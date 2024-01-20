@@ -1,3 +1,7 @@
+---
+icon: material/heart
+---
+
 # Linux 201 进阶教程
 
 欢迎来到 Linux 201 进阶教程，本教程主要面向 Debian 及其衍生发行版（如 Ubuntu 等）的系统运维，因此与传统的 Linux 教程有所不同。
