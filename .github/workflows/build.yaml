@@ -28,6 +28,7 @@ jobs:
                   globs: "**/*.md"
 
             - name: Determine if a PR should be submitted
+              if: github.ref == 'refs/heads/master'
               id: file_changes
               run: |
                   if [[ -z $(git diff --name-only) ]]; then
@@ -37,7 +38,7 @@ jobs:
                   fi
 
             - name: Submit PR if mdl changes files
-              if: steps.file_changes.outputs.should_submit == 'true'
+              if: steps.file_changes.outputs.should_submit == 'true' && github.ref == 'refs/heads/master'
               uses: peter-evans/create-pull-request@v5
               with:
                   commit-message: "MarkdownLint auto fix from GitHub Actions run ${{ github.run_number }}"
