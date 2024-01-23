@@ -5,6 +5,3 @@
 -->
 
 <!-- man 5 -->
-
-[ssh_config.5]: https://man.openbsd.org/ssh_config
-[sshd_config.5]: https://man.openbsd.org/sshd_config
