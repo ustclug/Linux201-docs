@@ -99,3 +99,31 @@ Host example
 - sshd 仅有一个配置文件 `/etc/ssh/sshd_config`，它的配置项可以在 [sshd_config(5)][sshd_config.5] 中找到。
 
 sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 `ssh.service` 中指定的 `ExecStartPre=` 命令和第一条 `ExecReload=` 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。
+
+
+## 拆分配置文件 {#include}
+
+从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 `Include` 选项，可以在主配置文件中 include 其他文件。与 C 的 `#include` 或 Nginx 的 `include` 不同，SSH config 里的 `Include` **不**等价于文本插入替换，并且 `Include` 可以出现在 `Host` 和 `Match` 块中。因此一个（不太常见的）坑是：
+
+!!! failure "错误写法"
+
+    ```shell
+    Host example
+      HostName example.com
+      User user
+
+    Include ~/.ssh/global.conf
+    ```
+
+因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 `Host example` 生效。正确的写法是将其放在一个 `Match all` 块（或者 `Host *`）中：
+
+!!! success "正确写法"
+
+    ```shell
+    Host example
+      HostName example.com
+      User user
+
+    Match all
+      Include ~/.ssh/global.conf
+    ```
