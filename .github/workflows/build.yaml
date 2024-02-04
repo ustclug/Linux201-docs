@@ -25,13 +25,15 @@ jobs:
               continue-on-error: true
               with:
                   fix: true
-                  globs: "**/*.md"
+                  globs: &mdl-globs |
+                    docs/**/*.md
+                    README.md
 
             - uses: DavidAnson/markdownlint-cli2-action@v15
               continue-on-error: true
               with:
                   fix: true
-                  globs: "**/*.md"
+                  globs: *mdl-globs
 
             - name: Determine if a PR should be submitted
               if: github.ref == 'refs/heads/master'
