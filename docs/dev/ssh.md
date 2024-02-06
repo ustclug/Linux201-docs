@@ -91,9 +91,35 @@ Host example
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
 
+### 跳板 {#jump-host}
+
+SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。
+
+`ssh` 命令的 `-J` 选项可以指定跳板机，例如：
+
+```shell
+ssh -J user@jumphost.example.com user@realhost.example.com
+```
+
+对应的配置文件语句是 `ProxyJump user@jumphost.example.com`。
+
+如果要给跳板机设置更多参数，如端口等，则必须使用配置文件：
+
+```shell
+Host jumphost
+  HostName jumphost.example.com
+  User jumphostuser
+  Port 2333
+
+Host realhost
+  HostName realhost.example.com
+  User realhostuser
+  ProxyJump jumphost
+```
+
 ### 高级功能：连接复用 {#connection-reuse}
 
-SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持链接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以服用这个连接，而不需要重新握手认证等，可以显著减少连接时间。
+SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以服用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
 
 启用连接复用需要在配置文件中同时指定 `ControlMaster`、`ControlPath` 和 `ControlPersist` 三个选项（它们的默认值都是禁用或者很不友好的值）：
 
