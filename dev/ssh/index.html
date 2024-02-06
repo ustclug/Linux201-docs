@@ -829,6 +829,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#connection-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      高级功能：连接复用
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1229,6 +1238,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#connection-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      高级功能：连接复用
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1335,6 +1353,15 @@
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span>DynamicForward<span class="w"> </span><span class="m">1081</span>
 </code></pre></div>
 <p><code>-L</code>、<code>-R</code>、<code>-D</code> 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。</p>
+<h3 id="connection-reuse">高级功能：连接复用<a class="headerlink" href="#connection-reuse" title="Permanent link">&para;</a></h3>
+<p>SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持链接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以服用这个连接，而不需要重新握手认证等，可以显著减少连接时间。</p>
+<p>启用连接复用需要在配置文件中同时指定 <code>ControlMaster</code>、<code>ControlPath</code> 和 <code>ControlPersist</code> 三个选项（它们的默认值都是禁用或者很不友好的值）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Host<span class="w"> </span>*
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>ControlMaster<span class="w"> </span>auto
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>ControlPath<span class="w"> </span>/tmp/sshcontrol-%C
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>ControlPersist<span class="w"> </span>yes
+</code></pre></div>
+<p>其中 <code>%C</code> 是 <code>%l%h%p%r</code> 的 hash，因此连接不同主机的 control socket 不会冲突。<strong>但是</strong>，如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 <code>git@github.com</code>），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 <code>ControlPath</code>。</p>
 <h2 id="sshd-config">服务端配置<a class="headerlink" href="#sshd-config" title="Permanent link">&para;</a></h2>
 <p>服务端的配置与客户端有一些不同点：</p>
 <ul>
@@ -1346,22 +1373,22 @@
 <p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中。因此一个（不太常见的）坑是：</p>
 <div class="admonition failure">
 <p class="admonition-title">错误写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </div>
 <p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
 <div class="admonition success">
 <p class="admonition-title">正确写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>Match<span class="w"> </span>all
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>Match<span class="w"> </span>all
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </div>
 <!--
