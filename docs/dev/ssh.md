@@ -91,6 +91,21 @@ Host example
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
 
+### 高级功能：连接复用 {#connection-reuse}
+
+SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持链接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以服用这个连接，而不需要重新握手认证等，可以显著减少连接时间。
+
+启用连接复用需要在配置文件中同时指定 `ControlMaster`、`ControlPath` 和 `ControlPersist` 三个选项（它们的默认值都是禁用或者很不友好的值）：
+
+```shell
+Host *
+  ControlMaster auto
+  ControlPath /tmp/sshcontrol-%C
+  ControlPersist yes
+```
+
+其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。**但是**，如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 `ControlPath`。
+
 ## 服务端配置 {#sshd-config}
 
 服务端的配置与客户端有一些不同点：
