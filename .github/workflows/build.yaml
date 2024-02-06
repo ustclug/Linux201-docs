@@ -12,10 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -50,7 +50,7 @@ jobs:
 
       - name: Submit PR if mdl changes files
         if: steps.file_changes.outputs.should_submit == 'true' && github.ref == 'refs/heads/master'
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "MarkdownLint auto fix from GitHub Actions run ${{ github.run_number }}"
           assignees: "${{ github.actor }}"
