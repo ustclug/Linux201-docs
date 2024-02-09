@@ -1315,6 +1315,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#disk-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘类型简介
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#disk-size" class="md-nav__link">
     <span class="md-ellipsis">
       磁盘规格与尺寸
@@ -1402,6 +1411,18 @@
 </ul>
 <p>本部分会对运维需要了解的基础知识进行介绍。</p>
 <h2 id="disks">磁盘<a class="headerlink" href="#disks" title="Permanent link">&para;</a></h2>
+<h3 id="disk-type">磁盘类型简介<a class="headerlink" href="#disk-type" title="Permanent link">&para;</a></h3>
+<p>在服务器上最常见的为机械硬盘（HDD）和固态硬盘（SSD）。机械硬盘使用磁盘片和机械臂进行数据读写，固态硬盘使用闪存芯片进行数据读写。
+除此以外，还可能有一些特殊的存储设备，例如磁带、Intel Optane 等，这里不做详细介绍。</p>
+<p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。
+而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
+对于企业级硬盘，这些性能指标可能会更高。</p>
+<p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。
+由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。
+尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。
+而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；
+读取操作对 SSD 的损耗可以忽略不计。</p>
+<p>对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。</p>
 <h3 id="disk-size">磁盘规格与尺寸<a class="headerlink" href="#disk-size" title="Permanent link">&para;</a></h3>
 <p>关于磁盘规格，在服务器安装时我们主要关心以下几点：</p>
 <ul>
@@ -1486,6 +1507,12 @@
 <p>将不同级别的 RAID 组合在一起，兼顾性能和冗余，各取所长，对于 10 块盘以上的阵列是更加常见的选择。例如 RAID 10 = RAID 1 + RAID 0，通常将每两块盘组成 RAID 1，再将这些 RAID 1 的组合拼成一个大 RAID 0。</p>
 </dd>
 </dl>
+<div class="admonition danger">
+<p class="admonition-title">磁盘阵列不是备份</p>
+<p>RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。</p>
+<p><a href="https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf"><img alt="磁盘阵列不是备份" src="images/raid-is-not-backup.png" /></a></p>
+<p><em>图片来自<a href="https://tuna.moe/event/2023/disk-array/">金枪鱼之夜：实验物理垃圾佬之乐——PB 级磁盘阵列演进</a></em></p>
+</div>
 <h3 id="raid_1">RAID 等级比较<a class="headerlink" href="#raid_1" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1543,6 +1570,15 @@
 </tbody>
 </table>
 <p>RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。</p>
+<div class="admonition question">
+<p class="admonition-title">思考题</p>
+<ol>
+<li>为什么 RAID 5 和 RAID 6 的重建期间性能会很差？</li>
+<li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？</li>
+<li>为什么对大容量磁盘使用 RAID 5 是一个坏主意？</li>
+<li>为什么说 RAID 5/6 有很高的写惩罚（Write Penalty）？</li>
+</ol>
+</div>
 <h3 id="raid_2">RAID 实现方式<a class="headerlink" href="#raid_2" title="Permanent link">&para;</a></h3>
 <p>RAID 可以在硬件层面实现，也可以在操作系统层面通过软件实现。</p>
 <p>硬件：</p>
@@ -1557,9 +1593,11 @@
 <li>较早的“动态磁盘”功能支持 RAID 0、1、5 等级别，并且是在分区层面实现的，因此同一个硬盘组上可以同时存在多个采用不同 RAID 级别的卷（文件系统）</li>
 <li>较新的 Windows 开始支持 Storage Spaces，可以实现更多 RAID 级别，以及“镜像加速”、“自动热迁移”等功能，但是比动态磁盘更加难用，重建也更复杂</li>
 </ul>
-<p>macOS：</p>
+<p>Linux:</p>
 <ul>
-<li>很遗憾超出了本文的范围，</li>
+<li>mdadm 是 Linux 上最常见的软件 RAID 实现方式之一</li>
+<li>Linux 常用的逻辑卷管理工具 LVM 也支持 RAID 功能</li>
+<li>一部分文件系统，如 ZFS 和 Btrfs，也支持 RAID 功能</li>
 </ul>
 <!--
   Links to man pages
@@ -1570,6 +1608,15 @@
 <!-- markdownlint-disable-file MD053 -->
 
 <!-- man 5 -->
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>IOPS 为每秒的 I/O 操作数，可以简单认为是命令操作延迟的倒数。&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
