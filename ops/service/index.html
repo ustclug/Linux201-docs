@@ -1317,6 +1317,14 @@
 <p>Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（systemd-journald）、网络管理（systemd-networkd）、本地 DNS 缓存（systemd-resolved）、时间同步（systemd-timesyncd）等，本文主要关心服务管理和日志管理。</p>
 <h3 id="unit">Unit<a class="headerlink" href="#unit" title="Permanent link">&para;</a></h3>
 <p>在 systemd 中，运行一个完整系统所需的每个部件都作为“单元”（unit）管理。一个 unit 可以是服务（<code>.service</code>）、挂载点（<code>.mount</code>）、设备（<code>.device</code>）、定时器（<code>.timer</code>）以至于目标（<code>.target</code>）等，完整的列表可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html"><code>systemd.unit(5)</code></a> 中找到。</p>
+<pre class="mermaid"><code>graph TD
+U(unit) --&gt; A(service)
+U --&gt; B(mount)
+U --&gt; C(device)
+U --&gt; D(target)
+U --&gt; E(slice)
+U --&gt; F(scope)</code></pre>
+<p>{: align=center }</p>
 <p>Systemd unit 的配置文件<strong>主要</strong>从以下目录按顺序载入，其中同名的文件只取找到的第一个：</p>
 <ul>
 <li><code>/etc/systemd/system</code>：本地配置文件，优先级最高，这也是唯一一个管理员可以手动修改文件的地方。</li>
