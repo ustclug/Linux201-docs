@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.7">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.8">
     
     
       
@@ -1272,7 +1272,7 @@
 <li>部分手册会将 2.5 英寸的磁盘称为 SFF（Small Form Factor），3.5 英寸的磁盘称为 LFF（Large Form Factor）。</li>
 </ul>
 </li>
-<li>磁盘的接口与协议（SAS、SATA、NVMe U.2、M.2）</li>
+<li>磁盘的接口与协议（SAS、SATA、NVMe、M.2、U.2）</li>
 <li>是否与服务器配置兼容：<ul>
 <li>部分服务器会有硬盘白名单，只有白名单中的硬盘才能识别。</li>
 <li>使用的硬件 RAID 方案可能会对硬盘接口有要求，例如 SATA 和 SAS 接口的硬盘不能混用。</li>
@@ -1284,11 +1284,48 @@
 <p>一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。</p>
 </div>
 <h3 id="_3">磁盘尺寸<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，支持 3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘。</p>
+<p>磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。</p>
 <h3 id="_4">磁盘接口与协议<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<p>机械硬盘与一部分固态硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。</p>
+<p>机械硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接，一些固态硬盘也会使用 SATA 接口。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。</p>
 <p>SATA 与 SAS 的详细对比可参考<a href="https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA">英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节</a>。</p>
-<p>随着固态硬盘的普及，PCIe 接口的固态硬盘也越来越多见。PCIe 接口的固态硬盘通常使用 NVMe 协议，因此也被称为 NVMe SSD。NVMe SSD 常见的接口形态有 U.2 和 M.2。M.2 相比于 U.2 来说尺寸更小，在个人计算机上也更常见。</p>
+<p>随着固态硬盘的普及，PCIe 接口的固态硬盘也越来越多见。PCIe 接口的固态硬盘通常使用 NVMe 协议，因此也被称为 NVMe SSD。NVMe SSD 常见的接口形态有 U.2、M.2 和 AIC（PCIe Add-in Card，即扩展卡）。</p>
+<ul>
+<li>
+<p>M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。</p>
+<ul>
+<li>常见的 M.2 接口有 B-key 和 M-key 两种，主流的 NVMe SSD 通常使用 M-key 接口，而 SATA SSD 通常使用 B-key 或 B+M（两个缺口）。一个 M.2 接口是否支持 NVMe 或 SATA 协议取决于主板或控制器，因此具体情况需要参考产品的说明书。<ul>
+<li>作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVme 的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。</li>
+</ul>
+</li>
+<li>除了接口的形状，M.2 接口的长宽也有一系列选项，例如 2230、2242、2280、22110 等，即宽度为 22 mm，长度分别为 30、42、80、110 mm 等。个人电脑一般采用 2280 的尺寸，而服务器（和一些高端台式机主板）上可能会使用 22110 的尺寸。这些尺寸不影响接口的电气特性，只是为了适应不同的空间和散热需求。</li>
+</ul>
+</li>
+<li>
+<p>U.2 接口形状与 SAS 类似，但是<strong>不兼容 SAS</strong>（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。</p>
+</li>
+<li>AIC 就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
+</ul>
+<details class="example">
+<summary>图片：M.2 SSD</summary>
+<p><figure markdown>
+  <img alt="M.2 2280 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg" />
+  <figcaption>M.2 2280 SSD</figcaption>
+</figure></p>
+</details>
+<details class="example">
+<summary>图片：U.2 SSD</summary>
+<p><figure markdown>
+  <img alt="U.2 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/620px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg" />
+  <figcaption>U.2 SSD</figcaption>
+</figure></p>
+</details>
+<details class="example">
+<summary>图片：AIC SSD</summary>
+<p><figure markdown>
+  <img alt="PCIe AIC SSD" src="https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg" />
+  <figcaption>PCIe 插卡式 SSD</figcaption>
+</figure></p>
+</details>
 <!--
   Links to man pages
 
@@ -1383,7 +1420,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.caa56a14.min.js"></script>
+      <script src="../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
       
     
   </body>
