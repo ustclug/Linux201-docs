@@ -23,6 +23,16 @@ Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（syst
 
 在 systemd 中，运行一个完整系统所需的每个部件都作为“单元”（unit）管理。一个 unit 可以是服务（`.service`）、挂载点（`.mount`）、设备（`.device`）、定时器（`.timer`）以至于目标（`.target`）等，完整的列表可以在 [`systemd.unit(5)`][systemd.unit.5] 中找到。
 
+```mermaid
+graph TD
+U(unit) --> A(service)
+U --> B(mount)
+U --> C(device)
+U --> D(target)
+U --> E(slice)
+U --> F(scope)
+```
+
 Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同名的文件只取找到的第一个：
 
 - `/etc/systemd/system`：本地配置文件，优先级最高，这也是唯一一个管理员可以手动修改文件的地方。
