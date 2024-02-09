@@ -12,7 +12,9 @@
 
 本部分会对运维需要了解的基础知识进行介绍。
 
-## 磁盘规格
+## 磁盘 {#disks}
+
+### 磁盘规格与尺寸 {#disk-size}
 
 关于磁盘规格，在服务器安装时我们主要关心以下几点：
 
@@ -27,11 +29,9 @@
 
     一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。
 
-### 磁盘尺寸
-
 磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。
 
-### 磁盘接口与协议
+### 磁盘接口与协议 {#disk-interface}
 
 机械硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接，一些固态硬盘也会使用 SATA 接口。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。
 
@@ -50,21 +50,58 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
 
 ??? example "图片：M.2 SSD"
 
-    <figure markdown>
+    <figure markdown="span">
       ![M.2 2280 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg)
       <figcaption>M.2 2280 SSD</figcaption>
     </figure>
 
 ??? example "图片：U.2 SSD"
 
-    <figure markdown>
+    <figure markdown="span">
       ![U.2 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/620px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg)
       <figcaption>U.2 SSD</figcaption>
     </figure>
 
 ??? example "图片：AIC SSD"
 
-    <figure markdown>
+    <figure markdown="span">
       ![PCIe AIC SSD](https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg)
       <figcaption>PCIe 插卡式 SSD</figcaption>
     </figure>
+
+## RAID
+
+RAID（Redundant Array of Inexpensive Disks）是一种将多个磁盘组合在一起实现数据冗余和性能提升的技术。不同的磁盘组合方式称为“RAID 级别（RAID Level）”，常见的有 RAID 0、RAID 1、RAID 5、RAID 6、RAID 10 等。
+
+RAID 0
+
+:   也称作条带化（Striping），将数据分块存储在多个磁盘上，可以充分利用所有容量，获得叠加的顺序读写性能（但随机读写性能一般），但没有冗余，任何一块磁盘损坏都会导致整个阵列的数据丢失，适合需要高性能读写但不需要数据安全性的场景。
+
+RAID 1
+
+:   也称作镜像（Mirroring），将数据完全复制到多个磁盘上，提供了绝对冗余，整个阵列中只需要有一块盘存活，数据就不会丢失。代价是整个阵列的容量等单块磁盘的容量，空间利用率低下，适合需要高可靠性<s>而且不缺钱</s>的场景。同时由于每块盘上的数据完全一致，RAID 1 的读取性能可以叠加（甚至包括随机读取），但写入性能不会提升。
+
+RAID 5
+
+:   将数据和**一份**校验信息分块存储在多个磁盘上，可以允许阵列中任何一块磁盘损坏，兼顾冗余性和容量利用率。重建期间的性能会严重下降，并且一旦在重建完成前又坏了一块盘，那么你就寄了。
+
+RAID 6
+
+:   将数据和**两份**校验信息分块存储在多个磁盘上，比 RAID 5 多了一份校验信息，可以容纳两块磁盘损坏，适合大容量或者磁盘较多的阵列。尽管允许两块盘损坏，但我们仍然建议在第一块盘损坏后立即更换并重建，不要等到更危险的时候。
+
+RAID 10, 50, 60
+
+:   将不同级别的 RAID 组合在一起，兼顾性能和冗余，各取所长，对于 10 块盘以上的阵列是更加常见的选择。例如 RAID 10 = RAID 1 + RAID 0，通常将每两块盘组成 RAID 1，再将这些 RAID 1 的组合拼成一个大 RAID 0。
+
+### RAID 等级比较
+
+| 等级    | 容量         | 冗余                           | 读写性能                                         | 适用场景                     |
+| ------- | ------------ | ------------------------------ | ------------------------------------------------ | ---------------------------- |
+| RAID 0  | 全部叠加     | 无，挂一块盘就寄了             | 顺序读写性能高，随机读写性能一般（略好于单块盘） | 临时数据、缓存               |
+| RAID 1  | 单块盘       | 最高，只要有一块盘存活就行     | 叠加的读性能，但是只有单块盘的写性能             | 重要数据                     |
+| RAID 5  | N-1 块盘     | 可以坏一块盘                   | 顺序读写性能高，随机读写性能差；重建期间**很差** | 兼顾容量和安全性             |
+| RAID 6  | N-2 块盘     | 可以坏两块盘                   | 顺序读写性能高，随机读写性能差；重建期间**更差** | 比 RAID 5 更稳一点           |
+| RAID 10 | 每组 RAID 1 容量叠加    | 每组 RAID 1 内只需要存活一块盘 | 顺序和随机性能都不错，并且重建期间还凑合         | 兼顾性能和安全性             |
+| RAID 60 | （自行计算） | 每组 RAID 6 内可以坏两块盘     | 顺序读写性能不错，并且重建期间<s>更凑合了</s>    | 盘很多，并且兼顾容量和安全性 |
+
+RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。
