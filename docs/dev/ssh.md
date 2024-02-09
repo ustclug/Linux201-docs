@@ -145,7 +145,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 `Include` 选项，可以在主配置文件中 include 其他文件。与 C 的 `#include` 或 Nginx 的 `include` 不同，SSH config 里的 `Include` **不**等价于文本插入替换，并且 `Include` 可以出现在 `Host` 和 `Match` 块中。因此一个（不太常见的）坑是：
 
-!!! failure "错误写法"
+??? failure "错误写法"
 
     ```shell
     Host example
@@ -157,7 +157,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 `Host example` 生效。正确的写法是将其放在一个 `Match all` 块（或者 `Host *`）中：
 
-!!! success "正确写法"
+??? success "正确写法"
 
     ```shell
     Host example
@@ -166,4 +166,16 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
     Match all
       Include ~/.ssh/global.conf
+    ```
+
+更加推荐的写法是将 `Include` 放在配置文件开头：
+
+!!! success "推荐写法"
+
+    ```shell
+    Include ~/.ssh/global.conf
+
+    Host example
+      HostName example.com
+      User user
     ```
