@@ -616,6 +616,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ext4" class="md-nav__link">
+    <span class="md-ellipsis">
+      ext4
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#btrfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      btrfs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1444,6 +1468,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ext4" class="md-nav__link">
+    <span class="md-ellipsis">
+      ext4
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#btrfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      btrfs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1787,7 +1835,7 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <td>Y</td>
 <td>Y</td>
 <td>Y</td>
-<td>应仅用于 EFI 分区或不同操作系统交换文件的场合。不支持大于 4GB 的文件。</td>
+<td>应仅用于 EFI 分区、部分情况下的 <code>/boot</code>，或不同操作系统交换文件的场合。不支持大于 4GB 的文件。</td>
 </tr>
 <tr>
 <td>exFAT</td>
@@ -1797,14 +1845,14 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <td>应仅用于不同操作系统交换文件。不支持日志。</td>
 </tr>
 <tr>
-<td>ext4</td>
+<td><a href="https://wiki.archlinux.org/title/Ext4">ext4</a></td>
 <td>Y</td>
 <td>N</td>
 <td>N</td>
 <td>Linux 上最常见的文件系统。</td>
 </tr>
 <tr>
-<td>XFS</td>
+<td><a href="https://wiki.archlinux.org/title/XFS">XFS</a></td>
 <td>Y</td>
 <td>N</td>
 <td>N</td>
@@ -1818,14 +1866,14 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <td>适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。</td>
 </tr>
 <tr>
-<td>Btrfs</td>
+<td><a href="https://wiki.archlinux.org/title/Btrfs">Btrfs</a></td>
 <td>Y</td>
 <td>N</td>
 <td>N</td>
 <td>内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。</td>
 </tr>
 <tr>
-<td>ZFS</td>
+<td><a href="https://wiki.archlinux.org/title/ZFS">ZFS</a></td>
 <td>Y</td>
 <td>N</td>
 <td>N</td>
@@ -1854,7 +1902,36 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 </tr>
 </tbody>
 </table>
-<p>以下将关注在 Linux 服务器端常见的场景。</p>
+<p>以下将关注在 Linux 服务器端常见的场景。表格中指向 ArchWiki 的链接也可能有所帮助。</p>
+<h3 id="ext4">ext4<a class="headerlink" href="#ext4" title="Permanent link">&para;</a></h3>
+<p>如果没有特殊的需求，ext4 是一个不错的选择。即使有其他需求，也建议对系统分区使用 ext4。
+最常见的问题之一是 ext4 的 inode 限制。</p>
+<div class="admonition info">
+<p class="admonition-title">inode</p>
+<p>inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
+可以使用 <code>stat</code> 查看某个文件的 inode 信息。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>stat<span class="w"> </span><span class="nb">test</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">  File: test</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">  Size: 0          Blocks: 0          IO Block: 4096   regular empty file</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">Device: 0,28 Inode: 54475724    Links: 1</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">Access: (0644/-rw-r--r--)  Uid: ( 1000/   username)   Gid: ( 1000/   username)</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">Access: 2024-02-11 00:23:27.743633975 +0800</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">Modify: 2024-02-11 00:23:27.743633975 +0800</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="go">Change: 2024-02-11 00:23:27.743633975 +0800</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="go"> Birth: 2024-02-11 00:23:27.743633975 +0800</span>
+</code></pre></div>
+<p>这里 test 文件的 inode 号码则为 54475724。</p>
+</div>
+<p>在创建 ext4 文件系统时，会固定名为 "bytes-per-inode" 的参数，用于控制总的 inode 数量。默认情况下，硬盘上每有 16KB 的空间，就会保留一个 inode。
+该参数无法在文件系统创建后更改。
+因此，如果创建了大量小文件，可能会发现磁盘空间并没有用完，但是已经无法再创建新文件了。</p>
+<p>除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
+但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 <code>tune2fs</code> 命令调整这一参数：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%</span>
+</code></pre></div>
+<h3 id="btrfs">btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
+<p>尽管在我们的实践中，我们不太建议使用 btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 btrfs 在长时间运行后存在严重的性能问题。
+但是在许多年的开发后，btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。</p>
 <!--
   Links to man pages
 
