@@ -132,7 +132,7 @@ $ sudo losetup -a
 以下介绍 MBR 与 GPT 分区表。
 
 MBR (Master Boot Record) 分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
-MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
+MBR 信息存储在磁盘的第一个扇区[^1]（512 字节[^2]），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
 提供给分区信息的只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
 为了让磁盘支持更多分区，出现了扩展分区的概念。
 扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2TB 的磁盘。
@@ -187,18 +187,18 @@ MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导
 首先创建一个空文件：
 
 ```console
-$ truncate -s 512M test.img
+$ truncate -s 8G test.img
 ```
 
 !!! info "稀疏文件"
 
-    这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 512M，但是实际上只占用了很少的磁盘空间。可以以此验证：
+    这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：
 
     ```console
     $ du -h test.img
     0	test.img
     $ du -h --apparent-size test.img
-    512M	test.img
+    8G	test.img
     ```
 
 之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。
@@ -208,3 +208,164 @@ $ fdisk test.img
 $ # 或者
 $ parted test.img
 ```
+
+以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根分区。
+
+??? info "fdisk 操作示例"
+
+    fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 `g` 命令。
+    在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 `+` 表示相对于当前位置的偏移量（即分区大小）。
+
+    最后使用 `w` 命令写入分区表。如果不想实际写入到磁盘，可以使用 `q` 退出而不保存。
+    更多信息可以使用 `m` 命令查看帮助。
+
+    ```console
+    $ fdisk test.img
+    Welcome to fdisk (util-linux 2.39.3).
+    Changes will remain in memory only, until you decide to write them.
+    Be careful before using the write command.
+
+    Device does not contain a recognized partition table.
+    Created a new DOS (MBR) disklabel with disk identifier 0xb7358160.
+
+    Command (m for help): g
+    Created a new GPT disklabel (GUID: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452).
+
+    Command (m for help): n
+    Partition number (1-128, default 1): 
+    First sector (2048-16777182, default 2048): 
+    Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-16777182, default 16775167): +256M
+
+    Created a new partition 1 of type 'Linux filesystem' and of size 256 MiB.
+
+    Command (m for help): n
+    Partition number (2-128, default 2): 
+    First sector (526336-16777182, default 526336): 
+    Last sector, +/-sectors or +/-size{K,M,G,T,P} (526336-16777182, default 16775167): +1G
+
+    Created a new partition 2 of type 'Linux filesystem' and of size 1 GiB.
+
+    Command (m for help): n
+    Partition number (3-128, default 3): 
+    First sector (2623488-16777182, default 2623488): 
+    Last sector, +/-sectors or +/-size{K,M,G,T,P} (2623488-16777182, default 16775167): 
+
+    Created a new partition 3 of type 'Linux filesystem' and of size 6.7 GiB.
+
+    Command (m for help): t
+    Partition number (1-3, default 3): 1
+    Partition type or alias (type L to list all): L
+    （省略）
+    Partition type or alias (type L to list all): 1
+
+    Changed type of partition 'Linux filesystem' to 'EFI System'.
+
+    Command (m for help): t
+    Partition number (1-3, default 3): 2
+    Partition type or alias (type L to list all): 19
+
+    Changed type of partition 'Linux filesystem' to 'Linux swap'.
+
+    Command (m for help): p
+    Disk test.img: 8 GiB, 8589934592 bytes, 16777216 sectors
+    Units: sectors of 1 * 512 = 512 bytes
+    Sector size (logical/physical): 512 bytes / 512 bytes
+    I/O size (minimum/optimal): 512 bytes / 512 bytes
+    Disklabel type: gpt
+    Disk identifier: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452
+
+    Device       Start      End  Sectors  Size Type
+    test.img1     2048   526335   524288  256M EFI System
+    test.img2   526336  2623487  2097152    1G Linux swap
+    test.img3  2623488 16775167 14151680  6.7G Linux filesystem
+
+    Command (m for help): w
+    The partition table has been altered.
+    Syncing disks.
+    ```
+
+??? info "parted 操作示例"
+
+    这里不推荐交互式使用 `parted`，因为其交互不如 `fdisk` 直观，并且**操作均为立刻写入**。但是 `parted` 在脚本中使用更加方便。
+    parted 脚本的例子可以参考 [101strap 脚本](https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46)。
+
+    ```console
+    $ parted -a optimal test.img  # 使用 optimal 参数，在创建新分区时使用最佳对齐
+    WARNING: You are not superuser.  Watch out for permissions.
+    GNU Parted 3.6
+    Using /home/taoky/tmp/201/test.img
+    Welcome to GNU Parted! Type 'help' to view a list of commands.
+    (parted) mklabel gpt
+    (parted) mkpart efi 0% 256M
+    (parted) mkpart swap 256M 1289M
+    (parted) mkpart rootfs 1289M 100%
+    (parted) set 1 esp
+    New state?  [on]/off?
+    (parted) set 2 swap
+    New state?  [on]/off?
+    (parted) print
+    Model:  (file)
+    Disk /home/taoky/tmp/201/test.img: 8590MB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags: 
+
+    Number  Start   End     Size    File system  Name    Flags
+    1      1049kB  256MB   255MB                efi     boot, esp
+    2      256MB   1289MB  1033MB               swap    swap
+    3      1289MB  8589MB  7300MB               rootfs
+
+    (parted) quit
+    ```
+
+在创建后，我们可以使用 `file` 和 `fdisk` 工具验证分区表的类型：
+
+```console
+$ file test.img  # MBR 只有一个分区，并且分区 ID 为 0xee，代表该磁盘镜像使用 GPT
+test.img: DOS/MBR boot sector; partition 1 : ID=0xee, start-CHS (0x0,0,2), end-CHS (0x3ff,255,63), startsector 1, 16777215 sectors, extended partition table (last)
+$ fdisk -l test.img
+Disk test.img: 8 GiB, 8589934592 bytes, 16777216 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452
+
+Device       Start      End  Sectors  Size Type
+test.img1     2048   526335   524288  256M EFI System
+test.img2   526336  2623487  2097152    1G Linux swap
+test.img3  2623488 16775167 14151680  6.7G Linux filesystem
+```
+
+如果对 GPT 的细节感兴趣，可以使用十六进制编辑器查看镜像内容，并与 GPT 标准对照。
+
+??? info "分区对齐"
+
+    观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
+    这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。
+    
+    在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
+    2048 这个数字也足够大，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
+
+## 文件系统
+
+下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。
+
+| 文件系统 | Linux? | macOS? | Windows? | 特点与备注 |
+| -------- | ------ | ------ | -------- | ---------- |
+| FAT32 (VFAT) | Y | Y | Y | 应仅用于 EFI 分区或不同操作系统交换文件的场合。不支持大于 4GB 的文件。 |
+| exFAT | Y | Y | Y | 应仅用于不同操作系统交换文件。不支持日志。 |
+| ext4 | Y | N | N | Linux 上最常见的文件系统。 |
+| XFS | Y | N | N | 适用于大文件、大容量的场合。无法随意缩小[^3]。 |
+| ReiserFS | Y (deprecated) | N | N | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。 |
+| Btrfs | Y | N | N | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。 |
+| ZFS | Y | N | N | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。 |
+| NTFS | Y (Kernel 5.15+) | Y (Readonly) | Y | Windows 上最常见的文件系统。 |
+| HFS+ | Y (Readonly) | Y | Y (Readonly, Bootcamp) | macOS 较早期版本最常见的文件系统。 |
+| APFS | N | Y | N | macOS 较新版本的 CoW 文件系统。 |
+
+以下将关注在 Linux 服务器端常见的场景。
+
+[^1]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
+[^2]: 扇区的大小（特别是实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
+[^3]: xfs_growfs(8): A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
