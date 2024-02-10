@@ -128,3 +128,81 @@ $ sudo losetup -a
 ## 分区表
 
 以下介绍 MBR 与 GPT 分区表。
+
+MBR (Master Boot Record) 分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
+MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
+提供给分区信息的只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
+为了让磁盘支持更多分区，出现了扩展分区的概念。
+扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2TB 的磁盘。
+
+而 GPT (GUID Partition Table) 分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
+目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」(Protective MBR)，用于防止旧系统对磁盘误操作，
+同时分区表信息在磁盘最后有一份备份，以减小损坏风险。
+
+!!! note "那 GPT 的磁盘怎么开机呢？"
+
+    对于使用传统 BIOS 的机器，GPT 开头的保护性 MBR 仍然可以存储引导代码。不过，目前的主流是使用 UEFI，不再需要在扇区里存储引导代码，
+    而是有一个专门的 EFI 分区（一般格式化为 FAT），用来存储引导程序与其他信息。
+
+    以下展示一个 EFI 分区的例子：
+
+    ```console
+    $ sudo mount /dev/disk/by-uuid/0E62-46C6 /efi
+    $ mount | grep efi
+    ...
+    /dev/nvme0n1p1 on /efi type vfat (rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro)
+    $ sudo tree /efi
+    /efi/
+    ├── $RECYCLE.BIN
+    │   └── desktop.ini
+    ├── BOOT
+    │   └── BOOT.SDI
+    ├── EFI
+    │   ├── arch
+    │   │   ├── fw
+    │   │   └── fwupdx64.efi
+    │   ├── Boot
+    │   │   ├── bootx64.efi
+    │   │   ├── LenovoBT.EFI
+    │   │   ├── License.txt
+    │   │   └── ReadMe.txt
+    │   ├── GRUB
+    │   │   └── grubx64.efi
+    │   └── Linux
+    └── System Volume Information
+        ├── IndexerVolumeGuid
+        └── WPSettings.dat
+
+    10 directories, 10 files
+    ```
+
+    这里 `efi` 后缀的文件就是 UEFI 会选择的启动引导程序，一般可以在启动时按下 F12 或者其他快捷键选择启动的设备或 EFI 文件。
+
+### 实验操作展示
+
+我们可以使用诸如 `fdisk`, `parted` 等工具对分区表进行操作。对于图形界面用户，`gparted` 是一个不错的选择。
+
+首先创建一个空文件：
+
+```console
+$ truncate -s 512M test.img
+```
+
+!!! info "稀疏文件"
+
+    这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 512M，但是实际上只占用了很少的磁盘空间。可以以此验证：
+
+    ```console
+    $ du -h test.img
+    0	test.img
+    $ du -h --apparent-size test.img
+    512M	test.img
+    ```
+
+之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。
+
+```console
+$ fdisk test.img
+$ # 或者
+$ parted test.img
+```
