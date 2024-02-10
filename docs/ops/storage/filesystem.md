@@ -353,18 +353,58 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
 | 文件系统 | Linux? | macOS? | Windows? | 特点与备注 |
 | -------- | ------ | ------ | -------- | ---------- |
-| FAT32 (VFAT) | Y | Y | Y | 应仅用于 EFI 分区或不同操作系统交换文件的场合。不支持大于 4GB 的文件。 |
+| FAT32 (VFAT) | Y | Y | Y | 应仅用于 EFI 分区、部分情况下的 `/boot`，或不同操作系统交换文件的场合。不支持大于 4GB 的文件。 |
 | exFAT | Y | Y | Y | 应仅用于不同操作系统交换文件。不支持日志。 |
-| ext4 | Y | N | N | Linux 上最常见的文件系统。 |
-| XFS | Y | N | N | 适用于大文件、大容量的场合。无法随意缩小[^3]。 |
+| [ext4](https://wiki.archlinux.org/title/Ext4) | Y | N | N | Linux 上最常见的文件系统。 |
+| [XFS](https://wiki.archlinux.org/title/XFS) | Y | N | N | 适用于大文件、大容量的场合。无法随意缩小[^3]。 |
 | ReiserFS | Y (deprecated) | N | N | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。 |
-| Btrfs | Y | N | N | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。 |
-| ZFS | Y | N | N | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。 |
+| [Btrfs](https://wiki.archlinux.org/title/Btrfs) | Y | N | N | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。 |
+| [ZFS](https://wiki.archlinux.org/title/ZFS) | Y | N | N | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。 |
 | NTFS | Y (Kernel 5.15+) | Y (Readonly) | Y | Windows 上最常见的文件系统。 |
 | HFS+ | Y (Readonly) | Y | Y (Readonly, Bootcamp) | macOS 较早期版本最常见的文件系统。 |
 | APFS | N | Y | N | macOS 较新版本的 CoW 文件系统。 |
 
-以下将关注在 Linux 服务器端常见的场景。
+以下将关注在 Linux 服务器端常见的场景。表格中指向 ArchWiki 的链接也可能有所帮助。
+
+### ext4
+
+如果没有特殊的需求，ext4 是一个不错的选择。即使有其他需求，也建议对系统分区使用 ext4。
+最常见的问题之一是 ext4 的 inode 限制。
+
+!!! info "inode"
+
+    inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
+    可以使用 `stat` 查看某个文件的 inode 信息。
+
+    ```console
+    $ stat test
+      File: test
+      Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
+    Device: 0,28	Inode: 54475724    Links: 1
+    Access: (0644/-rw-r--r--)  Uid: ( 1000/   username)   Gid: ( 1000/   username)
+    Access: 2024-02-11 00:23:27.743633975 +0800
+    Modify: 2024-02-11 00:23:27.743633975 +0800
+    Change: 2024-02-11 00:23:27.743633975 +0800
+     Birth: 2024-02-11 00:23:27.743633975 +0800
+    ```
+
+    这里 test 文件的 inode 号码则为 54475724。
+
+在创建 ext4 文件系统时，会固定名为 "bytes-per-inode" 的参数，用于控制总的 inode 数量。默认情况下，硬盘上每有 16KB 的空间，就会保留一个 inode。
+该参数无法在文件系统创建后更改。
+因此，如果创建了大量小文件，可能会发现磁盘空间并没有用完，但是已经无法再创建新文件了。
+
+除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
+但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 `tune2fs` 命令调整这一参数：
+
+```console
+$ sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%
+```
+
+### btrfs
+
+尽管在我们的实践中，我们不太建议使用 btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 btrfs 在长时间运行后存在严重的性能问题。
+但是在许多年的开发后，btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。
 
 [^1]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^2]: 扇区的大小（特别是实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
