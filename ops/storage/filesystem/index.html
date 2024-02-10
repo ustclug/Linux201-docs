@@ -609,6 +609,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件系统
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1428,6 +1437,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件系统
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1563,7 +1581,7 @@ Linux 内核开发中曾有过允许非特权用户挂载本地回环的讨论�
 <h2 id="_4">分区表<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>以下介绍 MBR 与 GPT 分区表。</p>
 <p>MBR (Master Boot Record) 分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
-MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
+MBR 信息存储在磁盘的第一个扇区<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>（512 字节<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup>），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
 提供给分区信息的只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
 为了让磁盘支持更多分区，出现了扩展分区的概念。
 扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2TB 的磁盘。</p>
@@ -1608,15 +1626,15 @@ MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导
 <h3 id="_5">实验操作展示<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <p>我们可以使用诸如 <code>fdisk</code>, <code>parted</code> 等工具对分区表进行操作。对于图形界面用户，<code>gparted</code> 是一个不错的选择。</p>
 <p>首先创建一个空文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">truncate -s 512M test.img</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">truncate -s 8G test.img</span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">稀疏文件</p>
-<p>这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 512M，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
+<p>这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>test.img
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">0 test.img</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>--apparent-size<span class="w"> </span>test.img
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">512M test.img</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">8G test.img</span>
 </code></pre></div>
 </div>
 <p>之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。</p>
@@ -1624,6 +1642,219 @@ MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp"># </span>或者
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">parted test.img</span>
 </code></pre></div>
+<p>以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根分区。</p>
+<details class="info">
+<summary>fdisk 操作示例</summary>
+<p>fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 <code>g</code> 命令。
+在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 <code>+</code> 表示相对于当前位置的偏移量（即分区大小）。</p>
+<p>最后使用 <code>w</code> 命令写入分区表。如果不想实际写入到磁盘，可以使用 <code>q</code> 退出而不保存。
+更多信息可以使用 <code>m</code> 命令查看帮助。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>fdisk<span class="w"> </span>test.img
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">Welcome to fdisk (util-linux 2.39.3).</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">Changes will remain in memory only, until you decide to write them.</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="go">Be careful before using the write command.</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">Device does not contain a recognized partition table.</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="go">Created a new DOS (MBR) disklabel with disk identifier 0xb7358160.</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="go">Command (m for help): g</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="go">Created a new GPT disklabel (GUID: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452).</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="go">Command (m for help): n</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go">Partition number (1-128, default 1): </span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="go">First sector (2048-16777182, default 2048): </span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="go">Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-16777182, default 16775167): +256M</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="go">Created a new partition 1 of type &#39;Linux filesystem&#39; and of size 256 MiB.</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="go">Command (m for help): n</span>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="go">Partition number (2-128, default 2): </span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="go">First sector (526336-16777182, default 526336): </span>
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="go">Last sector, +/-sectors or +/-size{K,M,G,T,P} (526336-16777182, default 16775167): +1G</span>
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a>
+<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="go">Created a new partition 2 of type &#39;Linux filesystem&#39; and of size 1 GiB.</span>
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a>
+<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a><span class="go">Command (m for help): n</span>
+<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="go">Partition number (3-128, default 3): </span>
+<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a><span class="go">First sector (2623488-16777182, default 2623488): </span>
+<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a><span class="go">Last sector, +/-sectors or +/-size{K,M,G,T,P} (2623488-16777182, default 16775167): </span>
+<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a>
+<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a><span class="go">Created a new partition 3 of type &#39;Linux filesystem&#39; and of size 6.7 GiB.</span>
+<a id="__codelineno-9-32" name="__codelineno-9-32" href="#__codelineno-9-32"></a>
+<a id="__codelineno-9-33" name="__codelineno-9-33" href="#__codelineno-9-33"></a><span class="go">Command (m for help): t</span>
+<a id="__codelineno-9-34" name="__codelineno-9-34" href="#__codelineno-9-34"></a><span class="go">Partition number (1-3, default 3): 1</span>
+<a id="__codelineno-9-35" name="__codelineno-9-35" href="#__codelineno-9-35"></a><span class="go">Partition type or alias (type L to list all): L</span>
+<a id="__codelineno-9-36" name="__codelineno-9-36" href="#__codelineno-9-36"></a><span class="go">（省略）</span>
+<a id="__codelineno-9-37" name="__codelineno-9-37" href="#__codelineno-9-37"></a><span class="go">Partition type or alias (type L to list all): 1</span>
+<a id="__codelineno-9-38" name="__codelineno-9-38" href="#__codelineno-9-38"></a>
+<a id="__codelineno-9-39" name="__codelineno-9-39" href="#__codelineno-9-39"></a><span class="go">Changed type of partition &#39;Linux filesystem&#39; to &#39;EFI System&#39;.</span>
+<a id="__codelineno-9-40" name="__codelineno-9-40" href="#__codelineno-9-40"></a>
+<a id="__codelineno-9-41" name="__codelineno-9-41" href="#__codelineno-9-41"></a><span class="go">Command (m for help): t</span>
+<a id="__codelineno-9-42" name="__codelineno-9-42" href="#__codelineno-9-42"></a><span class="go">Partition number (1-3, default 3): 2</span>
+<a id="__codelineno-9-43" name="__codelineno-9-43" href="#__codelineno-9-43"></a><span class="go">Partition type or alias (type L to list all): 19</span>
+<a id="__codelineno-9-44" name="__codelineno-9-44" href="#__codelineno-9-44"></a>
+<a id="__codelineno-9-45" name="__codelineno-9-45" href="#__codelineno-9-45"></a><span class="go">Changed type of partition &#39;Linux filesystem&#39; to &#39;Linux swap&#39;.</span>
+<a id="__codelineno-9-46" name="__codelineno-9-46" href="#__codelineno-9-46"></a>
+<a id="__codelineno-9-47" name="__codelineno-9-47" href="#__codelineno-9-47"></a><span class="go">Command (m for help): p</span>
+<a id="__codelineno-9-48" name="__codelineno-9-48" href="#__codelineno-9-48"></a><span class="go">Disk test.img: 8 GiB, 8589934592 bytes, 16777216 sectors</span>
+<a id="__codelineno-9-49" name="__codelineno-9-49" href="#__codelineno-9-49"></a><span class="go">Units: sectors of 1 * 512 = 512 bytes</span>
+<a id="__codelineno-9-50" name="__codelineno-9-50" href="#__codelineno-9-50"></a><span class="go">Sector size (logical/physical): 512 bytes / 512 bytes</span>
+<a id="__codelineno-9-51" name="__codelineno-9-51" href="#__codelineno-9-51"></a><span class="go">I/O size (minimum/optimal): 512 bytes / 512 bytes</span>
+<a id="__codelineno-9-52" name="__codelineno-9-52" href="#__codelineno-9-52"></a><span class="go">Disklabel type: gpt</span>
+<a id="__codelineno-9-53" name="__codelineno-9-53" href="#__codelineno-9-53"></a><span class="go">Disk identifier: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452</span>
+<a id="__codelineno-9-54" name="__codelineno-9-54" href="#__codelineno-9-54"></a>
+<a id="__codelineno-9-55" name="__codelineno-9-55" href="#__codelineno-9-55"></a><span class="go">Device       Start      End  Sectors  Size Type</span>
+<a id="__codelineno-9-56" name="__codelineno-9-56" href="#__codelineno-9-56"></a><span class="go">test.img1     2048   526335   524288  256M EFI System</span>
+<a id="__codelineno-9-57" name="__codelineno-9-57" href="#__codelineno-9-57"></a><span class="go">test.img2   526336  2623487  2097152    1G Linux swap</span>
+<a id="__codelineno-9-58" name="__codelineno-9-58" href="#__codelineno-9-58"></a><span class="go">test.img3  2623488 16775167 14151680  6.7G Linux filesystem</span>
+<a id="__codelineno-9-59" name="__codelineno-9-59" href="#__codelineno-9-59"></a>
+<a id="__codelineno-9-60" name="__codelineno-9-60" href="#__codelineno-9-60"></a><span class="go">Command (m for help): w</span>
+<a id="__codelineno-9-61" name="__codelineno-9-61" href="#__codelineno-9-61"></a><span class="go">The partition table has been altered.</span>
+<a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a><span class="go">Syncing disks.</span>
+</code></pre></div>
+</details>
+<details class="info">
+<summary>parted 操作示例</summary>
+<p>这里不推荐交互式使用 <code>parted</code>，因为其交互不如 <code>fdisk</code> 直观，并且<strong>操作均为立刻写入</strong>。但是 <code>parted</code> 在脚本中使用更加方便。
+parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46">101strap 脚本</a>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>parted<span class="w"> </span>-a<span class="w"> </span>optimal<span class="w"> </span>test.img<span class="w">  </span><span class="c1"># 使用 optimal 参数，在创建新分区时使用最佳对齐</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">WARNING: You are not superuser.  Watch out for permissions.</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">GNU Parted 3.6</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">Using /home/taoky/tmp/201/test.img</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">Welcome to GNU Parted! Type &#39;help&#39; to view a list of commands.</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">mklabel gpt</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">mkpart efi 0% 256M</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">mkpart swap 256M 1289M</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">mkpart rootfs 1289M 100%</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">set 1 esp</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="go">New state?  [on]/off?</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">set 2 swap</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="go">New state?  [on]/off?</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">print</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="go">Model:  (file)</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="go">Disk /home/taoky/tmp/201/test.img: 8590MB</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="go">Sector size (logical/physical): 512B/512B</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="go">Partition Table: gpt</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="go">Disk Flags: </span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="go">Number  Start   End     Size    File system  Name    Flags</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="go">1      1049kB  256MB   255MB                efi     boot, esp</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="go">2      256MB   1289MB  1033MB               swap    swap</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="go">3      1289MB  8589MB  7300MB               rootfs</span>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="gp gp-VirtualEnv">(parted)</span> <span class="go">quit</span>
+</code></pre></div>
+</details>
+<p>在创建后，我们可以使用 <code>file</code> 和 <code>fdisk</code> 工具验证分区表的类型：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>file<span class="w"> </span>test.img<span class="w">  </span><span class="c1"># MBR 只有一个分区，并且分区 ID 为 0xee，代表该磁盘镜像使用 GPT</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">test.img: DOS/MBR boot sector; partition 1 : ID=0xee, start-CHS (0x0,0,2), end-CHS (0x3ff,255,63), startsector 1, 16777215 sectors, extended partition table (last)</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">$ </span>fdisk<span class="w"> </span>-l<span class="w"> </span>test.img
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">Disk test.img: 8 GiB, 8589934592 bytes, 16777216 sectors</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">Units: sectors of 1 * 512 = 512 bytes</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">Sector size (logical/physical): 512 bytes / 512 bytes</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="go">I/O size (minimum/optimal): 512 bytes / 512 bytes</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">Disklabel type: gpt</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="go">Disk identifier: E19C12C2-CAB9-4A9A-88D5-2F389F7B4452</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="go">Device       Start      End  Sectors  Size Type</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="go">test.img1     2048   526335   524288  256M EFI System</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="go">test.img2   526336  2623487  2097152    1G Linux swap</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="go">test.img3  2623488 16775167 14151680  6.7G Linux filesystem</span>
+</code></pre></div>
+<p>如果对 GPT 的细节感兴趣，可以使用十六进制编辑器查看镜像内容，并与 GPT 标准对照。</p>
+<details class="info">
+<summary>分区对齐</summary>
+<p>观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
+这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。</p>
+<p>在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
+2048 这个数字也足够大，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。</p>
+</details>
+<h2 id="_6">文件系统<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。</p>
+<table>
+<thead>
+<tr>
+<th>文件系统</th>
+<th>Linux?</th>
+<th>macOS?</th>
+<th>Windows?</th>
+<th>特点与备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FAT32 (VFAT)</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>应仅用于 EFI 分区或不同操作系统交换文件的场合。不支持大于 4GB 的文件。</td>
+</tr>
+<tr>
+<td>exFAT</td>
+<td>Y</td>
+<td>Y</td>
+<td>Y</td>
+<td>应仅用于不同操作系统交换文件。不支持日志。</td>
+</tr>
+<tr>
+<td>ext4</td>
+<td>Y</td>
+<td>N</td>
+<td>N</td>
+<td>Linux 上最常见的文件系统。</td>
+</tr>
+<tr>
+<td>XFS</td>
+<td>Y</td>
+<td>N</td>
+<td>N</td>
+<td>适用于大文件、大容量的场合。无法随意缩小<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>。</td>
+</tr>
+<tr>
+<td>ReiserFS</td>
+<td>Y (deprecated)</td>
+<td>N</td>
+<td>N</td>
+<td>适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。</td>
+</tr>
+<tr>
+<td>Btrfs</td>
+<td>Y</td>
+<td>N</td>
+<td>N</td>
+<td>内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。</td>
+</tr>
+<tr>
+<td>ZFS</td>
+<td>Y</td>
+<td>N</td>
+<td>N</td>
+<td>起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。</td>
+</tr>
+<tr>
+<td>NTFS</td>
+<td>Y (Kernel 5.15+)</td>
+<td>Y (Readonly)</td>
+<td>Y</td>
+<td>Windows 上最常见的文件系统。</td>
+</tr>
+<tr>
+<td>HFS+</td>
+<td>Y (Readonly)</td>
+<td>Y</td>
+<td>Y (Readonly, Bootcamp)</td>
+<td>macOS 较早期版本最常见的文件系统。</td>
+</tr>
+<tr>
+<td>APFS</td>
+<td>N</td>
+<td>Y</td>
+<td>N</td>
+<td>macOS 较新版本的 CoW 文件系统。</td>
+</tr>
+</tbody>
+</table>
+<p>以下将关注在 Linux 服务器端常见的场景。</p>
 <!--
   Links to man pages
 
@@ -1633,6 +1864,21 @@ MBR 信息存储在磁盘的第一个扇区（512 字节），其中用于引导
 <!-- markdownlint-disable-file MD053 -->
 
 <!-- man 5 -->
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p>扇区的大小（特别是实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p>xfs_growfs(8): A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
