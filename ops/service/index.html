@@ -497,11 +497,11 @@
         <li class="md-nav__item">
   <a href="#systemd" class="md-nav__link">
     <span class="md-ellipsis">
-      Systemd
+      Systemd 与服务
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Systemd">
+    <nav class="md-nav" aria-label="Systemd 与服务">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -558,6 +558,57 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timers" class="md-nav__link">
+    <span class="md-ellipsis">
+      定时任务
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建一个定时任务
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log" class="md-nav__link">
+    <span class="md-ellipsis">
+      日志管理
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="日志管理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#systemd-journald" class="md-nav__link">
+    <span class="md-ellipsis">
+      Systemd-journald
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logrotate" class="md-nav__link">
+    <span class="md-ellipsis">
+      logrotate
+    </span>
+  </a>
   
 </li>
         
@@ -1458,11 +1509,11 @@
         <li class="md-nav__item">
   <a href="#systemd" class="md-nav__link">
     <span class="md-ellipsis">
-      Systemd
+      Systemd 与服务
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Systemd">
+    <nav class="md-nav" aria-label="Systemd 与服务">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1522,6 +1573,57 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#timers" class="md-nav__link">
+    <span class="md-ellipsis">
+      定时任务
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建一个定时任务
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#log" class="md-nav__link">
+    <span class="md-ellipsis">
+      日志管理
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="日志管理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#systemd-journald" class="md-nav__link">
+    <span class="md-ellipsis">
+      Systemd-journald
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logrotate" class="md-nav__link">
+    <span class="md-ellipsis">
+      logrotate
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1545,7 +1647,7 @@
   
 
 
-<h1 id="_1">服务管理<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="_1">服务与日志管理<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">本文仍在编辑中</p>
 </div>
@@ -1558,7 +1660,7 @@
 <li>不受 <code>SIGKILL</code> 或 <code>SIGSTOP</code> 信号影响，不能被杀死或暂停。类似地，即使收到了其他未注册的信号，默认行为也是忽略，而不是结束进程或挂起。</li>
 <li>当其他进程退出时，这些进程的子进程会由 PID 1 接管，因此 PID 1 需要负责回收（<code>wait(2)</code>）这些僵尸进程。</li>
 </ul>
-<h2 id="systemd">Systemd<a class="headerlink" href="#systemd" title="Permanent link">&para;</a></h2>
+<h2 id="systemd">Systemd 与服务<a class="headerlink" href="#systemd" title="Permanent link">&para;</a></h2>
 <p>Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（systemd-journald）、网络管理（systemd-networkd）、本地 DNS 缓存（systemd-resolved）、时间同步（systemd-timesyncd）等，本文主要关心服务管理和日志管理。</p>
 <h3 id="unit">Unit<a class="headerlink" href="#unit" title="Permanent link">&para;</a></h3>
 <p>在 systemd 中，运行一个完整系统所需的每个部件都作为“单元”（unit）管理。一个 unit 可以是服务（<code>.service</code>）、挂载点（<code>.mount</code>）、设备（<code>.device</code>）、定时器（<code>.timer</code>）以至于目标（<code>.target</code>）等，完整的列表可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html"><code>systemd.unit(5)</code></a> 中找到。</p>
@@ -1761,6 +1863,73 @@ U --&gt; F(scope)</code></pre>
 与前面的类型不同的是，这类服务需要程序主动支持 <code>sd_notify</code> 或者 D-Bus 接口。</p>
 </dd>
 </dl>
+<h3 id="timers">定时任务<a class="headerlink" href="#timers" title="Permanent link">&para;</a></h3>
+<p>Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer unit 通常会对应一个 service unit，即在指定的时间点或者时间间隔触发 service 的启动。</p>
+<p>相比于更常见的定时任务方案 CRON，systemd timers 具有以下优点：</p>
+<ul>
+<li>
+<p>更丰富的时间表达式，除了等价于 crontab 的 <code>OnCalendar=</code> 时间之外，也可以使用 <code>OnUnitActiveSec=</code>（服务启动后）、<code>OnBootSec=</code>（系统启动后）等指定其他时间计算方式。</p>
+<ul>
+<li>
+<p>例如，<code>systemd-tmpfiles-clean.timer</code> 就是在系统启动后 15 分钟触发一次 <code>systemd-tmpfiles-clean.service</code>，然后每天触发一次，用于清理临时文件。</p>
+<div class="highlight"><span class="filename">/lib/systemd/system/systemd-tmpfiles-clean.timer</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[Timer]</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">OnBootSec</span><span class="o">=</span><span class="s">15min</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="na">OnUnitActiveSec</span><span class="o">=</span><span class="s">1d</span>
+</code></pre></div>
+</li>
+</ul>
+</li>
+<li>
+<p>更加精确的时间控制，通过 <code>AccuracySec=</code> 可以支持秒级甚至更细的时间精度。
+    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。</p>
+</li>
+<li><code>RandomizedDelaySec=</code> 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
+    这在使用同一份系统镜像部署大量虚拟机或类似场景下非常有用，可以避免大量计划任务同时触发，导致系统负载过高。</li>
+<li><code>Persistent=</code> 可以确保如果因关机、重启等原因错过了设定时间，定时任务会在下次系统启动后会立即执行。</li>
+<li>可以通过 <code>systemctl enable</code> 和 <code>systemctl disable</code> 启用和禁用定时任务，而无需修改配置文件。
+    也可以使用 <code>systemctl status</code> 查看 timer 和 service 的状态，以及 <code>journalctl</code> 查看日志。</li>
+<li>基于 service 而不是简单运行命令的优点：<ul>
+<li>享受 service 的全部好处，如依赖管理、环境变量、自动重启等，也包括安全与隔离等高级功能。</li>
+<li>利用 service 单实例的特性，避免一个任务同时运行多份实例，即当任务已经在运行而没有结束时，不会继续启动新的进程。在 cron 中，这通常需要借助额外的工具实现，如 <code>flock(1)</code>。</li>
+</ul>
+</li>
+</ul>
+<p>Timers 的主要缺点是：</p>
+<ul>
+<li>配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，数十行的配置文件不得不说复杂。</li>
+<li>没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 <code>journalctl</code> 查看；也可以为 service 指定 <code>StandardOutput=</code> 和 <code>StandardError=</code> 手动重定向输出。</li>
+</ul>
+<p>另外，第三方开发的 <a href="https://github.com/systemd-cron/systemd-cron">systemd-cron</a> 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。</p>
+<h3 id="create-timer">创建一个定时任务<a class="headerlink" href="#create-timer" title="Permanent link">&para;</a></h3>
+<p>如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。</p>
+<p>首先创建一个 service，需要注意的是 <code>Type=oneshot</code>，并且<strong>不能</strong>使用 <code>RemainAfterExit=yes</code>（一般将其忽略即可，它的默认值是 no）。</p>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Certbot</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">file:///usr/share/doc/python-certbot-doc/html/index.html</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">https://certbot.eff.org/docs</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/certbot -q renew</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+</code></pre></div>
+<p>接下来创建一个 timer，指定触发时间，并按需启用 <code>Persistent=</code>。</p>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.timer</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run certbot twice daily</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">[Timer]</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 00,12:00:00</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">43200</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+</code></pre></div>
+<p>此时 <code>certbot.timer</code> 会自动触发同名的 service，也就是 <code>certbot.service</code>。</p>
+<p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
+<h2 id="log">日志管理<a class="headerlink" href="#log" title="Permanent link">&para;</a></h2>
+<h3 id="systemd-journald">Systemd-journald<a class="headerlink" href="#systemd-journald" title="Permanent link">&para;</a></h3>
+<h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
 <!--
   Links to man pages
 
