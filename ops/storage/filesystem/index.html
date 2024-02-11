@@ -1517,9 +1517,10 @@
 <p class="admonition-title">本文仍在编辑中</p>
 </div>
 <h2 id="_2">相关概念<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<ul>
-<li>
-<p>块设备：常见的磁盘设备的读写均以块（而不是字节）为单位，因此在 Linux 中，设备文件分为块设备和字符设备两种。</p>
+<dl>
+<dt>块设备</dt>
+<dd>
+<p>常见的磁盘设备的读写均以块（而不是字节）为单位，因此在 Linux 中，设备文件分为块设备和字符设备两种。</p>
 <p>可以使用 <code>lsblk</code> 命令查看系统中的块设备。一个桌面系统的例子如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">nvme0n1     259:0    0  1.9T  0 disk </span>
@@ -1532,9 +1533,10 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="go">                                     /home</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="go">                                     /</span>
 </code></pre></div>
-</li>
-<li>
-<p>分区表：一个块设备上可以有一个或多个分区，而分区表则记录了分区的信息，常见的分区表有 MBR 和 GPT 两种。</p>
+</dd>
+<dt>分区表</dt>
+<dd>
+<p>一个块设备上可以有一个或多个分区，而分区表则记录了分区的信息，常见的分区表有 MBR 和 GPT 两种格式。</p>
 <p>可以使用 <code>fdisk</code> 查看块设备的分区表，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fdisk<span class="w"> </span>-l<span class="w"> </span>/dev/nvme0n1
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">Disk /dev/nvme0n1: 1.86 TiB, 2048408248320 bytes, 4000797360 sectors</span>
@@ -1551,11 +1553,12 @@
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">/dev/nvme0n1p3 117975040 4000796671 3882821632  1.8T Linux filesystem</span>
 </code></pre></div>
 <p>可以看到，该块设备使用了 GPT 分区表，有三个分区。</p>
-</li>
-<li>
-<p>文件系统：每个分区需要被格式化成某种文件系统后，才能存储文件。</p>
-</li>
-</ul>
+</dd>
+<dt>文件系统</dt>
+<dd>
+<p>每个分区需要被格式化成某种文件系统后，才能存储文件。</p>
+</dd>
+</dl>
 <h2 id="_3">本地回环<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <p>Linux 支持「本地回环设备」，支持挂载一个文件作为块设备使用，类似于「虚拟光驱」类软件。
 因此，可以通过本地回环的方式，在不购买新硬件的情况下进行一些磁盘相关的实验。</p>
@@ -1628,19 +1631,19 @@ Linux 内核开发中曾有过允许非特权用户挂载本地回环的讨论�
 </code></pre></div>
 <h2 id="_4">分区表<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
 <p>以下介绍 MBR 与 GPT 分区表。</p>
-<p>MBR (Master Boot Record) 分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
-MBR 信息存储在磁盘的第一个扇区<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup>（512 字节<sup id="fnref:2"><a class="footnote-ref" href="#fn:2">2</a></sup>），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
-提供给分区信息的只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
+<p>MBR（Master Boot Record）分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
+MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="footnote-ref" href="#fn:sector">1</a></sup>（512 字节<sup id="fnref:sector-size"><a class="footnote-ref" href="#fn:sector-size">2</a></sup>），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
+提供给分区信息的空间只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
 为了让磁盘支持更多分区，出现了扩展分区的概念。
-扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2TB 的磁盘。</p>
-<p>而 GPT (GUID Partition Table) 分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
-目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」(Protective MBR)，用于防止旧系统对磁盘误操作，
+扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2 TiB 的磁盘。</p>
+<p>而 GPT（GUID Partition Table（分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
+目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」（Protective MBR），用于防止不认识 GPT 的旧系统和软件对磁盘误操作，
 同时分区表信息在磁盘最后有一份备份，以减小损坏风险。</p>
 <div class="admonition note">
 <p class="admonition-title">那 GPT 的磁盘怎么开机呢？</p>
 <p>对于使用传统 BIOS 的机器，GPT 开头的保护性 MBR 仍然可以存储引导代码。不过，目前的主流是使用 UEFI，不再需要在扇区里存储引导代码，
-而是有一个专门的 EFI 分区（一般格式化为 FAT），用来存储引导程序与其他信息。</p>
-<p>以下展示一个 EFI 分区的例子：</p>
+而是有一个专门的 EFI 系统分区（必须格式化为 FAT32），用来存储引导程序与其他信息。</p>
+<p>以下展示一个 EFI 系统分区的例子：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>/dev/disk/by-uuid/0E62-46C6<span class="w"> </span>/efi
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>efi
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">...</span>
@@ -1678,7 +1681,7 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:1"><a class="footnote-
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">稀疏文件</p>
-<p>这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
+<p>这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>test.img
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">0 test.img</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>--apparent-size<span class="w"> </span>test.img
@@ -1690,11 +1693,11 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:1"><a class="footnote-
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp"># </span>或者
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">parted test.img</span>
 </code></pre></div>
-<p>以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根分区。</p>
+<p>以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根文件系统的分区。</p>
 <details class="info">
 <summary>fdisk 操作示例</summary>
 <p>fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 <code>g</code> 命令。
-在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 <code>+</code> 表示相对于当前位置的偏移量（即分区大小）。</p>
+在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 <code>+</code> 表示相对于当前位置的偏移量（即分区大小），或者使用 <code>-</code> 表示相对于磁盘末尾的偏移量（即在尾部留出多少空间）。</p>
 <p>最后使用 <code>w</code> 命令写入分区表。如果不想实际写入到磁盘，可以使用 <code>q</code> 退出而不保存。
 更多信息可以使用 <code>m</code> 命令查看帮助。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>fdisk<span class="w"> </span>test.img
@@ -1763,7 +1766,7 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:1"><a class="footnote-
 </details>
 <details class="info">
 <summary>parted 操作示例</summary>
-<p>这里不推荐交互式使用 <code>parted</code>，因为其交互不如 <code>fdisk</code> 直观，并且<strong>操作均为立刻写入</strong>。但是 <code>parted</code> 在脚本中使用更加方便。
+<p>这里不推荐交互式使用 <code>parted</code>，因为其交互不如 <code>fdisk</code> 直观，并且<strong>所有操作均为立刻写入</strong>。但是 <code>parted</code> 在脚本中使用更加方便。
 parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46">101strap 脚本</a>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>parted<span class="w"> </span>-a<span class="w"> </span>optimal<span class="w"> </span>test.img<span class="w">  </span><span class="c1"># 使用 optimal 参数，在创建新分区时使用最佳对齐</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">WARNING: You are not superuser.  Watch out for permissions.</span>
@@ -1815,7 +1818,7 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <p>观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
 这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。</p>
 <p>在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
-2048 这个数字也足够大，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。</p>
+2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。</p>
 </details>
 <h2 id="_6">文件系统<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
 <p>下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。</p>
@@ -1823,93 +1826,94 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <thead>
 <tr>
 <th>文件系统</th>
-<th>Linux?</th>
-<th>macOS?</th>
-<th>Windows?</th>
+<th>Linux</th>
+<th>macOS</th>
+<th>Windows</th>
 <th>特点与备注</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>FAT32 (VFAT)</td>
-<td>Y</td>
-<td>Y</td>
-<td>Y</td>
-<td>应仅用于 EFI 分区、部分情况下的 <code>/boot</code>，或不同操作系统交换文件的场合。不支持大于 4GB 的文件。</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td>仅适用于 EFI 分区和部分情况下的 <code>/boot</code>，或不同操作系统交换文件的场合。不支持大于 4 GiB 的文件。</td>
 </tr>
 <tr>
 <td>exFAT</td>
-<td>Y</td>
-<td>Y</td>
-<td>Y</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
 <td>应仅用于不同操作系统交换文件。不支持日志。</td>
 </tr>
 <tr>
 <td><a href="https://wiki.archlinux.org/title/Ext4">ext4</a></td>
-<td>Y</td>
-<td>N</td>
-<td>N</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
 <td>Linux 上最常见的文件系统。</td>
 </tr>
 <tr>
 <td><a href="https://wiki.archlinux.org/title/XFS">XFS</a></td>
-<td>Y</td>
-<td>N</td>
-<td>N</td>
-<td>适用于大文件、大容量的场合。无法随意缩小<sup id="fnref:3"><a class="footnote-ref" href="#fn:3">3</a></sup>。</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td>适用于大文件、大容量的场合。无法随意缩小<sup id="fnref:xfs_growfs"><a class="footnote-ref" href="#fn:xfs_growfs">3</a></sup>。</td>
 </tr>
 <tr>
 <td>ReiserFS</td>
-<td>Y (deprecated)</td>
-<td>N</td>
-<td>N</td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span> (deprecated)</td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
 <td>适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。</td>
 </tr>
 <tr>
 <td><a href="https://wiki.archlinux.org/title/Btrfs">Btrfs</a></td>
-<td>Y</td>
-<td>N</td>
-<td>N</td>
-<td>内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td>内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID 5/6 支持不稳定，也有对整体稳定性的争议。</td>
 </tr>
 <tr>
 <td><a href="https://wiki.archlinux.org/title/ZFS">ZFS</a></td>
-<td>Y</td>
-<td>N</td>
-<td>N</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span>（需要 kernel module）</td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
 <td>起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。</td>
 </tr>
 <tr>
 <td>NTFS</td>
-<td>Y (Kernel 5.15+)</td>
-<td>Y (Readonly)</td>
-<td>Y</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span> (Linux 5.15+)</td>
+<td>只读</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
 <td>Windows 上最常见的文件系统。</td>
 </tr>
 <tr>
 <td>HFS+</td>
-<td>Y (Readonly)</td>
-<td>Y</td>
-<td>Y (Readonly, Bootcamp)</td>
+<td>只读</td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td>只读，Bootcamp</td>
 <td>macOS 较早期版本最常见的文件系统。</td>
 </tr>
 <tr>
 <td>APFS</td>
-<td>N</td>
-<td>Y</td>
-<td>N</td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
+<td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256l105.3-105.4z"/></svg></span></td>
 <td>macOS 较新版本的 CoW 文件系统。</td>
 </tr>
 </tbody>
 </table>
 <p>以下将关注在 Linux 服务器端常见的场景。表格中指向 ArchWiki 的链接也可能有所帮助。</p>
 <h3 id="ext4">ext4<a class="headerlink" href="#ext4" title="Permanent link">&para;</a></h3>
-<p>如果没有特殊的需求，ext4 是一个不错的选择。即使有其他需求，也建议对系统分区使用 ext4。
-最常见的问题之一是 ext4 的 inode 限制。</p>
+<p>ext4 是包括 Debian 和 Ubuntu 在内的众多发行版为系统分区（根文件系统）默认采用的文件系统格式。
+如果没有特殊的需求，ext4 是一个不错的选择；即使有其他需求，也建议对系统分区使用 ext4。
+ext4 最常见的问题之一是 inode 的数量限制。</p>
 <div class="admonition info">
 <p class="admonition-title">inode</p>
 <p>inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
-可以使用 <code>stat</code> 查看某个文件的 inode 信息。</p>
+可以使用 <code>stat</code> 或 <code>ls -i</code> 查看文件的 inode 信息。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>stat<span class="w"> </span><span class="nb">test</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">  File: test</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">  Size: 0          Blocks: 0          IO Block: 4096   regular empty file</span>
@@ -1924,7 +1928,8 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 </div>
 <p>在创建 ext4 文件系统时，会固定名为 "bytes-per-inode" 的参数，用于控制总的 inode 数量。默认情况下，硬盘上每有 16KB 的空间，就会保留一个 inode。
 该参数无法在文件系统创建后更改。
-因此，如果创建了大量小文件，可能会发现磁盘空间并没有用完，但是已经无法再创建新文件了。</p>
+因此，如果创建了大量小文件，可能会发现磁盘空间并没有用完，但是已经无法再创建新文件了。
+此时如果扩充了文件系统的容量，那么 inode 的数量也会按比例增加。</p>
 <p>除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
 但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 <code>tune2fs</code> 命令调整这一参数：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%</span>
@@ -1942,17 +1947,19 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 
 <!-- man 5 -->
 
+<!-- man 8 -->
+
 <div class="footnote">
 <hr />
 <ol>
-<li id="fn:1">
-<p>当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+<li id="fn:sector">
+<p>当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。&#160;<a class="footnote-backref" href="#fnref:sector" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
-<li id="fn:2">
-<p>扇区的大小（特别是实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+<li id="fn:sector-size">
+<p>扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。&#160;<a class="footnote-backref" href="#fnref:sector-size" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
-<li id="fn:3">
-<p>xfs_growfs(8): A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<li id="fn:xfs_growfs">
+<p><a href="https://linux.die.net/man/8/xfs_growfs">xfs_growfs(8)</a>: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.&#160;<a class="footnote-backref" href="#fnref:xfs_growfs" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
