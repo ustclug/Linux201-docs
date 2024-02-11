@@ -4,7 +4,9 @@
 
 ## 相关概念
 
-- 块设备：常见的磁盘设备的读写均以块（而不是字节）为单位，因此在 Linux 中，设备文件分为块设备和字符设备两种。
+块设备
+
+:   常见的磁盘设备的读写均以块（而不是字节）为单位，因此在 Linux 中，设备文件分为块设备和字符设备两种。
 
     可以使用 `lsblk` 命令查看系统中的块设备。一个桌面系统的例子如下：
 
@@ -21,7 +23,9 @@
                                          /
     ```
 
-- 分区表：一个块设备上可以有一个或多个分区，而分区表则记录了分区的信息，常见的分区表有 MBR 和 GPT 两种。
+分区表
+
+:   一个块设备上可以有一个或多个分区，而分区表则记录了分区的信息，常见的分区表有 MBR 和 GPT 两种格式。
 
     可以使用 `fdisk` 查看块设备的分区表，例如：
 
@@ -43,7 +47,9 @@
 
     可以看到，该块设备使用了 GPT 分区表，有三个分区。
 
-- 文件系统：每个分区需要被格式化成某种文件系统后，才能存储文件。
+文件系统
+
+:   每个分区需要被格式化成某种文件系统后，才能存储文件。
 
 ## 本地回环
 
@@ -131,22 +137,22 @@ $ sudo losetup -a
 
 以下介绍 MBR 与 GPT 分区表。
 
-MBR (Master Boot Record) 分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
-MBR 信息存储在磁盘的第一个扇区[^1]（512 字节[^2]），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
-提供给分区信息的只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
+MBR（Master Boot Record）分区表是早期的分区表格式，在存储分区信息的同时，还负责系统的启动。
+MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]），其中用于引导的代码位于最开头，占据 440 字节（BIOS 在启动会加载代码，并且跳转）；
+提供给分区信息的空间只有 64 个字节。由于每个分区需要 16 字节的信息，因此 MBR 分区表最多支持 4 个主分区。
 为了让磁盘支持更多分区，出现了扩展分区的概念。
-扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2TB 的磁盘。
+扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2 TiB 的磁盘。
 
-而 GPT (GUID Partition Table) 分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
-目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」(Protective MBR)，用于防止旧系统对磁盘误操作，
+而 GPT（GUID Partition Table（分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
+目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」（Protective MBR），用于防止不认识 GPT 的旧系统和软件对磁盘误操作，
 同时分区表信息在磁盘最后有一份备份，以减小损坏风险。
 
 !!! note "那 GPT 的磁盘怎么开机呢？"
 
     对于使用传统 BIOS 的机器，GPT 开头的保护性 MBR 仍然可以存储引导代码。不过，目前的主流是使用 UEFI，不再需要在扇区里存储引导代码，
-    而是有一个专门的 EFI 分区（一般格式化为 FAT），用来存储引导程序与其他信息。
+    而是有一个专门的 EFI 系统分区（必须格式化为 FAT32），用来存储引导程序与其他信息。
 
-    以下展示一个 EFI 分区的例子：
+    以下展示一个 EFI 系统分区的例子：
 
     ```console
     $ sudo mount /dev/disk/by-uuid/0E62-46C6 /efi
@@ -192,7 +198,7 @@ $ truncate -s 8G test.img
 
 !!! info "稀疏文件"
 
-    这里我们创建了「稀疏文件」(Sparse file)。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：
+    这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：
 
     ```console
     $ du -h test.img
@@ -209,12 +215,12 @@ $ # 或者
 $ parted test.img
 ```
 
-以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根分区。
+以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根文件系统的分区。
 
 ??? info "fdisk 操作示例"
 
     fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 `g` 命令。
-    在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 `+` 表示相对于当前位置的偏移量（即分区大小）。
+    在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 `+` 表示相对于当前位置的偏移量（即分区大小），或者使用 `-` 表示相对于磁盘末尾的偏移量（即在尾部留出多少空间）。
 
     最后使用 `w` 命令写入分区表。如果不想实际写入到磁盘，可以使用 `q` 退出而不保存。
     更多信息可以使用 `m` 命令查看帮助。
@@ -286,7 +292,7 @@ $ parted test.img
 
 ??? info "parted 操作示例"
 
-    这里不推荐交互式使用 `parted`，因为其交互不如 `fdisk` 直观，并且**操作均为立刻写入**。但是 `parted` 在脚本中使用更加方便。
+    这里不推荐交互式使用 `parted`，因为其交互不如 `fdisk` 直观，并且**所有操作均为立刻写入**。但是 `parted` 在脚本中使用更加方便。
     parted 脚本的例子可以参考 [101strap 脚本](https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46)。
 
     ```console
@@ -345,36 +351,37 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
     这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。
     
     在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
-    2048 这个数字也足够大，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
+    2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
 
 ## 文件系统
 
 下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。
 
-| 文件系统 | Linux? | macOS? | Windows? | 特点与备注 |
-| -------- | ------ | ------ | -------- | ---------- |
-| FAT32 (VFAT) | Y | Y | Y | 应仅用于 EFI 分区、部分情况下的 `/boot`，或不同操作系统交换文件的场合。不支持大于 4GB 的文件。 |
-| exFAT | Y | Y | Y | 应仅用于不同操作系统交换文件。不支持日志。 |
-| [ext4](https://wiki.archlinux.org/title/Ext4) | Y | N | N | Linux 上最常见的文件系统。 |
-| [XFS](https://wiki.archlinux.org/title/XFS) | Y | N | N | 适用于大文件、大容量的场合。无法随意缩小[^3]。 |
-| ReiserFS | Y (deprecated) | N | N | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。 |
-| [Btrfs](https://wiki.archlinux.org/title/Btrfs) | Y | N | N | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID5/6 支持不稳定，也有对整体稳定性的争议。 |
-| [ZFS](https://wiki.archlinux.org/title/ZFS) | Y | N | N | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。 |
-| NTFS | Y (Kernel 5.15+) | Y (Readonly) | Y | Windows 上最常见的文件系统。 |
-| HFS+ | Y (Readonly) | Y | Y (Readonly, Bootcamp) | macOS 较早期版本最常见的文件系统。 |
-| APFS | N | Y | N | macOS 较新版本的 CoW 文件系统。 |
+| 文件系统                                        | Linux                                                  | macOS                                    | Windows                                  | 特点与备注                                                                                                            |
+| ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| FAT32 (VFAT)                                    | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } | 仅适用于 EFI 分区和部分情况下的 `/boot`，或不同操作系统交换文件的场合。不支持大于 4 GiB 的文件。                      |
+| exFAT                                           | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } | 应仅用于不同操作系统交换文件。不支持日志。                                                                            |
+| [ext4](https://wiki.archlinux.org/title/Ext4)   | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | Linux 上最常见的文件系统。                                                                                            |
+| [XFS](https://wiki.archlinux.org/title/XFS)     | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 适用于大文件、大容量的场合。无法随意缩小[^xfs_growfs]。                                                                        |
+| ReiserFS                                        | :fontawesome-solid-check:{: .orangered } (deprecated)  | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。          |
+| [Btrfs](https://wiki.archlinux.org/title/Btrfs) | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID 5/6 支持不稳定，也有对整体稳定性的争议。 |
+| [ZFS](https://wiki.archlinux.org/title/ZFS)     | :fontawesome-solid-check:{: .limegreen }（需要 kernel module）              | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。                   |
+| NTFS                                            | :fontawesome-solid-check:{: .limegreen } (Linux 5.15+) | 只读                                     | :fontawesome-solid-check:{: .limegreen } | Windows 上最常见的文件系统。                                                                                          |
+| HFS+                                            | 只读                                                   | :fontawesome-solid-check:{: .limegreen } | 只读，Bootcamp                           | macOS 较早期版本最常见的文件系统。                                                                                    |
+| APFS                                            | :fontawesome-solid-xmark:{: .orangered }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | macOS 较新版本的 CoW 文件系统。                                                                                       |
 
 以下将关注在 Linux 服务器端常见的场景。表格中指向 ArchWiki 的链接也可能有所帮助。
 
 ### ext4
 
-如果没有特殊的需求，ext4 是一个不错的选择。即使有其他需求，也建议对系统分区使用 ext4。
-最常见的问题之一是 ext4 的 inode 限制。
+ext4 是包括 Debian 和 Ubuntu 在内的众多发行版为系统分区（根文件系统）默认采用的文件系统格式。
+如果没有特殊的需求，ext4 是一个不错的选择；即使有其他需求，也建议对系统分区使用 ext4。
+ext4 最常见的问题之一是 inode 的数量限制。
 
 !!! info "inode"
 
     inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
-    可以使用 `stat` 查看某个文件的 inode 信息。
+    可以使用 `stat` 或 `ls -i` 查看文件的 inode 信息。
 
     ```console
     $ stat test
@@ -393,6 +400,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 在创建 ext4 文件系统时，会固定名为 "bytes-per-inode" 的参数，用于控制总的 inode 数量。默认情况下，硬盘上每有 16KB 的空间，就会保留一个 inode。
 该参数无法在文件系统创建后更改。
 因此，如果创建了大量小文件，可能会发现磁盘空间并没有用完，但是已经无法再创建新文件了。
+此时如果扩充了文件系统的容量，那么 inode 的数量也会按比例增加。
 
 除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
 但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 `tune2fs` 命令调整这一参数：
@@ -406,6 +414,6 @@ $ sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%
 尽管在我们的实践中，我们不太建议使用 btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 btrfs 在长时间运行后存在严重的性能问题。
 但是在许多年的开发后，btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。
 
-[^1]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
-[^2]: 扇区的大小（特别是实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
-[^3]: xfs_growfs(8): A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
+[^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
+[^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
+[^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.

@@ -49,9 +49,9 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
 相比于手工修改文件，使用 `systemctl` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
 
-Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件可能是这样的：
+Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 `[Service]` section，并通常会包含一个 `[Install]` section。以 cron 服务的配置文件为例：
 
-```ini title="/lib/systemd/system/cron.service"
+``` { .ini title="/lib/systemd/system/cron.service" #cron.service }
 [Unit]
 Description=Regular background program processing daemon
 Documentation=man:cron(8)
@@ -70,11 +70,38 @@ WantedBy=multi-user.target
 
 #### 顺序与依赖 {#unit-dependency}
 
-!!! warning "未完待续"
+相比于 SysVinit（完全顺序启动）和 upstart（基于 event 触发的方式有限的并行），systemd 的每个 unit 都明确指定了依赖关系，分析依赖关系后 systemd 就可以最大化并行启动服务，这样可以大大缩短启动时间。
+
+Systemd 中的 unit 有很多状态，大致可以归为以下几类：
+
+- inactive：未启动
+- activating：正在启动
+- active：已启动（成功）
+- deactivating：正在停止
+- failed：启动失败
+
+大部分系统 unit 都会使用以下几个字段：
+
+`Wants=` 和 `Requires=`
+
+:   指定 unit 之间的依赖关系，例如网络服务通常会依赖 `network.target`，即当网络开始配置时才会运行。
+    两者都在 `[Unit]` section 中指定，区别在于 `Requires=` 是强依赖，即如果被依赖的 unit 没有启动或启动失败，那么当前 unit 也会被标记为失败；
+    而 `Wants=` 是弱依赖，即尝试启动被依赖的 unit，但如果失败了也不会影响当前 unit 的启动。
+
+`WantedBy=` 和 `RequiredBy=`
+
+:   与上面两个相反，指定了其他 unit 依赖当前 unit。
+    这两个字段在 `[Install]` section 中指定，并且仅当对应的 unit 被启用（`systemctl enable`）时才会生效。
+
+`Before=` 和 `After=`
+
+:   指定启动顺序，即相关的 unit 需要在前者启动完成，进入 active 状态后才会尝试启动。这两个字段在 `[Unit]` section 中指定。
+    与 Wants/Requires 不同，Before/After 只是指定启动顺序，不影响依赖关系。
 
 ### Target
 
-Target 是一组服务（其他 unit）的集合，通过 target 这样一层抽象可以更方便地管理服务的启动顺序，类似 SysVinit 中的 runlevel，可以理解为“系统启动目标”。例如网络服务应该 `Requires=network-online.target` 并且 `After=network-online.target`，这样就可以保证网络服务在网络连通后再启动。
+Target 是一组服务（其他 unit）的集合，通过 target 这样一层抽象可以更方便地管理服务的启动顺序，类似 SysVinit 中的 runlevel，可以理解为“系统启动目标”。
+例如网络服务应该 `Requires=network-online.target` 并且 `After=network-online.target`，这样就可以保证网络服务在网络连通后再启动。
 
 Systemd 在开机时会尝试启动 default.target，这个 target 一般是指向 graphical.target 的软链接，即启动图形界面相关的服务，另一个常见的 multi-user.target 则是命令行模式。
 
@@ -88,6 +115,11 @@ Systemd 在开机时会尝试启动 default.target，这个 target 一般是指�
 | graphical.target  |         5         | 图形界面                                             |
 |   reboot.target   |         6         | 重启                                                 |
 | emergency.target  |         S         | 紧急模式                                             |
-|    halt.target    |        无         | 系统已经停止，但是既不断电也不重启，可以看到关机日志 |
+|    halt.target    |      （无）       | 系统已经停止，但是既不断电也不重启，可以看到关机日志 |
 
-默认的 target 可以通过 `systemctl set-default` 命令修改，或者在 GRUB 中为 kernel cmdline 指定 `systemd.unit=`。与其他 `systemctl` 命令一样，前者的本质是创建一个软链接 `/etc/systemd/system/default.target`。
+默认的 target 可以通过 `systemctl set-default` 命令修改，或者在 GRUB 中为 kernel cmdline 指定 `systemd.unit=`。
+与其他 `systemctl` 命令一样，前者的本质是创建一个软链接 `/etc/systemd/system/default.target`。
+
+### Service
+
+Service 也就是我们最常见的服务，它的配置文件中有一个 `[Service]` section，包括了服务的启动命令和一系列其他配置。以[上面的 cron 服务](#cron.service)为例：
