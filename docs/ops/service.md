@@ -1,4 +1,4 @@
-# 服务管理
+# 服务与日志管理
 
 !!! warning "本文仍在编辑中"
 
@@ -15,7 +15,7 @@ PID 1 在 Linux 中有一些特殊的地位：
 - 不受 `SIGKILL` 或 `SIGSTOP` 信号影响，不能被杀死或暂停。类似地，即使收到了其他未注册的信号，默认行为也是忽略，而不是结束进程或挂起。
 - 当其他进程退出时，这些进程的子进程会由 PID 1 接管，因此 PID 1 需要负责回收（`wait(2)`）这些僵尸进程。
 
-## Systemd
+## Systemd 与服务
 
 Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（systemd-journald）、网络管理（systemd-networkd）、本地 DNS 缓存（systemd-resolved）、时间同步（systemd-timesyncd）等，本文主要关心服务管理和日志管理。
 
@@ -186,3 +186,81 @@ notify 和 dbus
 
 :   类似 `simple` 和 `exec`，但是服务会在启动完成后主动通知 systemd。
     与前面的类型不同的是，这类服务需要程序主动支持 `sd_notify` 或者 D-Bus 接口。
+
+### 定时任务 {#timers}
+
+Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer unit 通常会对应一个 service unit，即在指定的时间点或者时间间隔触发 service 的启动。
+
+相比于更常见的定时任务方案 CRON，systemd timers 具有以下优点：
+
+- 更丰富的时间表达式，除了等价于 crontab 的 `OnCalendar=` 时间之外，也可以使用 `OnUnitActiveSec=`（服务启动后）、`OnBootSec=`（系统启动后）等指定其他时间计算方式。
+    - 例如，`systemd-tmpfiles-clean.timer` 就是在系统启动后 15 分钟触发一次 `systemd-tmpfiles-clean.service`，然后每天触发一次，用于清理临时文件。
+
+        ```ini title="/lib/systemd/system/systemd-tmpfiles-clean.timer"
+        [Timer]
+        OnBootSec=15min
+        OnUnitActiveSec=1d
+        ```
+
+- 更加精确的时间控制，通过 `AccuracySec=` 可以支持秒级甚至更细的时间精度。
+    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。
+- `RandomizedDelaySec=` 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
+    这在使用同一份系统镜像部署大量虚拟机或类似场景下非常有用，可以避免大量计划任务同时触发，导致系统负载过高。
+- `Persistent=` 可以确保如果因关机、重启等原因错过了设定时间，定时任务会在下次系统启动后会立即执行。
+- 可以通过 `systemctl enable` 和 `systemctl disable` 启用和禁用定时任务，而无需修改配置文件。
+    也可以使用 `systemctl status` 查看 timer 和 service 的状态，以及 `journalctl` 查看日志。
+- 基于 service 而不是简单运行命令的优点：
+    - 享受 service 的全部好处，如依赖管理、环境变量、自动重启等，也包括安全与隔离等高级功能。
+    - 利用 service 单实例的特性，避免一个任务同时运行多份实例，即当任务已经在运行而没有结束时，不会继续启动新的进程。在 cron 中，这通常需要借助额外的工具实现，如 `flock(1)`。
+
+Timers 的主要缺点是：
+
+- 配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，数十行的配置文件不得不说复杂。
+- 没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 `journalctl` 查看；也可以为 service 指定 `StandardOutput=` 和 `StandardError=` 手动重定向输出。
+
+另外，第三方开发的 [systemd-cron][systemd-cron] 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。
+
+  [systemd-cron]: https://github.com/systemd-cron/systemd-cron
+
+### 创建一个定时任务 {#create-timer}
+
+如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。
+
+首先创建一个 service，需要注意的是 `Type=oneshot`，并且**不能**使用 `RemainAfterExit=yes`（一般将其忽略即可，它的默认值是 no）。
+
+```ini title="/lib/systemd/system/certbot.service"
+[Unit]
+Description=Certbot
+Documentation=file:///usr/share/doc/python-certbot-doc/html/index.html
+Documentation=https://certbot.eff.org/docs
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/certbot -q renew
+PrivateTmp=true
+```
+
+接下来创建一个 timer，指定触发时间，并按需启用 `Persistent=`。
+
+```ini title="/lib/systemd/system/certbot.timer"
+[Unit]
+Description=Run certbot twice daily
+
+[Timer]
+OnCalendar=*-*-* 00,12:00:00
+RandomizedDelaySec=43200
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+此时 `certbot.timer` 会自动触发同名的 service，也就是 `certbot.service`。
+
+在编辑完两个文件之后，需要运行 `systemctl daemon-reload` 使 systemd 重新加载配置文件，然后可以使用 `systemctl start certbot.timer` 启动定时器，或者使用 `systemctl enable certbot.timer` 让其开机启动。
+
+## 日志管理 {#log}
+
+### Systemd-journald
+
+### logrotate
