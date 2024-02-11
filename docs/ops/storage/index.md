@@ -50,7 +50,9 @@ icon: material/harddisk
 
     一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。
 
-磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。
+磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。同时，托架也一般有 LED 灯，在磁盘故障时会亮黄灯或红灯，也一般能够使用服务器的管理工具控制灯闪烁来定位磁盘。
+
+<!-- TODO: 一张托架的照片 -->
 
 ### 磁盘接口与协议 {#disk-interface}
 
@@ -89,6 +91,72 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
       ![PCIe AIC SSD](https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg)
       <figcaption>PCIe 插卡式 SSD</figcaption>
     </figure>
+
+### S.M.A.R.T. {#smart}
+
+磁盘的 S.M.A.R.T.（Self-Monitoring, Analysis and Reporting Technology）功能可以记录磁盘的运行状态，并且在磁盘出现故障前提供预警。S.M.A.R.T. 可以记录磁盘的温度、读写错误率、磁盘旋转速度、磁盘的寿命等信息。
+
+Linux 系统上可以安装 `smartmontools` 包来查看磁盘的 S.M.A.R.T. 信息。使用以下命令查看可用的磁盘与其 S.M.A.R.T 状态：
+
+```console
+$ sudo smartctl --scan
+/dev/nvme0 -d nvme # /dev/nvme0, NVMe device
+$ sudo smartctl -a /dev/nvme0
+（内容省略）
+```
+
+在服务器上，如果使用硬件 RAID，使用 `smartctl` 需要添加额外的参数来从 RAID 控制器获取真实的磁盘信息，例如下面的例子：
+
+```console
+$ sudo smartctl --scan
+/dev/sda -d scsi # /dev/sda, SCSI device
+/dev/sdb -d scsi # /dev/sdb, SCSI device
+/dev/sdc -d scsi # /dev/sdc, SCSI device
+/dev/sdd -d scsi # /dev/sdd, SCSI device
+/dev/bus/4 -d megaraid,8 # /dev/bus/4 [megaraid_disk_08], SCSI device
+/dev/bus/4 -d megaraid,9 # /dev/bus/4 [megaraid_disk_09], SCSI device
+/dev/bus/4 -d megaraid,10 # /dev/bus/4 [megaraid_disk_10], SCSI device
+/dev/bus/4 -d megaraid,11 # /dev/bus/4 [megaraid_disk_11], SCSI device
+/dev/bus/4 -d megaraid,12 # /dev/bus/4 [megaraid_disk_12], SCSI device
+/dev/bus/4 -d megaraid,13 # /dev/bus/4 [megaraid_disk_13], SCSI device
+/dev/bus/4 -d megaraid,14 # /dev/bus/4 [megaraid_disk_14], SCSI device
+/dev/bus/4 -d megaraid,15 # /dev/bus/4 [megaraid_disk_15], SCSI device
+/dev/bus/0 -d megaraid,8 # /dev/bus/0 [megaraid_disk_08], SCSI device
+/dev/bus/0 -d megaraid,9 # /dev/bus/0 [megaraid_disk_09], SCSI device
+/dev/bus/0 -d megaraid,10 # /dev/bus/0 [megaraid_disk_10], SCSI device
+/dev/bus/0 -d megaraid,11 # /dev/bus/0 [megaraid_disk_11], SCSI device
+/dev/bus/0 -d megaraid,12 # /dev/bus/0 [megaraid_disk_12], SCSI device
+/dev/bus/0 -d megaraid,13 # /dev/bus/0 [megaraid_disk_13], SCSI device
+$ sudo smartctl -a /dev/sdd  # 直接查询只能看到没有意义的控制器信息
+smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-21-amd64] (local build)
+Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               AVAGO
+Product:              MR9361-8i
+Revision:             4.68
+Compliance:           SPC-3
+User Capacity:        1,919,816,826,880 bytes [1.91 TB]
+Logical block size:   512 bytes
+Physical block size:  4096 bytes
+Logical Unit id:      0x600605b00f17786026223e2d33c1767b
+Serial number:        007b76c1332d3e22266078170fb00506
+Device type:          disk
+Local Time is:        Sun Feb 11 18:40:45 2024 CST
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+Current Drive Temperature:     0 C
+Drive Trip Temperature:        0 C
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+$ sudo smartctl -a /dev/bus/4 -d megaraid,8  # 添加参数可以看到真实的磁盘信息
+（内容省略）
+```
+
+有关 S.M.A.R.T. 指标解释与监控的内容将会在 [LVM 与 RAID](./lvm-raid.md) 中介绍。
 
 ## RAID
 
