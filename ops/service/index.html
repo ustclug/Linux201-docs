@@ -544,6 +544,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#service-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Service Type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1490,6 +1505,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#service-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Service Type
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1662,6 +1692,75 @@ U --&gt; F(scope)</code></pre>
 与其他 <code>systemctl</code> 命令一样，前者的本质是创建一个软链接 <code>/etc/systemd/system/default.target</code>。</p>
 <h3 id="service">Service<a class="headerlink" href="#service" title="Permanent link">&para;</a></h3>
 <p>Service 也就是我们最常见的服务，它的配置文件中有一个 <code>[Service]</code> section，包括了服务的启动命令和一系列其他配置。以<a href="#cron.service">上面的 cron 服务</a>为例：</p>
+<ul>
+<li><code>[Unit]</code> 部分指定的 <code>After=remote-fs.target nss-user-lookup.target</code> 表示 cron 会在系统达到这两个 target 之后才启动，即远程文件系统挂载完成和用户信息服务（<code>getent passwd</code> 等命令可用）都已经启动。</li>
+<li><code>EnvironmentFile=-/etc/default/cron</code> 表示会读取 <code>/etc/default/cron</code> 文件中的环境变量。开头的 <code>-</code> 表示如果这个文件不存在，则直接忽略。</li>
+<li>
+<p><code>ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS</code> 指定了服务的启动命令，其中 <code>$EXTRA_OPTS</code> 是从上面的文件中读取的环境变量。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 <code>$PATH</code> 环境变量，而是使用一个硬编码的列表。</p>
+</div>
+</li>
+<li>
+<p><code>Restart=on-failure</code> 表示服务在失败时会自动重启。<code>Restart=</code> 的取值和含义可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=">systemd.service</a> 文档中找到。</p>
+</li>
+<li>最后的 <code>[Install]</code> 部分指定了服务的启动级别，即 <code>WantedBy=multi-user.target</code> 表示在多用户模式下启动。</li>
+</ul>
+<p>其他常用的配置还有：</p>
+<dl>
+<dt><code>ExecStartPre=</code>、<code>ExecStartPost=</code>、<code>ExecStopPost=</code></dt>
+<dd>
+<p>在服务启动前、启动后、停止后执行的命令。可用于检查服务的配置文件是否正确、创建临时文件、清理临时文件等。例如 ssh.service 就会使用 <code>ExecStartPre=/usr/sbin/sshd -t</code> 来检查配置文件是否正确。</p>
+</dd>
+<dt><code>ExecReload=</code></dt>
+<dd>
+<p>指定重载服务的命令，一个常见的做法是 <code>ExecReload=/bin/kill -HUP $MAINPID</code>。
+配置了 <code>ExecReload=</code> 之后即可使用 <code>systemctl reload [service]</code> 命令来向服务的主进程发送 SIGHUP 信号。一些服务还有自己的 reload 命令，例如 nginx 的 <code>ExecReload=/usr/sbin/nginx -s reload</code>。</p>
+</dd>
+<dt><code>Type=</code></dt>
+<dd>
+<p>指定服务的类型。大部分服务都由一个在后台运行的进程组成，此时可以省略 Type 使用默认值 <code>simple</code>，或者更推荐的做法是 <code>Type=exec</code>。其他的服务类型参见下面的 <a href="#service-type">Service Type</a> 一节。</p>
+</dd>
+<dt><code>User=</code>、<code>Group=</code> 和 <code>SupplementaryGroups=</code></dt>
+<dd>
+<p>指定运行服务的用户和组，以及额外的附加组。默认情况下服务会以 <code>root</code> 用户运行，如果有安全和权限管理的需求，那么你应该配置这几项设置。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>如果你有额外的安全需求，可以参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing">Sandboxing</a> 一节使用 systemd 提供的高级隔离功能。</p>
+</div>
+</dd>
+</dl>
+<h4 id="service-type">Service Type<a class="headerlink" href="#service-type" title="Permanent link">&para;</a></h4>
+<dl>
+<dt>simple 和 exec</dt>
+<dd>
+<p>是最常见的服务类型，服务主体是一个长期运行的进程。
+两者的区别在于 <code>simple</code> 类型“启动即成功”，即 <code>systemctl start</code> 会立刻成功退出；
+而 <code>exec</code> 类型会确保 <code>ExecStart=</code> 命令可以正常运行，包括 <code>User=</code> 和 <code>Group=</code> 存在、所指定的命令存在且可执行等。
+因此现代的服务应该尽量使用 <code>Type=exec</code>。</p>
+</dd>
+<dt>forking</dt>
+<dd>
+<p>一些传统的服务会使用这种方式，启动命令会 fork 出一个子进程然后退出，实际服务由这个子进程提供。
+这种服务需要配置 <code>PIDFile=</code>，以便 systemd 能够正确追踪服务的主进程。当 <code>PIDFile=</code> 指定的文件存在且包含一个有效的 PID 时，systemd 认为服务已经启动成功。</p>
+</dd>
+<dt>oneshot</dt>
+<dd>
+<p>一次性服务，即启动后运行一次 <code>ExecStart=</code> 命令，然后退出。
+这个 Type 有两种使用场景：</p>
+<ol>
+<li>一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 <code>ip</code> 命令）；</li>
+<li>和 timer 配合使用，即定时任务。</li>
+</ol>
+<p>如果你有 Type=oneshot 的服务，那么你很可能也想配置 <code>RemainAfterExit=yes</code>，这样配置的命令执行完成后会一直保持 active 状态。</p>
+</dd>
+<dt>notify 和 dbus</dt>
+<dd>
+<p>类似 <code>simple</code> 和 <code>exec</code>，但是服务会在启动完成后主动通知 systemd。
+与前面的类型不同的是，这类服务需要程序主动支持 <code>sd_notify</code> 或者 D-Bus 接口。</p>
+</dd>
+</dl>
 <!--
   Links to man pages
 
