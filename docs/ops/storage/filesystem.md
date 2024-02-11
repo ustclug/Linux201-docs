@@ -1,6 +1,6 @@
 # 分区与文件系统
 
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
 ## 相关概念
 
@@ -143,7 +143,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 为了让磁盘支持更多分区，出现了扩展分区的概念。
 扩展分区是一个特殊的主分区，可以划分为多个逻辑分区。受到设计限制，MBR 仅支持最大 2 TiB 的磁盘。
 
-而 GPT（GUID Partition Table（分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
+而 GPT（GUID Partition Table）分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
 目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」（Protective MBR），用于防止不认识 GPT 的旧系统和软件对磁盘误操作，
 同时分区表信息在磁盘最后有一份备份，以减小损坏风险。
 
@@ -409,10 +409,164 @@ ext4 最常见的问题之一是 inode 的数量限制。
 $ sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%
 ```
 
-### btrfs
+### Btrfs
 
-尽管在我们的实践中，我们不太建议使用 btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 btrfs 在长时间运行后存在严重的性能问题。
-但是在许多年的开发后，btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。
+尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。
+但是在许多年的开发后，Btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。
+
+#### Subvolume
+
+Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」。与目录不同，Subvolume 是独立的，可以有自己的挂载点。
+同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。
+
+我们可以来试一试：
+
+```console
+$ truncate -s 8G btrfs.img
+$ mkfs.btrfs btrfs.img
+（输出省略）
+$ sudo mount btrfs.img /media/btrfs
+$ sudo btrfs filesystem show /media/btrfs  # 可以使用 btrfs 工具管理 Btrfs 文件系统
+Label: none  uuid: 5cdcf4bb-8020-45f9-8dfd-95e04a2a2bc1
+	Total devices 1 FS bytes used 144.00KiB
+	devid    1 size 8.00GiB used 536.00MiB path /dev/loop0
+
+$ # btrfs 工具也可以管理离线的 btrfs 块设备
+$ # 接下来创建一些 subvolume
+$ sudo btrfs subvolume create /media/btrfs/subvol1
+Create subvolume '/media/btrfs/subvol1'
+$ sudo btrfs subvolume create /media/btrfs/subvol2
+Create subvolume '/media/btrfs/subvol2'
+$ sudo btrfs subvolume create /media/btrfs/subvol3
+Create subvolume '/media/btrfs/subvol3'
+$ sudo btrfs subvolume list /media/btrfs
+ID 256 gen 8 top level 5 path subvol1
+ID 257 gen 8 top level 5 path subvol2
+ID 258 gen 8 top level 5 path subvol3
+$ ls -lh /media/btrfs  # 看起来和普通目录没什么区别
+total 0
+drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol1/
+drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol2/
+drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol3/
+$ sudo umount /media/btrfs
+$ sudo mount -o subvol=subvol1 btrfs.img /media/btrfs1  # 挂载 subvol1
+$ sudo mount -o subvol=subvol2 btrfs.img /media/btrfs2  # 挂载 subvol2
+$ mount | grep btrfs.img
+/path/to/btrfs.img on /media/btrfs1 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/subvol1)
+/path/to/btrfs.img on /media/btrfs2 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=257,subvol=/subvol2)
+$ sudo umount /media/btrfs1
+$ sudo umount /media/btrfs2
+```
+
+!!! warning "Subvolume 的挂载参数"
+
+    [大部分 Btrfs 的挂载参数（例如透明压缩）只适用于整个文件系统](https://btrfs.readthedocs.io/en/latest/Subvolumes.html#mount-options)，在首个 subvolume 上挂载时，这些参数会被应用到整个文件系统。
+    后续挂载使用的参数会被忽略。
+
+#### 快照
+
+在 subvolume 的基础上，Btrfs 支持了快照功能。这里的快照可能与我们熟悉的「快照」（例如虚拟机软件的快照功能）有所不同，它本质上就是和其他 subvolume 共享数据的 subvolume。让我们试一试吧：
+
+```console
+$ sudo mount btrfs.img /media/btrfs  # 挂载整个文件系统
+$ echo "test1" > /media/btrfs/subvol1/test  # 可能需要 root 权限
+$ sudo btrfs subvolume snapshot /media/btrfs/subvol1 /media/btrfs/snap1  # 创建快照
+Create a snapshot of '/media/btrfs/subvol1/' in '/media/btrfs/snap1'
+$ # 此时 snap1 和 subvol1 共享数据——存储的是目前 subvol1 的内容
+$ cat /media/btrfs/snap1/test
+test1
+$ echo "test2" > /media/btrfs/subvol1/test  # 修改 subvol1
+$ cat /media/btrfs/snap1/test  # snap1 不受影响
+test1
+$ echo "test3" > /media/btrfs/snap1/test  # 修改 snap1
+$ cat /media/btrfs/subvol1/test  # subvol1 不受影响
+test2
+$ sudo btrfs subvolume delete /media/btrfs/snap1  # 删除快照
+Delete subvolume 259 (no-commit): '/media/btrfs/snap1'
+$ sudo umount /media/btrfs
+```
+
+这里我们可以修改「快照」的内容，在 CoW 文件系统中，修改共享的内容会被复制，而未修改的内容会被共享。
+不过很多时候我们不希望快照可写，在创建快照时可以加上 `-r` 参数。
+
+#### 透明压缩
+
+Btrfs 支持透明压缩，文件系统会自动压缩文件，而上层的应用程序不需要关心这一过程。
+这也是许多 Btrfs 用户会开启的挂载选项。
+Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。
+
+以下是一个启用了 Btrfs 透明压缩（`compress=zstd:3`）的桌面用户，在 `/home` 这个 subvolume 下的例子：
+
+```console
+$ sudo compsize /home
+Processed 4429337 files, 5827189 regular extents (6428918 refs), 2327200 inline.
+Type       Perc     Disk Usage   Uncompressed Referenced  
+TOTAL       78%     1017G         1.2T         1.3T       
+none       100%      911G         911G         918G       
+zstd        27%      105G         384G         413G       
+prealloc   100%      643M         643M         1.0G
+```
+
+可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。
+
+#### 常见问题
+
+Balance
+
+:   一个常见的问题是：明明还有剩余空间，但是已经无法写入数据了。简单来说，这是因为 Btrfs 内部存储分为数据（Data）和元数据（Metadata）等部分，当两者任一已满，并且没有未分配（Unallocated）的空间，那么就无法再写入数据了。这可以通过执行 `btrfs filesystem usage` 判断：
+
+    ```console
+    $ sudo btrfs filesystem usage /
+    Overall:
+        Device size:		   1.81TiB
+        Device allocated:		   1.66TiB
+        Device unallocated:		 156.45GiB
+        Device missing:		     0.00B
+        Device slack:		     0.00B
+        Used:			   1.39TiB
+        Free (estimated):		 414.79GiB	(min: 336.57GiB)
+        Free (statfs, df):		 414.79GiB
+        Data ratio:			      1.00
+        Metadata ratio:		      2.00
+        Global reserve:		 512.00MiB	(used: 0.00B)
+        Multiple profiles:		        no
+
+    Data,single: Size:1.62TiB, Used:1.37TiB (84.43%)
+    /dev/nvme0n1p3	   1.62TiB
+
+    Metadata,DUP: Size:18.00GiB, Used:11.54GiB (64.13%)
+    /dev/nvme0n1p3	  36.00GiB
+
+    System,DUP: Size:8.00MiB, Used:208.00KiB (2.54%)
+    /dev/nvme0n1p3	  16.00MiB
+
+    Unallocated:
+    /dev/nvme0n1p3	 156.45GiB
+    ```
+
+    除了直接删除文件以外，使用 `truncate` 将大文件的大小截断为 0 可以在不添加 metadata 信息的情况下释放空间。
+    如果 metadata 已满，但是 data 仍有空间，可以使用 balance 功能重新分配空间：
+
+    ```console
+    $ sudo btrfs balance start /mountpoint -dusage=0
+    ```
+
+    `-dusage=0` 代表将 data 中没有使用（使用率为 0%）的空间释放。视情况，有可能需要增大 `-dusage` 参数的值。
+
+Check
+
+:   Btrfs 的文件系统检查工具 `btrfs-check` **不是传统文件系统 fsck 的平替**。
+    对出现问题的 Btrfs 分区使用 `btrfs-check` 的 `--repair` 选项很可能导致数据丢失。
+
+    一般来讲，建议设置定时 scrub 任务，以检查 checksum 与实际内容是否一致。Scrub 可以在运行时执行，但是不检查结构是否正确。
+
+关闭 CoW
+
+:   对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对文件使用 `chattr +C` 命令关闭 CoW 特性。
+
+### ZFS
+
+参见 [ZFS](./zfs.md)。
 
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
