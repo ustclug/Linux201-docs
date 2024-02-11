@@ -554,6 +554,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    LVM 与 RAID
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -563,6 +574,49 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#lvm" class="md-nav__link">
+    <span class="md-ellipsis">
+      LVM
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LVM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1331,6 +1385,38 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#lvm" class="md-nav__link">
+    <span class="md-ellipsis">
+      LVM
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LVM">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1352,6 +1438,141 @@
 <p class="admonition-title">本文仍在编辑中</p>
 </div>
 <p>本文将介绍 LVM，以及常见的 RAID 方案的使用与维护。</p>
+<h2 id="lvm">LVM<a class="headerlink" href="#lvm" title="Permanent link">&para;</a></h2>
+<p>LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：</p>
+<ul>
+<li>LVM 可以管理多个硬盘（物理卷）上的存储空间</li>
+<li>LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置</li>
+<li>LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作</li>
+</ul>
+<p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。</p>
+<h3 id="_1">基础概念<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<p>LVM 中有三个基本概念：</p>
+<ul>
+<li>物理卷（Physical Volume，PV）：通常是一块硬盘（分区）</li>
+<li>卷组（Volume Group，VG）：由一个或多个物理卷组成</li>
+<li>逻辑卷（Logical Volume，LV）：在卷组里分配的逻辑存储空间。称之为「逻辑」，是因为它可以跨越多个物理卷，也不一定是连续的</li>
+</ul>
+<p>这里我们创建三个 1GB 的文件作为物理卷，并且加入到一个卷组中：</p>
+<div class="admonition warning">
+<p class="admonition-title">避免在物理磁盘上创建无分区表的文件系统/物理卷</p>
+<p>在实践中，尽管没有什么阻止这么做，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
+这会给其他人带来困惑，并且如果未来有在对应磁盘上启动系统等需要多分区的需求，会带来很多麻烦（可能只能备份数据后从头再来）。</p>
+<p>直接对物理磁盘设备格式化为文件系统也是操作时常见的输入错误：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>mkfs.ext4<span class="w"> </span>/dev/sdz<span class="w">  </span><span class="c1"># 错误 ❌</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>mkfs.ext4<span class="w"> </span>/dev/sdz1<span class="w"> </span><span class="c1"># 正确 ✅</span>
+</code></pre></div>
+<p>在下面的例子中，为了简化操作，我们假设 pv[1-3].img 相当于每块硬盘上使用全部空间的分区。</p>
+</div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>1G<span class="w"> </span>pv1.img<span class="w"> </span>pv2.img<span class="w"> </span>pv3.img
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv1.img
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">/dev/loop0</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv2.img
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">/dev/loop1</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv3.img
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">/dev/loop2</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvcreate<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2<span class="w">  </span><span class="c1"># 创建物理卷</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">  Physical volume &quot;/dev/loop0&quot; successfully created.</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">  Physical volume &quot;/dev/loop1&quot; successfully created.</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">  Physical volume &quot;/dev/loop2&quot; successfully created.</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgcreate<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2<span class="w">  </span><span class="c1"># 创建卷组</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully created</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvs<span class="w">  </span><span class="c1"># 查看物理卷信息</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">  PV         VG         Fmt  Attr PSize    PFree   </span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">  /dev/loop0 vg201-test lvm2 a--  1020.00m 1020.00m</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="go">  /dev/loop1 vg201-test lvm2 a--  1020.00m 1020.00m</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="go">  /dev/loop2 vg201-test lvm2 a--  1020.00m 1020.00m</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgs<span class="w">  </span><span class="c1"># 查看卷组信息</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="go">  VG         #PV #LV #SN Attr   VSize  VFree </span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">  vg201-test   3   0   0 wz--n- &lt;2.99g &lt;2.99g</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>.5G<span class="w"> </span>vg201-test<span class="w">  </span><span class="c1"># 创建一个 2.5G 的逻辑卷</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">  Logical volume &quot;lvol0&quot; created.</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w">  </span><span class="c1"># 查看逻辑卷信息</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">  lvol0 vg201-test -wi-a----- 2.50g</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="gp">$ </span>ls<span class="w"> </span>-lh<span class="w"> </span>/dev/mapper/
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="go">total 0</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="go">crw------- 1 root root 10, 236 Feb 11 13:30 control</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="go">lrwxrwxrwx 1 root root       7 Feb 12 00:09 vg201--test-lvol0 -&gt; ../dm-0</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="gp">$ </span><span class="c1"># /dev/mapper/vg201--test-lvol0 就是我们创建的逻辑卷（块设备），可以在上面创建文件系统。</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">等等，怎么每块盘少了几 MB 空间？</p>
+<p>其实大概可以猜到，这些空间留给了 LVM 的元数据。LVM 的元数据为<strong>纯文本</strong>格式，可以存储相对复杂的信息，但是也带来了下述两个问题：</p>
+<ul>
+<li>LVM 的元数据格式没有书面的标准，因此其他软件在解析 LVM 元数据时可能会出现问题。<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=985974">科大镜像站的机器就遇到过 GRUB 解析 LVM 元数据代码的问题</a>，导致无法正确配置启动器。
+这个问题直到现在都没有被 GRUB 修复，因此只能自行编译手动修复后的版本，并且固定 GRUB 版本。</li>
+<li>LVM 的纯文本格式导致元数据本身较大，如果预分配的元数据空间不足，并且卷组中有大量逻辑卷（默认值 + 上千个 LV 就会出现问题），那么最后会导致无法再创建/扩容逻辑卷，并且只能通过添加新的物理卷，然后由该卷存储元数据来解决问题。<a href="https://vlab.ibugone.com/records/2022-06-16/">Vlab 项目曾遇到过这样的问题</a>。</li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="admonition-title">这里创建的逻辑卷横跨了三块盘，所以 LVM 默认是 RAID 0？</p>
+<p>这是不正确的。这里逻辑卷的数据布局与 RAID 0 不同。RAID 0 考虑的是性能，因此数据类似于这么存储：</p>
+<table>
+<thead>
+<tr>
+<th>Disk 1</th>
+<th>Disk 2</th>
+<th>Disk 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4</td>
+<td>5</td>
+</tr>
+<tr>
+<td>6</td>
+<td>7</td>
+<td>8</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<p>这样的话，应用程序顺序读写时，就可以利用多块盘的并行读写能力。但是 LVM 类似于这样：</p>
+<table>
+<thead>
+<tr>
+<th>Disk 1</th>
+<th>Disk 2</th>
+<th>Disk 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>100000</td>
+<td>200000</td>
+</tr>
+<tr>
+<td>1</td>
+<td>100001</td>
+<td>200001</td>
+</tr>
+<tr>
+<td>2</td>
+<td>100002</td>
+<td>200002</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<p>每块盘是顺序填充的。这样做可以更加灵活地管理空间，但是性能不如 RAID 0。</p>
+</div>
 <!--
   Links to man pages
 
