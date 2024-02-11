@@ -123,3 +123,66 @@ Systemd 在开机时会尝试启动 default.target，这个 target 一般是指�
 ### Service
 
 Service 也就是我们最常见的服务，它的配置文件中有一个 `[Service]` section，包括了服务的启动命令和一系列其他配置。以[上面的 cron 服务](#cron.service)为例：
+
+- `[Unit]` 部分指定的 `After=remote-fs.target nss-user-lookup.target` 表示 cron 会在系统达到这两个 target 之后才启动，即远程文件系统挂载完成和用户信息服务（`getent passwd` 等命令可用）都已经启动。
+- `EnvironmentFile=-/etc/default/cron` 表示会读取 `/etc/default/cron` 文件中的环境变量。开头的 `-` 表示如果这个文件不存在，则直接忽略。
+- `ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS` 指定了服务的启动命令，其中 `$EXTRA_OPTS` 是从上面的文件中读取的环境变量。
+  
+    !!! tip
+
+        通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 `$PATH` 环境变量，而是使用一个硬编码的列表。
+
+- `Restart=on-failure` 表示服务在失败时会自动重启。`Restart=` 的取值和含义可以在 [systemd.service][systemd.service.5#Restart=] 文档中找到。
+- 最后的 `[Install]` 部分指定了服务的启动级别，即 `WantedBy=multi-user.target` 表示在多用户模式下启动。
+
+其他常用的配置还有：
+
+`ExecStartPre=`、`ExecStartPost=`、`ExecStopPost=`
+
+:   在服务启动前、启动后、停止后执行的命令。可用于检查服务的配置文件是否正确、创建临时文件、清理临时文件等。例如 ssh.service 就会使用 `ExecStartPre=/usr/sbin/sshd -t` 来检查配置文件是否正确。
+
+`ExecReload=`
+
+:   指定重载服务的命令，一个常见的做法是 `ExecReload=/bin/kill -HUP $MAINPID`。
+    配置了 `ExecReload=` 之后即可使用 `systemctl reload [service]` 命令来向服务的主进程发送 SIGHUP 信号。一些服务还有自己的 reload 命令，例如 nginx 的 `ExecReload=/usr/sbin/nginx -s reload`。
+
+`Type=`
+
+:   指定服务的类型。大部分服务都由一个在后台运行的进程组成，此时可以省略 Type 使用默认值 `simple`，或者更推荐的做法是 `Type=exec`。其他的服务类型参见下面的 [Service Type](#service-type) 一节。
+
+`User=`、`Group=` 和 `SupplementaryGroups=`
+
+:   指定运行服务的用户和组，以及额外的附加组。默认情况下服务会以 `root` 用户运行，如果有安全和权限管理的需求，那么你应该配置这几项设置。
+
+    !!! tip
+
+        如果你有额外的安全需求，可以参考 [Sandboxing][systemd.exec.5#Sandboxing] 一节使用 systemd 提供的高级隔离功能。
+
+#### Service Type {#service-type}
+
+simple 和 exec
+
+:   是最常见的服务类型，服务主体是一个长期运行的进程。
+    两者的区别在于 `simple` 类型“启动即成功”，即 `systemctl start` 会立刻成功退出；
+    而 `exec` 类型会确保 `ExecStart=` 命令可以正常运行，包括 `User=` 和 `Group=` 存在、所指定的命令存在且可执行等。
+    因此现代的服务应该尽量使用 `Type=exec`。
+
+forking
+
+:   一些传统的服务会使用这种方式，启动命令会 fork 出一个子进程然后退出，实际服务由这个子进程提供。
+    这种服务需要配置 `PIDFile=`，以便 systemd 能够正确追踪服务的主进程。当 `PIDFile=` 指定的文件存在且包含一个有效的 PID 时，systemd 认为服务已经启动成功。
+
+oneshot
+
+:   一次性服务，即启动后运行一次 `ExecStart=` 命令，然后退出。
+    这个 Type 有两种使用场景：
+
+    1. 一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 `ip` 命令）；
+    2. 和 timer 配合使用，即定时任务。
+
+    如果你有 Type=oneshot 的服务，那么你很可能也想配置 `RemainAfterExit=yes`，这样配置的命令执行完成后会一直保持 active 状态。
+
+notify 和 dbus
+
+:   类似 `simple` 和 `exec`，但是服务会在启动完成后主动通知 systemd。
+    与前面的类型不同的是，这类服务需要程序主动支持 `sd_notify` 或者 D-Bus 接口。

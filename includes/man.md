@@ -11,7 +11,10 @@
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
+[systemd.exec.5#Environment]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Environment
+[systemd.exec.5#Sandboxing]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
+[systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 
 <!-- man 8 -->
