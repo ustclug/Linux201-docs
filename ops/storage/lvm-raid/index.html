@@ -1665,7 +1665,7 @@
 </div>
 <h3 id="raid">创建 RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h3>
 <p>当然了，对于多盘场景，上面的例子显然是不满足需求的：创建出的逻辑卷仍然是有一块盘坏掉就会故障的状态。
-以下展示了 RAID0, 1, 6 的创建方式：</p>
+以下展示了 RAID0, 1, 5 的创建方式：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvremove<span class="w"> </span>vg201-test/lvol0<span class="w">  </span><span class="c1"># 删除刚才的 LV，腾出一些空间</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvol0? [y/n]: y</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  Logical volume &quot;lvol0&quot; successfully removed.</span>
@@ -1673,11 +1673,114 @@
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid0<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>striped<span class="w"> </span>--stripes<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">  Using default stripesize 64.00 KiB.</span>
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">  Logical volume &quot;lvraid0&quot; created.</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="gp">$ </span><span class="c1"># RAID 1 (mirror)。--mirrors 参数指定了副本数量，也是和盘数量一致</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>mirror<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">  Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="gp gp-VirtualEnv">(TODO)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="gp">$ </span><span class="c1"># RAID 1 (mirror)。--mirrors 参数指定了副本数量（不含本体），所以是盘数量减一</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>mirror<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">2</span><span class="w"> </span>vg201-test
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">  Logical volume &quot;lvraid1&quot; created.</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="gp">$ </span><span class="c1"># 因为只有 3 块盘，这里展示 RAID 5。--stripes 参数不包含额外的验证盘。</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid5<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.2G<span class="w"> </span>--type<span class="w"> </span>raid5<span class="w"> </span>--stripes<span class="w"> </span><span class="m">2</span><span class="w"> </span>vg201-test
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="go">  Using default stripesize 64.00 KiB.</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="go">  Rounding up size to full physical extent 208.00 MiB</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="go">  Logical volume &quot;lvraid5&quot; created.</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="go">  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="go">  lvraid0 vg201-test -wi-a----- 516.00m                                                               </span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="go">  lvraid1 vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00          </span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="go">  lvraid5 vg201-test rwi-a-r--- 208.00m                                               100.00</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Extent 是多大</p>
+<p>有时在输入错误的参数之后，会出现 extent 不足的提示，类似于这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span><span class="c1"># --mirrors 参数多了一，空间不够</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>mirror<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">  Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required</span>
+</code></pre></div>
+<p>但是 "extent" 是多大呢？在 LVM 中，有两种 extent: PE（Physical Extent）和 LE（Logical Extent），
+对应物理卷和逻辑卷的大小参数。这里指的是 PE，可以使用 <code>pvdisplay</code> 或 <code>vgdisplay</code> 查看。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgdisplay
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">  --- Volume group ---</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">  VG Name               vg201-test</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="go">  System ID             </span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="go">  Format                lvm2</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="go">  Metadata Areas        3</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="go">  Metadata Sequence No  11</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="go">  VG Access             read/write</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="go">  VG Status             resizable</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="go">  MAX LV                0</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="go">  Cur LV                2</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="go">  Open LV               0</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="go">  Max PV                0</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="go">  Cur PV                3</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="go">  Act PV                3</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="go">  VG Size               &lt;2.99 GiB</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="go">  PE Size               4.00 MiB</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="go">  Total PE              765</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="go">  Alloc PE / Size       514 / &lt;2.01 GiB</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="go">  Free  PE / Size       251 / 1004.00 MiB</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="go">  VG UUID               Ybsskf-2giI-Q5PU-LCof-Irr9-EDud-nlB0Ms</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvdisplay
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="go">  --- Physical volume ---</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="go">  PV Name               /dev/loop0</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="go">  VG Name               vg201-test</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="go">  PV Size               1.00 GiB / not usable 4.00 MiB</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="go">  Allocatable           yes </span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="go">  PE Size               4.00 MiB</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="go">  Total PE              255</span>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="go">  Free PE               84</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="go">  Allocated PE          171</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="go">  PV UUID               DBn9ke-9UfO-tZJA-ymSh-GQtP-jMq8-tSm62B</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="go">  --- Physical volume ---</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="go">  PV Name               /dev/loop1</span>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="go">  VG Name               vg201-test</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="go">  PV Size               1.00 GiB / not usable 4.00 MiB</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="go">  Allocatable           yes </span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="go">  PE Size               4.00 MiB</span>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="go">  Total PE              255</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="go">  Free PE               84</span>
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="go">  Allocated PE          171</span>
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="go">  PV UUID               aut3hf-J6Tl-O5Gq-0TIw-bneD-mfzr-8wMJJx</span>
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="go">  --- Physical volume ---</span>
+<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="go">  PV Name               /dev/loop2</span>
+<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="go">  VG Name               vg201-test</span>
+<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a><span class="go">  PV Size               1.00 GiB / not usable 4.00 MiB</span>
+<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a><span class="go">  Allocatable           yes </span>
+<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a><span class="go">  PE Size               4.00 MiB</span>
+<a id="__codelineno-5-51" name="__codelineno-5-51" href="#__codelineno-5-51"></a><span class="go">  Total PE              255</span>
+<a id="__codelineno-5-52" name="__codelineno-5-52" href="#__codelineno-5-52"></a><span class="go">  Free PE               83</span>
+<a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a><span class="go">  Allocated PE          172</span>
+<a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a><span class="go">  PV UUID               AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ</span>
+</code></pre></div>
+<p>可以看到 PE 是 4M，因此缺少 512 个 extent 指缺少 512 * 4M = 2048M = 2G 空间。
+这里是因为 PV 数量不足，所以无法找到能够存储第四份副本的磁盘。</p>
+</div>
+<p><code>lvs</code> 支持指定参数查看 LV 的其他信息，这里我们查看逻辑卷实际使用的物理卷：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a<span class="w"> </span>-o<span class="w"> </span>+devices<span class="w"> </span>vg201-test
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">  LV                 VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert Devices                                                    </span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">  lvraid0            vg201-test -wi-a----- 516.00m                                                                /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  </span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">  lvraid1            vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00           lvraid1_mimage_0(0),lvraid1_mimage_1(0),lvraid1_mimage_2(0)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">  [lvraid1_mimage_0] vg201-test iwi-aom--- 512.00m                                                                /dev/loop0(43)                                             </span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">  [lvraid1_mimage_1] vg201-test iwi-aom--- 512.00m                                                                /dev/loop1(43)                                             </span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">  [lvraid1_mimage_2] vg201-test iwi-aom--- 512.00m                                                                /dev/loop2(43)                                             </span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">  [lvraid1_mlog]     vg201-test lwi-aom---   4.00m                                                                /dev/loop2(171)                                            </span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">  lvraid5            vg201-test rwi-a-r--- 208.00m                                               100.00           lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">  [lvraid5_rimage_0] vg201-test iwi-aor--- 104.00m                                                                /dev/loop0(172)                                            </span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">  [lvraid5_rimage_1] vg201-test iwi-aor--- 104.00m                                                                /dev/loop1(172)                                            </span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">  [lvraid5_rimage_2] vg201-test iwi-aor--- 104.00m                                                                /dev/loop2(173)                                            </span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="go">  [lvraid5_rmeta_0]  vg201-test ewi-aor---   4.00m                                                                /dev/loop0(171)                                            </span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="go">  [lvraid5_rmeta_1]  vg201-test ewi-aor---   4.00m                                                                /dev/loop1(171)                                            </span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="go">  [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                                /dev/loop2(172)</span>
+</code></pre></div>
+<details class="note">
+<summary>mimage, mlog, rimage, rmeta</summary>
+<p>可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1 (mirror) 或 RAID 5/6 的产物：</p>
+<ul>
+<li>mimage: "mirrored image"，数据写入时，会向每个关联的 mimage 写入数据</li>
+<li>mlog: 存储了 RAID 1 的盘之间的同步状态信息</li>
+<li>rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷</li>
+<li>rmeta: 存储了 RAID 的元数据信息</li>
+</ul>
+</details>
 <!--
   Links to man pages
 
