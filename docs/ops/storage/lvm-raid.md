@@ -60,7 +60,7 @@ $ sudo pvs  # 查看物理卷信息
 $ sudo vgs  # 查看卷组信息
   VG         #PV #LV #SN Attr   VSize  VFree 
   vg201-test   3   0   0 wz--n- <2.99g <2.99g
-$ sudo lvcreate -L 2.5G vg201-test  # 创建一个 2.5G 的逻辑卷
+$ sudo lvcreate -n lvol0 -L 2.5G vg201-test  # 创建一个 2.5G 的逻辑卷
   Logical volume "lvol0" created.
 $ sudo lvs  # 查看逻辑卷信息
   LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
@@ -70,6 +70,31 @@ total 0
 crw------- 1 root root 10, 236 Feb 11 13:30 control
 lrwxrwxrwx 1 root root       7 Feb 12 00:09 vg201--test-lvol0 -> ../dm-0
 $ # /dev/mapper/vg201--test-lvol0 就是我们创建的逻辑卷（块设备），可以在上面创建文件系统。
+$ sudo lvchange -an vg201-test/lvol0  # 取消激活 (disactivate) 刚才创建的逻辑卷
+$ sudo lvs
+  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg201-test -wi------- 2.50g 
+$ sudo losetup -D  # 卸载本地回环
+```
+
+之后再次挂载：
+
+```console
+$ sudo losetup -f --show pv1.img
+/dev/loop0
+$ sudo losetup -f --show pv2.img
+/dev/loop1
+$ sudo losetup -f --show pv3.img
+/dev/loop2
+$ sudo pvs  # 可以看到物理卷被自动识别了
+  PV         VG         Fmt  Attr PSize    PFree  
+  /dev/loop0 vg201-test lvm2 a--  1020.00m      0 
+  /dev/loop1 vg201-test lvm2 a--  1020.00m      0 
+  /dev/loop2 vg201-test lvm2 a--  1020.00m 500.00m
+$ sudo lvchange -ay vg201-test/lvol0  # 激活 LV
+$ sudo lvs
+  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 vg201-test -wi-a----- 2.50g
 ```
 
 !!! note "等等，怎么每块盘少了几 MB 空间？"
@@ -101,3 +126,24 @@ $ # /dev/mapper/vg201--test-lvol0 就是我们创建的逻辑卷（块设备）�
     | ...    | ...    | ...    |
 
     每块盘是顺序填充的。这样做可以更加灵活地管理空间，但是性能不如 RAID 0。
+
+    LVM 也提供了创建 RAID 0 逻辑卷的功能，被称为「条带化」（Striped）卷，上面默认生成的被称为「线性」（Linear）卷。
+
+### 创建 RAID
+
+当然了，对于多盘场景，上面的例子显然是不满足需求的：创建出的逻辑卷仍然是有一块盘坏掉就会故障的状态。
+以下展示了 RAID0, 1, 6 的创建方式：
+
+```console
+$ sudo lvremove vg201-test/lvol0  # 删除刚才的 LV，腾出一些空间
+Do you really want to remove active logical volume vg201-test/lvol0? [y/n]: y
+  Logical volume "lvol0" successfully removed.
+$ # RAID 0 (striped)。--stripes 参数指定了条带的数量，正常情况下和盘数量一致
+$ sudo lvcreate -n lvraid0 -L 0.5G --type striped --stripes 3 vg201-test
+  Using default stripesize 64.00 KiB.
+  Logical volume "lvraid0" created.
+$ # RAID 1 (mirror)。--mirrors 参数指定了副本数量，也是和盘数量一致
+$ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 3 vg201-test
+  Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required
+(TODO)
+```
