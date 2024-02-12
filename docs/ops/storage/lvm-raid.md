@@ -132,7 +132,7 @@ $ sudo lvs
 ### 创建 RAID
 
 当然了，对于多盘场景，上面的例子显然是不满足需求的：创建出的逻辑卷仍然是有一块盘坏掉就会故障的状态。
-以下展示了 RAID0, 1, 6 的创建方式：
+以下展示了 RAID0, 1, 5 的创建方式：
 
 ```console
 $ sudo lvremove vg201-test/lvol0  # 删除刚才的 LV，腾出一些空间
@@ -142,8 +142,119 @@ $ # RAID 0 (striped)。--stripes 参数指定了条带的数量，正常情况�
 $ sudo lvcreate -n lvraid0 -L 0.5G --type striped --stripes 3 vg201-test
   Using default stripesize 64.00 KiB.
   Logical volume "lvraid0" created.
-$ # RAID 1 (mirror)。--mirrors 参数指定了副本数量，也是和盘数量一致
-$ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 3 vg201-test
-  Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required
-(TODO)
+$ # RAID 1 (mirror)。--mirrors 参数指定了副本数量（不含本体），所以是盘数量减一
+$ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 2 vg201-test
+  Logical volume "lvraid1" created.
+$ # 因为只有 3 块盘，这里展示 RAID 5。--stripes 参数不包含额外的验证盘。
+$ sudo lvcreate -n lvraid5 -L 0.2G --type raid5 --stripes 2 vg201-test
+  Using default stripesize 64.00 KiB.
+  Rounding up size to full physical extent 208.00 MiB
+  Logical volume "lvraid5" created.
+$ sudo lvs
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert
+  lvraid0 vg201-test -wi-a----- 516.00m                                                               
+  lvraid1 vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00          
+  lvraid5 vg201-test rwi-a-r--- 208.00m                                               100.00
 ```
+
+!!! note "Extent 是多大"
+
+    有时在输入错误的参数之后，会出现 extent 不足的提示，类似于这样：
+
+    ```console
+    $ # --mirrors 参数多了一，空间不够
+    $ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 3 vg201-test
+      Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required
+    ```
+
+    但是 "extent" 是多大呢？在 LVM 中，有两种 extent: PE（Physical Extent）和 LE（Logical Extent），
+    对应物理卷和逻辑卷的大小参数。这里指的是 PE，可以使用 `pvdisplay` 或 `vgdisplay` 查看。
+
+    ```console
+    $ sudo vgdisplay
+      --- Volume group ---
+      VG Name               vg201-test
+      System ID             
+      Format                lvm2
+      Metadata Areas        3
+      Metadata Sequence No  11
+      VG Access             read/write
+      VG Status             resizable
+      MAX LV                0
+      Cur LV                2
+      Open LV               0
+      Max PV                0
+      Cur PV                3
+      Act PV                3
+      VG Size               <2.99 GiB
+      PE Size               4.00 MiB
+      Total PE              765
+      Alloc PE / Size       514 / <2.01 GiB
+      Free  PE / Size       251 / 1004.00 MiB
+      VG UUID               Ybsskf-2giI-Q5PU-LCof-Irr9-EDud-nlB0Ms
+    $ sudo pvdisplay
+      --- Physical volume ---
+      PV Name               /dev/loop0
+      VG Name               vg201-test
+      PV Size               1.00 GiB / not usable 4.00 MiB
+      Allocatable           yes 
+      PE Size               4.00 MiB
+      Total PE              255
+      Free PE               84
+      Allocated PE          171
+      PV UUID               DBn9ke-9UfO-tZJA-ymSh-GQtP-jMq8-tSm62B
+      
+      --- Physical volume ---
+      PV Name               /dev/loop1
+      VG Name               vg201-test
+      PV Size               1.00 GiB / not usable 4.00 MiB
+      Allocatable           yes 
+      PE Size               4.00 MiB
+      Total PE              255
+      Free PE               84
+      Allocated PE          171
+      PV UUID               aut3hf-J6Tl-O5Gq-0TIw-bneD-mfzr-8wMJJx
+      
+      --- Physical volume ---
+      PV Name               /dev/loop2
+      VG Name               vg201-test
+      PV Size               1.00 GiB / not usable 4.00 MiB
+      Allocatable           yes 
+      PE Size               4.00 MiB
+      Total PE              255
+      Free PE               83
+      Allocated PE          172
+      PV UUID               AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ
+    ```
+
+    可以看到 PE 是 4M，因此缺少 512 个 extent 指缺少 512 * 4M = 2048M = 2G 空间。
+    这里是因为 PV 数量不足，所以无法找到能够存储第四份副本的磁盘。
+
+`lvs` 支持指定参数查看 LV 的其他信息，这里我们查看逻辑卷实际使用的物理卷：
+
+```console
+$ sudo lvs -a -o +devices vg201-test
+  LV                 VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert Devices                                                    
+  lvraid0            vg201-test -wi-a----- 516.00m                                                                /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  
+  lvraid1            vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00           lvraid1_mimage_0(0),lvraid1_mimage_1(0),lvraid1_mimage_2(0)
+  [lvraid1_mimage_0] vg201-test iwi-aom--- 512.00m                                                                /dev/loop0(43)                                             
+  [lvraid1_mimage_1] vg201-test iwi-aom--- 512.00m                                                                /dev/loop1(43)                                             
+  [lvraid1_mimage_2] vg201-test iwi-aom--- 512.00m                                                                /dev/loop2(43)                                             
+  [lvraid1_mlog]     vg201-test lwi-aom---   4.00m                                                                /dev/loop2(171)                                            
+  lvraid5            vg201-test rwi-a-r--- 208.00m                                               100.00           lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
+  [lvraid5_rimage_0] vg201-test iwi-aor--- 104.00m                                                                /dev/loop0(172)                                            
+  [lvraid5_rimage_1] vg201-test iwi-aor--- 104.00m                                                                /dev/loop1(172)                                            
+  [lvraid5_rimage_2] vg201-test iwi-aor--- 104.00m                                                                /dev/loop2(173)                                            
+  [lvraid5_rmeta_0]  vg201-test ewi-aor---   4.00m                                                                /dev/loop0(171)                                            
+  [lvraid5_rmeta_1]  vg201-test ewi-aor---   4.00m                                                                /dev/loop1(171)                                            
+  [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                                /dev/loop2(172)
+```
+
+??? note "mimage, mlog, rimage, rmeta"
+
+    可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1 (mirror) 或 RAID 5/6 的产物：
+
+    - mimage: "mirrored image"，数据写入时，会向每个关联的 mimage 写入数据
+    - mlog: 存储了 RAID 1 的盘之间的同步状态信息
+    - rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷
+    - rmeta: 存储了 RAID 的元数据信息
