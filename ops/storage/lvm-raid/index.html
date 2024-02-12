@@ -609,6 +609,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#raid" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建 RAID
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1459,6 +1468,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#raid" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建 RAID
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1534,7 +1552,7 @@
 <a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgs<span class="w">  </span><span class="c1"># 查看卷组信息</span>
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="go">  VG         #PV #LV #SN Attr   VSize  VFree </span>
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">  vg201-test   3   0   0 wz--n- &lt;2.99g &lt;2.99g</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>.5G<span class="w"> </span>vg201-test<span class="w">  </span><span class="c1"># 创建一个 2.5G 的逻辑卷</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvol0<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>.5G<span class="w"> </span>vg201-test<span class="w">  </span><span class="c1"># 创建一个 2.5G 的逻辑卷</span>
 <a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">  Logical volume &quot;lvol0&quot; created.</span>
 <a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w">  </span><span class="c1"># 查看逻辑卷信息</span>
 <a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
@@ -1544,6 +1562,28 @@
 <a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="go">crw------- 1 root root 10, 236 Feb 11 13:30 control</span>
 <a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="go">lrwxrwxrwx 1 root root       7 Feb 12 00:09 vg201--test-lvol0 -&gt; ../dm-0</span>
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="gp">$ </span><span class="c1"># /dev/mapper/vg201--test-lvol0 就是我们创建的逻辑卷（块设备），可以在上面创建文件系统。</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>-an<span class="w"> </span>vg201-test/lvol0<span class="w">  </span><span class="c1"># 取消激活 (disactivate) 刚才创建的逻辑卷</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="go">  lvol0 vg201-test -wi------- 2.50g </span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-D<span class="w">  </span><span class="c1"># 卸载本地回环</span>
+</code></pre></div>
+<p>之后再次挂载：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv1.img
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">/dev/loop0</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv2.img
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">/dev/loop1</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv3.img
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">/dev/loop2</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvs<span class="w">  </span><span class="c1"># 可以看到物理卷被自动识别了</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">  PV         VG         Fmt  Attr PSize    PFree  </span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">  /dev/loop0 vg201-test lvm2 a--  1020.00m      0 </span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="go">  /dev/loop1 vg201-test lvm2 a--  1020.00m      0 </span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="go">  /dev/loop2 vg201-test lvm2 a--  1020.00m 500.00m</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test/lvol0<span class="w">  </span><span class="c1"># 激活 LV</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">  lvol0 vg201-test -wi-a----- 2.50g</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">等等，怎么每块盘少了几 MB 空间？</p>
@@ -1621,7 +1661,23 @@
 </tbody>
 </table>
 <p>每块盘是顺序填充的。这样做可以更加灵活地管理空间，但是性能不如 RAID 0。</p>
+<p>LVM 也提供了创建 RAID 0 逻辑卷的功能，被称为「条带化」（Striped）卷，上面默认生成的被称为「线性」（Linear）卷。</p>
 </div>
+<h3 id="raid">创建 RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h3>
+<p>当然了，对于多盘场景，上面的例子显然是不满足需求的：创建出的逻辑卷仍然是有一块盘坏掉就会故障的状态。
+以下展示了 RAID0, 1, 6 的创建方式：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvremove<span class="w"> </span>vg201-test/lvol0<span class="w">  </span><span class="c1"># 删除刚才的 LV，腾出一些空间</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvol0? [y/n]: y</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  Logical volume &quot;lvol0&quot; successfully removed.</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="gp">$ </span><span class="c1"># RAID 0 (striped)。--stripes 参数指定了条带的数量，正常情况下和盘数量一致</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid0<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>striped<span class="w"> </span>--stripes<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">  Using default stripesize 64.00 KiB.</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">  Logical volume &quot;lvraid0&quot; created.</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="gp">$ </span><span class="c1"># RAID 1 (mirror)。--mirrors 参数指定了副本数量，也是和盘数量一致</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>mirror<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">  Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="gp gp-VirtualEnv">(TODO)</span>
+</code></pre></div>
 <!--
   Links to man pages
 
