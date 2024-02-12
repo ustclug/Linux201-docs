@@ -618,6 +618,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#raid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 维护
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1477,6 +1486,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#raid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 维护
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1513,6 +1531,10 @@
 <li>LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作</li>
 </ul>
 <p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。</p>
+<div class="admonition warning">
+<p class="admonition-title">本部分无法涵盖全部内容</p>
+<p>LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。</p>
+</div>
 <h3 id="_1">基础概念<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
 <p>LVM 中有三个基本概念：</p>
 <ul>
@@ -1781,6 +1803,33 @@
 <li>rmeta: 存储了 RAID 的元数据信息</li>
 </ul>
 </details>
+<h3 id="raid_1">RAID 维护<a class="headerlink" href="#raid_1" title="Permanent link">&para;</a></h3>
+<p>正常情况下，<code>lvs</code> 返回的 RAID 1/5/6 设备的 "Cpy%Sync" 应该是 100.00，表示数据已经同步到所有盘上。
+这里模拟强制删除一块盘的情况：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-an<span class="w"> </span>vg201-test
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">  0 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-D
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gp">$ </span><span class="c1"># 接下来只挂载两块盘</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv1.img
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">/dev/loop0</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv2.img
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">/dev/loop1</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvs
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="go">  PV         VG         Fmt  Attr PSize    PFree  </span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="go">  /dev/loop0 vg201-test lvm2 a--  1020.00m 228.00m</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="go">  /dev/loop1 vg201-test lvm2 a--  1020.00m 228.00m</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="go">  [unknown]  vg201-test lvm2 a-m  1020.00m 224.00m</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="go">  Refusing activation of partial LV vg201-test/lvraid0.  Use &#39;--activationmode partial&#39; to override.</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="go">  Refusing activation of partial LV vg201-test/lvraid1.  Use &#39;--activationmode partial&#39; to override.</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="go">  1 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>-ay<span class="w"> </span>--activationmode<span class="w"> </span>partial<span class="w"> </span>vg201-test/lvraid0
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="go">  Logical volume vg201-test/lvraid0 changed.</span>
+</code></pre></div>
 <!--
   Links to man pages
 
