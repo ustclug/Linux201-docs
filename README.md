@@ -9,4 +9,4 @@
 
 ## 许可
 
-本文档以 Creative Commons BY-SA 4.0 协议发布。详情请见 [LICENSE](LICENSE)。
+本文档以 Creative Commons BY-NC-SA 4.0 协议发布。详情请见 [LICENSE](LICENSE)。
