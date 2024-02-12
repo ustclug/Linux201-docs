@@ -14,6 +14,10 @@ LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，相比于直
 
 一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。
 
+!!! warning "本部分无法涵盖全部内容"
+
+    LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。
+
 ### 基础概念
 
 LVM 中有三个基本概念：
@@ -258,3 +262,34 @@ $ sudo lvs -a -o +devices vg201-test
     - mlog: 存储了 RAID 1 的盘之间的同步状态信息
     - rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷
     - rmeta: 存储了 RAID 的元数据信息
+
+### RAID 维护
+
+正常情况下，`lvs` 返回的 RAID 1/5/6 设备的 "Cpy%Sync" 应该是 100.00，表示数据已经同步到所有盘上。
+这里模拟强制删除一块盘的情况：
+
+```console
+$ sudo vgchange -an vg201-test
+  0 logical volume(s) in volume group "vg201-test" now active
+$ sudo losetup -D
+$ # 接下来只挂载两块盘
+$ sudo losetup -f --show pv1.img
+/dev/loop0
+$ sudo losetup -f --show pv2.img
+/dev/loop1
+$ sudo pvs
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).
+  PV         VG         Fmt  Attr PSize    PFree  
+  /dev/loop0 vg201-test lvm2 a--  1020.00m 228.00m
+  /dev/loop1 vg201-test lvm2 a--  1020.00m 228.00m
+  [unknown]  vg201-test lvm2 a-m  1020.00m 224.00m
+$ sudo vgchange -ay vg201-test
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).
+  Refusing activation of partial LV vg201-test/lvraid0.  Use '--activationmode partial' to override.
+  Refusing activation of partial LV vg201-test/lvraid1.  Use '--activationmode partial' to override.
+  1 logical volume(s) in volume group "vg201-test" now active
+$ sudo lvchange -ay --activationmode partial vg201-test/lvraid0
+  Logical volume vg201-test/lvraid0 changed.
+```
