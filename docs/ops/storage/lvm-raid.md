@@ -6,13 +6,14 @@
 
 ## LVM
 
-LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：
+LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核的 device mapper（dm）功能。
+相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：
 
 - LVM 可以管理多个硬盘（物理卷）上的存储空间
 - LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置
 - LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作
 
-一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。
+一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自[红帽 RHEL 的 LVM 管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper)[^rhel-version]。
 
 !!! warning "本部分无法涵盖全部内容"
 
@@ -481,3 +482,48 @@ $ sudo lvs -o +raid_sync_action,raid_mismatch_count
     LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。
 
     这项功能不是 scrub 的替代品。
+
+### SSD 缓存
+
+LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm-cache 的读写缓存。
+
+!!! note "dm-writecache"
+
+    本部分不介绍以优化写入为目的的 dm-writecache——我们没有相关的使用场景。
+
+!!! note "缓存方案"
+
+    目前内核自带这些缓存方案：
+
+    - [bcache](https://wiki.archlinux.org/title/Bcache)：需要将 SSD 和 HDD 对应的块设备分区使用 `make-bcache` 初始化后，
+    在 bcache 暴露的 `/dev/bcache0` 上进行操作。
+    - [lvmcache](https://wiki.archlinux.org/title/LVM#Cache)：需要在 LVM 的基础上进行操作。基于内核的 dm-cache。
+
+    此外，在 Linux 6.7（2024 年 1 月）之后，内核合并了 bcachefs 支持，它同样也包含了 SSD 缓存的功能。
+    但是 bcachefs 的稳定性仍然需要至少数年的时间来验证。ZFS 同样也包含缓存功能（ARC 与 L2ARC），将在 [ZFS](./zfs.md) 中介绍。
+
+    不过，随着 SSD 单位空间成本逐渐降低，SSD 缓存的意义也在逐渐减小。
+    甚至也[有预测表明](https://thecuberesearch.com/flash-native-drives-real-time-business-process/)，到 2026 年后 SSD 的成本甚至会低于 HDD。内核中 `dm-cache` 的开发也不活跃。
+
+    在考虑缓存方案的选择时，需要考虑各种因素，下文会做一些简单的介绍。
+
+首先删除上面创建的 LV 与 PV，然后创建一个大的 image 和一个小的 image 作为 HDD 与 SSD：
+
+```console
+$ sudo lvremove vg201-test/lvraid0 vg201-test/lvraid1 vg201-test/lvraid5
+  Logical volume "lvraid0" successfully removed.
+Do you really want to remove active logical volume vg201-test/lvraid1? [y/n]: y
+  Logical volume "lvraid1" successfully removed.
+Do you really want to remove active logical volume vg201-test/lvraid5? [y/n]: y
+  Logical volume "lvraid5" successfully removed.
+$ sudo vgremove vg201-test
+  Volume group "vg201-test" successfully removed
+$ sudo losetup -D
+$ rm pv*.img
+$ truncate -s 100G hdd.img
+$ truncate -s 10G ssd.img
+```
+
+<!-- TODO: 如何模拟限制访问 hdd.img 的速度？ -->
+
+[^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
