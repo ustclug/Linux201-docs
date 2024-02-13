@@ -651,6 +651,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ssd" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSD 缓存
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1543,6 +1552,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ssd" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSD 缓存
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1572,13 +1590,14 @@
 </div>
 <p>本文将介绍 LVM，以及常见的 RAID 方案的使用与维护。</p>
 <h2 id="lvm">LVM<a class="headerlink" href="#lvm" title="Permanent link">&para;</a></h2>
-<p>LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：</p>
+<p>LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核的 device mapper（dm）功能。
+相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：</p>
 <ul>
 <li>LVM 可以管理多个硬盘（物理卷）上的存储空间</li>
 <li>LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置</li>
 <li>LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作</li>
 </ul>
-<p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。</p>
+<p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自<a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper">红帽 RHEL 的 LVM 管理指南</a><sup id="fnref:rhel-version"><a class="footnote-ref" href="#fn:rhel-version">1</a></sup>。</p>
 <div class="admonition warning">
 <p class="admonition-title">本部分无法涵盖全部内容</p>
 <p>LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。</p>
@@ -2051,6 +2070,42 @@
 LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。</p>
 <p>这项功能不是 scrub 的替代品。</p>
 </div>
+<h3 id="ssd">SSD 缓存<a class="headerlink" href="#ssd" title="Permanent link">&para;</a></h3>
+<p>LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm-cache 的读写缓存。</p>
+<div class="admonition note">
+<p class="admonition-title">dm-writecache</p>
+<p>本部分不介绍以优化写入为目的的 dm-writecache——我们没有相关的使用场景。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">缓存方案</p>
+<p>目前内核自带这些缓存方案：</p>
+<ul>
+<li><a href="https://wiki.archlinux.org/title/Bcache">bcache</a>：需要将 SSD 和 HDD 对应的块设备分区使用 <code>make-bcache</code> 初始化后，
+在 bcache 暴露的 <code>/dev/bcache0</code> 上进行操作。</li>
+<li><a href="https://wiki.archlinux.org/title/LVM#Cache">lvmcache</a>：需要在 LVM 的基础上进行操作。基于内核的 dm-cache。</li>
+</ul>
+<p>此外，在 Linux 6.7（2024 年 1 月）之后，内核合并了 bcachefs 支持，它同样也包含了 SSD 缓存的功能。
+但是 bcachefs 的稳定性仍然需要至少数年的时间来验证。ZFS 同样也包含缓存功能（ARC 与 L2ARC），将在 <a href="../zfs/">ZFS</a> 中介绍。</p>
+<p>不过，随着 SSD 单位空间成本逐渐降低，SSD 缓存的意义也在逐渐减小。
+甚至也<a href="https://thecuberesearch.com/flash-native-drives-real-time-business-process/">有预测表明</a>，到 2026 年后 SSD 的成本甚至会低于 HDD。内核中 <code>dm-cache</code> 的开发也不活跃。</p>
+<p>在考虑缓存方案的选择时，需要考虑各种因素，下文会做一些简单的介绍。</p>
+</div>
+<p>首先删除上面创建的 LV 与 PV，然后创建一个大的 image 和一个小的 image 作为 HDD 与 SSD：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvremove<span class="w"> </span>vg201-test/lvraid0<span class="w"> </span>vg201-test/lvraid1<span class="w"> </span>vg201-test/lvraid5
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">  Logical volume &quot;lvraid0&quot; successfully removed.</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvraid1? [y/n]: y</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">  Logical volume &quot;lvraid1&quot; successfully removed.</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvraid5? [y/n]: y</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">  Logical volume &quot;lvraid5&quot; successfully removed.</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgremove<span class="w"> </span>vg201-test
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully removed</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-D
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="gp">$ </span>rm<span class="w"> </span>pv*.img
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>100G<span class="w"> </span>hdd.img
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>10G<span class="w"> </span>ssd.img
+</code></pre></div>
+<!-- TODO: 如何模拟限制访问 hdd.img 的速度？ -->
+
 <!--
   Links to man pages
 
@@ -2062,6 +2117,15 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <!-- man 5 -->
 
 <!-- man 8 -->
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:rhel-version">
+<p>推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。&#160;<a class="footnote-backref" href="#fnref:rhel-version" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
