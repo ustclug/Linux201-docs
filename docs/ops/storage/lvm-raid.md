@@ -135,6 +135,11 @@ $ sudo lvs
 
 ### 创建 RAID
 
+!!! warning "不建议使用 LVM 构建 RAID"
+
+    相比于 mdadm，LVM 与 RAID 相关的概念与提供的工具更加复杂，并且这种复杂性在很多场景下没有收益。
+    更加常见的模式是，使用 mdadm 构建 RAID，然后使用 LVM 管理构建好的 RAID 上的逻辑卷。
+
 当然了，对于多盘场景，上面的例子显然是不满足需求的：创建出的逻辑卷仍然是有一块盘坏掉就会故障的状态。
 以下展示了 RAID0, 1, 5 的创建方式：
 
@@ -146,8 +151,8 @@ $ # RAID 0 (striped)。--stripes 参数指定了条带的数量，正常情况�
 $ sudo lvcreate -n lvraid0 -L 0.5G --type striped --stripes 3 vg201-test
   Using default stripesize 64.00 KiB.
   Logical volume "lvraid0" created.
-$ # RAID 1 (mirror)。--mirrors 参数指定了副本数量（不含本体），所以是盘数量减一
-$ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 2 vg201-test
+$ # RAID 1。--mirrors 参数指定了副本数量（不含本体），所以是盘数量减一
+$ sudo lvcreate -n lvraid1 -L 0.5G --type raid1 --mirrors 2 vg201-test
   Logical volume "lvraid1" created.
 $ # 因为只有 3 块盘，这里展示 RAID 5。--stripes 参数不包含额外的验证盘。
 $ sudo lvcreate -n lvraid5 -L 0.2G --type raid5 --stripes 2 vg201-test
@@ -155,11 +160,20 @@ $ sudo lvcreate -n lvraid5 -L 0.2G --type raid5 --stripes 2 vg201-test
   Rounding up size to full physical extent 208.00 MiB
   Logical volume "lvraid5" created.
 $ sudo lvs
-  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert
-  lvraid0 vg201-test -wi-a----- 516.00m                                                               
-  lvraid1 vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00          
-  lvraid5 vg201-test rwi-a-r--- 208.00m                                               100.00
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvraid0 vg201-test -wi-a----- 516.00m                                                    
+  lvraid1 vg201-test rwi-a-r--- 512.00m                                    100.00          
+  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00
 ```
+
+!!! warning "不要使用 `--type mirror`"
+
+    `mirror` 和 `raid1` 是两个**不同**的 type。除非有特殊需要，否则应该使用 `--type raid1` 创建 RAID 1 阵列。
+    可以使用 `lvconvert` 将 mirror 转换为 raid1。
+    
+    相关讨论可查看 [In what case(s) will `--type mirror` continue to be a good choice / is not deprecated?](https://unix.stackexchange.com/questions/697364/in-what-cases-will-type-mirror-continue-to-be-a-good-choice-is-not-depre)。
+
+    在后文的缺盘测试中，`mirror` 的行为也与预期不同——LVM 默认会拒绝挂载，如果强行挂载，会直接将缺失的盘丢掉。
 
 !!! note "Extent 是多大"
 
@@ -167,8 +181,8 @@ $ sudo lvs
 
     ```console
     $ # --mirrors 参数多了一，空间不够
-    $ sudo lvcreate -n lvraid1 -L 0.5G --type mirror --mirrors 3 vg201-test
-      Insufficient suitable allocatable extents for logical volume lvraid1: 512 more required
+    $ sudo lvcreate -n lvraid1 -L 0.5G --type raid1 --mirrors 3 vg201-test
+      Insufficient suitable allocatable extents for logical volume lvraid1: 516 more required
     ```
 
     但是 "extent" 是多大呢？在 LVM 中，有两种 extent: PE（Physical Extent）和 LE（Logical Extent），
@@ -231,42 +245,49 @@ $ sudo lvs
       PV UUID               AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ
     ```
 
-    可以看到 PE 是 4M，因此缺少 512 个 extent 指缺少 512 * 4M = 2048M = 2G 空间。
+    可以看到 PE 是 4M，因此缺少 516 个 extent 指缺少 516 * 4M ~= 2G 空间。
     这里是因为 PV 数量不足，所以无法找到能够存储第四份副本的磁盘。
 
 `lvs` 支持指定参数查看 LV 的其他信息，这里我们查看逻辑卷实际使用的物理卷：
 
 ```console
 $ sudo lvs -a -o +devices vg201-test
-  LV                 VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log            Cpy%Sync Convert Devices                                                    
-  lvraid0            vg201-test -wi-a----- 516.00m                                                                /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  
-  lvraid1            vg201-test mwi-a-m--- 512.00m                                [lvraid1_mlog] 100.00           lvraid1_mimage_0(0),lvraid1_mimage_1(0),lvraid1_mimage_2(0)
-  [lvraid1_mimage_0] vg201-test iwi-aom--- 512.00m                                                                /dev/loop0(43)                                             
-  [lvraid1_mimage_1] vg201-test iwi-aom--- 512.00m                                                                /dev/loop1(43)                                             
-  [lvraid1_mimage_2] vg201-test iwi-aom--- 512.00m                                                                /dev/loop2(43)                                             
-  [lvraid1_mlog]     vg201-test lwi-aom---   4.00m                                                                /dev/loop2(171)                                            
-  lvraid5            vg201-test rwi-a-r--- 208.00m                                               100.00           lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
-  [lvraid5_rimage_0] vg201-test iwi-aor--- 104.00m                                                                /dev/loop0(172)                                            
-  [lvraid5_rimage_1] vg201-test iwi-aor--- 104.00m                                                                /dev/loop1(172)                                            
-  [lvraid5_rimage_2] vg201-test iwi-aor--- 104.00m                                                                /dev/loop2(173)                                            
-  [lvraid5_rmeta_0]  vg201-test ewi-aor---   4.00m                                                                /dev/loop0(171)                                            
-  [lvraid5_rmeta_1]  vg201-test ewi-aor---   4.00m                                                                /dev/loop1(171)                                            
-  [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                                /dev/loop2(172)
+  LV                 VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices                                                    
+  lvraid0            vg201-test -wi-a----- 516.00m                                                     /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  
+  lvraid1            vg201-test rwi-a-r--- 512.00m                                    100.00           lvraid1_rimage_0(0),lvraid1_rimage_1(0),lvraid1_rimage_2(0)
+  [lvraid1_rimage_0] vg201-test iwi-aor--- 512.00m                                                     /dev/loop0(44)                                             
+  [lvraid1_rimage_1] vg201-test iwi-aor--- 512.00m                                                     /dev/loop1(44)                                             
+  [lvraid1_rimage_2] vg201-test iwi-aor--- 512.00m                                                     /dev/loop2(44)                                             
+  [lvraid1_rmeta_0]  vg201-test ewi-aor---   4.00m                                                     /dev/loop0(43)                                             
+  [lvraid1_rmeta_1]  vg201-test ewi-aor---   4.00m                                                     /dev/loop1(43)                                             
+  [lvraid1_rmeta_2]  vg201-test ewi-aor---   4.00m                                                     /dev/loop2(43)                                             
+  lvraid5            vg201-test rwi-a-r--- 208.00m                                    100.00           lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
+  [lvraid5_rimage_0] vg201-test iwi-aor--- 104.00m                                                     /dev/loop0(173)                                            
+  [lvraid5_rimage_1] vg201-test iwi-aor--- 104.00m                                                     /dev/loop1(173)                                            
+  [lvraid5_rimage_2] vg201-test iwi-aor--- 104.00m                                                     /dev/loop2(173)                                            
+  [lvraid5_rmeta_0]  vg201-test ewi-aor---   4.00m                                                     /dev/loop0(172)                                            
+  [lvraid5_rmeta_1]  vg201-test ewi-aor---   4.00m                                                     /dev/loop1(172)                                            
+  [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                     /dev/loop2(172)
 ```
 
-??? note "mimage, mlog, rimage, rmeta"
+??? note "rimage, rmeta（与 mimage, mlog）"
 
-    可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1 (mirror) 或 RAID 5/6 的产物：
+    可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1/ 5/6 的产物：
 
-    - mimage: "mirrored image"，数据写入时，会向每个关联的 mimage 写入数据
-    - mlog: 存储了 RAID 1 的盘之间的同步状态信息
     - rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷
     - rmeta: 存储了 RAID 的元数据信息
 
+    如果在创建 RAID 1 时选择了 `--type mirror`，那么对应创建的是 mimage 和 mlog：
+
+    - mimage: "mirrored image"，数据写入时，会向每个关联的 mimage 写入数据
+    - mlog: 存储了 RAID 1 的盘之间的同步状态信息
+
 ### RAID 维护
 
+#### RAID 状态与重建
+
 正常情况下，`lvs` 返回的 RAID 1/5/6 设备的 "Cpy%Sync" 应该是 100.00，表示数据已经同步到所有盘上。
-这里模拟强制删除一块盘的情况：
+并且 `health_status` 属性应该为空。这里模拟强制删除一块盘的情况：
 
 ```console
 $ sudo vgchange -an vg201-test
@@ -288,8 +309,175 @@ $ sudo vgchange -ay vg201-test
   WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
   WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).
   Refusing activation of partial LV vg201-test/lvraid0.  Use '--activationmode partial' to override.
-  Refusing activation of partial LV vg201-test/lvraid1.  Use '--activationmode partial' to override.
-  1 logical volume(s) in volume group "vg201-test" now active
-$ sudo lvchange -ay --activationmode partial vg201-test/lvraid0
-  Logical volume vg201-test/lvraid0 changed.
+  2 logical volume(s) in volume group "vg201-test" now active
+$ sudo lvs -a -o name,copy_percent,health_status,devices vg201-test
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).
+  LV                 Cpy%Sync Health          Devices                                                    
+  lvraid0                     partial         /dev/loop0(0),/dev/loop1(0),[unknown](0)                   
+  lvraid1            100.00   partial         lvraid1_rimage_0(0),lvraid1_rimage_1(0),lvraid1_rimage_2(0)
+  [lvraid1_rimage_0]                          /dev/loop0(44)                                             
+  [lvraid1_rimage_1]                          /dev/loop1(44)                                             
+  [lvraid1_rimage_2]          partial         [unknown](44)                                              
+  [lvraid1_rmeta_0]                           /dev/loop0(43)                                             
+  [lvraid1_rmeta_1]                           /dev/loop1(43)                                             
+  [lvraid1_rmeta_2]           partial         [unknown](43)                                              
+  lvraid5            100.00   partial         lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
+  [lvraid5_rimage_0]                          /dev/loop0(173)                                            
+  [lvraid5_rimage_1]                          /dev/loop1(173)                                            
+  [lvraid5_rimage_2]          partial         [unknown](173)                                             
+  [lvraid5_rmeta_0]                           /dev/loop0(172)                                            
+  [lvraid5_rmeta_1]                           /dev/loop1(172)                                            
+  [lvraid5_rmeta_2]           partial         [unknown](172)
 ```
+
+可以发现：
+
+- RAID 0 由于缺少一块盘，LVM 会拒绝激活
+- RAID 1/5 可以激活，但是 health_status 为 partial，表示对应阵列处于不完整的状态
+
+假设我们添加一块新盘，并删除旧盘，进行 RAID 1/5 的重建：
+
+```console
+$ truncate -s 1G pv4.img
+$ sudo losetup /dev/loop3 pv4.img
+$ sudo pvcreate /dev/loop3
+  Physical volume "/dev/loop3" successfully created.
+$ sudo vgextend vg201-test /dev/loop3
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  Volume group "vg201-test" successfully extended
+$ sudo lvconvert --repair vg201-test/lvraid1
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+Attempt to replace failed RAID images (requires full device resync)? [y/n]: y
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  Faulty devices in vg201-test/lvraid1 successfully replaced.
+$ sudo lvconvert --repair vg201-test/lvraid5
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+Attempt to replace failed RAID images (requires full device resync)? [y/n]: y
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  Faulty devices in vg201-test/lvraid5 successfully replaced.
+$ sudo lvs -a -o name,copy_percent,health_status,devices vg201-test
+  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).
+  LV                 Cpy%Sync Health          Devices                                                    
+  lvraid0                     partial         /dev/loop0(0),/dev/loop1(0),[unknown](0)                   
+  lvraid1            100.00                   lvraid1_rimage_0(0),lvraid1_rimage_1(0),lvraid1_rimage_2(0)
+  [lvraid1_rimage_0]                          /dev/loop0(44)                                             
+  [lvraid1_rimage_1]                          /dev/loop1(44)                                             
+  [lvraid1_rimage_2]                          /dev/loop3(1)                                              
+  [lvraid1_rmeta_0]                           /dev/loop0(43)                                             
+  [lvraid1_rmeta_1]                           /dev/loop1(43)                                             
+  [lvraid1_rmeta_2]                           /dev/loop3(0)                                              
+  lvraid5            100.00                   lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
+  [lvraid5_rimage_0]                          /dev/loop0(173)                                            
+  [lvraid5_rimage_1]                          /dev/loop1(173)                                            
+  [lvraid5_rimage_2]                          /dev/loop3(130)                                            
+  [lvraid5_rmeta_0]                           /dev/loop0(172)                                            
+  [lvraid5_rmeta_1]                           /dev/loop1(172)                                            
+  [lvraid5_rmeta_2]                           /dev/loop3(129)
+```
+
+下面展示将原始的 `/dev/loop2` 恢复回 vg201-test 的过程，以「恢复」最后的 RAID 0。
+通过使用 `vgextend` 的 `--restoremissing` 参数，我们不需要重新初始化 `/dev/loop2`，而是直接将其加入到卷组中。
+**只在确定原始的 PV 没有被修改的情况下才能如此操作**。
+
+```console
+$ sudo losetup /dev/loop2 pv3.img
+$ sudo pvs
+  WARNING: ignoring metadata seqno 37 on /dev/loop2 for seqno 43 on /dev/loop0 for VG vg201-test.
+  WARNING: Inconsistent metadata found for VG vg201-test.
+  See vgck --updatemetadata to correct inconsistency.
+  WARNING: VG vg201-test was previously updated while PV /dev/loop2 was missing.
+  WARNING: VG vg201-test was missing PV /dev/loop2 AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  PV         VG         Fmt  Attr PSize    PFree  
+  /dev/loop0 vg201-test lvm2 a--  1020.00m 224.00m
+  /dev/loop1 vg201-test lvm2 a--  1020.00m 224.00m
+  /dev/loop2 vg201-test lvm2 a-m  1020.00m 848.00m
+  /dev/loop3 vg201-test lvm2 a--  1020.00m 396.00m
+$ sudo vgextend vg201-test /dev/loop2 --restoremissing
+  WARNING: ignoring metadata seqno 37 on /dev/loop2 for seqno 43 on /dev/loop0 for VG vg201-test.
+  WARNING: Inconsistent metadata found for VG vg201-test.
+  See vgck --updatemetadata to correct inconsistency.
+  WARNING: VG vg201-test was previously updated while PV /dev/loop2 was missing.
+  WARNING: VG vg201-test was missing PV /dev/loop2 AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.
+  WARNING: VG vg201-test was previously updated while PV /dev/loop2 was missing.
+  WARNING: updating old metadata to 44 on /dev/loop2 for VG vg201-test.
+  Volume group "vg201-test" successfully extended
+$ sudo lvs -a -o name,copy_percent,health_status,devices vg201-test
+  LV                 Cpy%Sync Health          Devices                                                    
+  lvraid0                                     /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  
+  lvraid1            100.00                   lvraid1_rimage_0(0),lvraid1_rimage_1(0),lvraid1_rimage_2(0)
+  [lvraid1_rimage_0]                          /dev/loop0(44)                                             
+  [lvraid1_rimage_1]                          /dev/loop1(44)                                             
+  [lvraid1_rimage_2]                          /dev/loop3(1)                                              
+  [lvraid1_rmeta_0]                           /dev/loop0(43)                                             
+  [lvraid1_rmeta_1]                           /dev/loop1(43)                                             
+  [lvraid1_rmeta_2]                           /dev/loop3(0)                                              
+  lvraid5            100.00                   lvraid5_rimage_0(0),lvraid5_rimage_1(0),lvraid5_rimage_2(0)
+  [lvraid5_rimage_0]                          /dev/loop0(173)                                            
+  [lvraid5_rimage_1]                          /dev/loop1(173)                                            
+  [lvraid5_rimage_2]                          /dev/loop3(130)                                            
+  [lvraid5_rmeta_0]                           /dev/loop0(172)                                            
+  [lvraid5_rmeta_1]                           /dev/loop1(172)                                            
+  [lvraid5_rmeta_2]                           /dev/loop3(129)
+```
+
+#### 完整性检查
+
+即使正常运行，RAID 也无法防止阵列中的某块硬盘因为某种原因数据不一致的情况（例如比特翻转），
+因此**定期进行完整性检查（Scrub）是非常重要的**。以下展示一个没有定期 scrub 的反例：
+
+> 有一个三块盘的 RAID1，因为某些神奇的误操作，其中一块盘的状态一直是 2018 年的，另两块是正确的 RAID1，然后这组盘被挪到了新机器，被重新加成了一个三盘的 RAID1，软 RAID 软件 somehow 没有做检查就跑了起来，于是读文件时有 1/3 概率读取到旧盘，也就是 ls 一下可能看到旧文件也可能看到新文件，可能这样用了很长一段时间一直没发现，昨天重启之后突然发现 glibc 回到了 2018 年
+
+另一个没有 scrub 数据，最终导致文件丢失的例子是 Linus Tech Tips（[YouTube](https://www.youtube.com/watch?v=Npu7jkJk5nM)/[Bilibili](https://www.bilibili.com/video/BV1844y1W74r), 05:15）。
+
+下面我们向 `pv4.img` 中间写入 1M 的随机数据，并展示 LVM 的检查与修复功能。
+
+```console
+$ sudo dd if=/dev/urandom of=/dev/loop3 bs=1M count=1 oseek=100
+1+0 records in
+1+0 records out
+1048576 bytes (1.0 MB, 1.0 MiB) copied, 0.00402655 s, 260 MB/s
+$ sudo lvs -o devices vg201-test
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvraid0 vg201-test -wi------- 516.00m                                                    
+  lvraid1 vg201-test rwi-a-r--- 512.00m                                    100.00          
+  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00
+$ sudo lvchange --syncaction check vg201-test/lvraid1
+$ sudo dmesg
+（省略）
+[1655658.162616] md: mdX: data-check done.
+[1655663.533169] md: data-check of RAID array mdX
+$ sudo lvs -o +raid_sync_action,raid_mismatch_count
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert SyncAction Mismatches
+  lvraid0 vg201-test -wi------- 516.00m                                                                          
+  lvraid1 vg201-test rwi-a-r-m- 512.00m                                    100.00           idle             2048
+  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00           idle                0
+$ # 因为我们的 RAID 1 有三块盘，所以这里的「不一致」还可以修复。
+$ sudo lvchange --syncaction repair vg201-test/lvraid1
+$ sudo dmesg
+（省略）
+[1655787.490037] md: requested-resync of RAID array mdX
+[1655789.691174] md: mdX: requested-resync done.
+$ sudo lvs -o +raid_sync_action,raid_mismatch_count
+  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert SyncAction Mismatches
+  lvraid0 vg201-test -wi------- 516.00m                                                                          
+  lvraid1 vg201-test rwi-a-r--- 512.00m                                    100.00           idle                0
+  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00           idle                0
+```
+
+!!! note "dm-integrity"
+
+    LVM 支持在设置 RAID 时添加 integrity 功能（`--raidintegrity`），这项功能为数据添加了校验和，
+    LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。
+
+    这项功能不是 scrub 的替代品。
