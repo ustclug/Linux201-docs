@@ -1978,7 +1978,134 @@ U --&gt; F(scope)</code></pre>
 <p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
 <h2 id="log">日志管理<a class="headerlink" href="#log" title="Permanent link">&para;</a></h2>
 <h3 id="systemd-journald">Systemd-journald<a class="headerlink" href="#systemd-journald" title="Permanent link">&para;</a></h3>
+<p>Journald 是 systemd 套件中负责管理日志的部分。与传统的 <code>/var/log/*.log</code> 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（<code>less</code>、<code>vim</code> 等）查看，需要通过 <code>journalctl</code> 管理。</p>
+<p>一些常用的选项和参数：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">选项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><code>-u [unit]</code></td>
+<td>只显示指定 unit 的日志</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-e</code></td>
+<td>显示最新的日志（自动将 less 跳转到末尾）</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-f</code></td>
+<td>实时查看日志（类似 <code>tail -f</code>）</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-x</code></td>
+<td>为事件显示额外的解释内容，如服务启动、停止等</td>
+</tr>
+</tbody>
+</table>
+<p>默认情况下，journald 会将日志存储在 <code>/var/log/journal</code> 目录下，如果这个目录不存在的话，则会使用 <code>/run/log/journal</code>。由于 <code>/run</code> 目录使用 tmpfs，若配置不当可能会导致内存占用过高，且重启后日志丢失。</p>
+<p>Journald 的配置文件位于 <code>/etc/systemd/journald.conf</code>，可以通过 <a href="https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html"><code>journald.conf(5)</code></a> 查看所有的配置项，Debian 也会在这个文件内以注释的形式提供所有配置的默认值。一些常见的配置项有：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">配置项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">Storage=</td>
+<td>指定日志存储方式，可以是 <code>auto</code>、<code>volatile</code>、<code>persistent</code> 和 <code>none</code></td>
+</tr>
+<tr>
+<td style="text-align: center;">SystemMaxUse=<br>SystemKeepFree=</td>
+<td>指定系统日志（<code>/var/log/journal</code>）的最大占用空间或保证磁盘的空余空间</td>
+</tr>
+<tr>
+<td style="text-align: center;">RuntimeMaxUse=<br>RuntimeKeepFree=</td>
+<td>指定运行时日志（<code>/run/log/journal</code>）的最大占用空间或保证磁盘的空余空间</td>
+</tr>
+<tr>
+<td style="text-align: center;">MaxRetentionSec=<br>MaxFileSec=</td>
+<td>指定日志内容和日志文件的最大保存时间</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">避免覆盖由包管理器管理的文件</p>
+<p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
+</div>
+<p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
+<p>按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责日志的“滚动”（rotate），即重命名、压缩、删除等操作。</p>
+<p>logrotate 的全局配置文件位于 <code>/etc/logrotate.conf</code>，而每个服务的配置文件则位于 <code>/etc/logrotate.d/</code> 目录下。以 Telegraf 为例，其配置文件如下：</p>
+<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/var/log/telegraf/telegraf.log
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="o">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>daily
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>missingok
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span>dateext
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span>copytruncate
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span>notifempty
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span>compress
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="o">}</span>
+</code></pre></div>
+<p>配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：</p>
+<dl>
+<dt>rotate &lt;n&gt;</dt>
+<dd>
+<p>保留的<strong>额外</strong>日志文件数量。例如 <code>rotate 6</code> 会保留 <code>example.log</code>、<code>example.log.1</code> 直到 <code>example.log.6</code>，而 <code>example.log.7</code> 则会直接删除。</p>
+</dd>
+<dt>daily / weekly / monthly / yearly</dt>
+<dd>
+<p>rotate 的频率</p>
+</dd>
+<dt>missingok / notifempty</dt>
+<dd>
+<p>特殊情况的处理方式（见这两个选项的字面含义）。</p>
+</dd>
+<dt>dateext / dateformat</dt>
+<dd>
+<p>使用日期作为后缀，而不是使用 <code>.1</code>、<code>.2</code> 等。另有 <code>dateyesterday</code> 选项，即使用昨天的日期来命名，保证文件名中的日期和文件内容尽可能一致。</p>
+</dd>
+<dt>copytruncate</dt>
+<dd>
+<p>将文件内容复制到新文件，然后清空原文件。程序需要以 <code>O_APPEND</code> 的方式打开日志文件，否则可能会造成错乱。</p>
+<p>适用于不支持通过 <code>SIGHUP</code> 等方式重新打开日志文件的程序。对于支持“重载日志文件”的程序，<strong>不推荐</strong>使用这个选项。</p>
+</dd>
+<dt>create &lt;mode&gt; &lt;owner&gt; &lt;group&gt;</dt>
+<dd>
+<p>创建新的日志文件时的权限和所有者。如果程序可以自己创建日志文件，那么可以忽略。</p>
+</dd>
+<dt>compress<br>compresscmd<br>uncompresscmd<br>compressext<br>compressoptions</dt>
+<dd>
+<p>压缩旧的日志文件，以及压缩参数（默认使用 <code>gzip</code> / <code>gunzip</code> / <code>.gz</code> / <code>-9</code>）。其中 <code>compress</code> 是开关，默认行为是 <code>nocompress</code>。</p>
+<p>例如，如果使用 Zstd 压缩，可以使用以下配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>compressext<span class="w"> </span>.zst
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
+</code></pre></div>
+</dd>
+<dt>delaycompress</dt>
+<dd>
+<p>不压缩刚 rotate 出来的日志文件，即保留 <code>example.log</code> 和 <code>example.log.1</code>，压缩 <code>.2</code> 开始的日志文件<br>如果没有这个选项，那么 <code>example.log.1</code> 会被压缩</p>
+</dd>
+<dt>prerotate / postrotate</dt>
+<dd>
+<p>在 rotate 之前/之后执行的命令，命令块需要以 <code>endscript</code> 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 <code>if</code> 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。</p>
+<p>例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：</p>
+<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>postrotate
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>endscript
+</code></pre></div>
+</dd>
+</dl>
+<p>修改了 logrotate 的配置文件之后，可以使用 <code>logrotate -d /etc/logrotate.conf</code> 来测试配置文件的正确性，而不会真正执行任何操作。</p>
+<p>同时由于 logrotate 不存在守护进程，而是通过 systemd timer 来定期执行的，因此修改配置文件之后不需要重启任何服务。</p>
 <!--
   Links to man pages
 
