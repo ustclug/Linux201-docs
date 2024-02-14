@@ -8,6 +8,7 @@
 
 <!-- man 5 -->
 
+[journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
@@ -19,4 +20,5 @@
 
 <!-- man 8 -->
 
+[logrotate.8]: https://linux.die.net/man/8/logrotate
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs

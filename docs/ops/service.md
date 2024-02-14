@@ -263,4 +263,110 @@ WantedBy=timers.target
 
 ### Systemd-journald
 
+Journald 是 systemd 套件中负责管理日志的部分。与传统的 `/var/log/*.log` 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（`less`、`vim` 等）查看，需要通过 `journalctl` 管理。
+
+一些常用的选项和参数：
+
+|    选项     | 说明                                         |
+| :---------: | -------------------------------------------- |
+| `-u [unit]` | 只显示指定 unit 的日志                       |
+|    `-e`     | 显示最新的日志（自动将 less 跳转到末尾）     |
+|    `-f`     | 实时查看日志（类似 `tail -f`）               |
+|    `-x`     | 为事件显示额外的解释内容，如服务启动、停止等 |
+
+默认情况下，journald 会将日志存储在 `/var/log/journal` 目录下，如果这个目录不存在的话，则会使用 `/run/log/journal`。由于 `/run` 目录使用 tmpfs，若配置不当可能会导致内存占用过高，且重启后日志丢失。
+
+Journald 的配置文件位于 `/etc/systemd/journald.conf`，可以通过 [`journald.conf(5)`][journald.conf.5] 查看所有的配置项，Debian 也会在这个文件内以注释的形式提供所有配置的默认值。一些常见的配置项有：
+
+|               配置项               | 说明                                                                   |
+| :--------------------------------: | ---------------------------------------------------------------------- |
+|              Storage=              | 指定日志存储方式，可以是 `auto`、`volatile`、`persistent` 和 `none`    |
+|  SystemMaxUse=<br>SystemKeepFree=  | 指定系统日志（`/var/log/journal`）的最大占用空间或保证磁盘的空余空间   |
+| RuntimeMaxUse=<br>RuntimeKeepFree= | 指定运行时日志（`/run/log/journal`）的最大占用空间或保证磁盘的空余空间 |
+|  MaxRetentionSec=<br>MaxFileSec=   | 指定日志内容和日志文件的最大保存时间                                   |
+
+!!! tip "避免覆盖由包管理器管理的文件"
+
+    自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 `/etc/systemd/*.conf` 文件均支持 `*.conf.d` 目录，即可以创建 `/etc/systemd/journald.conf.d/` 目录，并在其中创建文件来覆盖默认配置，而无需修改 `*.conf` 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。
+
+如果你需要手动清理日志，释放磁盘空间的话，可以使用 `journalctl --vacuum-size=100M` 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 `--vacuum-time=` 和 `--vacuum-files=10` 也可参考。
+
 ### logrotate
+
+按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责日志的“滚动”（rotate），即重命名、压缩、删除等操作。
+
+logrotate 的全局配置文件位于 `/etc/logrotate.conf`，而每个服务的配置文件则位于 `/etc/logrotate.d/` 目录下。以 Telegraf 为例，其配置文件如下：
+
+```shell title="/etc/logrotate.d/telegraf"
+/var/log/telegraf/telegraf.log
+{
+    rotate 6
+    daily
+    missingok
+    dateext
+    copytruncate
+    notifempty
+    compress
+}
+```
+
+配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：
+
+rotate &lt;n&gt;
+
+:   保留的**额外**日志文件数量。例如 `rotate 6` 会保留 `example.log`、`example.log.1` 直到 `example.log.6`，而 `example.log.7` 则会直接删除。
+
+daily / weekly / monthly / yearly
+
+:   rotate 的频率，也许你并不需要使用后两者。
+
+missingok / notifempty
+
+:   特殊情况的处理方式（见这两个选项的字面含义）。
+
+dateext / dateformat
+
+:   使用日期作为后缀，而不是使用 `.1`、`.2` 等。另有 `dateyesterday` 选项，即使用昨天的日期来命名，保证文件名中的日期和文件内容尽可能一致。
+
+copytruncate
+
+:   将文件内容复制到新文件，然后清空原文件。程序需要以 `O_APPEND` 的方式打开日志文件，否则可能会造成错乱。
+
+    适用于不支持通过 `SIGHUP` 等方式重新打开日志文件的程序。对于支持“重载日志文件”的程序，**不推荐**使用这个选项。
+
+create &lt;mode&gt; &lt;owner&gt; &lt;group&gt;
+
+:   创建新的日志文件时的权限和所有者。如果程序可以自己创建日志文件，那么可以忽略。
+
+compress<br>compresscmd<br>uncompresscmd<br>compressext<br>compressoptions
+
+:   压缩旧的日志文件，以及压缩参数（默认使用 `gzip` / `gunzip` / `.gz` / `-9`）。其中 `compress` 是开关，默认行为是 `nocompress`。
+
+    例如，如果使用 Zstd 压缩，可以使用以下配置：
+
+    ```shell
+    compresscmd /usr/bin/zstd
+    uncompresscmd /usr/bin/unzstd
+    compressext .zst
+    compressoptions -13 -T0
+    ```
+
+delaycompress
+
+:   不压缩刚 rotate 出来的日志文件，即保留 `example.log` 和 `example.log.1`，压缩 `.2` 开始的日志文件<br>如果没有这个选项，那么 `example.log.1` 会被压缩
+
+prerotate / postrotate
+
+:   在 rotate 之前/之后执行的命令，命令块需要以 `endscript` 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 `if` 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。
+
+    例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：
+
+    ```shell title="/etc/logrotate.d/nginx"
+    postrotate
+        invoke-rc.d nginx rotate >/dev/null 2>&1
+    endscript
+    ```
+
+修改了 logrotate 的配置文件之后，可以使用 `logrotate -d /etc/logrotate.conf` 来测试配置文件的正确性，而不会真正执行任何操作。
+
+同时由于 logrotate 不存在守护进程，而是通过 systemd timer 来定期执行的，因此修改配置文件之后不需要重启任何服务。
