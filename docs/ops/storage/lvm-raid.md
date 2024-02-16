@@ -273,7 +273,7 @@ $ sudo lvs -a -o +devices vg201-test
 
 ??? note "rimage, rmeta（与 mimage, mlog）"
 
-    可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1/ 5/6 的产物：
+    可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1/5/6 的产物：
 
     - rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷
     - rmeta: 存储了 RAID 的元数据信息
@@ -522,8 +522,128 @@ $ sudo losetup -D
 $ rm pv*.img
 $ truncate -s 100G hdd.img
 $ truncate -s 10G ssd.img
+$ sudo losetup -f --show hdd.img
+/dev/loop0
+$ sudo losetup -f --show ssd.img
+/dev/loop1
+$ sudo pvcreate /dev/loop0 /dev/loop1
+  Physical volume "/dev/loop0" successfully created.
+  Physical volume "/dev/loop1" successfully created.
+$ sudo vgcreate vg201-test /dev/loop0 /dev/loop1
+  Volume group "vg201-test" successfully created
 ```
 
 <!-- TODO: 如何模拟限制访问 hdd.img 的速度？ -->
+
+接下来我们创建存储（后备）数据的 LV，这个 LV 只应该在 HDD 上：
+
+```console
+$ sudo lvcreate -n lvdata -l 100%FREE vg201-test /dev/loop0
+  Logical volume "lvdata" created.
+$ sudo lvs -o +devices vg201-test
+  LV     VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices      
+  lvdata vg201-test -wi-a----- <100.00g                                                     /dev/loop0(0)
+```
+
+!!! note "另一种做法"
+
+    另一种可能会看到的做法是把 SSD 和 HDD 分别开 VG，在后面创建好之后再 `vgmerge`。
+    （当然其实是没有必要的……）
+
+之后我们需要创建缓存相关的 LV。LVM 支持两种方式：`cachevol` 和 `cachepool`：
+
+- `cachevol` 在一个 LV 中包含了缓存的数据和元数据
+- `cachepool` 将缓存的数据和元数据分开存储（因此可以将数据和元数据放到不同的设备上）
+
+许多教程中都使用 `cachepool`，但是很多时候是没有必要的。
+
+下面先展示 `cachevol` 的操作（只需两步：创建缓存盘，然后 `lvconvert` 配置缓存即可）：
+
+```console
+$ sudo lvcreate -n lvdata_cache -l 100%FREE vg201-test /dev/loop1
+  Logical volume "lvdata_cache" created.
+$ sudo lvconvert --type cache --cachevol lvdata_cache vg201-test/lvdata
+Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
+  Logical volume vg201-test/lvdata is now cached.
+$ sudo lvs -a -o +devices vg201-test
+  LV                  VG         Attr       LSize    Pool                Origin         Data%  Meta%  Move Log Cpy%Sync Convert Devices        
+  lvdata              vg201-test Cwi-a-C--- <100.00g [lvdata_cache_cvol] [lvdata_corig] 0.01   11.07           0.00             lvdata_corig(0)
+  [lvdata_cache_cvol] vg201-test Cwi-aoC---  <10.00g                                                                            /dev/loop1(0)  
+  [lvdata_corig]      vg201-test owi-aoC--- <100.00g                                                                            /dev/loop0(0)
+```
+
+`lvs` 也可以输出一些缓存相关的配置和统计信息：
+
+```console
+$ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,cache_used_blocks,cache_dirty_blocks,cache_read_hits,cache_read_misses,cache_write_hits,cache_write_misses
+  Devices         CachePolicy CacheMode    CacheSettings CacheTotalBlocks CacheUsedBlocks  CacheDirtyBlocks CacheReadHits    CacheReadMisses  CacheWriteHits   CacheWriteMisses
+  lvdata_corig(0) smq         writethrough                         163584               15                0                5               51                0                0
+```
+
+可以看到缓存的模式是 writethrough，策略是 smq，以及缓存的读写命中率与脏块数量。
+
+!!! note "lvmcache 的缓存模式与策略"
+
+    lvmcache 支持三种缓存模式：
+
+    - passthrough: 缓存无效。此时**所有读写**都到后备设备。同时写命中会触发对应的块缓存失效。
+    - writethrough: 写入操作在缓存和后备设备上都进行。
+    - writeback: 写入操作只在缓存上进行，对应的块标记为脏块（Dirty Block）。
+    **除非被缓存的数据完全无关紧要，或者有多块 SSD 进行缓存，否则不要使用 writeback。文件系统核心元数据的损坏可能直接导致整个文件系统无法读取。**
+
+    在策略一栏，我们可以看到 "smq"。事实上，lvmcache 唯一支持的有效的现代策略就是 [smq（Stochastic Multi-Queue）](https://elixir.bootlin.com/linux/v6.7/source/drivers/md/dm-cache-policy-smq.c)。
+    另一种 cleaner 策略用于将所有脏块写回后备设备。
+
+!!! comment "其他的缓存模式？"
+
+    可以注意到，`lvmcache` 做了这么一个假设：写入的内容很快就会被读取。但是这个假设真的总是成立吗？
+    writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有实现这个模式。
+
+??? note "SMQ from dm-cache-policy-smq.c"
+
+    > 以下内容由 GPT-4 生成。
+
+    SMQ（Stochastic Multi-Queue）算法是用于缓存管理的一种策略，旨在通过调整缓存中的数据保持频繁访问的数据项，以提高整体的缓存命中率。
+    SMQ 策略将缓存分为几个部分：热点队列（Hotspot Queue）、干净队列（Clean Queue）、脏队列（Dirty Queue），
+    以及其他辅助数据结构，如散列表（Hash Table）和条目分配器（Entry Allocator）。下面对SMQ算法的关键操作进行了简要描述：
+
+    1. **初始化**：
+        - 分配内存空间。
+        - 初始化锁、统计信息、队列等数据结构。
+        - 设置缓存块大小、热点区块的大小等参数。
+        - 初始化三个队列：`热点`、`干净`和`脏队列`。每一个队列都维护了一个由缓存块（cache blocks）组成的列表，按一定的规则进行组织和管理。
+
+    2. **查找（Lookup）**：
+        - 查找操作首先通过散列表快速定位请求的数据是否在缓存中。
+        - 如果数据在缓存中，此时会更新其在队列中的位置，反映其最近的访问模式。
+        - 如果数据不在缓存中，会考虑是否需要将其提升到缓存中（Promotion）。
+
+    3. **提升（Promotion）**：
+        - 当一个被频繁访问的数据不在缓存中时，算法会决定是否将其提升到缓存中。
+        - 提升决策基于对数据项在`热点队列`中的位置和级别的考察，热点队列帮助跟踪频繁访问的数据。
+        - 如果空间不够，会根据`干净队列`和`脏队列`中的条目状态，选择老化的数据进行淘汰或写回，以腾出空间给新提升的数据。
+
+    4. **写回（Write-back）** 和 **淘汰（Demotion）**：
+        - 缓存中的数据项如果被修改（脏数据），最终需要被写回到更持久的存储。
+        - 数据项可以根据其在缓存中的活跃程度被淘汰或降级，尤其是当缓存空间不足时。
+        - 写回和淘汰操作依赖于脏队列和干净队列中数据项的状态以及其相对重要性。
+
+    5. **队列管理**：
+        - SMQ 维护多个级别的队列来组织数据项，尝试根据访问频率和模式将数据项放在合适的级别。
+        - 通过智能队列管理，SMQ 策略能够动态调整缓存内容，以期在不同的工作负载下都实现较高的缓存命中率。
+
+    6. **背景工作**：
+        - SMQ 策略还会进行一些后台任务，比如定期重新分配队列中的数据项，清理和写回脏数据，以及根据实时访问模式调整提升和淘汰策略。
+        - 背景任务确保缓存状态持续更新，以响应工作负载的变化。
+
+    SMQ 算法通过综合考虑数据访问频率、缓存中数据的新旧程度和脏干净状态等因素，使缓存内容尽可能反映最有价值和最有可能再次访问的数据，从而提升整体系统性能。
+
+使用 `cachepool` 就麻烦很多。先把上面的 uncache 掉：
+
+```console
+$ sudo lvconvert --uncache vg201-test/lvdata
+  Logical volume "lvdata_cache" successfully removed.
+  Logical volume vg201-test/lvdata is not cached and vg201-test/lvdata_cache is removed.
+```
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
