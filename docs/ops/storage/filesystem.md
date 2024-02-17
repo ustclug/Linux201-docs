@@ -10,7 +10,7 @@
 
     可以使用 `lsblk` 命令查看系统中的块设备。一个桌面系统的例子如下：
 
-    ```console
+    ```text
     NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
     nvme0n1     259:0    0  1.9T  0 disk 
     ├─nvme0n1p1 259:1    0  260M  0 part 
@@ -192,7 +192,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 
 首先创建一个空文件：
 
-```console
+```shell
 truncate -s 8G test.img
 ```
 
@@ -209,7 +209,7 @@ truncate -s 8G test.img
 
 之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。
 
-```console
+```shell
 fdisk test.img
 # 或者
 parted test.img
@@ -405,7 +405,7 @@ ext4 最常见的问题之一是 inode 的数量限制。
 除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
 但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 `tune2fs` 命令调整这一参数：
 
-```console
+```shell
 sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%
 ```
 
