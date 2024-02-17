@@ -6,6 +6,8 @@
 
 <!-- markdownlint-disable-file MD053 -->
 
+<!-- man 1 -->
+
 <!-- man 5 -->
 
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html

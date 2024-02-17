@@ -289,6 +289,13 @@ Journald 的配置文件位于 `/etc/systemd/journald.conf`，可以通过 [`jou
 
     自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 `/etc/systemd/*.conf` 文件均支持 `*.conf.d` 目录，即可以创建 `/etc/systemd/journald.conf.d/` 目录，并在其中创建文件来覆盖默认配置，而无需修改 `*.conf` 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。
 
+    例如，要限制磁盘占用（`/var/log/journal`）为 1G，可以创建如下文件，然后重启 `systemd-journald` 服务：
+
+    ```ini title="/etc/systemd/journald.conf.d/override.conf"
+    [Journal]
+    SystemMaxUse=1G
+    ```
+
 如果你需要手动清理日志，释放磁盘空间的话，可以使用 `journalctl --vacuum-size=100M` 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 `--vacuum-time=` 和 `--vacuum-files=10` 也可参考。
 
 ### logrotate
