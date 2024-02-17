@@ -545,10 +545,12 @@ $ sudo lvs -o +devices vg201-test
   lvdata vg201-test -wi-a----- <100.00g                                                     /dev/loop0(0)
 ```
 
-!!! note "另一种做法"
+!!! comment "@taoky: 另一种做法"
 
-    另一种可能会看到的做法是把 SSD 和 HDD 分别开 VG，在后面创建好之后再 `vgmerge`。
-    （当然其实是没有必要的……）
+    在配置 mirrors4 服务器的缓存时，[我们的文档](https://docs.ustclug.org/services/mirrors/4/volumes/#ssd)中的做法是把 SSD 和 HDD 分别开 VG，在后面创建好之后再 `vgmerge`。
+    
+    这么做其实是没有必要的，只要 `lvcreate` 的时候清醒一些就行。
+    况且缓存盘和后备设备必须在同一个 VG 里头。
 
 之后我们需要创建缓存相关的 LV。LVM 支持两种方式：`cachevol` 和 `cachepool`：
 
@@ -582,7 +584,7 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
 
 可以看到缓存的模式是 writethrough，策略是 smq，以及缓存的读写命中率与脏块数量。
 
-!!! note "lvmcache 的缓存模式与策略"
+!!! note "lvmcache 的缓存模式、策略与部分术语"
 
     lvmcache 支持三种缓存模式：
 
@@ -594,49 +596,29 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
     在策略一栏，我们可以看到 "smq"。事实上，lvmcache 唯一支持的有效的现代策略就是 [smq（Stochastic Multi-Queue）](https://elixir.bootlin.com/linux/v6.7/source/drivers/md/dm-cache-policy-smq.c)。
     另一种 cleaner 策略用于将所有脏块写回后备设备。
 
-!!! comment "其他的缓存模式？"
+    此外，在阅读相关资料时，可能会看到下面三个术语：
 
-    可以注意到，`lvmcache` 做了这么一个假设：写入的内容很快就会被读取。但是这个假设真的总是成立吗？
+    - Migration：将一块数据从一个设备复制到另一个设备
+    - Promotion：将一块数据从后备设备复制到缓存设备
+    - Demotion：将一块数据从缓存设备复制到后备设备
+
+!!! comment "@taoky: 关于缓存模式"
+
+    分享一个笑话，最开始 @iBug 配的缓存模式选了 passthrough，理由是：
+
+    > 这里的缓存模式采用 passthrough，即写入动作绕过缓存直接写回原设备（当然啦，写入都是由从上游同步产生的），另外两种 writeback 和 writethrough 都会写入缓存，不是我们想要的。
+
+    （当然，这是错的）
+
+    另外可以注意到，`lvmcache` 做了这么一个假设：写入的内容很快就会被读取。但是这个假设真的总是成立吗？
     writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有实现这个模式。
 
-??? note "SMQ from dm-cache-policy-smq.c"
+??? note "`dm-cache-policy-smq.c` 中实现的 SMQ 策略算法"
 
-    > 以下内容由 GPT-4 生成。
+    核心的结构体是 `smq_policy`，其中包含了三个 SMQ 队列：热点（hotspot）队列、clean 队列和 dirty 队列。
+    每个 SMQ 队列中包含 64 个 LRU 队列。这 64 个队列构成不同的等级，存储由热到冷的内容。
 
-    SMQ（Stochastic Multi-Queue）算法是用于缓存管理的一种策略，旨在通过调整缓存中的数据保持频繁访问的数据项，以提高整体的缓存命中率。
-    SMQ 策略将缓存分为几个部分：热点队列（Hotspot Queue）、干净队列（Clean Queue）、脏队列（Dirty Queue），
-    以及其他辅助数据结构，如散列表（Hash Table）和条目分配器（Entry Allocator）。下面对SMQ算法的关键操作进行了简要描述：
-
-    1. **初始化**：
-        - 分配内存空间。
-        - 初始化锁、统计信息、队列等数据结构。
-        - 设置缓存块大小、热点区块的大小等参数。
-        - 初始化三个队列：`热点`、`干净`和`脏队列`。每一个队列都维护了一个由缓存块（cache blocks）组成的列表，按一定的规则进行组织和管理。
-
-    2. **查找（Lookup）**：
-        - 查找操作首先通过散列表快速定位请求的数据是否在缓存中。
-        - 如果数据在缓存中，此时会更新其在队列中的位置，反映其最近的访问模式。
-        - 如果数据不在缓存中，会考虑是否需要将其提升到缓存中（Promotion）。
-
-    3. **提升（Promotion）**：
-        - 当一个被频繁访问的数据不在缓存中时，算法会决定是否将其提升到缓存中。
-        - 提升决策基于对数据项在`热点队列`中的位置和级别的考察，热点队列帮助跟踪频繁访问的数据。
-        - 如果空间不够，会根据`干净队列`和`脏队列`中的条目状态，选择老化的数据进行淘汰或写回，以腾出空间给新提升的数据。
-
-    4. **写回（Write-back）** 和 **淘汰（Demotion）**：
-        - 缓存中的数据项如果被修改（脏数据），最终需要被写回到更持久的存储。
-        - 数据项可以根据其在缓存中的活跃程度被淘汰或降级，尤其是当缓存空间不足时。
-        - 写回和淘汰操作依赖于脏队列和干净队列中数据项的状态以及其相对重要性。
-
-    5. **队列管理**：
-        - SMQ 维护多个级别的队列来组织数据项，尝试根据访问频率和模式将数据项放在合适的级别。
-        - 通过智能队列管理，SMQ 策略能够动态调整缓存内容，以期在不同的工作负载下都实现较高的缓存命中率。
-
-    6. **背景工作**：
-        - SMQ 策略还会进行一些后台任务，比如定期重新分配队列中的数据项，清理和写回脏数据，以及根据实时访问模式调整提升和淘汰策略。
-        - 背景任务确保缓存状态持续更新，以响应工作负载的变化。
-
-    SMQ 算法通过综合考虑数据访问频率、缓存中数据的新旧程度和脏干净状态等因素，使缓存内容尽可能反映最有价值和最有可能再次访问的数据，从而提升整体系统性能。
+    <!-- TODO: 更详细的介绍 -->
 
 使用 `cachepool` 就麻烦很多。先把上面的 uncache 掉：
 
