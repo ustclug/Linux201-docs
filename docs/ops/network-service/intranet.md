@@ -43,7 +43,7 @@ sudo apt update
 sudo apt install wireguard
 ```
 
-在 Red Hat 或 Fedora 系列的系统上，你可以使用`dnf`：
+在 Red Hat 或 Fedora 系列的系统上，你可以使用 `dnf`：
 
 ```shell
 sudo dnf install wireguard-tools
@@ -51,7 +51,7 @@ sudo dnf install wireguard-tools
 
 ### 生成密钥对
 
-每个 WireGuard 接口都需要一个私钥和公钥。`wg genkey`生成一个私钥，`wg pubkey`根据输入的私钥输出公钥。
+每个 WireGuard 接口都需要一个私钥和公钥。`wg genkey` 生成一个私钥，`wg pubkey` 根据输入的私钥输出公钥。
 
 使用下面的命令生成密钥对：
 
@@ -63,58 +63,58 @@ wg genkey | tee privatekey | wg pubkey > publickey
 
 ### 创建配置文件
 
-这里以一个简单的场景为例，两台机器 A 和 B 进行组网。其中 A 有公网 ip，对应域名 `example.com`
+这里以一个简单的场景为例，两台机器 A 和 B 进行组网。其中 A 有公网 IP，对应域名 `example.com`
 
 A 的配置如下：
 
-```conf
+```ini
 [Interface]
 Address = 10.0.0.1/24
 ListenPort = 51820
-PrivateKey = <A的私钥>
+PrivateKey = <A 的私钥>
 
 [Peer]
-PublicKey = <B的公钥>
+PublicKey = <B 的公钥>
 AllowedIPs = 10.0.0.4/32
 ```
 
 B 的配置如下：
 
-```conf
+```ini
 [Interface]
 Address = 10.0.0.4/24
-PrivateKey = <B的私钥>
+PrivateKey = <B 的私钥>
 
 [Peer]
-PublicKey = <A的公钥>
+PublicKey = <A 的公钥>
 Endpoint = example.com:51820
 AllowedIPs = 10.0.11.0/24
 PersistentKeepalive = 25
 ```
 
-上述配置文件中，密钥的替换成密钥的**文本**，而不是密钥文件的路径。
+上述配置文件中，密钥的替换成密钥的**内容**，而不是密钥文件的路径。
 
 设备 A 的 VPN 内部 IP 地址设置为 `10.0.0.1`，设备 B 的 VPN 内部 IP 地址设置为 `10.0.0.4`，子网掩码为 24 位。
 
-`PersistentKeepalive=25` 代表每 25 秒发送一个无实质数据的心跳包，用于在 NAT 或防火墙环境中保持连接活跃。
+`PersistentKeepalive = 25` 代表每 25 秒发送一个无实质数据的心跳包，用于在 NAT 或防火墙环境中保持连接活跃。
 
 `AllowedIPs` 指定了可以通过 VPN 发送到哪些 IP 地址的数据。例如 `10.0.0.1/32` 表示只有目标为 `10.0.0.1` 的数据包可以通过 VPN 发送给对方。
 
-配置文件写到 `/etc/wireguard/<配置名>.conf` 中。例如：`/etc/wireguard/wg0.conf`
+配置文件需要写在 `/etc/wireguard/<配置名>.conf` 中。例如：`/etc/wireguard/wg0.conf`
 
 ### 启动 WireGuard 接口
 
-使用`wg-quick`工具启动 WireGuard 接口：
+使用 `wg-quick` 工具启动 WireGuard 接口：
 
 ```shell
 sudo wg-quick up wg0
 ```
 
-其中`wg0`是配置文件的名称，不带`.conf`后缀。
+其中 `wg0` 是配置文件的名称，不包括 `.conf` 后缀。
 
 ### 检查接口状态
 
-可以使用 wg 命令查看当前的 WireGuard 状态：
+可以使用 `wg` 命令查看当前的 WireGuard 状态：
 
 ```shell
 sudo wg
