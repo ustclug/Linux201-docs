@@ -776,6 +776,66 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="WireGuard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      安装 WireGuard
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      生成密钥对
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建配置文件
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      启动 WireGuard 接口
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      检查接口状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      停止 WireGuard 接口
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1534,6 +1594,66 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="WireGuard">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      安装 WireGuard
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      生成密钥对
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建配置文件
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      启动 WireGuard 接口
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      检查接口状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wireguard_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      停止 WireGuard 接口
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1574,6 +1694,61 @@
 <p>安全性高，易于配置，但是基于 udp</p>
 <h2 id="wireguard">WireGuard<a class="headerlink" href="#wireguard" title="Permanent link">&para;</a></h2>
 <p>WireGuard 是一种现代的 VPN 协议，速度快，配置简单，安全性高，但是基于 udp</p>
+<h3 id="wireguard_1">安装 WireGuard<a class="headerlink" href="#wireguard_1" title="Permanent link">&para;</a></h3>
+<p>大多数现代 Linux 发行版都可以直接从官方仓库中安装 WireGuard。例如，在基于 Debian 的系统（如 Ubuntu）上，你可以使用以下命令安装：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>wireguard
+</code></pre></div>
+<p>在 Red Hat 或 Fedora 系列的系统上，你可以使用<code>dnf</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>wireguard-tools
+</code></pre></div>
+<h3 id="_2">生成密钥对<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>每个 WireGuard 接口都需要一个私钥和公钥。<code>wg genkey</code>生成一个私钥，<code>wg pubkey</code>根据输入的私钥输出公钥。</p>
+<p>使用下面的命令生成密钥对：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>wg<span class="w"> </span>genkey<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>privatekey<span class="w"> </span><span class="p">|</span><span class="w"> </span>wg<span class="w"> </span>pubkey<span class="w"> </span>&gt;<span class="w"> </span>publickey
+</code></pre></div>
+<p>这将在当前目录下生成两个文件：<code>privatekey</code> 和 <code>publickey</code></p>
+<h3 id="_3">创建配置文件<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>这里以一个简单的场景为例，两台机器 A 和 B 进行组网。其中 A 有公网 ip，对应域名 <code>example.com</code></p>
+<p>A 的配置如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[Interface]
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Address = 10.0.0.1/24
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>ListenPort = 51820
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>PrivateKey = &lt;A的私钥&gt;
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>[Peer]
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>PublicKey = &lt;B的公钥&gt;
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>AllowedIPs = 10.0.0.4/32
+</code></pre></div>
+<p>B 的配置如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[Interface]
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Address = 10.0.0.4/24
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>PrivateKey = &lt;B的私钥&gt;
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>[Peer]
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>PublicKey = &lt;A的公钥&gt;
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Endpoint = example.com:51820
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>AllowedIPs = 10.0.11.0/24
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>PersistentKeepalive = 25
+</code></pre></div>
+<p>上述配置文件中，密钥的替换成密钥的<strong>文本</strong>，而不是密钥文件的路径。</p>
+<p>设备 A 的 VPN 内部 IP 地址设置为 <code>10.0.0.1</code>，设备 B 的 VPN 内部 IP 地址设置为 <code>10.0.0.4</code>，子网掩码为 24 位。</p>
+<p><code>PersistentKeepalive=25</code> 代表每 25 秒发送一个无实质数据的心跳包，用于在 NAT 或防火墙环境中保持连接活跃。</p>
+<p><code>AllowedIPs</code> 指定了可以通过 VPN 发送到哪些 IP 地址的数据。例如 <code>10.0.0.1/32</code> 表示只有目标为 <code>10.0.0.1</code> 的数据包可以通过 VPN 发送给对方。</p>
+<p>配置文件写到 <code>/etc/wireguard/&lt;配置名&gt;.conf</code> 中。例如：<code>/etc/wireguard/wg0.conf</code></p>
+<h3 id="wireguard_2">启动 WireGuard 接口<a class="headerlink" href="#wireguard_2" title="Permanent link">&para;</a></h3>
+<p>使用<code>wg-quick</code>工具启动 WireGuard 接口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>wg-quick<span class="w"> </span>up<span class="w"> </span>wg0
+</code></pre></div>
+<p>其中<code>wg0</code>是配置文件的名称，不带<code>.conf</code>后缀。</p>
+<h3 id="_4">检查接口状态<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>可以使用 wg 命令查看当前的 WireGuard 状态：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>wg
+</code></pre></div>
+<h3 id="wireguard_3">停止 WireGuard 接口<a class="headerlink" href="#wireguard_3" title="Permanent link">&para;</a></h3>
+<p>当不再需要时，可以使用以下命令停止接口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>wg-quick<span class="w"> </span>down<span class="w"> </span>wg0
+</code></pre></div>
 <!--
   Links to man pages
 
