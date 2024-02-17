@@ -16,7 +16,7 @@ QEMU（Quick Emulator）是一个开源的虚拟化软件，它通过动态二�
 
 ### KVM
 
-KVM（Kernel-based Virtual Machine）是一种基于 Linux 内核的开源虚拟化解决方案。KVM 将 Linux 转变成一个虚拟机监视器（Hypervisor）。它利用了现代处理器中的硬件虚拟化支持（例如 Intel VT 或 AMD-V），以实现高性能的虚拟化。它专注于以最小的开销在 Linux 上提供安全和隔离的虚拟环境，同时维持接近原生的性能。它向用户空间提供了虚拟 CPU 和内存子系统的配置和执行控制相关接口，但 KVM 不包含硬件模型，不能独立构成虚拟机。
+KVM（Kernel-based Virtual Machine）是一种基于 Linux 内核的开源虚拟化解决方案。KVM 将 Linux 转变成一个虚拟机监视器（Hypervisor）。它利用了现代处理器中的硬件虚拟化支持（例如 Intel VT-x 或 AMD-V），以实现高性能的虚拟化。它专注于以最小的开销在 Linux 上提供安全和隔离的虚拟环境，同时维持接近原生的性能。它向用户空间提供了虚拟 CPU 和内存子系统的配置和执行控制相关接口，但 KVM 不包含硬件模型，不能独立构成虚拟机。
 
 ### QEMU/KVM
 
