@@ -1851,7 +1851,7 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <h3 id="_5">实验操作展示<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <p>我们可以使用诸如 <code>fdisk</code>, <code>parted</code> 等工具对分区表进行操作。对于图形界面用户，<code>gparted</code> 是一个不错的选择。</p>
 <p>首先创建一个空文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">truncate -s 8G test.img</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>8G<span class="w"> </span>test.img
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">稀疏文件</p>
@@ -1863,9 +1863,9 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 </code></pre></div>
 </div>
 <p>之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="go">fdisk test.img</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp"># </span>或者
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">parted test.img</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>fdisk<span class="w"> </span>test.img
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">$ </span><span class="c1"># 或者</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">$ </span>parted<span class="w"> </span>test.img
 </code></pre></div>
 <p>以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根文件系统的分区。</p>
 <details class="info">
@@ -2106,7 +2106,7 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 此时如果扩充了文件系统的容量，那么 inode 的数量也会按比例增加。</p>
 <p>除此之外，ext4 默认的 5% 保留空间也是常会遇到的问题。这一部分保留空间仅允许 root 用户使用，以在磁盘空间不足时仍保证 root 权限的进程能够正常运行。
 但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 <code>tune2fs</code> 命令调整这一参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>tune2fs<span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>/dev/sda1<span class="w">  </span><span class="c1"># 将保留空间调整为 1%</span>
 </code></pre></div>
 <h3 id="btrfs">Btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
 <p>尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。
