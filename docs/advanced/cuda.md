@@ -24,11 +24,11 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
     - NCCL：多 GPU 和多节点上的集合通信的库。
 
-    - Thrust：类似于 C++标准模板库（`STL`）的并行算法库。
+    - Thrust：类似于 C++ 标准模板库（`STL`）的并行算法库。
 
-- CUDA Samples： 示例代码，涵盖了基本的`Hello World`程序到更复杂的应用程序。
+- CUDA Samples：示例代码，涵盖了基本的`Hello World`程序到更复杂的应用程序。
 
-- NVIDIA Nsight Tools： 集成开发环境和调试工具，用于帮助开发者优化 CUDA 应用程序的性能和可靠性。包括 `Nsight Eclipse Edition`、`Nsight Visual Studio Edition`、`Nsight Compute` 和 `Nsight Systems`。
+- NVIDIA Nsight Tools：集成开发环境和调试工具，用于帮助开发者优化 CUDA 应用程序的性能和可靠性。包括 `Nsight Eclipse Edition`、`Nsight Visual Studio Edition`、`Nsight Compute` 和 `Nsight Systems`。
 
 - CUDA Documentation：包括 API 参考、编程指南、最佳实践指南和其他技术资源等
 
@@ -36,7 +36,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 ### 硬件准备
 
-在开始之前，你需要确认显卡是否支持支持 CUDA 。在这里可以查看支持的列表：<https://developer.nvidia.com/CUDA-gpus>
+在开始之前，你需要确认显卡是否支持支持 CUDA。在这里可以查看支持的列表：<https://developer.nvidia.com/CUDA-gpus>
 
 表中的`Compute Capability`代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。
 
