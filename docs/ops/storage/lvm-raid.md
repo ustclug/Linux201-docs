@@ -620,12 +620,292 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
 
     <!-- TODO: 更详细的介绍 -->
 
-使用 `cachepool` 就麻烦很多。先把上面的 uncache 掉：
+如果不关心数据卷和元数据卷的细节，创建 `cachepool` 的体验也类似。先把上面的 uncache 掉：
 
 ```console
 $ sudo lvconvert --uncache vg201-test/lvdata
   Logical volume "lvdata_cache" successfully removed.
   Logical volume vg201-test/lvdata is not cached and vg201-test/lvdata_cache is removed.
 ```
+
+然后创建 **cache-pool 类型**的 LV，并且附加到后备设备上：
+
+```console
+$ sudo lvcreate --type cache-pool -n lvdata_cache -l 100%FREE vg201-test /dev/loop1
+  Logical volume "lvdata_cache" created.
+$ sudo lvs -a
+  LV                   VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvdata               vg201-test -wi-a----- <100.00g                                                    
+  lvdata_cache         vg201-test Cwi---C---    9.97g                                                    
+  [lvdata_cache_cdata] vg201-test Cwi-------    9.97g                                                    
+  [lvdata_cache_cmeta] vg201-test ewi-------   12.00m                                                    
+  [lvol0_pmspare]      vg201-test ewi-------   12.00m
+$ sudo lvconvert --type cache --cachepool lvdata_cache vg201-test/lvdata
+Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache? [y/n]: y
+  Logical volume vg201-test/lvdata is now cached.
+$ sudo lvs -a
+  LV                         VG         Attr       LSize    Pool                 Origin         Data%  Meta%  Move Log Cpy%Sync Convert
+  lvdata                     vg201-test Cwi-a-C--- <100.00g [lvdata_cache_cpool] [lvdata_corig] 0.01   11.07           0.00            
+  [lvdata_cache_cpool]       vg201-test Cwi---C---    9.97g                                     0.01   11.07           0.00            
+  [lvdata_cache_cpool_cdata] vg201-test Cwi-ao----    9.97g                                                                            
+  [lvdata_cache_cpool_cmeta] vg201-test ewi-ao----   12.00m                                                                            
+  [lvdata_corig]             vg201-test owi-aoC--- <100.00g                                                                            
+  [lvol0_pmspare]            vg201-test ewi-------   12.00m
+```
+
+可以发现，在 `lvcreate --type cache-pool` 的时候，LVM 会自动创建两个 LV：`lvdata_cache_cdata` 和 `lvdata_cache_cmeta`。
+但是更老一些的教程中会介绍分别手工创建缓存和元数据 LV 的内容。让我们先把这个再拆掉（uncache），然后手工做这个过程。
+
+根据 [RHEL 6 的文档](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/logical_volume_manager_administration/lvm_cache_volume_creation)，数据和元数据的推荐大小比例是 1000:1（例如如果有 2G 的缓存，那么就需要 12M 的元数据）。
+这里我们的 "SSD" 有 10G，因此大约需要 60M 的元数据，可以先创建元数据 LV，然后剩下的——全部给数据？
+
+```console
+$ sudo lvcreate -L 60M -n lvdata_cache_meta vg201-test /dev/loop1
+  Logical volume "lvdata_cache_meta" created.
+$ sudo lvcreate -l 100%FREE -n lvdata_cache_data vg201-test /dev/loop1
+  Logical volume "lvdata_cache_data" created.
+$ sudo lvconvert --type cache-pool --poolmetadata lvdata_cache_meta --cachemode writethrough vg201-test/lvdata_cache_data
+  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool's data and metadata volumes with metadata wiping.
+  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)
+Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y
+  Volume group "vg201-test" has insufficient free space (0 extents): 15 required.
+  Failed to set up spare metadata LV for pool.
+```
+
+可以看到还需要一些空间（15 个 extent），因此使用 `lvreduce` 留点出来：
+
+```console
+$ sudo lvreduce -l -15 vg201-test/lvdata_cache_data
+  No file system found on /dev/vg201-test/lvdata_cache_data.
+  Size of logical volume vg201-test/lvdata_cache_data changed from <9.94 GiB (2544 extents) to <9.88 GiB (2529 extents).
+  Logical volume vg201-test/lvdata_cache_data successfully resized.
+$ sudo lvconvert --type cache-pool --poolmetadata lvdata_cache_meta --cachemode writethrough vg201-test/lvdata_cache_data
+  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool's data and metadata volumes with metadata wiping.
+  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)
+Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y
+  Converted vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool.
+```
+
+之后就和上面一致了：
+
+```console
+$ sudo lvs -a
+  LV                        VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvdata                    vg201-test -wi-a----- <100.00g                                                    
+  lvdata_cache_data         vg201-test Cwi---C---   <9.88g                                                    
+  [lvdata_cache_data_cdata] vg201-test Cwi-------   <9.88g                                                    
+  [lvdata_cache_data_cmeta] vg201-test ewi-------   60.00m                                                    
+  [lvol0_pmspare]           vg201-test ewi-------   60.00m
+$ sudo lvconvert --type cache --cachepool lvdata_cache_data vg201-test/lvdata
+Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache_data? [y/n]: y
+  Logical volume vg201-test/lvdata is now cached.
+```
+
+#### Does lvmcache scale?
+
+现实中我们肯定不可能只用 10G 的 SSD 来做缓存，而在非家用的场景下，需要缓存的后备存储也不可能只有 100G 这么大。
+下面考虑一个类似于目前 mirrors 的场景：1.5T 的 SSD 空间对 65T 的 HDD 空间进行缓存（比例大约 1:45）。
+
+把已有的拆掉之后重新创建 1.5T（1536G）和 65T 的稀疏文件作为 SSD 和 HDD，加入 LVM，然后让我们试试 cachevol……
+
+```console
+$ sudo lvconvert --type cache --cachevol lvdata_cache vg201-test/lvdata
+Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
+  Cache data blocks 3219046400 and chunk size 128 exceed max chunks 1000000.
+  Use smaller cache, larger --chunksize or increase max chunks setting.
+```
+
+这里 cache 需要记录缓存数据的访问情况，记录的单位就是 chunk（需要是 32K 的倍数）。默认情况下，chunk 大小设置为 64KB。
+并且 LVM 推荐 chunk 不超过一百万个（这也是 allocation/cache_pool_max_chunks 设置的默认值）。
+换句话讲，如果保持默认设置，那么后备数据最大只能有 64KB * 1,000,000 ~= 64GB << 1.5T，这显然是不够的。
+
+直觉来讲，既然 chunk 推荐不超过一百万个，那就拉高 chunk size？但是需要考虑这两个问题：
+
+1. 如果访问的模式不那么连续，那么更大的 chunk size 就势必导致更多的数据在缓存和后备设备之间来回传输。（命中率降低）
+2. SSD 的写入量是有限制的。上面一点中提到的命中率降低的问题会导致更多的写入，最终导致 SSD 的寿命缩短。
+
+因此更好的选择是以（相对更能接受的）一些额外的 overhead 为代价，增加 chunk 数量。具体的「代价」在后续创建后，可以在内核日志里面看到：
+
+```log
+[2030783.641796] device-mapper: cache: You have created a cache device with a lot of individual cache blocks (12578624)
+                 All these mappings can consume a lot of kernel memory, and take some time to read/write.
+                 Please consider increasing the cache block size to reduce the overall cache block count.
+```
+
+考虑到在服务器场合，内存一般都是足够（甚至过量）的，因此唯一可能需要考虑的就是额外的延迟了。
+
+!!! comment "@taoky: 真实事件的教训"
+
+    最开始的时候，mirrors 的 chunk size 设置为了 1M，结果过了两年多就发现 SSD 快挂了。
+    查看统计发现 SSD 每小时读取 0.1T，但是写 1T 数据……
+
+    因为经历过 SSD 被 lvmcache 磨没的事件，所以我个人的看法是，
+    在 201 中，提及这一点（以及后面会介绍 lvmcache 还有其他的坑）是很重要的——有些方案放大规模之后，就会出现意想不到的问题。
+
+```console
+$ sudo lvconvert --type cache --cachevol lvdata_cache --config allocation/cache_pool_max_chunks=25148800 vg201-test/lvdata
+Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
+  WARNING: Configured cache_pool_max_chunks value 25148800 is higher then recommended 1000000.
+  Logical volume vg201-test/lvdata is now cached.
+```
+
+64K 也是目前 mirrors 机器使用的 chunk size。
+
+当然也可以把 chunk size 略微调大到 128K，这样的话 chunk 就少一些：
+
+```console
+$ sudo lvconvert --type cache --cachevol lvdata_cache --chunksize 128K --config allocation/cache_pool_max_chunks=12578624 vg201-test/lvdata
+Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
+  WARNING: Configured cache_pool_max_chunks value 12578624 is higher then recommended 1000000.
+  Logical volume vg201-test/lvdata is now cached.
+```
+
+可能需要进行一些性能测试来权衡 chunk size 带来的影响——考虑到本地测试时稀疏文件等因素，实际的性能测试可能需要在真实的环境中进行。
+例如，`fio` 工具可以对块设备测试读延迟等性能指标。
+
+<!-- TODO: 很明显，缺真实的延迟数据 -->
+
+??? note "使用 fio 测试随机读延迟的例子"
+
+    本部分参考了 [Oracle 的文档](https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm)。
+
+    一个只读情况下测试 10s `/dev/mapper/vg201--test-lvdata` 的 4K 随机读的例子如下：
+
+    ```console
+    $ sudo fio --filename=/dev/mapper/vg201--test-lvdata --direct=1 --rw=randread --bsudo fio --filename=/dev/mapper/vg201--test-lvdata --direct=1 --rw=randread --bs=4k --ioengine=libaio --iodepth=1 --numjobs=1 --time_based --group_reporting --name=readlatency-test-job --runtime=10 --eta-newline=1 --readonly
+    readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1
+    fio-3.36
+    Starting 1 process
+    fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.
+    fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.
+    Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]
+    Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] 
+    Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] 
+    Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] 
+    Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]
+    readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024
+    read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)
+        slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07
+        clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24
+        lat (usec): min=10, max=26564, avg=17.06, stdev=60.82
+        clat percentiles (usec):
+        |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],
+        | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],
+        | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],
+        | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],
+        | 99.99th=[  465]
+    bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19
+    iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19
+    lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
+    lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%
+    lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%
+    lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%
+    cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23
+    IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+        submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+        complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+        issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+        latency   : target=0, window=0, percentile=100.00%, depth=1
+
+    Run status group 0 (all jobs):
+    READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
+    ```
+
+#### Too dirty to use
+
+lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
+更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
+
+!!! note "lvmcache 的设计"
+
+    从前面的统计数据可以注意到，脏块的数量是一个指标。在 lvmcache 的设计中，存在出现模式为 writethrough 并且存在脏块的可能，所以目前程序上没有实现看到 writethrough 之后
+    就忽略脏块的问题。
+
+??? note "模拟出现这个问题的情况"
+
+    格式化我们刚才创建的有 cache 的 LV，使用 `fio` 上点压力：
+
+    ```console
+    $ sudo fio --filename=./test --filesize=2G --direct=1 --rw=randrw --bs=4k --ioengine=libaio --iodepth=256 --runtime=120 --numjobs=4 --time_based --group_reporting --name=job_name --eta-newline=1
+    ```
+
+    同时做切换 cachemode 的操作：
+
+    ```console
+    $ sudo lvchange --cachemode writeback vg201-test/lvdata
+      WARNING: repairing a damaged cachevol is not yet possible.
+      WARNING: cache mode writethrough is suggested for safe operation.
+    Continue using writeback without repair?y
+      Logical volume vg201-test/lvdata changed.
+    $ sudo lvchange --cachemode writethrough vg201-test/lvdata
+      Flushing 16401 blocks for cache vg201-test/lvdata.
+      Flushing 16405 blocks for cache vg201-test/lvdata.
+      Flushing 12309 blocks for cache vg201-test/lvdata.
+      Flushing 8213 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 6481 blocks for cache vg201-test/lvdata.
+      Flushing 2411 blocks for cache vg201-test/lvdata.
+      Logical volume vg201-test/lvdata changed.
+    ```
+
+    可以注意到卡在了 `Flushing 6481 blocks` 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。
+
+根据文档，`migration_threshold` 参数控制每次迁移脏块的扇区（512K）数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
+在调试问题时发现，修改这个值可以实现强制迁移（但是迁移时所有相关的 IO 操作都会暂停），脚本类似这样：
+
+```sh
+# dirty hack
+sudo lvchange --cachepolicy cleaner lug/repo
+for i in `seq 1 1500`; do sudo lvchange --cachesettings migration_threshold=2113536 lug/repo && sudo lvchange --cachesettings migration_threshold=16384 lug/repo && echo $i && sleep 15; done;
+# 需要确认没有脏块。如果还有的话继续执行（次数调小一些）
+# 如果是从 writeback 切换，需要先把模式切到 writethrough
+# 然后再修改 cachepolicy 到 smq
+sudo lvchange --cachepolicy smq lug/repo
+```
+
+我们目前的建议是在计划重启（维护窗口）前手动卸载缓存，在重启后再挂载。
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
