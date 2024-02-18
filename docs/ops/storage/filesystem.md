@@ -423,6 +423,89 @@ ext4 最常见的问题之一是 inode 的数量限制。
 sudo tune2fs -m 1 /dev/sda1  # 将保留空间调整为 1%
 ```
 
+### XFS
+
+> ArchWiki: XFS is a high-performance journaling file system created by Silicon Graphics, Inc. XFS is particularly proficient at parallel IO due to its allocation group based design. This enables extreme scalability of IO threads, filesystem bandwidth, file and filesystem size when spanning multiple storage devices.
+
+对于镜像站场景，XFS 是一个不错的选项，至少不需要去担心 inode 会不会用完的问题。
+
+以下介绍 XFS 的特色功能：基于项目（Project）的配额（Quota）。
+该功能可以实现文件夹大小统计，一个使用场景是：了解每个文件夹占用了多少空间，而不需要缓慢地遍历整个文件系统。
+ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用户或组的配额）。
+
+```console
+$ sudo truncate -s 8G xfs.img
+$ sudo mkfs.xfs xfs.img
+meta-data=xfs.img                isize=512    agcount=4, agsize=524288 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=1
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=1
+data     =                       bsize=4096   blocks=2097152, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+$ sudo mount -o prjquota xfs.img /media/xfs  # 需要在挂载时启用项目配额功能
+$ sudo mkdir /media/xfs/a /media/xfs/b /media/xfs/c
+```
+
+XFS 的项目配额功能配置位于 `/etc/projects` 与 `/etc/projid` 文件中。
+其中 `/etc/projects` 存储路径与项目 ID 的映射，而 `/etc/projid` 存储项目 ID 与项目名称的映射。
+
+对于上面创建的三个文件夹，我们可以编辑上述两个文件，分别创建配额：
+
+```console
+$ cat /etc/projects
+1:/media/xfs/a
+2:/media/xfs/b
+3:/media/xfs/c
+$ cat /etc/projid
+a:1
+b:2
+c:3
+```
+
+然后初始化项目（如果文件夹中已经有大量文件，那么需要一段时间初始化）：
+
+```console
+$ sudo xfs_quota -x -c 'project -s a'
+Setting up project a (path /media/xfs/a)...
+Processed 1 (/etc/projects and cmdline) paths for project a with recursion depth infinite (-1).
+$ sudo xfs_quota -x -c 'project -s b'
+Setting up project b (path /media/xfs/b)...
+Processed 1 (/etc/projects and cmdline) paths for project b with recursion depth infinite (-1).
+$ sudo xfs_quota -x -c 'project -s c'
+Setting up project c (path /media/xfs/c)...
+Processed 1 (/etc/projects and cmdline) paths for project c with recursion depth infinite (-1).
+```
+
+之后我们可以尝试向这些文件夹中写入文件，然后使用 `xfs_quota` 命令查看配额使用情况。
+
+```console
+$ sudo cp /etc/os-release /media/xfs/a/
+$ sudo xfs_quota -c 'df -h'
+Filesystem     Size   Used  Avail Use% Pathname
+/dev/loop4     7.9G 187.9M   7.8G   2% /media/xfs
+/dev/loop4     7.9G     4K   7.8G   0% /media/xfs/a
+/dev/loop4     7.9G      0   7.8G   0% /media/xfs/b
+/dev/loop4     7.9G      0   7.8G   0% /media/xfs/c
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /home
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /opt
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /tmp
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /var
+/dev/nvme0n1p3
+               1.8T   1.4T 400.9G  78% /var/lib/docker/btrfs
+```
+
+`xfs_quota` 的 `df` 也会输出其他文件系统的空间使用情况，忽略即可。
+
 ### Btrfs
 
 尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。

@@ -1024,6 +1024,8 @@ for i in `seq 1 1500`; do sudo lvchange --cachesettings migration_threshold=2113
 sudo lvchange --cachepolicy smq lug/repo
 ```
 
+在我们的配置下，写全部脏块操作（包括中间的 `sleep` 操作在内）需要大约 10 个小时。
+
 !!! danger "GRUB 可能无法处理自定义的 migration_threshold 等属性"
 
     参考 patch: <https://github.com/taoky/grub/commit/484b718831ab3ca034bb5ea3624a85efeb5bf2ba>。
