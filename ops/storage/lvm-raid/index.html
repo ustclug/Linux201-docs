@@ -2712,7 +2712,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </tr>
 <tr>
 <td>ZFS ARC + L2ARC</td>
-<td>/ (?)</td>
+<td>类似 writearound</td>
 <td>ARC</td>
 <td>ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低</td>
 <td><a href="https://github.com/openzfs/zfs/">随 ZFS 开发</a></td>
@@ -2728,7 +2728,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <td>Flashcache</td>
 <td>writethrough, writeback, writearound</td>
 <td>fifo, lru</td>
-<td>FackBook 开发的早期 SSD 缓存方案</td>
+<td>FaceBook 开发的早期 SSD 缓存方案</td>
 <td>☠️ <a href="https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100">7 年前</a></td>
 </tr>
 <tr>
@@ -2741,6 +2741,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </tbody>
 </table>
 <h3 id="_4">集群存储<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>LVM 支持多机共享存储。在这种场景下，集群中的服务器通过 iSCSI 等方式连接到同一台共享的存储，并且通过锁等机制实现集群内部的同步。</p>
 <!--
   Links to man pages
 
