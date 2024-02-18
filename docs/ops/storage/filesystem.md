@@ -370,6 +370,20 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 | HFS+                                            | 只读                                                   | :fontawesome-solid-check:{: .limegreen } | 只读，Bootcamp                           | macOS 较早期版本最常见的文件系统。                                                                                    |
 | APFS                                            | :fontawesome-solid-xmark:{: .orangered }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | macOS 较新版本的 CoW 文件系统。                                                                                       |
 
+!!! comment "@taoky: 关于 ReiserFS"
+
+    ReiserFS 其实有一个其他文件系统不能有效替代的优势：它是目前主线中唯一一个能够只使用几个 GB 的空间就能存储上千万个文件元数据的文件系统。
+    （作为对比，对于一百九十万个只有几个字节的文件，Reiserfs 只需要 325MB，而对比之下，即使是「针对小文件优化」的 Btrfs 也需要接近 1GB。）
+    这个场景在镜像站使用 [rsync-huai](https://github.com/tuna/rsync) 的时候就非常有用。
+    @shankerwangmiao 的 patch 使得 rsync 服务器可以分离元数据和文件实际的数据——此时元数据就可以存储在 SSD 或者内存盘上，
+    实际的文件存储在 HDD 上。由于 rsync 总是需要扫一遍文件来构建同步列表，因此这么做可以大大提升性能。
+
+    如果 Hans Reiser 没有犯下杀妻之罪的话，ReiserFS（或者后继者 Reiser4）很可能会成为 ext4 的强有力竞争者。但是很可惜，历史是不能做「如果」的。
+    虽然我有时候会想，如果我在 LKML 中讨论是否应该移除 ReiserFS 的时候，回复这样一个 use case，会不会有不同的结果？
+    即使 ReiserFS 目前还没有解决 2038 问题，之后也总能有办法解决——大不了重新格式化一次。
+
+    只是，对过去的事情做假设是没有意义的。至于 rsync-huai，可能得做一个基于数据库的版本，不过什么时候能够完成就不知道了。
+
 以下将关注在 Linux 服务器端常见的场景。表格中指向 ArchWiki 的链接也可能有所帮助。
 
 ### ext4

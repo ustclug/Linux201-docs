@@ -826,7 +826,7 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
 
-!!! note "最新的内核可能修复了此问题"
+!!! note "最新的内核可能修复了后一个问题"
 
     参见 <https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb>。
     根据该 commit 的描述，在 cleaner 状态下即使 IO idle 为 false，也会进行脏块迁移。
