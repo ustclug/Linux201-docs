@@ -1102,12 +1102,14 @@ $ sudo lvs -a
 | --- | --- | --- | --- | --- |
 | lvmcache | writethrough, writeback | smq | 与 LVM 集成的缓存方案，基于内核的 dm-cache | [7 个月前](https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb) |
 | bcache | writethrough, writeback, writearound | lru, fifo, random | 已在内核中的稳定 cache 方案 | [2 个月前](https://github.com/torvalds/linux/commit/105c1a5f6ccef7f52f9e76664407ef96218272eb) |
-| ZFS ARC + L2ARC | / (?) | ARC | ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低 | [随 ZFS 开发](https://github.com/openzfs/zfs/) |
+| ZFS ARC + L2ARC | 类似 writearound | ARC | ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低 | [随 ZFS 开发](https://github.com/openzfs/zfs/) |
 | EnhanceIO | readonly (writearound), writethrough, writeback | lru, fifo, random | 早期的 SSD 缓存方案 | ☠️ [9 年前](https://github.com/stec-inc/EnhanceIO/commit/104d4287f32da28f51efc5a451e62e4071322480) |
-| Flashcache | writethrough, writeback, writearound | fifo, lru | FackBook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
+| Flashcache | writethrough, writeback, writearound | fifo, lru | FaceBook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
 | [OpenCAS](https://open-cas.github.io/index.html) | writethrough, writeback, writearound, write-invalidate, write-only | lru (?) | SPDK 的一部分 | [3 个月前](https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8)  |
 
 ### 集群存储
+
+LVM 支持多机共享存储。在这种场景下，集群中的服务器通过 iSCSI 等方式连接到同一台共享的存储，并且通过锁等机制实现集群内部的同步。
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
 [^time]: Retrieved on 2024-02-18.
