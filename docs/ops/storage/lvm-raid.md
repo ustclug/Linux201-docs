@@ -545,7 +545,6 @@ Filesystem                       Size  Used Avail Use% Mounted on
 由于 ext4 文件系统不支持在线缩小，因此操作前必须卸载文件系统。
 这里我们把文件系统缩到最小，然后缩小 LV，最后再扩大文件系统：
 
-
 ```console
 $ sudo umount /somewhere/you/like
 $ sudo resize2fs -M /dev/vg201-test/lvraid0
@@ -1215,6 +1214,23 @@ $ sudo lvs -a
 ### 集群存储
 
 LVM 支持多机共享存储。在这种场景下，集群中的服务器通过 iSCSI 等方式连接到同一台共享的存储，并且通过锁等机制实现集群内部的同步。
+LVM 自带的 locking 机制为 `lvmlockd`，支持 `dlm`（需要配置 dlm 与 corosync 构建集群）和 `sanlock` 两种后端。
+
+不过很可惜的是，我们唯一使用到集群存储的地方是 Proxmox VE 虚拟机，而 PVE 使用的是另一套方案：
+PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部的全局锁，所有使用 PVE 工具修改存储的操作都会先获取这个全局锁。
+并且 PVE 不存在多台机器访问同一个 LV 的情况，因此这一套方案不依赖于 `lvmlockd`。
+
+!!! warning "确保所有访问 LVM 的机器在同一个 PVE 集群中"
+
+    否则在集群外的虚拟机创建等操作不会正确获取锁，导致**覆盖**已有的虚拟机磁盘。
+    相关故障案例见 <https://vlab.ibugone.com/servers/ct100/#%E6%95%85%E9%9A%9C>。
+
+!!! warning "LVM 集群不支持精简置备 LV"
+
+    在虚拟化场景下，一个常见的节省空间的做法是使用精简置备（thin-provisioned）的存储，
+    这么做可以在创建 LV 时只分配少量的空间，然后在需要的时候再分配更多的空间。
+    但是 LVM 集群不支持这种操作（因此每个虚拟机都要实打实地占用对应的空间）。
+    如果需要节约空间，可能需要考虑其他方案（例如部分企业级 SAN 支持类似于「虚拟地址」的功能，可以在需要的时候再分配空间）。
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
 [^time]: Retrieved on 2024-02-18.
