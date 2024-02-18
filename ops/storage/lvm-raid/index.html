@@ -682,7 +682,7 @@
           <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
-      缓存算法比较
+      缓存方案比较
     </span>
   </a>
   
@@ -690,6 +690,15 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      集群存储
+    </span>
+  </a>
   
 </li>
         
@@ -1616,7 +1625,7 @@
           <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
-      缓存算法比较
+      缓存方案比较
     </span>
   </a>
   
@@ -1624,6 +1633,15 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      集群存储
+    </span>
+  </a>
   
 </li>
         
@@ -2331,6 +2349,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">  Cache data blocks 3219046400 and chunk size 128 exceed max chunks 1000000.</span>
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">  Use smaller cache, larger --chunksize or increase max chunks setting.</span>
 </code></pre></div>
+<p>（这里显示的单位是扇区，即 512 字节）</p>
 <p>这里 cache 需要记录缓存数据的访问情况，记录的单位就是 chunk（需要是 32K 的倍数）。默认情况下，chunk 大小设置为 64KB。
 并且 LVM 推荐 chunk 不超过一百万个（这也是 allocation/cache_pool_max_chunks 设置的默认值）。
 换句话讲，如果保持默认设置，那么后备数据最大只能有 64KB * 1,000,000 ~= 64GB &lt;&lt; 1.5T，这显然是不够的。</p>
@@ -2411,9 +2430,15 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-24-37" name="__codelineno-24-37" href="#__codelineno-24-37"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
 </code></pre></div>
 </details>
+<p>此外，在 <code>lvconvert</code> 创建缓存时，如果 SSD 设备不支持 TRIM（常见的场景是在 RAID 卡后面），那么其会清零对应的块，这个过程可能会花费超过半个小时的时间。</p>
 <h4 id="too-dirty-to-use">Too dirty to use<a class="headerlink" href="#too-dirty-to-use" title="Permanent link">&para;</a></h4>
 <p>lvmcache 方案的一个无法忽视的弊端是：<strong>即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块</strong>。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。</p>
+<div class="admonition note">
+<p class="admonition-title">最新的内核可能修复了此问题</p>
+<p>参见 <a href="https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb">https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb</a>。
+根据该 commit 的描述，在 cleaner 状态下即使 IO idle 为 false，也会进行脏块迁移。</p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">lvmcache 的设计</p>
 <p>从前面的统计数据可以注意到，脏块的数量是一个指标。在 lvmcache 的设计中，存在出现模式为 writethrough 并且存在脏块的可能，所以目前程序上没有实现看到 writethrough 之后
@@ -2485,7 +2510,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </code></pre></div>
 <p>可以注意到卡在了 <code>Flushing 6481 blocks</code> 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。</p>
 </details>
-<p>根据文档，<code>migration_threshold</code> 参数控制每次迁移脏块的扇区（512K）数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
+<p>根据文档，<code>migration_threshold</code> 参数控制每次迁移脏块的扇区数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
 在调试问题时发现，修改这个值可以实现强制迁移（但是迁移时所有相关的 IO 操作都会暂停），脚本类似这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># dirty hack</span>
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachepolicy<span class="w"> </span>cleaner<span class="w"> </span>lug/repo
@@ -2657,7 +2682,65 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">  lvdata       vg201-test -wi-a----- &lt;65.00t                                                    </span>
 <a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="go">  lvdata_cache vg201-test -wi-a-----  &lt;1.50t</span>
 </code></pre></div>
-<h4 id="_3">缓存算法比较<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<h4 id="_3">缓存方案比较<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<p>作为 SSD 缓存部分的最后一小节，本部分以表格形式介绍已有的 SSD 缓存方案（包括已经不再维护的）。
+我们建议无论选择何种方案，都需要先测试其是否易于使用，是否会给运维操作带来额外的负担。</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>缓存模式</th>
+<th>缓存算法</th>
+<th>简介</th>
+<th>上次维护时间<sup id="fnref:time"><a class="footnote-ref" href="#fn:time">2</a></sup></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>lvmcache</td>
+<td>writethrough, writeback</td>
+<td>smq</td>
+<td>与 LVM 集成的缓存方案，基于内核的 dm-cache</td>
+<td><a href="https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb">7 个月前</a></td>
+</tr>
+<tr>
+<td>bcache</td>
+<td>writethrough, writeback, writearound</td>
+<td>lru, fifo, random</td>
+<td>已在内核中的稳定 cache 方案</td>
+<td><a href="https://github.com/torvalds/linux/commit/105c1a5f6ccef7f52f9e76664407ef96218272eb">2 个月前</a></td>
+</tr>
+<tr>
+<td>ZFS ARC + L2ARC</td>
+<td>/ (?)</td>
+<td>ARC</td>
+<td>ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低</td>
+<td><a href="https://github.com/openzfs/zfs/">随 ZFS 开发</a></td>
+</tr>
+<tr>
+<td>EnhanceIO</td>
+<td>readonly (writearound), writethrough, writeback</td>
+<td>lru, fifo, random</td>
+<td>早期的 SSD 缓存方案</td>
+<td>☠️ <a href="https://github.com/stec-inc/EnhanceIO/commit/104d4287f32da28f51efc5a451e62e4071322480">9 年前</a></td>
+</tr>
+<tr>
+<td>Flashcache</td>
+<td>writethrough, writeback, writearound</td>
+<td>fifo, lru</td>
+<td>FackBook 开发的早期 SSD 缓存方案</td>
+<td>☠️ <a href="https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100">7 年前</a></td>
+</tr>
+<tr>
+<td><a href="https://open-cas.github.io/index.html">OpenCAS</a></td>
+<td>writethrough, writeback, writearound, write-invalidate, write-only</td>
+<td>lru (?)</td>
+<td>SPDK 的一部分</td>
+<td><a href="https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8">3 个月前</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">集群存储<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <!--
   Links to man pages
 
@@ -2677,6 +2760,9 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <ol>
 <li id="fn:rhel-version">
 <p>推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。&#160;<a class="footnote-backref" href="#fnref:rhel-version" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:time">
+<p>Retrieved on 2024-02-18.&#160;<a class="footnote-backref" href="#fnref:time" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
