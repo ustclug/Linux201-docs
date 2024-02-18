@@ -631,6 +631,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#xfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      XFS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#btrfs" class="md-nav__link">
     <span class="md-ellipsis">
       Btrfs
@@ -1604,6 +1613,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#xfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      XFS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#btrfs" class="md-nav__link">
     <span class="md-ellipsis">
       Btrfs
@@ -2120,6 +2138,74 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 但是对于现代的大容量磁盘来说，这一部分空间可能会浪费很多。可以使用 <code>tune2fs</code> 命令调整这一参数：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo<span class="w"> </span>tune2fs<span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>/dev/sda1<span class="w">  </span><span class="c1"># 将保留空间调整为 1%</span>
 </code></pre></div>
+<h3 id="xfs">XFS<a class="headerlink" href="#xfs" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>ArchWiki: XFS is a high-performance journaling file system created by Silicon Graphics, Inc. XFS is particularly proficient at parallel IO due to its allocation group based design. This enables extreme scalability of IO threads, filesystem bandwidth, file and filesystem size when spanning multiple storage devices.</p>
+</blockquote>
+<p>对于镜像站场景，XFS 是一个不错的选项，至少不需要去担心 inode 会不会用完的问题。</p>
+<p>以下介绍 XFS 的特色功能：基于项目（Project）的配额（Quota）。
+该功能可以实现文件夹大小统计，一个使用场景是：了解每个文件夹占用了多少空间，而不需要缓慢地遍历整个文件系统。
+ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用户或组的配额）。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>truncate<span class="w"> </span>-s<span class="w"> </span>8G<span class="w"> </span>xfs.img
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>mkfs.xfs<span class="w"> </span>xfs.img
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">meta-data=xfs.img                isize=512    agcount=4, agsize=524288 blks</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">         =                       sectsz=512   attr=2, projid32bit=1</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">         =                       crc=1        finobt=1, sparse=1, rmapbt=1</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=1</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">data     =                       bsize=4096   blocks=2097152, imaxpct=25</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">         =                       sunit=0      swidth=0 blks</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">naming   =version 2              bsize=4096   ascii-ci=0, ftype=1</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="go">log      =internal log           bsize=4096   blocks=16384, version=2</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">         =                       sectsz=512   sunit=0 blks, lazy-count=1</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">realtime =none                   extsz=4096   blocks=0, rtextents=0</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span>prjquota<span class="w"> </span>xfs.img<span class="w"> </span>/media/xfs<span class="w">  </span><span class="c1"># 需要在挂载时启用项目配额功能</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>mkdir<span class="w"> </span>/media/xfs/a<span class="w"> </span>/media/xfs/b<span class="w"> </span>/media/xfs/c
+</code></pre></div>
+<p>XFS 的项目配额功能配置位于 <code>/etc/projects</code> 与 <code>/etc/projid</code> 文件中。
+其中 <code>/etc/projects</code> 存储路径与项目 ID 的映射，而 <code>/etc/projid</code> 存储项目 ID 与项目名称的映射。</p>
+<p>对于上面创建的三个文件夹，我们可以编辑上述两个文件，分别创建配额：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/projects
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">1:/media/xfs/a</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">2:/media/xfs/b</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">3:/media/xfs/c</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/projid
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">a:1</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">b:2</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">c:3</span>
+</code></pre></div>
+<p>然后初始化项目（如果文件夹中已经有大量文件，那么需要一段时间初始化）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>xfs_quota<span class="w"> </span>-x<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;project -s a&#39;</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">Setting up project a (path /media/xfs/a)...</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">Processed 1 (/etc/projects and cmdline) paths for project a with recursion depth infinite (-1).</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>xfs_quota<span class="w"> </span>-x<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;project -s b&#39;</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">Setting up project b (path /media/xfs/b)...</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">Processed 1 (/etc/projects and cmdline) paths for project b with recursion depth infinite (-1).</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>xfs_quota<span class="w"> </span>-x<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;project -s c&#39;</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">Setting up project c (path /media/xfs/c)...</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">Processed 1 (/etc/projects and cmdline) paths for project c with recursion depth infinite (-1).</span>
+</code></pre></div>
+<p>之后我们可以尝试向这些文件夹中写入文件，然后使用 <code>xfs_quota</code> 命令查看配额使用情况。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>cp<span class="w"> </span>/etc/os-release<span class="w"> </span>/media/xfs/a/
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>xfs_quota<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;df -h&#39;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">Filesystem     Size   Used  Avail Use% Pathname</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">/dev/loop4     7.9G 187.9M   7.8G   2% /media/xfs</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">/dev/loop4     7.9G     4K   7.8G   0% /media/xfs/a</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go">/dev/loop4     7.9G      0   7.8G   0% /media/xfs/b</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="go">/dev/loop4     7.9G      0   7.8G   0% /media/xfs/c</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="go">               1.8T   1.4T 400.9G  78% /</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="go">               1.8T   1.4T 400.9G  78% /home</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="go">               1.8T   1.4T 400.9G  78% /opt</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="go">               1.8T   1.4T 400.9G  78% /tmp</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="go">               1.8T   1.4T 400.9G  78% /var</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="go">/dev/nvme0n1p3</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="go">               1.8T   1.4T 400.9G  78% /var/lib/docker/btrfs</span>
+</code></pre></div>
+<p><code>xfs_quota</code> 的 <code>df</code> 也会输出其他文件系统的空间使用情况，忽略即可。</p>
 <h3 id="btrfs">Btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
 <p>尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。
 但是在许多年的开发后，Btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。</p>
@@ -2127,40 +2213,40 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 <p>Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」。与目录不同，Subvolume 是独立的，可以有自己的挂载点。
 同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。</p>
 <p>我们可以来试一试：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>8G<span class="w"> </span>btrfs.img
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">$ </span>mkfs.btrfs<span class="w"> </span>btrfs.img
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">（输出省略）</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>show<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 可以使用 btrfs 工具管理 Btrfs 文件系统</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">Label: none  uuid: 5cdcf4bb-8020-45f9-8dfd-95e04a2a2bc1</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">    Total devices 1 FS bytes used 144.00KiB</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">    devid    1 size 8.00GiB used 536.00MiB path /dev/loop0</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">$ </span><span class="c1"># btrfs 工具也可以管理离线的 btrfs 块设备</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="gp">$ </span><span class="c1"># 接下来创建一些 subvolume</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol1
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol1&#39;</span>
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol2
-<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol2&#39;</span>
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol3
-<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol3&#39;</span>
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>list<span class="w"> </span>/media/btrfs
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="go">ID 256 gen 8 top level 5 path subvol1</span>
-<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="go">ID 257 gen 8 top level 5 path subvol2</span>
-<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="go">ID 258 gen 8 top level 5 path subvol3</span>
-<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="gp">$ </span>ls<span class="w"> </span>-lh<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 看起来和普通目录没什么区别</span>
-<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="go">total 0</span>
-<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol1/</span>
-<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol2/</span>
-<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol3/</span>
-<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
-<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvol</span><span class="o">=</span>subvol1<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs1<span class="w">  </span><span class="c1"># 挂载 subvol1</span>
-<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvol</span><span class="o">=</span>subvol2<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs2<span class="w">  </span><span class="c1"># 挂载 subvol2</span>
-<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>btrfs.img
-<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="go">/path/to/btrfs.img on /media/btrfs1 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/subvol1)</span>
-<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="go">/path/to/btrfs.img on /media/btrfs2 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=257,subvol=/subvol2)</span>
-<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs1
-<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>8G<span class="w"> </span>btrfs.img
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="gp">$ </span>mkfs.btrfs<span class="w"> </span>btrfs.img
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">（输出省略）</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>show<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 可以使用 btrfs 工具管理 Btrfs 文件系统</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">Label: none  uuid: 5cdcf4bb-8020-45f9-8dfd-95e04a2a2bc1</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">    Total devices 1 FS bytes used 144.00KiB</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">    devid    1 size 8.00GiB used 536.00MiB path /dev/loop0</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="gp">$ </span><span class="c1"># btrfs 工具也可以管理离线的 btrfs 块设备</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="gp">$ </span><span class="c1"># 接下来创建一些 subvolume</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol1
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol1&#39;</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol2
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol2&#39;</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol3
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="go">Create subvolume &#39;/media/btrfs/subvol3&#39;</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>list<span class="w"> </span>/media/btrfs
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="go">ID 256 gen 8 top level 5 path subvol1</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="go">ID 257 gen 8 top level 5 path subvol2</span>
+<a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="go">ID 258 gen 8 top level 5 path subvol3</span>
+<a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a><span class="gp">$ </span>ls<span class="w"> </span>-lh<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 看起来和普通目录没什么区别</span>
+<a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a><span class="go">total 0</span>
+<a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol1/</span>
+<a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol2/</span>
+<a id="__codelineno-18-26" name="__codelineno-18-26" href="#__codelineno-18-26"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol3/</span>
+<a id="__codelineno-18-27" name="__codelineno-18-27" href="#__codelineno-18-27"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
+<a id="__codelineno-18-28" name="__codelineno-18-28" href="#__codelineno-18-28"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvol</span><span class="o">=</span>subvol1<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs1<span class="w">  </span><span class="c1"># 挂载 subvol1</span>
+<a id="__codelineno-18-29" name="__codelineno-18-29" href="#__codelineno-18-29"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvol</span><span class="o">=</span>subvol2<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs2<span class="w">  </span><span class="c1"># 挂载 subvol2</span>
+<a id="__codelineno-18-30" name="__codelineno-18-30" href="#__codelineno-18-30"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>btrfs.img
+<a id="__codelineno-18-31" name="__codelineno-18-31" href="#__codelineno-18-31"></a><span class="go">/path/to/btrfs.img on /media/btrfs1 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=256,subvol=/subvol1)</span>
+<a id="__codelineno-18-32" name="__codelineno-18-32" href="#__codelineno-18-32"></a><span class="go">/path/to/btrfs.img on /media/btrfs2 type btrfs (rw,relatime,ssd,discard=async,space_cache=v2,subvolid=257,subvol=/subvol2)</span>
+<a id="__codelineno-18-33" name="__codelineno-18-33" href="#__codelineno-18-33"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs1
+<a id="__codelineno-18-34" name="__codelineno-18-34" href="#__codelineno-18-34"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs2
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Subvolume 的挂载参数</p>
@@ -2169,22 +2255,22 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 </div>
 <h4 id="_7">快照<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h4>
 <p>在 subvolume 的基础上，Btrfs 支持了快照功能。这里的快照可能与我们熟悉的「快照」（例如虚拟机软件的快照功能）有所不同，它本质上就是和其他 subvolume 共享数据的 subvolume。让我们试一试吧：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 挂载整个文件系统</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test1&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># 可能需要 root 权限</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>snapshot<span class="w"> </span>/media/btrfs/subvol1<span class="w"> </span>/media/btrfs/snap1<span class="w">  </span><span class="c1"># 创建快照</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">Create a snapshot of &#39;/media/btrfs/subvol1/&#39; in &#39;/media/btrfs/snap1&#39;</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp">$ </span><span class="c1"># 此时 snap1 和 subvol1 共享数据——存储的是目前 subvol1 的内容</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/snap1/test
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">test1</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test2&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># 修改 subvol1</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/snap1/test<span class="w">  </span><span class="c1"># snap1 不受影响</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">test1</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test3&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/snap1/test<span class="w">  </span><span class="c1"># 修改 snap1</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># subvol1 不受影响</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">test2</span>
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>delete<span class="w"> </span>/media/btrfs/snap1<span class="w">  </span><span class="c1"># 删除快照</span>
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="go">Delete subvolume 259 (no-commit): &#39;/media/btrfs/snap1&#39;</span>
-<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 挂载整个文件系统</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test1&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># 可能需要 root 权限</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>snapshot<span class="w"> </span>/media/btrfs/subvol1<span class="w"> </span>/media/btrfs/snap1<span class="w">  </span><span class="c1"># 创建快照</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="go">Create a snapshot of &#39;/media/btrfs/subvol1/&#39; in &#39;/media/btrfs/snap1&#39;</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="gp">$ </span><span class="c1"># 此时 snap1 和 subvol1 共享数据——存储的是目前 subvol1 的内容</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/snap1/test
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="go">test1</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test2&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># 修改 subvol1</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/snap1/test<span class="w">  </span><span class="c1"># snap1 不受影响</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="go">test1</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test3&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/snap1/test<span class="w">  </span><span class="c1"># 修改 snap1</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="gp">$ </span>cat<span class="w"> </span>/media/btrfs/subvol1/test<span class="w">  </span><span class="c1"># subvol1 不受影响</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="go">test2</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>delete<span class="w"> </span>/media/btrfs/snap1<span class="w">  </span><span class="c1"># 删除快照</span>
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a><span class="go">Delete subvolume 259 (no-commit): &#39;/media/btrfs/snap1&#39;</span>
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 </code></pre></div>
 <p>这里我们可以修改「快照」的内容，在 CoW 文件系统中，修改共享的内容会被复制，而未修改的内容会被共享。
 不过很多时候我们不希望快照可写，在创建快照时可以加上 <code>-r</code> 参数。</p>
@@ -2193,13 +2279,13 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 这也是许多 Btrfs 用户会开启的挂载选项。
 Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p>
 <p>以下是一个启用了 Btrfs 透明压缩（<code>compress=zstd:3</code>）的桌面用户，在 <code>/home</code> 这个 subvolume 下的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>compsize<span class="w"> </span>/home
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">Processed 4429337 files, 5827189 regular extents (6428918 refs), 2327200 inline.</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">Type       Perc     Disk Usage   Uncompressed Referenced  </span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">TOTAL       78%     1017G         1.2T         1.3T       </span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">none       100%      911G         911G         918G       </span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">zstd        27%      105G         384G         413G       </span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">prealloc   100%      643M         643M         1.0G</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>compsize<span class="w"> </span>/home
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">Processed 4429337 files, 5827189 regular extents (6428918 refs), 2327200 inline.</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">Type       Perc     Disk Usage   Uncompressed Referenced  </span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">TOTAL       78%     1017G         1.2T         1.3T       </span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">none       100%      911G         911G         918G       </span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">zstd        27%      105G         384G         413G       </span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">prealloc   100%      643M         643M         1.0G</span>
 </code></pre></div>
 <p>可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。</p>
 <h4 id="_9">常见问题<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h4>
@@ -2207,36 +2293,36 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <dt>Balance</dt>
 <dd>
 <p>一个常见的问题是：明明还有剩余空间，但是已经无法写入数据了。简单来说，这是因为 Btrfs 内部存储分为数据（Data）和元数据（Metadata）等部分，当两者任一已满，并且没有未分配（Unallocated）的空间，那么就无法再写入数据了。这可以通过执行 <code>btrfs filesystem usage</code> 判断：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>usage<span class="w"> </span>/
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">Overall:</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">    Device size:           1.81TiB</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">    Device allocated:          1.66TiB</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">    Device unallocated:      156.45GiB</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go">    Device missing:          0.00B</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="go">    Device slack:            0.00B</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="go">    Used:              1.39TiB</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="go">    Free (estimated):        414.79GiB  (min: 336.57GiB)</span>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="go">    Free (statfs, df):       414.79GiB</span>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="go">    Data ratio:               1.00</span>
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="go">    Metadata ratio:           2.00</span>
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="go">    Global reserve:      512.00MiB  (used: 0.00B)</span>
-<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="go">    Multiple profiles:              no</span>
-<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>
-<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="go">Data,single: Size:1.62TiB, Used:1.37TiB (84.43%)</span>
-<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="go">/dev/nvme0n1p3     1.62TiB</span>
-<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>
-<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="go">Metadata,DUP: Size:18.00GiB, Used:11.54GiB (64.13%)</span>
-<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="go">/dev/nvme0n1p3    36.00GiB</span>
-<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>
-<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="go">System,DUP: Size:8.00MiB, Used:208.00KiB (2.54%)</span>
-<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a><span class="go">/dev/nvme0n1p3    16.00MiB</span>
-<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>
-<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="go">Unallocated:</span>
-<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="go">/dev/nvme0n1p3   156.45GiB</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>usage<span class="w"> </span>/
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">Overall:</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">    Device size:           1.81TiB</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">    Device allocated:          1.66TiB</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">    Device unallocated:      156.45GiB</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">    Device missing:          0.00B</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="go">    Device slack:            0.00B</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="go">    Used:              1.39TiB</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="go">    Free (estimated):        414.79GiB  (min: 336.57GiB)</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="go">    Free (statfs, df):       414.79GiB</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="go">    Data ratio:               1.00</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="go">    Metadata ratio:           2.00</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="go">    Global reserve:      512.00MiB  (used: 0.00B)</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="go">    Multiple profiles:              no</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="go">Data,single: Size:1.62TiB, Used:1.37TiB (84.43%)</span>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="go">/dev/nvme0n1p3     1.62TiB</span>
+<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a>
+<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a><span class="go">Metadata,DUP: Size:18.00GiB, Used:11.54GiB (64.13%)</span>
+<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="go">/dev/nvme0n1p3    36.00GiB</span>
+<a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a>
+<a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a><span class="go">System,DUP: Size:8.00MiB, Used:208.00KiB (2.54%)</span>
+<a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a><span class="go">/dev/nvme0n1p3    16.00MiB</span>
+<a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a>
+<a id="__codelineno-21-25" name="__codelineno-21-25" href="#__codelineno-21-25"></a><span class="go">Unallocated:</span>
+<a id="__codelineno-21-26" name="__codelineno-21-26" href="#__codelineno-21-26"></a><span class="go">/dev/nvme0n1p3   156.45GiB</span>
 </code></pre></div>
 <p>除了直接删除文件以外，使用 <code>truncate</code> 将大文件的大小截断为 0 可以在不添加 metadata 信息的情况下释放空间。
 如果 metadata 已满，但是 data 仍有空间，可以使用 balance 功能重新分配空间：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>balance<span class="w"> </span>start<span class="w"> </span>/mountpoint<span class="w"> </span>-dusage<span class="o">=</span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>balance<span class="w"> </span>start<span class="w"> </span>/mountpoint<span class="w"> </span>-dusage<span class="o">=</span><span class="m">0</span>
 </code></pre></div>
 <p><code>-dusage=0</code> 代表将 data 中没有使用（使用率为 0%）的空间释放。视情况，有可能需要增大 <code>-dusage</code> 参数的值。</p>
 </dd>
