@@ -75,6 +75,7 @@ total 0
 crw------- 1 root root 10, 236 Feb 11 13:30 control
 lrwxrwxrwx 1 root root       7 Feb 12 00:09 vg201--test-lvol0 -> ../dm-0
 $ # /dev/mapper/vg201--test-lvol0 就是我们创建的逻辑卷（块设备），可以在上面创建文件系统。
+$ # 对应的设备文件也可以在 /dev/vg201-test/ 里面找到
 $ sudo lvchange -an vg201-test/lvol0  # 取消激活 (disactivate) 刚才创建的逻辑卷
 $ sudo lvs
   LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
@@ -482,6 +483,109 @@ $ sudo lvs -o +raid_sync_action,raid_mismatch_count
     LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。
 
     这项功能不是 scrub 的替代品。
+
+### 扩容/缩小操作
+
+LVM 支持在线扩容/缩小逻辑卷，有三个相关命令：`lvextend`（扩大）、`lvreduce`（缩小）、`lvresize`（通用）。
+让我们先在 lvraid0 上创建一个 ext4 文件系统并挂载，模拟在线场景：
+
+```console
+$ sudo mkfs.ext4 /dev/vg201-test/lvraid0
+mke2fs 1.47.0 (5-Feb-2023)
+Discarding device blocks: done                            
+Creating filesystem with 132096 4k blocks and 33040 inodes
+Filesystem UUID: 49e73c33-1ea2-43fa-8609-586389a11b98
+Superblock backups stored on blocks: 
+	32768, 98304
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+$ sudo mount /dev/vg201-test/lvraid0 /somewhere/you/like
+$ df -h /somewhere/you/like
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/mapper/vg201--test-lvraid0  492M  152K  455M   1% /somewhere/you/like
+```
+
+下面展示 `lvextend` 和 `lvreduce`。`lvresize` 的操作可以自行查阅。
+
+```console
+$ sudo lvextend --size +100M /dev/vg201-test/lvraid0
+  Using stripesize of last segment 64.00 KiB
+  Rounding size (154 extents) up to stripe boundary size for segment (156 extents).
+  Size of logical volume vg201-test/lvraid0 changed from 516.00 MiB (129 extents) to 624.00 MiB (156 extents).
+  Logical volume vg201-test/lvraid0 successfully resized.
+```
+
+此时 `lvraid0` 这个 LV 已经增大了 100M，但是文件系统并没有感知到这个变化：
+
+```console
+$ df -h /somewhere/you/like
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/mapper/vg201--test-lvraid0  492M  152K  455M   1% /somewhere/you/like
+```
+
+因此我们需要用文件系统提供的工具扩容。ext4 支持使用 `resize2fs` 在线扩容/缩小：
+
+```console
+$ sudo resize2fs /dev/vg201-test/lvraid0
+resize2fs 1.47.0 (5-Feb-2023)
+Filesystem at /dev/vg201-test/lvraid0 is mounted on /home/taoky/tmp/mountpoint; on-line resizing required
+old_desc_blocks = 1, new_desc_blocks = 1
+The filesystem on /dev/vg201-test/lvraid0 is now 159744 (4k) blocks long.
+
+$ df -h /somewhere/you/like
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/mapper/vg201--test-lvraid0  600M  152K  563M   1% /somewhere/you/like
+```
+
+缩小操作的顺序刚好相反：**需要先缩小文件系统，再缩小 LV**。
+否则文件系统被缩小的部分会丢失，导致文件系统损坏。
+由于 ext4 文件系统不支持在线缩小，因此操作前必须卸载文件系统。
+这里我们把文件系统缩到最小，然后缩小 LV，最后再扩大文件系统：
+
+
+```console
+$ sudo umount /somewhere/you/like
+$ sudo resize2fs -M /dev/vg201-test/lvraid0
+resize2fs 1.47.0 (5-Feb-2023)
+Please run 'e2fsck -f /dev/vg201-test/lvraid0' first.
+
+$ # 在缩小前，保险起见，需要先检查文件系统的完整性
+$ sudo e2fsck -f /dev/vg201-test/lvraid0
+e2fsck 1.47.0 (5-Feb-2023)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+/dev/vg201-test/lvraid0: 12/33040 files (0.0% non-contiguous), 6407/159744 blocks
+$ sudo resize2fs -M /dev/vg201-test/lvraid0
+resize2fs 1.47.0 (5-Feb-2023)
+Resizing the filesystem on /dev/vg201-test/lvraid0 to 6420 (4k) blocks.
+The filesystem on /dev/vg201-test/lvraid0 is now 6420 (4k) blocks long.
+
+$ # 现在缩小 LV
+$ sudo lvreduce --size -100M /dev/vg201-test/lvraid0
+  Rounding size (131 extents) up to stripe boundary size for segment (132 extents).
+  File system ext4 found on vg201-test/lvraid0.
+  File system size (<25.08 MiB) is smaller than the requested size (528.00 MiB).
+  File system reduce is not needed, skipping.
+  Size of logical volume vg201-test/lvraid0 changed from 624.00 MiB (156 extents) to 528.00 MiB (132 extents).
+  Logical volume vg201-test/lvraid0 successfully resized.
+$ sudo resize2fs /dev/vg201-test/lvraid0
+resize2fs 1.47.0 (5-Feb-2023)
+Resizing the filesystem on /dev/vg201-test/lvraid0 to 135168 (4k) blocks.
+The filesystem on /dev/vg201-test/lvraid0 is now 135168 (4k) blocks long.
+
+$ sudo mount /dev/vg201-test/lvraid0 /somewhere/you/like
+$ df -h /somewhere/you/like
+Filesystem                       Size  Used Avail Use% Mounted on
+/dev/mapper/vg201--test-lvraid0  504M  152K  471M   1% /somewhere/you/like
+```
+
+对于支持的文件系统，`lvreduce` 会检查文件系统的大小，避免数据损坏。但在操作时仍然需要谨慎。
 
 ### SSD 缓存
 
@@ -1106,6 +1210,7 @@ $ sudo lvs -a
 | EnhanceIO | readonly (writearound), writethrough, writeback | lru, fifo, random | 早期的 SSD 缓存方案 | ☠️ [9 年前](https://github.com/stec-inc/EnhanceIO/commit/104d4287f32da28f51efc5a451e62e4071322480) |
 | Flashcache | writethrough, writeback, writearound | fifo, lru | FaceBook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
 | [OpenCAS](https://open-cas.github.io/index.html) | writethrough, writeback, writearound, write-invalidate, write-only | lru (?) | SPDK 的一部分 | [3 个月前](https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8)  |
+| bcachefs | writethrough, writeback, writearound | lru[^bcachefs-principles] | 由 bcache 作者开发的新 CoW 文件系统，内置 SSD 缓存支持 | [活跃开发](https://evilpiepirate.org/git/bcachefs.git) |
 
 ### 集群存储
 
@@ -1113,3 +1218,4 @@ LVM 支持多机共享存储。在这种场景下，集群中的服务器通过 
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
 [^time]: Retrieved on 2024-02-18.
+[^bcachefs-principles]: "Buckets containing only cached data are discarded as needed by the allocator in LRU order" ([bcachefs: Principles of Operation](https://bcachefs.org/bcachefs-principles-of-operation.pdf) 2.2.4)
