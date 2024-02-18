@@ -2082,7 +2082,7 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <div class="admonition comment">
 <p class="admonition-title">@taoky: 关于 ReiserFS</p>
 <p>ReiserFS 其实有一个其他文件系统不能有效替代的优势：它是目前主线中唯一一个能够只使用几个 GB 的空间就能存储上千万个文件元数据的文件系统。
-（作为对比，对于一百九十万个只有几个字节的文件，Reiserfs 只需要 325MB，而对比之下，即使是「针对小文件优化」的 Btrfs 也需要接近 1GB。）
+（例如，对于一百九十万个只有几个字节的文件，Reiserfs 只需要 325MB，而对比之下，即使是「针对小文件优化」的 Btrfs 也需要接近 1GB。）
 这个场景在镜像站使用 <a href="https://github.com/tuna/rsync">rsync-huai</a> 的时候就非常有用。
 @shankerwangmiao 的 patch 使得 rsync 服务器可以分离元数据和文件实际的数据——此时元数据就可以存储在 SSD 或者内存盘上，
 实际的文件存储在 HDD 上。由于 rsync 总是需要扫一遍文件来构建同步列表，因此这么做可以大大提升性能。</p>
