@@ -545,7 +545,6 @@ Filesystem                       Size  Used Avail Use% Mounted on
 由于 ext4 文件系统不支持在线缩小，因此操作前必须卸载文件系统。
 这里我们把文件系统缩到最小，然后缩小 LV，最后再扩大文件系统：
 
-
 ```console
 $ sudo umount /somewhere/you/like
 $ sudo resize2fs -M /dev/vg201-test/lvraid0
