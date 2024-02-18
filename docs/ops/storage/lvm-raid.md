@@ -721,6 +721,8 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
   Use smaller cache, larger --chunksize or increase max chunks setting.
 ```
 
+（这里显示的单位是扇区，即 512 字节）
+
 这里 cache 需要记录缓存数据的访问情况，记录的单位就是 chunk（需要是 32K 的倍数）。默认情况下，chunk 大小设置为 64KB。
 并且 LVM 推荐 chunk 不超过一百万个（这也是 allocation/cache_pool_max_chunks 设置的默认值）。
 换句话讲，如果保持默认设置，那么后备数据最大只能有 64KB * 1,000,000 ~= 64GB << 1.5T，这显然是不够的。
@@ -817,10 +819,17 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
     READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
     ```
 
+此外，在 `lvconvert` 创建缓存时，如果 SSD 设备不支持 TRIM（常见的场景是在 RAID 卡后面），那么其会清零对应的块，这个过程可能会花费超过半个小时的时间。
+
 #### Too dirty to use
 
 lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
+
+!!! note "最新的内核可能修复了此问题"
+
+    参见 <https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb>。
+    根据该 commit 的描述，在 cleaner 状态下即使 IO idle 为 false，也会进行脏块迁移。
 
 !!! note "lvmcache 的设计"
 
@@ -899,7 +908,7 @@ lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 write
 
     可以注意到卡在了 `Flushing 6481 blocks` 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。
 
-根据文档，`migration_threshold` 参数控制每次迁移脏块的扇区（512K）数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
+根据文档，`migration_threshold` 参数控制每次迁移脏块的扇区数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
 在调试问题时发现，修改这个值可以实现强制迁移（但是迁移时所有相关的 IO 操作都会暂停），脚本类似这样：
 
 ```sh
@@ -1084,6 +1093,21 @@ $ sudo lvs -a
   lvdata_cache vg201-test -wi-a-----  <1.50t
 ```
 
-#### 缓存算法比较
+#### 缓存方案比较
+
+作为 SSD 缓存部分的最后一小节，本部分以表格形式介绍已有的 SSD 缓存方案（包括已经不再维护的）。
+我们建议无论选择何种方案，都需要先测试其是否易于使用，是否会给运维操作带来额外的负担。
+
+| 方案 | 缓存模式 | 缓存算法 | 简介 | 上次维护时间[^time] |
+| --- | --- | --- | --- | --- |
+| lvmcache | writethrough, writeback | smq | 与 LVM 集成的缓存方案，基于内核的 dm-cache | [7 个月前](https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb) |
+| bcache | writethrough, writeback, writearound | lru, fifo, random | 已在内核中的稳定 cache 方案 | [2 个月前](https://github.com/torvalds/linux/commit/105c1a5f6ccef7f52f9e76664407ef96218272eb) |
+| ZFS ARC + L2ARC | / (?) | ARC | ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低 | [随 ZFS 开发](https://github.com/openzfs/zfs/) |
+| EnhanceIO | readonly (writearound), writethrough, writeback | lru, fifo, random | 早期的 SSD 缓存方案 | ☠️ [9 年前](https://github.com/stec-inc/EnhanceIO/commit/104d4287f32da28f51efc5a451e62e4071322480) |
+| Flashcache | writethrough, writeback, writearound | fifo, lru | FackBook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
+| [OpenCAS](https://open-cas.github.io/index.html) | writethrough, writeback, writearound, write-invalidate, write-only | lru (?) | SPDK 的一部分 | [3 个月前](https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8)  |
+
+### 集群存储
 
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
+[^time]: Retrieved on 2024-02-18.
