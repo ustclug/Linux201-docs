@@ -1207,7 +1207,7 @@ $ sudo lvs -a
 | bcache | writethrough, writeback, writearound | lru, fifo, random | 已在内核中的稳定 cache 方案 | [2 个月前](https://github.com/torvalds/linux/commit/105c1a5f6ccef7f52f9e76664407ef96218272eb) |
 | ZFS ARC + L2ARC | 类似 writearound | ARC | ZFS 自带的缓存。ARC 以内存为缓存；L2ARC 作为第二级缓存，使用 SSD，用于在高负载情况下支撑 IOPS，命中率较低 | [随 ZFS 开发](https://github.com/openzfs/zfs/) |
 | EnhanceIO | readonly (writearound), writethrough, writeback | lru, fifo, random | 早期的 SSD 缓存方案 | ☠️ [9 年前](https://github.com/stec-inc/EnhanceIO/commit/104d4287f32da28f51efc5a451e62e4071322480) |
-| Flashcache | writethrough, writeback, writearound | fifo, lru | FaceBook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
+| Flashcache | writethrough, writeback, writearound | fifo, lru | Facebook 开发的早期 SSD 缓存方案 | ☠️ [7 年前](https://github.com/facebookarchive/flashcache/commit/437afbfe233e94589948b76743c6489080cdd100) |
 | [OpenCAS](https://open-cas.github.io/index.html) | writethrough, writeback, writearound, write-invalidate, write-only | lru (?) | SPDK 的一部分 | [3 个月前](https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8)  |
 | bcachefs | writethrough, writeback, writearound | lru[^bcachefs-principles] | 由 bcache 作者开发的新 CoW 文件系统，内置 SSD 缓存支持 | [活跃开发](https://evilpiepirate.org/git/bcachefs.git) |
 

@@ -9,7 +9,7 @@ import material
 CUSTOM_ADMONITIONS = {
     "comment": {
         "icon": "material/comment",
-        "rgb": [43, 155, 70],
+        "rgb": [0x00, 0xC8, 0x53],
     },
 }
 
