@@ -1,10 +1,8 @@
-# LVM 与 RAID
+# LVM
 
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
-本文将介绍 LVM，以及常见的 RAID 方案的使用与维护。
-
-## LVM
+本文将介绍常见 LVM 特性的使用与维护。
 
 LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核的 device mapper（dm）功能。
 相比于直接在创建分区表后使用分区，LVM 提供了更加灵活的存储管理方式：
@@ -19,7 +17,7 @@ LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核
 
     LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。
 
-### 基础概念
+## 基础概念
 
 LVM 中有三个基本概念：
 
@@ -135,7 +133,7 @@ $ sudo lvs
 
     LVM 也提供了创建 RAID 0 逻辑卷的功能，被称为「条带化」（Striped）卷，上面默认生成的被称为「线性」（Linear）卷。
 
-### 创建 RAID
+## 创建 RAID
 
 !!! warning "不建议使用 LVM 构建 RAID"
 
@@ -284,9 +282,9 @@ $ sudo lvs -a -o +devices vg201-test
     - mimage: "mirrored image"，数据写入时，会向每个关联的 mimage 写入数据
     - mlog: 存储了 RAID 1 的盘之间的同步状态信息
 
-### RAID 维护
+## RAID 维护
 
-#### RAID 状态与重建
+### RAID 状态与重建
 
 正常情况下，`lvs` 返回的 RAID 1/5/6 设备的 "Cpy%Sync" 应该是 100.00，表示数据已经同步到所有盘上。
 并且 `health_status` 属性应该为空。这里模拟强制删除一块盘的情况：
@@ -433,7 +431,7 @@ $ sudo lvs -a -o name,copy_percent,health_status,devices vg201-test
   [lvraid5_rmeta_2]                           /dev/loop3(129)
 ```
 
-#### 完整性检查
+### 完整性检查
 
 即使正常运行，RAID 也无法防止阵列中的某块硬盘因为某种原因数据不一致的情况（例如比特翻转），
 因此**定期进行完整性检查（Scrub）是非常重要的**。以下展示一个没有定期 scrub 的反例：
@@ -484,7 +482,7 @@ $ sudo lvs -o +raid_sync_action,raid_mismatch_count
 
     这项功能不是 scrub 的替代品。
 
-### 扩容/缩小操作
+## 扩容/缩小操作
 
 LVM 支持在线扩容/缩小逻辑卷，有三个相关命令：`lvextend`（扩大）、`lvreduce`（缩小）、`lvresize`（通用）。
 让我们先在 lvraid0 上创建一个 ext4 文件系统并挂载，模拟在线场景：
@@ -586,7 +584,7 @@ Filesystem                       Size  Used Avail Use% Mounted on
 
 对于支持的文件系统，`lvreduce` 会检查文件系统的大小，避免数据损坏。但在操作时仍然需要谨慎。
 
-### SSD 缓存
+## SSD 缓存
 
 LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm-cache 的读写缓存。
 
@@ -810,7 +808,7 @@ Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache_data? [
   Logical volume vg201-test/lvdata is now cached.
 ```
 
-#### Does lvmcache scale?
+### Does lvmcache scale?
 
 现实中我们肯定不可能只用 10G 的 SSD 来做缓存，而在非家用的场景下，需要缓存的后备存储也不可能只有 100G 这么大。
 下面考虑一个类似于目前 mirrors 的场景：1.5T 的 SSD 空间对 65T 的 HDD 空间进行缓存（比例大约 1:45）。
@@ -924,7 +922,7 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 
 此外，在 `lvconvert` 创建缓存时，如果 SSD 设备不支持 TRIM（常见的场景是在 RAID 卡后面），那么其会清零对应的块，这个过程可能会花费超过半个小时的时间。
 
-#### Too dirty to use
+### Too dirty to use
 
 lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
@@ -1198,7 +1196,7 @@ $ sudo lvs -a
   lvdata_cache vg201-test -wi-a-----  <1.50t
 ```
 
-#### 缓存方案比较
+### 缓存方案比较
 
 作为 SSD 缓存部分的最后一小节，本部分以表格形式介绍已有的 SSD 缓存方案（包括已经不再维护的）。
 我们建议无论选择何种方案，都需要先测试其是否易于使用，是否会给运维操作带来额外的负担。
@@ -1213,7 +1211,7 @@ $ sudo lvs -a
 | [OpenCAS](https://open-cas.github.io/index.html) | writethrough, writeback, writearound, write-invalidate, write-only | lru (?) | SPDK 的一部分 | [3 个月前](https://github.com/Open-CAS/open-cas-linux/commit/fd39e912cc4ec4f02741269df81cd6bcc88b18b8)  |
 | bcachefs | writethrough, writeback, writearound | lru[^bcachefs-principles] | 由 bcache 作者开发的新 CoW 文件系统，内置 SSD 缓存支持 | [活跃开发](https://evilpiepirate.org/git/bcachefs.git) |
 
-### 集群存储
+## 集群存储
 
 LVM 支持多机共享存储。在这种场景下，集群中的服务器通过 iSCSI 等方式连接到同一台共享的存储，并且通过锁等机制实现集群内部的同步。
 LVM 自带的 locking 机制为 `lvmlockd`，支持 `dlm`（需要配置 dlm 与 corosync 构建集群）和 `sanlock` 两种后端。
