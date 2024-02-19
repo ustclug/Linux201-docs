@@ -937,17 +937,44 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
 
-!!! note "最新的内核可能修复了后一个问题"
+??? tip "如何实验复现「所有块被标记」的行为？"
+
+    由于没有能够强制卸载本地回环的方法，因此这里可以考虑的思路是：
+    在虚拟机中使用本地回环设备创建 lvmcache，写入并读取一些数据（单纯的写入一次可能不会使用缓存块空间），然后使用 `reboot -f` 强制重启。
+
+    如果使用的块够多，并且操作及时，可能就能看到 dirty block > 0 的情况：
+
+    ```console
+    $ sudo losetup -f --show hdd.img
+    /dev/loop0
+    $ sudo losetup -f --show ssd.img
+    /dev/loop1
+    $ sudo lvs -a -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,cache_used_blocks,cache_dirty_blocks,cache_read_hits,cache_read_misses,cache_write_hits,cache_write_misses
+      Devices         CachePolicy CacheMode    CacheSettings CacheTotalBlocks CacheUsedBlocks  CacheDirtyBlocks CacheReadHits    CacheReadMisses  CacheWriteHits   CacheWriteMisses
+      lvdata_corig(0) smq         writethrough                         163584            62544             4918              120                0                0                0
+      /dev/loop1(0)                                                                                                                                                                
+      /dev/loop0(0)
+    ```
+
+    另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，可能会出现 cache LV 的 superblock 未正确写入的情况，
+    此时 LVM 无法挂载[^t-p-t-bug] cache，并且似乎也无法修复。
+    幸运的是，至少用一些 trick 可以 uncache 掉这个坏掉的 LV
+    （cachevol 可能会麻烦一些，需要先使用 `dmsetup remove` 移除多余的卷；cachepool 可以直接 uncache）。
+
+    来自 linux-lvm 邮件列表的可能相关的故障报告参见
+    <https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/>。
+
+!!! note "最新的内核可能部分修复了后一个问题"
 
     参见 <https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb>。
-    根据该 commit 的描述，在 cleaner 状态下即使 IO idle 为 false，也会进行脏块迁移。
+    根据该 commit 的描述，**在 cleaner 状态下**即使 IO idle 为 false，也会进行脏块迁移。
 
 !!! note "lvmcache 的设计"
 
     从前面的统计数据可以注意到，脏块的数量是一个指标。在 lvmcache 的设计中，存在出现模式为 writethrough 并且存在脏块的可能，所以目前程序上没有实现看到 writethrough 之后
     就忽略脏块的问题。
 
-??? note "模拟出现这个问题的情况"
+??? note "模拟在 IO 压力下迁移缓慢的情况"
 
     格式化我们刚才创建的有 cache 的 LV，使用 `fio` 上点压力：
 
@@ -1288,6 +1315,8 @@ LVM 自带的 locking 机制为 `lvmlockd`，支持 `dlm`（需要配置 dlm 与
 PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部的全局锁，所有使用 PVE 工具修改存储的操作都会先获取这个全局锁。
 并且 PVE 不存在多台机器访问同一个 LV 的情况，因此这一套方案不依赖于 `lvmlockd`。
 
+<!-- TODO: 关于 corosync 和分布式系统相关的内容放在哪里呢？ -->
+
 !!! warning "确保所有访问 LVM 的机器在同一个 PVE 集群中"
 
     否则在集群外的虚拟机创建等操作不会正确获取锁，导致**覆盖**已有的虚拟机磁盘。
@@ -1303,3 +1332,5 @@ PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部�
 [^rhel-version]: 推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。
 [^time]: Retrieved on 2024-02-18.
 [^bcachefs-principles]: "Buckets containing only cached data are discarded as needed by the allocator in LRU order" ([bcachefs: Principles of Operation](https://bcachefs.org/bcachefs-principles-of-operation.pdf) 2.2.4)
+<!-- markdownlint-disable -->
+[^t-p-t-bug]: Cache 的完整性检查工具 `cache_check` 位于 [thin-provisioning-tools](https://github.com/jthornber/thin-provisioning-tools) 中。其 1.0 版本使用 Rust 重写后[存在一个 bug](https://github.com/jthornber/thin-provisioning-tools/issues/294)，会导致即使检查失败，LVM 也会继续尝试挂载。
