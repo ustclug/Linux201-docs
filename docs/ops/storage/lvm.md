@@ -529,7 +529,7 @@ Filesystem                       Size  Used Avail Use% Mounted on
 ```console
 $ sudo resize2fs /dev/vg201-test/lvraid0
 resize2fs 1.47.0 (5-Feb-2023)
-Filesystem at /dev/vg201-test/lvraid0 is mounted on /home/taoky/tmp/mountpoint; on-line resizing required
+Filesystem at /dev/vg201-test/lvraid0 is mounted on /somewhere/you/like; on-line resizing required
 old_desc_blocks = 1, new_desc_blocks = 1
 The filesystem on /dev/vg201-test/lvraid0 is now 159744 (4k) blocks long.
 
