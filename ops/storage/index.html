@@ -18,11 +18,11 @@
         <link rel="prev" href="../service/">
       
       
-        <link rel="next" href="filesystem/">
+        <link rel="next" href="intro/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.9">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.f2e4d321.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -479,6 +479,8 @@
       
         
       
+        
+      
     
     
       
@@ -519,6 +521,27 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    基础知识简介
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -1416,116 +1439,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#disks" class="md-nav__link">
-    <span class="md-ellipsis">
-      磁盘
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="磁盘">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disk-type" class="md-nav__link">
-    <span class="md-ellipsis">
-      磁盘类型简介
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disk-size" class="md-nav__link">
-    <span class="md-ellipsis">
-      磁盘规格与尺寸
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#disk-interface" class="md-nav__link">
-    <span class="md-ellipsis">
-      磁盘接口与协议
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#smart" class="md-nav__link">
-    <span class="md-ellipsis">
-      S.M.A.R.T.
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#trim-discardunmap" class="md-nav__link">
-    <span class="md-ellipsis">
-      Trim (Discard/Unmap)
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#raid" class="md-nav__link">
-    <span class="md-ellipsis">
-      RAID
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="RAID">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#raid_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      RAID 等级比较
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#raid_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      RAID 实现方式
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      文件系统
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -1543,289 +1456,7 @@
 
 
 <h1 id="_1">存储系统<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<div class="admonition warning">
-<p class="admonition-title">本文初稿已完成，但可能仍需大幅度修改</p>
-</div>
-<p>服务器需要使用的存储方案与个人计算机的差异较大，例如：</p>
-<ul>
-<li>服务器提供了大量的盘位，不同服务器的盘位使用的接口、磁盘的尺寸可能不同。</li>
-<li>服务器一般提供 RAID 卡，可以在硬件层面实现 RAID 功能，大部分 RAID 卡也允许管理员设置直通到操作系统中，由操作系统实现 RAID 功能。</li>
-<li>根据工作负载的不同，可能需要考虑不同文件系统的差异，并且选择合适的文件系统。</li>
-<li>由于磁盘数量多，磁盘故障的概率也会增加，因此需要能够及时发现故障，并采取相应的措施。</li>
-<li>…………</li>
-</ul>
-<p>本部分会对运维需要了解的基础知识进行介绍。</p>
-<h2 id="disks">磁盘<a class="headerlink" href="#disks" title="Permanent link">&para;</a></h2>
-<h3 id="disk-type">磁盘类型简介<a class="headerlink" href="#disk-type" title="Permanent link">&para;</a></h3>
-<p>在服务器上最常见的为机械硬盘（HDD）和固态硬盘（SSD）。机械硬盘使用磁盘片和机械臂进行数据读写，固态硬盘使用闪存芯片进行数据读写。
-除此以外，还可能有一些特殊的存储设备，例如磁带、Intel Optane 等，这里不做详细介绍。</p>
-<p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。
-而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
-对于企业级硬盘，这些性能指标可能会更高。</p>
-<p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。
-由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。
-尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。
-而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；
-读取操作对 SSD 的损耗可以忽略不计。</p>
-<p>对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。</p>
-<h3 id="disk-size">磁盘规格与尺寸<a class="headerlink" href="#disk-size" title="Permanent link">&para;</a></h3>
-<p>关于磁盘规格，在服务器安装时我们主要关心以下几点：</p>
-<ul>
-<li>磁盘的尺寸（2.5 英寸、3.5 英寸）<ul>
-<li>部分手册会将 2.5 英寸的磁盘称为 SFF（Small Form Factor），3.5 英寸的磁盘称为 LFF（Large Form Factor）。</li>
-</ul>
-</li>
-<li>磁盘的接口与协议（SAS、SATA、NVMe、M.2、U.2）</li>
-<li>是否与服务器配置兼容：<ul>
-<li>部分服务器会有硬盘白名单，只有白名单中的硬盘才能识别。</li>
-<li>使用的硬件 RAID 方案可能会对硬盘接口有要求，例如 SATA 和 SAS 接口的硬盘不能混用。</li>
-</ul>
-</li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title">仔细阅读并确认厂商文档</p>
-<p>一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。</p>
-</div>
-<p>磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。同时，托架也一般有 LED 灯，在磁盘故障时会亮黄灯或红灯，也一般能够使用服务器的管理工具控制灯闪烁来定位磁盘。</p>
-<!-- TODO: 一张托架的照片 -->
-
-<h3 id="disk-interface">磁盘接口与协议<a class="headerlink" href="#disk-interface" title="Permanent link">&para;</a></h3>
-<p>机械硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接，一些固态硬盘也会使用 SATA 接口。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。</p>
-<p>SATA 与 SAS 的详细对比可参考<a href="https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA">英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节</a>。</p>
-<p>随着固态硬盘的普及，PCIe 接口的固态硬盘也越来越多见。PCIe 接口的固态硬盘通常使用 NVMe 协议，因此也被称为 NVMe SSD。NVMe SSD 常见的接口形态有 U.2、M.2 和 AIC（PCIe Add-in Card，即扩展卡）。</p>
-<ul>
-<li>
-<p>M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。</p>
-<ul>
-<li>常见的 M.2 接口有 B-key 和 M-key 两种，主流的 NVMe SSD 通常使用 M-key 接口，而 SATA SSD 通常使用 B-key 或 B+M（两个缺口）。一个 M.2 接口是否支持 NVMe 或 SATA 协议取决于主板或控制器，因此具体情况需要参考产品的说明书。<ul>
-<li>作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVme 的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。</li>
-</ul>
-</li>
-<li>除了接口的形状，M.2 接口的长宽也有一系列选项，例如 2230、2242、2280、22110 等，即宽度为 22 mm，长度分别为 30、42、80、110 mm 等。个人电脑一般采用 2280 的尺寸，而服务器（和一些高端台式机主板）上可能会使用 22110 的尺寸。这些尺寸不影响接口的电气特性，只是为了适应不同的空间和散热需求。</li>
-</ul>
-</li>
-<li>
-<p>U.2 接口形状与 SAS 类似，但是<strong>不兼容 SAS</strong>（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。</p>
-</li>
-<li>AIC 就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
-</ul>
-<details class="example">
-<summary>图片：M.2 SSD</summary>
-<p><figure markdown="span">
-  <img alt="M.2 2280 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg" />
-  <figcaption>M.2 2280 SSD</figcaption>
-</figure></p>
-</details>
-<details class="example">
-<summary>图片：U.2 SSD</summary>
-<p><figure markdown="span">
-  <img alt="U.2 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/620px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg" />
-  <figcaption>U.2 SSD</figcaption>
-</figure></p>
-</details>
-<details class="example">
-<summary>图片：AIC SSD</summary>
-<p><figure markdown="span">
-  <img alt="PCIe AIC SSD" src="https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg" />
-  <figcaption>PCIe 插卡式 SSD</figcaption>
-</figure></p>
-</details>
-<h3 id="smart">S.M.A.R.T.<a class="headerlink" href="#smart" title="Permanent link">&para;</a></h3>
-<p>磁盘的 S.M.A.R.T.（Self-Monitoring, Analysis and Reporting Technology）功能可以记录磁盘的运行状态，并且在磁盘出现故障前提供预警。S.M.A.R.T. 可以记录磁盘的温度、读写错误率、磁盘旋转速度、磁盘的寿命等信息。</p>
-<p>Linux 系统上可以安装 <code>smartmontools</code> 包来查看磁盘的 S.M.A.R.T. 信息。使用以下命令查看可用的磁盘与其 S.M.A.R.T 状态：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>--scan
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">/dev/nvme0 -d nvme # /dev/nvme0, NVMe device</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/nvme0
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">（内容省略）</span>
-</code></pre></div>
-<p>在服务器上，如果使用硬件 RAID，使用 <code>smartctl</code> 需要添加额外的参数来从 RAID 控制器获取真实的磁盘信息，例如下面的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>--scan
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">/dev/sda -d scsi # /dev/sda, SCSI device</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">/dev/sdb -d scsi # /dev/sdb, SCSI device</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">/dev/sdc -d scsi # /dev/sdc, SCSI device</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">/dev/sdd -d scsi # /dev/sdd, SCSI device</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">/dev/bus/4 -d megaraid,8 # /dev/bus/4 [megaraid_disk_08], SCSI device</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">/dev/bus/4 -d megaraid,9 # /dev/bus/4 [megaraid_disk_09], SCSI device</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">/dev/bus/4 -d megaraid,10 # /dev/bus/4 [megaraid_disk_10], SCSI device</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">/dev/bus/4 -d megaraid,11 # /dev/bus/4 [megaraid_disk_11], SCSI device</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">/dev/bus/4 -d megaraid,12 # /dev/bus/4 [megaraid_disk_12], SCSI device</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">/dev/bus/4 -d megaraid,13 # /dev/bus/4 [megaraid_disk_13], SCSI device</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">/dev/bus/4 -d megaraid,14 # /dev/bus/4 [megaraid_disk_14], SCSI device</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">/dev/bus/4 -d megaraid,15 # /dev/bus/4 [megaraid_disk_15], SCSI device</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">/dev/bus/0 -d megaraid,8 # /dev/bus/0 [megaraid_disk_08], SCSI device</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">/dev/bus/0 -d megaraid,9 # /dev/bus/0 [megaraid_disk_09], SCSI device</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">/dev/bus/0 -d megaraid,10 # /dev/bus/0 [megaraid_disk_10], SCSI device</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="go">/dev/bus/0 -d megaraid,11 # /dev/bus/0 [megaraid_disk_11], SCSI device</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="go">/dev/bus/0 -d megaraid,12 # /dev/bus/0 [megaraid_disk_12], SCSI device</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="go">/dev/bus/0 -d megaraid,13 # /dev/bus/0 [megaraid_disk_13], SCSI device</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/sdd<span class="w">  </span><span class="c1"># 直接查询只能看到没有意义的控制器信息</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-21-amd64] (local build)</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="go">Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="go">=== START OF INFORMATION SECTION ===</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">Vendor:               AVAGO</span>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">Product:              MR9361-8i</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="go">Revision:             4.68</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="go">Compliance:           SPC-3</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="go">User Capacity:        1,919,816,826,880 bytes [1.91 TB]</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="go">Logical block size:   512 bytes</span>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="go">Physical block size:  4096 bytes</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="go">Logical Unit id:      0x600605b00f17786026223e2d33c1767b</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="go">Serial number:        007b76c1332d3e22266078170fb00506</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="go">Device type:          disk</span>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="go">Local Time is:        Sun Feb 11 18:40:45 2024 CST</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="go">SMART support is:     Unavailable - device lacks SMART capability.</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="go">=== START OF READ SMART DATA SECTION ===</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="go">Current Drive Temperature:     0 C</span>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="go">Drive Trip Temperature:        0 C</span>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>
-<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="go">Error Counter logging not supported</span>
-<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>
-<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="go">Device does not support Self Test logging</span>
-<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/bus/4<span class="w"> </span>-d<span class="w"> </span>megaraid,8<span class="w">  </span><span class="c1"># 添加参数可以看到真实的磁盘信息</span>
-<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="go">（内容省略）</span>
-</code></pre></div>
-<p>有关 S.M.A.R.T. 指标解释与监控的内容将会在 <a href="raid/">RAID</a> 中介绍。</p>
-<h3 id="trim-discardunmap">Trim (Discard/Unmap)<a class="headerlink" href="#trim-discardunmap" title="Permanent link">&para;</a></h3>
-<p>SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。
-SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，
-SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（<code>virtio-scsi</code>）、部分企业级的 SAN 等。</p>
-<details class="note">
-<summary>关注存储的可用空间比例</summary>
-<p>不建议将存储的可用空间全部或接近全部耗尽，这是因为：</p>
-<ul>
-<li>机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；</li>
-<li>固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。</li>
-</ul>
-</details>
-<p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，
-一般推荐后者）。</p>
-<h2 id="raid">RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h2>
-<p>RAID（Redundant Array of Inexpensive Disks）是一种将多个磁盘组合在一起实现数据冗余和性能提升的技术。不同的磁盘组合方式称为“RAID 级别（RAID Level）”，常见的有 RAID 0、RAID 1、RAID 5、RAID 6、RAID 10 等。</p>
-<dl>
-<dt>RAID 0</dt>
-<dd>
-<p>也称作条带化（Striped），将数据分块存储在多个磁盘上，可以充分利用所有容量，获得叠加的顺序读写性能（但随机读写性能一般），但没有冗余，任何一块磁盘损坏都会导致整个阵列的数据丢失，适合需要高性能读写但不需要数据安全性的场景。</p>
-</dd>
-<dt>RAID 1</dt>
-<dd>
-<p>也称作镜像（Mirrored），将数据完全复制到多个磁盘上，提供了绝对冗余，整个阵列中只需要有一块盘存活，数据就不会丢失。代价是整个阵列的容量等单块磁盘的容量，空间利用率低下，适合需要高可靠性<s>而且不缺钱</s>的场景。同时由于每块盘上的数据完全一致，RAID 1 的读取性能可以叠加（甚至包括随机读取），但写入性能不会提升。</p>
-</dd>
-<dt>RAID 5</dt>
-<dd>
-<p>将数据和<strong>一份</strong>校验信息分块存储在多个磁盘上，可以允许阵列中任何一块磁盘损坏，兼顾冗余性和容量利用率。重建期间的性能会严重下降，并且一旦在重建完成前又坏了一块盘，那么你就寄了。</p>
-</dd>
-<dt>RAID 6</dt>
-<dd>
-<p>将数据和<strong>两份</strong>校验信息分块存储在多个磁盘上，比 RAID 5 多了一份校验信息，可以容纳两块磁盘损坏，适合大容量或者磁盘较多的阵列。尽管允许两块盘损坏，但我们仍然建议在第一块盘损坏后立即更换并重建，不要等到更危险的时候。</p>
-</dd>
-<dt>RAID 10, 50, 60</dt>
-<dd>
-<p>将不同级别的 RAID 组合在一起，兼顾性能和冗余，各取所长，对于 10 块盘以上的阵列是更加常见的选择。例如 RAID 10 = RAID 1 + RAID 0，通常将每两块盘组成 RAID 1，再将这些 RAID 1 的组合拼成一个大 RAID 0。</p>
-</dd>
-</dl>
-<div class="admonition danger">
-<p class="admonition-title">磁盘阵列不是备份</p>
-<p>RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。</p>
-<p><a href="https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf"><img alt="磁盘阵列不是备份" src="images/raid-is-not-backup.png" /></a></p>
-<p><em>图片来自<a href="https://tuna.moe/event/2023/disk-array/">金枪鱼之夜：实验物理垃圾佬之乐——PB 级磁盘阵列演进</a></em></p>
-</div>
-<h3 id="raid_1">RAID 等级比较<a class="headerlink" href="#raid_1" title="Permanent link">&para;</a></h3>
-<table>
-<thead>
-<tr>
-<th>等级</th>
-<th>容量</th>
-<th>冗余</th>
-<th>读写性能</th>
-<th>适用场景</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>RAID 0</td>
-<td>全部叠加</td>
-<td>无，挂一块盘就寄了</td>
-<td>顺序读写性能高，随机读写性能一般（略好于单块盘）</td>
-<td>临时数据、缓存</td>
-</tr>
-<tr>
-<td>RAID 1</td>
-<td>单块盘</td>
-<td>最高，只要有一块盘存活就行</td>
-<td>叠加的读性能，但是只有单块盘的写性能</td>
-<td>重要数据</td>
-</tr>
-<tr>
-<td>RAID 5</td>
-<td>N-1 块盘</td>
-<td>可以坏一块盘</td>
-<td>顺序读写性能高，随机读写性能差；重建期间<strong>很差</strong></td>
-<td>兼顾容量和安全性</td>
-</tr>
-<tr>
-<td>RAID 6</td>
-<td>N-2 块盘</td>
-<td>可以坏两块盘</td>
-<td>顺序读写性能高，随机读写性能差；重建期间<strong>更差</strong></td>
-<td>比 RAID 5 更稳一点</td>
-</tr>
-<tr>
-<td>RAID 10</td>
-<td>每组 RAID 1 容量叠加</td>
-<td>每组 RAID 1 内只需要存活一块盘</td>
-<td>顺序和随机性能都不错，并且重建期间还凑合</td>
-<td>兼顾性能和安全性</td>
-</tr>
-<tr>
-<td>RAID 60</td>
-<td>（自行计算）</td>
-<td>每组 RAID 6 内可以坏两块盘</td>
-<td>顺序读写性能不错，并且重建期间<s>更凑合了</s></td>
-<td>盘很多，并且兼顾容量和安全性</td>
-</tr>
-</tbody>
-</table>
-<p>RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。</p>
-<div class="admonition question">
-<p class="admonition-title">思考题</p>
-<ol>
-<li>为什么 RAID 5 和 RAID 6 的重建期间性能会很差？</li>
-<li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？</li>
-<li>为什么对大容量磁盘使用 RAID 5 是一个坏主意？</li>
-<li>为什么说 RAID 5/6 有很高的写惩罚（Write Penalty）？</li>
-</ol>
-</div>
-<h3 id="raid_2">RAID 实现方式<a class="headerlink" href="#raid_2" title="Permanent link">&para;</a></h3>
-<p>RAID 可以在硬件层面实现，也可以在操作系统层面通过软件实现。</p>
-<p>硬件：</p>
-<ul>
-<li>LSI MegaRAID 系列是最常见的硬件 RAID 卡</li>
-<li>HPE Smart Array 系列</li>
-<li>一些专用的存储服务器，如 HPE MSA、Dell EMC PowerVault 等存储网络（SAN）设备</li>
-<li>Intel RST 和 Intel VMD，是个人计算机上常见的硬件 RAID 方案<s>（但是非常难用）</s></li>
-</ul>
-<p>Windows：</p>
-<ul>
-<li>较早的“动态磁盘”功能支持 RAID 0、1、5 等级别，并且是在分区层面实现的，因此同一个硬盘组上可以同时存在多个采用不同 RAID 级别的卷（文件系统）</li>
-<li>较新的 Windows 开始支持 Storage Spaces，可以实现更多 RAID 级别，以及“镜像加速”、“自动热迁移”等功能，但是比动态磁盘更加难用，重建也更复杂</li>
-</ul>
-<p>Linux：</p>
-<ul>
-<li>mdadm 是 Linux 上最常见的软件 RAID 实现方式之一</li>
-<li>Linux 常用的逻辑卷管理工具 LVM 也支持 RAID 功能</li>
-<li>一部分文件系统，如 ZFS 和 Btrfs，也支持 RAID 功能</li>
-</ul>
-<p>服务器一般都配备了硬件 RAID 卡，如果需要使用软件 RAID，需要设置 RAID 卡或对应磁盘到 HBA 模式（也叫 JBOD/Non-RAID/直通 模式）。
-一部分低端 RAID 卡不提供相关功能的支持，尽管可以通过为每块磁盘创建单独的 RAID 0 阵列实现类似的功能，但是并不推荐。</p>
-<h2 id="_2">文件系统<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>在 Linux 上，ext4 是最常见的文件系统。但是对于某些需求，ext4 可能无法满足，例如：</p>
-<ul>
-<li>需要支持存储大量文件，数量甚至可能超过 ext4 的限制</li>
-<li>需要支持快照、透明压缩、数据校验等高级功能</li>
-</ul>
-<p>在<a href="filesystem/">「分区与文件系统」部分</a>会对文件系统的选择进行介绍。</p>
+<p>本部分介绍维护 Linux 服务器存储系统的有关内容。</p>
 <!--
   Links to man pages
 
@@ -1839,15 +1470,6 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <!-- man 5 -->
 
 <!-- man 8 -->
-
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:1">
-<p>IOPS 为每秒的 I/O 操作数，可以简单认为是命令操作延迟的倒数。&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
 
 
 

@@ -12,28 +12,28 @@
         <meta name="author" content="LUG @ USTC">
       
       
-        <link rel="canonical" href="https://201.ustclug.org/advanced/cuda/">
+        <link rel="canonical" href="https://201.ustclug.org/ops/storage/intro/">
       
       
         <link rel="prev" href="../">
       
       
-        <link rel="next" href="../nmap/">
+        <link rel="next" href="../filesystem/">
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
     
     
       
-        <title>CUDA 环境简介 - Linux 201</title>
+        <title>基础知识简介 - Linux 201</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7e359304.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -52,9 +52,9 @@
       
     
     
-      <link rel="stylesheet" href="../../css/extra.css">
+      <link rel="stylesheet" href="../../../css/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -90,7 +90,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cuda" class="md-skip">
+        <a href="#_1" class="md-skip">
           跳转至
         </a>
       
@@ -106,7 +106,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../.." title="Linux 201" class="md-header__button md-logo" aria-label="Linux 201" data-md-component="logo">
+    <a href="../../.." title="Linux 201" class="md-header__button md-logo" aria-label="Linux 201" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M220.8 123.3c1 .5 1.8 1.7 3 1.7 1.1 0 2.8-.4 2.9-1.5.2-1.4-1.9-2.3-3.2-2.9-1.7-.7-3.9-1-5.5-.1-.4.2-.8.7-.6 1.1.3 1.3 2.3 1.1 3.4 1.7zm-21.9 1.7c1.2 0 2-1.2 3-1.7 1.1-.6 3.1-.4 3.5-1.6.2-.4-.2-.9-.6-1.1-1.6-.9-3.8-.6-5.5.1-1.3.6-3.4 1.5-3.2 2.9.1 1 1.8 1.5 2.8 1.4zM420 403.8c-3.6-4-5.3-11.6-7.2-19.7-1.8-8.1-3.9-16.8-10.5-22.4-1.3-1.1-2.6-2.1-4-2.9-1.3-.8-2.7-1.5-4.1-2 9.2-27.3 5.6-54.5-3.7-79.1-11.4-30.1-31.3-56.4-46.5-74.4-17.1-21.5-33.7-41.9-33.4-72C311.1 85.4 315.7.1 234.8 0 132.4-.2 158 103.4 156.9 135.2c-1.7 23.4-6.4 41.8-22.5 64.7-18.9 22.5-45.5 58.8-58.1 96.7-6 17.9-8.8 36.1-6.2 53.3-6.5 5.8-11.4 14.7-16.6 20.2-4.2 4.3-10.3 5.9-17 8.3s-14 6-18.5 14.5c-2.1 3.9-2.8 8.1-2.8 12.4 0 3.9.6 7.9 1.2 11.8 1.2 8.1 2.5 15.7.8 20.8-5.2 14.4-5.9 24.4-2.2 31.7 3.8 7.3 11.4 10.5 20.1 12.3 17.3 3.6 40.8 2.7 59.3 12.5 19.8 10.4 39.9 14.1 55.9 10.4 11.6-2.6 21.1-9.6 25.9-20.2 12.5-.1 26.3-5.4 48.3-6.6 14.9-1.2 33.6 5.3 55.1 4.1.6 2.3 1.4 4.6 2.5 6.7v.1c8.3 16.7 23.8 24.3 40.3 23 16.6-1.3 34.1-11 48.3-27.9 13.6-16.4 36-23.2 50.9-32.2 7.4-4.5 13.4-10.1 13.9-18.3.4-8.2-4.4-17.3-15.5-29.7zM223.7 87.3c9.8-22.2 34.2-21.8 44-.4 6.5 14.2 3.6 30.9-4.3 40.4-1.6-.8-5.9-2.6-12.6-4.9 1.1-1.2 3.1-2.7 3.9-4.6 4.8-11.8-.2-27-9.1-27.3-7.3-.5-13.9 10.8-11.8 23-4.1-2-9.4-3.5-13-4.4-1-6.9-.3-14.6 2.9-21.8zM183 75.8c10.1 0 20.8 14.2 19.1 33.5-3.5 1-7.1 2.5-10.2 4.6 1.2-8.9-3.3-20.1-9.6-19.6-8.4.7-9.8 21.2-1.8 28.1 1 .8 1.9-.2-5.9 5.5-15.6-14.6-10.5-52.1 8.4-52.1zm-13.6 60.7c6.2-4.6 13.6-10 14.1-10.5 4.7-4.4 13.5-14.2 27.9-14.2 7.1 0 15.6 2.3 25.9 8.9 6.3 4.1 11.3 4.4 22.6 9.3 8.4 3.5 13.7 9.7 10.5 18.2-2.6 7.1-11 14.4-22.7 18.1-11.1 3.6-19.8 16-38.2 14.9-3.9-.2-7-1-9.6-2.1-8-3.5-12.2-10.4-20-15-8.6-4.8-13.2-10.4-14.7-15.3-1.4-4.9 0-9 4.2-12.3zm3.3 334c-2.7 35.1-43.9 34.4-75.3 18-29.9-15.8-68.6-6.5-76.5-21.9-2.4-4.7-2.4-12.7 2.6-26.4v-.2c2.4-7.6.6-16-.6-23.9-1.2-7.8-1.8-15 .9-20 3.5-6.7 8.5-9.1 14.8-11.3 10.3-3.7 11.8-3.4 19.6-9.9 5.5-5.7 9.5-12.9 14.3-18 5.1-5.5 10-8.1 17.7-6.9 8.1 1.2 15.1 6.8 21.9 16l19.6 35.6c9.5 19.9 43.1 48.4 41 68.9zm-1.4-25.9c-4.1-6.6-9.6-13.6-14.4-19.6 7.1 0 14.2-2.2 16.7-8.9 2.3-6.2 0-14.9-7.4-24.9-13.5-18.2-38.3-32.5-38.3-32.5-13.5-8.4-21.1-18.7-24.6-29.9s-3-23.3-.3-35.2c5.2-22.9 18.6-45.2 27.2-59.2 2.3-1.7.8 3.2-8.7 20.8-8.5 16.1-24.4 53.3-2.6 82.4.6-20.7 5.5-41.8 13.8-61.5 12-27.4 37.3-74.9 39.3-112.7 1.1.8 4.6 3.2 6.2 4.1 4.6 2.7 8.1 6.7 12.6 10.3 12.4 10 28.5 9.2 42.4 1.2 6.2-3.5 11.2-7.5 15.9-9 9.9-3.1 17.8-8.6 22.3-15 7.7 30.4 25.7 74.3 37.2 95.7 6.1 11.4 18.3 35.5 23.6 64.6 3.3-.1 7 .4 10.9 1.4 13.8-35.7-11.7-74.2-23.3-84.9-4.7-4.6-4.9-6.6-2.6-6.5 12.6 11.2 29.2 33.7 35.2 59 2.8 11.6 3.3 23.7.4 35.7 16.4 6.8 35.9 17.9 30.7 34.8-2.2-.1-3.2 0-4.2 0 3.2-10.1-3.9-17.6-22.8-26.1-19.6-8.6-36-8.6-38.3 12.5-12.1 4.2-18.3 14.7-21.4 27.3-2.8 11.2-3.6 24.7-4.4 39.9-.5 7.7-3.6 18-6.8 29-32.1 22.9-76.7 32.9-114.3 7.2zm257.4-11.5c-.9 16.8-41.2 19.9-63.2 46.5-13.2 15.7-29.4 24.4-43.6 25.5s-26.5-4.8-33.7-19.3c-4.7-11.1-2.4-23.1 1.1-36.3 3.7-14.2 9.2-28.8 9.9-40.6.8-15.2 1.7-28.5 4.2-38.7 2.6-10.3 6.6-17.2 13.7-21.1.3-.2.7-.3 1-.5.8 13.2 7.3 26.6 18.8 29.5 12.6 3.3 30.7-7.5 38.4-16.3 9-.3 15.7-.9 22.6 5.1 9.9 8.5 7.1 30.3 17.1 41.6 10.6 11.6 14 19.5 13.7 24.6zM173.3 148.7c2 1.9 4.7 4.5 8 7.1 6.6 5.2 15.8 10.6 27.3 10.6 11.6 0 22.5-5.9 31.8-10.8 4.9-2.6 10.9-7 14.8-10.4s5.9-6.3 3.1-6.6-2.6 2.6-6 5.1c-4.4 3.2-9.7 7.4-13.9 9.8-7.4 4.2-19.5 10.2-29.9 10.2s-18.7-4.8-24.9-9.7c-3.1-2.5-5.7-5-7.7-6.9-1.5-1.4-1.9-4.6-4.3-4.9-1.4-.1-1.8 3.7 1.7 6.5z"/></svg>
@@ -126,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CUDA 环境简介
+              基础知识简介
             
           </span>
         </div>
@@ -239,7 +239,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Linux 201" class="md-nav__button md-logo" aria-label="Linux 201" data-md-component="logo">
+    <a href="../../.." title="Linux 201" class="md-nav__button md-logo" aria-label="Linux 201" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M220.8 123.3c1 .5 1.8 1.7 3 1.7 1.1 0 2.8-.4 2.9-1.5.2-1.4-1.9-2.3-3.2-2.9-1.7-.7-3.9-1-5.5-.1-.4.2-.8.7-.6 1.1.3 1.3 2.3 1.1 3.4 1.7zm-21.9 1.7c1.2 0 2-1.2 3-1.7 1.1-.6 3.1-.4 3.5-1.6.2-.4-.2-.9-.6-1.1-1.6-.9-3.8-.6-5.5.1-1.3.6-3.4 1.5-3.2 2.9.1 1 1.8 1.5 2.8 1.4zM420 403.8c-3.6-4-5.3-11.6-7.2-19.7-1.8-8.1-3.9-16.8-10.5-22.4-1.3-1.1-2.6-2.1-4-2.9-1.3-.8-2.7-1.5-4.1-2 9.2-27.3 5.6-54.5-3.7-79.1-11.4-30.1-31.3-56.4-46.5-74.4-17.1-21.5-33.7-41.9-33.4-72C311.1 85.4 315.7.1 234.8 0 132.4-.2 158 103.4 156.9 135.2c-1.7 23.4-6.4 41.8-22.5 64.7-18.9 22.5-45.5 58.8-58.1 96.7-6 17.9-8.8 36.1-6.2 53.3-6.5 5.8-11.4 14.7-16.6 20.2-4.2 4.3-10.3 5.9-17 8.3s-14 6-18.5 14.5c-2.1 3.9-2.8 8.1-2.8 12.4 0 3.9.6 7.9 1.2 11.8 1.2 8.1 2.5 15.7.8 20.8-5.2 14.4-5.9 24.4-2.2 31.7 3.8 7.3 11.4 10.5 20.1 12.3 17.3 3.6 40.8 2.7 59.3 12.5 19.8 10.4 39.9 14.1 55.9 10.4 11.6-2.6 21.1-9.6 25.9-20.2 12.5-.1 26.3-5.4 48.3-6.6 14.9-1.2 33.6 5.3 55.1 4.1.6 2.3 1.4 4.6 2.5 6.7v.1c8.3 16.7 23.8 24.3 40.3 23 16.6-1.3 34.1-11 48.3-27.9 13.6-16.4 36-23.2 50.9-32.2 7.4-4.5 13.4-10.1 13.9-18.3.4-8.2-4.4-17.3-15.5-29.7zM223.7 87.3c9.8-22.2 34.2-21.8 44-.4 6.5 14.2 3.6 30.9-4.3 40.4-1.6-.8-5.9-2.6-12.6-4.9 1.1-1.2 3.1-2.7 3.9-4.6 4.8-11.8-.2-27-9.1-27.3-7.3-.5-13.9 10.8-11.8 23-4.1-2-9.4-3.5-13-4.4-1-6.9-.3-14.6 2.9-21.8zM183 75.8c10.1 0 20.8 14.2 19.1 33.5-3.5 1-7.1 2.5-10.2 4.6 1.2-8.9-3.3-20.1-9.6-19.6-8.4.7-9.8 21.2-1.8 28.1 1 .8 1.9-.2-5.9 5.5-15.6-14.6-10.5-52.1 8.4-52.1zm-13.6 60.7c6.2-4.6 13.6-10 14.1-10.5 4.7-4.4 13.5-14.2 27.9-14.2 7.1 0 15.6 2.3 25.9 8.9 6.3 4.1 11.3 4.4 22.6 9.3 8.4 3.5 13.7 9.7 10.5 18.2-2.6 7.1-11 14.4-22.7 18.1-11.1 3.6-19.8 16-38.2 14.9-3.9-.2-7-1-9.6-2.1-8-3.5-12.2-10.4-20-15-8.6-4.8-13.2-10.4-14.7-15.3-1.4-4.9 0-9 4.2-12.3zm3.3 334c-2.7 35.1-43.9 34.4-75.3 18-29.9-15.8-68.6-6.5-76.5-21.9-2.4-4.7-2.4-12.7 2.6-26.4v-.2c2.4-7.6.6-16-.6-23.9-1.2-7.8-1.8-15 .9-20 3.5-6.7 8.5-9.1 14.8-11.3 10.3-3.7 11.8-3.4 19.6-9.9 5.5-5.7 9.5-12.9 14.3-18 5.1-5.5 10-8.1 17.7-6.9 8.1 1.2 15.1 6.8 21.9 16l19.6 35.6c9.5 19.9 43.1 48.4 41 68.9zm-1.4-25.9c-4.1-6.6-9.6-13.6-14.4-19.6 7.1 0 14.2-2.2 16.7-8.9 2.3-6.2 0-14.9-7.4-24.9-13.5-18.2-38.3-32.5-38.3-32.5-13.5-8.4-21.1-18.7-24.6-29.9s-3-23.3-.3-35.2c5.2-22.9 18.6-45.2 27.2-59.2 2.3-1.7.8 3.2-8.7 20.8-8.5 16.1-24.4 53.3-2.6 82.4.6-20.7 5.5-41.8 13.8-61.5 12-27.4 37.3-74.9 39.3-112.7 1.1.8 4.6 3.2 6.2 4.1 4.6 2.7 8.1 6.7 12.6 10.3 12.4 10 28.5 9.2 42.4 1.2 6.2-3.5 11.2-7.5 15.9-9 9.9-3.1 17.8-8.6 22.3-15 7.7 30.4 25.7 74.3 37.2 95.7 6.1 11.4 18.3 35.5 23.6 64.6 3.3-.1 7 .4 10.9 1.4 13.8-35.7-11.7-74.2-23.3-84.9-4.7-4.6-4.9-6.6-2.6-6.5 12.6 11.2 29.2 33.7 35.2 59 2.8 11.6 3.3 23.7.4 35.7 16.4 6.8 35.9 17.9 30.7 34.8-2.2-.1-3.2 0-4.2 0 3.2-10.1-3.9-17.6-22.8-26.1-19.6-8.6-36-8.6-38.3 12.5-12.1 4.2-18.3 14.7-21.4 27.3-2.8 11.2-3.6 24.7-4.4 39.9-.5 7.7-3.6 18-6.8 29-32.1 22.9-76.7 32.9-114.3 7.2zm257.4-11.5c-.9 16.8-41.2 19.9-63.2 46.5-13.2 15.7-29.4 24.4-43.6 25.5s-26.5-4.8-33.7-19.3c-4.7-11.1-2.4-23.1 1.1-36.3 3.7-14.2 9.2-28.8 9.9-40.6.8-15.2 1.7-28.5 4.2-38.7 2.6-10.3 6.6-17.2 13.7-21.1.3-.2.7-.3 1-.5.8 13.2 7.3 26.6 18.8 29.5 12.6 3.3 30.7-7.5 38.4-16.3 9-.3 15.7-.9 22.6 5.1 9.9 8.5 7.1 30.3 17.1 41.6 10.6 11.6 14 19.5 13.7 24.6zM173.3 148.7c2 1.9 4.7 4.5 8 7.1 6.6 5.2 15.8 10.6 27.3 10.6 11.6 0 22.5-5.9 31.8-10.8 4.9-2.6 10.9-7 14.8-10.4s5.9-6.3 3.1-6.6-2.6 2.6-6 5.1c-4.4 3.2-9.7 7.4-13.9 9.8-7.4 4.2-19.5 10.2-29.9 10.2s-18.7-4.8-24.9-9.7c-3.1-2.5-5.7-5-7.7-6.9-1.5-1.4-1.9-4.6-4.3-4.9-1.4-.1-1.8 3.7 1.7 6.5z"/></svg>
@@ -269,7 +269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 21.35-1.45-1.32C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35Z"/></svg>
@@ -288,6 +288,8 @@
       
   
   
+    
+  
   
   
     
@@ -331,16 +333,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/></svg>
@@ -359,7 +361,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             运维基础
@@ -375,7 +377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/checklist/" class="md-nav__link">
+      <a href="../../checklist/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -396,7 +398,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/server.md" class="md-nav__link">
+      <a href="../../server.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -417,7 +419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/package/" class="md-nav__link">
+      <a href="../../package/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -438,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/service/" class="md-nav__link">
+      <a href="../../service/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -456,6 +458,8 @@
                 
   
   
+    
+  
   
   
     
@@ -482,16 +486,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/storage/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m6 2a6 6 0 0 0-6 6c0 3.31 2.69 6 6.1 6l-.88-2.23a1.01 1.01 0 0 1 .37-1.37l.86-.5a1.01 1.01 0 0 1 1.37.37l1.92 2.42A5.977 5.977 0 0 0 18 10a6 6 0 0 0-6-6m0 5a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-5 9a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m5.09-4.73 2.49 6.31 2.59-1.5-4.22-5.31-.86.5Z"/></svg>
@@ -510,7 +514,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_6">
             <span class="md-nav__icon md-icon"></span>
             存储系统
@@ -523,10 +527,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../ops/storage/intro/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    基础知识简介
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -535,6 +559,128 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#disks" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="磁盘">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disk-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘类型简介
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disk-size" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘规格与尺寸
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#disk-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘接口与协议
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#smart" class="md-nav__link">
+    <span class="md-ellipsis">
+      S.M.A.R.T.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trim-discardunmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trim (Discard/Unmap)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raid" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RAID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 等级比较
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raid_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 实现方式
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件系统
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -547,7 +693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/filesystem/" class="md-nav__link">
+      <a href="../filesystem/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -568,7 +714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/lvm/" class="md-nav__link">
+      <a href="../lvm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -589,7 +735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/raid/" class="md-nav__link">
+      <a href="../raid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -610,7 +756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/network/" class="md-nav__link">
+      <a href="../network/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -631,7 +777,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/zfs/" class="md-nav__link">
+      <a href="../zfs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -660,7 +806,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/network/" class="md-nav__link">
+      <a href="../../network/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -705,7 +851,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/network-service/" class="md-nav__link ">
+            <a href="../../network-service/" class="md-nav__link ">
               
   
   <span class="md-ellipsis">
@@ -738,7 +884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/network-service/intranet/" class="md-nav__link">
+      <a href="../../network-service/intranet/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -759,7 +905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/network-service/network-file.md" class="md-nav__link">
+      <a href="../../network-service/network-file.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -788,7 +934,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/database.md" class="md-nav__link">
+      <a href="../../database.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -809,7 +955,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/debug.md" class="md-nav__link">
+      <a href="../../debug.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -871,7 +1017,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/virtualization/qemu-kvm/" class="md-nav__link">
+      <a href="../../virtualization/qemu-kvm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -900,7 +1046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/account.md" class="md-nav__link">
+      <a href="../../account.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -921,7 +1067,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/monitor.md" class="md-nav__link">
+      <a href="../../monitor.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -942,7 +1088,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/security.md" class="md-nav__link">
+      <a href="../../security.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1001,7 +1147,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../dev/" class="md-nav__link ">
+            <a href="../../../dev/" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12Z"/></svg>
@@ -1036,7 +1182,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/language.md" class="md-nav__link">
+      <a href="../../../dev/language.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1057,7 +1203,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/git.md" class="md-nav__link">
+      <a href="../../../dev/git.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1078,7 +1224,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/ssh/" class="md-nav__link">
+      <a href="../../../dev/ssh/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1099,7 +1245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dev/ide.md" class="md-nav__link">
+      <a href="../../../dev/ide.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1124,8 +1270,6 @@
       
   
   
-    
-  
   
   
     
@@ -1163,16 +1307,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../../advanced/" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13a9 9 0 0 0 9 9c0-5-4.03-9-9-9m9-7.5A2.5 2.5 0 0 1 14.5 8a2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 9.5 8 2.5 2.5 0 0 1 12 5.5m-6.4 4.75a2.5 2.5 0 0 0 2.5 2.5c.53 0 1.02-.17 1.4-.44v.19A2.5 2.5 0 0 0 12 15a2.5 2.5 0 0 0 2.5-2.5v-.19c.38.27.87.44 1.4.44a2.5 2.5 0 0 0 2.5-2.5c0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.26 1.43-2.25a2.5 2.5 0 0 0-2.5-2.5c-.53 0-1.02.16-1.4.44V3.5A2.5 2.5 0 0 0 12 1a2.5 2.5 0 0 0-2.5 2.5v.19c-.38-.28-.87-.44-1.4-.44a2.5 2.5 0 0 0-2.5 2.5c0 .99.59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25M12 22a9 9 0 0 0 9-9c-5 0-9 4-9 9Z"/></svg>
@@ -1191,7 +1335,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             高级内容
@@ -1204,30 +1348,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    CUDA 环境简介
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../advanced/cuda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1236,110 +1360,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="目录">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#cuda_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      配置 CUDA 环境
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="配置 CUDA 环境">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      硬件准备
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#cuda_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      安装 CUDA
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="安装 CUDA">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      安装预编译的内核模块
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      安装用户空间的驱动和库
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      查看显卡状态
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
-    <span class="md-ellipsis">
-      添加环境变量（可选）
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cuda_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      CUDA 编程模型
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1352,7 +1372,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../display.md" class="md-nav__link">
+      <a href="../../../advanced/display.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1373,7 +1393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../acl.md" class="md-nav__link">
+      <a href="../../../advanced/acl.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1394,7 +1414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../caddy.md" class="md-nav__link">
+      <a href="../../../advanced/caddy.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1415,7 +1435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../duckdb.md" class="md-nav__link">
+      <a href="../../../advanced/duckdb.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1436,7 +1456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sentry.md" class="md-nav__link">
+      <a href="../../../advanced/sentry.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1457,7 +1477,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nmap/" class="md-nav__link">
+      <a href="../../../advanced/nmap/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1478,7 +1498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../daemon.md" class="md-nav__link">
+      <a href="../../../advanced/daemon.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1499,7 +1519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../supercomputer.md" class="md-nav__link">
+      <a href="../../../advanced/supercomputer.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1520,7 +1540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../switch.md" class="md-nav__link">
+      <a href="../../../advanced/switch.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1568,70 +1588,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cuda_1" class="md-nav__link">
+  <a href="#disks" class="md-nav__link">
     <span class="md-ellipsis">
-      配置 CUDA 环境
+      磁盘
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="配置 CUDA 环境">
+    <nav class="md-nav" aria-label="磁盘">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#disk-type" class="md-nav__link">
     <span class="md-ellipsis">
-      硬件准备
+      磁盘类型简介
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#cuda_2" class="md-nav__link">
+  <a href="#disk-size" class="md-nav__link">
     <span class="md-ellipsis">
-      安装 CUDA
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="安装 CUDA">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      安装预编译的内核模块
+      磁盘规格与尺寸
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#disk-interface" class="md-nav__link">
     <span class="md-ellipsis">
-      安装用户空间的驱动和库
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
-    <span class="md-ellipsis">
-      查看显卡状态
+      磁盘接口与协议
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#smart" class="md-nav__link">
     <span class="md-ellipsis">
-      添加环境变量（可选）
+      S.M.A.R.T.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trim-discardunmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trim (Discard/Unmap)
     </span>
   </a>
   
@@ -1643,9 +1648,42 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#cuda_3" class="md-nav__link">
+  <a href="#raid" class="md-nav__link">
     <span class="md-ellipsis">
-      CUDA 编程模型
+      RAID
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RAID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#raid_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 等级比较
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#raid_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAID 实现方式
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件系统
     </span>
   </a>
   
@@ -1669,110 +1707,290 @@
   
 
 
-<h1 id="cuda">CUDA 环境简介<a class="headerlink" href="#cuda" title="Permanent link">&para;</a></h1>
+<h1 id="_1">基础知识简介<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">本文仍在编辑中</p>
+<p class="admonition-title">本文初稿已完成，但可能仍需大幅度修改</p>
 </div>
-<p>CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发套件，它允许软件开发人员使用 NVIDIA 的 GPU（图形处理单元）进行通用计算。</p>
-<p>包含的组件有：</p>
+<p>服务器需要使用的存储方案与个人计算机的差异较大，例如：</p>
 <ul>
-<li>
-<p>CUDA Runtime API：CUDA 编程的高级 API，为开发者提供了管理 GPU 设备、内存分配、数据传输和执行计算任务等功能的接口。</p>
-</li>
-<li>
-<p>CUDA Driver API：CUDA 的低级 API，提供了更细粒度的控制，允许开发者直接与 CUDA 驱动程序交互。对于需要更精细管理资源和执行模型的高级用户来说，这是一个有用的工具。</p>
-</li>
-<li>
-<p>CUDA Toolkit：一系列编译工具、库和技术文档。包括 <code>nvcc</code>（NVIDIA 的 CUDA 编译器）、CUDA 库、CUDA 调试器、性能分析工具（如 <code>nvprof</code>）以及其他开发工具。</p>
-</li>
-<li>
-<p>CUDA Libraries：一组为加速不同类型的计算任务而优化的库</p>
+<li>服务器提供了大量的盘位，不同服务器的盘位使用的接口、磁盘的尺寸可能不同。</li>
+<li>服务器一般提供 RAID 卡，可以在硬件层面实现 RAID 功能，大部分 RAID 卡也允许管理员设置直通到操作系统中，由操作系统实现 RAID 功能。</li>
+<li>根据工作负载的不同，可能需要考虑不同文件系统的差异，并且选择合适的文件系统。</li>
+<li>由于磁盘数量多，磁盘故障的概率也会增加，因此需要能够及时发现故障，并采取相应的措施。</li>
+<li>…………</li>
+</ul>
+<p>本部分会对运维需要了解的基础知识进行介绍。</p>
+<h2 id="disks">磁盘<a class="headerlink" href="#disks" title="Permanent link">&para;</a></h2>
+<h3 id="disk-type">磁盘类型简介<a class="headerlink" href="#disk-type" title="Permanent link">&para;</a></h3>
+<p>在服务器上最常见的为机械硬盘（HDD）和固态硬盘（SSD）。机械硬盘使用磁盘片和机械臂进行数据读写，固态硬盘使用闪存芯片进行数据读写。
+除此以外，还可能有一些特殊的存储设备，例如磁带、Intel Optane 等，这里不做详细介绍。</p>
+<p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。
+而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
+对于企业级硬盘，这些性能指标可能会更高。</p>
+<p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。
+由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。
+尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。
+而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；
+读取操作对 SSD 的损耗可以忽略不计。</p>
+<p>对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。</p>
+<h3 id="disk-size">磁盘规格与尺寸<a class="headerlink" href="#disk-size" title="Permanent link">&para;</a></h3>
+<p>关于磁盘规格，在服务器安装时我们主要关心以下几点：</p>
 <ul>
-<li>
-<p>cuBLAS：基本线性代数子程序（<code>BLAS</code>）的 GPU 加速版本。</p>
-</li>
-<li>
-<p>cuFFT：在 GPU 上进行快速傅里叶变换的库。</p>
-</li>
-<li>
-<p>cuRAND：在 GPU 上生成随机数的库。</p>
-</li>
-<li>
-<p>cuDNN：用于深度神经网络的 GPU 加速的原语和函数库。</p>
-</li>
-<li>
-<p>NCCL：多 GPU 和多节点上的集合通信的库。</p>
-</li>
-<li>
-<p>Thrust：类似于 C++ 标准模板库（<code>STL</code>）的并行算法库。</p>
-</li>
+<li>磁盘的尺寸（2.5 英寸、3.5 英寸）<ul>
+<li>部分手册会将 2.5 英寸的磁盘称为 SFF（Small Form Factor），3.5 英寸的磁盘称为 LFF（Large Form Factor）。</li>
 </ul>
 </li>
-<li>
-<p>CUDA Samples：示例代码，涵盖了基本的<code>Hello World</code>程序到更复杂的应用程序。</p>
-</li>
-<li>
-<p>NVIDIA Nsight Tools：集成开发环境和调试工具，用于帮助开发者优化 CUDA 应用程序的性能和可靠性。包括 <code>Nsight Eclipse Edition</code>、<code>Nsight Visual Studio Edition</code>、<code>Nsight Compute</code> 和 <code>Nsight Systems</code>。</p>
-</li>
-<li>
-<p>CUDA Documentation：包括 API 参考、编程指南、最佳实践指南和其他技术资源等</p>
+<li>磁盘的接口与协议（SAS、SATA、NVMe、M.2、U.2）</li>
+<li>是否与服务器配置兼容：<ul>
+<li>部分服务器会有硬盘白名单，只有白名单中的硬盘才能识别。</li>
+<li>使用的硬件 RAID 方案可能会对硬盘接口有要求，例如 SATA 和 SAS 接口的硬盘不能混用。</li>
+</ul>
 </li>
 </ul>
-<h2 id="cuda_1">配置 CUDA 环境<a class="headerlink" href="#cuda_1" title="Permanent link">&para;</a></h2>
-<h3 id="_1">硬件准备<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
-<p>在开始之前，你需要确认显卡是否支持支持 CUDA。在这里可以查看支持的列表：<a href="https://developer.nvidia.com/CUDA-gpus">https://developer.nvidia.com/CUDA-gpus</a></p>
-<p>表中的<code>Compute Capability</code>代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。</p>
-<h3 id="cuda_2">安装 CUDA<a class="headerlink" href="#cuda_2" title="Permanent link">&para;</a></h3>
-<p>虽然在不同的操作系统下，CUDA 的多种不同的安装方式，但总的来说，在 Linux 下，CUDA 的安装方式大致分为：</p>
-<ul>
-<li>
-<p>使用官方 runfile 一键安装</p>
-</li>
-<li>
-<p>从官网下载本地仓库的安装包，并用包管理系统进行安装</p>
-</li>
-<li>
-<p>直接使用操作系统本身的仓库和包管理系统进行安装</p>
-</li>
-</ul>
-<p>对于前两种方式，可以在官网下载页面<a href="https://developer.nvidia.com/CUDA-downloads">https://developer.nvidia.com/CUDA-downloads</a>选择合适的操作系统，网页将给出对应操作系统的安装指令。</p>
-<p>如果你的主机处于内网环境，例如某些企业中，或和 Nvidia 服务器的连接较慢，可以直接使用操作系统自带的软件仓库进行安装。这里以常用的 Ubuntu 为例：</p>
-<h4 id="_2">安装预编译的内核模块<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-modules-nvidia-<span class="si">${</span><span class="nv">DRIVER_BRANCH</span><span class="si">}${</span><span class="nv">SERVER</span><span class="si">}</span>-<span class="si">${</span><span class="nv">LINUX_FLAVOUR</span><span class="si">}</span>
-</code></pre></div>
-<p><code>${DRIVER_BRANCH}</code>是 Nvidia 驱动的版本号，例如<code>525</code>,<code>535</code>等</p>
-<p><code>${SERVER}</code>可以是<code>-server</code>或为空，代表是否选择为服务器优化的版本。</p>
-<p><code>${LINUX_FLAVOUR}</code>可以是<code>generic</code>，<code>lowlatency</code>等。通常情况下，选择前者，除非希望系统尽可能的实时，同时又不希望降低太多的性能。</p>
-<p>例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-modules-nvidia-525-generic
-</code></pre></div>
-<h4 id="_3">安装用户空间的驱动和库<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>nvidia-driver-<span class="si">${</span><span class="nv">DRIVER_BRANCH</span><span class="si">}${</span><span class="nv">SERVER</span><span class="si">}</span>
-</code></pre></div>
-<p>参数意义同上</p>
-<p>例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>nvidia-driver-525
-</code></pre></div>
-<h3 id="_4">查看显卡状态<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>nvidia-smi
-</code></pre></div>
-<p>这个命令可以列举并查看显卡的资源使用率，温度，功率等信息。</p>
-<p>如果能够查看到你的显卡，那么恭喜你，显卡已经可以使用了。</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p><code>nvidia-smi</code>界面右上角显示的 CUDA 版本是指当前系统上安装的 NVIDIA 驱动支持的最高 CUDA 版本，并不是已安装的 CUDA 版本</p>
+<div class="admonition warning">
+<p class="admonition-title">仔细阅读并确认厂商文档</p>
+<p>一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。</p>
 </div>
-<h3 id="_5">添加环境变量（可选）<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到<code>PATH</code>环境变量中</p>
-<p>在<code>~/.bashrc</code>等文件中添加这一行</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/cuda/bin<span class="si">${</span><span class="nv">PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">PATH</span><span class="si">}}</span>
+<p>磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。同时，托架也一般有 LED 灯，在磁盘故障时会亮黄灯或红灯，也一般能够使用服务器的管理工具控制灯闪烁来定位磁盘。</p>
+<!-- TODO: 一张托架的照片 -->
+
+<h3 id="disk-interface">磁盘接口与协议<a class="headerlink" href="#disk-interface" title="Permanent link">&para;</a></h3>
+<p>机械硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接，一些固态硬盘也会使用 SATA 接口。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。</p>
+<p>SATA 与 SAS 的详细对比可参考<a href="https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA">英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节</a>。</p>
+<p>随着固态硬盘的普及，PCIe 接口的固态硬盘也越来越多见。PCIe 接口的固态硬盘通常使用 NVMe 协议，因此也被称为 NVMe SSD。NVMe SSD 常见的接口形态有 U.2、M.2 和 AIC（PCIe Add-in Card，即扩展卡）。</p>
+<ul>
+<li>
+<p>M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。</p>
+<ul>
+<li>常见的 M.2 接口有 B-key 和 M-key 两种，主流的 NVMe SSD 通常使用 M-key 接口，而 SATA SSD 通常使用 B-key 或 B+M（两个缺口）。一个 M.2 接口是否支持 NVMe 或 SATA 协议取决于主板或控制器，因此具体情况需要参考产品的说明书。<ul>
+<li>作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVme 的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。</li>
+</ul>
+</li>
+<li>除了接口的形状，M.2 接口的长宽也有一系列选项，例如 2230、2242、2280、22110 等，即宽度为 22 mm，长度分别为 30、42、80、110 mm 等。个人电脑一般采用 2280 的尺寸，而服务器（和一些高端台式机主板）上可能会使用 22110 的尺寸。这些尺寸不影响接口的电气特性，只是为了适应不同的空间和散热需求。</li>
+</ul>
+</li>
+<li>
+<p>U.2 接口形状与 SAS 类似，但是<strong>不兼容 SAS</strong>（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。</p>
+</li>
+<li>AIC 就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
+</ul>
+<details class="example">
+<summary>图片：M.2 SSD</summary>
+<p><figure markdown="span">
+  <img alt="M.2 2280 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg" />
+  <figcaption>M.2 2280 SSD</figcaption>
+</figure></p>
+</details>
+<details class="example">
+<summary>图片：U.2 SSD</summary>
+<p><figure markdown="span">
+  <img alt="U.2 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/620px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg" />
+  <figcaption>U.2 SSD</figcaption>
+</figure></p>
+</details>
+<details class="example">
+<summary>图片：AIC SSD</summary>
+<p><figure markdown="span">
+  <img alt="PCIe AIC SSD" src="https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg" />
+  <figcaption>PCIe 插卡式 SSD</figcaption>
+</figure></p>
+</details>
+<h3 id="smart">S.M.A.R.T.<a class="headerlink" href="#smart" title="Permanent link">&para;</a></h3>
+<p>磁盘的 S.M.A.R.T.（Self-Monitoring, Analysis and Reporting Technology）功能可以记录磁盘的运行状态，并且在磁盘出现故障前提供预警。S.M.A.R.T. 可以记录磁盘的温度、读写错误率、磁盘旋转速度、磁盘的寿命等信息。</p>
+<p>Linux 系统上可以安装 <code>smartmontools</code> 包来查看磁盘的 S.M.A.R.T. 信息。使用以下命令查看可用的磁盘与其 S.M.A.R.T 状态：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>--scan
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">/dev/nvme0 -d nvme # /dev/nvme0, NVMe device</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/nvme0
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">（内容省略）</span>
 </code></pre></div>
-<p>以便执行 nvcc 等程序。</p>
-<p>如果编译项目时找不到 CUDA 库，则需要更新动态链接库路径。</p>
-<p>在<code>~/.bashrc</code>等文件中添加这一行</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="si">}}</span>
+<p>在服务器上，如果使用硬件 RAID，使用 <code>smartctl</code> 需要添加额外的参数来从 RAID 控制器获取真实的磁盘信息，例如下面的例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>--scan
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">/dev/sda -d scsi # /dev/sda, SCSI device</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">/dev/sdb -d scsi # /dev/sdb, SCSI device</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">/dev/sdc -d scsi # /dev/sdc, SCSI device</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">/dev/sdd -d scsi # /dev/sdd, SCSI device</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">/dev/bus/4 -d megaraid,8 # /dev/bus/4 [megaraid_disk_08], SCSI device</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">/dev/bus/4 -d megaraid,9 # /dev/bus/4 [megaraid_disk_09], SCSI device</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">/dev/bus/4 -d megaraid,10 # /dev/bus/4 [megaraid_disk_10], SCSI device</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">/dev/bus/4 -d megaraid,11 # /dev/bus/4 [megaraid_disk_11], SCSI device</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">/dev/bus/4 -d megaraid,12 # /dev/bus/4 [megaraid_disk_12], SCSI device</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">/dev/bus/4 -d megaraid,13 # /dev/bus/4 [megaraid_disk_13], SCSI device</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">/dev/bus/4 -d megaraid,14 # /dev/bus/4 [megaraid_disk_14], SCSI device</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">/dev/bus/4 -d megaraid,15 # /dev/bus/4 [megaraid_disk_15], SCSI device</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">/dev/bus/0 -d megaraid,8 # /dev/bus/0 [megaraid_disk_08], SCSI device</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">/dev/bus/0 -d megaraid,9 # /dev/bus/0 [megaraid_disk_09], SCSI device</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">/dev/bus/0 -d megaraid,10 # /dev/bus/0 [megaraid_disk_10], SCSI device</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="go">/dev/bus/0 -d megaraid,11 # /dev/bus/0 [megaraid_disk_11], SCSI device</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="go">/dev/bus/0 -d megaraid,12 # /dev/bus/0 [megaraid_disk_12], SCSI device</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="go">/dev/bus/0 -d megaraid,13 # /dev/bus/0 [megaraid_disk_13], SCSI device</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/sdd<span class="w">  </span><span class="c1"># 直接查询只能看到没有意义的控制器信息</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-21-amd64] (local build)</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="go">Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="go">=== START OF INFORMATION SECTION ===</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">Vendor:               AVAGO</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">Product:              MR9361-8i</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="go">Revision:             4.68</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="go">Compliance:           SPC-3</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="go">User Capacity:        1,919,816,826,880 bytes [1.91 TB]</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="go">Logical block size:   512 bytes</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="go">Physical block size:  4096 bytes</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="go">Logical Unit id:      0x600605b00f17786026223e2d33c1767b</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="go">Serial number:        007b76c1332d3e22266078170fb00506</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="go">Device type:          disk</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="go">Local Time is:        Sun Feb 11 18:40:45 2024 CST</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="go">SMART support is:     Unavailable - device lacks SMART capability.</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="go">=== START OF READ SMART DATA SECTION ===</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="go">Current Drive Temperature:     0 C</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="go">Drive Trip Temperature:        0 C</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="go">Error Counter logging not supported</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="go">Device does not support Self Test logging</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="gp">$ </span>sudo<span class="w"> </span>smartctl<span class="w"> </span>-a<span class="w"> </span>/dev/bus/4<span class="w"> </span>-d<span class="w"> </span>megaraid,8<span class="w">  </span><span class="c1"># 添加参数可以看到真实的磁盘信息</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="go">（内容省略）</span>
 </code></pre></div>
-<h2 id="cuda_3">CUDA 编程模型<a class="headerlink" href="#cuda_3" title="Permanent link">&para;</a></h2>
+<p>有关 S.M.A.R.T. 指标解释与监控的内容将会在 <a href="../raid/">RAID</a> 中介绍。</p>
+<h3 id="trim-discardunmap">Trim (Discard/Unmap)<a class="headerlink" href="#trim-discardunmap" title="Permanent link">&para;</a></h3>
+<p>SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。
+SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，
+SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（<code>virtio-scsi</code>）、部分企业级的 SAN 等。</p>
+<details class="note">
+<summary>关注存储的可用空间比例</summary>
+<p>不建议将存储的可用空间全部或接近全部耗尽，这是因为：</p>
+<ul>
+<li>机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；</li>
+<li>固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。</li>
+</ul>
+</details>
+<p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，
+一般推荐后者）。</p>
+<h2 id="raid">RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h2>
+<p>RAID（Redundant Array of Inexpensive Disks）是一种将多个磁盘组合在一起实现数据冗余和性能提升的技术。不同的磁盘组合方式称为“RAID 级别（RAID Level）”，常见的有 RAID 0、RAID 1、RAID 5、RAID 6、RAID 10 等。</p>
+<dl>
+<dt>RAID 0</dt>
+<dd>
+<p>也称作条带化（Striped），将数据分块存储在多个磁盘上，可以充分利用所有容量，获得叠加的顺序读写性能（但随机读写性能一般），但没有冗余，任何一块磁盘损坏都会导致整个阵列的数据丢失，适合需要高性能读写但不需要数据安全性的场景。</p>
+</dd>
+<dt>RAID 1</dt>
+<dd>
+<p>也称作镜像（Mirrored），将数据完全复制到多个磁盘上，提供了绝对冗余，整个阵列中只需要有一块盘存活，数据就不会丢失。代价是整个阵列的容量等单块磁盘的容量，空间利用率低下，适合需要高可靠性<s>而且不缺钱</s>的场景。同时由于每块盘上的数据完全一致，RAID 1 的读取性能可以叠加（甚至包括随机读取），但写入性能不会提升。</p>
+</dd>
+<dt>RAID 5</dt>
+<dd>
+<p>将数据和<strong>一份</strong>校验信息分块存储在多个磁盘上，可以允许阵列中任何一块磁盘损坏，兼顾冗余性和容量利用率。重建期间的性能会严重下降，并且一旦在重建完成前又坏了一块盘，那么你就寄了。</p>
+</dd>
+<dt>RAID 6</dt>
+<dd>
+<p>将数据和<strong>两份</strong>校验信息分块存储在多个磁盘上，比 RAID 5 多了一份校验信息，可以容纳两块磁盘损坏，适合大容量或者磁盘较多的阵列。尽管允许两块盘损坏，但我们仍然建议在第一块盘损坏后立即更换并重建，不要等到更危险的时候。</p>
+</dd>
+<dt>RAID 10, 50, 60</dt>
+<dd>
+<p>将不同级别的 RAID 组合在一起，兼顾性能和冗余，各取所长，对于 10 块盘以上的阵列是更加常见的选择。例如 RAID 10 = RAID 1 + RAID 0，通常将每两块盘组成 RAID 1，再将这些 RAID 1 的组合拼成一个大 RAID 0。</p>
+</dd>
+</dl>
+<div class="admonition danger">
+<p class="admonition-title">磁盘阵列不是备份</p>
+<p>RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。</p>
+<p><a href="https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf"><img alt="磁盘阵列不是备份" src="../images/raid-is-not-backup.png" /></a></p>
+<p><em>图片来自<a href="https://tuna.moe/event/2023/disk-array/">金枪鱼之夜：实验物理垃圾佬之乐——PB 级磁盘阵列演进</a></em></p>
+</div>
+<h3 id="raid_1">RAID 等级比较<a class="headerlink" href="#raid_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>等级</th>
+<th>容量</th>
+<th>冗余</th>
+<th>读写性能</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAID 0</td>
+<td>全部叠加</td>
+<td>无，挂一块盘就寄了</td>
+<td>顺序读写性能高，随机读写性能一般（略好于单块盘）</td>
+<td>临时数据、缓存</td>
+</tr>
+<tr>
+<td>RAID 1</td>
+<td>单块盘</td>
+<td>最高，只要有一块盘存活就行</td>
+<td>叠加的读性能，但是只有单块盘的写性能</td>
+<td>重要数据</td>
+</tr>
+<tr>
+<td>RAID 5</td>
+<td>N-1 块盘</td>
+<td>可以坏一块盘</td>
+<td>顺序读写性能高，随机读写性能差；重建期间<strong>很差</strong></td>
+<td>兼顾容量和安全性</td>
+</tr>
+<tr>
+<td>RAID 6</td>
+<td>N-2 块盘</td>
+<td>可以坏两块盘</td>
+<td>顺序读写性能高，随机读写性能差；重建期间<strong>更差</strong></td>
+<td>比 RAID 5 更稳一点</td>
+</tr>
+<tr>
+<td>RAID 10</td>
+<td>每组 RAID 1 容量叠加</td>
+<td>每组 RAID 1 内只需要存活一块盘</td>
+<td>顺序和随机性能都不错，并且重建期间还凑合</td>
+<td>兼顾性能和安全性</td>
+</tr>
+<tr>
+<td>RAID 60</td>
+<td>（自行计算）</td>
+<td>每组 RAID 6 内可以坏两块盘</td>
+<td>顺序读写性能不错，并且重建期间<s>更凑合了</s></td>
+<td>盘很多，并且兼顾容量和安全性</td>
+</tr>
+</tbody>
+</table>
+<p>RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。</p>
+<div class="admonition question">
+<p class="admonition-title">思考题</p>
+<ol>
+<li>为什么 RAID 5 和 RAID 6 的重建期间性能会很差？</li>
+<li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？</li>
+<li>为什么对大容量磁盘使用 RAID 5 是一个坏主意？</li>
+<li>为什么说 RAID 5/6 有很高的写惩罚（Write Penalty）？</li>
+</ol>
+</div>
+<h3 id="raid_2">RAID 实现方式<a class="headerlink" href="#raid_2" title="Permanent link">&para;</a></h3>
+<p>RAID 可以在硬件层面实现，也可以在操作系统层面通过软件实现。</p>
+<p>硬件：</p>
+<ul>
+<li>LSI MegaRAID 系列是最常见的硬件 RAID 卡</li>
+<li>HPE Smart Array 系列</li>
+<li>一些专用的存储服务器，如 HPE MSA、Dell EMC PowerVault 等存储网络（SAN）设备</li>
+<li>Intel RST 和 Intel VMD，是个人计算机上常见的硬件 RAID 方案<s>（但是非常难用）</s></li>
+</ul>
+<p>Windows：</p>
+<ul>
+<li>较早的“动态磁盘”功能支持 RAID 0、1、5 等级别，并且是在分区层面实现的，因此同一个硬盘组上可以同时存在多个采用不同 RAID 级别的卷（文件系统）</li>
+<li>较新的 Windows 开始支持 Storage Spaces，可以实现更多 RAID 级别，以及“镜像加速”、“自动热迁移”等功能，但是比动态磁盘更加难用，重建也更复杂</li>
+</ul>
+<p>Linux：</p>
+<ul>
+<li>mdadm 是 Linux 上最常见的软件 RAID 实现方式之一</li>
+<li>Linux 常用的逻辑卷管理工具 LVM 也支持 RAID 功能</li>
+<li>一部分文件系统，如 ZFS 和 Btrfs，也支持 RAID 功能</li>
+</ul>
+<p>服务器一般都配备了硬件 RAID 卡，如果需要使用软件 RAID，需要设置 RAID 卡或对应磁盘到 HBA 模式（也叫 JBOD/Non-RAID/直通 模式）。
+一部分低端 RAID 卡不提供相关功能的支持，尽管可以通过为每块磁盘创建单独的 RAID 0 阵列实现类似的功能，但是并不推荐。</p>
+<h2 id="_2">文件系统<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>在 Linux 上，ext4 是最常见的文件系统。但是对于某些需求，ext4 可能无法满足，例如：</p>
+<ul>
+<li>需要支持存储大量文件，数量甚至可能超过 ext4 的限制</li>
+<li>需要支持快照、透明压缩、数据校验等高级功能</li>
+</ul>
+<p>在<a href="../filesystem/">「分区与文件系统」部分</a>会对文件系统的选择进行介绍。</p>
 <!--
   Links to man pages
 
@@ -1786,6 +2004,15 @@
 <!-- man 5 -->
 
 <!-- man 8 -->
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p>IOPS 为每秒的 I/O 操作数，可以简单认为是命令操作延迟的倒数。&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
@@ -1870,10 +2097,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.8fd75fb4.min.js"></script>
       
     
   </body>

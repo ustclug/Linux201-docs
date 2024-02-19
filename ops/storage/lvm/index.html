@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.9">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.f2e4d321.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7e359304.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -479,6 +479,8 @@
       
         
       
+        
+      
     
     
       
@@ -519,6 +521,27 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../intro/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    基础知识简介
+  </span>
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -2360,6 +2383,14 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <p>直到<a href="https://github.com/lvmteam/lvm2/issues/30#issuecomment-1412248104">相对新（&gt;= 2.03.12，发布于 2021/05/08）的 LVM 工具</a>之前，被缓存的 LV 不能被 resize。因此 resize 之前必须先撤下缓存，resize 结束后再安回去。</p>
 <p>因此 <a href="https://packages.debian.org/bookworm/lvm2">Debian Bookworm 的 LVM 工具</a>支持这种情况下的 resize，而 Bullseye 不支持。</p>
 </div>
+<div class="admonition warning">
+<p class="admonition-title"><code>cachevol</code> 无法修复</p>
+<p>目前 <code>lvconvert --repair</code> 不支持修复 cachevol，尝试这么做会看到以下输出：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--repair<span class="w"> </span>vg201-test/lvdata_cache_cvol
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">  WARNING: Command on LV vg201-test/lvdata_cache_cvol does not accept LV type linear.</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">  Command not permitted on LV vg201-test/lvdata_cache_cvol.</span>
+</code></pre></div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">lvmcache 的缓存模式、策略与部分术语</p>
 <p>lvmcache 支持三种缓存模式：</p>
@@ -2395,78 +2426,78 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <!-- TODO: 更详细的介绍 -->
 </details>
 <p>如果不关心数据卷和元数据卷的细节，创建 <code>cachepool</code> 的体验也类似。先把上面的 uncache 掉：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--uncache<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; successfully removed.</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">  Logical volume vg201-test/lvdata is not cached and vg201-test/lvdata_cache is removed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--uncache<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; successfully removed.</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">  Logical volume vg201-test/lvdata is not cached and vg201-test/lvdata_cache is removed.</span>
 </code></pre></div>
 <p>然后创建 <strong>cache-pool 类型</strong>的 LV，并且附加到后备设备上：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>-n<span class="w"> </span>lvdata_cache<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; created.</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">  LV                   VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">  lvdata               vg201-test -wi-a----- &lt;100.00g                                                    </span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">  lvdata_cache         vg201-test Cwi---C---    9.97g                                                    </span>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="go">  [lvdata_cache_cdata] vg201-test Cwi-------    9.97g                                                    </span>
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="go">  [lvdata_cache_cmeta] vg201-test ewi-------   12.00m                                                    </span>
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="go">  [lvol0_pmspare]      vg201-test ewi-------   12.00m</span>
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachepool<span class="w"> </span>lvdata_cache<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="go">Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache? [y/n]: y</span>
-<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
-<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="go">  LV                         VG         Attr       LSize    Pool                 Origin         Data%  Meta%  Move Log Cpy%Sync Convert</span>
-<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="go">  lvdata                     vg201-test Cwi-a-C--- &lt;100.00g [lvdata_cache_cpool] [lvdata_corig] 0.01   11.07           0.00            </span>
-<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="go">  [lvdata_cache_cpool]       vg201-test Cwi---C---    9.97g                                     0.01   11.07           0.00            </span>
-<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="go">  [lvdata_cache_cpool_cdata] vg201-test Cwi-ao----    9.97g                                                                            </span>
-<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="go">  [lvdata_cache_cpool_cmeta] vg201-test ewi-ao----   12.00m                                                                            </span>
-<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a><span class="go">  [lvdata_corig]             vg201-test owi-aoC--- &lt;100.00g                                                                            </span>
-<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="go">  [lvol0_pmspare]            vg201-test ewi-------   12.00m</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>-n<span class="w"> </span>lvdata_cache<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; created.</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">  LV                   VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">  lvdata               vg201-test -wi-a----- &lt;100.00g                                                    </span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">  lvdata_cache         vg201-test Cwi---C---    9.97g                                                    </span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="go">  [lvdata_cache_cdata] vg201-test Cwi-------    9.97g                                                    </span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="go">  [lvdata_cache_cmeta] vg201-test ewi-------   12.00m                                                    </span>
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="go">  [lvol0_pmspare]      vg201-test ewi-------   12.00m</span>
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachepool<span class="w"> </span>lvdata_cache<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="go">Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache? [y/n]: y</span>
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a><span class="go">  LV                         VG         Attr       LSize    Pool                 Origin         Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a><span class="go">  lvdata                     vg201-test Cwi-a-C--- &lt;100.00g [lvdata_cache_cpool] [lvdata_corig] 0.01   11.07           0.00            </span>
+<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a><span class="go">  [lvdata_cache_cpool]       vg201-test Cwi---C---    9.97g                                     0.01   11.07           0.00            </span>
+<a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a><span class="go">  [lvdata_cache_cpool_cdata] vg201-test Cwi-ao----    9.97g                                                                            </span>
+<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a><span class="go">  [lvdata_cache_cpool_cmeta] vg201-test ewi-ao----   12.00m                                                                            </span>
+<a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a><span class="go">  [lvdata_corig]             vg201-test owi-aoC--- &lt;100.00g                                                                            </span>
+<a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a><span class="go">  [lvol0_pmspare]            vg201-test ewi-------   12.00m</span>
 </code></pre></div>
 <p>可以发现，在 <code>lvcreate --type cache-pool</code> 的时候，LVM 会自动创建两个 LV：<code>lvdata_cache_cdata</code> 和 <code>lvdata_cache_cmeta</code>。
 但是更老一些的教程中会介绍分别手工创建缓存和元数据 LV 的内容。让我们先把这个再拆掉（uncache），然后手工做这个过程。</p>
 <p>根据 <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/logical_volume_manager_administration/lvm_cache_volume_creation">RHEL 6 的文档</a>，数据和元数据的推荐大小比例是 1000:1（例如如果有 2G 的缓存，那么就需要 12M 的元数据）。
 这里我们的 "SSD" 有 10G，因此大约需要 60M 的元数据，可以先创建元数据 LV，然后剩下的——全部给数据？</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span>60M<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">  Logical volume &quot;lvdata_cache_meta&quot; created.</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_data<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">  Logical volume &quot;lvdata_cache_data&quot; created.</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>--poolmetadata<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata_cache_data
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool&#39;s data and metadata volumes with metadata wiping.</span>
-<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="go">  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)</span>
-<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="go">Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y</span>
-<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="go">  Volume group &quot;vg201-test&quot; has insufficient free space (0 extents): 15 required.</span>
-<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="go">  Failed to set up spare metadata LV for pool.</span>
-</code></pre></div>
-<p>可以看到还需要一些空间（15 个 extent），因此使用 <code>lvreduce</code> 留点出来：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvreduce<span class="w"> </span>-l<span class="w"> </span>-15<span class="w"> </span>vg201-test/lvdata_cache_data
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">  No file system found on /dev/vg201-test/lvdata_cache_data.</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="go">  Size of logical volume vg201-test/lvdata_cache_data changed from &lt;9.94 GiB (2544 extents) to &lt;9.88 GiB (2529 extents).</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">  Logical volume vg201-test/lvdata_cache_data successfully resized.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span>60M<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">  Logical volume &quot;lvdata_cache_meta&quot; created.</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_data<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">  Logical volume &quot;lvdata_cache_data&quot; created.</span>
 <a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>--poolmetadata<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata_cache_data
 <a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool&#39;s data and metadata volumes with metadata wiping.</span>
 <a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="go">  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)</span>
 <a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="go">Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y</span>
-<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  Converted vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool.</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  Volume group &quot;vg201-test&quot; has insufficient free space (0 extents): 15 required.</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="go">  Failed to set up spare metadata LV for pool.</span>
+</code></pre></div>
+<p>可以看到还需要一些空间（15 个 extent），因此使用 <code>lvreduce</code> 留点出来：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvreduce<span class="w"> </span>-l<span class="w"> </span>-15<span class="w"> </span>vg201-test/lvdata_cache_data
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">  No file system found on /dev/vg201-test/lvdata_cache_data.</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">  Size of logical volume vg201-test/lvdata_cache_data changed from &lt;9.94 GiB (2544 extents) to &lt;9.88 GiB (2529 extents).</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">  Logical volume vg201-test/lvdata_cache_data successfully resized.</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>--poolmetadata<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata_cache_data
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool&#39;s data and metadata volumes with metadata wiping.</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go">Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">  Converted vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool.</span>
 </code></pre></div>
 <p>之后就和上面一致了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">  LV                        VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">  lvdata                    vg201-test -wi-a----- &lt;100.00g                                                    </span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">  lvdata_cache_data         vg201-test Cwi---C---   &lt;9.88g                                                    </span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="go">  [lvdata_cache_data_cdata] vg201-test Cwi-------   &lt;9.88g                                                    </span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">  [lvdata_cache_data_cmeta] vg201-test ewi-------   60.00m                                                    </span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">  [lvol0_pmspare]           vg201-test ewi-------   60.00m</span>
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachepool<span class="w"> </span>lvdata_cache_data<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache_data? [y/n]: y</span>
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">  LV                        VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">  lvdata                    vg201-test -wi-a----- &lt;100.00g                                                    </span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">  lvdata_cache_data         vg201-test Cwi---C---   &lt;9.88g                                                    </span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">  [lvdata_cache_data_cdata] vg201-test Cwi-------   &lt;9.88g                                                    </span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="go">  [lvdata_cache_data_cmeta] vg201-test ewi-------   60.00m                                                    </span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="go">  [lvol0_pmspare]           vg201-test ewi-------   60.00m</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachepool<span class="w"> </span>lvdata_cache_data<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="go">Do you want wipe existing metadata of cache pool vg201-test/lvdata_cache_data? [y/n]: y</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
 </code></pre></div>
 <h3 id="does-lvmcache-scale">Does lvmcache scale?<a class="headerlink" href="#does-lvmcache-scale" title="Permanent link">&para;</a></h3>
 <p>现实中我们肯定不可能只用 10G 的 SSD 来做缓存，而在非家用的场景下，需要缓存的后备存储也不可能只有 100G 这么大。
 下面考虑一个类似于目前 mirrors 的场景：1.5T 的 SSD 空间对 65T 的 HDD 空间进行缓存（比例大约 1:45）。</p>
 <p>把已有的拆掉之后重新创建 1.5T（1536G）和 65T 的稀疏文件作为 SSD 和 HDD，加入 LVM，然后让我们试试 cachevol……</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">  Cache data blocks 3219046400 and chunk size 128 exceed max chunks 1000000.</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">  Use smaller cache, larger --chunksize or increase max chunks setting.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">  Cache data blocks 3219046400 and chunk size 128 exceed max chunks 1000000.</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">  Use smaller cache, larger --chunksize or increase max chunks setting.</span>
 </code></pre></div>
 <p>（这里显示的单位是扇区，即 512 字节）</p>
 <p>这里 cache 需要记录缓存数据的访问情况，记录的单位就是 chunk（需要是 32K 的倍数）。默认情况下，chunk 大小设置为 64KB。
@@ -2478,9 +2509,9 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <li>SSD 的写入量是有限制的。上面一点中提到的命中率降低的问题会导致更多的写入，最终导致 SSD 的寿命缩短。</li>
 </ol>
 <p>因此更好的选择是以（相对更能接受的）一些额外的 overhead 为代价，增加 chunk 数量。具体的「代价」在后续创建后，可以在内核日志里面看到：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>[2030783.641796] device-mapper: cache: You have created a cache device with a lot of individual cache blocks (12578624)
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>                 All these mappings can consume a lot of kernel memory, and take some time to read/write.
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>                 Please consider increasing the cache block size to reduce the overall cache block count.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>[2030783.641796] device-mapper: cache: You have created a cache device with a lot of individual cache blocks (12578624)
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>                 All these mappings can consume a lot of kernel memory, and take some time to read/write.
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>                 Please consider increasing the cache block size to reduce the overall cache block count.
 </code></pre></div>
 <p>考虑到在服务器场合，内存一般都是足够（甚至过量）的，因此唯一可能需要考虑的就是额外的延迟了。</p>
 <div class="admonition comment">
@@ -2490,17 +2521,17 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <p>因为经历过 SSD 被 lvmcache 磨没的事件，所以我个人的看法是，
 在 201 中，提及这一点（以及后面会介绍 lvmcache 还有其他的坑）是很重要的——有些方案放大规模之后，就会出现意想不到的问题。</p>
 </div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>--config<span class="w"> </span>allocation/cache_pool_max_chunks<span class="o">=</span><span class="m">25148800</span><span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">  WARNING: Configured cache_pool_max_chunks value 25148800 is higher then recommended 1000000.</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>--config<span class="w"> </span>allocation/cache_pool_max_chunks<span class="o">=</span><span class="m">25148800</span><span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">  WARNING: Configured cache_pool_max_chunks value 25148800 is higher then recommended 1000000.</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
 </code></pre></div>
 <p>64K 也是目前 mirrors 机器使用的 chunk size。</p>
 <p>当然也可以把 chunk size 略微调大到 128K，这样的话 chunk 就少一些：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>--chunksize<span class="w"> </span>128K<span class="w"> </span>--config<span class="w"> </span>allocation/cache_pool_max_chunks<span class="o">=</span><span class="m">12578624</span><span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">  WARNING: Configured cache_pool_max_chunks value 12578624 is higher then recommended 1000000.</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>--chunksize<span class="w"> </span>128K<span class="w"> </span>--config<span class="w"> </span>allocation/cache_pool_max_chunks<span class="o">=</span><span class="m">12578624</span><span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">  WARNING: Configured cache_pool_max_chunks value 12578624 is higher then recommended 1000000.</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
 </code></pre></div>
 <p>可能需要进行一些性能测试来权衡 chunk size 带来的影响——考虑到本地测试时稀疏文件等因素，实际的性能测试可能需要在真实的环境中进行。
 例如，<code>fio</code> 工具可以对块设备测试读延迟等性能指标。</p>
@@ -2510,43 +2541,43 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <summary>使用 fio 测试随机读延迟的例子</summary>
 <p>本部分参考了 <a href="https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm">Oracle 的文档</a>。</p>
 <p>一个只读情况下测试 10s <code>/dev/mapper/vg201--test-lvdata</code> 的 4K 随机读的例子如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bsudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">fio-3.36</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">Starting 1 process</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
-<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
-<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
-<a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
-<a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
-<a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
-<a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a><span class="go">    clat percentiles (usec):</span>
-<a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
-<a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
-<a id="__codelineno-29-20" name="__codelineno-29-20" href="#__codelineno-29-20"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
-<a id="__codelineno-29-21" name="__codelineno-29-21" href="#__codelineno-29-21"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
-<a id="__codelineno-29-22" name="__codelineno-29-22" href="#__codelineno-29-22"></a><span class="go">    | 99.99th=[  465]</span>
-<a id="__codelineno-29-23" name="__codelineno-29-23" href="#__codelineno-29-23"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
-<a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
-<a id="__codelineno-29-25" name="__codelineno-29-25" href="#__codelineno-29-25"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-29-26" name="__codelineno-29-26" href="#__codelineno-29-26"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
-<a id="__codelineno-29-27" name="__codelineno-29-27" href="#__codelineno-29-27"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-29-28" name="__codelineno-29-28" href="#__codelineno-29-28"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
-<a id="__codelineno-29-29" name="__codelineno-29-29" href="#__codelineno-29-29"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
-<a id="__codelineno-29-30" name="__codelineno-29-30" href="#__codelineno-29-30"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-29-31" name="__codelineno-29-31" href="#__codelineno-29-31"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-29-32" name="__codelineno-29-32" href="#__codelineno-29-32"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-29-33" name="__codelineno-29-33" href="#__codelineno-29-33"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
-<a id="__codelineno-29-34" name="__codelineno-29-34" href="#__codelineno-29-34"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
-<a id="__codelineno-29-35" name="__codelineno-29-35" href="#__codelineno-29-35"></a>
-<a id="__codelineno-29-36" name="__codelineno-29-36" href="#__codelineno-29-36"></a><span class="go">Run status group 0 (all jobs):</span>
-<a id="__codelineno-29-37" name="__codelineno-29-37" href="#__codelineno-29-37"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bsudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="go">fio-3.36</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="go">Starting 1 process</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
+<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
+<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
+<a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
+<a id="__codelineno-30-16" name="__codelineno-30-16" href="#__codelineno-30-16"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
+<a id="__codelineno-30-17" name="__codelineno-30-17" href="#__codelineno-30-17"></a><span class="go">    clat percentiles (usec):</span>
+<a id="__codelineno-30-18" name="__codelineno-30-18" href="#__codelineno-30-18"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
+<a id="__codelineno-30-19" name="__codelineno-30-19" href="#__codelineno-30-19"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
+<a id="__codelineno-30-20" name="__codelineno-30-20" href="#__codelineno-30-20"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
+<a id="__codelineno-30-21" name="__codelineno-30-21" href="#__codelineno-30-21"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
+<a id="__codelineno-30-22" name="__codelineno-30-22" href="#__codelineno-30-22"></a><span class="go">    | 99.99th=[  465]</span>
+<a id="__codelineno-30-23" name="__codelineno-30-23" href="#__codelineno-30-23"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
+<a id="__codelineno-30-24" name="__codelineno-30-24" href="#__codelineno-30-24"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
+<a id="__codelineno-30-25" name="__codelineno-30-25" href="#__codelineno-30-25"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-30-26" name="__codelineno-30-26" href="#__codelineno-30-26"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
+<a id="__codelineno-30-27" name="__codelineno-30-27" href="#__codelineno-30-27"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-30-28" name="__codelineno-30-28" href="#__codelineno-30-28"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
+<a id="__codelineno-30-29" name="__codelineno-30-29" href="#__codelineno-30-29"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
+<a id="__codelineno-30-30" name="__codelineno-30-30" href="#__codelineno-30-30"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-30-31" name="__codelineno-30-31" href="#__codelineno-30-31"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-30-32" name="__codelineno-30-32" href="#__codelineno-30-32"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-30-33" name="__codelineno-30-33" href="#__codelineno-30-33"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
+<a id="__codelineno-30-34" name="__codelineno-30-34" href="#__codelineno-30-34"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
+<a id="__codelineno-30-35" name="__codelineno-30-35" href="#__codelineno-30-35"></a>
+<a id="__codelineno-30-36" name="__codelineno-30-36" href="#__codelineno-30-36"></a><span class="go">Run status group 0 (all jobs):</span>
+<a id="__codelineno-30-37" name="__codelineno-30-37" href="#__codelineno-30-37"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
 </code></pre></div>
 </details>
 <p>此外，在 <code>lvconvert</code> 创建缓存时，如果 SSD 设备不支持 TRIM（常见的场景是在 RAID 卡后面），那么其会清零对应的块，这个过程可能会花费超过半个小时的时间。</p>
@@ -2566,78 +2597,78 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <details class="note">
 <summary>模拟出现这个问题的情况</summary>
 <p>格式化我们刚才创建的有 cache 的 LV，使用 <code>fio</code> 上点压力：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
 </code></pre></div>
 <p>同时做切换 cachemode 的操作：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachemode<span class="w"> </span>writeback<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">  WARNING: repairing a damaged cachevol is not yet possible.</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">  WARNING: cache mode writethrough is suggested for safe operation.</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">Continue using writeback without repair?y</span>
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="go">  Logical volume vg201-test/lvdata changed.</span>
-<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="go">  Flushing 16401 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="go">  Flushing 16405 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="go">  Flushing 12309 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="go">  Flushing 8213 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-22" name="__codelineno-31-22" href="#__codelineno-31-22"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-23" name="__codelineno-31-23" href="#__codelineno-31-23"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-24" name="__codelineno-31-24" href="#__codelineno-31-24"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-25" name="__codelineno-31-25" href="#__codelineno-31-25"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-26" name="__codelineno-31-26" href="#__codelineno-31-26"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-27" name="__codelineno-31-27" href="#__codelineno-31-27"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-28" name="__codelineno-31-28" href="#__codelineno-31-28"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-29" name="__codelineno-31-29" href="#__codelineno-31-29"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-30" name="__codelineno-31-30" href="#__codelineno-31-30"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-31" name="__codelineno-31-31" href="#__codelineno-31-31"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-32" name="__codelineno-31-32" href="#__codelineno-31-32"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-33" name="__codelineno-31-33" href="#__codelineno-31-33"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-34" name="__codelineno-31-34" href="#__codelineno-31-34"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-35" name="__codelineno-31-35" href="#__codelineno-31-35"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-36" name="__codelineno-31-36" href="#__codelineno-31-36"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-37" name="__codelineno-31-37" href="#__codelineno-31-37"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-38" name="__codelineno-31-38" href="#__codelineno-31-38"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-39" name="__codelineno-31-39" href="#__codelineno-31-39"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-40" name="__codelineno-31-40" href="#__codelineno-31-40"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-41" name="__codelineno-31-41" href="#__codelineno-31-41"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-42" name="__codelineno-31-42" href="#__codelineno-31-42"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-43" name="__codelineno-31-43" href="#__codelineno-31-43"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-44" name="__codelineno-31-44" href="#__codelineno-31-44"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-45" name="__codelineno-31-45" href="#__codelineno-31-45"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-46" name="__codelineno-31-46" href="#__codelineno-31-46"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-47" name="__codelineno-31-47" href="#__codelineno-31-47"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-48" name="__codelineno-31-48" href="#__codelineno-31-48"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-49" name="__codelineno-31-49" href="#__codelineno-31-49"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-50" name="__codelineno-31-50" href="#__codelineno-31-50"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-51" name="__codelineno-31-51" href="#__codelineno-31-51"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-52" name="__codelineno-31-52" href="#__codelineno-31-52"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-53" name="__codelineno-31-53" href="#__codelineno-31-53"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-54" name="__codelineno-31-54" href="#__codelineno-31-54"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-55" name="__codelineno-31-55" href="#__codelineno-31-55"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-56" name="__codelineno-31-56" href="#__codelineno-31-56"></a><span class="go">  Flushing 2411 blocks for cache vg201-test/lvdata.</span>
-<a id="__codelineno-31-57" name="__codelineno-31-57" href="#__codelineno-31-57"></a><span class="go">  Logical volume vg201-test/lvdata changed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachemode<span class="w"> </span>writeback<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">  WARNING: repairing a damaged cachevol is not yet possible.</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="go">  WARNING: cache mode writethrough is suggested for safe operation.</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">Continue using writeback without repair?y</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">  Logical volume vg201-test/lvdata changed.</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="go">  Flushing 16401 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">  Flushing 16405 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="go">  Flushing 12309 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="go">  Flushing 8213 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-16" name="__codelineno-32-16" href="#__codelineno-32-16"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-17" name="__codelineno-32-17" href="#__codelineno-32-17"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-18" name="__codelineno-32-18" href="#__codelineno-32-18"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-19" name="__codelineno-32-19" href="#__codelineno-32-19"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-20" name="__codelineno-32-20" href="#__codelineno-32-20"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-21" name="__codelineno-32-21" href="#__codelineno-32-21"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-22" name="__codelineno-32-22" href="#__codelineno-32-22"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-23" name="__codelineno-32-23" href="#__codelineno-32-23"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-24" name="__codelineno-32-24" href="#__codelineno-32-24"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-25" name="__codelineno-32-25" href="#__codelineno-32-25"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-26" name="__codelineno-32-26" href="#__codelineno-32-26"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-27" name="__codelineno-32-27" href="#__codelineno-32-27"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-28" name="__codelineno-32-28" href="#__codelineno-32-28"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-29" name="__codelineno-32-29" href="#__codelineno-32-29"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-30" name="__codelineno-32-30" href="#__codelineno-32-30"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-31" name="__codelineno-32-31" href="#__codelineno-32-31"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-32" name="__codelineno-32-32" href="#__codelineno-32-32"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-33" name="__codelineno-32-33" href="#__codelineno-32-33"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-34" name="__codelineno-32-34" href="#__codelineno-32-34"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-35" name="__codelineno-32-35" href="#__codelineno-32-35"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-36" name="__codelineno-32-36" href="#__codelineno-32-36"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-37" name="__codelineno-32-37" href="#__codelineno-32-37"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-38" name="__codelineno-32-38" href="#__codelineno-32-38"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-39" name="__codelineno-32-39" href="#__codelineno-32-39"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-40" name="__codelineno-32-40" href="#__codelineno-32-40"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-41" name="__codelineno-32-41" href="#__codelineno-32-41"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-42" name="__codelineno-32-42" href="#__codelineno-32-42"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-43" name="__codelineno-32-43" href="#__codelineno-32-43"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-44" name="__codelineno-32-44" href="#__codelineno-32-44"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-45" name="__codelineno-32-45" href="#__codelineno-32-45"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-46" name="__codelineno-32-46" href="#__codelineno-32-46"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-47" name="__codelineno-32-47" href="#__codelineno-32-47"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-48" name="__codelineno-32-48" href="#__codelineno-32-48"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-49" name="__codelineno-32-49" href="#__codelineno-32-49"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-50" name="__codelineno-32-50" href="#__codelineno-32-50"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-51" name="__codelineno-32-51" href="#__codelineno-32-51"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-52" name="__codelineno-32-52" href="#__codelineno-32-52"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-53" name="__codelineno-32-53" href="#__codelineno-32-53"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-54" name="__codelineno-32-54" href="#__codelineno-32-54"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-55" name="__codelineno-32-55" href="#__codelineno-32-55"></a><span class="go">  Flushing 6481 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-56" name="__codelineno-32-56" href="#__codelineno-32-56"></a><span class="go">  Flushing 2411 blocks for cache vg201-test/lvdata.</span>
+<a id="__codelineno-32-57" name="__codelineno-32-57" href="#__codelineno-32-57"></a><span class="go">  Logical volume vg201-test/lvdata changed.</span>
 </code></pre></div>
 <p>可以注意到卡在了 <code>Flushing 6481 blocks</code> 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。</p>
 </details>
 <p>根据文档，<code>migration_threshold</code> 参数控制每次迁移脏块的扇区数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
 在调试问题时发现，修改这个值可以实现强制迁移（但是迁移时所有相关的 IO 操作都会暂停），脚本类似这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># dirty hack</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachepolicy<span class="w"> </span>cleaner<span class="w"> </span>lug/repo
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>seq<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">1500</span><span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachesettings<span class="w"> </span><span class="nv">migration_threshold</span><span class="o">=</span><span class="m">2113536</span><span class="w"> </span>lug/repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachesettings<span class="w"> </span><span class="nv">migration_threshold</span><span class="o">=</span><span class="m">16384</span><span class="w"> </span>lug/repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$i</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sleep<span class="w"> </span><span class="m">15</span><span class="p">;</span><span class="w"> </span><span class="k">done</span><span class="p">;</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="c1"># 需要确认没有脏块。如果还有的话继续执行（次数调小一些）</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="c1"># 如果是从 writeback 切换，需要先把模式切到 writethrough</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="c1"># 然后再修改 cachepolicy 到 smq</span>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachepolicy<span class="w"> </span>smq<span class="w"> </span>lug/repo
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="c1"># dirty hack</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachepolicy<span class="w"> </span>cleaner<span class="w"> </span>lug/repo
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="k">for</span><span class="w"> </span>i<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="sb">`</span>seq<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">1500</span><span class="sb">`</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachesettings<span class="w"> </span><span class="nv">migration_threshold</span><span class="o">=</span><span class="m">2113536</span><span class="w"> </span>lug/repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachesettings<span class="w"> </span><span class="nv">migration_threshold</span><span class="o">=</span><span class="m">16384</span><span class="w"> </span>lug/repo<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$i</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sleep<span class="w"> </span><span class="m">15</span><span class="p">;</span><span class="w"> </span><span class="k">done</span><span class="p">;</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="c1"># 需要确认没有脏块。如果还有的话继续执行（次数调小一些）</span>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="c1"># 如果是从 writeback 切换，需要先把模式切到 writethrough</span>
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="c1"># 然后再修改 cachepolicy 到 smq</span>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>sudo<span class="w"> </span>lvchange<span class="w"> </span>--cachepolicy<span class="w"> </span>smq<span class="w"> </span>lug/repo
 </code></pre></div>
 <p>在我们的配置下，写全部脏块操作（包括中间的 <code>sleep</code> 操作在内）需要大约 10 个小时。</p>
 <div class="admonition danger">
@@ -2653,154 +2684,210 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <p>对每次 LVM 操作，lvm 的工具都会在 <code>/etc/lvm/archive</code> 备份操作前的元数据信息，同时在 <code>/etc/lvm/backup</code> 存储当前的元数据，但是还是尽量小心，以免酿成悲剧。</p>
 </div>
 <details class="note">
-<summary>VG 元数据例子</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a># Generated by LVM2 version 2.03.23(2) (2023-11-21): Sun Feb 18 00:25:36 2024
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>contents = &quot;Text Format Volume Group&quot;
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>version = 1
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>
-<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>description = &quot;Created *after* executing &#39;lvconvert --type cache --cachevol lvdata_cache --config allocation/cache_pool_max_chunks=25148800 vg201-test/lvdata&#39;&quot;
-<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>
-<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>creation_host = &quot;shimarin.taoky.moe&quot;    # Linux shimarin.taoky.moe 6.6.10-arch1-1 #1 SMP PREEMPT_DYNAMIC Fri, 05 Jan 2024 16:20:41 +0000 x86_64
-<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>creation_time = 1708187136  # Sun Feb 18 00:25:36 2024
-<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a>
-<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>vg201-test {
-<a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a>    id = &quot;kDKbJ2-kebs-HaIJ-4Vfj-E4OB-aCce-yEcdAy&quot;
-<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>    seqno = 34
-<a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a>    format = &quot;lvm2&quot;         # informational
-<a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a>    status = [&quot;RESIZEABLE&quot;, &quot;READ&quot;, &quot;WRITE&quot;]
-<a id="__codelineno-33-16" name="__codelineno-33-16" href="#__codelineno-33-16"></a>    flags = []
-<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>    extent_size = 8192      # 4 Megabytes
-<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>    max_lv = 0
-<a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a>    max_pv = 0
-<a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a>    metadata_copies = 0
-<a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a>
-<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>    physical_volumes {
-<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>
-<a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a>        pv0 {
-<a id="__codelineno-33-25" name="__codelineno-33-25" href="#__codelineno-33-25"></a>            id = &quot;VfZ83M-BPwe-bIQ1-JJRO-ZBSf-ks8d-fMln8E&quot;
-<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a>            device = &quot;/dev/loop0&quot;   # Hint only
-<a id="__codelineno-33-27" name="__codelineno-33-27" href="#__codelineno-33-27"></a>
-<a id="__codelineno-33-28" name="__codelineno-33-28" href="#__codelineno-33-28"></a>            status = [&quot;ALLOCATABLE&quot;]
-<a id="__codelineno-33-29" name="__codelineno-33-29" href="#__codelineno-33-29"></a>            flags = []
-<a id="__codelineno-33-30" name="__codelineno-33-30" href="#__codelineno-33-30"></a>            dev_size = 139586437120 # 65 Terabytes
-<a id="__codelineno-33-31" name="__codelineno-33-31" href="#__codelineno-33-31"></a>            pe_start = 2048
-<a id="__codelineno-33-32" name="__codelineno-33-32" href="#__codelineno-33-32"></a>            pe_count = 17039359 # 65 Terabytes
-<a id="__codelineno-33-33" name="__codelineno-33-33" href="#__codelineno-33-33"></a>        }
-<a id="__codelineno-33-34" name="__codelineno-33-34" href="#__codelineno-33-34"></a>
-<a id="__codelineno-33-35" name="__codelineno-33-35" href="#__codelineno-33-35"></a>        pv1 {
-<a id="__codelineno-33-36" name="__codelineno-33-36" href="#__codelineno-33-36"></a>            id = &quot;8hZXeS-gZJX-OfrY-vfUm-tG1R-pw3V-6c3CBI&quot;
-<a id="__codelineno-33-37" name="__codelineno-33-37" href="#__codelineno-33-37"></a>            device = &quot;/dev/loop1&quot;   # Hint only
-<a id="__codelineno-33-38" name="__codelineno-33-38" href="#__codelineno-33-38"></a>
-<a id="__codelineno-33-39" name="__codelineno-33-39" href="#__codelineno-33-39"></a>            status = [&quot;ALLOCATABLE&quot;]
-<a id="__codelineno-33-40" name="__codelineno-33-40" href="#__codelineno-33-40"></a>            flags = []
-<a id="__codelineno-33-41" name="__codelineno-33-41" href="#__codelineno-33-41"></a>            dev_size = 3221225472   # 1.5 Terabytes
-<a id="__codelineno-33-42" name="__codelineno-33-42" href="#__codelineno-33-42"></a>            pe_start = 2048
-<a id="__codelineno-33-43" name="__codelineno-33-43" href="#__codelineno-33-43"></a>            pe_count = 393215   # 1.5 Terabytes
-<a id="__codelineno-33-44" name="__codelineno-33-44" href="#__codelineno-33-44"></a>        }
-<a id="__codelineno-33-45" name="__codelineno-33-45" href="#__codelineno-33-45"></a>    }
-<a id="__codelineno-33-46" name="__codelineno-33-46" href="#__codelineno-33-46"></a>
-<a id="__codelineno-33-47" name="__codelineno-33-47" href="#__codelineno-33-47"></a>    logical_volumes {
-<a id="__codelineno-33-48" name="__codelineno-33-48" href="#__codelineno-33-48"></a>
-<a id="__codelineno-33-49" name="__codelineno-33-49" href="#__codelineno-33-49"></a>        lvdata {
-<a id="__codelineno-33-50" name="__codelineno-33-50" href="#__codelineno-33-50"></a>            id = &quot;6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2&quot;
-<a id="__codelineno-33-51" name="__codelineno-33-51" href="#__codelineno-33-51"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
-<a id="__codelineno-33-52" name="__codelineno-33-52" href="#__codelineno-33-52"></a>            flags = []
-<a id="__codelineno-33-53" name="__codelineno-33-53" href="#__codelineno-33-53"></a>            creation_time = 1708181300  # 2024-02-17 22:48:20 +0800
-<a id="__codelineno-33-54" name="__codelineno-33-54" href="#__codelineno-33-54"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
-<a id="__codelineno-33-55" name="__codelineno-33-55" href="#__codelineno-33-55"></a>            segment_count = 1
-<a id="__codelineno-33-56" name="__codelineno-33-56" href="#__codelineno-33-56"></a>
-<a id="__codelineno-33-57" name="__codelineno-33-57" href="#__codelineno-33-57"></a>            segment1 {
-<a id="__codelineno-33-58" name="__codelineno-33-58" href="#__codelineno-33-58"></a>                start_extent = 0
-<a id="__codelineno-33-59" name="__codelineno-33-59" href="#__codelineno-33-59"></a>                extent_count = 17039359 # 65 Terabytes
-<a id="__codelineno-33-60" name="__codelineno-33-60" href="#__codelineno-33-60"></a>
-<a id="__codelineno-33-61" name="__codelineno-33-61" href="#__codelineno-33-61"></a>                type = &quot;cache+CACHE_USES_CACHEVOL&quot;
-<a id="__codelineno-33-62" name="__codelineno-33-62" href="#__codelineno-33-62"></a>                cache_pool = &quot;lvdata_cache_cvol&quot;
-<a id="__codelineno-33-63" name="__codelineno-33-63" href="#__codelineno-33-63"></a>                origin = &quot;lvdata_corig&quot;
-<a id="__codelineno-33-64" name="__codelineno-33-64" href="#__codelineno-33-64"></a>                metadata_format = 2
-<a id="__codelineno-33-65" name="__codelineno-33-65" href="#__codelineno-33-65"></a>                chunk_size = 128
-<a id="__codelineno-33-66" name="__codelineno-33-66" href="#__codelineno-33-66"></a>                cache_mode = &quot;writethrough&quot;
-<a id="__codelineno-33-67" name="__codelineno-33-67" href="#__codelineno-33-67"></a>                policy = &quot;smq&quot;
-<a id="__codelineno-33-68" name="__codelineno-33-68" href="#__codelineno-33-68"></a>                metadata_start = 0
-<a id="__codelineno-33-69" name="__codelineno-33-69" href="#__codelineno-33-69"></a>                metadata_len = 2170880
-<a id="__codelineno-33-70" name="__codelineno-33-70" href="#__codelineno-33-70"></a>                data_start = 2170880
-<a id="__codelineno-33-71" name="__codelineno-33-71" href="#__codelineno-33-71"></a>                data_len = 3219046400
-<a id="__codelineno-33-72" name="__codelineno-33-72" href="#__codelineno-33-72"></a>            }
-<a id="__codelineno-33-73" name="__codelineno-33-73" href="#__codelineno-33-73"></a>        }
-<a id="__codelineno-33-74" name="__codelineno-33-74" href="#__codelineno-33-74"></a>
-<a id="__codelineno-33-75" name="__codelineno-33-75" href="#__codelineno-33-75"></a>        lvdata_cache_cvol {
-<a id="__codelineno-33-76" name="__codelineno-33-76" href="#__codelineno-33-76"></a>            id = &quot;RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV&quot;
-<a id="__codelineno-33-77" name="__codelineno-33-77" href="#__codelineno-33-77"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
-<a id="__codelineno-33-78" name="__codelineno-33-78" href="#__codelineno-33-78"></a>            flags = [&quot;CACHE_VOL&quot;]
-<a id="__codelineno-33-79" name="__codelineno-33-79" href="#__codelineno-33-79"></a>            creation_time = 1708187133  # 2024-02-18 00:25:33 +0800
-<a id="__codelineno-33-80" name="__codelineno-33-80" href="#__codelineno-33-80"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
-<a id="__codelineno-33-81" name="__codelineno-33-81" href="#__codelineno-33-81"></a>            segment_count = 1
-<a id="__codelineno-33-82" name="__codelineno-33-82" href="#__codelineno-33-82"></a>
-<a id="__codelineno-33-83" name="__codelineno-33-83" href="#__codelineno-33-83"></a>            segment1 {
-<a id="__codelineno-33-84" name="__codelineno-33-84" href="#__codelineno-33-84"></a>                start_extent = 0
-<a id="__codelineno-33-85" name="__codelineno-33-85" href="#__codelineno-33-85"></a>                extent_count = 393215   # 1.5 Terabytes
-<a id="__codelineno-33-86" name="__codelineno-33-86" href="#__codelineno-33-86"></a>
-<a id="__codelineno-33-87" name="__codelineno-33-87" href="#__codelineno-33-87"></a>                type = &quot;striped&quot;
-<a id="__codelineno-33-88" name="__codelineno-33-88" href="#__codelineno-33-88"></a>                stripe_count = 1    # linear
-<a id="__codelineno-33-89" name="__codelineno-33-89" href="#__codelineno-33-89"></a>
-<a id="__codelineno-33-90" name="__codelineno-33-90" href="#__codelineno-33-90"></a>                stripes = [
-<a id="__codelineno-33-91" name="__codelineno-33-91" href="#__codelineno-33-91"></a>                    &quot;pv1&quot;, 0
-<a id="__codelineno-33-92" name="__codelineno-33-92" href="#__codelineno-33-92"></a>                ]
-<a id="__codelineno-33-93" name="__codelineno-33-93" href="#__codelineno-33-93"></a>            }
-<a id="__codelineno-33-94" name="__codelineno-33-94" href="#__codelineno-33-94"></a>        }
-<a id="__codelineno-33-95" name="__codelineno-33-95" href="#__codelineno-33-95"></a>
-<a id="__codelineno-33-96" name="__codelineno-33-96" href="#__codelineno-33-96"></a>        lvdata_corig {
-<a id="__codelineno-33-97" name="__codelineno-33-97" href="#__codelineno-33-97"></a>            id = &quot;xIprwR-KD4I-f6E8-tdgp-lcjN-iUdk-rS63YR&quot;
-<a id="__codelineno-33-98" name="__codelineno-33-98" href="#__codelineno-33-98"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
-<a id="__codelineno-33-99" name="__codelineno-33-99" href="#__codelineno-33-99"></a>            flags = []
-<a id="__codelineno-33-100" name="__codelineno-33-100" href="#__codelineno-33-100"></a>            creation_time = 1708187136  # 2024-02-18 00:25:36 +0800
-<a id="__codelineno-33-101" name="__codelineno-33-101" href="#__codelineno-33-101"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
-<a id="__codelineno-33-102" name="__codelineno-33-102" href="#__codelineno-33-102"></a>            segment_count = 1
-<a id="__codelineno-33-103" name="__codelineno-33-103" href="#__codelineno-33-103"></a>
-<a id="__codelineno-33-104" name="__codelineno-33-104" href="#__codelineno-33-104"></a>            segment1 {
-<a id="__codelineno-33-105" name="__codelineno-33-105" href="#__codelineno-33-105"></a>                start_extent = 0
-<a id="__codelineno-33-106" name="__codelineno-33-106" href="#__codelineno-33-106"></a>                extent_count = 17039359 # 65 Terabytes
-<a id="__codelineno-33-107" name="__codelineno-33-107" href="#__codelineno-33-107"></a>
-<a id="__codelineno-33-108" name="__codelineno-33-108" href="#__codelineno-33-108"></a>                type = &quot;striped&quot;
-<a id="__codelineno-33-109" name="__codelineno-33-109" href="#__codelineno-33-109"></a>                stripe_count = 1    # linear
-<a id="__codelineno-33-110" name="__codelineno-33-110" href="#__codelineno-33-110"></a>
-<a id="__codelineno-33-111" name="__codelineno-33-111" href="#__codelineno-33-111"></a>                stripes = [
-<a id="__codelineno-33-112" name="__codelineno-33-112" href="#__codelineno-33-112"></a>                    &quot;pv0&quot;, 0
-<a id="__codelineno-33-113" name="__codelineno-33-113" href="#__codelineno-33-113"></a>                ]
-<a id="__codelineno-33-114" name="__codelineno-33-114" href="#__codelineno-33-114"></a>            }
-<a id="__codelineno-33-115" name="__codelineno-33-115" href="#__codelineno-33-115"></a>        }
-<a id="__codelineno-33-116" name="__codelineno-33-116" href="#__codelineno-33-116"></a>    }
-<a id="__codelineno-33-117" name="__codelineno-33-117" href="#__codelineno-33-117"></a>
-<a id="__codelineno-33-118" name="__codelineno-33-118" href="#__codelineno-33-118"></a>}
+<summary>有 cache 的 VG 元数据例子</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a># Generated by LVM2 version 2.03.23(2) (2023-11-21): Sun Feb 18 00:25:36 2024
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>contents = &quot;Text Format Volume Group&quot;
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>version = 1
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>description = &quot;Created *after* executing &#39;lvconvert --type cache --cachevol lvdata_cache --config allocation/cache_pool_max_chunks=25148800 vg201-test/lvdata&#39;&quot;
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>creation_host = &quot;shimarin.taoky.moe&quot;    # Linux shimarin.taoky.moe 6.6.10-arch1-1 #1 SMP PREEMPT_DYNAMIC Fri, 05 Jan 2024 16:20:41 +0000 x86_64
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>creation_time = 1708187136  # Sun Feb 18 00:25:36 2024
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>vg201-test {
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    id = &quot;kDKbJ2-kebs-HaIJ-4Vfj-E4OB-aCce-yEcdAy&quot;
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>    seqno = 34
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>    format = &quot;lvm2&quot;         # informational
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>    status = [&quot;RESIZEABLE&quot;, &quot;READ&quot;, &quot;WRITE&quot;]
+<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>    flags = []
+<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>    extent_size = 8192      # 4 Megabytes
+<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>    max_lv = 0
+<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a>    max_pv = 0
+<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a>    metadata_copies = 0
+<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a>
+<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>    physical_volumes {
+<a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a>
+<a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a>        pv0 {
+<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>            id = &quot;VfZ83M-BPwe-bIQ1-JJRO-ZBSf-ks8d-fMln8E&quot;
+<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a>            device = &quot;/dev/loop0&quot;   # Hint only
+<a id="__codelineno-34-27" name="__codelineno-34-27" href="#__codelineno-34-27"></a>
+<a id="__codelineno-34-28" name="__codelineno-34-28" href="#__codelineno-34-28"></a>            status = [&quot;ALLOCATABLE&quot;]
+<a id="__codelineno-34-29" name="__codelineno-34-29" href="#__codelineno-34-29"></a>            flags = []
+<a id="__codelineno-34-30" name="__codelineno-34-30" href="#__codelineno-34-30"></a>            dev_size = 139586437120 # 65 Terabytes
+<a id="__codelineno-34-31" name="__codelineno-34-31" href="#__codelineno-34-31"></a>            pe_start = 2048
+<a id="__codelineno-34-32" name="__codelineno-34-32" href="#__codelineno-34-32"></a>            pe_count = 17039359 # 65 Terabytes
+<a id="__codelineno-34-33" name="__codelineno-34-33" href="#__codelineno-34-33"></a>        }
+<a id="__codelineno-34-34" name="__codelineno-34-34" href="#__codelineno-34-34"></a>
+<a id="__codelineno-34-35" name="__codelineno-34-35" href="#__codelineno-34-35"></a>        pv1 {
+<a id="__codelineno-34-36" name="__codelineno-34-36" href="#__codelineno-34-36"></a>            id = &quot;8hZXeS-gZJX-OfrY-vfUm-tG1R-pw3V-6c3CBI&quot;
+<a id="__codelineno-34-37" name="__codelineno-34-37" href="#__codelineno-34-37"></a>            device = &quot;/dev/loop1&quot;   # Hint only
+<a id="__codelineno-34-38" name="__codelineno-34-38" href="#__codelineno-34-38"></a>
+<a id="__codelineno-34-39" name="__codelineno-34-39" href="#__codelineno-34-39"></a>            status = [&quot;ALLOCATABLE&quot;]
+<a id="__codelineno-34-40" name="__codelineno-34-40" href="#__codelineno-34-40"></a>            flags = []
+<a id="__codelineno-34-41" name="__codelineno-34-41" href="#__codelineno-34-41"></a>            dev_size = 3221225472   # 1.5 Terabytes
+<a id="__codelineno-34-42" name="__codelineno-34-42" href="#__codelineno-34-42"></a>            pe_start = 2048
+<a id="__codelineno-34-43" name="__codelineno-34-43" href="#__codelineno-34-43"></a>            pe_count = 393215   # 1.5 Terabytes
+<a id="__codelineno-34-44" name="__codelineno-34-44" href="#__codelineno-34-44"></a>        }
+<a id="__codelineno-34-45" name="__codelineno-34-45" href="#__codelineno-34-45"></a>    }
+<a id="__codelineno-34-46" name="__codelineno-34-46" href="#__codelineno-34-46"></a>
+<a id="__codelineno-34-47" name="__codelineno-34-47" href="#__codelineno-34-47"></a>    logical_volumes {
+<a id="__codelineno-34-48" name="__codelineno-34-48" href="#__codelineno-34-48"></a>
+<a id="__codelineno-34-49" name="__codelineno-34-49" href="#__codelineno-34-49"></a>        lvdata {
+<a id="__codelineno-34-50" name="__codelineno-34-50" href="#__codelineno-34-50"></a>            id = &quot;6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2&quot;
+<a id="__codelineno-34-51" name="__codelineno-34-51" href="#__codelineno-34-51"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-34-52" name="__codelineno-34-52" href="#__codelineno-34-52"></a>            flags = []
+<a id="__codelineno-34-53" name="__codelineno-34-53" href="#__codelineno-34-53"></a>            creation_time = 1708181300  # 2024-02-17 22:48:20 +0800
+<a id="__codelineno-34-54" name="__codelineno-34-54" href="#__codelineno-34-54"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-55" name="__codelineno-34-55" href="#__codelineno-34-55"></a>            segment_count = 1
+<a id="__codelineno-34-56" name="__codelineno-34-56" href="#__codelineno-34-56"></a>
+<a id="__codelineno-34-57" name="__codelineno-34-57" href="#__codelineno-34-57"></a>            segment1 {
+<a id="__codelineno-34-58" name="__codelineno-34-58" href="#__codelineno-34-58"></a>                start_extent = 0
+<a id="__codelineno-34-59" name="__codelineno-34-59" href="#__codelineno-34-59"></a>                extent_count = 17039359 # 65 Terabytes
+<a id="__codelineno-34-60" name="__codelineno-34-60" href="#__codelineno-34-60"></a>
+<a id="__codelineno-34-61" name="__codelineno-34-61" href="#__codelineno-34-61"></a>                type = &quot;cache+CACHE_USES_CACHEVOL&quot;
+<a id="__codelineno-34-62" name="__codelineno-34-62" href="#__codelineno-34-62"></a>                cache_pool = &quot;lvdata_cache_cvol&quot;
+<a id="__codelineno-34-63" name="__codelineno-34-63" href="#__codelineno-34-63"></a>                origin = &quot;lvdata_corig&quot;
+<a id="__codelineno-34-64" name="__codelineno-34-64" href="#__codelineno-34-64"></a>                metadata_format = 2
+<a id="__codelineno-34-65" name="__codelineno-34-65" href="#__codelineno-34-65"></a>                chunk_size = 128
+<a id="__codelineno-34-66" name="__codelineno-34-66" href="#__codelineno-34-66"></a>                cache_mode = &quot;writethrough&quot;
+<a id="__codelineno-34-67" name="__codelineno-34-67" href="#__codelineno-34-67"></a>                policy = &quot;smq&quot;
+<a id="__codelineno-34-68" name="__codelineno-34-68" href="#__codelineno-34-68"></a>                metadata_start = 0
+<a id="__codelineno-34-69" name="__codelineno-34-69" href="#__codelineno-34-69"></a>                metadata_len = 2170880
+<a id="__codelineno-34-70" name="__codelineno-34-70" href="#__codelineno-34-70"></a>                data_start = 2170880
+<a id="__codelineno-34-71" name="__codelineno-34-71" href="#__codelineno-34-71"></a>                data_len = 3219046400
+<a id="__codelineno-34-72" name="__codelineno-34-72" href="#__codelineno-34-72"></a>            }
+<a id="__codelineno-34-73" name="__codelineno-34-73" href="#__codelineno-34-73"></a>        }
+<a id="__codelineno-34-74" name="__codelineno-34-74" href="#__codelineno-34-74"></a>
+<a id="__codelineno-34-75" name="__codelineno-34-75" href="#__codelineno-34-75"></a>        lvdata_cache_cvol {
+<a id="__codelineno-34-76" name="__codelineno-34-76" href="#__codelineno-34-76"></a>            id = &quot;RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV&quot;
+<a id="__codelineno-34-77" name="__codelineno-34-77" href="#__codelineno-34-77"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
+<a id="__codelineno-34-78" name="__codelineno-34-78" href="#__codelineno-34-78"></a>            flags = [&quot;CACHE_VOL&quot;]
+<a id="__codelineno-34-79" name="__codelineno-34-79" href="#__codelineno-34-79"></a>            creation_time = 1708187133  # 2024-02-18 00:25:33 +0800
+<a id="__codelineno-34-80" name="__codelineno-34-80" href="#__codelineno-34-80"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-81" name="__codelineno-34-81" href="#__codelineno-34-81"></a>            segment_count = 1
+<a id="__codelineno-34-82" name="__codelineno-34-82" href="#__codelineno-34-82"></a>
+<a id="__codelineno-34-83" name="__codelineno-34-83" href="#__codelineno-34-83"></a>            segment1 {
+<a id="__codelineno-34-84" name="__codelineno-34-84" href="#__codelineno-34-84"></a>                start_extent = 0
+<a id="__codelineno-34-85" name="__codelineno-34-85" href="#__codelineno-34-85"></a>                extent_count = 393215   # 1.5 Terabytes
+<a id="__codelineno-34-86" name="__codelineno-34-86" href="#__codelineno-34-86"></a>
+<a id="__codelineno-34-87" name="__codelineno-34-87" href="#__codelineno-34-87"></a>                type = &quot;striped&quot;
+<a id="__codelineno-34-88" name="__codelineno-34-88" href="#__codelineno-34-88"></a>                stripe_count = 1    # linear
+<a id="__codelineno-34-89" name="__codelineno-34-89" href="#__codelineno-34-89"></a>
+<a id="__codelineno-34-90" name="__codelineno-34-90" href="#__codelineno-34-90"></a>                stripes = [
+<a id="__codelineno-34-91" name="__codelineno-34-91" href="#__codelineno-34-91"></a>                    &quot;pv1&quot;, 0
+<a id="__codelineno-34-92" name="__codelineno-34-92" href="#__codelineno-34-92"></a>                ]
+<a id="__codelineno-34-93" name="__codelineno-34-93" href="#__codelineno-34-93"></a>            }
+<a id="__codelineno-34-94" name="__codelineno-34-94" href="#__codelineno-34-94"></a>        }
+<a id="__codelineno-34-95" name="__codelineno-34-95" href="#__codelineno-34-95"></a>
+<a id="__codelineno-34-96" name="__codelineno-34-96" href="#__codelineno-34-96"></a>        lvdata_corig {
+<a id="__codelineno-34-97" name="__codelineno-34-97" href="#__codelineno-34-97"></a>            id = &quot;xIprwR-KD4I-f6E8-tdgp-lcjN-iUdk-rS63YR&quot;
+<a id="__codelineno-34-98" name="__codelineno-34-98" href="#__codelineno-34-98"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
+<a id="__codelineno-34-99" name="__codelineno-34-99" href="#__codelineno-34-99"></a>            flags = []
+<a id="__codelineno-34-100" name="__codelineno-34-100" href="#__codelineno-34-100"></a>            creation_time = 1708187136  # 2024-02-18 00:25:36 +0800
+<a id="__codelineno-34-101" name="__codelineno-34-101" href="#__codelineno-34-101"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-102" name="__codelineno-34-102" href="#__codelineno-34-102"></a>            segment_count = 1
+<a id="__codelineno-34-103" name="__codelineno-34-103" href="#__codelineno-34-103"></a>
+<a id="__codelineno-34-104" name="__codelineno-34-104" href="#__codelineno-34-104"></a>            segment1 {
+<a id="__codelineno-34-105" name="__codelineno-34-105" href="#__codelineno-34-105"></a>                start_extent = 0
+<a id="__codelineno-34-106" name="__codelineno-34-106" href="#__codelineno-34-106"></a>                extent_count = 17039359 # 65 Terabytes
+<a id="__codelineno-34-107" name="__codelineno-34-107" href="#__codelineno-34-107"></a>
+<a id="__codelineno-34-108" name="__codelineno-34-108" href="#__codelineno-34-108"></a>                type = &quot;striped&quot;
+<a id="__codelineno-34-109" name="__codelineno-34-109" href="#__codelineno-34-109"></a>                stripe_count = 1    # linear
+<a id="__codelineno-34-110" name="__codelineno-34-110" href="#__codelineno-34-110"></a>
+<a id="__codelineno-34-111" name="__codelineno-34-111" href="#__codelineno-34-111"></a>                stripes = [
+<a id="__codelineno-34-112" name="__codelineno-34-112" href="#__codelineno-34-112"></a>                    &quot;pv0&quot;, 0
+<a id="__codelineno-34-113" name="__codelineno-34-113" href="#__codelineno-34-113"></a>                ]
+<a id="__codelineno-34-114" name="__codelineno-34-114" href="#__codelineno-34-114"></a>            }
+<a id="__codelineno-34-115" name="__codelineno-34-115" href="#__codelineno-34-115"></a>        }
+<a id="__codelineno-34-116" name="__codelineno-34-116" href="#__codelineno-34-116"></a>    }
+<a id="__codelineno-34-117" name="__codelineno-34-117" href="#__codelineno-34-117"></a>
+<a id="__codelineno-34-118" name="__codelineno-34-118" href="#__codelineno-34-118"></a>}
+</code></pre></div>
+</details>
+<details class="note">
+<summary>没有 cache 的 VG 元数据例子</summary>
+<p>以下仅展示 <code>logical_volumes</code> 部分：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a># （省略）
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>vg201-test {
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>    # （省略）
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>    logical_volumes {
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>
+<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a>        lvdata {
+<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a>            id = &quot;6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2&quot;
+<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a>            flags = []
+<a id="__codelineno-35-12" name="__codelineno-35-12" href="#__codelineno-35-12"></a>            creation_time = 1708181300  # 2024-02-17 22:48:20 +0800
+<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-35-14" name="__codelineno-35-14" href="#__codelineno-35-14"></a>            segment_count = 1
+<a id="__codelineno-35-15" name="__codelineno-35-15" href="#__codelineno-35-15"></a>
+<a id="__codelineno-35-16" name="__codelineno-35-16" href="#__codelineno-35-16"></a>            segment1 {
+<a id="__codelineno-35-17" name="__codelineno-35-17" href="#__codelineno-35-17"></a>                start_extent = 0
+<a id="__codelineno-35-18" name="__codelineno-35-18" href="#__codelineno-35-18"></a>                extent_count = 17039359 # 65 Terabytes
+<a id="__codelineno-35-19" name="__codelineno-35-19" href="#__codelineno-35-19"></a>
+<a id="__codelineno-35-20" name="__codelineno-35-20" href="#__codelineno-35-20"></a>                type = &quot;striped&quot;
+<a id="__codelineno-35-21" name="__codelineno-35-21" href="#__codelineno-35-21"></a>                stripe_count = 1    # linear
+<a id="__codelineno-35-22" name="__codelineno-35-22" href="#__codelineno-35-22"></a>
+<a id="__codelineno-35-23" name="__codelineno-35-23" href="#__codelineno-35-23"></a>                stripes = [
+<a id="__codelineno-35-24" name="__codelineno-35-24" href="#__codelineno-35-24"></a>                    &quot;pv0&quot;, 0
+<a id="__codelineno-35-25" name="__codelineno-35-25" href="#__codelineno-35-25"></a>                ]
+<a id="__codelineno-35-26" name="__codelineno-35-26" href="#__codelineno-35-26"></a>            }
+<a id="__codelineno-35-27" name="__codelineno-35-27" href="#__codelineno-35-27"></a>        }
+<a id="__codelineno-35-28" name="__codelineno-35-28" href="#__codelineno-35-28"></a>
+<a id="__codelineno-35-29" name="__codelineno-35-29" href="#__codelineno-35-29"></a>        lvdata_cache {
+<a id="__codelineno-35-30" name="__codelineno-35-30" href="#__codelineno-35-30"></a>            id = &quot;RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV&quot;
+<a id="__codelineno-35-31" name="__codelineno-35-31" href="#__codelineno-35-31"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-35-32" name="__codelineno-35-32" href="#__codelineno-35-32"></a>            flags = []
+<a id="__codelineno-35-33" name="__codelineno-35-33" href="#__codelineno-35-33"></a>            creation_time = 1708187133  # 2024-02-18 00:25:33 +0800
+<a id="__codelineno-35-34" name="__codelineno-35-34" href="#__codelineno-35-34"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-35-35" name="__codelineno-35-35" href="#__codelineno-35-35"></a>            segment_count = 1
+<a id="__codelineno-35-36" name="__codelineno-35-36" href="#__codelineno-35-36"></a>
+<a id="__codelineno-35-37" name="__codelineno-35-37" href="#__codelineno-35-37"></a>            segment1 {
+<a id="__codelineno-35-38" name="__codelineno-35-38" href="#__codelineno-35-38"></a>                start_extent = 0
+<a id="__codelineno-35-39" name="__codelineno-35-39" href="#__codelineno-35-39"></a>                extent_count = 393215   # 1.5 Terabytes
+<a id="__codelineno-35-40" name="__codelineno-35-40" href="#__codelineno-35-40"></a>
+<a id="__codelineno-35-41" name="__codelineno-35-41" href="#__codelineno-35-41"></a>                type = &quot;striped&quot;
+<a id="__codelineno-35-42" name="__codelineno-35-42" href="#__codelineno-35-42"></a>                stripe_count = 1    # linear
+<a id="__codelineno-35-43" name="__codelineno-35-43" href="#__codelineno-35-43"></a>
+<a id="__codelineno-35-44" name="__codelineno-35-44" href="#__codelineno-35-44"></a>                stripes = [
+<a id="__codelineno-35-45" name="__codelineno-35-45" href="#__codelineno-35-45"></a>                    &quot;pv1&quot;, 0
+<a id="__codelineno-35-46" name="__codelineno-35-46" href="#__codelineno-35-46"></a>                ]
+<a id="__codelineno-35-47" name="__codelineno-35-47" href="#__codelineno-35-47"></a>            }
+<a id="__codelineno-35-48" name="__codelineno-35-48" href="#__codelineno-35-48"></a>        }
+<a id="__codelineno-35-49" name="__codelineno-35-49" href="#__codelineno-35-49"></a>    }
+<a id="__codelineno-35-50" name="__codelineno-35-50" href="#__codelineno-35-50"></a>
+<a id="__codelineno-35-51" name="__codelineno-35-51" href="#__codelineno-35-51"></a>}
 </code></pre></div>
 </details>
 <p>首先对比 archive 和 backup 中的元数据，确认无误之后使用 <code>vgcfgrestore</code> 恢复元数据。
 某些情况下，可能需要编辑元数据文件以符合实际情况（例如在创建缓存之后又做了其他操作）。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgcfgrestore<span class="w"> </span>-f<span class="w"> </span>/etc/lvm/archive/vg201-test_00084-792872325.vg<span class="w"> </span>vg201-test
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="go">  Volume group vg201-test has active volume: lvdata.</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="go">  Volume group vg201-test has active volume: lvdata_corig.</span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="go">  WARNING: Found 5 active volume(s) in volume group &quot;vg201-test&quot;.</span>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="go">  Restoring VG with active LVs, may cause mismatch with its metadata.</span>
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="go">Do you really want to proceed with restore of volume group &quot;vg201-test&quot;, while 5 volume(s) are active? [y/n]: y</span>
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="go">  Restored volume group vg201-test.</span>
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="go">  WARNING: Detected cache segment type does not match expected type striped for vg201-test/lvdata.</span>
-<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="go">  LV           VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
-<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="go">  lvdata       vg201-test -wi-XX--X- &lt;65.00t                                                    </span>
-<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="go">  lvdata_cache vg201-test -wi-a-----  &lt;1.50t</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgcfgrestore<span class="w"> </span>-f<span class="w"> </span>/etc/lvm/archive/vg201-test_00084-792872325.vg<span class="w"> </span>vg201-test
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">  Volume group vg201-test has active volume: lvdata.</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="go">  Volume group vg201-test has active volume: lvdata_corig.</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="go">  WARNING: Found 5 active volume(s) in volume group &quot;vg201-test&quot;.</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="go">  Restoring VG with active LVs, may cause mismatch with its metadata.</span>
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">Do you really want to proceed with restore of volume group &quot;vg201-test&quot;, while 5 volume(s) are active? [y/n]: y</span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="go">  Restored volume group vg201-test.</span>
+<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
+<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a><span class="go">  WARNING: Detected cache segment type does not match expected type striped for vg201-test/lvdata.</span>
+<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a><span class="go">  LV           VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-36-14" name="__codelineno-36-14" href="#__codelineno-36-14"></a><span class="go">  lvdata       vg201-test -wi-XX--X- &lt;65.00t                                                    </span>
+<a id="__codelineno-36-15" name="__codelineno-36-15" href="#__codelineno-36-15"></a><span class="go">  lvdata_cache vg201-test -wi-a-----  &lt;1.50t</span>
 </code></pre></div>
 <p>在重新 activate 之后，状态即恢复正常：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-an<span class="w"> </span>vg201-test
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">  0 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="go">  2 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
-<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="go">  LV           VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
-<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="go">  lvdata       vg201-test -wi-a----- &lt;65.00t                                                    </span>
-<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="go">  lvdata_cache vg201-test -wi-a-----  &lt;1.50t</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-an<span class="w"> </span>vg201-test
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="go">  0 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="go">  2 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="go">  LV           VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="go">  lvdata       vg201-test -wi-a----- &lt;65.00t                                                    </span>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="go">  lvdata_cache vg201-test -wi-a-----  &lt;1.50t</span>
 </code></pre></div>
 <h3 id="_4">缓存方案比较<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <p>作为 SSD 缓存部分的最后一小节，本部分以表格形式介绍已有的 SSD 缓存方案（包括已经不再维护的）。
