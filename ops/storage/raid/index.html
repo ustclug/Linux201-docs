@@ -602,6 +602,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    RAID
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -611,6 +622,34 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mdadm" class="md-nav__link">
+    <span class="md-ellipsis">
+      mdadm
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1449,6 +1488,23 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mdadm" class="md-nav__link">
+    <span class="md-ellipsis">
+      mdadm
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1469,6 +1525,63 @@
 <p>本文介绍常见的 RAID 方案的使用与维护。
 直接使用 LVM 创建 RAID 的方法请参考 <a href="../lvm/">LVM</a>；
 使用 ZFS 创建 RAID (raidz) 的方法请参考 <a href="../zfs/">ZFS</a>。</p>
+<p>本部分不涉及 FakeRAID（例如 Intel Rapid Storage Technology）。
+建议阅读以下内容前，先阅读 <a href="../lvm/">LVM</a> 中与 RAID 相关的部分。</p>
+<h2 id="mdadm">mdadm<a class="headerlink" href="#mdadm" title="Permanent link">&para;</a></h2>
+<p>mdadm 是 Linux 上最常用的软件 RAID 方案。
+在下面的步骤中，与 LVM 一章类似，我们使用本地回环创建三个块设备。
+同样地，在实际使用中，强烈建议先分区再创建 RAID。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>1G<span class="w"> </span>md0.img<span class="w"> </span>md1.img<span class="w"> </span>md2.img
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>md0.img
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">/dev/loop0</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>md1.img
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">/dev/loop1</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>md2.img
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="go">/dev/loop2</span>
+</code></pre></div>
+<p>我们先以 RAID 0 为例，创建一个跨 3 块盘的 RAID 0。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mdadm<span class="w"> </span>--create<span class="w"> </span>/dev/md0<span class="w"> </span>--level<span class="o">=</span><span class="m">0</span><span class="w"> </span>--raid-devices<span class="o">=</span><span class="m">3</span><span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">mdadm: Defaulting to version 1.2 metadata</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">mdadm: array /dev/md0 started.</span>
+</code></pre></div>
+<p>得到的 <code>/dev/md0</code> 就是创建完成的 RAID 块设备，它的大小是约 3G，可以使用 <code>mdadm --detail</code> 查看详细信息。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mdadm<span class="w"> </span>--detail<span class="w"> </span>/dev/md0
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">/dev/md0:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">           Version : 1.2</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">     Creation Time : Wed Feb 21 00:54:02 2024</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">        Raid Level : raid0</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">        Array Size : 3139584 (2.99 GiB 3.21 GB)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">      Raid Devices : 3</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">     Total Devices : 3</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">       Persistence : Superblock is persistent</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="go">       Update Time : Wed Feb 21 00:54:02 2024</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="go">             State : clean </span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="go">    Active Devices : 3</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">   Working Devices : 3</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">    Failed Devices : 0</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="go">     Spare Devices : 0</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="go">            Layout : -unknown-</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="go">        Chunk Size : 512K</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="go">Consistency Policy : none</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="go">              Name : hostname:0  (local to host hostname)</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="go">              UUID : 119661ca:ff0a76b7:28909e39:18af76dc</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="go">            Events : 0</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="go">    Number   Major   Minor   RaidDevice State</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="go">       0       7        0        0      active sync   /dev/loop0</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="go">       1       7        1        1      active sync   /dev/loop1</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="go">       2       7        2        2      active sync   /dev/loop2</span>
+</code></pre></div>
+<p>使用 <code>--stop</code> 选项停止 RAID：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mdadm<span class="w"> </span>--stop<span class="w"> </span>/dev/md0
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">mdadm: stopped /dev/md0</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="gp">$ </span>ls<span class="w"> </span>-lha<span class="w"> </span>/dev/md0
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">ls: cannot access &#39;/dev/md0&#39;: No such file or directory</span>
+</code></pre></div>
 <!--
   Links to man pages
 
