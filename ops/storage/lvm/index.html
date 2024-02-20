@@ -2396,8 +2396,8 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <p>lvmcache 支持三种缓存模式：</p>
 <ul>
 <li>passthrough: 缓存无效。此时<strong>所有读写</strong>都到后备设备。同时写命中会触发对应的块缓存失效。</li>
-<li>writethrough: 写入操作在缓存和后备设备上都进行。</li>
-<li>writeback: 写入操作只在缓存上进行，对应的块标记为脏块（Dirty Block）。
+<li>writethrough: 写入操作在缓存和后备设备上都进行，在两者均写入完成后才视作写入生效。</li>
+<li>writeback: 写入操作先在缓存上进行，对应的块标记为脏块（Dirty Block），推迟在后备设备上的写入。
 <strong>除非被缓存的数据完全无关紧要，或者有多块 SSD 进行缓存，否则不要使用 writeback。文件系统核心元数据的损坏可能直接导致整个文件系统无法读取。</strong></li>
 </ul>
 <p>在策略一栏，我们可以看到 "smq"。事实上，lvmcache 唯一支持的有效的现代策略就是 <a href="https://elixir.bootlin.com/linux/v6.7/source/drivers/md/dm-cache-policy-smq.c">smq（Stochastic Multi-Queue）</a>。
@@ -2682,6 +2682,13 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </code></pre></div>
 <p>可以注意到卡在了 <code>Flushing 6481 blocks</code> 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。</p>
 </details>
+<div class="admonition comment">
+<p class="admonition-title">@taoky: 其他信息</p>
+<p>这可能是对于较大缓存、较重的负载下 lvmcache 最大的问题了。
+关于下面处理不方便的问题，我在 lvm2 仓库提交了 issue: <a href="https://github.com/lvmteam/lvm2/issues/141">https://github.com/lvmteam/lvm2/issues/141</a>，
+希望能够在 lvm 工具中实现绕过 flush dirty block 的操作。</p>
+<p>不过最佳的解决方法可能还是给 kernel 交个 patch，如果目前状态是 writethrough 并且 dirty = 0 那么给某个 struct 设一个特殊的 bit。但是感觉不知道如何下手，只能以后再说了。</p>
+</div>
 <p>根据文档，<code>migration_threshold</code> 参数控制每次迁移脏块的扇区数量。相关的 bug report 建议将这个值设置为 chunk size 的至少 8 倍（默认为 2048，对应 1M）。
 在调试问题时发现，修改这个值可以实现强制迁移（但是迁移时所有相关的 IO 操作都会暂停），脚本类似这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># dirty hack</span>
