@@ -740,6 +740,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      紧急救援
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1689,6 +1698,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      紧急救援
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1955,10 +1973,170 @@ HPE 的 Smart Array 可以使用 <code>ssacli</code> 等。
 这些软件 Linux 发行版不自带，需要自行下载安装。</p>
 <p>以下介绍 MegaRAID 相关的一些操作。</p>
 <h3 id="_3">获取管理软件<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
+由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
+这里提供了一些链接：</p>
+<div class="admonition warning">
+<p class="admonition-title">尽可能从官方来源获取这些工具</p>
+<p>即使会麻烦一些，在下载前确认来源站点（在这里是博通）是非常重要的。
+从不明网站下载工具存在很大的供应链攻击的风险。</p>
+</div>
+<ul>
+<li>用户手册：<a href="https://docs.broadcom.com/docs/12353236">https://docs.broadcom.com/docs/12353236</a></li>
+<li>MegaCLI 下载：<a href="https://docs.broadcom.com/docs-and-downloads/raid-controllers/raid-controllers-common-files/8-07-14_MegaCLI.zip">https://docs.broadcom.com/docs-and-downloads/raid-controllers/raid-controllers-common-files/8-07-14_MegaCLI.zip</a>（SHA256 <code>d9b152ae3dab76a334b9251702dba3311ceed91b58aaf52d916eb4ba1c2ab6e9</code>）</li>
+<li>StorCLI 下载：<a href="https://docs.broadcom.com/docs/1232743397">https://docs.broadcom.com/docs/1232743397</a></li>
+</ul>
+<p>压缩包中包含的是 rpm 包，在非 rpm 系的发行版上可以使用 <code>rpm2cpio</code> 解压后手动「安装」：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>rpm2cpio<span class="w"> </span>MegaCli-8.07.14-1.noarch.rpm<span class="w"> </span><span class="p">|</span><span class="w"> </span>cpio<span class="w"> </span>-div
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">./opt/MegaRAID/MegaCli/MegaCli</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">./opt/MegaRAID/MegaCli/MegaCli64</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">./opt/MegaRAID/MegaCli/libstorelibir-2.so.14.07-0</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">11194 blocks</span>
+</code></pre></div>
+<p>将解压出的文件（一般都在 <code>opt</code> 里面）放到合适的位置。
+如果在运行时缺少库（例如 <code>libncurses.so.5</code>），安装对应的包即可。</p>
+<p>MegaCLI 与 StorCLI 的操作有许多不同，下面主要展示 StorCLI 的操作。
+MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是不同的阵列）。</p>
+<div class="admonition tip">
+<p class="admonition-title">使用时加上 <code>-NoLog</code> (MegaCLI) / <code>nolog</code> (StorCLI) 参数</p>
+<p>MegaRAID 的这两个工具默认每次执行都会在当前工作目录创建日志文件，可以使用 <code>-NoLog</code> 或 <code>nolog</code> 参数禁用。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">StorCLI 的 JSON 支持</p>
+<p>StorCLI 支持输出 JSON 格式的信息，这对程序化解析 RAID 阵列状态很有帮助。
+在命令的最后添加 <code>J</code> 即可，如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog<span class="w"> </span>J
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">{</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">&quot;Controllers&quot;:[</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">{</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">  &quot;Command Status&quot; : {</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+</div>
 <h3 id="_4">基础概念<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>MegaRAID 支持管理多个 RAID 控制器（Adapter/Controller），每个控制器可以连接一个或多个机柜（Enclosure），
+机柜中有物理磁盘（Physical Drive, PD），这些磁盘可以组成虚拟磁盘（Virtual Drive, VD 或 Logical Drive, LD）。</p>
+<p>因此我们可以查看控制器，以及其控制的机柜、物理/虚拟磁盘的相关信息：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog<span class="w">  </span><span class="c1"># /c0 表示控制器 0，也可以使用 /call 表示所有控制器</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">Generating detailed summary of the adapter, it may take a while to complete.</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">Status = Success</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="go">Description = None</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/eall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog<span class="w">  </span><span class="c1"># 也可以使用 /e252 表示机柜 252</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="go">Status = Success</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="go">Description = None</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="go">Enclosure /c0/e252  :</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="go">===================</span>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/e252<span class="w"> </span>/sall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="go">Status = Success</span>
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="go">Description = Show Drive Information Succeeded.</span>
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a><span class="go">Drive /c0/e252/s0 :</span>
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a><span class="go">=================</span>
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a><span class="go">EID:Slt DID State DG     Size Intf Med SED PI SeSz Model                Sp Type </span>
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="go">252:0     8 Onln   0 9.094 TB SATA HDD N   N  512B HGST HUH721010ALE600 U  -    </span>
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/vall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog
+<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a><span class="go">Status = Success</span>
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a><span class="go">Description = None</span>
+<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a>
+<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a>
+<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a><span class="go">/c0/v0 :</span>
+<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a><span class="go">======</span>
+<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a>
+<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a><span class="go">DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name </span>
+<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a><span class="go">0/0   RAID6 Optl  RW     Yes     NRWTC -   ON  36.380 TB      </span>
+<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+<details class="note">
+<summary>MegaCLI alternative</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpallInfo<span class="w"> </span>-a0<span class="w"> </span>-NoLog<span class="w">  </span><span class="c1"># 使用 -aALL 表示所有控制器</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">Adapter #0</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">==============================================================================</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">                    Versions</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">                ================</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go">Product Name    : PERC 6/i Integrated</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="go">Serial No       : 1122334455667788</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="go">FW Package Build: 6.3.3.0002</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-EncInfo<span class="w"> </span>-a0<span class="w"> </span>-NoLog
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="go">Number of enclosures on adapter 0 -- 1</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="go">Enclosure 0:</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="go">Device ID                     : 32</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-PDList<span class="w"> </span>-a0<span class="w"> </span>-NoLog
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="go">Adapter #0</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="go">Enclosure Device ID: 32</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="go">Slot Number: 2</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="go">Drive&#39;s position: DiskGroup: 1, Span: 0, Arm: 0</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="go">Enclosure position: N/A</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="go">Device Id: 2</span>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="go">WWN: </span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="go">Sequence Number: 2</span>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="go">Media Error Count: 0</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="go">Other Error Count: 50107</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="go">Predictive Failure Count: 0</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="go">Last Predictive Failure Event Seq Number: 0</span>
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="go">PD Type: SATA</span>
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-LDInfo<span class="w"> </span>-Lall<span class="w"> </span>-a0<span class="w"> </span>-NoLog
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a>
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="go">Adapter 0 -- Virtual Drive Information:</span>
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="go">Virtual Drive: 0 (Target Id: 0)</span>
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="go">Name                :sys</span>
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="go">RAID Level          : Primary-1, Secondary-0, RAID Level Qualifier-0</span>
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="go">Size                : 931.0 GB</span>
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a><span class="go">Sector Size         : 512</span>
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a><span class="go">Mirror Data         : 931.0 GB</span>
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a><span class="go">State               : Degraded</span>
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a><span class="go">Strip Size          : 64 KB</span>
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a><span class="go">Number Of Drives    : 2</span>
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a><span class="go">Span Depth          : 1</span>
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a><span class="go">Default Cache Policy: WriteBack, ReadAheadNone, Direct, No Write Cache if Bad BBU</span>
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a><span class="go">Current Cache Policy: WriteBack, ReadAheadNone, Direct, No Write Cache if Bad BBU</span>
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a><span class="go">Default Access Policy: Read/Write</span>
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a><span class="go">Current Access Policy: Read/Write</span>
+<a id="__codelineno-13-54" name="__codelineno-13-54" href="#__codelineno-13-54"></a><span class="go">Disk Cache Policy   : Disk&#39;s Default</span>
+<a id="__codelineno-13-55" name="__codelineno-13-55" href="#__codelineno-13-55"></a><span class="go">Encryption Type     : None</span>
+<a id="__codelineno-13-56" name="__codelineno-13-56" href="#__codelineno-13-56"></a><span class="go">Is VD Cached: No</span>
+<a id="__codelineno-13-57" name="__codelineno-13-57" href="#__codelineno-13-57"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+</details>
 <h3 id="_5">维护操作<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <h2 id="raid_3">RAID 与文件系统<a class="headerlink" href="#raid_3" title="Permanent link">&para;</a></h2>
 <h2 id="_6">监控<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<h2 id="_7">紧急救援<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
