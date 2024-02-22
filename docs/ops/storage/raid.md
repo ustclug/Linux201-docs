@@ -290,10 +290,183 @@ HPE 的 Smart Array 可以使用 `ssacli` 等。
 
 ### 获取管理软件
 
+MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
+由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
+这里提供了一些链接：
+
+!!! warning "尽可能从官方来源获取这些工具"
+
+    即使会麻烦一些，在下载前确认来源站点（在这里是博通）是非常重要的。
+    从不明网站下载工具存在很大的供应链攻击的风险。
+
+- 用户手册：<https://docs.broadcom.com/docs/12353236>
+- MegaCLI 下载：<https://docs.broadcom.com/docs-and-downloads/raid-controllers/raid-controllers-common-files/8-07-14_MegaCLI.zip>（SHA256 `d9b152ae3dab76a334b9251702dba3311ceed91b58aaf52d916eb4ba1c2ab6e9`）
+- StorCLI 下载：<https://docs.broadcom.com/docs/1232743397>
+
+压缩包中包含的是 rpm 包，在非 rpm 系的发行版上可以使用 `rpm2cpio` 解压后手动「安装」：
+
+```console
+$ rpm2cpio MegaCli-8.07.14-1.noarch.rpm | cpio -div
+./opt/MegaRAID/MegaCli/MegaCli
+./opt/MegaRAID/MegaCli/MegaCli64
+./opt/MegaRAID/MegaCli/libstorelibir-2.so.14.07-0
+11194 blocks
+```
+
+将解压出的文件（一般都在 `opt` 里面）放到合适的位置。
+如果在运行时缺少库（例如 `libncurses.so.5`），安装对应的包即可。
+
+MegaCLI 与 StorCLI 的操作有许多不同，下面主要展示 StorCLI 的操作。
+MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是不同的阵列）。
+
+!!! tip "使用时加上 `-NoLog` (MegaCLI) / `nolog` (StorCLI) 参数"
+
+    MegaRAID 的这两个工具默认每次执行都会在当前工作目录创建日志文件，可以使用 `-NoLog` 或 `nolog` 参数禁用。
+
+!!! tip "StorCLI 的 JSON 支持"
+
+    StorCLI 支持输出 JSON 格式的信息，这对程序化解析 RAID 阵列状态很有帮助。
+    在命令的最后添加 ` J` 即可，如：
+
+    ```console
+    $ sudo ./storcli64 /c0 show all nolog J
+    {
+    "Controllers":[
+    {
+      "Command Status" : {
+    （以下省略）
+    ```
+
 ### 基础概念
+
+MegaRAID 支持管理多个 RAID 控制器（Adapter/Controller），每个控制器可以连接一个或多个机柜（Enclosure），
+机柜中有物理磁盘（Physical Drive, PD），这些磁盘可以组成虚拟磁盘（Virtual Drive, VD 或 Logical Drive, LD）。
+
+因此我们可以查看控制器，以及其控制的机柜、物理/虚拟磁盘的相关信息：
+
+```console
+$ sudo ./storcli64 /c0 show all nolog  # /c0 表示控制器 0，也可以使用 /call 表示所有控制器
+Generating detailed summary of the adapter, it may take a while to complete.
+
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Success
+Description = None
+（以下省略）
+$ sudo ./storcli64 /c0 /eall show all nolog  # 也可以使用 /e252 表示机柜 252
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Success
+Description = None
+
+
+Enclosure /c0/e252  :
+===================
+（以下省略）
+$ sudo ./storcli64 /c0 /e252 /sall show all nolog
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Success
+Description = Show Drive Information Succeeded.
+
+
+Drive /c0/e252/s0 :
+=================
+
+--------------------------------------------------------------------------------
+EID:Slt DID State DG     Size Intf Med SED PI SeSz Model                Sp Type 
+--------------------------------------------------------------------------------
+252:0     8 Onln   0 9.094 TB SATA HDD N   N  512B HGST HUH721010ALE600 U  -    
+--------------------------------------------------------------------------------
+（以下省略）
+$ sudo ./storcli64 /c0 /vall show all nolog
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Success
+Description = None
+
+
+/c0/v0 :
+======
+
+--------------------------------------------------------------
+DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name 
+--------------------------------------------------------------
+0/0   RAID6 Optl  RW     Yes     NRWTC -   ON  36.380 TB      
+--------------------------------------------------------------
+（以下省略）
+```
+
+??? note "MegaCLI alternative"
+
+    ```console
+    $ sudo ./MegaCli64 -AdpallInfo -a0 -NoLog  # 使用 -aALL 表示所有控制器
+                                            
+    Adapter #0
+
+    ==============================================================================
+                        Versions
+                    ================
+    Product Name    : PERC 6/i Integrated
+    Serial No       : 1122334455667788
+    FW Package Build: 6.3.3.0002
+    （以下省略）
+    $ sudo ./MegaCli64 -EncInfo -a0 -NoLog
+                                         
+    Number of enclosures on adapter 0 -- 1
+
+    Enclosure 0:
+    Device ID                     : 32
+    （以下省略）
+    $ sudo ./MegaCli64 -PDList -a0 -NoLog
+                                            
+    Adapter #0
+
+    Enclosure Device ID: 32
+    Slot Number: 2
+    Drive's position: DiskGroup: 1, Span: 0, Arm: 0
+    Enclosure position: N/A
+    Device Id: 2
+    WWN: 
+    Sequence Number: 2
+    Media Error Count: 0
+    Other Error Count: 50107
+    Predictive Failure Count: 0
+    Last Predictive Failure Event Seq Number: 0
+    PD Type: SATA
+    （以下省略）
+    $ sudo ./MegaCli64 -LDInfo -Lall -a0 -NoLog
+                                            
+
+    Adapter 0 -- Virtual Drive Information:
+    Virtual Drive: 0 (Target Id: 0)
+    Name                :sys
+    RAID Level          : Primary-1, Secondary-0, RAID Level Qualifier-0
+    Size                : 931.0 GB
+    Sector Size         : 512
+    Mirror Data         : 931.0 GB
+    State               : Degraded
+    Strip Size          : 64 KB
+    Number Of Drives    : 2
+    Span Depth          : 1
+    Default Cache Policy: WriteBack, ReadAheadNone, Direct, No Write Cache if Bad BBU
+    Current Cache Policy: WriteBack, ReadAheadNone, Direct, No Write Cache if Bad BBU
+    Default Access Policy: Read/Write
+    Current Access Policy: Read/Write
+    Disk Cache Policy   : Disk's Default
+    Encryption Type     : None
+    Is VD Cached: No
+    （以下省略）
+    ```
 
 ### 维护操作
 
 ## RAID 与文件系统
 
 ## 监控
+
+## 紧急救援
