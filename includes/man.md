@@ -8,6 +8,9 @@
 
 <!-- man 1 -->
 
+<!-- man 4 -->
+[md.4]: https://man7.org/linux/man-pages/man4/md.4.html
+
 <!-- man 5 -->
 
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
