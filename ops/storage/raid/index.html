@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.10">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.11">
     
     
       
@@ -715,6 +715,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="维护操作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      电池状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      重建操作
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -732,7 +756,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       监控
     </span>
@@ -741,7 +765,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       紧急救援
     </span>
@@ -1673,6 +1697,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="维护操作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      电池状态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      重建操作
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1690,7 +1738,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_6" class="md-nav__link">
+  <a href="#_8" class="md-nav__link">
     <span class="md-ellipsis">
       监控
     </span>
@@ -1699,7 +1747,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_7" class="md-nav__link">
+  <a href="#_9" class="md-nav__link">
     <span class="md-ellipsis">
       紧急救援
     </span>
@@ -2134,9 +2182,80 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 </code></pre></div>
 </details>
 <h3 id="_5">维护操作<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<h4 id="_6">电池状态<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
+<p>MegaRAID 控制器一般会有一个电池（Battery Backup Unit, BBU）用于保护缓存中的数据。
+当意外断电的情况发生时，电池会支撑控制器将缓存中的数据写入磁盘，以避免数据丢失。
+在默认配置下，如果电池损坏，那么控制器不会使用缓存（WriteBack）模式，而是使用直写（WriteThrough）模式。
+在某些控制器上，这项功能是由称之为 CacheVault 的技术实现的。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/bbu<span class="w"> </span>show<span class="w"> </span>all
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">Status = Failure</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">Description = None</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">Detailed Status :</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">===============</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">--------------------------------------</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">Ctrl Status Property ErrMsg     ErrCd </span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="go">--------------------------------------</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="go">   0 Failed -        use /cx/cv   255 </span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="go">--------------------------------------</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="gp">$ </span><span class="c1"># 这里提示使用 /cx/cv 查看 CacheVault 的状态</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/cv<span class="w"> </span>show<span class="w"> </span>all
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="go">Controller = 0</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="go">Status = Success</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="go">Description = None</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="go">Cachevault_Info :</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="go">===============</span>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="go">--------------------</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="go">Property    Value   </span>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="go">--------------------</span>
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="go">Type        CVPM02  </span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="go">Temperature 20 C    </span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="go">State       Optimal </span>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="go">--------------------</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+<details class="note">
+<summary>MegaCLI alternative</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpBbuCmd<span class="w"> </span>-a0<span class="w"> </span>-NoLog
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">BBU status for Adapter: 0</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">BatteryType: BBU</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">Voltage: 3991 mV</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">Current: 0 mA</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">Temperature: 22 C</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">Battery State: Optimal</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+<p>MegaCLI 可能不支持 CacheVault。</p>
+</details>
+<div class="admonition note">
+<p class="admonition-title">RAID 5/6 write hole 问题</p>
+<p>在讨论 RAID 5/6 的可靠性，以及为什么 btrfs 一直没有稳定的 RAID 5/6 支持时，经常会提到 write hole 问题。
+在 RAID 5/6 阵列中，在每块盘写入的数据都需要保持一致性（包括 parity），但是阵列的写入操作不是「原子」的。
+这意味着每次写入时，阵列在事实上有一小段时间是不一致的。
+如果突然断电，就可能产生不一致，存在可能在未来的重建时恢复出错误数据的可能。</p>
+<p>对于硬件 RAID，设置电池一般即可解决这个问题。但是对于软件 RAID 来说就麻烦一些了。Linux 的 md 支持两种方法：
+设置一个额外的设备用来做 dirty stripe journal，或者对于 RAID 5，在 RAID 元数据中存储 partial parity log。</p>
+<p>ZFS 的 raidz1/2/3 不受 write hole 影响。</p>
+</div>
+<h4 id="_7">重建操作<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h4>
+<div class="admonition note">
+<p class="admonition-title">下面的内容没有命令输出展示</p>
+<p>由于没有测试条件，因此下面的内容仅作示例。</p>
+</div>
 <h2 id="raid_3">RAID 与文件系统<a class="headerlink" href="#raid_3" title="Permanent link">&para;</a></h2>
-<h2 id="_6">监控<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
-<h2 id="_7">紧急救援<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
+<h2 id="_8">监控<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<h2 id="_9">紧急救援<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
