@@ -152,6 +152,7 @@ $ sudo smartctl -a /dev/bus/4 -d megaraid,8  # 添加参数可以看到真实的
 （内容省略）
 ```
 
+<!-- TODO: 可能放 RAID 里面还是不太合适，在这里完整讲 SMART 会比较好 -->
 有关 S.M.A.R.T. 指标解释与监控的内容将会在 [RAID](./raid.md) 中介绍。
 
 ### Trim (Discard/Unmap)

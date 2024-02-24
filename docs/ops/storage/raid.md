@@ -465,6 +465,86 @@ DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name
 
 ### 维护操作
 
+#### 电池状态
+
+MegaRAID 控制器一般会有一个电池（Battery Backup Unit, BBU）用于保护缓存中的数据。
+当意外断电的情况发生时，电池会支撑控制器将缓存中的数据写入磁盘，以避免数据丢失。
+在默认配置下，如果电池损坏，那么控制器不会使用缓存（WriteBack）模式，而是使用直写（WriteThrough）模式。
+在某些控制器上，这项功能是由称之为 CacheVault 的技术实现的。
+
+```console
+$ sudo ./storcli64 /c0 /bbu show all
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Failure
+Description = None
+
+Detailed Status :
+===============
+
+--------------------------------------
+Ctrl Status Property ErrMsg     ErrCd 
+--------------------------------------
+   0 Failed -        use /cx/cv   255 
+--------------------------------------
+$ # 这里提示使用 /cx/cv 查看 CacheVault 的状态
+$ sudo ./storcli64 /c0 /cv show all
+CLI Version = 007.1513.0000.0000 Apr 01, 2021
+Operating system = Linux 5.10.0-21-amd64
+Controller = 0
+Status = Success
+Description = None
+
+
+Cachevault_Info :
+===============
+
+--------------------
+Property    Value   
+--------------------
+Type        CVPM02  
+Temperature 20 C    
+State       Optimal 
+--------------------
+（以下省略）
+```
+
+??? note "MegaCLI alternative"
+
+    ```console
+    $ sudo ./MegaCli64 -AdpBbuCmd -a0 -NoLog
+                                            
+    BBU status for Adapter: 0
+
+    BatteryType: BBU
+    Voltage: 3991 mV
+    Current: 0 mA
+    Temperature: 22 C
+    Battery State: Optimal
+    （以下省略）
+    ```
+
+    MegaCLI 可能不支持 CacheVault。
+
+!!! note "RAID 5/6 write hole 问题"
+
+    在讨论 RAID 5/6 的可靠性，以及为什么 btrfs 一直没有稳定的 RAID 5/6 支持时，经常会提到 write hole 问题。
+    在 RAID 5/6 阵列中，在每块盘写入的数据都需要保持一致性（包括 parity），但是阵列的写入操作不是「原子」的。
+    这意味着每次写入时，阵列在事实上有一小段时间是不一致的。
+    如果突然断电，就可能产生不一致，存在可能在未来的重建时恢复出错误数据的可能。
+
+    对于硬件 RAID，设置电池一般即可解决这个问题。但是对于软件 RAID 来说就麻烦一些了。Linux 的 md 支持两种方法：
+    设置一个额外的设备用来做 dirty stripe journal，或者对于 RAID 5，在 RAID 元数据中存储 partial parity log。
+
+    ZFS 的 raidz1/2/3 不受 write hole 影响。
+
+#### 重建操作
+
+!!! note "下面的内容没有命令输出展示"
+
+    由于没有测试条件，因此下面的内容仅作示例。
+
 ## RAID 与文件系统
 
 ## 监控
