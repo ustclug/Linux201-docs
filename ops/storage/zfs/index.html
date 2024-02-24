@@ -690,9 +690,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pool" class="md-nav__link">
     <span class="md-ellipsis">
-      Pool
+      创建 pool
     </span>
   </a>
   
@@ -1513,9 +1522,18 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pool" class="md-nav__link">
     <span class="md-ellipsis">
-      Pool
+      创建 pool
     </span>
   </a>
   
@@ -1567,7 +1585,62 @@
 </li>
 </ul>
 <p>不论是 Debian 还是 Ubuntu，都需要安装 <code>zfsutils-linux</code> 软件包，以便使用 ZFS 的命令行工具。</p>
-<h2 id="pool">Pool<a class="headerlink" href="#pool" title="Permanent link">&para;</a></h2>
+<h2 id="_1">基础概念<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>与 LVM 和其他卷管理工具类似，ZFS 也将存储设备组织成多级结构：</p>
+<ul>
+<li>vdev（Virtual Device）是 ZFS 对“硬盘组”的抽象。一个 vdev 可以是单块硬盘、mirror（类似 RAID 1 硬盘组）或 RAID-Z、RAID-Z2、RAID-Z3（类似 RAID 5、6、7 硬盘组）等。</li>
+<li>pool 是 ZFS 的存储池，由一个或多个 vdev 组成，类似 LVM 的 VG（Volume Group）概念。</li>
+<li>
+<p>ZFS 的文件系统和 Zvol（ZFS Volume）都是在 pool 上创建的，类似 LVM 的 LV（Logical Volume）概念。</p>
+<p>与 LVM 略有区别的地方是，ZFS 的文件系统是直接创建在 pool 上的，而无需像 LVM 一样先创建 LV，再将其格式化为某种文件系统。ZFS 的文件系统就是 ZFS。</p>
+</li>
+</ul>
+<h2 id="pool">创建 pool<a class="headerlink" href="#pool" title="Permanent link">&para;</a></h2>
+<p>同样与 LVM 不同的是，ZFS 推荐使用整块硬盘或尽可能整块的硬盘来创建 pool，以保证稳定的性能。作为一项适配操作，如果将整块硬盘用于创建 zpool，ZFS 会自动对其进行分区，以便在硬盘故障时能够更好地识别和处理。</p>
+<p>以下假设 disk[1-3].img 是三块大小相同的硬盘。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>1G<span class="w"> </span>disk1.img<span class="w"> </span>disk2.img<span class="w"> </span>disk3.img
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>disk1.img
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">/dev/loop0</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>disk2.img
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">/dev/loop1</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>disk3.img
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="go">/dev/loop2</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>zpool<span class="w"> </span>create<span class="w"> </span>tank<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gp">$</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">关于 zpool</p>
+<p><code>ashift</code> 参数是 ZFS 对“磁盘扇区大小”的理解，且在创建 pool 后<strong>无法更改</strong>。
+为了确保最佳的性能，<code>ashift</code> 参数应当与硬盘的真实扇区大小相匹配，既不宜过大也不宜过小。
+默认情况下，在创建 zpool 的时候，ZFS 会自动检测硬盘的扇区大小（<code>ioctl(BLKPBSZGET)</code>）并设置合适的 <code>ashift</code> 参数。
+对于固态硬盘，建议查阅硬盘的规格，然后手动指定 <code>zpool create -o ashift=...</code>。</p>
+<p>在生产环境中，请<strong>不要</strong>将 ZFS 用于任何虚拟硬盘或软件/硬件 RAID 阵列上。
+只有当 ZFS 直接管理每块硬盘时，才能获得最佳的性能和 ZFS 提供的数据完整性保证。
+如果你的阵列卡不支持直通，可以考虑为每块盘建立一个单盘阵列。</p>
+</div>
+<p>在实际应用中，如果你使用 <code>sda</code>、<code>nvme0n1</code> 等设备名来创建 pool，ZFS 会自动对其进行分区，然后使用 <code>sda1</code>、<code>nvme0n1p1</code> 等分区名来创建 pool，并在每个盘的末尾创建一个 8 MB 的分区（<code>sda9</code>、<code>nvme0n1p9</code>）。分区的目的可能出于某些历史原因，目前无从考证，且这个编号为 9 的分区是没有任何用途的。</p>
+<p>在创建好 pool 之后，可以使用 <code>zpool status</code> 和 <code>zpool list</code> 查看 pool 的状态和使用情况。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>zpool<span class="w"> </span>status
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">  pool: tank</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go"> state: ONLINE</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">config:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">        NAME        STATE     READ WRITE CKSUM</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">        tank        ONLINE       0     0     0</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">          loop0     ONLINE       0     0     0</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">          loop1     ONLINE       0     0     0</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">          loop2     ONLINE       0     0     0</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">errors: No known data errors</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="gp">$ </span>zpool<span class="w"> </span>list
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">NAME    SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH  ALTROOT</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>在 ZFS 中，绝大多数诸如查询状态等只读的命令都不需要 <code>sudo</code>。</p>
+</div>
+<p>在创建好 zpool <code>tank</code> 后，ZFS 也自动创建了一个文件系统 <code>tank</code> 并挂载在了 <code>/tank</code> 目录，可以直接使用。</p>
 <!--
   Links to man pages
 
