@@ -2,7 +2,7 @@
 
 本文介绍常见的 RAID 方案的使用与维护。
 直接使用 LVM 创建 RAID 的方法请参考 [LVM](./lvm.md)；
-使用 ZFS 创建 RAID (raidz) 的方法请参考 [ZFS](./zfs.md)。
+使用 ZFS 创建 RAID 的方法请参考 [ZFS](./zfs.md)。
 
 本部分不涉及 FakeRAID（例如 Intel Rapid Storage Technology）。
 建议阅读以下内容前，先阅读 [LVM](./lvm.md) 中与 RAID 相关的部分。
@@ -288,6 +288,30 @@ HPE 的 Smart Array 可以使用 `ssacli` 等。
 
 以下介绍 MegaRAID 相关的一些操作。
 
+!!! comment "@taoky: 硬件 RAID，md/LVM，还是 ZFS？"
+
+    选择何种方案，需要在系统部署前确定好，否则后续切换的代价极高。
+    在约十年前，硬件 RAID 是很合理的方案，因为能够节省 CPU 计算资源，性能足够好，配置简单，而且服务器一般都会带个卡。
+    但在今天，硬件 RAID 方案（以及块设备级别的软件 RAID 方案）可能不总是最佳选择了：
+
+    - CPU 性能提升，使得软件 RAID 的计算开销不再是瓶颈
+    - 软件 RAID 方案的监控与运维操作更方便
+        - 考虑到厂商混乱的文档管理，我敢肯定大多数配置硬件 RAID 的运维都不太清楚如何使用 MegaCLI/StorCLI 来监控硬盘的状态
+        - 如果没有人去机房（或者去机房的人 don't care），那么结果就是：RAID 6（或者 RAID 10）坏了一块盘 => 没人知道 => 又坏了一盘 => 还是没人知道（可能会发现服务器变慢了） => 又坏盘了 => 服务挂了，Boom，只能氪金（去数据恢复）了！
+        - 而查看软件 RAID 的状态就方便得多
+    - 不受制于闭源、无法调试的固件
+        - 我们曾经遇到过在某台旧服务器上，硬件 RAID 卡固件多次崩溃的问题，此时整个阵列（包括系统盘）都会掉线
+        - 并且没有人知道为什么——开放的软件 RAID 方案至少还有调试的机会
+        - 商业 SAN 方案也有类似的问题——我们也遇到过 SAN 的管理口启动一会之后就直接坏掉的情况，而且无法处理（同样，没有人知道为什么）
+    - 文件系统比块设备（和阵列卡）更懂数据
+        - ZFS/Btrfs 的重建操作只会涉及到实际的数据块，而不会涉及到整个设备，减少重建时间与风险
+        - ZFS/Btrfs 的 checksum 会在读取时检查数据的完整性，帮助处理 bit rot 问题（LVM 的 dm-integrity 也有类似的功能）
+    
+    所以目前的结论是：如果需要存储大量的数据，那么 ZFS 绝对值得一试（至于 Btrfs，可能需要至少等它的 RAID 5/6 实现稳定下来再说了）。
+
+    当然了，如果你在使用 Windows Server，那么硬件 RAID……大概仍然还是一个挺不错的选择？
+    如果愿意吃螃蟹的话，也可以试试 ReFS……
+
 ### 获取管理软件
 
 MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
@@ -360,13 +384,7 @@ Enclosure /c0/e252  :
 ===================
 （以下省略）
 $ sudo ./storcli64 /c0 /e252 /sall show all nolog
-CLI Version = 007.1513.0000.0000 Apr 01, 2021
-Operating system = Linux 5.10.0-21-amd64
-Controller = 0
-Status = Success
-Description = Show Drive Information Succeeded.
-
-
+...
 Drive /c0/e252/s0 :
 =================
 
@@ -655,6 +673,46 @@ sudo ./storcli64 /c0 /sx show rebuild nolog
     Rebuild Progress on Device at Enclosure 252, Slot 7 Completed 8% in 39 Minutes.
 
     Exit Code: 0x00
+    ```
+
+#### 磁盘识别
+
+在磁盘损坏的时候，托架上的 LED 灯一般会亮红或黄灯，便于搜索。
+但是有的时候我们有找到某块硬盘的需求（即使它还没有被阵列卡识别为损坏）。
+MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
+
+```console
+# 开始闪烁对应硬盘的 LED 灯
+sudo ./storcli64 /c0 /e252 /s0 locate start nolog
+# 停止闪烁
+sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
+```
+
+??? note "MegaCLI alternative"
+
+    ```console
+    # 开始闪烁
+    sudo ./MegaCli64 -PdLocate -start -physdrv[252:0] -a0 -NoLog
+    # 停止闪烁
+    sudo ./MegaCli64 -PdLocate -stop -physdrv[252:0] -a0 -NoLog
+    ```
+
+!!! tip "还可以让阵列卡发出声音……"
+
+    可以配置阵列卡在阵列出现异常情况时发出声音，这可以帮助在机房的系统管理员发现异常情况。
+    可以使用 `show alarm` (StorCLI) / `-AdpGetProp AlarmDsply` (MegaCLI) 显示当前的配置情况。
+
+    ```console
+    $ sudo ./storcli64 /c0 show alarm nolog
+    ...
+    Controller Properties :
+    =====================
+
+    ----------------
+    Ctrl_Prop Value 
+    ----------------
+    Alarm     ON    
+    ----------------
     ```
 
 ## RAID 与文件系统
