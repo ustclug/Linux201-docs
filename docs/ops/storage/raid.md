@@ -353,15 +353,9 @@ Operating system = Linux 5.10.0-21-amd64
 Controller = 0
 Status = Success
 Description = None
-（以下省略）
+（以下省略；上面的部分每次 storcli 正确执行时都会输出，所以下面也会省略）
 $ sudo ./storcli64 /c0 /eall show all nolog  # 也可以使用 /e252 表示机柜 252
-CLI Version = 007.1513.0000.0000 Apr 01, 2021
-Operating system = Linux 5.10.0-21-amd64
-Controller = 0
-Status = Success
-Description = None
-
-
+...
 Enclosure /c0/e252  :
 ===================
 （以下省略）
@@ -383,13 +377,7 @@ EID:Slt DID State DG     Size Intf Med SED PI SeSz Model                Sp Type
 --------------------------------------------------------------------------------
 （以下省略）
 $ sudo ./storcli64 /c0 /vall show all nolog
-CLI Version = 007.1513.0000.0000 Apr 01, 2021
-Operating system = Linux 5.10.0-21-amd64
-Controller = 0
-Status = Success
-Description = None
-
-
+...
 /c0/v0 :
 ======
 
@@ -469,17 +457,12 @@ DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name
 
 MegaRAID 控制器一般会有一个电池（Battery Backup Unit, BBU）用于保护缓存中的数据。
 当意外断电的情况发生时，电池会支撑控制器将缓存中的数据写入磁盘，以避免数据丢失。
-在默认配置下，如果电池损坏，那么控制器不会使用缓存（WriteBack）模式，而是使用直写（WriteThrough）模式。
+在默认配置下，如果电池损坏，那么控制器不会使用缓存（WriteBack）模式，而是使用直写（WriteThrough）模式，造成写入性能下降。
 在某些控制器上，这项功能是由称之为 CacheVault 的技术实现的。
 
 ```console
 $ sudo ./storcli64 /c0 /bbu show all
-CLI Version = 007.1513.0000.0000 Apr 01, 2021
-Operating system = Linux 5.10.0-21-amd64
-Controller = 0
-Status = Failure
-Description = None
-
+...
 Detailed Status :
 ===============
 
@@ -490,13 +473,7 @@ Ctrl Status Property ErrMsg     ErrCd
 --------------------------------------
 $ # 这里提示使用 /cx/cv 查看 CacheVault 的状态
 $ sudo ./storcli64 /c0 /cv show all
-CLI Version = 007.1513.0000.0000 Apr 01, 2021
-Operating system = Linux 5.10.0-21-amd64
-Controller = 0
-Status = Success
-Description = None
-
-
+...
 Cachevault_Info :
 ===============
 
@@ -532,21 +509,160 @@ State       Optimal
     在讨论 RAID 5/6 的可靠性，以及为什么 btrfs 一直没有稳定的 RAID 5/6 支持时，经常会提到 write hole 问题。
     在 RAID 5/6 阵列中，在每块盘写入的数据都需要保持一致性（包括 parity），但是阵列的写入操作不是「原子」的。
     这意味着每次写入时，阵列在事实上有一小段时间是不一致的。
-    如果突然断电，就可能产生不一致，存在可能在未来的重建时恢复出错误数据的可能。
+    如果突然断电，就可能产生不一致。如果这种不一致出现在 parity 中，这样的错误不可能被文件系统检测到，
+    那么就可能在未来重建时恢复出错误的数据。
 
     对于硬件 RAID，设置电池一般即可解决这个问题。但是对于软件 RAID 来说就麻烦一些了。Linux 的 md 支持两种方法：
     设置一个额外的设备用来做 dirty stripe journal，或者对于 RAID 5，在 RAID 元数据中存储 partial parity log。
 
     ZFS 的 raidz1/2/3 不受 write hole 影响。
 
+#### 完整性检查
+
+!!! note "下面的部分内容没有命令输出展示"
+
+    由于没有测试条件，因此下面的部分需要对磁盘状态作修改的内容仅作示例。
+
+MegaRAID 阵列卡默认定期进行完整性检查（Consistency Check）与 Patrol Read；
+前者检查阵列中的数据是否一致，后者检查物理磁盘是否有坏道等问题。
+可以查看阵列的完整性检查与 Patrol Read 状态：
+
+```console
+$ sudo ./storcli64 /c0 show cc nolog
+...
+Controller Properties :
+=====================
+
+-----------------------------------------------
+Ctrl_Prop                 Value                
+-----------------------------------------------
+CC Operation Mode         Concurrent           
+CC Execution Delay        168 hours            
+CC Next Starttime         02/17/2024, 03:00:00 
+CC Current State          Active               
+CC Number of iterations   110                  
+CC Number of VD completed 0                    
+CC Excluded VDs           None                 
+-----------------------------------------------
+$ sudo ./storcli64 /c0 show patrolRead nolog
+...
+Controller Properties :
+=====================
+
+---------------------------------------------
+Ctrl_Prop               Value                
+---------------------------------------------
+PR Mode                 Auto                 
+PR Execution Delay      168 hours            
+PR iterations completed 18                   
+PR Next Start time      09/17/2022, 03:00:00 
+PR on SSD               Disabled             
+PR Current State        Active 0             
+PR Excluded VDs         None                 
+PR MaxConcurrentPd      255                  
+---------------------------------------------
+```
+
+!!! tip "检查阵列卡的时间"
+
+    阵列卡的时间可能与系统时间不一致，可以使用 `/cx show time` (StorCLI) / `-AdpGetTime -ax` (MegaCLI) 查看。
+
+??? note "MegaCLI alternative"
+
+    ```console
+    $ sudo ./MegaCli64 -AdpCcSched -Info -a0 -NoLog
+    
+    Adapter #0
+
+    Operation Mode: Disabled
+    Execution Delay: 168
+    Next start time: 09/02/2023, 03:00:00
+    Current State: Stopped
+    Number of iterations: 0
+    Number of VD completed: 0
+    Excluded VDs          : None
+    Exit Code: 0x00
+    $ sudo ./MegaCli64 -AdpPR -Info -a0 -NoLog
+
+    Adapter 0: Patrol Read Information:
+
+    Patrol Read Mode: Auto
+    Patrol Read Execution Delay: 168 hours
+    Number of iterations completed: 591 
+    Next start time: 02/26/2024, 21:00:00
+    Current State: Stopped
+    Patrol Read on SSD Devices: Disabled
+
+    Exit Code: 0x00
+    ```
+
 #### 重建操作
 
-!!! note "下面的内容没有命令输出展示"
+在替换坏盘后，阵列卡会自动开始重建操作。
+如果在有盘损坏时有热备盘（Spare），那么阵列卡会自动将热备盘加入阵列并开始重建。
 
-    由于没有测试条件，因此下面的内容仅作示例。
+默认情况下，阵列卡会在重建时限制 IO 性能，这个指标可以通过 `rebuildrate` 参数调整（默认为 30%）：
+
+```console
+$ sudo ./storcli64 /c0 show rebuildrate nolog
+...
+Controller Properties :
+=====================
+
+------------------
+Ctrl_Prop   Value 
+------------------
+Rebuildrate 30%   
+------------------
+$ sudo ./storcli64 /c0 set rebuildrate=60 nolog
+...
+Controller Properties :
+=====================
+
+------------------
+Ctrl_Prop   Value 
+------------------
+Rebuildrate 60%   
+------------------
+```
+
+??? note "MegaCLI alternative"
+
+    ```console
+    $ sudo ./MegaCli64 -AdpGetProp RebuildRate -a0 -NoLog
+
+    Adapter 0: Rebuild Rate = 30%
+
+    Exit Code: 0x00
+    $ sudo ./MegaCli64 -AdpSetProp RebuildRate -60 -a0 -NoLog
+
+    Adapter 0: Set rebuild rate to 60% success.
+
+    Exit Code: 0x00
+    ```
+
+在重建时，也可以查看重建的进度：
+
+```console
+sudo ./storcli64 /c0 /sx show rebuild nolog
+```
+
+??? note "MegaCLI alternative"
+
+    ```console
+    $ sudo ./MegaCli64 -PDRbld -ShowProg -PhysDrv [252:7] -a0 -NoLog
+
+    Rebuild Progress on Device at Enclosure 252, Slot 7 Completed 8% in 39 Minutes.
+
+    Exit Code: 0x00
+    ```
 
 ## RAID 与文件系统
 
 ## 监控
 
 ## 紧急救援
+
+## 补充阅读
+
+- [MegaCli wrapper for LSI MegaRAID for Debian/Ubuntu/RHEL/CentOS](https://gist.github.com/demofly/53b26d7a3f12b3008716)：一个服务器运维的 MegaCLI 脚本，其中包含了一些可供参考的操作与推荐设置
