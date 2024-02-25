@@ -2343,6 +2343,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 </code></pre></div>
 <p>这里我们可以修改「快照」的内容，在 CoW 文件系统中，修改共享的内容会被复制，而未修改的内容会被共享。
 不过很多时候我们不希望快照可写，在创建快照时可以加上 <code>-r</code> 参数。</p>
+<p>可以定时执行快照，以便在文件被误操作时能够恢复。例如 snapper 等软件可以在后台自动执行快照任务。</p>
 <h4 id="_8">透明压缩<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h4>
 <p>Btrfs 支持透明压缩，文件系统会自动压缩文件，而上层的应用程序不需要关心这一过程。
 这也是许多 Btrfs 用户会开启的挂载选项。
@@ -2357,6 +2358,8 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">prealloc   100%      643M         643M         1.0G</span>
 </code></pre></div>
 <p>可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。</p>
+<!-- TODO: btrfs 去重功能介绍？ -->
+
 <h4 id="_9">常见问题<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h4>
 <dl>
 <dt>Balance</dt>
@@ -2393,7 +2396,9 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 如果 metadata 已满，但是 data 仍有空间，可以使用 balance 功能重新分配空间：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>balance<span class="w"> </span>start<span class="w"> </span>/mountpoint<span class="w"> </span>-dusage<span class="o">=</span><span class="m">0</span>
 </code></pre></div>
-<p><code>-dusage=0</code> 代表将 data 中没有使用（使用率为 0%）的空间释放。视情况，有可能需要增大 <code>-dusage</code> 参数的值。</p>
+<p><code>-dusage=0</code> 代表将 data 中没有使用（使用率为 0%）的空间释放。视情况，有可能需要增大 <code>-dusage</code> 参数的值。
+如果在 balance 时提示没有足够的空间，那么可能不得不需要临时添加一个新的磁盘（比如一个 U 盘，或者如果能够承担
+数据丢失的风险，一个内存盘），添加设备后再执行 balance，然后再移除设备。</p>
 </dd>
 <dt>Check</dt>
 <dd>
