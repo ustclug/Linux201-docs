@@ -745,6 +745,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘识别
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -765,7 +774,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
       监控
     </span>
@@ -774,7 +783,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
+  <a href="#_11" class="md-nav__link">
     <span class="md-ellipsis">
       紧急救援
     </span>
@@ -783,7 +792,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
+  <a href="#_12" class="md-nav__link">
     <span class="md-ellipsis">
       补充阅读
     </span>
@@ -1745,6 +1754,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      磁盘识别
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1765,7 +1783,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_9" class="md-nav__link">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
       监控
     </span>
@@ -1774,7 +1792,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_10" class="md-nav__link">
+  <a href="#_11" class="md-nav__link">
     <span class="md-ellipsis">
       紧急救援
     </span>
@@ -1783,7 +1801,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_11" class="md-nav__link">
+  <a href="#_12" class="md-nav__link">
     <span class="md-ellipsis">
       补充阅读
     </span>
@@ -1812,7 +1830,7 @@
 <h1 id="raid">RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h1>
 <p>本文介绍常见的 RAID 方案的使用与维护。
 直接使用 LVM 创建 RAID 的方法请参考 <a href="../lvm/">LVM</a>；
-使用 ZFS 创建 RAID (raidz) 的方法请参考 <a href="../zfs/">ZFS</a>。</p>
+使用 ZFS 创建 RAID 的方法请参考 <a href="../zfs/">ZFS</a>。</p>
 <p>本部分不涉及 FakeRAID（例如 Intel Rapid Storage Technology）。
 建议阅读以下内容前，先阅读 <a href="../lvm/">LVM</a> 中与 RAID 相关的部分。</p>
 <h2 id="mdadm">mdadm<a class="headerlink" href="#mdadm" title="Permanent link">&para;</a></h2>
@@ -2056,6 +2074,35 @@
 HPE 的 Smart Array 可以使用 <code>ssacli</code> 等。
 这些软件 Linux 发行版不自带，需要自行下载安装。</p>
 <p>以下介绍 MegaRAID 相关的一些操作。</p>
+<div class="admonition comment">
+<p class="admonition-title">@taoky: 硬件 RAID，md/LVM，还是 ZFS？</p>
+<p>选择何种方案，需要在系统部署前确定好，否则后续切换的代价极高。
+在约十年前，硬件 RAID 是很合理的方案，因为能够节省 CPU 计算资源，性能足够好，配置简单，而且服务器一般都会带个卡。
+但在今天，硬件 RAID 方案（以及块设备级别的软件 RAID 方案）可能不总是最佳选择了：</p>
+<ul>
+<li>CPU 性能提升，使得软件 RAID 的计算开销不再是瓶颈</li>
+<li>软件 RAID 方案的监控与运维操作更方便<ul>
+<li>考虑到厂商混乱的文档管理，我敢肯定大多数配置硬件 RAID 的运维都不太清楚如何使用 MegaCLI/StorCLI 来监控硬盘的状态</li>
+<li>如果没有人去机房（或者去机房的人 don't care），那么结果就是：RAID 6（或者 RAID 10）坏了一块盘 =&gt; 没人知道 =&gt; 又坏了一盘 =&gt; 还是没人知道（可能会发现服务器变慢了） =&gt; 又坏盘了 =&gt; 服务挂了，Boom，只能氪金（去数据恢复）了！</li>
+<li>而查看软件 RAID 的状态就方便得多</li>
+</ul>
+</li>
+<li>不受制于闭源、无法调试的固件<ul>
+<li>我们曾经遇到过在某台旧服务器上，硬件 RAID 卡固件多次崩溃的问题，此时整个阵列（包括系统盘）都会掉线</li>
+<li>并且没有人知道为什么——开放的软件 RAID 方案至少还有调试的机会</li>
+<li>商业 SAN 方案也有类似的问题——我们也遇到过 SAN 的管理口启动一会之后就直接坏掉的情况，而且无法处理（同样，没有人知道为什么）</li>
+</ul>
+</li>
+<li>文件系统比块设备（和阵列卡）更懂数据<ul>
+<li>ZFS/Btrfs 的重建操作只会涉及到实际的数据块，而不会涉及到整个设备，减少重建时间与风险</li>
+<li>ZFS/Btrfs 的 checksum 会在读取时检查数据的完整性，帮助处理 bit rot 问题（LVM 的 dm-integrity 也有类似的功能）</li>
+</ul>
+</li>
+</ul>
+<p>所以目前的结论是：如果需要存储大量的数据，那么 ZFS 绝对值得一试（至于 Btrfs，可能需要至少等它的 RAID 5/6 实现稳定下来再说了）。</p>
+<p>当然了，如果你在使用 Windows Server，那么硬件 RAID……大概仍然还是一个挺不错的选择？
+如果愿意吃螃蟹的话，也可以试试 ReFS……</p>
+</div>
 <h3 id="_3">获取管理软件<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <p>MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
 由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
@@ -2116,33 +2163,27 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="go">===================</span>
 <a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="go">（以下省略）</span>
 <a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/e252<span class="w"> </span>/sall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="go">CLI Version = 007.1513.0000.0000 Apr 01, 2021</span>
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="go">Operating system = Linux 5.10.0-21-amd64</span>
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="go">Controller = 0</span>
-<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="go">Status = Success</span>
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="go">Description = Show Drive Information Succeeded.</span>
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>
-<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="go">Drive /c0/e252/s0 :</span>
-<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="go">=================</span>
-<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="go">--------------------------------------------------------------------------------</span>
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="go">EID:Slt DID State DG     Size Intf Med SED PI SeSz Model                Sp Type </span>
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a><span class="go">--------------------------------------------------------------------------------</span>
-<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a><span class="go">252:0     8 Onln   0 9.094 TB SATA HDD N   N  512B HGST HUH721010ALE600 U  -    </span>
-<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a><span class="go">--------------------------------------------------------------------------------</span>
-<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a><span class="go">（以下省略）</span>
-<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/vall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog
-<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a><span class="go">...</span>
-<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a><span class="go">/c0/v0 :</span>
-<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="go">======</span>
-<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>
-<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a><span class="go">--------------------------------------------------------------</span>
-<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a><span class="go">DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name </span>
-<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a><span class="go">--------------------------------------------------------------</span>
-<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a><span class="go">0/0   RAID6 Optl  RW     Yes     NRWTC -   ON  36.380 TB      </span>
-<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a><span class="go">--------------------------------------------------------------</span>
-<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="go">...</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="go">Drive /c0/e252/s0 :</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="go">=================</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="go">EID:Slt DID State DG     Size Intf Med SED PI SeSz Model                Sp Type </span>
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="go">252:0     8 Onln   0 9.094 TB SATA HDD N   N  512B HGST HUH721010ALE600 U  -    </span>
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>/vall<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="go">...</span>
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a><span class="go">/c0/v0 :</span>
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a><span class="go">======</span>
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a><span class="go">DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name </span>
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a><span class="go">0/0   RAID6 Optl  RW     Yes     NRWTC -   ON  36.380 TB      </span>
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="go">--------------------------------------------------------------</span>
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 <details class="note">
 <summary>MegaCLI alternative</summary>
@@ -2387,10 +2428,43 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">Exit Code: 0x00</span>
 </code></pre></div>
 </details>
+<h4 id="_9">磁盘识别<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h4>
+<p>在磁盘损坏的时候，托架上的 LED 灯一般会亮红或黄灯，便于搜索。
+但是有的时候我们有找到某块硬盘的需求（即使它还没有被阵列卡识别为损坏）。
+MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp"># </span>开始闪烁对应硬盘的<span class="w"> </span>LED<span class="w"> </span>灯
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">sudo ./storcli64 /c0 /e252 /s0 locate start nolog</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp"># </span>停止闪烁
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">sudo ./storcli64 /c0 /e252 /s0 locate stop nolog</span>
+</code></pre></div>
+<details class="note">
+<summary>MegaCLI alternative</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp"># </span>开始闪烁
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">sudo ./MegaCli64 -PdLocate -start -physdrv[252:0] -a0 -NoLog</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gp"># </span>停止闪烁
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">sudo ./MegaCli64 -PdLocate -stop -physdrv[252:0] -a0 -NoLog</span>
+</code></pre></div>
+</details>
+<div class="admonition tip">
+<p class="admonition-title">还可以让阵列卡发出声音……</p>
+<p>可以配置阵列卡在阵列出现异常情况时发出声音，这可以帮助在机房的系统管理员发现异常情况。
+可以使用 <code>show alarm</code> (StorCLI) / <code>-AdpGetProp AlarmDsply</code> (MegaCLI) 显示当前的配置情况。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>show<span class="w"> </span>alarm<span class="w"> </span>nolog
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">...</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">Controller Properties :</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">=====================</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">----------------</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">Ctrl_Prop Value </span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go">----------------</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">Alarm     ON    </span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="go">----------------</span>
+</code></pre></div>
+</div>
 <h2 id="raid_3">RAID 与文件系统<a class="headerlink" href="#raid_3" title="Permanent link">&para;</a></h2>
-<h2 id="_9">监控<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
-<h2 id="_10">紧急救援<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
-<h2 id="_11">补充阅读<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h2 id="_10">监控<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h2 id="_11">紧急救援<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h2 id="_12">补充阅读<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="https://gist.github.com/demofly/53b26d7a3f12b3008716">MegaCli wrapper for LSI MegaRAID for Debian/Ubuntu/RHEL/CentOS</a>：一个服务器运维的 MegaCLI 脚本，其中包含了一些可供参考的操作与推荐设置</li>
 </ul>
