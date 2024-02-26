@@ -1,5 +1,7 @@
 # RAID
 
+!!! warning "本文初稿编写中"
+
 本文介绍常见的 RAID 方案的使用与维护。
 直接使用 LVM 创建 RAID 的方法请参考 [LVM](./lvm.md)；
 使用 ZFS 创建 RAID 的方法请参考 [ZFS](./zfs.md)。
@@ -717,7 +719,453 @@ sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
 
 ## RAID 与文件系统
 
+在 RAID 阵列中，"chunk" 指每块盘上的数据块大小，例如以下 RAID 0 的布局表：
+
+| Disk 0 | Disk 1 |
+| ------ | ------ |
+| 0      | 1      |
+| 2      | 3      |
+| ...    | ...    |
+
+其中的 0, 1, 2, 3 等每一项都是一个 chunk。Chunk 通常比扇区（512B 或 4KB）大得多，例如 64KB 或 128KB。
+每行的 chunk 就组成条带（stripe）。
+文件系统在格式化时，也可以提供 RAID 相关的信息，帮助合理布局数据。
+
+对于 ext4 文件系统，`mkfs.ext4 -E` 中的 `stride` 与 `stripe_width` 参数可以用来提供 RAID 阵列的信息：
+
+- `stride` 是 chunk 除以 block size（一般为 4k）的结果，即在移动到下一块盘之前会处理的 block 的数量
+- `stripe_width` 是 stripe 的块数（stride * 实际数据盘数，不包含 parity 盘）
+
+而对于 XFS 文件系统，其能够自动识别软件 RAID 的信息。在使用硬件 RAID 的情况下，则需要在 `mkfs.xfs -d` 的时候
+考虑 `sunit` 与 `swidth` 参数：
+
+- `sunit` 是 chunk 除以扇区（512B）的结果
+- `swidth` 则是 `sunit` 乘以实际数据盘数
+
 ## 监控
+
+### SMART 信息 {#smart}
+
+阅读 SMART 信息可以帮助了解硬盘的健康状态。在服务器上，如果使用硬件 RAID，使用 `smartctl` 需要添加额外的参数来从 RAID 控制器获取真实的磁盘信息，例如下面的例子：
+
+```console
+$ sudo smartctl --scan
+/dev/sda -d scsi # /dev/sda, SCSI device
+/dev/sdb -d scsi # /dev/sdb, SCSI device
+/dev/sdc -d scsi # /dev/sdc, SCSI device
+/dev/sdd -d scsi # /dev/sdd, SCSI device
+/dev/bus/4 -d megaraid,8 # /dev/bus/4 [megaraid_disk_08], SCSI device
+/dev/bus/4 -d megaraid,9 # /dev/bus/4 [megaraid_disk_09], SCSI device
+/dev/bus/4 -d megaraid,10 # /dev/bus/4 [megaraid_disk_10], SCSI device
+/dev/bus/4 -d megaraid,11 # /dev/bus/4 [megaraid_disk_11], SCSI device
+/dev/bus/4 -d megaraid,12 # /dev/bus/4 [megaraid_disk_12], SCSI device
+/dev/bus/4 -d megaraid,13 # /dev/bus/4 [megaraid_disk_13], SCSI device
+/dev/bus/4 -d megaraid,14 # /dev/bus/4 [megaraid_disk_14], SCSI device
+/dev/bus/4 -d megaraid,15 # /dev/bus/4 [megaraid_disk_15], SCSI device
+/dev/bus/0 -d megaraid,8 # /dev/bus/0 [megaraid_disk_08], SCSI device
+/dev/bus/0 -d megaraid,9 # /dev/bus/0 [megaraid_disk_09], SCSI device
+/dev/bus/0 -d megaraid,10 # /dev/bus/0 [megaraid_disk_10], SCSI device
+/dev/bus/0 -d megaraid,11 # /dev/bus/0 [megaraid_disk_11], SCSI device
+/dev/bus/0 -d megaraid,12 # /dev/bus/0 [megaraid_disk_12], SCSI device
+/dev/bus/0 -d megaraid,13 # /dev/bus/0 [megaraid_disk_13], SCSI device
+$ sudo smartctl -a /dev/sdd  # 直接查询只能看到没有意义的控制器信息
+smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-21-amd64] (local build)
+Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               AVAGO
+Product:              MR9361-8i
+Revision:             4.68
+Compliance:           SPC-3
+User Capacity:        1,919,816,826,880 bytes [1.91 TB]
+Logical block size:   512 bytes
+Physical block size:  4096 bytes
+Logical Unit id:      0x600605b00f17786026223e2d33c1767b
+Serial number:        007b76c1332d3e22266078170fb00506
+Device type:          disk
+Local Time is:        Sun Feb 11 18:40:45 2024 CST
+SMART support is:     Unavailable - device lacks SMART capability.
+
+=== START OF READ SMART DATA SECTION ===
+Current Drive Temperature:     0 C
+Drive Trip Temperature:        0 C
+
+Error Counter logging not supported
+
+Device does not support Self Test logging
+$ sudo smartctl -a /dev/bus/4 -d megaraid,8  # 添加参数可以看到真实的磁盘信息
+（内容省略）
+```
+
+`smartctl -a` 的输出主要分为两个部分：information section 和 smart data section。
+
+Information section 展示硬盘的基本信息，包括型号、序列号、容量、固件版本等。
+
+??? example "一块 NVMe SSD 的信息示例"
+
+    ```smartctl
+    === START OF INFORMATION SECTION ===
+    Model Number:                       INTEL SSDPEKNU020TZ
+    Serial Number:                      PHKA119600MK2P0D
+    Firmware Version:                   002C
+    PCI Vendor/Subsystem ID:            0x8086
+    IEEE OUI Identifier:                0x5cd2e4
+    Controller ID:                      1
+    NVMe Version:                       1.4
+    Number of Namespaces:               1
+    Namespace 1 Size/Capacity:          2,048,408,248,320 [2.04 TB]
+    Namespace 1 Formatted LBA Size:     512
+    Local Time is:                      Mon Feb 26 21:59:27 2024 CST
+    Firmware Updates (0x14):            2 Slots, no Reset required
+    Optional Admin Commands (0x0017):   Security Format Frmw_DL Self_Test
+    Optional NVM Commands (0x005f):     Comp Wr_Unc DS_Mngmt Wr_Zero Sav/Sel_Feat Timestmp
+    Log Page Attributes (0x0f):         S/H_per_NS Cmd_Eff_Lg Ext_Get_Lg Telmtry_Lg
+    Maximum Data Transfer Size:         64 Pages
+    Warning  Comp. Temp. Threshold:     77 Celsius
+    Critical Comp. Temp. Threshold:     80 Celsius
+
+    Supported Power States
+    St Op     Max   Active     Idle   RL RT WL WT  Ent_Lat  Ex_Lat
+    0 +     5.50W       -        -    0  0  0  0        0       0
+    1 +     3.60W       -        -    1  1  1  1        0       0
+    2 +     2.60W       -        -    2  2  2  2        0       0
+    3 -   0.0250W       -        -    3  3  3  3     5000    5000
+    4 -   0.0040W       -        -    4  4  4  4     3000   11999
+
+    Supported LBA Sizes (NSID 0x1)
+    Id Fmt  Data  Metadt  Rel_Perf
+    0 +     512       0         0
+    ```
+
+??? example "一块 SATA SSD 的信息示例"
+
+    ```smartctl
+    === START OF INFORMATION SECTION ===
+    Model Family:     Intel S4510/S4610/S4500/S4600 Series SSDs
+    Device Model:     INTEL SSDSC2KB019T8
+    Serial Number:    PHYF8314006P1P9DGM
+    LU WWN Device Id: 5 5cd2e4 14fa8880b
+    Firmware Version: XCV10165
+    User Capacity:    1,920,383,410,176 bytes [1.92 TB]
+    Sector Sizes:     512 bytes logical, 4096 bytes physical
+    Rotation Rate:    Solid State Device
+    Form Factor:      2.5 inches
+    TRIM Command:     Available, deterministic, zeroed
+    Device is:        In smartctl database [for details use: -P show]
+    ATA Version is:   ACS-3 T13/2161-D revision 5
+    SATA Version is:  SATA 3.2, 6.0 Gb/s (current: 6.0 Gb/s)
+    Local Time is:    Mon Feb 26 22:13:57 2024 CST
+    SMART support is: Available - device has SMART capability.
+    SMART support is: Enabled
+    ```
+
+??? example "一块 SATA HDD 的信息示例"
+
+    ```smartctl
+    === START OF INFORMATION SECTION ===
+    Model Family:     Hitachi Ultrastar A7K2000
+    Device Model:     Hitachi HUA722020ALA330
+    Serial Number:    JK11A4B8KKLUDX
+    LU WWN Device Id: 5 000cca 222f24777
+    Firmware Version: JKAOA3EA
+    User Capacity:    2,000,398,934,016 bytes [2.00 TB]
+    Sector Size:      512 bytes logical/physical
+    Rotation Rate:    7200 rpm
+    Form Factor:      3.5 inches
+    Device is:        In smartctl database [for details use: -P show]
+    ATA Version is:   ATA8-ACS T13/1699-D revision 4
+    SATA Version is:  SATA 2.6, 3.0 Gb/s
+    Local Time is:    Mon Feb 26 22:15:41 2024 CST
+    SMART support is: Available - device has SMART capability.
+    SMART support is: Enabled
+    ```
+
+??? example "一块 SAS HDD 的信息示例"
+
+    ```smartctl
+    === START OF INFORMATION SECTION ===
+    Vendor:               WDC
+    Product:              WUH721818AL5206
+    Revision:             C240
+    Compliance:           SPC-5
+    User Capacity:        18,000,207,937,536 bytes [18.0 TB]
+    Logical block size:   512 bytes
+    Physical block size:  4096 bytes
+    LU is fully provisioned
+    Rotation Rate:        7200 rpm
+    Form Factor:          3.5 inches
+    Logical Unit id:      0x5000cca2a909e560
+    Serial number:        3JG5ER6G
+    Device type:          disk
+    Transport protocol:   SAS (SPL-4)
+    Local Time is:        Mon Feb 26 22:21:06 2024 CST
+    SMART support is:     Available - device has SMART capability.
+    SMART support is:     Enabled
+    Temperature Warning:  Enabled
+    ```
+
+!!! warning "检查硬盘的固件版本"
+
+    数据中心盘的 SSD 近年来有多起因为固件问题导致使用时间过长（几万小时）后盘坏掉的新闻：
+
+    - [Time to Patch: HPE SSDs Will Fail After 32,768 Hours](https://www.pcmag.com/news/time-to-patch-hpe-ssds-will-fail-after-32768-hours)
+    - [SSD drives' 40,000-hour "death bug" continues to catch enterprises unawares](https://www.thestack.technology/ssd-death-bug-40000-hours-sandisk/)
+
+    对于服务器场景，这类事件一旦发生，后果极其严重，因为配置新服务器时，很多时候使用的盘型号是一样的，导致开机时间也是一样的，
+    因此出现问题之后，所有盘都会在短时间内坏掉，RAID 的冗余再高也无力回天。
+
+    即使是面向个人用户的产品，也出现过固件问题导致 SSD 在短时间内损坏的情况。
+    因此检查固件版本（以及关注相关信息）是非常重要的。`smartctl` 提供的信息中包含了固件版本，可以用作搜索、自查的参考。
+
+    一部分厂商提供了 fwupd 支持，可以直接进行固件版本的检查与升级；而另一些就需要自己去搜索相关工具进行升级。
+    [我们的文档](https://docs.ustclug.org/faq/ssd/)记录了在两块盘遇到固件导致的损坏后升级 Intel SSD 固件（XCV10100 -> XCV10110）的惨痛经历，可以作为参考。
+
+Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**与**错误记录**均会显示，其他的部分视硬盘类型而定。
+
+??? example "一块 NVMe SSD 的 SMART 数据示例"
+
+    ```smartctl
+    === START OF SMART DATA SECTION ===
+    SMART overall-health self-assessment test result: PASSED
+
+    SMART/Health Information (NVMe Log 0x02)
+    Critical Warning:                   0x00
+    Temperature:                        38 Celsius
+    Available Spare:                    100%
+    Available Spare Threshold:          10%
+    Percentage Used:                    2%
+    Data Units Read:                    84,073,721 [43.0 TB]
+    Data Units Written:                 61,243,095 [31.3 TB]
+    Host Read Commands:                 447,275,235
+    Host Write Commands:                1,184,078,579
+    Controller Busy Time:               9,203
+    Power Cycles:                       77
+    Power On Hours:                     14,101
+    Unsafe Shutdowns:                   25
+    Media and Data Integrity Errors:    0
+    Error Information Log Entries:      0
+    Warning  Comp. Temperature Time:    0
+    Critical Comp. Temperature Time:    0
+
+    Error Information (NVMe Log 0x01, 16 of 256 entries)
+    No Errors Logged
+
+    Read Self-test Log failed: Invalid Field in Command (0x002)
+    ```
+
+    对于 NVMe SSD 来说，关注的重点是：
+
+    - 写入量与寿命：Available Spare、Percentage Used、Data Units Written
+    - 出现错误的次数：Media and Data Integrity Errors
+
+??? example "一块 SATA SSD 的 SMART 数据示例"
+
+    ```smartctl
+    === START OF READ SMART DATA SECTION ===
+    SMART overall-health self-assessment test result: PASSED
+
+    General SMART Values:
+    Offline data collection status:  (0x00)	Offline data collection activity
+                        was never started.
+                        Auto Offline Data Collection: Disabled.
+    Self-test execution status:      (   0)	The previous self-test routine completed
+                        without error or no self-test has ever 
+                        been run.
+    Total time to complete Offline 
+    data collection: 		(    0) seconds.
+    Offline data collection
+    capabilities: 			 (0x79) SMART execute Offline immediate.
+                        No Auto Offline data collection support.
+                        Suspend Offline collection upon new
+                        command.
+                        Offline surface scan supported.
+                        Self-test supported.
+                        Conveyance Self-test supported.
+                        Selective Self-test supported.
+    SMART capabilities:            (0x0003)	Saves SMART data before entering
+                        power-saving mode.
+                        Supports SMART auto save timer.
+    Error logging capability:        (0x01)	Error logging supported.
+                        General Purpose Logging supported.
+    Short self-test routine 
+    recommended polling time: 	 (   1) minutes.
+    Extended self-test routine
+    recommended polling time: 	 (   2) minutes.
+    Conveyance self-test routine
+    recommended polling time: 	 (   2) minutes.
+    SCT capabilities: 	       (0x003d)	SCT Status supported.
+                        SCT Error Recovery Control supported.
+                        SCT Feature Control supported.
+                        SCT Data Table supported.
+
+    SMART Attributes Data Structure revision number: 1
+    Vendor Specific SMART Attributes with Thresholds:
+    ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+    5 Reallocated_Sector_Ct   0x0032   100   100   000    Old_age   Always       -       0
+    9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       41492
+    12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       22
+    170 Available_Reservd_Space 0x0033   100   100   010    Pre-fail  Always       -       0
+    171 Program_Fail_Count      0x0032   100   100   000    Old_age   Always       -       0
+    172 Erase_Fail_Count        0x0032   100   100   000    Old_age   Always       -       0
+    174 Unsafe_Shutdown_Count   0x0032   100   100   000    Old_age   Always       -       18
+    175 Power_Loss_Cap_Test     0x0033   100   100   010    Pre-fail  Always       -       2561 (22 65535)
+    183 SATA_Downshift_Count    0x0032   100   100   000    Old_age   Always       -       0
+    184 End-to-End_Error_Count  0x0033   100   100   090    Pre-fail  Always       -       0
+    187 Uncorrectable_Error_Cnt 0x0032   100   100   000    Old_age   Always       -       0
+    190 Drive_Temperature       0x0022   079   073   000    Old_age   Always       -       21 (Min/Max 19/27)
+    192 Unsafe_Shutdown_Count   0x0032   100   100   000    Old_age   Always       -       18
+    194 Temperature_Celsius     0x0022   100   100   000    Old_age   Always       -       21
+    197 Pending_Sector_Count    0x0012   100   100   000    Old_age   Always       -       0
+    199 CRC_Error_Count         0x003e   100   100   000    Old_age   Always       -       0
+    225 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       1627966
+    226 Workld_Media_Wear_Indic 0x0032   100   100   000    Old_age   Always       -       1177
+    227 Workld_Host_Reads_Perc  0x0032   100   100   000    Old_age   Always       -       20
+    228 Workload_Minutes        0x0032   100   100   000    Old_age   Always       -       2489558
+    232 Available_Reservd_Space 0x0033   100   100   010    Pre-fail  Always       -       0
+    233 Media_Wearout_Indicator 0x0032   099   099   000    Old_age   Always       -       0
+    234 Thermal_Throttle_Status 0x0032   100   100   000    Old_age   Always       -       0/0
+    235 Power_Loss_Cap_Test     0x0033   100   100   010    Pre-fail  Always       -       2561 (22 65535)
+    241 Host_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       1627966
+    242 Host_Reads_32MiB        0x0032   100   100   000    Old_age   Always       -       407022
+    243 NAND_Writes_32MiB       0x0032   100   100   000    Old_age   Always       -       8173747
+
+    SMART Error Log Version: 1
+    No Errors Logged
+
+    SMART Self-test log structure revision number 1
+    No self-tests have been logged.  [To run self-tests, use: smartctl -t]
+
+    SMART Selective self-test log data structure revision number 1
+    SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+        1        0        0  Not_testing
+        2        0        0  Not_testing
+        3        0        0  Not_testing
+        4        0        0  Not_testing
+        5        0        0  Not_testing
+    Selective self-test flags (0x0):
+    After scanning selected spans, do NOT read-scan remainder of disk.
+    If Selective self-test is pending on power-up, resume after 0 minute delay.
+    ```
+
+    这里主要关注 attributes 表中的值。Attributes 分为两类，"Pre-fail" 代表其异常预示着硬盘会在不久的将来出现问题，"Old_age" 则表示硬盘随时间老化的指标。
+    Value 为 100（有些硬盘的起始值会更高）通常表示最佳指标，随着使用逐渐降低。Worst 则记录历史最差（最低）值，如果值低于阈值（Threshold），则代表硬盘出现了问题。
+
+    对于 SSD 来说，除了 Pre-fail 以外，需要额外关注与 wearout（磨损）有关的指标。
+
+??? example "一块 SATA HDD 的 SMART 数据示例"
+
+    ```smartctl
+    === START OF READ SMART DATA SECTION ===
+    SMART Status not supported: ATA return descriptor not supported by controller firmware
+    SMART overall-health self-assessment test result: PASSED
+    Warning: This result is based on an Attribute check.
+
+    General SMART Values:
+    Offline data collection status:  (0x82)	Offline data collection activity
+                        was completed without error.
+                        Auto Offline Data Collection: Enabled.
+    Self-test execution status:      (   0)	The previous self-test routine completed
+                        without error or no self-test has ever 
+                        been run.
+    Total time to complete Offline 
+    data collection: 		(21007) seconds.
+    Offline data collection
+    capabilities: 			 (0x5b) SMART execute Offline immediate.
+                        Auto Offline data collection on/off support.
+                        Suspend Offline collection upon new
+                        command.
+                        Offline surface scan supported.
+                        Self-test supported.
+                        No Conveyance Self-test supported.
+                        Selective Self-test supported.
+    SMART capabilities:            (0x0003)	Saves SMART data before entering
+                        power-saving mode.
+                        Supports SMART auto save timer.
+    Error logging capability:        (0x01)	Error logging supported.
+                        General Purpose Logging supported.
+    Short self-test routine 
+    recommended polling time: 	 (   1) minutes.
+    Extended self-test routine
+    recommended polling time: 	 ( 350) minutes.
+    SCT capabilities: 	       (0x003d)	SCT Status supported.
+                        SCT Error Recovery Control supported.
+                        SCT Feature Control supported.
+                        SCT Data Table supported.
+
+    SMART Attributes Data Structure revision number: 16
+    Vendor Specific SMART Attributes with Thresholds:
+    ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+    1 Raw_Read_Error_Rate     0x000b   100   100   016    Pre-fail  Always       -       0
+    2 Throughput_Performance  0x0005   133   133   054    Pre-fail  Offline      -       102
+    3 Spin_Up_Time            0x0007   119   119   024    Pre-fail  Always       -       604 (Average 610)
+    4 Start_Stop_Count        0x0012   100   100   000    Old_age   Always       -       104
+    5 Reallocated_Sector_Ct   0x0033   100   100   005    Pre-fail  Always       -       0
+    7 Seek_Error_Rate         0x000b   100   100   067    Pre-fail  Always       -       0
+    8 Seek_Time_Performance   0x0005   121   121   020    Pre-fail  Offline      -       35
+    9 Power_On_Hours          0x0012   084   084   000    Old_age   Always       -       113016
+    10 Spin_Retry_Count        0x0013   100   100   060    Pre-fail  Always       -       0
+    12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       104
+    192 Power-Off_Retract_Count 0x0032   100   100   000    Old_age   Always       -       129
+    193 Load_Cycle_Count        0x0012   100   100   000    Old_age   Always       -       129
+    194 Temperature_Celsius     0x0002   181   181   000    Old_age   Always       -       33 (Min/Max 17/56)
+    196 Reallocated_Event_Count 0x0032   100   100   000    Old_age   Always       -       0
+    197 Current_Pending_Sector  0x0022   100   100   000    Old_age   Always       -       0
+    198 Offline_Uncorrectable   0x0008   100   100   000    Old_age   Offline      -       0
+    199 UDMA_CRC_Error_Count    0x000a   200   200   000    Old_age   Always       -       1
+
+    SMART Error Log Version: 0
+    No Errors Logged
+
+    SMART Self-test log structure revision number 1
+    No self-tests have been logged.  [To run self-tests, use: smartctl -t]
+
+    SMART Selective self-test log data structure revision number 1
+    SPAN  MIN_LBA  MAX_LBA  CURRENT_TEST_STATUS
+        1        0        0  Not_testing
+        2        0        0  Not_testing
+        3        0        0  Not_testing
+        4        0        0  Not_testing
+        5        0        0  Not_testing
+    Selective self-test flags (0x0):
+    After scanning selected spans, do NOT read-scan remainder of disk.
+    If Selective self-test is pending on power-up, resume after 0 minute delay.
+    ```
+
+    阅读 attributes 的方法参见上面的 SATA SSD 的示例。
+
+??? example "一块 SAS HDD 的 SMART 数据示例"
+
+    ```smartctl
+    === START OF READ SMART DATA SECTION ===
+    SMART Health Status: OK
+
+    Grown defects during certification <not available>
+    Total blocks reassigned during format <not available>
+    Total new blocks reassigned <not available>
+    Power on minutes since format <not available>
+    Current Drive Temperature:     26 C
+    Drive Trip Temperature:        85 C
+
+    Accumulated power on time, hours:minutes 3632:21
+    Manufactured in week 44 of year 2021
+    Specified cycle count over device lifetime:  50000
+    Accumulated start-stop cycles:  6
+    Specified load-unload count over device lifetime:  600000
+    Accumulated load-unload cycles:  155
+    Elements in grown defect list: 0
+
+    Error counter log:
+            Errors Corrected by           Total   Correction     Gigabytes    Total
+                ECC          rereads/    errors   algorithm      processed    uncorrected
+            fast | delayed   rewrites  corrected  invocations   [10^9 bytes]  errors
+    read:          0        0         0         0          3       1235.896           0
+    write:         0        0         0         0         30        595.461           0
+    verify:        0        0         0         0         28          0.000           0
+
+    Non-medium error count:        0
+
+    No Self-tests have been logged
+    ```
 
 ## 紧急救援
 

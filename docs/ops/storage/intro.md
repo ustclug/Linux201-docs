@@ -101,9 +101,9 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
 
 ### S.M.A.R.T. {#smart}
 
-磁盘的 S.M.A.R.T.（Self-Monitoring, Analysis and Reporting Technology）功能可以记录磁盘的运行状态，并且在磁盘出现故障前提供预警。S.M.A.R.T. 可以记录磁盘的温度、读写错误率、磁盘旋转速度、磁盘的寿命等信息。
+磁盘的 S.M.A.R.T.（Self-Monitoring, Analysis and Reporting Technology，以下简称为 SMART）功能可以记录磁盘的运行状态，并且在磁盘出现故障前提供预警。SMART 可以记录磁盘的温度、读写错误率、磁盘旋转速度、磁盘的寿命等信息。
 
-Linux 系统上可以安装 `smartmontools` 包来查看磁盘的 S.M.A.R.T. 信息。使用以下命令查看可用的磁盘与其 S.M.A.R.T 状态：
+Linux 系统上可以安装 `smartmontools` 包来查看磁盘的 SMART 信息。使用以下命令查看可用的磁盘与其 SMART 状态：
 
 ```console
 $ sudo smartctl --scan
@@ -112,59 +112,8 @@ $ sudo smartctl -a /dev/nvme0
 （内容省略）
 ```
 
-在服务器上，如果使用硬件 RAID，使用 `smartctl` 需要添加额外的参数来从 RAID 控制器获取真实的磁盘信息，例如下面的例子：
-
-```console
-$ sudo smartctl --scan
-/dev/sda -d scsi # /dev/sda, SCSI device
-/dev/sdb -d scsi # /dev/sdb, SCSI device
-/dev/sdc -d scsi # /dev/sdc, SCSI device
-/dev/sdd -d scsi # /dev/sdd, SCSI device
-/dev/bus/4 -d megaraid,8 # /dev/bus/4 [megaraid_disk_08], SCSI device
-/dev/bus/4 -d megaraid,9 # /dev/bus/4 [megaraid_disk_09], SCSI device
-/dev/bus/4 -d megaraid,10 # /dev/bus/4 [megaraid_disk_10], SCSI device
-/dev/bus/4 -d megaraid,11 # /dev/bus/4 [megaraid_disk_11], SCSI device
-/dev/bus/4 -d megaraid,12 # /dev/bus/4 [megaraid_disk_12], SCSI device
-/dev/bus/4 -d megaraid,13 # /dev/bus/4 [megaraid_disk_13], SCSI device
-/dev/bus/4 -d megaraid,14 # /dev/bus/4 [megaraid_disk_14], SCSI device
-/dev/bus/4 -d megaraid,15 # /dev/bus/4 [megaraid_disk_15], SCSI device
-/dev/bus/0 -d megaraid,8 # /dev/bus/0 [megaraid_disk_08], SCSI device
-/dev/bus/0 -d megaraid,9 # /dev/bus/0 [megaraid_disk_09], SCSI device
-/dev/bus/0 -d megaraid,10 # /dev/bus/0 [megaraid_disk_10], SCSI device
-/dev/bus/0 -d megaraid,11 # /dev/bus/0 [megaraid_disk_11], SCSI device
-/dev/bus/0 -d megaraid,12 # /dev/bus/0 [megaraid_disk_12], SCSI device
-/dev/bus/0 -d megaraid,13 # /dev/bus/0 [megaraid_disk_13], SCSI device
-$ sudo smartctl -a /dev/sdd  # 直接查询只能看到没有意义的控制器信息
-smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-21-amd64] (local build)
-Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
-
-=== START OF INFORMATION SECTION ===
-Vendor:               AVAGO
-Product:              MR9361-8i
-Revision:             4.68
-Compliance:           SPC-3
-User Capacity:        1,919,816,826,880 bytes [1.91 TB]
-Logical block size:   512 bytes
-Physical block size:  4096 bytes
-Logical Unit id:      0x600605b00f17786026223e2d33c1767b
-Serial number:        007b76c1332d3e22266078170fb00506
-Device type:          disk
-Local Time is:        Sun Feb 11 18:40:45 2024 CST
-SMART support is:     Unavailable - device lacks SMART capability.
-
-=== START OF READ SMART DATA SECTION ===
-Current Drive Temperature:     0 C
-Drive Trip Temperature:        0 C
-
-Error Counter logging not supported
-
-Device does not support Self Test logging
-$ sudo smartctl -a /dev/bus/4 -d megaraid,8  # 添加参数可以看到真实的磁盘信息
-（内容省略）
-```
-
 <!-- TODO: 可能放 RAID 里面还是不太合适，在这里完整讲 SMART 会比较好 -->
-有关 S.M.A.R.T. 指标解释与监控的内容将会在 [RAID](./raid.md) 中介绍。
+有关 SMART 指标解释与监控的内容将会在 [RAID](./raid.md#smart) 中介绍。
 
 ### Trim (Discard/Unmap)
 
@@ -278,7 +227,7 @@ Linux：
 
     对已经有数据的块设备进行写入操作会导致数据丢失，在测试时请加上 `--readonly` 参数。
 
-??? note "使用 fio 测试块设备（`/dev/mapper/vg201--test-lvdata`）随机读延迟的例子"
+??? example "使用 fio 测试块设备（`/dev/mapper/vg201--test-lvdata`）随机读延迟的例子"
 
     本部分编写时参考了 [Oracle 的文档](https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm)。
 
@@ -328,7 +277,7 @@ Linux：
     READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
     ```
 
-??? note "向 `./test` 随机读写，模拟 I/O 压力"
+??? example "向 `./test` 随机读写，模拟 I/O 压力"
 
     ```console
     sudo fio --filename=./test \
@@ -338,7 +287,7 @@ Linux：
       --group_reporting --name=job_name --eta-newline=1
     ```
 
-??? note "模拟 Crystal DiskMark 测试磁盘性能"
+??? example "模拟 Crystal DiskMark 测试磁盘性能"
 
     本部分来自 [Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+](https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test)。
 
