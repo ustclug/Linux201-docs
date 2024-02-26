@@ -880,55 +880,8 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 ```
 
 可能需要进行一些性能测试来权衡 chunk size 带来的影响——考虑到本地测试时稀疏文件等因素，实际的性能测试可能需要在真实的环境中进行。
-例如，`fio` 工具可以对块设备测试读延迟等性能指标。
 
 <!-- TODO: 很明显，缺真实的延迟数据 -->
-
-??? note "使用 fio 测试随机读延迟的例子"
-
-    本部分参考了 [Oracle 的文档](https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm)。
-
-    一个只读情况下测试 10s `/dev/mapper/vg201--test-lvdata` 的 4K 随机读的例子如下：
-
-    ```console
-    $ sudo fio --filename=/dev/mapper/vg201--test-lvdata --direct=1 --rw=randread --bsudo fio --filename=/dev/mapper/vg201--test-lvdata --direct=1 --rw=randread --bs=4k --ioengine=libaio --iodepth=1 --numjobs=1 --time_based --group_reporting --name=readlatency-test-job --runtime=10 --eta-newline=1 --readonly
-    readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1
-    fio-3.36
-    Starting 1 process
-    fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.
-    fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.
-    Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]
-    Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] 
-    Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] 
-    Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] 
-    Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]
-    readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024
-    read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)
-        slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07
-        clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24
-        lat (usec): min=10, max=26564, avg=17.06, stdev=60.82
-        clat percentiles (usec):
-        |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],
-        | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],
-        | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],
-        | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],
-        | 99.99th=[  465]
-    bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19
-    iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19
-    lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
-    lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%
-    lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%
-    lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%
-    cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23
-    IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
-        submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-        complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
-        issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0
-        latency   : target=0, window=0, percentile=100.00%, depth=1
-
-    Run status group 0 (all jobs):
-    READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
-    ```
 
 此外，在 `lvconvert` 创建缓存时，如果 SSD 设备不支持 TRIM（常见的场景是在 RAID 卡后面），那么其会清零对应的块，这个过程可能会花费超过半个小时的时间。
 

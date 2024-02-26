@@ -259,6 +259,104 @@ Linux：
 服务器一般都配备了硬件 RAID 卡，如果需要使用软件 RAID，需要设置 RAID 卡或对应磁盘到 HBA 模式（也叫 JBOD/Non-RAID/直通 模式）。
 一部分低端 RAID 卡不提供相关功能的支持，尽管可以通过为每块磁盘创建单独的 RAID 0 阵列实现类似的功能，但是并不推荐。
 
+## 性能测试
+
+我们可以使用 [`fio`](https://fio.readthedocs.io/en/latest/) 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。
+
+以下是一些常见的参数：
+
+- `--rw`：I/O 访问的模式，例如 `read`, `write`（顺序读写）, `randread`, `randwrite`（随机读写）等
+- `--ioengine`：使用的 I/O 引擎，默认为 `psync`（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 `libaio` 来使用系统的异步 I/O 接口，此时建议添加 `--direct=1` 参数，并且可以使用 `--iodepth` 参数来控制并发（处于未完成状态的）异步 I/O 操作的数量。
+- `--runtime`：测试的时间长度（无单位则为秒），需要再添加 `--time_based` 参数防止任务完成而提前结束
+- `--bs`：每次 I/O 操作的块大小，默认为 4k（4096）
+- `--numjobs`：I/O 任务数量，此时建议添加 `--group_reporting` 参数来汇总所有任务的结果
+- `--readonly`：检查当前任务是否为只读任务，防止误操作导致数据丢失
+
+以下是一些例子，一部分在编写其他内容时使用到了：
+
+!!! warning "对正在运行的块设备操作时需要小心"
+
+    对已经有数据的块设备进行写入操作会导致数据丢失，在测试时请加上 `--readonly` 参数。
+
+??? note "使用 fio 测试块设备（`/dev/mapper/vg201--test-lvdata`）随机读延迟的例子"
+
+    本部分编写时参考了 [Oracle 的文档](https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm)。
+
+    一个只读情况下测试 10s `/dev/mapper/vg201--test-lvdata` 的 4K 随机读的例子如下：
+
+    ```console
+    $ sudo fio --filename=/dev/mapper/vg201--test-lvdata \
+        --direct=1 --rw=randread --bs=4k \
+        --ioengine=libaio --iodepth=1 --numjobs=1 \
+        --time_based --group_reporting --name=readlatency-test-job \
+        --runtime=10 --eta-newline=1 --readonly
+    readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1
+    fio-3.36
+    Starting 1 process
+    fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.
+    fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.
+    Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]
+    Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] 
+    Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] 
+    Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] 
+    Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]
+    readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024
+    read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)
+        slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07
+        clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24
+        lat (usec): min=10, max=26564, avg=17.06, stdev=60.82
+        clat percentiles (usec):
+        |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],
+        | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],
+        | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],
+        | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],
+        | 99.99th=[  465]
+    bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19
+    iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19
+    lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%
+    lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%
+    lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%
+    lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%
+    cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23
+    IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+        submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+        complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+        issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+        latency   : target=0, window=0, percentile=100.00%, depth=1
+
+    Run status group 0 (all jobs):
+    READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
+    ```
+
+??? note "向 `./test` 随机读写，模拟 I/O 压力"
+
+    ```console
+    sudo fio --filename=./test \
+      --filesize=2G --direct=1 --rw=randrw \
+      --bs=4k --ioengine=libaio --iodepth=256 \
+      --runtime=120 --numjobs=4 --time_based \
+      --group_reporting --name=job_name --eta-newline=1
+    ```
+
+??? note "模拟 Crystal DiskMark 测试磁盘性能"
+
+    本部分来自 [Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+](https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test)。
+
+    ```console
+    sudo fio --loops=5 --size=500m --filename=fiotest.tmp --stonewall --ioengine=libaio --direct=1 \
+        --name=SeqRead --bs=1m --rw=read \
+        --name=SeqWrite --bs=1m --rw=write \
+        --name=512Kread --bs=512k --rw=randread \
+        --name=512Kwrite --bs=512k --rw=randwrite \
+        --name=4KQD32read --bs=4k --iodepth=32 --rw=randread \
+        --name=4KQD32write --bs=4k --iodepth=32 --rw=randwrite \
+        --name=4Kread --bs=4k --rw=randread \
+        --name=4Kwrite --bs=4k --rw=randwrite
+    ```
+
+由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于重复使用。
+相关的配置文件编写方法可以参考 fio 的文档。
+
 ## 文件系统
 
 在 Linux 上，ext4 是最常见的文件系统。但是对于某些需求，ext4 可能无法满足，例如：
@@ -267,5 +365,9 @@ Linux：
 - 需要支持快照、透明压缩、数据校验等高级功能
 
 在[「分区与文件系统」部分](./filesystem.md)会对文件系统的选择进行介绍。
+
+## 补充阅读
+
+[对 Linux 虚拟机上的永久性磁盘性能进行基准测试](https://cloud.google.com/compute/docs/disks/benchmarking-pd-performance?hl=zh-cn)：GCE 关于使用 fio 进行磁盘性能测试的文档。
 
 [^1]: IOPS 为每秒的 I/O 操作数，可以简单认为是命令操作延迟的倒数。
