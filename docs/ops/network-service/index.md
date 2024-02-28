@@ -1,5 +1,5 @@
 ---
-icon: material/apple/safari
+icon: material/apple-safari
 ---
 
 # 网络服务实践

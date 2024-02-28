@@ -36,15 +36,25 @@ strongSwan 当前提供多种 daemon：
 - `strongswan-starter.service` 来自 `strongswan-starter`
 - `strongswan.service` 来自 `charon-systemd`
 
+TODO
+
+也可以使用如 [yangzhaofengsteven/strongswan](https://hub.docker.com/r/yangzhaofengsteven/strongswan) 等 docker 镜像。
+
+#### 配置证书和路由
+
 ## AnyConnect
 
-是思科的专有软件，但是 [openconnect/ocserv](https://gitlab.com/openconnect/ocserv) 兼容了其协议
+AnyConnect 是由思科开发的专用 VPN 协议，由 TLS 负责数据的传输安全。其客户端易于使用、并且跨平台，该协议较为流行。
 
-易于使用，安全性高，支持多种平台
+然而 AnyConnect 作为 Cisco 专有协议，我们一般使用兼容 AnyConnect 协议的服务端 [openconnect/ocserv](https://gitlab.com/openconnect/ocserv)。
+
+### 安装 ocserv
+
+[yangzhaofengsteven/ocserv](https://hub.docker.com/r/yangzhaofengsteven/ocserv) docker 镜像
 
 ## OpenVPN
 
-开源，免费，可定制，但是速度相对较慢
+OpenVPN 是一款开源的 VPN 协议，使用 TLS 进行认证。相比其他协议，其服务端性能开销较大。
 
 ## WireGuard
 
