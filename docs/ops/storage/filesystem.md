@@ -353,6 +353,95 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
     在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
     2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
 
+!!! tip "`/dev/disk`"
+
+    在 Linux 中，硬盘设备的设备文件名不是固定的，如果机器有多个硬盘，就可能发生重启前名为 `sda` 的设备重启之后变成了 `sdb` 
+    的事情。Linux 的用户态设备管理器 udev 会在 `/dev/disk` 下根据不同分类方式，提供硬盘/分区到实际设备的软链接。
+    其命名不会在重启后变化。一个例子如下：
+
+    ```console
+    $ tree /dev/disk/
+    /dev/disk/
+    ├── by-diskseq
+    │   ├── 1 -> ../../nvme0n1
+    │   ├── 1-part1 -> ../../nvme0n1p1
+    │   ├── 1-part2 -> ../../nvme0n1p2
+    │   └── 1-part3 -> ../../nvme0n1p3
+    ├── by-id
+    │   ├── nvme-eui.0000000001000000e4d25c8003505301 -> ../../nvme0n1
+    │   ├── nvme-eui.0000000001000000e4d25c8003505301-part1 -> ../../nvme0n1p1
+    │   ├── nvme-eui.0000000001000000e4d25c8003505301-part2 -> ../../nvme0n1p2
+    │   ├── nvme-eui.0000000001000000e4d25c8003505301-part3 -> ../../nvme0n1p3
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C -> ../../nvme0n1
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C_1 -> ../../nvme0n1
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C_1-part1 -> ../../nvme0n1p1
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C_1-part2 -> ../../nvme0n1p2
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C_1-part3 -> ../../nvme0n1p3
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C-part1 -> ../../nvme0n1p1
+    │   ├── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C-part2 -> ../../nvme0n1p2
+    │   └── nvme-INTEL_SSDPEKNU020TZ_PHKA119600MK2P0C-part3 -> ../../nvme0n1p3
+    ├── by-label
+    │   └── SYSTEM -> ../../nvme0n1p1
+    ├── by-partlabel
+    │   └── EFI\x20system\x20partition -> ../../nvme0n1p1
+    ├── by-partuuid
+    │   ├── 370b0fef-f3fc-4378-a083-c520fc25ccc4 -> ../../nvme0n1p1
+    │   ├── 4f2efc48-47e2-f145-828d-af8b385073fc -> ../../nvme0n1p3
+    │   └── dd06687c-6b2a-5847-ae83-5c30c21f26cf -> ../../nvme0n1p2
+    ├── by-path
+    │   ├── pci-0000:02:00.0-nvme-1 -> ../../nvme0n1
+    │   ├── pci-0000:02:00.0-nvme-1-part1 -> ../../nvme0n1p1
+    │   ├── pci-0000:02:00.0-nvme-1-part2 -> ../../nvme0n1p2
+    │   └── pci-0000:02:00.0-nvme-1-part3 -> ../../nvme0n1p3
+    └── by-uuid
+        ├── 0E62-46C6 -> ../../nvme0n1p1
+        ├── 6c80c677-34e3-4380-8a0e-667a3d7f29e7 -> ../../nvme0n1p2
+        └── f744de26-960b-4f60-ba3c-818d5b38c926 -> ../../nvme0n1p3
+
+    8 directories, 28 files
+    ```
+
+    其中常见的目录有以下几项：
+
+    by-label
+
+    :   绝大部分文件系统都允许用户为其设置「标签」。Windows 用户可能会很熟悉这个特性，
+    因为在「此电脑」中显示、设置的分区名称就是这里的 label。
+
+    by-partlabel
+
+    :   这个「标签」存储在 GPT 分区表中（而非文件系统中），不随着文件系统的改变而变化。
+
+    by-uuid
+
+    :   由文件系统提供的唯一标识符信息。可以注意到，这里 EFI 分区由于是 FAT32，因此它的 UUID 相比其他的短得多。
+
+    by-partuuid
+
+    :   由 GPT 分区表提供的唯一标识符信息。
+
+    by-id
+
+    :   根据设备的序列号等信息提供的软链接，分区则以 -partN 的形式提供。
+
+    by-path
+
+    :   根据系统 sysfs 提供的信息创建的软链接，例如这里的 `pci-0000:02:00.0-nvme-1` 对应了：
+
+        ```console
+        $ pwd
+        /sys/block
+        $ ls -lha
+        total 0
+        drwxr-xr-x  2 root root 0 Feb 29 15:58 ./
+        dr-xr-xr-x 13 root root 0 Feb 29 15:58 ../
+        lrwxrwxrwx  1 root root 0 Feb 27 18:24 nvme0n1 -> ../devices/pci0000:00/0000:00:06.0/0000:02:00.0/nvme/nvme0/nvme0n1/
+        ```
+    
+    即使对于单硬盘的用户，这些信息也可能会在一些地方使用到（例如配置 GRUB 启动器的时候）。
+    并且有必要小心文件系统的 label/uuid 与 GPT 分区表的 label/uuid 的区别：
+    例如格式化为新文件系统后，文件系统的信息会被重置；而在虚拟化场景进行分区扩容后，GPT 分区表中对应的分区信息可能会被重置。
+
 ## 文件系统
 
 下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。
