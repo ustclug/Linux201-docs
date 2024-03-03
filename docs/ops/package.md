@@ -1,8 +1,79 @@
 # 包管理器
 
-Debian / Ubuntu 使用的包管理系统是由 Debian 开发的 Debian 软件包管理系统（dpkg）和由 Ubuntu 开发的高级包装工具（Advanced Packing Tool，APT）。`dpkg` 和 `apt` 都是命令行工具，但是另有 aptitude 和 synaptic 等图形界面工具可以使用。
+在Linux系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。
 
-APT 和 dpkg 的分工大致如下：
+包管理器的范畴较广：管理系统的，比如apt，zypper；管理环境的，比如conda；管理语言包的，比如pip，gem；有一些包管理器甚至是语言的“附属”，如cargo
 
-- dpkg 负责直接操作软件包，如安装、卸载、运行配置脚本等，同时一定程度上处理软件包的依赖关系。
-- APT 负责管理软件包，如更新和维护仓库（即软件包的源）、下载软件包、解决依赖关系、提供搜索和查询功能等。APT 在分析软件包依赖并下载软件包后，会调用 dpkg 完成剩下的工作。
+本文将着重讲解Debian的包管理器。
+
+Debian的包管理器是APT （**A**dvanced **p**ackage **t**ool）& dpkg其中，dpkg负责中低层操作，包括.deb包的安装，卸载，以及信息查询，dpkg还可以检查依赖的安装情况。
+
+APT主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb软件包，然后按照合理的顺序调用`dpkg`，在必要时使用`--force`。
+
+## 安装一个包（.deb）的过程
+
+在这一段中，可以自己手操（其实建议不要）安装若干包，这里以`apt-utils`为例进行演示，这个包的依赖在debian环境中应当已经被配置完成。
+
+1. 准备工作：获得`apt-utils`的下载地址，并且在系统中下载。创建/tmp/install-temp文件夹。
+
+```bash
+cd /tmp
+mkdir install-temp
+cd install-temp
+wget http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
+
+# 可以观察包的内容
+# dpkg -c apt-utils_2.7.12_amd64.deb
+# apt-file list apt-utils # 这个命令位于apt-file包中
+```
+
+2. 解包
+
+```bash
+ar -x apt-utils_2.7.12_amd64.deb
+
+# 可以使用以下命令代替
+
+dpkg-deb -R apt-utils_2.7.12_amd64.deb .
+
+# 注意两者结果不同，可以尝试并且观察区别
+```
+
+3. 移动文件
+
+将文件移动至其安装位置，该包结构十分简单，可以直接操作。
+
+这个过程其实包含在解包中。
+
+```bash
+sudo tar xpvf data.tar.xf --directory=/
+
+# 或者......
+
+sudo rsync -av usr /
+```
+
+4. 在dpkg的辅助文件中修改为已安装
+
+复制control.tar.xz中的control，并添加到/var/lib/dpkg/status中的合适位置，添加Status行目
+
+将control.tar.xz中的md5sum移动到/var/lib/dpkg/list/包名.md5sum
+
+```bash
+tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
+```
+
+这个包的结构十分简单，大多数的包包含preinst，postinst，conffiles，prerm，postrm等附加属性，因此请慎重（不要）使用以上步骤！
+
+## 配置文件与辅助文件
+
+`dpkg`的配置文件位于`/etc/dpkg/`，辅助文件位于`/var/lib/dpkg/`
+
+APT的配置文件位于`/etc/apt`，辅助文件位于`/var/lib/apt`
+
+可以观察`/var/lib/apt/lists`中的文件作为参考
+
+## 重要而不常见的功能
+
+
+
