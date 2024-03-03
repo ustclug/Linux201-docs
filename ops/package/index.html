@@ -1558,15 +1558,15 @@
 
 
 <h1 id="_1">包管理器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>在Linux系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。</p>
-<p>包管理器的范畴较广：管理系统的，比如apt，zypper；管理环境的，比如conda；管理语言包的，比如pip，gem；有一些包管理器甚至是语言的“附属”，如cargo</p>
-<p>本文将着重讲解Debian的包管理器。</p>
-<p>Debian的包管理器是APT （<strong>A</strong>dvanced <strong>p</strong>ackage <strong>t</strong>ool）&amp; dpkg其中，dpkg负责中低层操作，包括.deb包的安装，卸载，以及信息查询，dpkg还可以检查依赖的安装情况。</p>
-<p>APT主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb软件包，然后按照合理的顺序调用<code>dpkg</code>，在必要时使用<code>--force</code>。</p>
+<p>在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。</p>
+<p>包管理器的范畴较广：管理系统的，比如 apt，zypper；管理环境的，比如 conda；管理语言包的，比如 pip，gem；有一些包管理器甚至是语言的“附属”，如 cargo</p>
+<p>本文将着重讲解 Debian 的包管理器。</p>
+<p>Debian 的包管理器是 APT（<strong>A</strong>dvanced <strong>p</strong>ackage <strong>t</strong>ool）&amp; dpkg 其中，dpkg 负责中低层操作，包括.deb 包的安装，卸载，以及信息查询，dpkg 还可以检查依赖的安装情况。</p>
+<p>APT 主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb 软件包，然后按照合理的顺序调用<code>dpkg</code>，在必要时使用<code>--force</code>。</p>
 <h2 id="deb">安装一个包（.deb）的过程<a class="headerlink" href="#deb" title="Permanent link">&para;</a></h2>
-<p>在这一段中，可以自己手操（其实建议不要）安装若干包，这里以<code>apt-utils</code>为例进行演示，这个包的依赖在debian环境中应当已经被配置完成。</p>
+<p>在这一段中，可以自己手操（其实建议不要）安装若干包，这里以<code>apt-utils</code>为例进行演示，这个包的依赖在 debian 环境中应当已经被配置完成。</p>
 <ol>
-<li>准备工作：获得<code>apt-utils</code>的下载地址，并且在系统中下载。创建/tmp/install-temp文件夹。</li>
+<li>准备工作：获得<code>apt-utils</code>的下载地址，并且在系统中下载。创建/tmp/install-temp 文件夹。</li>
 </ol>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mkdir<span class="w"> </span>install-temp
@@ -1600,16 +1600,16 @@
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
 </code></pre></div>
 <ol>
-<li>在dpkg的辅助文件中修改为已安装</li>
+<li>在 dpkg 的辅助文件中修改为已安装</li>
 </ol>
-<p>复制control.tar.xz中的control，并添加到/var/lib/dpkg/status中的合适位置，添加Status行目</p>
-<p>将control.tar.xz中的md5sum移动到/var/lib/dpkg/list/包名.md5sum</p>
+<p>复制 control.tar.xz 中的 control，并添加到/var/lib/dpkg/status 中的合适位置，添加 Status 行目</p>
+<p>将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
 </code></pre></div>
-<p>这个包的结构十分简单，仅作参考用，大多数的包包含preinst，postinst，conffiles，prerm，postrm等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用gpkg等工具进行包的操作。</p>
+<p>这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 gpkg 等工具进行包的操作。</p>
 <h2 id="_2">配置文件与辅助文件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p><code>dpkg</code>的配置文件位于<code>/etc/dpkg/</code>，辅助文件位于<code>/var/lib/dpkg/</code></p>
-<p>APT的配置文件位于<code>/etc/apt</code>，辅助文件位于<code>/var/lib/apt</code></p>
+<p>APT 的配置文件位于<code>/etc/apt</code>，辅助文件位于<code>/var/lib/apt</code></p>
 <p>可以观察<code>/var/lib/apt/lists</code>中的文件作为参考</p>
 <p>TODO</p>
 <h2 id="_3">重要而不常见的功能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
