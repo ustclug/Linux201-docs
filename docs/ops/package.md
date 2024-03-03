@@ -63,7 +63,7 @@ sudo rsync -av usr /
 tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
 ```
 
-这个包的结构十分简单，大多数的包包含preinst，postinst，conffiles，prerm，postrm等附加属性，因此请慎重（不要）使用以上步骤！
+这个包的结构十分简单，仅作参考用，大多数的包包含preinst，postinst，conffiles，prerm，postrm等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用gpkg等工具进行包的操作。
 
 ## 配置文件与辅助文件
 
@@ -73,7 +73,9 @@ APT的配置文件位于`/etc/apt`，辅助文件位于`/var/lib/apt`
 
 可以观察`/var/lib/apt/lists`中的文件作为参考
 
+TODO
+
 ## 重要而不常见的功能
 
-
+TODO
 
