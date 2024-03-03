@@ -428,6 +428,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    包管理系统
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -437,6 +448,52 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deb" class="md-nav__link">
+    <span class="md-ellipsis">
+      安装一个包（.deb）的过程
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置文件与辅助文件
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      重要而不常见的功能
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1449,6 +1506,41 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#deb" class="md-nav__link">
+    <span class="md-ellipsis">
+      安装一个包（.deb）的过程
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置文件与辅助文件
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      重要而不常见的功能
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1466,12 +1558,62 @@
 
 
 <h1 id="_1">包管理器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>Debian / Ubuntu 使用的包管理系统是由 Debian 开发的 Debian 软件包管理系统（dpkg）和由 Ubuntu 开发的高级包装工具（Advanced Packing Tool，APT）。<code>dpkg</code> 和 <code>apt</code> 都是命令行工具，但是另有 aptitude 和 synaptic 等图形界面工具可以使用。</p>
-<p>APT 和 dpkg 的分工大致如下：</p>
-<ul>
-<li>dpkg 负责直接操作软件包，如安装、卸载、运行配置脚本等，同时一定程度上处理软件包的依赖关系。</li>
-<li>APT 负责管理软件包，如更新和维护仓库（即软件包的源）、下载软件包、解决依赖关系、提供搜索和查询功能等。APT 在分析软件包依赖并下载软件包后，会调用 dpkg 完成剩下的工作。</li>
-</ul>
+<p>在Linux系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。</p>
+<p>包管理器的范畴较广：管理系统的，比如apt，zypper；管理环境的，比如conda；管理语言包的，比如pip，gem；有一些包管理器甚至是语言的“附属”，如cargo</p>
+<p>本文将着重讲解Debian的包管理器。</p>
+<p>Debian的包管理器是APT （<strong>A</strong>dvanced <strong>p</strong>ackage <strong>t</strong>ool）&amp; dpkg其中，dpkg负责中低层操作，包括.deb包的安装，卸载，以及信息查询，dpkg还可以检查依赖的安装情况。</p>
+<p>APT主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb软件包，然后按照合理的顺序调用<code>dpkg</code>，在必要时使用<code>--force</code>。</p>
+<h2 id="deb">安装一个包（.deb）的过程<a class="headerlink" href="#deb" title="Permanent link">&para;</a></h2>
+<p>在这一段中，可以自己手操（其实建议不要）安装若干包，这里以<code>apt-utils</code>为例进行演示，这个包的依赖在debian环境中应当已经被配置完成。</p>
+<ol>
+<li>准备工作：获得<code>apt-utils</code>的下载地址，并且在系统中下载。创建/tmp/install-temp文件夹。</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mkdir<span class="w"> </span>install-temp
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nb">cd</span><span class="w"> </span>install-temp
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>wget<span class="w"> </span>http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># 可以观察包的内容</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># dpkg -c apt-utils_2.7.12_amd64.deb</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># apt-file list apt-utils # 这个命令位于apt-file包中</span>
+</code></pre></div>
+<ol>
+<li>解包</li>
+</ol>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ar<span class="w"> </span>-x<span class="w"> </span>apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># 可以使用以下命令代替</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>dpkg-deb<span class="w"> </span>-R<span class="w"> </span>apt-utils_2.7.12_amd64.deb<span class="w"> </span>.
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># 注意两者结果不同，可以尝试并且观察区别</span>
+</code></pre></div>
+<ol>
+<li>移动文件</li>
+</ol>
+<p>将文件移动至其安装位置，该包结构十分简单，可以直接操作。</p>
+<p>这个过程其实包含在解包中。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>tar<span class="w"> </span>xpvf<span class="w"> </span>data.tar.xf<span class="w"> </span>--directory<span class="o">=</span>/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># 或者......</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
+</code></pre></div>
+<ol>
+<li>在dpkg的辅助文件中修改为已安装</li>
+</ol>
+<p>复制control.tar.xz中的control，并添加到/var/lib/dpkg/status中的合适位置，添加Status行目</p>
+<p>将control.tar.xz中的md5sum移动到/var/lib/dpkg/list/包名.md5sum</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
+</code></pre></div>
+<p>这个包的结构十分简单，仅作参考用，大多数的包包含preinst，postinst，conffiles，prerm，postrm等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用gpkg等工具进行包的操作。</p>
+<h2 id="_2">配置文件与辅助文件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p><code>dpkg</code>的配置文件位于<code>/etc/dpkg/</code>，辅助文件位于<code>/var/lib/dpkg/</code></p>
+<p>APT的配置文件位于<code>/etc/apt</code>，辅助文件位于<code>/var/lib/apt</code></p>
+<p>可以观察<code>/var/lib/apt/lists</code>中的文件作为参考</p>
+<p>TODO</p>
+<h2 id="_3">重要而不常见的功能<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>TODO</p>
 <!--
   Links to man pages
 
