@@ -14,6 +14,7 @@
 <!-- man 5 -->
 
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
+[smartd.conf.5]: https://linux.die.net/man/5/smartd.conf
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
