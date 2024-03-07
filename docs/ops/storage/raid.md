@@ -1226,6 +1226,47 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 
 ## 紧急救援
 
+!!! danger "数据无价，谨慎操作！"
+
+    如果不满足以下任一条件，请咨询专业的数据恢复公司，不要轻易尝试自行操作：
+
+    - 数据的价值不高，可以承受丢失的风险
+    - 有足够的时间、精力，以及购置临时存储的硬盘的预算
+    - 有足够的盘能被识别，并能够读取大部分的内容
+
+!!! tip "也可阅读 Hackergame 2021 题目「阵列恢复大师」的官方题解"
+
+    相关内容基于真实的事件改编。该题目要求选手从完整未损坏但配置未知的 RAID 盘组中恢复数据。
+    题目描述与题解参见 <https://github.com/USTC-Hackergame/hackergame2021-writeups/tree/master/official/%E9%98%B5%E5%88%97%E6%81%A2%E5%A4%8D%E5%A4%A7%E5%B8%88>。
+
+尽管没有人会想经历这样的事情，但是这种事情确实有可能会发生，特别是在缺少经验，或监控设施不完善的情况下。
+不过一条可能不算那么糟糕的经验是：在阵列因为硬盘问题下线的时候，最后一块报告损坏的硬盘很多时候仍然可以读取大部分内容，
+不过在此之前的坏盘可能就没那么好运了——插在电脑上如果发出了怪声音，那么多半是真的坏了。
+
+那么首先我们需要获取所有还能读取的硬盘，dump 出对应的块设备全部的内容。这个过程会很漫长，而且需要大量的存储空间。
+大部分人可能会首先考虑使用 `dd` 来做这个事情，但是在这种场合下，`dd` 不是非常可靠——如果遇到了 I/O 错误，那么 `dd` 默认的行为是
+直接退出，即使添加了 `conv=noerror` 选项，[其填充的行为也是不可控的](https://superuser.com/questions/622541/what-does-dd-conv-sync-noerror-do/1075837#1075837)。因此，这里推荐使用 [ddrescue](https://www.gnu.org/software/ddrescue/manual/ddrescue_manual.html) 进行应急的读取全部块设备内容的工作（[参考操作](https://askubuntu.com/questions/146524/recover-files-from-ntfs-drive-with-bad-sectors)）。
+
+在操作完成后，得到的文件建议设置只读或额外备份，避免后续操作出现意外。
+
+如果使用的是软件 RAID，那么元数据一般位于硬盘/分区的开头，如果幸运的话，使用本地回环挂载为块设备后就可以直接使用对应的 RAID 工具挂载了；
+但如果是硬件 RAID 的话，就没有这么幸运了——硬件 RAID 的元数据一般位于硬盘末尾，使用的格式为 [DDF（Disk Data Format）](https://www.snia.org/tech_activities/standards/curr_standards/ddf)。并且，没有通用的工具可以解析 DDF 格式的元数据[^mdadm-ddf]，因此需要自行判断 RAID 的配置，以及每块盘在其中的位置，可能需要在之后的挂载中多次试错后才能找到正确的配置。
+
+对于 RAID 0 类型的配置（包括 RAID 10/01），`mdadm` 工具支持拼接多个（没有 mdadm superblock 的）块设备的内容组成 RAID，参考命令如下：
+
+```console
+sudo mdadm --build --assume-clean -c 128 --level=0 --raid-devices=8 --size=195364584 /dev/md0 /dev/mapper/disk1 /dev/mapper/disk2 /dev/mapper/disk3 /dev/mapper/disk4 /dev/mapper/disk5 /dev/mapper/disk6 /dev/mapper/disk7 /dev/mapper/disk8
+```
+
+如果是 RAID 5/6，`mdadm` 不支持直接拼接，需要使用 assemble 操作，但是对应的操作会覆盖掉每块盘开头的一部分[^dmsetup-cow]。
+另一种方法是编写使用 fuse 的脚本挂载，更加灵活但是性能较差，脚本内容可参照「阵列恢复大师」的官方题解的后半部分。
+
+在此次实际的事件中，最终成功挂载了文件系统。对文件检查后发现有部分文件损坏，但是这些文件都不重要，最终成功恢复了所有重要数据。
+
 ## 补充阅读
 
 - [MegaCli wrapper for LSI MegaRAID for Debian/Ubuntu/RHEL/CentOS](https://gist.github.com/demofly/53b26d7a3f12b3008716)：一个服务器运维的 MegaCLI 脚本，其中包含了一些可供参考的操作与推荐设置
+
+[^mdadm-ddf]: mdadm 工具可能支持 DDF，但是在我们自行数据恢复的过程中没有成功操作，可能是硬件厂商的 DDF 格式与 mdadm 实现不符。
+[^dmsetup-cow]: 通过使用 dmsetup 可以实现类似于 CoW 的操作：在只读的 image 上添加一层 CoW 的 overlay，相关脚本可以参考 <https://gist.github.com/coderjo/c8de3ecc31f1d6450254b5e97ea2c595>。
+<!-- TODO: dmsetup 高级操作（扔高级内容里） -->
