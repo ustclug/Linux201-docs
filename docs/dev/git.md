@@ -31,11 +31,37 @@ Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中
 [color "branch"]
     upstream = green
     remote = red
+[core]
+    editor = nvim # 使用 Neovim 作为默认编辑器
+    excludesfile = ~/.gitignore_global # 全局 .gitignore 文件，见下文
+[commit]
+    template = ~/.gitmessage # commit message 模板，见下文
 [push]
     default = upstream
     followTags = true
 [tag]
     sort = version:refname
+```
+
+### gitignore {#git-gitignore}
+
+GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用[gitignore.io](https://www.gitignore.io/) 生成。
+
+#### Global gitignore {#git-global-gitignore}
+
+对于一些常见的文件类型，可以在全局配置文件中指定：
+
+```ini
+[core]
+    excludesfile = ~/.gitignore_global
+```
+
+```txt
+# ~/.gitignore_global
+*~
+.DS_Store # for macOS
+.idea
+*.cache
 ```
 
 ### Git Hook {#git-hooks}
@@ -52,11 +78,35 @@ TBC
 
 ### Commit Message Convention {#git-commit-message}
 
-TBC
+对于多人写作的项目，良好的 commit message 是非常重要的。如果不加重视而胡乱使用诸如 `update`、`fix`、`change` 等无意义的 commit message，会使得项目的历史记录变得难以理解，也会给后续的维护和合作带来困难。
 
-### Global Gitignore {#git-global-gitignore}
+一种常见的 commit message 格式是 [Conventional Commits](https://www.conventionalcommits.org/)，它的格式是：
 
-TBC
+```txt
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+其中：
+
+- `type` 是 commit 的类型，可以是 `feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore` 等。
+- `scope` 是 commit 的作用域
+- `description` 是 commit 的简要描述
+- `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
+- `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
+
+值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`.
+
+即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如[这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file)：
+
+```ini
+# ~/.gitconfig
+[commit]
+    template = ~/.gitmessage
+```
 
 ## GitHub 使用技巧
 
