@@ -1222,7 +1222,7 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
     我们的 RAID 目前主要有 ZFS (zpool) 与硬件 RAID 两种。前者我们使用的方案是 <https://github.com/iwvelando/telegraf-exec-zpool-status>，
     而后者是 @taoky 编写的 [raid-telegraf](https://github.com/ustclug/raid-telegraf)。
 
-    可用于导入的 [Grafana Dashboard JSON](../../assets/RAID%20and%20SSD-1709828565742.json)，以及[参考效果](https://monitor.ustclug.org/d/SonKmbWnk/raid-and-ssd?orgId=1)。
+    可用于导入的 [Grafana.com Dashboard 分享页面](https://grafana.com/grafana/dashboards/20645-raid-and-ssd/)，[Grafana Dashboard JSON](../../assets/RAID%20and%20SSD-1709828565742.json)，以及[参考效果](https://monitor.ustclug.org/d/SonKmbWnk/raid-and-ssd?orgId=1)。
 
 ## 紧急救援
 
