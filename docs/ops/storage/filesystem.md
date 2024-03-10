@@ -681,7 +681,7 @@ $ sudo umount /media/btrfs
 在 subvolume 的基础上，Btrfs 支持了快照功能。这里的快照可能与我们熟悉的「快照」（例如虚拟机软件的快照功能）有所不同，它本质上就是和其他 subvolume 共享数据的 subvolume。让我们试一试吧：
 
 ```console
-$ sudo mount btrfs.img /media/btrfs  # 挂载整个文件系统
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
 $ echo "test1" > /media/btrfs/subvol1/test  # 可能需要 root 权限
 $ sudo btrfs subvolume snapshot /media/btrfs/subvol1 /media/btrfs/snap1  # 创建快照
 Create a snapshot of '/media/btrfs/subvol1/' in '/media/btrfs/snap1'
@@ -702,7 +702,28 @@ $ sudo umount /media/btrfs
 这里我们可以修改「快照」的内容，在 CoW 文件系统中，修改共享的内容会被复制，而未修改的内容会被共享。
 不过很多时候我们不希望快照可写，在创建快照时可以加上 `-r` 参数。
 
-可以定时执行快照，以便在文件被误操作时能够恢复。例如 snapper 等软件可以在后台自动执行快照任务。
+和 `cp` 命令类似地，当快照的目标路径是一个目录时，Btrfs 工具将在该目录下一个创建同名的 subvolume。
+
+```console
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
+$ sudo mkdir /media/btrfs/snapshots  # 创建 snapshots 目录
+$ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snapshots  # 创建只读快照
+Create a readonly snapshot of '/media/btrfs/subvol1/' in '/media/btrfs/snapshots/subvol1'
+$ sudo btrfs property get /media/btrfs/snapshots/subvol1  # 验证只读属性
+ro=true
+$ sudo mkdir /media/btrfs/recovered  # 创建 recovered 目录
+$ sudo btrfs subvolume snapshot /media/btrfs/snapshots/subvol1 /media/btrfs/recovered  # 还原快照
+Create a snapshot of '/media/btrfs/snapshots/subvol1' in '/media/btrfs/recovered/subvol1'
+$ sudo btrfs property set /media/btrfs/recovered/subvol1 ro false  # 将还原的 subvolume 设置为可写
+$ echo "test4" > /media/btrfs/recovered/subvol1
+$ sudo umount /media/btrfs
+```
+
+!!! note "嵌套 subvolume"
+
+    虽然嵌套 subvolume 在目录树中看上去是上级 subvolume 的一部分，但它并不是上级 subvolume 的文件，因此不会被包括在快照中，只会保留作为挂载点的空目录。
+
+我们可以定时执行快照，以便在文件被误操作时能够恢复。例如 snapper 等软件可以在后台自动执行快照任务。
 
 #### 透明压缩
 
