@@ -609,7 +609,7 @@ Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文�
 
 ```console
 $ truncate -s 8G btrfs.img
-$ mkfs.btrfs btrfs.img
+$ sudo mkfs.btrfs btrfs.img
 （输出省略）
 $ sudo mount btrfs.img /media/btrfs
 $ sudo btrfs filesystem show /media/btrfs  # 可以使用 btrfs 工具管理 Btrfs 文件系统
@@ -644,10 +644,37 @@ $ sudo umount /media/btrfs1
 $ sudo umount /media/btrfs2
 ```
 
-!!! warning "Subvolume 的挂载参数"
+!!! warning "全局挂载参数"
 
     [大部分 Btrfs 的挂载参数（例如透明压缩）只适用于整个文件系统](https://btrfs.readthedocs.io/en/latest/Subvolumes.html#mount-options)，在首个 subvolume 上挂载时，这些参数会被应用到整个文件系统。
     后续挂载使用的参数会被忽略。
+
+在 Btrfs 挂载参数中，`subvol=<path>` 和 `subvolid=<id>` 用来标识需要挂载的 subvolume。如果两个参数都不指定，则会挂载默认 subvolume。
+
+```console
+$ sudo mount btrfs.img /media/btrfs # 挂载整个文件系统
+$ sudo btrfs subvolume create /media/btrfs/subvol1/nestedvol1  # 创建嵌套的 subvolume
+Create subvolume '/media/btrfs/subvol1/nestedvol1'
+$ # 将 subvolume 设置为默认
+$ sudo btrfs subvolume set-default /media/btrfs/subvol1/nestedvol1
+$ sudo btrfs subvolume get-default /media/btrfs
+ID 259 gen 11 top level 256 path subvol1/nestedvol1
+$ sudo umount /media/btrfs
+$ # 重新挂载文件系统，可以看到挂载的 subvolume 已经改变
+$ sudo mount btrfs.img /media/btrfs  
+$ sudo btrfs subvolume show /media/btrfs
+subvol1/nestedvol1
+	Name: 			nestedvol1
+（以下输出省略）
+$ sudo umount /media/btrfs
+$ # 重新挂载文件系统，指定挂载根 subvolume（ID=5）
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs
+$ sudo btrfs subvolume show /media/btrfs
+/
+	Name: 			<FS_TREE>
+（以下输出省略）
+$ sudo umount /media/btrfs
+```
 
 #### 快照
 
