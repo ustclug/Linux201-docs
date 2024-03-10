@@ -715,7 +715,7 @@ $ sudo mkdir /media/btrfs/recovered  # 创建 recovered 目录
 $ sudo btrfs subvolume snapshot /media/btrfs/snapshots/subvol1 /media/btrfs/recovered  # 还原快照
 Create a snapshot of '/media/btrfs/snapshots/subvol1' in '/media/btrfs/recovered/subvol1'
 $ sudo btrfs property set /media/btrfs/recovered/subvol1 ro false  # 将还原的 subvolume 设置为可写
-$ echo "test4" > /media/btrfs/recovered/subvol1
+$ echo "test4" > /media/btrfs/recovered/subvol1  # 修改还原的 subvol1
 $ sudo umount /media/btrfs
 ```
 
@@ -724,6 +724,74 @@ $ sudo umount /media/btrfs
     虽然嵌套 subvolume 在目录树中看上去是上级 subvolume 的一部分，但它并不是上级 subvolume 的文件，因此不会被包括在快照中，只会保留作为挂载点的空目录。
 
 我们可以定时执行快照，以便在文件被误操作时能够恢复。例如 snapper 等软件可以在后台自动执行快照任务。
+
+#### 传输
+
+Btrfs 支持文件系统层面的流式发送和接收，允许以字节流的形式将一个**只读** subvolume（以下简称快照）的内容拷贝到另一个文件系统上，比如下面这样：
+
+```console
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
+$ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snap2  # 创建只读快照
+Create a readonly snapshot of '/media/btrfs/subvol1' in '/media/btrfs/snap2'
+$ # 创建并挂载新文件系统
+$ truncate -s 8G btrfs-alt.img
+$ sudo mkfs.btrfs btrfs-alt.img
+（输出省略）
+$ sudo mount btrfs-alt.img /media/btrfs-alt
+$ # 将 snap2 发送到新的文件系统
+$ sudo btrfs send /media/btrfs/snap2 | sudo btrfs receive /media/btrfs-alt/subvol1
+At subvol /media/btrfs/snap2
+At subvol subvol1
+$ sudo btrfs subvolume ls /media/btrfs-alt
+ID 256 gen 11 top level 5 path subvol1
+$ sudo umount /media/btrfs
+$ sudo umount /media/btrfs-alt
+```
+
+通过管道传输，Btrfs 的流式传输功能大大简化了不同磁盘、文件系统甚至服务器之间的文件系统备份和迁移。
+
+```console
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
+$ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snap3
+Create a readonly snapshot of '/media/btrfs/subvol1' in '/media/btrfs/snap3'
+$ # 备份到其它文件系统，这里以 NFS 为例
+$ sudo btrfs send /media/btrfs/snap3 -f /mnt/nfs/btrfs/subvol1  # 将快照导出为文件
+At subvol /media/btrfs/snap3
+$ sudo btrfs receive /media/btrfs/snap1 -f /mnt/nfs/btrfs/subvol1  # 在另一台共享存储的服务器上还原
+At subvol snap1
+$ # 通过 SSH 压缩传输到另一台服务器，需要安装 lz4
+$ sudo btrfs send /media/btrfs/snap3 | lz4 | ssh another-server "lz4 -d | sudo btrfs receive /media/btrfs/snap1"
+At subvol /media/btrfs/snap3
+At subvol snap1
+$ sudo umount /media/btrfs
+```
+
+Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在与源文件系统上同名且内容完全一致的快照，Btrfs 可以自动计算并传输两个快照的差异部分。
+
+```console
+$ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
+$ sudo mount btrfs-alt.img /media/btrfs-alt  # 挂载另一个文件系统
+$ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snap4  # 创建只读快照
+$ # 将 snap4 发送到另一个文件系统
+$ sudo btrfs send /media/btrfs/snap4 | sudo btrfs receive /media/btrfs-alt
+At subvol /media/btrfs/snap4
+At subvol snap4
+$ echo "test5" > /media/btrfs/subvol1  # 修改 subvol1
+$ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snap4  # 创建新的只读快照
+$ # 查看 snap5 相对于 snap4 的变化
+$ sudo btrfs send /media/btrfs/snap5 -p /media/btrfs/snap4 | sudo btrfs receive --dump
+$ # 将 snap5 增量发送到另一个文件系统
+$ sudo btrfs send /media/btrfs/snap5 -p /media/btrfs/snap4 | sudo btrfs receive /media/btrfs-alt
+At subvol /media/btrfs/snap5
+At subvol snap5
+$ sudo umount /media/btrfs
+$ sudo umount /media/btrfs-alt
+```
+
+!!! warning "网络安全风险"
+
+    Btrfs 工具目前不会充分验证增量传输流的可靠性，攻击者可以通过精心构造 Btrfs 流使得创建的快照中包括目标文件系统中的任意文件。
+    在通过网络接收 Btrfs 流时，应该首先确保传输来源和传输链路的安全性、可靠性，防范潜在的网络安全攻击风险。
 
 #### 透明压缩
 
