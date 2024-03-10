@@ -12,28 +12,28 @@
         <meta name="author" content="LUG @ USTC">
       
       
-        <link rel="canonical" href="https://201.ustclug.org/dev/ssh/">
+        <link rel="canonical" href="https://201.ustclug.org/ops/network-service/network-file/">
       
       
-        <link rel="prev" href="../git/">
+        <link rel="prev" href="../intranet/">
       
       
-        <link rel="next" href="../../advanced/">
+        <link rel="next" href="../../virtualization/qemu-kvm/">
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.13">
     
     
       
-        <title>SSH 使用技巧 - Linux 201</title>
+        <title>网络文件共享 - Linux 201</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.7e359304.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -52,9 +52,9 @@
       
     
     
-      <link rel="stylesheet" href="../../css/extra.css">
+      <link rel="stylesheet" href="../../../css/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
   
@@ -90,7 +90,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ssh" class="md-skip">
+        <a href="#_1" class="md-skip">
           跳转至
         </a>
       
@@ -106,7 +106,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="页眉">
-    <a href="../.." title="Linux 201" class="md-header__button md-logo" aria-label="Linux 201" data-md-component="logo">
+    <a href="../../.." title="Linux 201" class="md-header__button md-logo" aria-label="Linux 201" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M220.8 123.3c1 .5 1.8 1.7 3 1.7 1.1 0 2.8-.4 2.9-1.5.2-1.4-1.9-2.3-3.2-2.9-1.7-.7-3.9-1-5.5-.1-.4.2-.8.7-.6 1.1.3 1.3 2.3 1.1 3.4 1.7zm-21.9 1.7c1.2 0 2-1.2 3-1.7 1.1-.6 3.1-.4 3.5-1.6.2-.4-.2-.9-.6-1.1-1.6-.9-3.8-.6-5.5.1-1.3.6-3.4 1.5-3.2 2.9.1 1 1.8 1.5 2.8 1.4zM420 403.8c-3.6-4-5.3-11.6-7.2-19.7-1.8-8.1-3.9-16.8-10.5-22.4-1.3-1.1-2.6-2.1-4-2.9-1.3-.8-2.7-1.5-4.1-2 9.2-27.3 5.6-54.5-3.7-79.1-11.4-30.1-31.3-56.4-46.5-74.4-17.1-21.5-33.7-41.9-33.4-72C311.1 85.4 315.7.1 234.8 0 132.4-.2 158 103.4 156.9 135.2c-1.7 23.4-6.4 41.8-22.5 64.7-18.9 22.5-45.5 58.8-58.1 96.7-6 17.9-8.8 36.1-6.2 53.3-6.5 5.8-11.4 14.7-16.6 20.2-4.2 4.3-10.3 5.9-17 8.3s-14 6-18.5 14.5c-2.1 3.9-2.8 8.1-2.8 12.4 0 3.9.6 7.9 1.2 11.8 1.2 8.1 2.5 15.7.8 20.8-5.2 14.4-5.9 24.4-2.2 31.7 3.8 7.3 11.4 10.5 20.1 12.3 17.3 3.6 40.8 2.7 59.3 12.5 19.8 10.4 39.9 14.1 55.9 10.4 11.6-2.6 21.1-9.6 25.9-20.2 12.5-.1 26.3-5.4 48.3-6.6 14.9-1.2 33.6 5.3 55.1 4.1.6 2.3 1.4 4.6 2.5 6.7v.1c8.3 16.7 23.8 24.3 40.3 23 16.6-1.3 34.1-11 48.3-27.9 13.6-16.4 36-23.2 50.9-32.2 7.4-4.5 13.4-10.1 13.9-18.3.4-8.2-4.4-17.3-15.5-29.7zM223.7 87.3c9.8-22.2 34.2-21.8 44-.4 6.5 14.2 3.6 30.9-4.3 40.4-1.6-.8-5.9-2.6-12.6-4.9 1.1-1.2 3.1-2.7 3.9-4.6 4.8-11.8-.2-27-9.1-27.3-7.3-.5-13.9 10.8-11.8 23-4.1-2-9.4-3.5-13-4.4-1-6.9-.3-14.6 2.9-21.8zM183 75.8c10.1 0 20.8 14.2 19.1 33.5-3.5 1-7.1 2.5-10.2 4.6 1.2-8.9-3.3-20.1-9.6-19.6-8.4.7-9.8 21.2-1.8 28.1 1 .8 1.9-.2-5.9 5.5-15.6-14.6-10.5-52.1 8.4-52.1zm-13.6 60.7c6.2-4.6 13.6-10 14.1-10.5 4.7-4.4 13.5-14.2 27.9-14.2 7.1 0 15.6 2.3 25.9 8.9 6.3 4.1 11.3 4.4 22.6 9.3 8.4 3.5 13.7 9.7 10.5 18.2-2.6 7.1-11 14.4-22.7 18.1-11.1 3.6-19.8 16-38.2 14.9-3.9-.2-7-1-9.6-2.1-8-3.5-12.2-10.4-20-15-8.6-4.8-13.2-10.4-14.7-15.3-1.4-4.9 0-9 4.2-12.3zm3.3 334c-2.7 35.1-43.9 34.4-75.3 18-29.9-15.8-68.6-6.5-76.5-21.9-2.4-4.7-2.4-12.7 2.6-26.4v-.2c2.4-7.6.6-16-.6-23.9-1.2-7.8-1.8-15 .9-20 3.5-6.7 8.5-9.1 14.8-11.3 10.3-3.7 11.8-3.4 19.6-9.9 5.5-5.7 9.5-12.9 14.3-18 5.1-5.5 10-8.1 17.7-6.9 8.1 1.2 15.1 6.8 21.9 16l19.6 35.6c9.5 19.9 43.1 48.4 41 68.9zm-1.4-25.9c-4.1-6.6-9.6-13.6-14.4-19.6 7.1 0 14.2-2.2 16.7-8.9 2.3-6.2 0-14.9-7.4-24.9-13.5-18.2-38.3-32.5-38.3-32.5-13.5-8.4-21.1-18.7-24.6-29.9s-3-23.3-.3-35.2c5.2-22.9 18.6-45.2 27.2-59.2 2.3-1.7.8 3.2-8.7 20.8-8.5 16.1-24.4 53.3-2.6 82.4.6-20.7 5.5-41.8 13.8-61.5 12-27.4 37.3-74.9 39.3-112.7 1.1.8 4.6 3.2 6.2 4.1 4.6 2.7 8.1 6.7 12.6 10.3 12.4 10 28.5 9.2 42.4 1.2 6.2-3.5 11.2-7.5 15.9-9 9.9-3.1 17.8-8.6 22.3-15 7.7 30.4 25.7 74.3 37.2 95.7 6.1 11.4 18.3 35.5 23.6 64.6 3.3-.1 7 .4 10.9 1.4 13.8-35.7-11.7-74.2-23.3-84.9-4.7-4.6-4.9-6.6-2.6-6.5 12.6 11.2 29.2 33.7 35.2 59 2.8 11.6 3.3 23.7.4 35.7 16.4 6.8 35.9 17.9 30.7 34.8-2.2-.1-3.2 0-4.2 0 3.2-10.1-3.9-17.6-22.8-26.1-19.6-8.6-36-8.6-38.3 12.5-12.1 4.2-18.3 14.7-21.4 27.3-2.8 11.2-3.6 24.7-4.4 39.9-.5 7.7-3.6 18-6.8 29-32.1 22.9-76.7 32.9-114.3 7.2zm257.4-11.5c-.9 16.8-41.2 19.9-63.2 46.5-13.2 15.7-29.4 24.4-43.6 25.5s-26.5-4.8-33.7-19.3c-4.7-11.1-2.4-23.1 1.1-36.3 3.7-14.2 9.2-28.8 9.9-40.6.8-15.2 1.7-28.5 4.2-38.7 2.6-10.3 6.6-17.2 13.7-21.1.3-.2.7-.3 1-.5.8 13.2 7.3 26.6 18.8 29.5 12.6 3.3 30.7-7.5 38.4-16.3 9-.3 15.7-.9 22.6 5.1 9.9 8.5 7.1 30.3 17.1 41.6 10.6 11.6 14 19.5 13.7 24.6zM173.3 148.7c2 1.9 4.7 4.5 8 7.1 6.6 5.2 15.8 10.6 27.3 10.6 11.6 0 22.5-5.9 31.8-10.8 4.9-2.6 10.9-7 14.8-10.4s5.9-6.3 3.1-6.6-2.6 2.6-6 5.1c-4.4 3.2-9.7 7.4-13.9 9.8-7.4 4.2-19.5 10.2-29.9 10.2s-18.7-4.8-24.9-9.7c-3.1-2.5-5.7-5-7.7-6.9-1.5-1.4-1.9-4.6-4.3-4.9-1.4-.1-1.8 3.7 1.7 6.5z"/></svg>
@@ -126,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SSH 使用技巧
+              网络文件共享
             
           </span>
         </div>
@@ -239,7 +239,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Linux 201" class="md-nav__button md-logo" aria-label="Linux 201" data-md-component="logo">
+    <a href="../../.." title="Linux 201" class="md-nav__button md-logo" aria-label="Linux 201" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M220.8 123.3c1 .5 1.8 1.7 3 1.7 1.1 0 2.8-.4 2.9-1.5.2-1.4-1.9-2.3-3.2-2.9-1.7-.7-3.9-1-5.5-.1-.4.2-.8.7-.6 1.1.3 1.3 2.3 1.1 3.4 1.7zm-21.9 1.7c1.2 0 2-1.2 3-1.7 1.1-.6 3.1-.4 3.5-1.6.2-.4-.2-.9-.6-1.1-1.6-.9-3.8-.6-5.5.1-1.3.6-3.4 1.5-3.2 2.9.1 1 1.8 1.5 2.8 1.4zM420 403.8c-3.6-4-5.3-11.6-7.2-19.7-1.8-8.1-3.9-16.8-10.5-22.4-1.3-1.1-2.6-2.1-4-2.9-1.3-.8-2.7-1.5-4.1-2 9.2-27.3 5.6-54.5-3.7-79.1-11.4-30.1-31.3-56.4-46.5-74.4-17.1-21.5-33.7-41.9-33.4-72C311.1 85.4 315.7.1 234.8 0 132.4-.2 158 103.4 156.9 135.2c-1.7 23.4-6.4 41.8-22.5 64.7-18.9 22.5-45.5 58.8-58.1 96.7-6 17.9-8.8 36.1-6.2 53.3-6.5 5.8-11.4 14.7-16.6 20.2-4.2 4.3-10.3 5.9-17 8.3s-14 6-18.5 14.5c-2.1 3.9-2.8 8.1-2.8 12.4 0 3.9.6 7.9 1.2 11.8 1.2 8.1 2.5 15.7.8 20.8-5.2 14.4-5.9 24.4-2.2 31.7 3.8 7.3 11.4 10.5 20.1 12.3 17.3 3.6 40.8 2.7 59.3 12.5 19.8 10.4 39.9 14.1 55.9 10.4 11.6-2.6 21.1-9.6 25.9-20.2 12.5-.1 26.3-5.4 48.3-6.6 14.9-1.2 33.6 5.3 55.1 4.1.6 2.3 1.4 4.6 2.5 6.7v.1c8.3 16.7 23.8 24.3 40.3 23 16.6-1.3 34.1-11 48.3-27.9 13.6-16.4 36-23.2 50.9-32.2 7.4-4.5 13.4-10.1 13.9-18.3.4-8.2-4.4-17.3-15.5-29.7zM223.7 87.3c9.8-22.2 34.2-21.8 44-.4 6.5 14.2 3.6 30.9-4.3 40.4-1.6-.8-5.9-2.6-12.6-4.9 1.1-1.2 3.1-2.7 3.9-4.6 4.8-11.8-.2-27-9.1-27.3-7.3-.5-13.9 10.8-11.8 23-4.1-2-9.4-3.5-13-4.4-1-6.9-.3-14.6 2.9-21.8zM183 75.8c10.1 0 20.8 14.2 19.1 33.5-3.5 1-7.1 2.5-10.2 4.6 1.2-8.9-3.3-20.1-9.6-19.6-8.4.7-9.8 21.2-1.8 28.1 1 .8 1.9-.2-5.9 5.5-15.6-14.6-10.5-52.1 8.4-52.1zm-13.6 60.7c6.2-4.6 13.6-10 14.1-10.5 4.7-4.4 13.5-14.2 27.9-14.2 7.1 0 15.6 2.3 25.9 8.9 6.3 4.1 11.3 4.4 22.6 9.3 8.4 3.5 13.7 9.7 10.5 18.2-2.6 7.1-11 14.4-22.7 18.1-11.1 3.6-19.8 16-38.2 14.9-3.9-.2-7-1-9.6-2.1-8-3.5-12.2-10.4-20-15-8.6-4.8-13.2-10.4-14.7-15.3-1.4-4.9 0-9 4.2-12.3zm3.3 334c-2.7 35.1-43.9 34.4-75.3 18-29.9-15.8-68.6-6.5-76.5-21.9-2.4-4.7-2.4-12.7 2.6-26.4v-.2c2.4-7.6.6-16-.6-23.9-1.2-7.8-1.8-15 .9-20 3.5-6.7 8.5-9.1 14.8-11.3 10.3-3.7 11.8-3.4 19.6-9.9 5.5-5.7 9.5-12.9 14.3-18 5.1-5.5 10-8.1 17.7-6.9 8.1 1.2 15.1 6.8 21.9 16l19.6 35.6c9.5 19.9 43.1 48.4 41 68.9zm-1.4-25.9c-4.1-6.6-9.6-13.6-14.4-19.6 7.1 0 14.2-2.2 16.7-8.9 2.3-6.2 0-14.9-7.4-24.9-13.5-18.2-38.3-32.5-38.3-32.5-13.5-8.4-21.1-18.7-24.6-29.9s-3-23.3-.3-35.2c5.2-22.9 18.6-45.2 27.2-59.2 2.3-1.7.8 3.2-8.7 20.8-8.5 16.1-24.4 53.3-2.6 82.4.6-20.7 5.5-41.8 13.8-61.5 12-27.4 37.3-74.9 39.3-112.7 1.1.8 4.6 3.2 6.2 4.1 4.6 2.7 8.1 6.7 12.6 10.3 12.4 10 28.5 9.2 42.4 1.2 6.2-3.5 11.2-7.5 15.9-9 9.9-3.1 17.8-8.6 22.3-15 7.7 30.4 25.7 74.3 37.2 95.7 6.1 11.4 18.3 35.5 23.6 64.6 3.3-.1 7 .4 10.9 1.4 13.8-35.7-11.7-74.2-23.3-84.9-4.7-4.6-4.9-6.6-2.6-6.5 12.6 11.2 29.2 33.7 35.2 59 2.8 11.6 3.3 23.7.4 35.7 16.4 6.8 35.9 17.9 30.7 34.8-2.2-.1-3.2 0-4.2 0 3.2-10.1-3.9-17.6-22.8-26.1-19.6-8.6-36-8.6-38.3 12.5-12.1 4.2-18.3 14.7-21.4 27.3-2.8 11.2-3.6 24.7-4.4 39.9-.5 7.7-3.6 18-6.8 29-32.1 22.9-76.7 32.9-114.3 7.2zm257.4-11.5c-.9 16.8-41.2 19.9-63.2 46.5-13.2 15.7-29.4 24.4-43.6 25.5s-26.5-4.8-33.7-19.3c-4.7-11.1-2.4-23.1 1.1-36.3 3.7-14.2 9.2-28.8 9.9-40.6.8-15.2 1.7-28.5 4.2-38.7 2.6-10.3 6.6-17.2 13.7-21.1.3-.2.7-.3 1-.5.8 13.2 7.3 26.6 18.8 29.5 12.6 3.3 30.7-7.5 38.4-16.3 9-.3 15.7-.9 22.6 5.1 9.9 8.5 7.1 30.3 17.1 41.6 10.6 11.6 14 19.5 13.7 24.6zM173.3 148.7c2 1.9 4.7 4.5 8 7.1 6.6 5.2 15.8 10.6 27.3 10.6 11.6 0 22.5-5.9 31.8-10.8 4.9-2.6 10.9-7 14.8-10.4s5.9-6.3 3.1-6.6-2.6 2.6-6 5.1c-4.4 3.2-9.7 7.4-13.9 9.8-7.4 4.2-19.5 10.2-29.9 10.2s-18.7-4.8-24.9-9.7c-3.1-2.5-5.7-5-7.7-6.9-1.5-1.4-1.9-4.6-4.3-4.9-1.4-.1-1.8 3.7 1.7 6.5z"/></svg>
@@ -269,7 +269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 21.35-1.45-1.32C5.4 15.36 2 12.27 2 8.5 2 5.41 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.08C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.41 22 8.5c0 3.77-3.4 6.86-8.55 11.53L12 21.35Z"/></svg>
@@ -288,6 +288,8 @@
       
   
   
+    
+  
   
   
     
@@ -331,16 +333,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/></svg>
@@ -359,7 +361,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             运维基础
@@ -375,7 +377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/checklist/" class="md-nav__link">
+      <a href="../../checklist/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -396,7 +398,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/server.md" class="md-nav__link">
+      <a href="../../server.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -417,7 +419,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/package/" class="md-nav__link">
+      <a href="../../package/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -438,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/service/" class="md-nav__link">
+      <a href="../../service/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -491,7 +493,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/storage/" class="md-nav__link ">
+            <a href="../../storage/" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2m6 2a6 6 0 0 0-6 6c0 3.31 2.69 6 6.1 6l-.88-2.23a1.01 1.01 0 0 1 .37-1.37l.86-.5a1.01 1.01 0 0 1 1.37.37l1.92 2.42A5.977 5.977 0 0 0 18 10a6 6 0 0 0-6-6m0 5a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1m-5 9a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m5.09-4.73 2.49 6.31 2.59-1.5-4.22-5.31-.86.5Z"/></svg>
@@ -526,7 +528,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/intro/" class="md-nav__link">
+      <a href="../../storage/intro/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -547,7 +549,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/filesystem/" class="md-nav__link">
+      <a href="../../storage/filesystem/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -568,7 +570,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/lvm/" class="md-nav__link">
+      <a href="../../storage/lvm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -589,7 +591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/raid/" class="md-nav__link">
+      <a href="../../storage/raid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -610,7 +612,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/network/" class="md-nav__link">
+      <a href="../../storage/network/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -631,7 +633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/storage/zfs/" class="md-nav__link">
+      <a href="../../storage/zfs/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -660,7 +662,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/network/" class="md-nav__link">
+      <a href="../../network/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -678,6 +680,8 @@
                 
   
   
+    
+  
   
   
     
@@ -696,16 +700,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" checked>
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../ops/network-service/" class="md-nav__link ">
+            <a href="../" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2m0 2a8 8 0 0 0-8 8c0 2.09.8 4 2.11 5.41l3.77-7.53 7.53-3.77A7.931 7.931 0 0 0 12 4m0 16a8 8 0 0 0 8-8c0-2.09-.8-4-2.11-5.41l-3.77 7.53-7.53 3.77A7.931 7.931 0 0 0 12 20m0-8-.77-.77L9.7 14.3l3.07-1.53L12 12m0 5.5h1V19h-1v-1.5m3.88-1.61.71-.71 1.06 1.06-.71.71-1.06-1.06M17.5 12v-1H19v1h-1.5M12 6.5h-1V5h1v1.5M8.12 8.11l-.71.71-1.06-1.06.71-.71 1.06 1.06M6.5 12v1H5v-1h1.5Z"/></svg>
@@ -724,7 +728,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_8">
             <span class="md-nav__icon md-icon"></span>
             网络服务实践
@@ -740,7 +744,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/network-service/intranet/" class="md-nav__link">
+      <a href="../intranet/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -758,10 +762,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../ops/network-service/network-file/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    网络文件共享
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -770,6 +794,167 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scp" class="md-nav__link">
+    <span class="md-ellipsis">
+      SCP
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SCP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用示例
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="使用示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件复制
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      复制目录
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用非标准端口
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      限制带宽
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      保留文件属性
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      开启压缩
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sftp" class="md-nav__link">
+    <span class="md-ellipsis">
+      SFTP
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SFTP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="使用指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sftp_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      启动 SFTP 会话
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件和目录操作
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sftp_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      退出 SFTP 会话
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -790,7 +975,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/database.md" class="md-nav__link">
+      <a href="../../database.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -811,7 +996,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/debug.md" class="md-nav__link">
+      <a href="../../debug.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -873,7 +1058,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/virtualization/qemu-kvm/" class="md-nav__link">
+      <a href="../../virtualization/qemu-kvm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -902,7 +1087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/account.md" class="md-nav__link">
+      <a href="../../account.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -923,7 +1108,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/monitor.md" class="md-nav__link">
+      <a href="../../monitor.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -944,7 +1129,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../ops/security.md" class="md-nav__link">
+      <a href="../../security.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -969,8 +1154,6 @@
       
   
   
-    
-  
   
   
     
@@ -996,16 +1179,16 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../../dev/" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 22a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6v7L9.5 7.5 7 9V2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12Z"/></svg>
@@ -1024,7 +1207,7 @@
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             开发速查手册
@@ -1040,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../language.md" class="md-nav__link">
+      <a href="../../../dev/language.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1061,7 +1244,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../git/" class="md-nav__link">
+      <a href="../../../dev/git/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1079,30 +1262,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    SSH 使用技巧
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../dev/ssh/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1111,104 +1274,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="目录">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      目录
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ssh-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      客户端配置
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="客户端配置">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#public-key-authentication" class="md-nav__link">
-    <span class="md-ellipsis">
-      公钥认证
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#port-forwarding" class="md-nav__link">
-    <span class="md-ellipsis">
-      端口转发
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#jump-host" class="md-nav__link">
-    <span class="md-ellipsis">
-      跳板
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#connection-reuse" class="md-nav__link">
-    <span class="md-ellipsis">
-      高级功能：连接复用
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#sshd-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      服务端配置
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#include" class="md-nav__link">
-    <span class="md-ellipsis">
-      拆分配置文件
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#traps" class="md-nav__link">
-    <span class="md-ellipsis">
-      一些坑点
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1221,7 +1286,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ide.md" class="md-nav__link">
+      <a href="../../../dev/ide.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1292,7 +1357,7 @@
           
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../advanced/" class="md-nav__link ">
+            <a href="../../../advanced/" class="md-nav__link ">
               
   
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13a9 9 0 0 0 9 9c0-5-4.03-9-9-9m9-7.5A2.5 2.5 0 0 1 14.5 8a2.5 2.5 0 0 1-2.5 2.5A2.5 2.5 0 0 1 9.5 8 2.5 2.5 0 0 1 12 5.5m-6.4 4.75a2.5 2.5 0 0 0 2.5 2.5c.53 0 1.02-.17 1.4-.44v.19A2.5 2.5 0 0 0 12 15a2.5 2.5 0 0 0 2.5-2.5v-.19c.38.27.87.44 1.4.44a2.5 2.5 0 0 0 2.5-2.5c0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.26 1.43-2.25a2.5 2.5 0 0 0-2.5-2.5c-.53 0-1.02.16-1.4.44V3.5A2.5 2.5 0 0 0 12 1a2.5 2.5 0 0 0-2.5 2.5v.19c-.38-.28-.87-.44-1.4-.44a2.5 2.5 0 0 0-2.5 2.5c0 .99.59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25M12 22a9 9 0 0 0 9-9c-5 0-9 4-9 9Z"/></svg>
@@ -1327,7 +1392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/cuda/" class="md-nav__link">
+      <a href="../../../advanced/cuda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1348,7 +1413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/display.md" class="md-nav__link">
+      <a href="../../../advanced/display.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1369,7 +1434,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/acl.md" class="md-nav__link">
+      <a href="../../../advanced/acl.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1390,7 +1455,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/caddy.md" class="md-nav__link">
+      <a href="../../../advanced/caddy.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1411,7 +1476,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/duckdb.md" class="md-nav__link">
+      <a href="../../../advanced/duckdb.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1432,7 +1497,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/sentry.md" class="md-nav__link">
+      <a href="../../../advanced/sentry.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1453,7 +1518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/nmap/" class="md-nav__link">
+      <a href="../../../advanced/nmap/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1474,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/daemon.md" class="md-nav__link">
+      <a href="../../../advanced/daemon.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1495,7 +1560,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/supercomputer.md" class="md-nav__link">
+      <a href="../../../advanced/supercomputer.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1516,7 +1581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced/switch.md" class="md-nav__link">
+      <a href="../../../advanced/switch.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1564,46 +1629,74 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ssh-config" class="md-nav__link">
+  <a href="#scp" class="md-nav__link">
     <span class="md-ellipsis">
-      客户端配置
+      SCP
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="客户端配置">
+    <nav class="md-nav" aria-label="SCP">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#public-key-authentication" class="md-nav__link">
+  <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
-      公钥认证
+      使用示例
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="使用示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件复制
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#port-forwarding" class="md-nav__link">
+  <a href="#_4" class="md-nav__link">
     <span class="md-ellipsis">
-      端口转发
+      复制目录
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#jump-host" class="md-nav__link">
+  <a href="#_5" class="md-nav__link">
     <span class="md-ellipsis">
-      跳板
+      使用非标准端口
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#connection-reuse" class="md-nav__link">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
-      高级功能：连接复用
+      限制带宽
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      保留文件属性
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      开启压缩
     </span>
   </a>
   
@@ -1613,31 +1706,66 @@
     </nav>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#sshd-config" class="md-nav__link">
-    <span class="md-ellipsis">
-      服务端配置
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#include" class="md-nav__link">
+  <a href="#sftp" class="md-nav__link">
     <span class="md-ellipsis">
-      拆分配置文件
+      SFTP
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SFTP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用指南
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="使用指南">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sftp_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      启动 SFTP 会话
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#traps" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
     <span class="md-ellipsis">
-      一些坑点
+      文件和目录操作
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sftp_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      退出 SFTP 会话
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1659,190 +1787,87 @@
   
 
 
-<h1 id="ssh">SSH 使用技巧<a class="headerlink" href="#ssh" title="Permanent link">&para;</a></h1>
+<h1 id="_1">网络文件共享<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">本文仍在编辑中</p>
+<p class="admonition-title">仍在编辑中，目前只有基于 ssh 的传输方式</p>
 </div>
-<p>尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，因此本教程只介绍 OpenSSH 的使用。</p>
-<h2 id="ssh-config">客户端配置<a class="headerlink" href="#ssh-config" title="Permanent link">&para;</a></h2>
-<p>SSH 客户端会按顺序处理以下配置，先出现的配置优先级更高：</p>
-<ul>
-<li>命令行参数</li>
-<li><code>~/.ssh/config</code></li>
-<li><code>/etc/ssh/ssh_config</code></li>
-</ul>
-<p>OpenSSH 的所有配置项都可以在 <a href="https://man.openbsd.org/ssh_config">ssh_config(5)</a> 中找到，这里介绍一些常用的配置。</p>
-<p>对于经常登录的主机，可以在 <code>~/.ssh/config</code> 中配置主机别名、用户名、端口等信息，以简化登录命令。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>Hostname<span class="w"> </span>example.com
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>User<span class="w"> </span>sshuser
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>Port<span class="w"> </span><span class="m">22</span>
+<p>网络文件共享是日常工作提高生产力的重要一环。Linux 环境下有多种文件传输工具，这里提供实践指南。</p>
+<h2 id="scp">SCP<a class="headerlink" href="#scp" title="Permanent link">&para;</a></h2>
+<p>SCP 是基于 SSH (Secure Shell) 协议的文件传输工具，它允许用户在本地和远程主机之间安全地复制文件。SCP 使用 SSH 进行数据传输，提供同 SSH 相同级别的安全性，包括数据加密和用户认证。</p>
+<p>SCP 命令的基本语法如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>scp<span class="w"> </span><span class="o">[</span>选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>源文件<span class="o">]</span><span class="w"> </span><span class="o">[</span>目标文件<span class="o">]</span>
 </code></pre></div>
-<p>注意 SSH config 没有提供密码配置，因为这是不安全的，请使用密钥登录。</p>
-<h3 id="public-key-authentication">公钥认证<a class="headerlink" href="#public-key-authentication" title="Permanent link">&para;</a></h3>
-<p>默认情况下，SSH 会寻找 <code>~/.ssh/id_*</code> 作为私钥，其中 <code>*</code> 部分可以是 <code>rsa</code>、<code>dsa</code>、<code>ecdsa</code>、<code>ed25519</code> 等，也可以通过 <code>-i</code> 参数指定私钥文件。私钥的文件名加上 <code>.pub</code> 后缀就是公钥文件，暂时没有方法指定公钥文件的路径。如果要在配置文件中指定一个或多个私钥，可以使用 <code>IdentityFile</code> 选项，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>IdentityFile<span class="w"> </span>~/.ssh/id_rsa
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="c1">#CertificateFile ~/.ssh/id_rsa-cert.pub</span>
+<p>其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 <code>用户名@主机名:文件路径</code>。</p>
+<h3 id="_2">使用示例<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h4 id="_3">文件复制<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<p>从本地复制到远程服务器</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>scp<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
-<p>一般来说，除非为了兼容一些非常古老（如 10 年前的）或非常简单的（如嵌入式）系统而不得不使用较短的 RSA 密钥对的时候，我们推荐使用 Ed25519 密钥对，或者 ECDSA 密钥对。这两种基于椭圆曲线的密码学算法比 RSA 更安全，而且性能也更好。如果不得不使用 RSA 的话，请尽可能使用 3072 位或更长的密钥长度。密钥长度可以在使用 <code>ssh-keygen</code> 生成密钥对时指定（<code>-b</code>），其中不同算法支持与推荐的长度也是不同的：</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: center;">算法</th>
-<th style="text-align: center;">支持长度</th>
-<th style="text-align: center;">推荐长度</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">RSA</td>
-<td style="text-align: center;">1024-4096</td>
-<td style="text-align: center;">3072 或以上</td>
-<td>曾经的推荐长度是 2048 位，但 2020 年以后认为这个长度已不够安全</td>
-</tr>
-<tr>
-<td style="text-align: center;">DSA<br>（不推荐）</td>
-<td style="text-align: center;">1024</td>
-<td style="text-align: center;">1024</td>
-<td>由于安全性问题，OpenSSH 7.0 以后不再默认支持 DSA 密钥</td>
-</tr>
-<tr>
-<td style="text-align: center;">ECDSA</td>
-<td style="text-align: center;">256 / 384 / 521</td>
-<td style="text-align: center;">256 / 384 / 521</td>
-<td>由于椭圆曲线参数选择的特殊性，只有这三种长度可选。注意最后一个选项是 521，不是 512</td>
-</tr>
-<tr>
-<td style="text-align: center;">Ed25519</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td>Ed25519 是基于 Edwards 曲线的算法，没有“长度”这种参数</td>
-</tr>
-</tbody>
-</table>
-<h3 id="port-forwarding">端口转发<a class="headerlink" href="#port-forwarding" title="Permanent link">&para;</a></h3>
-<p>SSH 支持三种端口转发：</p>
-<ul>
-<li>
-<p>本地端口转发（<strong>L</strong>ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ssh<span class="w"> </span>-L<span class="w"> </span><span class="m">8080</span>:localhost:80<span class="w"> </span>example
+<p>或从远程服务器复制到本地</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>scp<span class="w"> </span>username@remotehost:/path/to/remote/file<span class="w"> </span>/path/to/local/directory
 </code></pre></div>
-<p>本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ssh<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.0.0.0:8080:localhost:80<span class="w"> </span>example
-</code></pre></div>
-<p>虽然 SSH 客户端也有一个 <code>GatewayPorts</code> 选项，但它只影响没有指定监听地址的语法模式（即三段式 <code>localport:remotehost:remoteport</code>）。指定四段式语法后，<code>GatewayPorts</code> 选项不再起作用。</p>
-</li>
-<li>
-<p>远程端口转发（<strong>R</strong>emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ssh<span class="w"> </span>-R<span class="w"> </span><span class="m">8080</span>:localhost:80<span class="w"> </span>example
-</code></pre></div>
-<p>上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。</p>
-<p>注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 <code>sshd_config</code> 中设置 <code>GatewayPorts yes</code>。与另外两种端口转发不同，客户端无法覆盖服务端的 <code>GatewayPorts</code> 设定。</p>
-</li>
-<li>
-<p>动态端口转发（<strong>D</strong>ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ssh<span class="w"> </span>-D<span class="w"> </span><span class="m">1080</span><span class="w"> </span>example
-</code></pre></div>
-<p>由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。</p>
-<p>与 LocalForward 类似，DynamicForward 也可以指定监听地址：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ssh<span class="w"> </span>-D<span class="w"> </span><span class="m">0</span>.0.0.0:1080<span class="w"> </span>example
-</code></pre></div>
-<p>同样地，<code>GatewayPorts</code> 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，<code>GatewayPorts</code> 选项不再起作用。</p>
-</li>
-</ul>
-<p>以上三种端口转发都可以在配置文件中指定，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span>LocalForward<span class="w"> </span><span class="m">8080</span><span class="w"> </span>localhost:80
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>LocalForward<span class="w"> </span><span class="m">8081</span><span class="w"> </span>localhost:8081
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>RemoteForward<span class="w"> </span><span class="m">8080</span><span class="w"> </span>localhost:80
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span>RemoteForward<span class="w"> </span><span class="m">8081</span><span class="w"> </span>localhost:8081
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span>DynamicForward<span class="w"> </span><span class="m">1080</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span>DynamicForward<span class="w"> </span><span class="m">1081</span>
-</code></pre></div>
-<p><code>-L</code>、<code>-R</code>、<code>-D</code> 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。</p>
-<h3 id="jump-host">跳板<a class="headerlink" href="#jump-host" title="Permanent link">&para;</a></h3>
-<p>SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。</p>
-<p><code>ssh</code> 命令的 <code>-J</code> 选项可以指定跳板机，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ssh<span class="w"> </span>-J<span class="w"> </span>user@jumphost.example.com<span class="w"> </span>user@realhost.example.com
-</code></pre></div>
-<p>对应的配置文件语句是 <code>ProxyJump user@jumphost.example.com</code>。</p>
-<p>如果要给跳板机设置更多参数，如端口等，则必须使用配置文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Host<span class="w"> </span>jumphost
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>HostName<span class="w"> </span>jumphost.example.com
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>User<span class="w"> </span>jumphostuser
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>Port<span class="w"> </span><span class="m">2333</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>Host<span class="w"> </span>realhost
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>HostName<span class="w"> </span>realhost.example.com
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span>User<span class="w"> </span>realhostuser
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span>ProxyJump<span class="w"> </span>jumphost
-</code></pre></div>
-<h3 id="connection-reuse">高级功能：连接复用<a class="headerlink" href="#connection-reuse" title="Permanent link">&para;</a></h3>
-<p>SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。</p>
-<p>启用连接复用需要在配置文件中同时指定 <code>ControlMaster</code>、<code>ControlPath</code> 和 <code>ControlPersist</code> 三个选项（它们的默认值都是禁用或者很不友好的值）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Host<span class="w"> </span>*
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>ControlMaster<span class="w"> </span>auto
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>ControlPath<span class="w"> </span>/tmp/sshcontrol-%C
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>ControlPersist<span class="w"> </span>yes
-</code></pre></div>
-<p>其中 <code>%C</code> 是 <code>%l%h%p%r</code> 的 hash，因此连接不同主机的 control socket 不会冲突。<strong>但是</strong>，如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 <code>git@github.com</code>），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 <code>ControlPath</code>。</p>
-<h2 id="sshd-config">服务端配置<a class="headerlink" href="#sshd-config" title="Permanent link">&para;</a></h2>
-<p>服务端的配置与客户端有一些不同点：</p>
-<ul>
-<li>sshd 服务端程序只有很少量的命令行参数，各种配置都在配置文件中完成。特别注意，如果配置文件不存在，sshd 会拒绝启动。</li>
-<li>sshd 仅有一个配置文件 <code>/etc/ssh/sshd_config</code>，它的配置项可以在 <a href="https://man.openbsd.org/sshd_config">sshd_config(5)</a> 中找到。</li>
-</ul>
-<p>sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。<code>sshd -t</code> 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 <code>ssh.service</code> 中指定的 <code>ExecStartPre=</code> 命令和第一条 <code>ExecReload=</code> 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。</p>
-<h2 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h2>
-<p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中。因此一个（不太常见的）坑是：</p>
-<details class="failure">
-<summary>错误写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
-</code></pre></div>
-</details>
-<p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
-<details class="success">
-<summary>正确写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>Match<span class="w"> </span>all
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
-</code></pre></div>
-</details>
-<p>更加推荐的写法是将 <code>Include</code> 放在配置文件开头：</p>
-<div class="admonition success">
-<p class="admonition-title">推荐写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Host<span class="w"> </span>example
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span>User<span class="w"> </span>user
-</code></pre></div>
+<p>这个命令会提示您输入远程主机上用户的密码，除非您已经设置了 SSH 密钥认证。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>你可以一次性传输多个文件或目录，将它们作为源路径的参数。
+例如：<code>scp file1.txt file2.txt username@remotehost:/path/to/remote/directory</code></p>
 </div>
-<h2 id="traps">一些坑点<a class="headerlink" href="#traps" title="Permanent link">&para;</a></h2>
-<p>在 OpenSSH 内部，同一个“代号”可能指代多种（有关联但）不同的细节。例如 <code>ssh-rsa</code> 至少有以下三种不同的含义：</p>
+<h4 id="_4">复制目录<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
+<p>如果需要复制整个目录，需要使用 <code>-r</code> 选项，这表示递归复制：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>scp<span class="w"> </span>-r<span class="w"> </span>/path/to/local/directory<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+<h4 id="_5">使用非标准端口<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
+<p>如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 <code>-P</code> 选项指定端口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>scp<span class="w"> </span>-P<span class="w"> </span><span class="m">2222</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+<h4 id="_6">限制带宽<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h4>
+<p>使用 <code>-l</code> 选项可以限制 SCP 使用的带宽，单位是 <code>Kbit/s</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>scp<span class="w"> </span>-l<span class="w"> </span><span class="m">1024</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+<h4 id="_7">保留文件属性<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h4>
+<p>使用 <code>-p</code> 选项可以保留原文件的修改时间和访问权限：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>scp<span class="w"> </span>-p<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+<h4 id="_8">开启压缩<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h4>
+<p>使用 <code>-C</code> 选项开启压缩，可以减少传输数据量并提升传输速度，特别对于文本文件效果显著。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>scp<span class="w"> </span>-C<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+<h2 id="sftp">SFTP<a class="headerlink" href="#sftp" title="Permanent link">&para;</a></h2>
+<p>SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。</p>
+<h3 id="_9">使用指南<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<h4 id="sftp_1">启动 SFTP 会话<a class="headerlink" href="#sftp_1" title="Permanent link">&para;</a></h4>
+<p>要连接到远程服务器，可以使用以下命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sftp<span class="w"> </span>username@remotehost
+</code></pre></div>
+<p>如果远程服务器的 SSH 服务使用的不是默认端口（22），可以使用 <code>-P</code> 选项指定端口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sftp<span class="w"> </span>-P<span class="w"> </span><span class="m">2233</span><span class="w"> </span>username@remotehost
+</code></pre></div>
+<h4 id="_10">文件和目录操作<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h4>
 <ul>
-<li>RSA 密钥对或 RSA 公钥算法（<code>id_rsa</code> 和 <code>id_rsa.pub</code> 文件）</li>
-<li>
-<p>基于 RSA / SHA-1 的 SSH 证书的签名算法（<code>CASignatureAlgorithms</code>）</p>
-<p>这种算法已经在 OpenSSH 8.2 中被淘汰，而 OpenSSH 7.2 起就已经支持替代算法 <code>rsa-sha2-256</code> 和 <code>rsa-sha2-512</code>（采用 SHA-256 和 SHA-512 哈希算法），虽然直到 OpenSSH 8.2，使用 RSA CA 私钥签出来的证书才<strong>默认</strong>采用 <code>rsa-sha2-512</code> 算法。</p>
-<p>如果你正在使用一个 RSA CA，那么你需要将已有的证书使用 OpenSSH 8.2 以上的版本重新签名。</p>
-<p>如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以在 <code>~/.ssh/config</code> 或 <code>sshd_config</code> 中指定 <code>CASignatureAlgorithms +ssh-rsa</code>，这样就可以使用旧版本的证书签名算法了。</p>
-</li>
-<li>
-<p>基于 RSA / SHA-1 的公钥签名算法套件（<code>ssh-rsa</code>）。与前面的证书不同，这种签名算法是用于用户登录时的公钥验证，不会保存在文件里，而是在 SSH 协议内部使用。</p>
-<p>与前一个采用 SHA-1 作为哈希算法的算法套件类似，OpenSSH 8.8 起也不再默认启用，且替代算法也分别叫做 <code>rsa-sha2-256</code> 和 <code>rsa-sha2-512</code>。好消息是，你不需要重新签发任何证书，只要确保客户端和服务端的 OpenSSH 版本都不低于 7.2 就可以了。</p>
-<p>如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以通过配置选项 <code>HostkeyAlgorithms</code> 和 <code>PubkeyAcceptedAlgorithms</code> 启用。这两个选项分别控制服务端和客户端的公钥签名算法套件，并且在两端都可以指定。</p>
-</li>
+<li><code>ls</code>：列出远程目录的内容。</li>
+<li><code>get remote-file [local-file]</code>：下载文件。</li>
+<li><code>put local-file [remote-file]</code>：上传文件。</li>
+<li><code>mkdir directory-name</code>：创建远程目录。</li>
+<li><code>rmdir directory-name</code>：删除远程目录。</li>
+<li><code>rm file-name</code>：删除远程文件。</li>
+<li><code>chmod mode file-name</code>：改变远程文件的权限。</li>
+<li><code>pwd</code>：显示当前远程目录。</li>
+<li><code>lpwd</code>：显示当前本地目录。</li>
+<li><code>cd directory-name</code>：改变远程工作目录。</li>
+<li><code>lcd directory-name</code>：改变本地工作目录。</li>
 </ul>
+<h4 id="sftp_2">退出 SFTP 会话<a class="headerlink" href="#sftp_2" title="Permanent link">&para;</a></h4>
+<p>输入 <code>exit</code> 或 <code>bye</code> 来终止 SFTP 会话。</p>
+<div class="admonition 使用脚本进行自动化操作">
+<p class="admonition-title">使用脚本进行自动化操作</p>
+<p>通过创建一个包含SFTP命令的批处理文件，你可以让SFTP会话自动执行这些命令。例如，你可以创建一个文件 <code>upload.txt</code>，其中包含以下内容：</p>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>put<span class="w"> </span>file1.txt
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>put<span class="w"> </span>file2.jpg
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>put<span class="w"> </span>file3.pdf
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>quit
+</code></pre></div>
+然后使用命令 <code>sftp -b upload.txt username@remotehost</code> 来自动上传文件。</p>
+</div>
 <!--
   Links to man pages
 
@@ -1941,10 +1966,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c8d2eff1.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.c8d2eff1.min.js"></script>
       
     
   </body>
