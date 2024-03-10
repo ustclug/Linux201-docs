@@ -128,6 +128,131 @@ Host realhost
   ProxyJump jumphost
 ```
 
+### 文件传输
+
+SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
+
+#### SCP
+
+SCP 是基于 SSH (Secure Shell) 协议的文件传输工具，它允许用户在本地和远程主机之间安全地复制文件。SCP 使用 SSH 进行数据传输，提供同 SSH 相同级别的安全性，包括数据加密和用户认证。
+
+SCP 命令的基本语法如下：
+
+```shell
+scp [选项] [源文件] [目标文件]
+```
+
+其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 `用户名@主机名:文件路径`。
+
+##### 文件复制
+
+从本地复制到远程服务器
+
+```shell
+scp /path/to/local/file username@remotehost:/path/to/remote/directory
+```
+
+或从远程服务器复制到本地
+
+```shell
+scp username@remotehost:/path/to/remote/file /path/to/local/directory
+```
+
+这个命令会提示您输入远程主机上用户的密码，除非您已经设置了 SSH 密钥认证。
+
+!!! tip
+
+    你可以一次性传输多个文件或目录，将它们作为源路径的参数。
+    例如：`scp file1.txt file2.txt username@remotehost:/path/to/remote/directory`
+
+##### 复制目录
+
+如果需要复制整个目录，需要使用 `-r` 选项，这表示递归复制：
+
+```shell
+scp -r /path/to/local/directory username@remotehost:/path/to/remote/directory
+```
+
+##### 使用非标准端口
+
+如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 `-P` 选项指定端口：
+
+```shell
+scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
+```
+
+##### 限制带宽
+
+使用 `-l` 选项可以限制 SCP 使用的带宽，单位是 `Kbit/s`：
+
+```shell
+scp -l 1024 /path/to/local/file username@remotehost:/path/to/remote/directory
+```
+
+##### 保留文件属性
+
+使用 `-p` 选项可以保留原文件的修改时间和访问权限：
+
+```shell
+scp -p /path/to/local/file username@remotehost:/path/to/remote/directory
+```
+
+##### 开启压缩
+
+使用 `-C` 选项开启压缩，可以减少传输数据量并提升传输速度，特别对于文本文件效果显著。
+
+```shell
+scp -C /path/to/local/file username@remotehost:/path/to/remote/directory
+```
+
+#### SFTP
+
+SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。
+
+##### 启动 SFTP 会话
+
+要连接到远程服务器，可以使用以下命令：
+
+```shell
+sftp username@remotehost
+```
+
+如果远程服务器的 SSH 服务使用的不是默认端口（22），可以使用 `-P` 选项指定端口：
+
+```shell
+sftp -P 2233 username@remotehost
+```
+
+##### 文件和目录操作
+
+- `ls`：列出远程目录的内容。
+- `get remote-file [local-file]`：下载文件。
+- `put local-file [remote-file]`：上传文件。
+- `mkdir directory-name`：创建远程目录。
+- `rmdir directory-name`：删除远程目录。
+- `rm file-name`：删除远程文件。
+- `chmod mode file-name`：改变远程文件的权限。
+- `pwd`：显示当前远程目录。
+- `lpwd`：显示当前本地目录。
+- `cd directory-name`：改变远程工作目录。
+- `lcd directory-name`：改变本地工作目录。
+
+##### 退出 SFTP 会话
+
+输入 `exit` 或 `bye` 来终止 SFTP 会话。
+
+!!! 使用脚本进行自动化操作
+
+    通过创建一个包含SFTP命令的批处理文件，你可以让SFTP会话自动执行这些命令。例如，你可以创建一个文件 `upload.txt`，其中包含以下内容：
+
+    ```shell
+    put file1.txt
+    put file2.jpg
+    put file3.pdf
+    quit
+    ```
+    然后使用命令 `sftp -b upload.txt username@remotehost` 来自动上传文件。
+
 ### 高级功能：连接复用 {#connection-reuse}
 
 SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
@@ -198,14 +323,14 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 - RSA 密钥对或 RSA 公钥算法（`id_rsa` 和 `id_rsa.pub` 文件）
 - 基于 RSA / SHA-1 的 SSH 证书的签名算法（`CASignatureAlgorithms`）
 
-    这种算法已经在 OpenSSH 8.2 中被淘汰，而 OpenSSH 7.2 起就已经支持替代算法 `rsa-sha2-256` 和 `rsa-sha2-512`（采用 SHA-256 和 SHA-512 哈希算法），虽然直到 OpenSSH 8.2，使用 RSA CA 私钥签出来的证书才**默认**采用 `rsa-sha2-512` 算法。
+  这种算法已经在 OpenSSH 8.2 中被淘汰，而 OpenSSH 7.2 起就已经支持替代算法 `rsa-sha2-256` 和 `rsa-sha2-512`（采用 SHA-256 和 SHA-512 哈希算法），虽然直到 OpenSSH 8.2，使用 RSA CA 私钥签出来的证书才**默认**采用 `rsa-sha2-512` 算法。
 
-    如果你正在使用一个 RSA CA，那么你需要将已有的证书使用 OpenSSH 8.2 以上的版本重新签名。
+  如果你正在使用一个 RSA CA，那么你需要将已有的证书使用 OpenSSH 8.2 以上的版本重新签名。
 
-    如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以在 `~/.ssh/config` 或 `sshd_config` 中指定 `CASignatureAlgorithms +ssh-rsa`，这样就可以使用旧版本的证书签名算法了。
+  如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以在 `~/.ssh/config` 或 `sshd_config` 中指定 `CASignatureAlgorithms +ssh-rsa`，这样就可以使用旧版本的证书签名算法了。
 
 - 基于 RSA / SHA-1 的公钥签名算法套件（`ssh-rsa`）。与前面的证书不同，这种签名算法是用于用户登录时的公钥验证，不会保存在文件里，而是在 SSH 协议内部使用。
 
-    与前一个采用 SHA-1 作为哈希算法的算法套件类似，OpenSSH 8.8 起也不再默认启用，且替代算法也分别叫做 `rsa-sha2-256` 和 `rsa-sha2-512`。好消息是，你不需要重新签发任何证书，只要确保客户端和服务端的 OpenSSH 版本都不低于 7.2 就可以了。
+  与前一个采用 SHA-1 作为哈希算法的算法套件类似，OpenSSH 8.8 起也不再默认启用，且替代算法也分别叫做 `rsa-sha2-256` 和 `rsa-sha2-512`。好消息是，你不需要重新签发任何证书，只要确保客户端和服务端的 OpenSSH 版本都不低于 7.2 就可以了。
 
-    如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以通过配置选项 `HostkeyAlgorithms` 和 `PubkeyAcceptedAlgorithms` 启用。这两个选项分别控制服务端和客户端的公钥签名算法套件，并且在两端都可以指定。
+  如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以通过配置选项 `HostkeyAlgorithms` 和 `PubkeyAcceptedAlgorithms` 启用。这两个选项分别控制服务端和客户端的公钥签名算法套件，并且在两端都可以指定。
