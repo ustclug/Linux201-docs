@@ -16,54 +16,54 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
 1. 准备工作：获得`apt-utils`的下载地址，并且在系统中下载。创建/tmp/install-temp 文件夹。
 
-```bash
-cd /tmp
-mkdir install-temp
-cd install-temp
-wget http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
+    ```bash
+    cd /tmp
+    mkdir install-temp
+    cd install-temp
+    wget http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
 
-# 可以观察包的内容
-# dpkg -c apt-utils_2.7.12_amd64.deb
-# apt-file list apt-utils # 这个命令位于apt-file包中
-```
+    # 可以观察包的内容
+    # dpkg -c apt-utils_2.7.12_amd64.deb
+    # apt-file list apt-utils # 这个命令位于apt-file包中
+    ```
 
 2. 解包
 
-```bash
-ar -x apt-utils_2.7.12_amd64.deb
+    ```bash
+    ar -x apt-utils_2.7.12_amd64.deb
 
-# 可以使用以下命令代替
+    # 可以使用以下命令代替
 
-dpkg-deb -R apt-utils_2.7.12_amd64.deb .
+    dpkg-deb -R apt-utils_2.7.12_amd64.deb .
 
-# 注意两者结果不同，可以尝试并且观察区别
-```
+    # 注意两者结果不同，可以尝试并且观察区别
+    ```
 
 3. 移动文件
 
-将文件移动至其安装位置，该包结构十分简单，可以直接操作。
+    将文件移动至其安装位置，该包结构十分简单，可以直接操作。
 
-这个过程其实包含在解包中。
+    这个过程其实包含在解包中。
 
-```bash
-sudo tar xpvf data.tar.xf --directory=/
+    ```bash
+    sudo tar xpvf data.tar.xf --directory=/
 
-# 或者......
+    # 或者......
 
-sudo rsync -av usr /
-```
+    sudo rsync -av usr /
+    ```
 
 4. 在 dpkg 的辅助文件中修改为已安装
 
-复制 control.tar.xz 中的 control，并添加到/var/lib/dpkg/status 中的合适位置，添加 Status 行目
+    复制 control.tar.xz 中的 control，并添加到/var/lib/dpkg/status 中的合适位置，添加 Status 行目
 
-将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum
+    将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum
 
-```bash
-tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
-```
+    ```bash
+    tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
+    ```
 
-这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 gpkg 等工具进行包的操作。
+    这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 gpkg 等工具进行包的操作。
 
 ## 配置文件与辅助文件
 
