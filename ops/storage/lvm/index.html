@@ -2557,10 +2557,10 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="go">  /dev/loop1(0)                                                                                                                                                                </span>
 <a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="go">  /dev/loop0(0)</span>
 </code></pre></div>
-<p>另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，可能会出现 cache LV 的 superblock 未正确写入的情况，
-此时 LVM 无法挂载<sup id="fnref:t-p-t-bug"><a class="footnote-ref" href="#fn:t-p-t-bug">4</a></sup> cache，并且似乎也无法修复。
-幸运的是，至少用一些 trick 可以 uncache 掉这个坏掉的 LV
-（cachevol 可能会麻烦一些，需要先使用 <code>dmsetup remove</code> 移除多余的卷；cachepool 可以直接 uncache）。</p>
+<p>另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，LVM 调用的旧版本的 <a href="https://github.com/jthornber/thin-provisioning-tools">cache 检查工具</a>可能会认为 cache LV 的结构不正确，
+此时 LVM 无法挂载<sup id="fnref:t-p-t-bug"><a class="footnote-ref" href="#fn:t-p-t-bug">4</a></sup> cache，只能用一些 trick 来 uncache 掉这个坏掉的 LV
+（cachevol 可能会麻烦一些，需要先使用 <code>dmsetup remove</code> 移除多余的卷；cachepool 可以直接 uncache）。
+或者将 thin-provisioning-tools 升级至 1.0.12 以上。</p>
 <p>来自 linux-lvm 邮件列表的可能相关的故障报告参见
 <a href="https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/">https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/</a>。</p>
 </details>
@@ -2990,7 +2990,7 @@ PVE 自带的集群管理功能使用了 <code>corosync</code> 维护了一个�
 <p>"Buckets containing only cached data are discarded as needed by the allocator in LRU order" (<a href="https://bcachefs.org/bcachefs-principles-of-operation.pdf">bcachefs: Principles of Operation</a> 2.2.4)&#160;<a class="footnote-backref" href="#fnref:bcachefs-principles" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:t-p-t-bug">
-<p>Cache 的完整性检查工具 <code>cache_check</code> 位于 <a href="https://github.com/jthornber/thin-provisioning-tools">thin-provisioning-tools</a> 中。其 1.0 版本使用 Rust 重写后<a href="https://github.com/jthornber/thin-provisioning-tools/issues/294">存在一个 bug</a>，会导致即使检查失败，LVM 也会继续尝试挂载。&#160;<a class="footnote-backref" href="#fnref:t-p-t-bug" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p>Cache 的完整性检查工具 <code>cache_check</code> 位于 <a href="https://github.com/jthornber/thin-provisioning-tools">thin-provisioning-tools</a> 中。其 1.0 版本使用 Rust 重写后<a href="https://github.com/jthornber/thin-provisioning-tools/issues/294">存在一个 bug</a>，会导致即使检查失败，LVM 也会继续尝试挂载。该问题在 1.0.12 被修复。&#160;<a class="footnote-backref" href="#fnref:t-p-t-bug" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
