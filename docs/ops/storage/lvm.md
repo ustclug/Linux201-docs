@@ -909,10 +909,10 @@ lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 write
       /dev/loop0(0)
     ```
 
-    另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，可能会出现 cache LV 的 superblock 未正确写入的情况，
-    此时 LVM 无法挂载[^t-p-t-bug] cache，并且似乎也无法修复。
-    幸运的是，至少用一些 trick 可以 uncache 掉这个坏掉的 LV
+    另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，LVM 调用的旧版本的 [cache 检查工具](https://github.com/jthornber/thin-provisioning-tools)可能会认为 cache LV 的结构不正确，
+    此时 LVM 无法挂载[^t-p-t-bug] cache，只能用一些 trick 来 uncache 掉这个坏掉的 LV
     （cachevol 可能会麻烦一些，需要先使用 `dmsetup remove` 移除多余的卷；cachepool 可以直接 uncache）。
+    或者将 thin-provisioning-tools 升级至 1.0.12 以上。
 
     来自 linux-lvm 邮件列表的可能相关的故障报告参见
     <https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/>。
@@ -1294,4 +1294,4 @@ PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部�
 [^time]: Retrieved on 2024-02-18.
 [^bcachefs-principles]: "Buckets containing only cached data are discarded as needed by the allocator in LRU order" ([bcachefs: Principles of Operation](https://bcachefs.org/bcachefs-principles-of-operation.pdf) 2.2.4)
 <!-- markdownlint-disable -->
-[^t-p-t-bug]: Cache 的完整性检查工具 `cache_check` 位于 [thin-provisioning-tools](https://github.com/jthornber/thin-provisioning-tools) 中。其 1.0 版本使用 Rust 重写后[存在一个 bug](https://github.com/jthornber/thin-provisioning-tools/issues/294)，会导致即使检查失败，LVM 也会继续尝试挂载。
+[^t-p-t-bug]: Cache 的完整性检查工具 `cache_check` 位于 [thin-provisioning-tools](https://github.com/jthornber/thin-provisioning-tools) 中。其 1.0 版本使用 Rust 重写后[存在一个 bug](https://github.com/jthornber/thin-provisioning-tools/issues/294)，会导致即使检查失败，LVM 也会继续尝试挂载。该问题在 1.0.12 被修复。
