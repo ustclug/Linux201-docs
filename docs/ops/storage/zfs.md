@@ -92,3 +92,61 @@ tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -
     在 ZFS 中，绝大多数诸如查询状态等只读的命令都不需要 `sudo`。
 
 在创建好 zpool `tank` 后，ZFS 也自动创建了一个文件系统 `tank` 并挂载在了 `/tank` 目录，可以直接使用。
+
+!!! tip "参数调节"
+
+    对于新建的 ZFS pool，我们推荐调整一些参数以获得最佳的性能。具体参见下面的[参数调节](#tuning)。
+
+## 参数调节 {#tuning}
+
+### Zpool {#tuning-zpool}
+
+Zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一些推荐修改的参数：
+
+- `autotrim=on`：如果你使用硬盘是 SSD，启用此选项后 ZFS 会自动为已删除的数据块向硬盘发送 TRIM 指令。例如：
+
+    ```shell
+    zpool set autotrim=on tank
+    ```
+
+### ZFS 文件系统 {#tuning-zfs}
+
+ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，语法与 `zpool set` 类似。以下是一些推荐修改的参数：
+
+- `xattr=sa`：将文件的扩展属性（如 POSIX ACL 和 SELinux 标签等）存储在 dnode 中（类似其他文件系统的 inode），而不是独立的“文件”中。对于经常使用扩展属性的应用场景（如 Samba），使用 `xattr=sa` 可以减少磁盘 I/O，提高性能。
+
+    如果你的使用场景不需要扩展属性（如镜像站），可以使用 `xattr=off` 关闭扩展属性功能，进一步减少磁盘 I/O。
+
+    该选项的默认值为 `xattr=on`，即扩展属性存储在额外的数据块中。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 `xattr=sa` 或 `xattr=off`。
+
+- `compression=on` 或 `compression=zstd`：启用 ZFS 的透明压缩功能。对于大多数数据，压缩后的数据量会显著减小，从而减少磁盘 I/O。
+
+    一般建议启用透明压缩功能，除非你的 CPU 性能较差（例如 10 年前的服务器）或者预期的数据量不会因压缩而减小（例如归档存储已经压缩过的数据）。
+
+    !!! note "压缩算法"
+
+        截至 2024 年，ZFS 默认使用 LZ4 算法进行压缩，这是一种速度较快的单线程算法。如果你的 CPU 不是上古级别的，可以考虑使用 Zstd，这是一种更加现代化的压缩算法，支持多线程和更高的压缩比。
+
+### ZFS 内核模块参数 {#tuning-zfs-ko}
+
+ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
+
+- **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般通过在 `/etc/modprobe.d` 中创建 `.conf` 文件来指定。
+- **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
+- **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
+
+最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为一级缓存的最大值。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：
+
+```shell
+echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
+```
+
+### 关于 ARC
+
+ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
+
+在 Linux 下，受限于 kernel 的设计，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
+
+!!! note ""
+
+    在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。
