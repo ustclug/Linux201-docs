@@ -301,7 +301,17 @@ $ mount | grep nfs
 nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
 ```
 
-即使看似有办法能从 hard 中全身而退，但是仍然需要小心：一个例子是 `home` 目录在 NFS 上，而用户登录时又需要读取 `~/.bashrc` 等文件。
+但是如果有的话，umount 会拒绝，即使加上 `-f` 也不会操作：
+
+```console
+$ sudo umount /mnt/nfs
+umount.nfs4: /mnt/nfs: target is busy
+$ sudo umount -f /mnt/nfs
+umount.nfs4: /mnt/nfs: target is busy
+```
+
+即使看似有办法能从 hard 中全身而退（杀掉全部访问进程再 umount），但是仍然需要小心：
+一个例子是 `home` 目录在 NFS 上，而用户登录时又需要读取 `~/.bashrc` 等文件。
 如果此时 NFS 服务器不可用，那么所有用户登录都会卡住，如果不能登录 root 的话，就只有强制重启一种选择了。
 
 如果能够登录，但是发现没有办法杀光所有访问 NFS 的进程（可能在不停出现新的），一种妥协的方法是 lazy unmount：
@@ -313,6 +323,7 @@ $
 
 此时 `/mnt/nfs` 不会暴露为挂载点，但是已有的进程如果持有挂载点内的文件描述符，仍然可以继续访问。
 此时的问题挂载点事实上还是没有被卸载，只是之后新的访问不会再涉及 NFS 了。
+在用这种方式「解决」问题之后，建议尽快重启服务器。
 
 此外，`intr` 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。
 
