@@ -1675,7 +1675,7 @@
 文件句柄的内容含义由服务器决定。
 在 Linux 内核态 NFS 的实现中，文件句柄的结构体为 <a href="https://elixir.bootlin.com/linux/v6.8/source/fs/nfsd/nfsfh.h#L47"><code>knfsd_fh</code></a>，如下所示：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">knfsd_fh</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">fh_size</span><span class="p">;</span><span class="w">       </span><span class="cm">/*</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w">    </span><span class="n">fh_size</span><span class="p">;</span><span class="w">    </span><span class="cm">/*</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">                                 * Points to the current size while</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cm">                                 * building a new file handle.</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">                                 */</span>
@@ -1748,7 +1748,88 @@ inode 编号后是 generation number，用于检测文件是否被修改。</p>
 <a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>Signed-off-by: Chuck Lever &lt;chuck.lever@oracle.com&gt;
 </code></pre></div>
 </details>
+<details class="note">
+<summary>RDMA 支持（服务端）</summary>
+<p>NFS 支持 RDMA 协议，在配置了专用 RDMA 卡的情况下，可以在数据中心内部网络的场景下减小网络延迟，提升性能。
+（如果希望本地测试，可以安装 <code>rdma-core</code> 包，其包含了 Soft-RoCE 实现，即软件模拟的 RDMA；
+<code>rdmacm-utils</code> 包包含了 <code>rping</code> 工具用于测试 RDMA 连接。
+如何使用 <code>rdma link</code> 命令创建软件模拟的 RDMA 设备请自行搜索）</p>
+<p>在系统能够识别到 RDMA 设备的情况下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>rdma<span class="w"> </span>link
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">link rxe0/1 state ACTIVE physical_state LINK_UP netdev enp1s0</span>
+</code></pre></div>
+<p>编辑 <code>/etc/nfs/nfs.conf</code> 文件，在 <code>[nfsd]</code> 一段进行 RDMA 的配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[nfsd]</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># ...</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="na">rdma</span><span class="o">=</span><span class="s">y</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="na">rdma-port</span><span class="o">=</span><span class="s">20049</span>
+</code></pre></div>
+<p>之后重启 <code>nfs-server</code> 服务即可。可以在 <code>/proc/fs/nfsd/portlist</code> 确认 NFS 服务器监听的端口情况：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>cat<span class="w"> </span>/proc/fs/nfsd/portlist
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">rdma 20049</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">rdma 20049</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">tcp 2049</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">tcp 2049</span>
+</code></pre></div>
+</details>
 <h3 id="_3">客户端配置<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>挂载 NFS（表面上）是一件很简单的事情：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>localhost:/srv/abcde<span class="w"> </span>/mnt/nfs
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">nfsd on /proc/fs/nfsd type nfsd (rw,relatime)</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">localhost:/srv/abcde on /mnt/nfs type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp6,timeo=600,retrans=2,sec=sys,clientaddr=::1,local_lock=none,addr=::1)</span>
+</code></pre></div>
+<p>有的时候需要添加参数，例如下面这个使用 NFS over RDMA 的例子中，需要指定协议与端口号：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>-o<span class="w"> </span><span class="nv">proto</span><span class="o">=</span>rdma,port<span class="o">=</span><span class="m">20049</span><span class="w"> </span><span class="m">192</span>.168.122.47:/srv/abcde<span class="w"> </span>/mnt/nfs
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">192.168.122.47:/srv/abcde on /mnt/nfs type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=rdma,port=20049,timeo=600,retrans=2,sec=sys,clientaddr=192.168.122.47,local_lock=none,addr=192.168.122.47)</span>
+</code></pre></div>
+<p>但是最常见的问题，还是 <code>hard</code> 与 <code>soft</code>（或者 Linux 5.6 之后新增的 <code>softerr</code>）的选择。
+NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600 / 10 = 60）秒。
+在 <code>hard</code> 模式下，如果服务器没有响应，那么客户端会永远重试下去，直到服务器恢复；
+而在 <code>soft</code> 模式下，在经过 <code>retrans</code>（默认为 2）次重试后，客户端会放弃，并向应用程序返回错误。
+（但是应用能不能正确处理错误，就是另外一回事了）</p>
+<p>默认情况下，出于保护数据完整性的考虑，<code>mount</code> 会选择 <code>hard</code> 模式。
+但是如果网络或者 NFS 服务器的稳定性不够的话，结果可能会比较棘手。
+让我们<strong>在虚拟机里试一试（请先保存全部数据！）</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>localhost:/srv/abcde<span class="w"> </span>/mnt/nfs
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>nfs-server
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/mnt/nfs/testfile
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C</span>
+</code></pre></div>
+<p>可以发现 <code>echo</code> 被阻塞住了，并且发送 SIGINT 无法正常终止。此时的 bash 进程处于 D 状态，栈如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/proc/4971/stack
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">[&lt;0&gt;] rpc_wait_bit_killable+0xd/0x60 [sunrpc]</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">[&lt;0&gt;] nfs4_run_open_task+0x152/0x1e0 [nfsv4]</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">[&lt;0&gt;] nfs4_do_open+0x25b/0xc20 [nfsv4]</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">[&lt;0&gt;] nfs4_atomic_open+0xf4/0x100 [nfsv4]</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">[&lt;0&gt;] nfs_atomic_open+0x215/0x6a0 [nfs]</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">[&lt;0&gt;] path_openat+0x6d7/0x1260</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">[&lt;0&gt;] do_filp_open+0xaf/0x160</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">[&lt;0&gt;] do_sys_openat2+0xaf/0x170</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">[&lt;0&gt;] __x64_sys_openat+0x6a/0xa0</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">[&lt;0&gt;] do_syscall_64+0x58/0xc0</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">[&lt;0&gt;] entry_SYSCALL_64_after_hwframe+0x64/0xce</span>
+</code></pre></div>
+<p>因为栈顶是 killable 的，发送 SIGKILL 仍可正常终止进程：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span><span class="nb">kill</span><span class="w"> </span>-9<span class="w"> </span><span class="m">4971</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/proc/4971/stack
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">cat: /proc/4971/stack: No such file or directory</span>
+</code></pre></div>
+<p>如果没有进程在使用的话，也能……正常（？）umount：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/mnt/nfs
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">^C</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">nfsd on /proc/fs/nfsd type nfsd (rw,relatime)</span>
+</code></pre></div>
+<p>即使看似有办法能从 hard 中全身而退，但是仍然需要小心：一个例子是 <code>home</code> 目录在 NFS 上，而用户登录时又需要读取 <code>~/.bashrc</code> 等文件。
+如果此时 NFS 服务器不可用，那么所有用户登录都会卡住，如果不能登录 root 的话，就只有强制重启一种选择了。</p>
+<p>如果能够登录，但是发现没有办法杀光所有访问 NFS 的进程（可能在不停出现新的），一种妥协的方法是 lazy unmount：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>-l<span class="w"> </span>/mnt/nfs
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="gp">$</span>
+</code></pre></div>
+<p>此时 <code>/mnt/nfs</code> 不会暴露为挂载点，但是已有的进程如果持有挂载点内的文件描述符，仍然可以继续访问。
+此时的问题挂载点事实上还是没有被卸载，只是之后新的访问不会再涉及 NFS 了。</p>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
