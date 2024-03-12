@@ -1611,7 +1611,7 @@
 <!-- TODO: a link to systemd socket -->
 
 <p>NFS 的导出配置位于 <code>/etc/exports</code> 文件中。例如以下的配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/srv/abcde  localhost(ro,no_root_squash,async,insecure,no_subtree_check)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/srv/abcde        localhost(ro,no_root_squash,async,insecure,no_subtree_check)
 </code></pre></div>
 <p>将 <code>/srv/abcde</code> 目录「导出」给了本机（localhost），并且设置了诸如只读等选项。
 在修改配置后，运行 <code>systemctl reload nfs-server.service</code>（等价于 <code>exportfs -r</code>）重新加载配置。</p>
@@ -1623,7 +1623,7 @@
 </div>
 <p>接下来主要介绍 <code>exports</code> 文件的常见配置。以上例子中对应目录被导出到了 <code>localhost</code>，但是同样也接受其他格式，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/var/lib/example 10.0.0.0/25(rw,sync,no_subtree_check,no_root_squash)
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/share  *(ro,no_root_squash,async,insecure,no_subtree_check)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/share        *(ro,no_root_squash,async,insecure,no_subtree_check)
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>/media 192.168.93.2(rw,no_subtree_check) 192.168.93.3(rw,no_subtree_check)
 </code></pre></div>
 <p>分别代表目录导出给了一个 CIDR 网段、所有 IP，以及两个特定的 IP。</p>
@@ -1636,7 +1636,7 @@
 </code></pre></div>
 <p>第一行是正确的配置，而<strong>第二行是错误的配置，实际行为是：bob.example.com 获得只读权限，而其他所有人获得读写权限。</strong>
 这显然是非预期的。我们在本地模仿类似的问题：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/srv/abcde  localhost (rw,no_root_squash,async,insecure,no_subtree_check)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/srv/abcde        localhost (rw,no_root_squash,async,insecure,no_subtree_check)
 </code></pre></div>
 <p>之后执行 <code>exportfs -a</code>，可以看到输出了一些警告，提示我们目前的配置存在潜在的问题（一些配置没有显式给出）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>exportfs<span class="w"> </span>-a
@@ -1657,7 +1657,7 @@
 <ul>
 <li><code>rw</code>/<code>ro</code>：读写/只读</li>
 <li><code>sync</code>/<code>async</code>：同步/异步，后者允许服务器在完成写入操作前就返回，在提升性能的同时可能会导致数据在崩溃/断电时丢失</li>
-<li><code>no_subtree_check</code>：「取消子树检查」——大部分情况下加上不会对安全有太大影响，但是能够提升性能</li>
+<li><code>no_subtree_check</code>：「取消子树检查」——如果确认 NFS 不会暴露在不可信的环境下，或者导出的目录是文件系统的根目录，可以设置这个选项以提升性能</li>
 <li><code>no_root_squash</code>：默认情况下，客户端的 root 会被映射到特定用户（<code>nobody</code>），设置 <code>no_root_squash</code> 会让客户端的 root 拥有和服务器 root 一样的文件权限；该选项不影响非 root 用户</li>
 <li><code>all_squash</code>：将所有客户端的用户映射到一个特定的用户（<code>nobody</code>）</li>
 <li><code>secure</code>/<code>insecure</code>：默认情况下，NFS 服务端只接受客户端使用 1024 以下的端口访问，设置 <code>insecure</code> 会放宽这个限制</li>
@@ -1672,9 +1672,39 @@
 <details class="note">
 <summary>关于「子树检查」的解释</summary>
 <p>NFS 服务器与客户端之间使用「文件句柄」（file handle）来标识文件。
-如果 NFS 共享（导出）的目录不是文件系统的根目录，那么服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
-这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。</p>
-<p>（不过要伪造这种「文件句柄」也不是一件容易的事情）</p>
+文件句柄的内容含义由服务器决定。
+在 Linux 内核态 NFS 的实现中，文件句柄的结构体为 <a href="https://elixir.bootlin.com/linux/v6.8/source/fs/nfsd/nfsfh.h#L47"><code>knfsd_fh</code></a>，如下所示：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">struct</span><span class="w"> </span><span class="nc">knfsd_fh</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">fh_size</span><span class="p">;</span><span class="w">       </span><span class="cm">/*</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">                                 * Points to the current size while</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cm">                                 * building a new file handle.</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">                                 */</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="kt">char</span><span class="w">        </span><span class="n">fh_raw</span><span class="p">[</span><span class="n">NFS4_FHSIZE</span><span class="p">];</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">            </span><span class="n">u8</span><span class="w">      </span><span class="n">fh_version</span><span class="p">;</span><span class="w">     </span><span class="cm">/* == 1 */</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">            </span><span class="n">u8</span><span class="w">      </span><span class="n">fh_auth_type</span><span class="p">;</span><span class="w">   </span><span class="cm">/* deprecated */</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">            </span><span class="n">u8</span><span class="w">      </span><span class="n">fh_fsid_type</span><span class="p">;</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">            </span><span class="n">u8</span><span class="w">      </span><span class="n">fh_fileid_type</span><span class="p">;</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">            </span><span class="n">u32</span><span class="w">     </span><span class="n">fh_fsid</span><span class="p">[];</span><span class="w"> </span><span class="cm">/* flexible-array member */</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">        </span><span class="p">};</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">    </span><span class="p">};</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="p">};</span>
+</code></pre></div>
+<p>例如抓包得到一个由内核态 NFSv4 服务器返回的文件句柄（十六进制）是这样的：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>01 00 07 01
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>b0 18 06 00 00 00 00 00 6c f8 f6 54 9a 14 47 03
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>be 4e c5 a0 59 c9 f7 f8 16 2e 06 00 a5 70 74 83
+</code></pre></div>
+<p>与 union 中的结构体对应。根据 fsid 和 fileid type 可以推断 <code>fh_fsid[]</code> 的前 24 个字节存储文件系统信息，后 8 个字节存储文件信息。
+inode 编号后是 generation number，用于检测文件是否被修改。</p>
+<p>该文件 inode 编号为 405014，即 0x62e16，可以发现以小端序的形式存储在最后 8 个字节。
+同时，被导出目录的 inode 编号为 399536，即 0x618b0；所处的文件系统的 UUID 为 6cf8f654-9a14-4703-be4e-c5a059c9f7f8，
+这些信息存储在前 24 个字节中。</p>
+<p>于是如果 NFS 共享（导出）的目录不是文件系统的根目录，那么内核态服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
+这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。
+<code>no_subtree_check</code> 会跳过这样的检查，即使不考虑可能恶意构造文件句柄的情况，风险仍然存在：
+如果我 <code>open()</code> 了一个目录，然后这个目录被移动到了共享目录之外后，再 <code>openfd(fd, "..")</code>，会发生什么？</p>
 <p>部分可能有帮助的信息：</p>
 <ul>
 <li><a href="https://docs.kernel.org/filesystems/nfs/exporting.html?highlight=export_op_nosubtreechk">Making Filesystems Exportable -- The Linux Kernel  documentation</a></li>
