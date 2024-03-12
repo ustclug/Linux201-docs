@@ -1703,14 +1703,50 @@ inode 编号后是 generation number，用于检测文件是否被修改。</p>
 这些信息存储在前 24 个字节中。</p>
 <p>于是如果 NFS 共享（导出）的目录不是文件系统的根目录，那么内核态服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
 这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。
-<code>no_subtree_check</code> 会跳过这样的检查，即使不考虑可能恶意构造文件句柄的情况，风险仍然存在：
-如果我 <code>open()</code> 了一个目录，然后这个目录被移动到了共享目录之外后，再 <code>openat(fd, "..")</code>，会发生什么？</p>
-<p>部分可能有帮助的信息：</p>
+而 <code>no_subtree_check</code> 会跳过这样的检查。</p>
+<p>部分可能对决策有帮助的信息——在例如有大量文件重命名的场合，可能不得不关闭子树检查：</p>
 <ul>
 <li><a href="https://docs.kernel.org/filesystems/nfs/exporting.html?highlight=export_op_nosubtreechk">Making Filesystems Exportable -- The Linux Kernel  documentation</a></li>
 <li><a href="https://ubuntu.com/server/docs/service-nfs">Network File System (NFS) | Ubuntu</a></li>
 <li><a href="https://nfs.sourceforge.net/#faq_c7">Linux NFS faq</a></li>
 </ul>
+<p>以及相关的 CVE 与修复的 commit message：</p>
+<p><a href="https://lists.debian.org/debian-lts-announce/2021/03/msg00010.html">CVE-2021-3178</a>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>吴异 reported an information leak in the NFSv3 server.  When only
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>a subdirectory of a filesystem volume is exported, an NFS client
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>listing the exported directory would obtain a file handle to the
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>parent directory, allowing it to access files that were not meant
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>to be exported.
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>Even after this update, it is still possible for NFSv3 clients to
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>guess valid file handles and access files outside an exported
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>subdirectory, unless the &quot;subtree_check&quot; export option is enabled.
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>It is recommended that you do not use that option but only export
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>whole filesystem volumes.
+</code></pre></div>
+<p><a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=51b2ee7d006a736a9126e8111d1f24e4fd0afaa6">nfsd4: readdirplus shouldn't return parent of export</a>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>nfsd4: readdirplus shouldn&#39;t return parent of export
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>If you export a subdirectory of a filesystem, a READDIRPLUS on the root
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>of that export will return the filehandle of the parent with the &quot;..&quot;
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>entry.
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>The filehandle is optional, so let&#39;s just not return the filehandle for
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>&quot;..&quot; if we&#39;re at the root of an export.
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>Note that once the client learns one filehandle outside of the export,
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>they can trivially access the rest of the export using further lookups.
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>However, it is also not very difficult to guess filehandles outside of
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>the export.  So exporting a subdirectory of a filesystem should
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>considered equivalent to providing access to the entire filesystem.  To
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>avoid confusion, we recommend only exporting entire filesystems.
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>Reported-by: Youjipeng &lt;wangzhibei1999@gmail.com&gt;
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>Signed-off-by: J. Bruce Fields &lt;bfields@redhat.com&gt;
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>Cc: stable@vger.kernel.org
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>Signed-off-by: Chuck Lever &lt;chuck.lever@oracle.com&gt;
+</code></pre></div>
 </details>
 <h3 id="_3">客户端配置<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
