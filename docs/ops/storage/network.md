@@ -112,7 +112,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
     ```c
     struct knfsd_fh {
-        unsigned int fh_size;       /*
+        unsigned int    fh_size;    /*
                                      * Points to the current size while
                                      * building a new file handle.
                                      */
@@ -198,6 +198,120 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
     Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
     ```
 
+??? note "RDMA 支持（服务端）"
+
+    NFS 支持 RDMA 协议，在配置了专用 RDMA 卡的情况下，可以在数据中心内部网络的场景下减小网络延迟，提升性能。
+    （如果希望本地测试，可以安装 `rdma-core` 包，其包含了 Soft-RoCE 实现，即软件模拟的 RDMA；
+    `rdmacm-utils` 包包含了 `rping` 工具用于测试 RDMA 连接。
+    如何使用 `rdma link` 命令创建软件模拟的 RDMA 设备请自行搜索）
+
+    在系统能够识别到 RDMA 设备的情况下：
+
+    ```console
+    $ rdma link
+    link rxe0/1 state ACTIVE physical_state LINK_UP netdev enp1s0
+    ```
+
+    编辑 `/etc/nfs/nfs.conf` 文件，在 `[nfsd]` 一段进行 RDMA 的配置：
+
+    ```ini
+    [nfsd]
+    # ...
+    rdma=y
+    rdma-port=20049
+    ```
+
+    之后重启 `nfs-server` 服务即可。可以在 `/proc/fs/nfsd/portlist` 确认 NFS 服务器监听的端口情况：
+
+    ```console
+    $ cat /proc/fs/nfsd/portlist
+    rdma 20049
+    rdma 20049
+    tcp 2049
+    tcp 2049
+    ```
+
 ### 客户端配置
+
+挂载 NFS（表面上）是一件很简单的事情：
+
+```console
+$ sudo mount -t nfs localhost:/srv/abcde /mnt/nfs
+$ mount | grep nfs
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+localhost:/srv/abcde on /mnt/nfs type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp6,timeo=600,retrans=2,sec=sys,clientaddr=::1,local_lock=none,addr=::1)
+```
+
+有的时候需要添加参数，例如下面这个使用 NFS over RDMA 的例子中，需要指定协议与端口号：
+
+```console
+$ sudo mount -t nfs -o proto=rdma,port=20049 192.168.122.47:/srv/abcde /mnt/nfs
+$ mount | grep nfs
+192.168.122.47:/srv/abcde on /mnt/nfs type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=rdma,port=20049,timeo=600,retrans=2,sec=sys,clientaddr=192.168.122.47,local_lock=none,addr=192.168.122.47)
+```
+
+但是最常见的问题，还是 `hard` 与 `soft`（或者 Linux 5.6 之后新增的 `softerr`）的选择。
+NFS 客户端在每次重试之前会等待 `timeo` / 10（默认 600 / 10 = 60）秒。
+在 `hard` 模式下，如果服务器没有响应，那么客户端会永远重试下去，直到服务器恢复；
+而在 `soft` 模式下，在经过 `retrans`（默认为 2）次重试后，客户端会放弃，并向应用程序返回错误。
+（但是应用能不能正确处理错误，就是另外一回事了）
+
+默认情况下，出于保护数据完整性的考虑，`mount` 会选择 `hard` 模式。
+但是如果网络或者 NFS 服务器的稳定性不够的话，结果可能会比较棘手。
+让我们**在虚拟机里试一试（请先保存全部数据！）**：
+
+```console
+$ sudo mount -t nfs localhost:/srv/abcde /mnt/nfs
+$ sudo systemctl stop nfs-server
+$ echo "test" > /mnt/nfs/testfile
+^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C
+```
+
+可以发现 `echo` 被阻塞住了，并且发送 SIGINT 无法正常终止。此时的 bash 进程处于 D 状态，栈如下：
+
+```console
+$ sudo cat /proc/4971/stack
+[<0>] rpc_wait_bit_killable+0xd/0x60 [sunrpc]
+[<0>] nfs4_run_open_task+0x152/0x1e0 [nfsv4]
+[<0>] nfs4_do_open+0x25b/0xc20 [nfsv4]
+[<0>] nfs4_atomic_open+0xf4/0x100 [nfsv4]
+[<0>] nfs_atomic_open+0x215/0x6a0 [nfs]
+[<0>] path_openat+0x6d7/0x1260
+[<0>] do_filp_open+0xaf/0x160
+[<0>] do_sys_openat2+0xaf/0x170
+[<0>] __x64_sys_openat+0x6a/0xa0
+[<0>] do_syscall_64+0x58/0xc0
+[<0>] entry_SYSCALL_64_after_hwframe+0x64/0xce
+```
+
+因为栈顶是 killable 的，发送 SIGKILL 仍可正常终止进程：
+
+```console
+$ kill -9 4971
+$ sudo cat /proc/4971/stack
+cat: /proc/4971/stack: No such file or directory
+```
+
+如果没有进程在使用的话，也能……正常（？）umount：
+
+```console
+$ sudo umount /mnt/nfs
+^C
+$ mount | grep nfs
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+```
+
+即使看似有办法能从 hard 中全身而退，但是仍然需要小心：一个例子是 `home` 目录在 NFS 上，而用户登录时又需要读取 `~/.bashrc` 等文件。
+如果此时 NFS 服务器不可用，那么所有用户登录都会卡住，如果不能登录 root 的话，就只有强制重启一种选择了。
+
+如果能够登录，但是发现没有办法杀光所有访问 NFS 的进程（可能在不停出现新的），一种妥协的方法是 lazy unmount：
+
+```console
+$ sudo umount -l /mnt/nfs
+$
+```
+
+此时 `/mnt/nfs` 不会暴露为挂载点，但是已有的进程如果持有挂载点内的文件描述符，仍然可以继续访问。
+此时的问题挂载点事实上还是没有被卸载，只是之后新的访问不会再涉及 NFS 了。
 
 ## iSCSI
