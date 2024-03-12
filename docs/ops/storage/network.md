@@ -146,14 +146,57 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
     于是如果 NFS 共享（导出）的目录不是文件系统的根目录，那么内核态服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
     这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。
-    `no_subtree_check` 会跳过这样的检查，即使不考虑可能恶意构造文件句柄的情况，风险仍然存在：
-    如果我 `open()` 了一个目录，然后这个目录被移动到了共享目录之外后，再 `openat(fd, "..")`，会发生什么？
+    而 `no_subtree_check` 会跳过这样的检查。
 
-    部分可能有帮助的信息：
+    部分可能对决策有帮助的信息——在例如有大量文件重命名的场合，可能不得不关闭子树检查：
 
     - [Making Filesystems Exportable -- The Linux Kernel  documentation](https://docs.kernel.org/filesystems/nfs/exporting.html?highlight=export_op_nosubtreechk)
     - [Network File System (NFS) | Ubuntu](https://ubuntu.com/server/docs/service-nfs)
     - [Linux NFS faq](https://nfs.sourceforge.net/#faq_c7)
+
+    以及相关的 CVE 与修复的 commit message：
+
+    [CVE-2021-3178](https://lists.debian.org/debian-lts-announce/2021/03/msg00010.html):
+
+    ```
+    吴异 reported an information leak in the NFSv3 server.  When only
+    a subdirectory of a filesystem volume is exported, an NFS client
+    listing the exported directory would obtain a file handle to the
+    parent directory, allowing it to access files that were not meant
+    to be exported.
+
+    Even after this update, it is still possible for NFSv3 clients to
+    guess valid file handles and access files outside an exported
+    subdirectory, unless the "subtree_check" export option is enabled.
+    It is recommended that you do not use that option but only export
+    whole filesystem volumes.
+    ```
+
+    [nfsd4: readdirplus shouldn't return parent of export](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=51b2ee7d006a736a9126e8111d1f24e4fd0afaa6):
+
+    ```
+    nfsd4: readdirplus shouldn't return parent of export
+
+    If you export a subdirectory of a filesystem, a READDIRPLUS on the root
+    of that export will return the filehandle of the parent with the ".."
+    entry.
+
+    The filehandle is optional, so let's just not return the filehandle for
+    ".." if we're at the root of an export.
+
+    Note that once the client learns one filehandle outside of the export,
+    they can trivially access the rest of the export using further lookups.
+
+    However, it is also not very difficult to guess filehandles outside of
+    the export.  So exporting a subdirectory of a filesystem should
+    considered equivalent to providing access to the entire filesystem.  To
+    avoid confusion, we recommend only exporting entire filesystems.
+
+    Reported-by: Youjipeng <wangzhibei1999@gmail.com>
+    Signed-off-by: J. Bruce Fields <bfields@redhat.com>
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
+    ```
 
 ### 客户端配置
 
