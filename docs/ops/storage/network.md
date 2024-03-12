@@ -27,7 +27,7 @@ NFS 在 Linux 上的服务端和客户端实现均有内核态与用户态的选
 NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
 ```exports
-/srv/abcde	localhost(ro,no_root_squash,async,insecure,no_subtree_check)
+/srv/abcde        localhost(ro,no_root_squash,async,insecure,no_subtree_check)
 ```
 
 将 `/srv/abcde` 目录「导出」给了本机（localhost），并且设置了诸如只读等选项。
@@ -44,7 +44,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
 ```exports
 /var/lib/example 10.0.0.0/25(rw,sync,no_subtree_check,no_root_squash)
-/share	*(ro,no_root_squash,async,insecure,no_subtree_check)
+/share        *(ro,no_root_squash,async,insecure,no_subtree_check)
 /media 192.168.93.2(rw,no_subtree_check) 192.168.93.3(rw,no_subtree_check)
 ```
 
@@ -64,7 +64,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
     这显然是非预期的。我们在本地模仿类似的问题：
 
     ```exports
-    /srv/abcde	localhost (rw,no_root_squash,async,insecure,no_subtree_check)
+    /srv/abcde        localhost (rw,no_root_squash,async,insecure,no_subtree_check)
     ```
 
     之后执行 `exportfs -a`，可以看到输出了一些警告，提示我们目前的配置存在潜在的问题（一些配置没有显式给出）：
@@ -91,7 +91,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
 - `rw`/`ro`：读写/只读
 - `sync`/`async`：同步/异步，后者允许服务器在完成写入操作前就返回，在提升性能的同时可能会导致数据在崩溃/断电时丢失
-- `no_subtree_check`：「取消子树检查」——大部分情况下加上不会对安全有太大影响，但是能够提升性能
+- `no_subtree_check`：「取消子树检查」——如果确认 NFS 不会暴露在不可信的环境下，或者导出的目录是文件系统的根目录，可以设置这个选项以提升性能
 - `no_root_squash`：默认情况下，客户端的 root 会被映射到特定用户（`nobody`），设置 `no_root_squash` 会让客户端的 root 拥有和服务器 root 一样的文件权限；该选项不影响非 root 用户
 - `all_squash`：将所有客户端的用户映射到一个特定的用户（`nobody`）
 - `secure`/`insecure`：默认情况下，NFS 服务端只接受客户端使用 1024 以下的端口访问，设置 `insecure` 会放宽这个限制
@@ -107,10 +107,47 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 ??? note "关于「子树检查」的解释"
 
     NFS 服务器与客户端之间使用「文件句柄」（file handle）来标识文件。
-    如果 NFS 共享（导出）的目录不是文件系统的根目录，那么服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
-    这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。
+    文件句柄的内容含义由服务器决定。
+    在 Linux 内核态 NFS 的实现中，文件句柄的结构体为 [`knfsd_fh`](https://elixir.bootlin.com/linux/v6.8/source/fs/nfsd/nfsfh.h#L47)，如下所示：
 
-    （不过要伪造这种「文件句柄」也不是一件容易的事情）
+    ```c
+    struct knfsd_fh {
+        unsigned int fh_size;       /*
+                                     * Points to the current size while
+                                     * building a new file handle.
+                                     */
+        union {
+            char        fh_raw[NFS4_FHSIZE];
+            struct {
+                u8      fh_version;     /* == 1 */
+                u8      fh_auth_type;   /* deprecated */
+                u8      fh_fsid_type;
+                u8      fh_fileid_type;
+                u32     fh_fsid[]; /* flexible-array member */
+            };
+        };
+    };
+    ```
+
+    例如抓包得到一个由内核态 NFSv4 服务器返回的文件句柄（十六进制）是这样的：
+
+    ```
+    01 00 07 01
+    b0 18 06 00 00 00 00 00 6c f8 f6 54 9a 14 47 03
+    be 4e c5 a0 59 c9 f7 f8 16 2e 06 00 a5 70 74 83
+    ```
+
+    与 union 中的结构体对应。根据 fsid 和 fileid type 可以推断 `fh_fsid[]` 的前 24 个字节存储文件系统信息，后 8 个字节存储文件信息。
+    inode 编号后是 generation number，用于检测文件是否被修改。
+    
+    该文件 inode 编号为 405014，即 0x62e16，可以发现以小端序的形式存储在最后 8 个字节。
+    同时，被导出目录的 inode 编号为 399536，即 0x618b0；所处的文件系统的 UUID 为 6cf8f654-9a14-4703-be4e-c5a059c9f7f8，
+    这些信息存储在前 24 个字节中。
+
+    于是如果 NFS 共享（导出）的目录不是文件系统的根目录，那么内核态服务器就需要判断客户端请求的文件句柄是否真的在共享的目录下。
+    这一项检查需要从文件的 inode 信息不停向上查找来确认文件确实在共享的目录中。
+    `no_subtree_check` 会跳过这样的检查，即使不考虑可能恶意构造文件句柄的情况，风险仍然存在：
+    如果我 `open()` 了一个目录，然后这个目录被移动到了共享目录之外后，再 `openfd(fd, "..")`，会发生什么？
 
     部分可能有帮助的信息：
 
