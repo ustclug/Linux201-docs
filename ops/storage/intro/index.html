@@ -2005,23 +2005,23 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <p>我们可以使用 <a href="https://fio.readthedocs.io/en/latest/"><code>fio</code></a> 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。</p>
 <div class="admonition info">
 <p class="admonition-title">使用 dd 测速的不足</p>
-<p>以下是使用 dd 命令测试一块希捷4TB机械硬盘的例子：
+<p>以下是使用 dd 命令测试一块希捷4TB机械硬盘的例子：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp"># </span>测试写
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">➜  ~  dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/zero<span class="w"> </span><span class="nv">of</span><span class="o">=</span>test.img<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">oflag</span><span class="o">=</span>direct
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">1000+0 records in</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">1000+0 records out</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="gp"># </span>测试读
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">➜  ~  dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/sda1<span class="w"> </span><span class="nv">of</span><span class="o">=</span>/dev/null<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">iflag</span><span class="o">=</span>direct
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">1000+0 records in</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">1000+0 records out</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s</span>
 </code></pre></div>
-虽然可以使用 dd 命令简易地测速，但是dd命令有一些缺点：</p>
+<p>虽然可以使用 dd 命令简易地测速，但是 dd 命令有一些缺点：</p>
 <ul>
 <li>dd 只能测试顺序读写的情况，无法测试随机读写。</li>
-<li>dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能。对于固态硬盘尤为明显</li>
-<li>dd 命令中使用的特殊设备<code>/dev/urandom</code>、<code>/dev/random</code>、<code>/dev/zero</code>本身性能不高，可能会成为测试的瓶颈。（比如测试<code>dd if=/dev/random of=/dev/null bs=1M count=1000</code>可能只有500MB/s的速度）</li>
+<li>dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能，这对于固态硬盘尤为明显。</li>
+<li>dd 命令中使用的特殊设备 <code>/dev/urandom</code>、<code>/dev/random</code> 本身性能有限，可能会成为测试的瓶颈。（比如测试 <code>dd if=/dev/random of=/dev/null bs=1M count=1000</code> 可能只有 500MB/s 的速度）</li>
 </ul>
 <p>因此要对磁盘进行更加全面的性能测试，我们需要使用 fio 这款更加专业的工具。</p>
 </div>
@@ -2029,8 +2029,17 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <ul>
 <li><code>--rw</code>：I/O 访问的模式，例如 <code>read</code>, <code>write</code>（顺序读写）, <code>randread</code>, <code>randwrite</code>（随机读写）, <code>randrw</code>（随机混合读写）等。</li>
 <li><code>--bs</code>：每次 I/O 操作的块大小，默认为 4KB。bs 对性能影响很大，电商平台硬盘标称的速度通常都是 1MB 大块顺序读写的速度（代表了拷贝大文件时的速度），而更加影响实际使用体验的 4k 的随机读写性能则要弱得多。</li>
-<li><code>--size</code>：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用<code>kib</code>, <code>mib</code>等。</li>
-<li><code>--ioengine</code>：使用的 I/O 引擎。默认为 <code>psync</code>（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 <code>libaio</code> 来使用系统的异步 I/O 接口，此时建议添加 <code>--direct=1</code> 参数使用非缓冲 I/O，因为 Linux 上缓冲 I/O 不是异步的。</li>
+<li>
+<p><code>--size</code>：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用 <code>kib</code>, <code>mib</code> 等。</p>
+<div class="admonition note">
+<p class="admonition-title">SI 与 IEC 单位</p>
+<p>SI 单位是国际单位制中的单位，采用 10 进制（即 1 KB = 1000 B）；IEC 单位是国际电工委员会的单位，采用二进制和带有 i 的单位（即 1 KiB = 1024 B）。</p>
+<p>fio 出于对旧脚本的兼容性，默认情况下交换了 SI 和 IEC 单位的含义，即不带 i 的使用 1024 倍率，而带 i 的采用 1000 倍率。这在 fio 文档中有说明（参数 <code>kb_base</code>）。</p>
+</div>
+</li>
+<li>
+<p><code>--ioengine</code>：使用的 I/O 引擎。默认为 <code>psync</code>（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 <code>libaio</code> 来使用系统的异步 I/O 接口，此时建议添加 <code>--direct=1</code> 参数使用非缓冲 I/O，因为 Linux 上缓冲 I/O 不是异步的。</p>
+</li>
 <li><code>--iodepth</code>: 并发（处于未完成状态的）I/O 操作的数量，通常和异步 I/O 引擎结合使用。增加 <code>iodepth</code> 可以显著提高吞吐量。</li>
 <li><code>--numjobs</code>：fork 若干进程执行相同的 I/O 任务，用于进行并发测试。此时建议添加 <code>--group_reporting</code> 参数，这样所有进程的数据会被累加到一起。</li>
 </ul>
@@ -2097,25 +2106,25 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 </details>
 <details class="example">
 <summary>向 <code>./test</code> 随机读写，模拟 I/O 压力</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">sudo fio --filename=./test \</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">  --filesize=2G --direct=1 --rw=randrw \</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  --bs=4k --ioengine=libaio --iodepth=256 \</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">  --runtime=120 --numjobs=4 --time_based \</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">  --group_reporting --name=job_name --eta-newline=1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
 </code></pre></div>
 </details>
 <details class="example">
 <summary>模拟 Crystal DiskMark 测试磁盘性能</summary>
 <p>本部分来自 <a href="https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test">Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+</a>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">sudo fio --loops=5 --size=500m --filename=fiotest.tmp --stonewall --ioengine=libaio --direct=1 \</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">    --name=SeqRead --bs=1m --rw=read \</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">    --name=SeqWrite --bs=1m --rw=write \</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">    --name=512Kread --bs=512k --rw=randread \</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">    --name=512Kwrite --bs=512k --rw=randwrite \</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="go">    --name=4KQD32read --bs=4k --iodepth=32 --rw=randread \</span>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="go">    --name=4KQD32write --bs=4k --iodepth=32 --rw=randwrite \</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="go">    --name=4Kread --bs=4k --rw=randread \</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="go">    --name=4Kwrite --bs=4k --rw=randwrite</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--loops<span class="o">=</span><span class="m">5</span><span class="w"> </span>--size<span class="o">=</span>500m<span class="w"> </span>--filename<span class="o">=</span>fiotest.tmp<span class="w"> </span>--stonewall<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>--name<span class="o">=</span>SeqRead<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span><span class="nb">read</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span>--name<span class="o">=</span>SeqWrite<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span>write<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span>--name<span class="o">=</span>512Kread<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span>--name<span class="o">=</span>512Kwrite<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32read<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32write<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span>--name<span class="o">=</span>4Kread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span>--name<span class="o">=</span>4Kwrite<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randwrite
 </code></pre></div>
 </details>
 <p>由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于修改和重复使用。</p>
