@@ -699,6 +699,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="iSCSI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      客户端配置
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1569,6 +1593,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="iSCSI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      客户端配置
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1840,6 +1888,90 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 在用这种方式「解决」问题之后，建议尽快重启服务器。</p>
 <p>此外，<code>intr</code> 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。</p>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
+<p>iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。</p>
+<h3 id="_4">服务端配置<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 <code>targetcli-fb</code> 包后使用 <code>targetcli</code> 命令行工具进行配置。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>targetcli
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">targetcli shell version 2.1.53</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">Copyright 2011-2013 by Datera, Inc and others.</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">For help on commands, type &#39;help&#39;.</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">/&gt; ls</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="go">o- / ..................................................................... [...]</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="go">  o- backstores .......................................................... [...]</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="go">  | o- block .............................................. [Storage Objects: 0]</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="go">  | o- fileio ............................................. [Storage Objects: 0]</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="go">  | o- pscsi .............................................. [Storage Objects: 0]</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="go">  | o- ramdisk ............................................ [Storage Objects: 0]</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="go">  o- iscsi ........................................................ [Targets: 0]</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="go">  o- loopback ..................................................... [Targets: 0]</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="go">  o- vhost ........................................................ [Targets: 0]</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="go">  o- xen-pvscsi ................................................... [Targets: 0]</span>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="go">/&gt; cd iscsi</span>
+<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="go">/iscsi&gt; ls</span>
+<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a><span class="go">o- iscsi .......................................................... [Targets: 0]</span>
+<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="go">/iscsi&gt;</span>
+</code></pre></div>
+<p>可以看到，target 与其相关的 backstore 都以类似于文件系统的树状结构展示，并且可以使用 <code>cd</code> 和 <code>ls</code> 进行导航。
+为了创建 iSCSI target，首先需要为其创建一个 backstore。最简单的方式是使用 <code>fileio</code> 将文件作为 backstore：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="go">/iscsi&gt; cd ..</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">/&gt; backstores/fileio create test1 /tmp/test1.img 1G</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="go">Created fileio test1 with size 1073741824</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">/&gt; ls backstores/fileio</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">o- fileio ................................................. [Storage Objects: 1]</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">  o- test1 .................... [/tmp/test1.img (1.0GiB) write-back deactivated]</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="go">    o- alua ................................................... [ALUA Groups: 1]</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="go">      o- default_tg_pt_gp ....................... [ALUA state: Active/optimized]</span>
+</code></pre></div>
+<p>和创建本地回环有些类似，但是这里的文件是专门作为 iSCSI target（或者别的 target）的 backstore 而存在的。
+将块设备作为 backstore 也类似：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="go">/&gt; backstores/block create test2 /dev/loop0</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">Created block storage object test2 using /dev/loop0</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="go">/&gt; ls backstores/</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">o- backstores ............................................................ [...]</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="go">  o- block ................................................ [Storage Objects: 1]</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go">  | o- test2 ...................... [/dev/loop0 (1.0GiB) write-thru deactivated]</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="go">  |   o- alua ................................................. [ALUA Groups: 1]</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="go">  |     o- default_tg_pt_gp ..................... [ALUA state: Active/optimized]</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  o- fileio ............................................... [Storage Objects: 1]</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="go">  | o- test1 .................. [/tmp/test1.img (1.0GiB) write-back deactivated]</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="go">  |   o- alua ................................................. [ALUA Groups: 1]</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="go">  |     o- default_tg_pt_gp ..................... [ALUA state: Active/optimized]</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="go">  o- pscsi ................................................ [Storage Objects: 0]</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="go">  o- ramdisk .............................................. [Storage Objects: 0]</span>
+</code></pre></div>
+<p>之后创建 iSCSI target。这里我们需要为这个 target「起一个名字」，这个名字被称为 iqn（iSCSI Qualified Name）。
+iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，其中 <code>yyyy-mm</code> 是日期，<code>com.example</code> 是反过来的域名（reversed domain name），而 <code>:</code> 后面的部分是 target 的名字。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="go">/&gt; iscsi/ create iqn.2024-03.org.example.201:test-target</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">Created target iqn.2024-03.org.example.201:test-target.</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">Created TPG 1.</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">Global pref auto_add_default_portal=true</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="go">Created default portal listening on all IPs (0.0.0.0), port 3260.</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">/&gt; ls iscsi/</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">o- iscsi .......................................................... [Targets: 1]</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go">  o- iqn.2024-03.org.example.201:test-target ......................... [TPGs: 1]</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">    o- tpg1 ............................................. [no-gen-acls, no-auth]</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="go">      o- acls ........................................................ [ACLs: 0]</span>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="go">      o- luns ........................................................ [LUNs: 0]</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="go">      o- portals .................................................. [Portals: 1]</span>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="go">        o- 0.0.0.0:3260 ................................................... [OK]</span>
+</code></pre></div>
+<p>之后绑定 backstore 到 target 上：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="go">/&gt; iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">Created LUN 0.</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">/&gt; ls iscsi/</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">o- iscsi .......................................................... [Targets: 1]</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">  o- iqn.2024-03.org.example.201:test-target ......................... [TPGs: 1]</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="go">    o- tpg1 ............................................. [no-gen-acls, no-auth]</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="go">      o- acls ........................................................ [ACLs: 0]</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="go">      o- luns ........................................................ [LUNs: 1]</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="go">      | o- lun0 ............. [fileio/test1 (/tmp/test1.img) (default_tg_pt_gp)]</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="go">      o- portals .................................................. [Portals: 1]</span>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="go">        o- 0.0.0.0:3260 ................................................... [OK]</span>
+</code></pre></div>
+<p>一个接受任意连接的 iSCSI target 就创建好了。
+<code>acls</code> 和 <code>portals</code> 分别可以限制连接的 initiator 和监听的 IP 地址，如有需要可自行查询使用方法。</p>
+<h3 id="_5">客户端配置<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <!--
   Links to man pages
 
