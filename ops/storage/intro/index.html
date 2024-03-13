@@ -2003,14 +2003,45 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 一部分低端 RAID 卡不提供相关功能的支持，尽管可以通过为每块磁盘创建单独的 RAID 0 阵列实现类似的功能，但是并不推荐。</p>
 <h2 id="benchmark">性能测试<a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h2>
 <p>我们可以使用 <a href="https://fio.readthedocs.io/en/latest/"><code>fio</code></a> 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。</p>
-<p>以下是一些常见的参数：</p>
+<div class="admonition info">
+<p class="admonition-title">使用 dd 测速的不足</p>
+<p>以下是使用 dd 命令测试一块希捷4TB机械硬盘的例子：
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp"># </span>测试写
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">➜  ~  dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">1000+0 records in</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">1000+0 records out</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="gp"># </span>测试读
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">➜  ~  dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">1000+0 records in</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">1000+0 records out</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s</span>
+</code></pre></div>
+虽然可以使用 dd 命令简易地测速，但是dd命令有一些缺点：</p>
 <ul>
-<li><code>--rw</code>：I/O 访问的模式，例如 <code>read</code>, <code>write</code>（顺序读写）, <code>randread</code>, <code>randwrite</code>（随机读写）等</li>
-<li><code>--ioengine</code>：使用的 I/O 引擎，默认为 <code>psync</code>（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 <code>libaio</code> 来使用系统的异步 I/O 接口，此时建议添加 <code>--direct=1</code> 参数，并且可以使用 <code>--iodepth</code> 参数来控制并发（处于未完成状态的）异步 I/O 操作的数量。</li>
-<li><code>--runtime</code>：测试的时间长度（无单位则为秒），需要再添加 <code>--time_based</code> 参数防止任务完成而提前结束</li>
-<li><code>--bs</code>：每次 I/O 操作的块大小，默认为 4k（4096）</li>
-<li><code>--numjobs</code>：I/O 任务数量，此时建议添加 <code>--group_reporting</code> 参数来汇总所有任务的结果</li>
-<li><code>--readonly</code>：检查当前任务是否为只读任务，防止误操作导致数据丢失</li>
+<li>dd 只能测试顺序读写的情况，无法测试随机读写。</li>
+<li>dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能。对于固态硬盘尤为明显</li>
+<li>dd 命令中使用的特殊设备<code>/dev/urandom</code>、<code>/dev/random</code>、<code>/dev/zero</code>本身性能不高，可能会成为测试的瓶颈。（比如测试<code>dd if=/dev/random of=/dev/null bs=1M count=1000</code>可能只有500MB/s的速度）</li>
+</ul>
+<p>因此要对磁盘进行更加全面的性能测试，我们需要使用 fio 这款更加专业的工具。</p>
+</div>
+<p>使用 fio 进行测试需要确定以下基础参数，这些参数描述了 I/O 负载是什么样的：</p>
+<ul>
+<li><code>--rw</code>：I/O 访问的模式，例如 <code>read</code>, <code>write</code>（顺序读写）, <code>randread</code>, <code>randwrite</code>（随机读写）, <code>randrw</code>（随机混合读写）等。</li>
+<li><code>--bs</code>：每次 I/O 操作的块大小，默认为 4KB。bs 对性能影响很大，电商平台硬盘标称的速度通常都是 1MB 大块顺序读写的速度（代表了拷贝大文件时的速度），而更加影响实际使用体验的 4k 的随机读写性能则要弱得多。</li>
+<li><code>--size</code>：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用<code>kib</code>, <code>mib</code>等。</li>
+<li><code>--ioengine</code>：使用的 I/O 引擎。默认为 <code>psync</code>（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 <code>libaio</code> 来使用系统的异步 I/O 接口，此时建议添加 <code>--direct=1</code> 参数使用非缓冲 I/O，因为 Linux 上缓冲 I/O 不是异步的。</li>
+<li><code>--iodepth</code>: 并发（处于未完成状态的）I/O 操作的数量，通常和异步 I/O 引擎结合使用。增加 <code>iodepth</code> 可以显著提高吞吐量。</li>
+<li><code>--numjobs</code>：fork 若干进程执行相同的 I/O 任务，用于进行并发测试。此时建议添加 <code>--group_reporting</code> 参数，这样所有进程的数据会被累加到一起。</li>
+</ul>
+<p>还有一些其他的参数影响 fio 如何运行：</p>
+<ul>
+<li><code>--filename</code>：测试的文件名或者块设备名。fio 默认为每个任务生成单独测试文件，使用该选项使所有任务使用相同文件。使用相对路径时，可以使用<code>--directory</code>指定测试文件的目录（默认为当前目录）。</li>
+<li><code>--name</code>：任务的名称。fio 可以同时运行多个测试任务，每个任务都有一个名称。命令行参数中每遇到一个 <code>--name</code> 会定义一个新任务，后面跟随该任务的参数。</li>
+<li><code>--stonewall</code>：等待前一个任务完成才开始这一个任务，fio 默认所有任务是同时执行的。</li>
+<li><code>--runtime</code>：测试的最大时间长度（无单位则为秒）。可以添加 <code>--time_based</code> 参数防止任务完成而提前结束</li>
+<li><code>--readonly</code>：检查当前任务是否为只读任务，防止误操作导致数据丢失。</li>
+<li><code>--loops</code>: 多次测试取平均值。</li>
 </ul>
 <p>以下是一些例子，一部分在编写其他内容时使用到了：</p>
 <div class="admonition warning">
@@ -2021,74 +2052,133 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <summary>使用 fio 测试块设备（<code>/dev/mapper/vg201--test-lvdata</code>）随机读延迟的例子</summary>
 <p>本部分编写时参考了 <a href="https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm">Oracle 的文档</a>。</p>
 <p>一个只读情况下测试 10s <code>/dev/mapper/vg201--test-lvdata</code> 的 4K 随机读的例子如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">fio-3.36</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">Starting 1 process</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
-<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
-<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
-<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">    clat percentiles (usec):</span>
-<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
-<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
-<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
-<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">    | 99.99th=[  465]</span>
-<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
-<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
-<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
-<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
-<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
-<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
-<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="go">Run status group 0 (all jobs):</span>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">fio-3.36</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">Starting 1 process</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="go">    clat percentiles (usec):</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="go">    | 99.99th=[  465]</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="go">Run status group 0 (all jobs):</span>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
 </code></pre></div>
 </details>
 <details class="example">
 <summary>向 <code>./test</code> 随机读写，模拟 I/O 压力</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">sudo fio --filename=./test \</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">  --filesize=2G --direct=1 --rw=randrw \</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">  --bs=4k --ioengine=libaio --iodepth=256 \</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">  --runtime=120 --numjobs=4 --time_based \</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">  --group_reporting --name=job_name --eta-newline=1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">sudo fio --filename=./test \</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">  --filesize=2G --direct=1 --rw=randrw \</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  --bs=4k --ioengine=libaio --iodepth=256 \</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">  --runtime=120 --numjobs=4 --time_based \</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">  --group_reporting --name=job_name --eta-newline=1</span>
 </code></pre></div>
 </details>
 <details class="example">
 <summary>模拟 Crystal DiskMark 测试磁盘性能</summary>
 <p>本部分来自 <a href="https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test">Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+</a>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">sudo fio --loops=5 --size=500m --filename=fiotest.tmp --stonewall --ioengine=libaio --direct=1 \</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">    --name=SeqRead --bs=1m --rw=read \</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">    --name=SeqWrite --bs=1m --rw=write \</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">    --name=512Kread --bs=512k --rw=randread \</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">    --name=512Kwrite --bs=512k --rw=randwrite \</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">    --name=4KQD32read --bs=4k --iodepth=32 --rw=randread \</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">    --name=4KQD32write --bs=4k --iodepth=32 --rw=randwrite \</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="go">    --name=4Kread --bs=4k --rw=randread \</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="go">    --name=4Kwrite --bs=4k --rw=randwrite</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">sudo fio --loops=5 --size=500m --filename=fiotest.tmp --stonewall --ioengine=libaio --direct=1 \</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">    --name=SeqRead --bs=1m --rw=read \</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">    --name=SeqWrite --bs=1m --rw=write \</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">    --name=512Kread --bs=512k --rw=randread \</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">    --name=512Kwrite --bs=512k --rw=randwrite \</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="go">    --name=4KQD32read --bs=4k --iodepth=32 --rw=randread \</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="go">    --name=4KQD32write --bs=4k --iodepth=32 --rw=randwrite \</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="go">    --name=4Kread --bs=4k --rw=randread \</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="go">    --name=4Kwrite --bs=4k --rw=randwrite</span>
 </code></pre></div>
 </details>
-<p>由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于重复使用。
-相关的配置文件编写方法可以参考 fio 的文档。</p>
+<p>由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于修改和重复使用。</p>
+<p>fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负载。fio 支持输入多个 job 文件，每个 job 文件会依次运行。而 job 文件内的任务默认是并行运行的，可以使用<code>stonewall</code>参数来保证串行。</p>
+<p>Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。</p>
+<details class="example">
+<summary>模拟 Crystal DiskMark 测试磁盘性能 job 文件</summary>
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">[global]</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="na">ioengine</span><span class="o">=</span><span class="s">libaio</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">direct</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="na">size</span><span class="o">=</span><span class="s">4g</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="na">runtime</span><span class="o">=</span><span class="s">60</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="na">loops</span><span class="o">=</span><span class="s">3</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">[Read SEQ1M Q8T1]</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="k">[Read SEQ1M Q1T1]</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="k">[Read RND4K Q32T1]</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="k">[Read RND4K Q1T1]</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="k">[Write SEQ1M Q8T1]</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="k">[Write SEQ1M Q1T1]</span>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="k">[Write RND4K Q32T1]</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
+<a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a>
+<a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="k">[Write RND4K Q1T1]</span>
+<a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="na">stonewall</span>
+<a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-5-49" name="__codelineno-5-49" href="#__codelineno-5-49"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-5-50" name="__codelineno-5-50" href="#__codelineno-5-50"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
+</code></pre></div>
+保存为<code>fio_CrystalDiskMark.ini</code>，然后运行
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">fio --filename=xxx fio_CrystalDiskMark.ini</span>
+</code></pre></div></p>
+</details>
+<p>fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提交延迟 (slat)、完成延迟 (clat)、以及 iodepth 分布等。输出内容具体含义可以参考 man 手册 OUTPUT 节。</p>
 <h2 id="filesystem">文件系统<a class="headerlink" href="#filesystem" title="Permanent link">&para;</a></h2>
 <p>在 Linux 上，ext4 是最常见的文件系统。但是对于某些需求，ext4 可能无法满足，例如：</p>
 <ul>
