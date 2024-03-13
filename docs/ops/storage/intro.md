@@ -229,14 +229,46 @@ Linux：
 
 我们可以使用 [`fio`](https://fio.readthedocs.io/en/latest/) 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。
 
-以下是一些常见的参数：
+!!! info "使用 dd 测速的不足"
 
-- `--rw`：I/O 访问的模式，例如 `read`, `write`（顺序读写）, `randread`, `randwrite`（随机读写）等
-- `--ioengine`：使用的 I/O 引擎，默认为 `psync`（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 `libaio` 来使用系统的异步 I/O 接口，此时建议添加 `--direct=1` 参数，并且可以使用 `--iodepth` 参数来控制并发（处于未完成状态的）异步 I/O 操作的数量。
-- `--runtime`：测试的时间长度（无单位则为秒），需要再添加 `--time_based` 参数防止任务完成而提前结束
-- `--bs`：每次 I/O 操作的块大小，默认为 4k（4096）
-- `--numjobs`：I/O 任务数量，此时建议添加 `--group_reporting` 参数来汇总所有任务的结果
-- `--readonly`：检查当前任务是否为只读任务，防止误操作导致数据丢失
+    以下是使用 dd 命令测试一块希捷4TB机械硬盘的例子：
+    ```console
+    # 测试写
+    ➜  ~  dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct
+    1000+0 records in
+    1000+0 records out
+    1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s
+    # 测试读
+    ➜  ~  dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct
+    1000+0 records in
+    1000+0 records out
+    1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s
+    ```
+    虽然可以使用 dd 命令简易地测速，但是dd命令有一些缺点：
+    
+    - dd 只能测试顺序读写的情况，无法测试随机读写。
+    - dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能。对于固态硬盘尤为明显
+    - dd 命令中使用的特殊设备`/dev/urandom`、`/dev/random`、`/dev/zero`本身性能不高，可能会成为测试的瓶颈。（比如测试`dd if=/dev/random of=/dev/null bs=1M count=1000`可能只有500MB/s的速度）
+
+    因此要对磁盘进行更加全面的性能测试，我们需要使用 fio 这款更加专业的工具。
+
+使用 fio 进行测试需要确定以下基础参数，这些参数描述了 I/O 负载是什么样的：
+
+- `--rw`：I/O 访问的模式，例如 `read`, `write`（顺序读写）, `randread`, `randwrite`（随机读写）, `randrw`（随机混合读写）等。
+- `--bs`：每次 I/O 操作的块大小，默认为 4KB。bs 对性能影响很大，电商平台硬盘标称的速度通常都是 1MB 大块顺序读写的速度（代表了拷贝大文件时的速度），而更加影响实际使用体验的 4k 的随机读写性能则要弱得多。
+- `--size`：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用`kib`, `mib`等。
+- `--ioengine`：使用的 I/O 引擎。默认为 `psync`（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 `libaio` 来使用系统的异步 I/O 接口，此时建议添加 `--direct=1` 参数使用非缓冲 I/O，因为 Linux 上缓冲 I/O 不是异步的。
+- `--iodepth`: 并发（处于未完成状态的）I/O 操作的数量，通常和异步 I/O 引擎结合使用。增加 `iodepth` 可以显著提高吞吐量。
+- `--numjobs`：fork 若干进程执行相同的 I/O 任务，用于进行并发测试。此时建议添加 `--group_reporting` 参数，这样所有进程的数据会被累加到一起。
+
+还有一些其他的参数影响 fio 如何运行：
+
+- `--filename`：测试的文件名或者块设备名。fio 默认为每个任务生成单独测试文件，使用该选项使所有任务使用相同文件。使用相对路径时，可以使用`--directory`指定测试文件的目录（默认为当前目录）。
+- `--name`：任务的名称。fio 可以同时运行多个测试任务，每个任务都有一个名称。命令行参数中每遇到一个 `--name` 会定义一个新任务，后面跟随该任务的参数。
+- `--stonewall`：等待前一个任务完成才开始这一个任务，fio 默认所有任务是同时执行的。
+- `--runtime`：测试的最大时间长度（无单位则为秒）。可以添加 `--time_based` 参数防止任务完成而提前结束
+- `--readonly`：检查当前任务是否为只读任务，防止误操作导致数据丢失。
+- `--loops`: 多次测试取平均值。
 
 以下是一些例子，一部分在编写其他内容时使用到了：
 
@@ -320,8 +352,72 @@ Linux：
         --name=4Kwrite --bs=4k --rw=randwrite
     ```
 
-由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于重复使用。
-相关的配置文件编写方法可以参考 fio 的文档。
+由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于修改和重复使用。
+
+fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负载。fio 支持输入多个 job 文件，每个 job 文件会依次运行。而 job 文件内的任务默认是并行运行的，可以使用`stonewall`参数来保证串行。
+
+Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。
+
+??? example "模拟 Crystal DiskMark 测试磁盘性能 job 文件"
+
+    ```ini
+    [global]
+    ioengine=libaio
+    direct=1
+    size=4g
+    runtime=60
+    loops=3
+
+    [Read SEQ1M Q8T1]
+    bs=1m
+    iodepth=8
+    rw=read
+
+    [Read SEQ1M Q1T1]
+    stonewall
+    bs=1m
+    rw=read
+
+    [Read RND4K Q32T1]
+    stonewall
+    bs=4k
+    iodepth=32
+    rw=randread
+
+    [Read RND4K Q1T1]
+    stonewall
+    bs=4k
+    iodepth=1
+    rw=randread
+
+    [Write SEQ1M Q8T1]
+    bs=1m
+    iodepth=8
+    rw=write
+
+    [Write SEQ1M Q1T1]
+    stonewall
+    bs=1m
+    rw=write
+
+    [Write RND4K Q32T1]
+    stonewall
+    bs=4k
+    iodepth=32
+    rw=randwrite
+
+    [Write RND4K Q1T1]
+    stonewall
+    bs=4k
+    iodepth=1
+    rw=randwrite
+    ```
+    保存为`fio_CrystalDiskMark.ini`，然后运行
+    ```console
+    fio --filename=xxx fio_CrystalDiskMark.ini
+    ```
+
+fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提交延迟 (slat)、完成延迟 (clat)、以及 iodepth 分布等。输出内容具体含义可以参考 man 手册 OUTPUT 节。
 
 ## 文件系统 {#filesystem}
 
