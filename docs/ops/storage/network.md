@@ -328,3 +328,106 @@ $
 此外，`intr` 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。
 
 ## iSCSI
+
+iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
+
+### 服务端配置
+
+Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。
+
+```console
+$ sudo targetcli
+targetcli shell version 2.1.53
+Copyright 2011-2013 by Datera, Inc and others.
+For help on commands, type 'help'.
+
+/> ls
+o- / ..................................................................... [...]
+  o- backstores .......................................................... [...]
+  | o- block .............................................. [Storage Objects: 0]
+  | o- fileio ............................................. [Storage Objects: 0]
+  | o- pscsi .............................................. [Storage Objects: 0]
+  | o- ramdisk ............................................ [Storage Objects: 0]
+  o- iscsi ........................................................ [Targets: 0]
+  o- loopback ..................................................... [Targets: 0]
+  o- vhost ........................................................ [Targets: 0]
+  o- xen-pvscsi ................................................... [Targets: 0]
+/> cd iscsi
+/iscsi> ls
+o- iscsi .......................................................... [Targets: 0]
+/iscsi>
+```
+
+可以看到，target 与其相关的 backstore 都以类似于文件系统的树状结构展示，并且可以使用 `cd` 和 `ls` 进行导航。
+为了创建 iSCSI target，首先需要为其创建一个 backstore。最简单的方式是使用 `fileio` 将文件作为 backstore：
+
+```console
+/iscsi> cd ..
+/> backstores/fileio create test1 /tmp/test1.img 1G
+Created fileio test1 with size 1073741824
+/> ls backstores/fileio
+o- fileio ................................................. [Storage Objects: 1]
+  o- test1 .................... [/tmp/test1.img (1.0GiB) write-back deactivated]
+    o- alua ................................................... [ALUA Groups: 1]
+      o- default_tg_pt_gp ....................... [ALUA state: Active/optimized]
+```
+
+和创建本地回环有些类似，但是这里的文件是专门作为 iSCSI target（或者别的 target）的 backstore 而存在的。
+将块设备作为 backstore 也类似：
+
+```console
+/> backstores/block create test2 /dev/loop0
+Created block storage object test2 using /dev/loop0
+/> ls backstores/
+o- backstores ............................................................ [...]
+  o- block ................................................ [Storage Objects: 1]
+  | o- test2 ...................... [/dev/loop0 (1.0GiB) write-thru deactivated]
+  |   o- alua ................................................. [ALUA Groups: 1]
+  |     o- default_tg_pt_gp ..................... [ALUA state: Active/optimized]
+  o- fileio ............................................... [Storage Objects: 1]
+  | o- test1 .................. [/tmp/test1.img (1.0GiB) write-back deactivated]
+  |   o- alua ................................................. [ALUA Groups: 1]
+  |     o- default_tg_pt_gp ..................... [ALUA state: Active/optimized]
+  o- pscsi ................................................ [Storage Objects: 0]
+  o- ramdisk .............................................. [Storage Objects: 0]
+```
+
+之后创建 iSCSI target。这里我们需要为这个 target「起一个名字」，这个名字被称为 iqn（iSCSI Qualified Name）。
+iqn 的格式形如 `iqn.yyyy-mm.com.example:some-storage-target`，其中 `yyyy-mm` 是日期，`com.example` 是反过来的域名（reversed domain name），而 `:` 后面的部分是 target 的名字。
+
+```console
+/> iscsi/ create iqn.2024-03.org.example.201:test-target
+Created target iqn.2024-03.org.example.201:test-target.
+Created TPG 1.
+Global pref auto_add_default_portal=true
+Created default portal listening on all IPs (0.0.0.0), port 3260.
+/> ls iscsi/
+o- iscsi .......................................................... [Targets: 1]
+  o- iqn.2024-03.org.example.201:test-target ......................... [TPGs: 1]
+    o- tpg1 ............................................. [no-gen-acls, no-auth]
+      o- acls ........................................................ [ACLs: 0]
+      o- luns ........................................................ [LUNs: 0]
+      o- portals .................................................. [Portals: 1]
+        o- 0.0.0.0:3260 ................................................... [OK]
+```
+
+之后绑定 backstore 到 target 上：
+
+```console
+/> iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1
+Created LUN 0.
+/> ls iscsi/
+o- iscsi .......................................................... [Targets: 1]
+  o- iqn.2024-03.org.example.201:test-target ......................... [TPGs: 1]
+    o- tpg1 ............................................. [no-gen-acls, no-auth]
+      o- acls ........................................................ [ACLs: 0]
+      o- luns ........................................................ [LUNs: 1]
+      | o- lun0 ............. [fileio/test1 (/tmp/test1.img) (default_tg_pt_gp)]
+      o- portals .................................................. [Portals: 1]
+        o- 0.0.0.0:3260 ................................................... [OK]
+```
+
+一个接受任意连接的 iSCSI target 就创建好了。
+`acls` 和 `portals` 分别可以限制连接的 initiator 和监听的 IP 地址，如有需要可自行查询使用方法。
+
+### 客户端配置
