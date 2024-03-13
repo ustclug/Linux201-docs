@@ -232,23 +232,25 @@ Linux：
 !!! info "使用 dd 测速的不足"
 
     以下是使用 dd 命令测试一块希捷4TB机械硬盘的例子：
+
     ```console
     # 测试写
-    ➜  ~  dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct
+    $ dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct
     1000+0 records in
     1000+0 records out
     1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s
     # 测试读
-    ➜  ~  dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct
+    $ dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct
     1000+0 records in
     1000+0 records out
     1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s
     ```
-    虽然可以使用 dd 命令简易地测速，但是dd命令有一些缺点：
+
+    虽然可以使用 dd 命令简易地测速，但是 dd 命令有一些缺点：
     
     - dd 只能测试顺序读写的情况，无法测试随机读写。
-    - dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能。对于固态硬盘尤为明显
-    - dd 命令中使用的特殊设备`/dev/urandom`、`/dev/random`、`/dev/zero`本身性能不高，可能会成为测试的瓶颈。（比如测试`dd if=/dev/random of=/dev/null bs=1M count=1000`可能只有500MB/s的速度）
+    - dd 使用非常低的 I/O 队列深度，无法充分测试设备的并发性能，这对于固态硬盘尤为明显。
+    - dd 命令中使用的特殊设备 `/dev/urandom`、`/dev/random` 本身性能有限，可能会成为测试的瓶颈。（比如测试 `dd if=/dev/random of=/dev/null bs=1M count=1000` 可能只有 500MB/s 的速度）
 
     因此要对磁盘进行更加全面的性能测试，我们需要使用 fio 这款更加专业的工具。
 
@@ -256,7 +258,14 @@ Linux：
 
 - `--rw`：I/O 访问的模式，例如 `read`, `write`（顺序读写）, `randread`, `randwrite`（随机读写）, `randrw`（随机混合读写）等。
 - `--bs`：每次 I/O 操作的块大小，默认为 4KB。bs 对性能影响很大，电商平台硬盘标称的速度通常都是 1MB 大块顺序读写的速度（代表了拷贝大文件时的速度），而更加影响实际使用体验的 4k 的随机读写性能则要弱得多。
-- `--size`：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用`kib`, `mib`等。
+- `--size`：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用 `kib`, `mib` 等。
+
+    !!! note "SI 与 IEC 单位"
+
+        SI 单位是国际单位制中的单位，采用 10 进制（即 1 KB = 1000 B）；IEC 单位是国际电工委员会的单位，采用二进制和带有 i 的单位（即 1 KiB = 1024 B）。
+
+        fio 出于对旧脚本的兼容性，默认情况下交换了 SI 和 IEC 单位的含义，即不带 i 的使用 1024 倍率，而带 i 的采用 1000 倍率。这在 fio 文档中有说明（参数 `kb_base`）。
+
 - `--ioengine`：使用的 I/O 引擎。默认为 `psync`（使用 pread/pwrite 系统调用）。在 Linux 上推荐选择 `libaio` 来使用系统的异步 I/O 接口，此时建议添加 `--direct=1` 参数使用非缓冲 I/O，因为 Linux 上缓冲 I/O 不是异步的。
 - `--iodepth`: 并发（处于未完成状态的）I/O 操作的数量，通常和异步 I/O 引擎结合使用。增加 `iodepth` 可以显著提高吞吐量。
 - `--numjobs`：fork 若干进程执行相同的 I/O 任务，用于进行并发测试。此时建议添加 `--group_reporting` 参数，这样所有进程的数据会被累加到一起。
@@ -328,7 +337,7 @@ Linux：
 
 ??? example "向 `./test` 随机读写，模拟 I/O 压力"
 
-    ```console
+    ```shell
     sudo fio --filename=./test \
       --filesize=2G --direct=1 --rw=randrw \
       --bs=4k --ioengine=libaio --iodepth=256 \
@@ -340,7 +349,7 @@ Linux：
 
     本部分来自 [Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+](https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test)。
 
-    ```console
+    ```shell
     sudo fio --loops=5 --size=500m --filename=fiotest.tmp --stonewall --ioengine=libaio --direct=1 \
         --name=SeqRead --bs=1m --rw=read \
         --name=SeqWrite --bs=1m --rw=write \
@@ -426,7 +435,7 @@ fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提�
 - 需要支持存储大量文件，数量甚至可能超过 ext4 的限制
 - 需要支持快照、透明压缩、数据校验等高级功能
 
-在[「分区与文件系统」部分](./filesystem.md)会对文件系统的选择进行介绍。
+在[「分区与文件系统」部分](filesystem.md)会对文件系统的选择进行介绍。
 
 ## 补充阅读 {#supplement}
 
