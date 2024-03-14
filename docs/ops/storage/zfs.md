@@ -290,4 +290,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
     发现该目录为 `/var/log/account`，调查后发现其中的文件在启用 process accounting 后会由内核写入。
     因此解释了为什么 `lsof` 没有显示任何进程占用对应文件。在关闭 process accounting 后，delete queue 清空了。
 
-    该问题已经尝试向 ZFS 反馈：<https://github.com/openzfs/zfs/issues/15998>
+    <del>该问题已经尝试向 ZFS 反馈：<https://github.com/openzfs/zfs/issues/15998></del>。
+    在收到 issue 回复之后检查了 Debian 的 acct 的 cron daily 脚本，发现其使用了 `invoke-rc.d` 重启服务。
+    但是 `/usr/sbin/policy-rc.d` 在多年前被设置为 `exit 101`，因此 `invoke-rc.d` 无法启动服务，
+    导致了 process accounting 服务一直未被重启，内核仍然在写入文件。
