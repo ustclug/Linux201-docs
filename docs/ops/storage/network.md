@@ -393,7 +393,7 @@ o- backstores ............................................................ [...]
 ```
 
 之后创建 iSCSI target。这里我们需要为这个 target「起一个名字」，这个名字被称为 iqn（iSCSI Qualified Name）。
-iqn 的格式形如 `iqn.yyyy-mm.com.example:some-storage-target`，其中 `yyyy-mm` 是日期，`com.example` 是反过来的域名（reversed domain name），而 `:` 后面的部分是 target 的名字。
+iqn 的格式形如 `iqn.yyyy-mm.com.example:some-storage-target`，其中 `yyyy-mm` 是日期，`com.example` 是反过来的域名（reversed domain name），而 `:` 后面的部分是 target 的名字。服务器和客户端都有自己的 iqn。
 
 ```console
 /> iscsi/ create iqn.2024-03.org.example.201:test-target
@@ -411,7 +411,8 @@ o- iscsi .......................................................... [Targets: 1]
         o- 0.0.0.0:3260 ................................................... [OK]
 ```
 
-之后绑定 backstore 到 target 上：
+之后在 `luns` 下绑定 backstore 到 target 上。
+LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。
 
 ```console
 /> iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1
@@ -427,7 +428,126 @@ o- iscsi .......................................................... [Targets: 1]
         o- 0.0.0.0:3260 ................................................... [OK]
 ```
 
-一个接受任意连接的 iSCSI target 就创建好了。
-`acls` 和 `portals` 分别可以限制连接的 initiator 和监听的 IP 地址，如有需要可自行查询使用方法。
+一个在所有地址的 3260 端口监听的 iSCSI target 就创建好了。
+`portals` 可以限制连接的 IP 地址，如有需要可自行查询使用方法。
+
+!!! tip "关于 protal"
+
+    一些 SAN 方案会提供多个 portal，对应不同的网口。在集群场景下让不同的节点连接到不同的 portal，以此提升性能。
+
+如果需要实际登录（诸如按照下面的客户端配置），还需要将客户端的 iqn 也记录在 `acls` 中：
+
+```console
+/> iscsi/iqn.2024-03.org.example.201:test-target/tpg1/acls create iqn.1993-08.org.debian:01:a6a4d4f7356f
+Created Node ACL for iqn.1993-08.org.debian:01:a6a4d4f7356f
+Created mapped LUN 0.
+```
 
 ### 客户端配置
+
+使用 `iscsiadm` 可以配置 iSCSI initiator（需要安装 `open-iscsi`）。
+操作的第一步是「发现」iSCSI target：
+
+```console
+$ sudo iscsiadm -m discovery -t sendtargets --portal 127.0.0.1
+127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target
+$ sudo iscsiadm -m node  # 列出发现的 target
+127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target
+```
+
+第二步是「登录」。但是直接登录会吃到闭门羹：
+
+```console
+$ sudo iscsiadm -m node --targetname iqn.2024-03.org.example.201:test-target --portal 127.0.0.1:3260 --login
+Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]
+iscsiadm: Could not login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260].
+iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure)
+iscsiadm: Could not log into all portals
+```
+
+我们需要让服务端授权客户端的 iqn，对应文件在 `/etc/iscsi/initiatorname.iscsi`。
+
+```console
+$ sudo cat /etc/iscsi/initiatorname.iscsi
+## DO NOT EDIT OR REMOVE THIS FILE!
+## If you remove this file, the iSCSI daemon will not start.
+## If you change the InitiatorName, existing access control lists
+## may reject this initiator.  The InitiatorName must be unique
+## for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.
+InitiatorName=iqn.1993-08.org.debian:01:a6a4d4f7356f
+```
+
+（注意不要抄这里的 iqn！）
+
+在服务端授权后就可以登录了：
+
+```console
+$ sudo iscsiadm -m node --targetname iqn.2024-03.org.example.201:test-target --portal 127.0.0.1:3260 --login
+Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]
+Login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful.
+```
+
+新设备可以通过多种方式确认：
+
+```console
+$ # session 代表了 initiator 和 target 的一个连接
+$ # 下面的命令列出了所有 session 的信息，并且用 -P 3 使得输出更详细
+$ sudo iscsiadm -m session -P 3
+iSCSI Transport Class version 2.0-870
+version 2.1.8
+Target: iqn.2024-03.org.example.201:test-target (non-flash)
+（略）
+			Attached scsi disk sda		State: running
+$ # 可以看到对应设备为 sda，也可以用 lsblk 确认
+$ lsblk
+NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda      8:0    0     1G  0 disk 
+sr0     11:0    1 932.3M  0 rom  
+vda    254:0    0    50G  0 disk 
+└─vda1 254:1    0    50G  0 part /
+```
+
+如果为了维护目的需要 logout：
+
+```console
+$ sudo iscsiadm -m node --targetname iqn.2024-03.org.example.201:test-target --logout all
+Logging out of session [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]
+Logout of [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful
+```
+
+有时候，服务端会添加新的 LUN，此时没有必要断开连接再重连（会导致服务中断）。
+客户端可以使用 `iscsiadm` 的 `--rescan` 选项来重新扫描设备：
+
+```console
+$ sudo iscsiadm -m session --rescan
+Rescanning session [sid: 4, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]
+$ lsblk
+NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+sda      8:0    0     1G  0 disk 
+sdb      8:16   0     1G  0 disk 
+sr0     11:0    1 932.3M  0 rom  
+vda    254:0    0    50G  0 disk 
+└─vda1 254:1    0    50G  0 part 
+$ # 多出了新添加的 sdb
+```
+
+另一点需要注意的是开机时的配置，虽然 `iscsid.service` 会在开机时自动启用，但是登录操作默认不是自动的。
+这一点可以从配置文件中确认：
+
+```console
+$ cat /etc/iscsi/iscsid.conf | grep node.startup
+# node.startup = automatic
+node.startup = manual
+$ sudo cat /etc/iscsi/nodes/iqn.2024-03.org.example.201\:test-target/127.0.0.1\,3260\,1/default | grep startup
+node.startup = manual
+node.conn[0].startup = manual
+```
+
+可以使用命令修改相关配置（也可以直接修改配置文件）：
+
+```console
+$ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.startup -v automatic
+$ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic
+```
+
+`open-iscsi.service` 在开机时会自动登录所有配置好的 target。
