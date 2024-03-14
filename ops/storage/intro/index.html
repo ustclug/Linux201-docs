@@ -684,6 +684,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fstab" class="md-nav__link">
+    <span class="md-ellipsis">
+      /etc/fstab
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1716,6 +1731,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fstab" class="md-nav__link">
+    <span class="md-ellipsis">
+      /etc/fstab
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2194,7 +2224,30 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <li>需要支持存储大量文件，数量甚至可能超过 ext4 的限制</li>
 <li>需要支持快照、透明压缩、数据校验等高级功能</li>
 </ul>
-<p>在<a href="../filesystem/">「分区与文件系统」部分</a>会对文件系统的选择进行介绍。</p>
+<p>在<a href="../filesystem/">「分区与文件系统」部分</a>会对文件系统的选择进行介绍。
+本部分主要介绍与文件系统、挂载等有关的通用内容。</p>
+<h3 id="fstab"><code>/etc/fstab</code><a class="headerlink" href="#fstab" title="Permanent link">&para;</a></h3>
+<p><code>/etc/fstab</code> 是 Linux 系统中用于配置文件系统挂载的文件。
+在启动时，系统会根据 <code>/etc/fstab</code> 中的配置自动挂载文件系统。
+如果配置不当，那么开机时就可能会出现挂载失败，从而进入紧急模式的情况。</p>
+<p>下面给出一个在 QEMU 虚拟机中的 Linux 系统的 <code>/etc/fstab</code> 的例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a># &lt;file system&gt; &lt;mount point&gt;   &lt;type&gt;  &lt;options&gt;       &lt;dump&gt;  &lt;pass&gt;
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount-ro 0       1
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>sharing /mnt/sharing    virtiofs    defaults,nofail 0   0
+</code></pre></div>
+<p>可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考<a href="../filesystem/">分区与文件系统</a>中对 <code>/dev/disk</code> 的介绍。<code>/dev/sda1</code> 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
+对特殊的文件系统，这里的内容由对应的实现决定，例如 <code>tmpfs</code> 的话，这里可能就是 <code>none</code> 或者 <code>tmpfs</code>；
+例子中的 <code>virtiofs</code> 是 QEMU 的虚拟文件系统，用于与宿主机共享文件，
+由于设置中的 <code>target</code> 是 <code>sharing</code>，因此这里的设备名是 <code>sharing</code>。</p>
+<p>后面则是挂载点、文件系统与挂载选项。挂载选项中大部分会提供给文件系统（例如这里的 <code>errors=remount-ro</code>），但是有一些是通用的设置。
+例如 <code>noauto</code> 选项表示启动时不挂载，<code>nofail</code> 表示即使挂载失败也不影响启动。
+一个在 <a href="https://man7.org/linux/man-pages/man5/fstab.5.html">fstab(5)</a> 中没有提及的重要选项是 <code>_netdev</code>，它表示这个挂载点需要网络连接，
+systemd 会配置启动时在网络配置好之后才挂载。
+这个选项在挂载基于网络的存储时非常有用。</p>
+<p>"dump" 可以忽略（0 即可），而 "pass" 标记了文件系统检查（fsck）的顺序：0 不检查，根分区应该为 1，其他分区为 2。</p>
+<p>在修改配置后，如果系统使用了 systemd，应当使用 <code>systemctl daemon-reload</code> 来让 systemd 重新加载所有的 mount 单元。
+否则 <code>mount -a</code> 之后，systemd 可能会「好心」地帮你改回来。</p>
 <h2 id="supplement">补充阅读<a class="headerlink" href="#supplement" title="Permanent link">&para;</a></h2>
 <p><a href="https://cloud.google.com/compute/docs/disks/benchmarking-pd-performance?hl=zh-cn">对 Linux 虚拟机上的永久性磁盘性能进行基准测试</a>：GCE 关于使用 fio 进行磁盘性能测试的文档。</p>
 <!--
