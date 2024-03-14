@@ -436,6 +436,38 @@ fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提�
 - 需要支持快照、透明压缩、数据校验等高级功能
 
 在[「分区与文件系统」部分](filesystem.md)会对文件系统的选择进行介绍。
+本部分主要介绍与文件系统、挂载等有关的通用内容。
+
+### `/etc/fstab` {#fstab}
+
+`/etc/fstab` 是 Linux 系统中用于配置文件系统挂载的文件。
+在启动时，系统会根据 `/etc/fstab` 中的配置自动挂载文件系统。
+如果配置不当，那么开机时就可能会出现挂载失败，从而进入紧急模式的情况。
+
+下面给出一个在 QEMU 虚拟机中的 Linux 系统的 `/etc/fstab` 的例子：
+
+```fstab
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount-ro 0       1
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+sharing	/mnt/sharing	virtiofs	defaults,nofail	0	0
+```
+
+可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考[分区与文件系统](./filesystem.md)中对 `/dev/disk` 的介绍。`/dev/sda1` 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
+对特殊的文件系统，这里的内容由对应的实现决定，例如 `tmpfs` 的话，这里可能就是 `none` 或者 `tmpfs`；
+例子中的 `virtiofs` 是 QEMU 的虚拟文件系统，用于与宿主机共享文件，
+由于设置中的 `target` 是 `sharing`，因此这里的设备名是 `sharing`。
+
+后面则是挂载点、文件系统与挂载选项。挂载选项中大部分会提供给文件系统（例如这里的 `errors=remount-ro`），但是有一些是通用的设置。
+例如 `noauto` 选项表示启动时不挂载，`nofail` 表示即使挂载失败也不影响启动。
+一个在 [fstab(5)][fstab.5] 中没有提及的重要选项是 `_netdev`，它表示这个挂载点需要网络连接，
+systemd 会配置启动时在网络配置好之后才挂载。
+这个选项在挂载基于网络的存储时非常有用。
+
+"dump" 可以忽略（0 即可），而 "pass" 标记了文件系统检查（fsck）的顺序：0 不检查，根分区应该为 1，其他分区为 2。
+
+在修改配置后，如果系统使用了 systemd，应当使用 `systemctl daemon-reload` 来让 systemd 重新加载所有的 mount 单元。
+否则 `mount -a` 之后，systemd 可能会「好心」地帮你改回来。
 
 ## 补充阅读 {#supplement}
 
