@@ -546,8 +546,8 @@ node.conn[0].startup = manual
 可以使用命令修改相关配置（也可以直接修改配置文件）：
 
 ```console
-$ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.startup -v automatic
-$ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic
+iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.startup -v automatic
+iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic
 ```
 
 `open-iscsi.service` 在开机时会自动登录所有配置好的 target。
