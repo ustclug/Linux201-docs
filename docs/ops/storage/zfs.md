@@ -150,3 +150,142 @@ ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数�
 !!! note ""
 
     在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。
+
+## 调试 {#debugging}
+
+ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内部结构。
+在遇到无法解释的问题时，使用 `zdb` 可能可以帮助调试问题。
+
+需要注意的是：
+
+- `zdb` 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 `zdb` 可能会得到不一致的结果
+- `zdb` 的输出没有文档，因为其假设使用者了解 ZFS 的内部结构
+- `zdb` 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 `zdb` 读取 pool 和文件系统的结构内容
+
+以下提供了一个使用 `zdb` 调试出生产环境「未解之谜」的例子：
+
+??? example "案例：使用 `zdb` 帮助找出文件系统使用空间异常的原因"
+
+    一台使用 ZFS 的服务器将 `/var/log` 挂载在了 ZFS 文件系统中：
+
+    ```
+    NAME                                 USED  AVAIL  REFER  MOUNTPOINT
+    pool1/log                           2.88G   181G  2.88G  /var/log
+    ```
+
+    但是系统管理员发现 `/var/log` 的使用空间会异常增大，直到大部分空间都被占用：
+
+    ```
+    NAME                                 USED  AVAIL     REFER  MOUNTPOINT
+    pool1/log                            173G  3.43G      173G  /var/log
+    ```
+
+    但是实际的 log 大小只有不到 3G：
+
+    ```console
+    $ sudo du -sh .
+    2.9G  .
+    ```
+
+    同时没有快照，通过 `lsof` 检查也没有进程占用在 `/var/log` 下已经被删除的文件。
+    重启后文件系统的使用空间又恢复到了正常的大小。没有人能够解释原因。
+
+    在时隔半年又一次因此重启后，系统管理员决定使用 `zdb` 来查看文件系统的内部结构：
+
+    ```console
+    $ sudo zdb -dddd pool1/log > zdb-log.txt
+    ```
+
+    检查输出，发现一个特别大的文件：
+
+    ```
+    Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+      6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
+                                               168   bonus  System attributes
+	dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+	dnode maxblkid: 8554489
+	uid     0
+	gid     4
+	atime	Thu Aug 17 19:22:48 2023
+	mtime	Sun Feb 18 16:05:29 2024
+	ctime	Sun Feb 18 16:05:29 2024
+	crtime	Thu Aug 17 06:25:01 2023
+	gen	30893491
+	mode	100640
+	size	1121254014464
+	parent	7279
+	links	0
+	pflags	40800000004
+    ```
+
+    "6426" 这个对象也出现在了 ZFS delete queue 中：
+
+    ```
+    Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+         3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
+	dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+	dnode maxblkid: 0
+	microzap: 6144 bytes, 1 entries
+
+		191a = 6426 
+    ```
+
+    看起来是这个文件不停增大，但是 ZFS 没有删除。检查 6426 的 parent 7279：
+
+    ```
+    Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+      7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
+                                               168   bonus  System attributes
+	dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+	dnode maxblkid: 0
+	uid     0
+	gid     0
+	atime	Mon Jun 24 01:32:06 2019
+	mtime	Fri Mar  8 06:25:02 2024
+	ctime	Fri Mar  8 06:25:02 2024
+	crtime	Tue Feb 27 21:11:06 2018
+	gen	4369970
+	mode	40755
+	size	33
+	parent	4
+	links	2
+	pflags	40800000144
+	microzap: 2560 bytes, 31 entries
+
+		pacct.6.gz = 3908 (type: Regular File)
+		pacct.17.gz = 1994 (type: Regular File)
+		pacct.16.gz = 275 (type: Regular File)
+		pacct.7.gz = 3518 (type: Regular File)
+		pacct.5.gz = 473 (type: Regular File)
+		pacct.14.gz = 1554 (type: Regular File)
+		pacct.15.gz = 651 (type: Regular File)
+		pacct.4.gz = 109 (type: Regular File)
+		pacct.29.gz = 468 (type: Regular File)
+		pacct.11.gz = 1863 (type: Regular File)
+		pacct.10.gz = 2129 (type: Regular File)
+		pacct.1.gz = 1294 (type: Regular File)
+		pacct.28.gz = 3648 (type: Regular File)
+		pacct.3.gz = 1864 (type: Regular File)
+		pacct.12.gz = 3516 (type: Regular File)
+		pacct.13.gz = 2128 (type: Regular File)
+		pacct.2.gz = 2955 (type: Regular File)
+		pacct.22.gz = 649 (type: Regular File)
+		pacct.23.gz = 3649 (type: Regular File)
+		pacct.8.gz = 3400 (type: Regular File)
+		pacct.19.gz = 535 (type: Regular File)
+		pacct = 796 (type: Regular File)
+		pacct.21.gz = 534 (type: Regular File)
+		pacct.0 = 904 (type: Regular File)
+		pacct.20.gz = 3725 (type: Regular File)
+		pacct.18.gz = 3515 (type: Regular File)
+		pacct.9.gz = 1293 (type: Regular File)
+		pacct.24.gz = 3905 (type: Regular File)
+		pacct.25.gz = 903 (type: Regular File)
+		pacct.27.gz = 1552 (type: Regular File)
+		pacct.26.gz = 1176 (type: Regular File)
+    ```
+
+    发现该目录为 `/var/log/account`，调查后发现其中的文件在启用 process accounting 后会由内核写入。
+    因此解释了为什么 `lsof` 没有显示任何进程占用对应文件。在关闭 process accounting 后，delete queue 清空了。
+
+    该问题已经尝试向 ZFS 反馈：<https://github.com/openzfs/zfs/issues/15998>
