@@ -758,6 +758,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      调试
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1643,6 +1652,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    <span class="md-ellipsis">
+      调试
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1792,6 +1810,119 @@
 <div class="admonition note">
 <p>在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。</p>
 </div>
+<h2 id="debugging">调试<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
+<p>ZFS 提供了调试工具 <code>zdb</code>，可以用于查看 pool 和文件系统的内部结构。
+在遇到无法解释的问题时，使用 <code>zdb</code> 可能可以帮助调试问题。</p>
+<p>需要注意的是：</p>
+<ul>
+<li><code>zdb</code> 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 <code>zdb</code> 可能会得到不一致的结果</li>
+<li><code>zdb</code> 的输出没有文档，因为其假设使用者了解 ZFS 的内部结构</li>
+<li><code>zdb</code> 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 <code>zdb</code> 读取 pool 和文件系统的结构内容</li>
+</ul>
+<p>以下提供了一个使用 <code>zdb</code> 调试出生产环境「未解之谜」的例子：</p>
+<details class="example">
+<summary>案例：使用 <code>zdb</code> 帮助找出文件系统使用空间异常的原因</summary>
+<p>一台使用 ZFS 的服务器将 <code>/var/log</code> 挂载在了 ZFS 文件系统中：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>NAME                                 USED  AVAIL  REFER  MOUNTPOINT
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pool1/log                           2.88G   181G  2.88G  /var/log
+</code></pre></div>
+<p>但是系统管理员发现 <code>/var/log</code> 的使用空间会异常增大，直到大部分空间都被占用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>NAME                                 USED  AVAIL     REFER  MOUNTPOINT
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pool1/log                            173G  3.43G      173G  /var/log
+</code></pre></div>
+<p>但是实际的 log 大小只有不到 3G：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>du<span class="w"> </span>-sh<span class="w"> </span>.
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">2.9G  .</span>
+</code></pre></div>
+<p>同时没有快照，通过 <code>lsof</code> 检查也没有进程占用在 <code>/var/log</code> 下已经被删除的文件。
+重启后文件系统的使用空间又恢复到了正常的大小。没有人能够解释原因。</p>
+<p>在时隔半年又一次因此重启后，系统管理员决定使用 <code>zdb</code> 来查看文件系统的内部结构：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>zdb<span class="w"> </span>-dddd<span class="w"> </span>pool1/log<span class="w"> </span>&gt;<span class="w"> </span>zdb-log.txt
+</code></pre></div>
+<p>检查输出，发现一个特别大的文件：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>dnode maxblkid: 8554489
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>uid     0
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>gid     4
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>atime   Thu Aug 17 19:22:48 2023
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>mtime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>ctime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>crtime  Thu Aug 17 06:25:01 2023
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>gen 30893491
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>mode    100640
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>size    1121254014464
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>parent  7279
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>links   0
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>pflags  40800000004
+</code></pre></div>
+<p>"6426" 这个对象也出现在了 ZFS delete queue 中：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>     3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>dnode maxblkid: 0
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>microzap: 6144 bytes, 1 entries
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    191a = 6426 
+</code></pre></div>
+<p>看起来是这个文件不停增大，但是 ZFS 没有删除。检查 6426 的 parent 7279：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>dnode maxblkid: 0
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>uid     0
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>gid     0
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>atime   Mon Jun 24 01:32:06 2019
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>mtime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>ctime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>crtime  Tue Feb 27 21:11:06 2018
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>gen 4369970
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>mode    40755
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>size    33
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>parent  4
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>links   2
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>pflags  40800000144
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>microzap: 2560 bytes, 31 entries
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>    pacct.6.gz = 3908 (type: Regular File)
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>    pacct.17.gz = 1994 (type: Regular File)
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>    pacct.16.gz = 275 (type: Regular File)
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>    pacct.7.gz = 3518 (type: Regular File)
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    pacct.5.gz = 473 (type: Regular File)
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>    pacct.14.gz = 1554 (type: Regular File)
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>    pacct.15.gz = 651 (type: Regular File)
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>    pacct.4.gz = 109 (type: Regular File)
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>    pacct.29.gz = 468 (type: Regular File)
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>    pacct.11.gz = 1863 (type: Regular File)
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>    pacct.10.gz = 2129 (type: Regular File)
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>    pacct.1.gz = 1294 (type: Regular File)
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>    pacct.28.gz = 3648 (type: Regular File)
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>    pacct.3.gz = 1864 (type: Regular File)
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>    pacct.12.gz = 3516 (type: Regular File)
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>    pacct.13.gz = 2128 (type: Regular File)
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>    pacct.2.gz = 2955 (type: Regular File)
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>    pacct.22.gz = 649 (type: Regular File)
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>    pacct.23.gz = 3649 (type: Regular File)
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>    pacct.8.gz = 3400 (type: Regular File)
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a>    pacct.19.gz = 535 (type: Regular File)
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a>    pacct = 796 (type: Regular File)
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>    pacct.21.gz = 534 (type: Regular File)
+<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a>    pacct.0 = 904 (type: Regular File)
+<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a>    pacct.20.gz = 3725 (type: Regular File)
+<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a>    pacct.18.gz = 3515 (type: Regular File)
+<a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a>    pacct.9.gz = 1293 (type: Regular File)
+<a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a>    pacct.24.gz = 3905 (type: Regular File)
+<a id="__codelineno-10-48" name="__codelineno-10-48" href="#__codelineno-10-48"></a>    pacct.25.gz = 903 (type: Regular File)
+<a id="__codelineno-10-49" name="__codelineno-10-49" href="#__codelineno-10-49"></a>    pacct.27.gz = 1552 (type: Regular File)
+<a id="__codelineno-10-50" name="__codelineno-10-50" href="#__codelineno-10-50"></a>    pacct.26.gz = 1176 (type: Regular File)
+</code></pre></div>
+<p>发现该目录为 <code>/var/log/account</code>，调查后发现其中的文件在启用 process accounting 后会由内核写入。
+因此解释了为什么 <code>lsof</code> 没有显示任何进程占用对应文件。在关闭 process accounting 后，delete queue 清空了。</p>
+<p>该问题已经尝试向 ZFS 反馈：<a href="https://github.com/openzfs/zfs/issues/15998">https://github.com/openzfs/zfs/issues/15998</a></p>
+</details>
 <!--
   Links to man pages
 
