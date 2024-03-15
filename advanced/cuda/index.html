@@ -1329,15 +1329,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#cuda_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      CUDA 编程模型
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1644,15 +1635,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#cuda_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      CUDA 编程模型
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1673,7 +1655,7 @@
 
 <h1 id="cuda">CUDA 环境简介<a class="headerlink" href="#cuda" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">本文仍在编辑中</p>
+<p class="admonition-title">本文初稿（也许）已完成，但可能仍需大幅度修改</p>
 </div>
 <p>CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发套件，它允许软件开发人员使用 NVIDIA 的 GPU（图形处理单元）进行通用计算。</p>
 <p>包含的组件有：</p>
@@ -1726,19 +1708,25 @@
 <p>表中的<code>Compute Capability</code>代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。</p>
 <h3 id="cuda_2">安装 CUDA<a class="headerlink" href="#cuda_2" title="Permanent link">&para;</a></h3>
 <p>虽然在不同的操作系统下，CUDA 的多种不同的安装方式，但总的来说，在 Linux 下，CUDA 的安装方式大致分为：</p>
+<ol>
+<li>
+<p>使用操作系统本身的仓库和包管理系统进行安装 （推荐）</p>
 <ul>
+<li>部分 linux 发行版不支持使用这种方式安装 cuda</li>
+</ul>
+</li>
+<li>
+<p>从官网下载安装包，并用包管理系统进行安装</p>
+</li>
 <li>
 <p>使用官方 runfile 一键安装</p>
-</li>
-<li>
-<p>从官网下载本地仓库的安装包，并用包管理系统进行安装</p>
-</li>
-<li>
-<p>直接使用操作系统本身的仓库和包管理系统进行安装</p>
-</li>
+<ul>
+<li>使用官方 runfile 一键安装的方式较为方便，但是在安装过程中会覆盖系统中的某些文件，<strong>可能会破坏系统</strong>。另外 runfile 安装管理麻烦，不能像包管理器在安装软件时会自动处理依赖关系，需要用户手动处理依赖问题。</li>
 </ul>
-<p>对于前两种方式，可以在官网下载页面<a href="https://developer.nvidia.com/CUDA-downloads">https://developer.nvidia.com/CUDA-downloads</a>选择合适的操作系统，网页将给出对应操作系统的安装指令。</p>
-<p>如果你的主机处于内网环境，例如某些企业中，或和 Nvidia 服务器的连接较慢，可以直接使用操作系统自带的软件仓库进行安装。这里以常用的 Ubuntu 为例：</p>
+</li>
+</ol>
+<p>对于后两种方式，可以在官网下载页面<a href="https://developer.nvidia.com/CUDA-downloads">https://developer.nvidia.com/CUDA-downloads</a>选择合适的操作系统，网页将给出对应操作系统的安装指令。</p>
+<p>对于第一种安装方式，这里以常用的 Ubuntu 为例：</p>
 <h4 id="_2">安装预编译的内核模块<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-modules-nvidia-<span class="si">${</span><span class="nv">DRIVER_BRANCH</span><span class="si">}${</span><span class="nv">SERVER</span><span class="si">}</span>-<span class="si">${</span><span class="nv">LINUX_FLAVOUR</span><span class="si">}</span>
 </code></pre></div>
@@ -1774,7 +1762,6 @@
 <p>在<code>~/.bashrc</code>等文件中添加这一行</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="si">}}</span>
 </code></pre></div>
-<h2 id="cuda_3">CUDA 编程模型<a class="headerlink" href="#cuda_3" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
