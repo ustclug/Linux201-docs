@@ -44,7 +44,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 虽然在不同的操作系统下，CUDA 的多种不同的安装方式，但总的来说，在 Linux 下，CUDA 的安装方式大致分为：
 
-1. 使用操作系统本身的仓库和包管理系统进行安装 （推荐）
+1. 使用操作系统本身的仓库和包管理系统进行安装（推荐）
 
      - 部分 linux 发行版不支持使用这种方式安装 cuda
 
