@@ -152,7 +152,7 @@ echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
 
 如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 `zfs_arc_min` 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。
 
-在 Linux 下，受限于 kernel 的设计(1)，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
+在 Linux 下，受限于 kernel 的设计 (1)，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
 {: .annotate }
 
 1. 在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。
