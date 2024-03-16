@@ -137,21 +137,35 @@ ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数
 - **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
 - **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
 
-最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为一级缓存的最大值。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：
-
-```shell
-echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
-```
+最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。
 
 ### 关于 ARC
 
 ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
 
-在 Linux 下，受限于 kernel 的设计，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
+由于 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。ZFS ARC 允许使用的最大内存量可以通过 `zfs_arc_max` 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：
 
-!!! note ""
+```shell
+# Set ARC memory limit to 4 GiB
+echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
+```
 
-    在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。
+如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 `zfs_arc_min` 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。
+
+在 Linux 下，受限于 kernel 的设计(1)，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
+{: .annotate }
+
+1. 在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。
+
+!!! tip "强制释放 ARC"
+
+    与 cached 内存一样，在 `echo 3 > /proc/sys/vm/drop_caches` 时，ZFS ARC 会一同释放。注意这会短暂地增加磁盘的读取压力。
+
+ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 `/proc/spl/kstat/zfs/arcstats` 查看，并且 ZFS 也提供了 `arc_summary` 命令将该接口的数据以更易读的方式输出。由于 `arc_summary` 输出量较大，建议使用 less 等分页工具查看。例如：
+
+```shell
+arc_summary | less
+```
 
 ## 调试 {#debugging}
 
@@ -160,9 +174,9 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 需要注意的是：
 
-- `zdb` 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 `zdb` 可能会得到不一致的结果
-- `zdb` 的输出没有文档，因为其假设使用者了解 ZFS 的内部结构
-- `zdb` 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 `zdb` 读取 pool 和文件系统的结构内容
+- `zdb` 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 `zdb` 可能会得到不一致的结果；
+- `zdb` 的输出格式没有文档说明，因为其假设使用者了解 ZFS 的内部结构；
+- `zdb` 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 `zdb` 读取 pool 和文件系统的结构内容。
 
 以下提供了一个使用 `zdb` 调试出生产环境「未解之谜」的例子：
 
@@ -170,14 +184,14 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
     一台使用 ZFS 的服务器将 `/var/log` 挂载在了 ZFS 文件系统中：
 
-    ```
+    ```text
     NAME                                 USED  AVAIL  REFER  MOUNTPOINT
     pool1/log                           2.88G   181G  2.88G  /var/log
     ```
 
     但是系统管理员发现 `/var/log` 的使用空间会异常增大，直到大部分空间都被占用：
 
-    ```
+    ```text
     NAME                                 USED  AVAIL     REFER  MOUNTPOINT
     pool1/log                            173G  3.43G      173G  /var/log
     ```
