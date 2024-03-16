@@ -1806,123 +1806,133 @@
 <li><strong>import 时生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 <code>zpool export</code> 再 <code>zpool import</code>。</li>
 <li><strong>立即生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。</li>
 </ul>
-<p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为一级缓存的最大值。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
-</code></pre></div>
+<p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。</p>
 <h3 id="arc">关于 ARC<a class="headerlink" href="#arc" title="Permanent link">&para;</a></h3>
 <p>ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
-<p>在 Linux 下，受限于 kernel 的设计，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。</p>
-<div class="admonition note">
-<p>在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。</p>
+<p>由于 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
+</code></pre></div>
+<p>如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 <code>zfs_arc_min</code> 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。</p>
+<p class="annotate">在 Linux 下，受限于 kernel 的设计(1)，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。</p>
+<ol>
+<li>在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">强制释放 ARC</p>
+<p>与 cached 内存一样，在 <code>echo 3 &gt; /proc/sys/vm/drop_caches</code> 时，ZFS ARC 会一同释放。注意这会短暂地增加磁盘的读取压力。</p>
 </div>
+<p>ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 <code>/proc/spl/kstat/zfs/arcstats</code> 查看，并且 ZFS 也提供了 <code>arc_summary</code> 命令将该接口的数据以更易读的方式输出。由于 <code>arc_summary</code> 输出量较大，建议使用 less 等分页工具查看。例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
+</code></pre></div>
 <h2 id="debugging">调试<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
 <p>ZFS 提供了调试工具 <code>zdb</code>，可以用于查看 pool 和文件系统的内部结构。
 在遇到无法解释的问题时，使用 <code>zdb</code> 可能可以帮助调试问题。</p>
 <p>需要注意的是：</p>
 <ul>
-<li><code>zdb</code> 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 <code>zdb</code> 可能会得到不一致的结果</li>
-<li><code>zdb</code> 的输出没有文档，因为其假设使用者了解 ZFS 的内部结构</li>
-<li><code>zdb</code> 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 <code>zdb</code> 读取 pool 和文件系统的结构内容</li>
+<li><code>zdb</code> 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 <code>zdb</code> 可能会得到不一致的结果；</li>
+<li><code>zdb</code> 的输出格式没有文档说明，因为其假设使用者了解 ZFS 的内部结构；</li>
+<li><code>zdb</code> 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 <code>zdb</code> 读取 pool 和文件系统的结构内容。</li>
 </ul>
 <p>以下提供了一个使用 <code>zdb</code> 调试出生产环境「未解之谜」的例子：</p>
 <details class="example">
 <summary>案例：使用 <code>zdb</code> 帮助找出文件系统使用空间异常的原因</summary>
 <p>一台使用 ZFS 的服务器将 <code>/var/log</code> 挂载在了 ZFS 文件系统中：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>NAME                                 USED  AVAIL  REFER  MOUNTPOINT
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pool1/log                           2.88G   181G  2.88G  /var/log
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>NAME                                 USED  AVAIL  REFER  MOUNTPOINT
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pool1/log                           2.88G   181G  2.88G  /var/log
 </code></pre></div>
 <p>但是系统管理员发现 <code>/var/log</code> 的使用空间会异常增大，直到大部分空间都被占用：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>NAME                                 USED  AVAIL     REFER  MOUNTPOINT
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pool1/log                            173G  3.43G      173G  /var/log
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>NAME                                 USED  AVAIL     REFER  MOUNTPOINT
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>pool1/log                            173G  3.43G      173G  /var/log
 </code></pre></div>
 <p>但是实际的 log 大小只有不到 3G：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>du<span class="w"> </span>-sh<span class="w"> </span>.
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">2.9G  .</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>du<span class="w"> </span>-sh<span class="w"> </span>.
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">2.9G  .</span>
 </code></pre></div>
 <p>同时没有快照，通过 <code>lsof</code> 检查也没有进程占用在 <code>/var/log</code> 下已经被删除的文件。
 重启后文件系统的使用空间又恢复到了正常的大小。没有人能够解释原因。</p>
 <p>在时隔半年又一次因此重启后，系统管理员决定使用 <code>zdb</code> 来查看文件系统的内部结构：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>zdb<span class="w"> </span>-dddd<span class="w"> </span>pool1/log<span class="w"> </span>&gt;<span class="w"> </span>zdb-log.txt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>zdb<span class="w"> </span>-dddd<span class="w"> </span>pool1/log<span class="w"> </span>&gt;<span class="w"> </span>zdb-log.txt
 </code></pre></div>
 <p>检查输出，发现一个特别大的文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>                                           168   bonus  System attributes
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>dnode maxblkid: 8554489
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>uid     0
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>gid     4
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>atime   Thu Aug 17 19:22:48 2023
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>mtime   Sun Feb 18 16:05:29 2024
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>ctime   Sun Feb 18 16:05:29 2024
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>crtime  Thu Aug 17 06:25:01 2023
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>gen 30893491
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>mode    100640
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>size    1121254014464
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>parent  7279
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>links   0
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>pflags  40800000004
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>dnode maxblkid: 8554489
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>uid     0
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>gid     4
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>atime   Thu Aug 17 19:22:48 2023
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>mtime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>ctime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>crtime  Thu Aug 17 06:25:01 2023
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>gen 30893491
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>mode    100640
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>size    1121254014464
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>parent  7279
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>links   0
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>pflags  40800000004
 </code></pre></div>
 <p>"6426" 这个对象也出现在了 ZFS delete queue 中：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>     3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>dnode maxblkid: 0
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>microzap: 6144 bytes, 1 entries
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    191a = 6426 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>     3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>dnode maxblkid: 0
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>microzap: 6144 bytes, 1 entries
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    191a = 6426 
 </code></pre></div>
 <p>看起来是这个文件不停增大，但是 ZFS 没有删除。检查 6426 的 parent 7279：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>                                           168   bonus  System attributes
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>dnode maxblkid: 0
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>uid     0
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>gid     0
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>atime   Mon Jun 24 01:32:06 2019
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>mtime   Fri Mar  8 06:25:02 2024
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>ctime   Fri Mar  8 06:25:02 2024
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>crtime  Tue Feb 27 21:11:06 2018
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>gen 4369970
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>mode    40755
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>size    33
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>parent  4
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>links   2
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>pflags  40800000144
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>microzap: 2560 bytes, 31 entries
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>    pacct.6.gz = 3908 (type: Regular File)
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>    pacct.17.gz = 1994 (type: Regular File)
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>    pacct.16.gz = 275 (type: Regular File)
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>    pacct.7.gz = 3518 (type: Regular File)
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    pacct.5.gz = 473 (type: Regular File)
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>    pacct.14.gz = 1554 (type: Regular File)
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>    pacct.15.gz = 651 (type: Regular File)
-<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>    pacct.4.gz = 109 (type: Regular File)
-<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>    pacct.29.gz = 468 (type: Regular File)
-<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>    pacct.11.gz = 1863 (type: Regular File)
-<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>    pacct.10.gz = 2129 (type: Regular File)
-<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>    pacct.1.gz = 1294 (type: Regular File)
-<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>    pacct.28.gz = 3648 (type: Regular File)
-<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>    pacct.3.gz = 1864 (type: Regular File)
-<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>    pacct.12.gz = 3516 (type: Regular File)
-<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a>    pacct.13.gz = 2128 (type: Regular File)
-<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a>    pacct.2.gz = 2955 (type: Regular File)
-<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a>    pacct.22.gz = 649 (type: Regular File)
-<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a>    pacct.23.gz = 3649 (type: Regular File)
-<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>    pacct.8.gz = 3400 (type: Regular File)
-<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a>    pacct.19.gz = 535 (type: Regular File)
-<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a>    pacct = 796 (type: Regular File)
-<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>    pacct.21.gz = 534 (type: Regular File)
-<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a>    pacct.0 = 904 (type: Regular File)
-<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a>    pacct.20.gz = 3725 (type: Regular File)
-<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a>    pacct.18.gz = 3515 (type: Regular File)
-<a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a>    pacct.9.gz = 1293 (type: Regular File)
-<a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a>    pacct.24.gz = 3905 (type: Regular File)
-<a id="__codelineno-10-48" name="__codelineno-10-48" href="#__codelineno-10-48"></a>    pacct.25.gz = 903 (type: Regular File)
-<a id="__codelineno-10-49" name="__codelineno-10-49" href="#__codelineno-10-49"></a>    pacct.27.gz = 1552 (type: Regular File)
-<a id="__codelineno-10-50" name="__codelineno-10-50" href="#__codelineno-10-50"></a>    pacct.26.gz = 1176 (type: Regular File)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>dnode maxblkid: 0
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>uid     0
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>gid     0
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>atime   Mon Jun 24 01:32:06 2019
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>mtime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>ctime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>crtime  Tue Feb 27 21:11:06 2018
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>gen 4369970
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>mode    40755
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>size    33
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>parent  4
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>links   2
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>pflags  40800000144
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>microzap: 2560 bytes, 31 entries
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>    pacct.6.gz = 3908 (type: Regular File)
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>    pacct.17.gz = 1994 (type: Regular File)
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>    pacct.16.gz = 275 (type: Regular File)
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>    pacct.7.gz = 3518 (type: Regular File)
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>    pacct.5.gz = 473 (type: Regular File)
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>    pacct.14.gz = 1554 (type: Regular File)
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>    pacct.15.gz = 651 (type: Regular File)
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>    pacct.4.gz = 109 (type: Regular File)
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>    pacct.29.gz = 468 (type: Regular File)
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>    pacct.11.gz = 1863 (type: Regular File)
+<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>    pacct.10.gz = 2129 (type: Regular File)
+<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>    pacct.1.gz = 1294 (type: Regular File)
+<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>    pacct.28.gz = 3648 (type: Regular File)
+<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>    pacct.3.gz = 1864 (type: Regular File)
+<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>    pacct.12.gz = 3516 (type: Regular File)
+<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a>    pacct.13.gz = 2128 (type: Regular File)
+<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a>    pacct.2.gz = 2955 (type: Regular File)
+<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a>    pacct.22.gz = 649 (type: Regular File)
+<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a>    pacct.23.gz = 3649 (type: Regular File)
+<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>    pacct.8.gz = 3400 (type: Regular File)
+<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a>    pacct.19.gz = 535 (type: Regular File)
+<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a>    pacct = 796 (type: Regular File)
+<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a>    pacct.21.gz = 534 (type: Regular File)
+<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a>    pacct.0 = 904 (type: Regular File)
+<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a>    pacct.20.gz = 3725 (type: Regular File)
+<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a>    pacct.18.gz = 3515 (type: Regular File)
+<a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a>    pacct.9.gz = 1293 (type: Regular File)
+<a id="__codelineno-11-47" name="__codelineno-11-47" href="#__codelineno-11-47"></a>    pacct.24.gz = 3905 (type: Regular File)
+<a id="__codelineno-11-48" name="__codelineno-11-48" href="#__codelineno-11-48"></a>    pacct.25.gz = 903 (type: Regular File)
+<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a>    pacct.27.gz = 1552 (type: Regular File)
+<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a>    pacct.26.gz = 1176 (type: Regular File)
 </code></pre></div>
 <p>发现该目录为 <code>/var/log/account</code>，调查后发现其中的文件在启用 process accounting 后会由内核写入。
 因此解释了为什么 <code>lsof</code> 没有显示任何进程占用对应文件。在关闭 process accounting 后，delete queue 清空了。</p>
