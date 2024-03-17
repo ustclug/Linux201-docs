@@ -64,10 +64,73 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 - `fd` 目录包含了所有程序打开的文件描述符
 - `stack`：程序在内核态的栈信息，这一项信息在程序一直处于 D 状态（不可中断睡眠）时特别有用
 
-在分析进程行为时，另一个相当有用的工具是 `strace`。它可以输出程序使用的所有系统调用信息，在调试许多问题的时候都可以提供很大的帮助。
+在分析进程行为时，另一个相当有用的工具是 `strace`。它可以输出程序使用的所有系统调用信息，在调试许多问题的时候都可以提供很大的帮助。一些常用的命令有：
+
+- `strace ls`：跟踪 `ls` 的系统调用
+- `strace -f bash`：跟踪 `bash` 及其 fork 出的子进程的系统调用
+- `strace -p <pid>`：跟踪指定 PID 的进程的系统调用
+- `strace -e openat ls`：只跟踪 `openat` 系统调用
+- `strace -ff -o /tmp/test.log bash`：将 `bash` 及其 fork 出的子进程的系统调用输出到 `/tmp/test.log.*`
+
+!!! example "案例：CentOS 7 容器使用 `yum` 安装软件的 bug"
+
+    在某些配置下，可以注意到 `centos:7` 容器中使用 `yum` 安装软件时会卡住：
+
+    ```console
+    $ sudo docker run -it --rm centos:7 bash
+    [root@16c7cc5f835d /]# yum update
+    （略）
+      Updating   : tzdata-2024a-1.el7.noarch                                                                                      1/102 
+      Updating   : bash-4.2.46-35.el7_9.x86_64                                                                                    2/102 
+      Updating   : glibc-common-2.17-326.el7_9.x86_64                                                                             3/102 
+      Updating   : nss-softokn-freebl-3.90.0-6.el7_9.x86_64                                                                       4/102 
+      Updating   : glibc-2.17-326.el7_9.x86_64                                                                                    5/102
+    ```
+
+    此时发现 `/usr/bin/python /usr/bin/yum update` CPU 占用 100%。使用 `strace` 跟踪 `yum` 的系统调用：
+
+    ```console
+    $ sudo strace -f -p 3163763
+    fcntl(441032195, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032196, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032197, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032198, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032199, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032200, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032201, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032202, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032203, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032204, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032205, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032206, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032207, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032208, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032209, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032210, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032211, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032212, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032213, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032214, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032215, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032216, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032217, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032218, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032219, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    fcntl(441032220, F_GETFD)               = -1 EBADF (Bad file descriptor)
+    ...
+    ```
+
+    可以发现其在遍历所有可能的文件描述符，但是在该容器环境中，这个范围过大，导致了 `yum` 卡住。
+    搜索后可以发现这是个已知的 bug：如果容器没有限制文件描述符的范围，那么默认值就特别大：
+
+    ```console
+    [root@16c7cc5f835d /]# ulimit -n
+    1073741816
+    ```
+
+    而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
+    不仅是 `yum`，诸如 `xinetd` 等也有类似的问题（[ref](https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4)）。
 
 ## 调试符号与 gdb
 
 ## 内核态调试
-
-## 信息收集与寻求帮助
