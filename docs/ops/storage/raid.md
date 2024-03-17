@@ -1263,9 +1263,10 @@ sudo mdadm --build --assume-clean -c 128 --level=0 --raid-devices=8 --size=19536
 
 在此次实际的事件中，最终成功挂载了文件系统。对文件检查后发现有部分文件损坏，但是这些文件都不重要，最终成功恢复了所有重要数据。
 
-## 补充阅读
+## 补充阅读 {#supplement}
 
 - [MegaCli wrapper for LSI MegaRAID for Debian/Ubuntu/RHEL/CentOS](https://gist.github.com/demofly/53b26d7a3f12b3008716)：一个服务器运维的 MegaCLI 脚本，其中包含了一些可供参考的操作与推荐设置
+- [Linux Raid Wiki](https://raid.wiki.kernel.org/)：Linux-raid 邮件列表的社区成员维护的 wiki，包含了大量有用的信息
 
 [^mdadm-ddf]: mdadm 工具可能支持 DDF，但是在我们自行数据恢复的过程中没有成功操作，可能是硬件厂商的 DDF 格式与 mdadm 实现不符。
 [^dmsetup-cow]: 通过使用 dmsetup 可以实现类似于 CoW 的操作：在只读的 image 上添加一层 CoW 的 overlay，相关脚本可以参考 <https://gist.github.com/coderjo/c8de3ecc31f1d6450254b5e97ea2c595>。
