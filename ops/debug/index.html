@@ -898,15 +898,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      信息收集与寻求帮助
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1570,15 +1561,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
-    <span class="md-ellipsis">
-      信息收集与寻求帮助
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1651,10 +1633,66 @@
 <li><code>fd</code> 目录包含了所有程序打开的文件描述符</li>
 <li><code>stack</code>：程序在内核态的栈信息，这一项信息在程序一直处于 D 状态（不可中断睡眠）时特别有用</li>
 </ul>
-<p>在分析进程行为时，另一个相当有用的工具是 <code>strace</code>。它可以输出程序使用的所有系统调用信息，在调试许多问题的时候都可以提供很大的帮助。</p>
+<p>在分析进程行为时，另一个相当有用的工具是 <code>strace</code>。它可以输出程序使用的所有系统调用信息，在调试许多问题的时候都可以提供很大的帮助。一些常用的命令有：</p>
+<ul>
+<li><code>strace ls</code>：跟踪 <code>ls</code> 的系统调用</li>
+<li><code>strace -f bash</code>：跟踪 <code>bash</code> 及其 fork 出的子进程的系统调用</li>
+<li><code>strace -p &lt;pid&gt;</code>：跟踪指定 PID 的进程的系统调用</li>
+<li><code>strace -e openat ls</code>：只跟踪 <code>openat</code> 系统调用</li>
+<li><code>strace -ff -o /tmp/test.log bash</code>：将 <code>bash</code> 及其 fork 出的子进程的系统调用输出到 <code>/tmp/test.log.*</code></li>
+</ul>
+<div class="admonition example">
+<p class="admonition-title">案例：CentOS 7 容器使用 <code>yum</code> 安装软件的 bug</p>
+<p>在某些配置下，可以注意到 <code>centos:7</code> 容器中使用 <code>yum</code> 安装软件时会卡住：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>centos:7<span class="w"> </span>bash
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="gp">[root@16c7cc5f835d /]# </span>yum<span class="w"> </span>update
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">（略）</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">  Updating   : tzdata-2024a-1.el7.noarch                                                                                      1/102 </span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">  Updating   : bash-4.2.46-35.el7_9.x86_64                                                                                    2/102 </span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">  Updating   : glibc-common-2.17-326.el7_9.x86_64                                                                             3/102 </span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="go">  Updating   : nss-softokn-freebl-3.90.0-6.el7_9.x86_64                                                                       4/102 </span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="go">  Updating   : glibc-2.17-326.el7_9.x86_64                                                                                    5/102</span>
+</code></pre></div>
+<p>此时发现 <code>/usr/bin/python /usr/bin/yum update</code> CPU 占用 100%。使用 <code>strace</code> 跟踪 <code>yum</code> 的系统调用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>strace<span class="w"> </span>-f<span class="w"> </span>-p<span class="w"> </span><span class="m">3163763</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">fcntl(441032195, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">fcntl(441032196, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">fcntl(441032197, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">fcntl(441032198, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">fcntl(441032199, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">fcntl(441032200, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">fcntl(441032201, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">fcntl(441032202, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">fcntl(441032203, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">fcntl(441032204, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">fcntl(441032205, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">fcntl(441032206, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">fcntl(441032207, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">fcntl(441032208, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">fcntl(441032209, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="go">fcntl(441032210, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="go">fcntl(441032211, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="go">fcntl(441032212, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="go">fcntl(441032213, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">fcntl(441032214, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="go">fcntl(441032215, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">fcntl(441032216, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="go">fcntl(441032217, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">fcntl(441032218, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">fcntl(441032219, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="go">fcntl(441032220, F_GETFD)               = -1 EBADF (Bad file descriptor)</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="go">...</span>
+</code></pre></div>
+<p>可以发现其在遍历所有可能的文件描述符，但是在该容器环境中，这个范围过大，导致了 <code>yum</code> 卡住。
+搜索后可以发现这是个已知的 bug：如果容器没有限制文件描述符的范围，那么默认值就特别大：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">[root@16c7cc5f835d /]# </span><span class="nb">ulimit</span><span class="w"> </span>-n
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">1073741816</span>
+</code></pre></div>
+<p>而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
+不仅是 <code>yum</code>，诸如 <code>xinetd</code> 等也有类似的问题（<a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4">ref</a>）。</p>
+</div>
 <h2 id="gdb">调试符号与 gdb<a class="headerlink" href="#gdb" title="Permanent link">&para;</a></h2>
 <h2 id="_2">内核态调试<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<h2 id="_3">信息收集与寻求帮助<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
