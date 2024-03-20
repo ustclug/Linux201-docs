@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.13">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.14">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7e359304.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.10ba22f1.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -574,6 +574,15 @@
       目录
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      术语
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#disks" class="md-nav__link">
@@ -1625,6 +1634,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      术语
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#disks" class="md-nav__link">
     <span class="md-ellipsis">
       磁盘
@@ -1790,6 +1808,22 @@
 <li>…………</li>
 </ul>
 <p>本部分会对运维需要了解的基础知识进行介绍。</p>
+<h2 id="glossary">术语<a class="headerlink" href="#glossary" title="Permanent link">&para;</a></h2>
+<ul>
+<li>所有的数据最终都存在一块或多块物理<strong>磁盘</strong>上。在数十年前，软盘和光盘等也是常见的存储介质，但是现在已经很少见了。
+    磁盘向操作系统提供了块设备的抽象，块设备是一种具有固定大小，可以以“扇区”为单位进行随机读写的设备。</li>
+<li>现代的磁盘支持<strong>分区</strong>，通过在磁盘上划分出互不重叠的区域，可以将磁盘的容量划分为多个小块，用于不同的用途。</li>
+<li><strong>文件系统</strong>是一种用于磁盘上的<em>数据结构</em>，它提供了文件和目录的概念，以及对文件的读写、删除等操作。
+    一个分区上只能有一个文件系统，但一个文件系统可以跨越多个分区。</li>
+<li>
+<p><strong>卷</strong>泛指一个文件系统及其底层的存储区域，它可以是一个分区，也可以是多个分区的组合。
+    例如，<a href="../lvm/">LVM</a> 等<strong>逻辑卷</strong>管理方案将磁盘分区再次组合起来，成为一个额外的抽象层次。
+    为了与逻辑卷区分，有时候也会将直接存在于一个磁盘分区上的文件系统称为<strong>物理卷</strong>。
+    这两种概念在使用上没有区别，仅在探讨计算机存储方案时方便指代。</p>
+<p>特别地，对于一些不支持分区的古董设备（软盘），卷也可以指整个设备和其中的文件系统。</p>
+<p>Windows 会将所有的文件系统都称作“卷”。</p>
+</li>
+</ul>
 <h2 id="disks">磁盘<a class="headerlink" href="#disks" title="Permanent link">&para;</a></h2>
 <h3 id="disk-type">磁盘类型简介<a class="headerlink" href="#disk-type" title="Permanent link">&para;</a></h3>
 <p>在服务器上最常见的为机械硬盘（HDD）和固态硬盘（SSD）。机械硬盘使用磁盘片和机械臂进行数据读写，固态硬盘使用闪存芯片进行数据读写。
@@ -2001,12 +2035,12 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <p class="admonition-title">思考题</p>
 <ol>
 <li>为什么 RAID 5 和 RAID 6 的重建期间性能会很差？</li>
-<li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？</li>
-<li>为什么说 RAID 5/6 有很高的写惩罚（Write Penalty）？</li>
+<li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？为什么 RAID 50 没人用？</li>
+<li>为什么说 RAID 5/6 有很高的写惩罚（Write penalty）？</li>
 <li>
 <p>在<a href="https://v2ex.com/t/1018680">该帖子</a>中，发帖人说自己组了 <strong>14TB * 12</strong> 的 <strong>RAID 5</strong>。
-假设这 12 块盘是机械硬盘，不可恢复读错误率为 10^14，如果仅考虑 URE，那么当损坏了一块盘重建时，重建成功的概率是多少？
-如果不可恢复读错误率为 10^15 呢？</p>
+    假设这 12 块盘是机械硬盘，不可恢复读错误率为 10^14，如果仅考虑 URE，那么当损坏了一块盘重建时，重建成功的概率是多少？
+    如果不可恢复读错误率为 10^15 呢？</p>
 <p>提示：假设为二项分布，前者结果接近于 0（几乎不可能成功），后者结果接近于 0.25（凶多吉少）。</p>
 </li>
 </ol>
@@ -2362,7 +2396,7 @@ systemd 会配置启动时在网络配置好之后才挂载。
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.c8d2eff1.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.bd41221c.min.js"></script>
       
     
   </body>
