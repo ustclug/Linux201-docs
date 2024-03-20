@@ -188,7 +188,7 @@ RAID 10, 50, 60
 
     RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。
 
-    [![磁盘阵列不是备份](../../images/raid-is-not-backup.png)](https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf)
+    [![磁盘阵列不是备份](../../images/raid-is-not-backup.jpg)](https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf)
 
     *图片来自[金枪鱼之夜：实验物理垃圾佬之乐——PB 级磁盘阵列演进](https://tuna.moe/event/2023/disk-array/)*
 
