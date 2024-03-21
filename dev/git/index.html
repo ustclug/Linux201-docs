@@ -1889,7 +1889,11 @@
 </div>
 <h2 id="git">Git 使用技巧<a class="headerlink" href="#git" title="Permanent link">&para;</a></h2>
 <h3 id="git-config">本地配置<a class="headerlink" href="#git-config" title="Permanent link">&para;</a></h3>
-<p>Git 的配置文件一般存放于 <code>~/.gitconfig</code> 或 <code>~/.config/git/config</code> 中。</p>
+<div class="admonition note">
+<p class="admonition-title">配置文件</p>
+<p>Git 的配置文件一般存放于 <code>~/.gitconfig</code> 或 <code>~/.config/git/config</code> 中, 你可以直接将下面的内容拷贝到你的配置文件中。</p>
+<p>下文中会讲解部分配置文件的作用及注意事项。</p>
+</div>
 <h4 id="git-alias">常用别名<a class="headerlink" href="#git-alias" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[alias]</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="na">aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!git config --get-regexp alias | sed -re &#39;s/alias\\.(\\S*)\\s(.*)$/\\1 = \\2/g&#39;</span>
@@ -1921,6 +1925,11 @@
 </code></pre></div>
 <h3 id="git-gitignore">gitignore<a class="headerlink" href="#git-gitignore" title="Permanent link">&para;</a></h3>
 <p>GitHub 在<a href="https://github.com/github/gitignore">这里</a> 提供了一些常见的 <code>.gitignore</code> 文件，对于较为复杂的项目，也可以使用<a href="https://www.gitignore.io/">gitignore.io</a> 生成。</p>
+<div class="admonition warning">
+<p class="admonition-title"><code>.env</code> 文件与 <code>.gitignore</code></p>
+<p>有些项目在开发的途中，可能引入<code>.env</code>用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到<code>.gitignore</code>中。</p>
+<p>但是请注意，当<code>git reset</code>到一个<code>.gitignore</code>中尚不包含<code>.env</code>的 commit 时，（回退时）<code>.env</code>会被忽略，但再次提交时并不会。此时需手动将<code>.env</code> 移除版本控制，例如 <code>mv ./.env ../.env.bk</code> 以防止<code>.env</code>被提交。</p>
+</div>
 <h4 id="git-global-gitignore">Global gitignore<a class="headerlink" href="#git-global-gitignore" title="Permanent link">&para;</a></h4>
 <p>对于一些常见的文件类型，可以在全局配置文件中指定：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[core]</span>
@@ -1959,11 +1968,15 @@
 </ul>
 <p>值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的<a href="https://github.com/ustclug/Linux201-docs">仓库</a>是一个文档类的项目，一般情况下可以直接省略掉<code>type</code>.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Commit Message 模板</p>
 <p>即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 <a href="https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file">这里的例子</a> 添加到 <code>~/.gitmessage</code>：</p>
+<p>添加后不要忘记在首行添加空行，这样 <code>git commit</code> 时无需新建一行。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># ~/.gitconfig</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">[commit]</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="na">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitmessage</span>
 </code></pre></div>
+</div>
 <h2 id="github">GitHub 使用技巧<a class="headerlink" href="#github" title="Permanent link">&para;</a></h2>
 <h3 id="github-gpg">GPG 签名<a class="headerlink" href="#github-gpg" title="Permanent link">&para;</a></h3>
 <p>TBC</p>
