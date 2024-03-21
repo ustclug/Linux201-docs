@@ -17,9 +17,9 @@ Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中
     co = checkout
     st = status
     lg = log --graph --date=relative --pretty=tformat:'%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%an %ad)%Creset'
-    oops = commit --amend --no-edit # 修改上一次提交，(忘记添加文件)
+    oops = commit --amend --no-edit
     reword = commit --amend
-    push-with-lease = push --force-with-lease # “安全”地 force push，（不会覆盖别人的提交）
+    push-with-lease = push --force-with-lease
     uncommit = reset --soft HEAD~1
 ```
 
@@ -32,10 +32,10 @@ Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中
     upstream = green
     remote = red
 [core]
-    editor = nvim # 使用 Neovim 作为默认编辑器
-    excludesfile = ~/.gitignore_global # 全局 .gitignore 文件，见下文
+    editor = nvim
+    excludesfile = ~/.gitignore_global
 [commit]
-    template = ~/.gitmessage # commit message 模板，见下文
+    template = ~/.gitmessage
 [push]
     default = upstream
     followTags = true
