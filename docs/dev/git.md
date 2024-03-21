@@ -78,29 +78,31 @@ TBC
 
 ### Commit Message Convention {#git-commit-message}
 
-对于多人写作的项目，良好的 commit message 是非常重要的。如果不加重视而胡乱使用诸如 `update`、`fix`、`change` 等无意义的 commit message，会使得项目的历史记录变得难以理解，也会给后续的维护和合作带来困难。
+对于多人协作的项目，良好的 commit message 是非常重要的。胡乱使用诸如 `update`、`fix`、`change` 等无意义的 Commit Message，会使得项目的历史记录变得难以理解，也会给后续的维护带来困难。
 
-一种常见的 commit message 格式是 [Conventional Commits](https://www.conventionalcommits.org/)，它的格式是：
+!!! note "Conventional Commits"
 
-```txt
-<type>[optional scope]: <description>
+    一种常见的 Commit Message 格式是 [Conventional Commits](https://www.conventionalcommits.org/)，它的格式是：
 
-[optional body]
+    ```txt
+    <type>[optional scope]: <description>
 
-[optional footer(s)]
-```
+    [optional body]
 
-其中：
+    [optional footer(s)]
+    ```
 
-- `type` 是 commit 的类型，可以是 `feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore` 等。
-- `scope` 是 commit 的作用域
-- `description` 是 commit 的简要描述
-- `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
-- `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
+    其中：
 
-值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`.
+    - `type` 是 commit 的类型，可以是 `feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore` 等。
+    - `scope` 是 commit 的作用域
+    - `description` 是 commit 的简要描述
+    - `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
+    - `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
 
-即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如[这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file)：
+    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`.
+
+即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 [这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file) 添加到 `~/.gitmessage`：
 
 ```ini
 # ~/.gitconfig
