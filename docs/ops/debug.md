@@ -131,6 +131,157 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
     而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
     不仅是 `yum`，诸如 `xinetd` 等也有类似的问题（[ref](https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4)）。
 
+除 strace 以外，Linux 中还有很多用于监控、追踪系统状态的工具，如图所示：
+
+![Linux tools](https://i.stack.imgur.com/ntC1q.png)
+
+需要根据具体情况选择合适的工具。本文亦无法详细介绍每一个工具的使用方法，因此请参考对应工具的手册。
+
 ## 调试符号与 gdb
 
+有的时候，我们会遇到程序崩溃的情况。除了程序本身留下的日志以外，另一个重要的信息就是程序的 coredump。
+coredump 中包含了程序的内存信息，通过解析 coredump，我们可以获取在程序崩溃时详细的调用栈信息，这对于排查问题非常有帮助。
+
+在安装了 systemd-coredump 的系统上，其会自动收集程序崩溃时的 coredump；
+对于正在运行的程序，也可以使用 `gcore` 命令来生成 coredump。
+但是 coredump 还需要配合**调试符号**才能进行分析，否则得到的内容包括写程序的人自己都不可能看懂。
+对于 Debian，可以参考 <https://wiki.debian.org/HowToGetABacktrace> 来获取调试符号，其他的发行版则需要阅读发行版对应的手册。
+一般来讲，许多发行版目前都提供了从 debuginfod 自动获取调试符号的功能，也可以选择手动安装调试符号包。
+
+有了调试符号之后，就可以使用 `gdb` 分析 coredump 了。对于 systemd-coredump，使用如下命令：
+
+```console
+$ coredumpctl list
+（找到对应的 coredump 以及其 pid）
+$ coredumpctl gdb <pid>  # 如果是最近一次的 coredump，可以省略 <pid>
+```
+
+如果是 coredump 文件的形式，也可以直接调用 gdb：
+
+```console
+gdb -c core.123456 # 假设 coredump 文件名为 core.123456
+```
+
+如果希望运行时调试，或者直接使用 gdb 启动希望调试的程序：
+
+```console
+$ gdb -p <pid>  # 附加（attach）到指定的 pid 调试
+$ gdb /path/to/program  # 直接启动 gdb 并调试指定的程序
+$ gdb --args /path/to/program arg1 arg2  # 启动 gdb 并调试指定的程序，同时传入参数
+$ gdb --args env VAR=VALUE /path/to/program arg1 arg2  # 启动 gdb 并调试指定的程序，同时传入环境变量和参数
+GNU gdb (GDB) 14.2
+Copyright (C) 2023 Free Software Foundation, Inc.
+...
+>>> run  # 启动程序，在启动程序前，可以进行断点设置等操作
+```
+
+在进入调试环境后，使用 `bt` 命令可以查看当前线程的调用栈。在调试符号配置正确的情况下，至少大部分的信息都能被显示出来（而不是一堆 `???`）。
+
+??? example "一个 coredump 的调用栈例子"
+
+    ```console
+    >>> bt
+    #0  g_type_check_instance_cast
+        (type_instance=type_instance@entry=0x60166e80e040, iface_type=0x60166aa86e20 [GtkWidget/GInitiallyUnowned])
+        at ../glib/gobject/gtype.c:4217
+    #1  0x00007408aee7a370 in registry_handle_global
+        (data=0x60166e80e040, registry=<optimized out>, name=81, interface=0x60166f7c7840 "wl_output", version=<optimized out>)
+        at ../spice-gtk-0.42/src/wayland-extensions.c:77
+    #2  0x00007408ca373596 in ??? () at /usr/lib/libffi.so.8
+    #3  0x00007408ca37000e in ??? () at /usr/lib/libffi.so.8
+    #4  0x00007408ca372bd3 in ffi_call () at /usr/lib/libffi.so.8
+    #5  0x00007408c327f645 in wl_closure_invoke (closure=closure@entry=0x60166f7c7760, target=<optimized out>, 
+        target@entry=0x60166ead1ff0, opcode=opcode@entry=0, data=<optimized out>, flags=1) at ../wayland-1.22.0/src/connection.c:1025
+    #6  0x00007408c327fe73 in dispatch_event (display=display@entry=0x60166a9ffed0, queue=0x60166a9fffc0)
+        at ../wayland-1.22.0/src/wayland-client.c:1631
+    #7  0x00007408c328013c in dispatch_queue (queue=0x60166a9fffc0, display=0x60166a9ffed0) at ../wayland-1.22.0/src/wayland-client.c:1777
+    #8  wl_display_dispatch_queue_pending (display=0x60166a9ffed0, queue=0x60166a9fffc0) at ../wayland-1.22.0/src/wayland-client.c:2019
+    #9  0x00007408c3478a39 in ??? () at /usr/lib/libgdk-3.so.0
+    #10 0x00007408c3444fa9 in gdk_display_get_event () at /usr/lib/libgdk-3.so.0
+    #11 0x00007408c3480208 in ??? () at /usr/lib/libgdk-3.so.0
+    #12 0x00007408c8ee8f69 in g_main_dispatch (context=0x60166aa114b0) at ../glib/glib/gmain.c:3476
+    #13 0x00007408c8f473a7 in g_main_context_dispatch_unlocked (context=0x60166aa114b0) at ../glib/glib/gmain.c:4284
+    #14 g_main_context_iterate_unlocked.isra.0
+        (context=context@entry=0x60166aa114b0, block=block@entry=1, dispatch=dispatch@entry=1, self=<optimized out>)
+        at ../glib/glib/gmain.c:4349
+    #15 0x00007408c8ee7162 in g_main_context_iteration (context=context@entry=0x60166aa114b0, may_block=may_block@entry=1)
+        at ../glib/glib/gmain.c:4414
+    #16 0x00007408c8c95b66 in g_application_run (application=0x60166abe9ce0 [GtkApplication], argc=<optimized out>, argv=0x0)
+        at ../glib/gio/gapplication.c:2577
+    #17 0x00007408ca373596 in ??? () at /usr/lib/libffi.so.8
+    #18 0x00007408ca37000e in ??? () at /usr/lib/libffi.so.8
+    #19 0x00007408ca372bd3 in ffi_call () at /usr/lib/libffi.so.8
+    #20 0x00007408c90566d1 in ??? () at /usr/lib/python3.11/site-packages/gi/_gi.cpython-311-x86_64-linux-gnu.so
+    #21 0x00007408c9055090 in ??? () at /usr/lib/python3.11/site-packages/gi/_gi.cpython-311-x86_64-linux-gnu.so
+    #22 0x00007408c9f98366 in _PyObject_Call
+        (kwargs=<optimized out>, args=0x7408bb5b3140, callable=0x7408c4561470, tstate=0x7408ca30d6d8 <_PyRuntime+166328>)
+        at Objects/call.c:343
+    #23 PyObject_Call (callable=0x7408c4561470, args=0x7408bb5b3140, kwargs=<optimized out>) at Objects/call.c:355
+    #24 0x00007408c9f6a64d in do_call_core
+        (use_tracing=<optimized out>, kwdict=0x7408bb575d80, callargs=0x7408bb5b3140, func=0x7408c4561470, tstate=<optimized out>)
+        at Python/ceval.c:7349
+    #25 _PyEval_EvalFrameDefault (tstate=<optimized out>, frame=<optimized out>, throwflag=<optimized out>) at Python/ceval.c:5376
+    #26 0x00007408ca01fae4 in _PyEval_EvalFrame (throwflag=0, frame=0x7408ca403020, tstate=0x7408ca30d6d8 <_PyRuntime+166328>)
+        at ./Include/internal/pycore_ceval.h:73
+    #27 _PyEval_Vector
+        (tstate=tstate@entry=0x7408ca30d6d8 <_PyRuntime+166328>, func=func@entry=0x7408c9b06020, locals=locals@entry=0x7408c9b26c80, args=args@entry=0x0, argcount=argcount@entry=0, kwnames=kwnames@entry=0x0) at Python/ceval.c:6434
+    #28 0x00007408ca01f4cc in PyEval_EvalCode (co=0x7408c9af8620, globals=<optimized out>, locals=0x7408c9b26c80) at Python/ceval.c:1148
+    #29 0x00007408ca03cd03 in run_eval_code_obj
+        (tstate=tstate@entry=0x7408ca30d6d8 <_PyRuntime+166328>, co=co@entry=0x7408c9af8620, globals=globals@entry=0x7408c9b26c80, locals=locals@entry=0x7408c9b26c80) at Python/pythonrun.c:1741
+    #30 0x00007408ca038e0a in run_mod
+        (mod=mod@entry=0x60166a2cd578, filename=filename@entry=0x7408c9ad4580, globals=globals@entry=0x7408c9b26c80, locals=locals@entry=0x7408c9b26c80, flags=flags@entry=0x7ffd781984f8, arena=arena@entry=0x7408c9a4f7b0) at Python/pythonrun.c:1762
+    #31 0x00007408ca04f383 in pyrun_file
+        (fp=fp@entry=0x60166a23d470, filename=filename@entry=0x7408c9ad4580, start=start@entry=257, globals=globals@entry=0x7408c9b26c80, locals=locals@entry=0x7408c9b26c80, closeit=closeit@entry=1, flags=0x7ffd781984f8) at Python/pythonrun.c:1657
+    #32 0x00007408ca04ecf5 in _PyRun_SimpleFileObject (fp=0x60166a23d470, filename=0x7408c9ad4580, closeit=1, flags=0x7ffd781984f8)
+        at Python/pythonrun.c:440
+    #33 0x00007408ca04d5f8 in _PyRun_AnyFileObject (fp=0x60166a23d470, filename=0x7408c9ad4580, closeit=1, flags=0x7ffd781984f8)
+        at Python/pythonrun.c:79
+    #34 0x00007408ca048098 in pymain_run_file_obj (skip_source_first_line=0, filename=0x7408c9ad4580, program_name=0x7408c9b26ef0)
+        at Modules/main.c:360
+    #35 pymain_run_file (config=0x7408ca2f3720 <_PyRuntime+59904>) at Modules/main.c:379
+    #36 pymain_run_python (exitcode=0x7ffd781984f0) at Modules/main.c:601
+    #37 Py_RunMain () at Modules/main.c:680
+    #38 0x00007408ca0131eb in Py_BytesMain (argc=<optimized out>, argv=<optimized out>) at Modules/main.c:734
+    #39 0x00007408c9c43cd0 in __libc_start_call_main
+        (main=main@entry=0x601669c16120 <main>, argc=argc@entry=2, argv=argv@entry=0x7ffd78198748)
+        at ../sysdeps/nptl/libc_start_call_main.h:58
+    #40 0x00007408c9c43d8a in __libc_start_main_impl
+        (main=0x601669c16120 <main>, argc=2, argv=0x7ffd78198748, init=<optimized out>, fini=<optimized out>, rtld_fini=<optimized out>, stack_end=0x7ffd78198738) at ../csu/libc-start.c:360
+    #41 0x0000601669c16045 in _start ()
+    ```
+
+此外，`bt full` 可以显示当前线程完整的调用栈，`thread apply all bt full` 可以显示所有线程的完整调用栈。这些信息在汇报 bug 时会非常有用。
+
+如果需要自行尝试从 coredump 获取信息，以下的命令也会有帮助：
+
+- `up`/`down`：切换到上一层/下一层调用栈
+- `info args` 与 `info locals`：显示当前函数的参数与局部变量。由于编译器优化，一部分变量会变成 `<optimized out>`，这些信息会丢失
+- `l`：显示当前函数的源码
+- `print xxx`：打印变量的值，参数支持表达式（需要对 C 的指针与类型系统有一定的了解）
+
+需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
+例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
+这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
+
 ## 内核态调试
+
+本部分主要介绍 eBPF 的使用（而不是类似在操作系统课程中使用 gdb attach 到 qemu 的「调试」）。
+在遇到疑难问题时，eBPF 可以帮助我们在线上系统中获取内核态更多的信息。
+此外在调试时，很可能需要阅读内核源码，[elixir.bootlin.com](https://elixir.bootlin.com/linux/latest/source)
+提供了在浏览器中方便的内核源码阅读功能，支持快速跳转到符号等功能。
+
+bcc 与 bpftrace 是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
+此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示：
+
+![Linux bcc/BPF Tracing Tools](https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png)
+
+![bpftrace/eBPF Tools](https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png)
+
+考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。
+
+<!-- TODO: not fin -->
+
+## 补充阅读 {#supplement}
+
+- [Linux debugging, profiling and tracing training Course by bootlin](https://bootlin.com/doc/training/debugging/)：Bootlin 公司提供的 Linux 调试等有关的资料，包括 slides 和练习实验
+- [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：著名的系统性能分析专家 Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
