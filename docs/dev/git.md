@@ -6,7 +6,11 @@
 
 ### 本地配置 {#git-config}
 
-Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中。
+!!! note "配置文件"
+
+    Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 你可以直接将下面的内容拷贝到你的配置文件中。
+
+    下文中会讲解部分配置文件的作用及注意事项。
 
 #### 常用别名 {#git-alias}
 
@@ -46,6 +50,12 @@ Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中
 ### gitignore {#git-gitignore}
 
 GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用[gitignore.io](https://www.gitignore.io/) 生成。
+
+!!! warning "`.env` 文件与 `.gitignore`"
+
+    有些项目在开发的途中，可能引入`.env`用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到`.gitignore`中。
+
+    但是请注意，当`git reset`到一个`.gitignore`中尚不包含`.env`的 commit 时，（回退时）`.env`会被忽略，但再次提交时并不会。此时需手动将`.env` 移除版本控制，例如 `mv ./.env ../.env.bk` 以防止`.env`被提交。
 
 #### Global gitignore {#git-global-gitignore}
 
@@ -102,13 +112,17 @@ TBC
 
     值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`.
 
-即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 [这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file) 添加到 `~/.gitmessage`：
+!!! note "Commit Message 模板"
 
-```ini
-# ~/.gitconfig
-[commit]
-    template = ~/.gitmessage
-```
+    即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 [这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file) 添加到 `~/.gitmessage`：
+
+    添加后不要忘记在首行添加空行，这样 `git commit` 时无需新建一行。
+
+    ```ini
+    # ~/.gitconfig
+    [commit]
+        template = ~/.gitmessage
+    ```
 
 ## GitHub 使用技巧
 
