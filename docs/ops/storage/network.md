@@ -19,7 +19,7 @@ NFS 默认没有基于密码等的鉴权机制，仅依靠客户端 IP 地址来
 
 NFS 在 Linux 上的服务端和客户端实现均有内核态与用户态的选择，如果没有特殊考虑，建议使用内核态实现。
 
-### 服务端配置
+### 服务端配置 {#nfs-server}
 
 服务端需要安装 `nfs-kernel-server` 包。除此之外，NFSv3 支持还需要安装 `rpcbind` 包（对应 NFSv3 协议的 111 端口），该包在目前的 Debian 中以 `rpcbind.socket` 的形式对外提供服务。
 
@@ -232,7 +232,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
     tcp 2049
     ```
 
-### 客户端配置
+### 客户端配置 {#nfs-client}
 
 挂载 NFS（表面上）是一件很简单的事情：
 
@@ -332,7 +332,7 @@ $
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
 
-### 服务端配置
+### 服务端配置 {#iscsi-server}
 
 Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。
 
@@ -444,7 +444,7 @@ Created Node ACL for iqn.1993-08.org.debian:01:a6a4d4f7356f
 Created mapped LUN 0.
 ```
 
-### 客户端配置
+### 客户端配置 {#iscsi-client}
 
 使用 `iscsiadm` 可以配置 iSCSI initiator（需要安装 `open-iscsi`）。
 操作的第一步是「发现」iSCSI target：

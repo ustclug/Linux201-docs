@@ -28,7 +28,7 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
 不论是 Debian 还是 Ubuntu，都需要安装 `zfsutils-linux` 软件包，以便使用 ZFS 的命令行工具。
 
-## 基础概念
+## 基础概念 {#concepts}
 
 与 LVM 和其他卷管理工具类似，ZFS 也将存储设备组织成多级结构：
 
@@ -38,7 +38,7 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
     与 LVM 略有区别的地方是，ZFS 的文件系统是直接创建在 pool 上的，而无需像 LVM 一样先创建 LV，再将其格式化为某种文件系统。ZFS 的文件系统就是 ZFS。
 
-## 创建 pool
+## 创建 pool {#create-pool}
 
 同样与 LVM 不同的是，ZFS 推荐使用整块硬盘或尽可能整块的硬盘来创建 pool，以保证稳定的性能。作为一项适配操作，如果将整块硬盘用于创建 zpool，ZFS 会自动对其进行分区，以便在硬盘故障时能够更好地识别和处理。
 
@@ -139,7 +139,7 @@ ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数
 
 最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。
 
-### 关于 ARC
+### 关于 ARC {#arc}
 
 ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
 

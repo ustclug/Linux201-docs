@@ -25,7 +25,7 @@ $ sudo losetup -f --show md2.img
 /dev/loop2
 ```
 
-### 创建 RAID
+### 创建 RAID {#mdadm-create}
 
 我们先以 RAID 0 为例，创建一个跨 3 块盘的 RAID 0。
 
@@ -139,7 +139,7 @@ mdadm: /dev/loop2 appears to be part of a raid array:
 此外，尽管这里不展示 RAID10 的创建过程，但是 mdadm 的 RAID10 涉及到 near, far 和 offset 三种布局的选择。
 详细的介绍可参考 [md(4)][md.4] 的 "About the RAID10 Layout Examples" 部分。
 
-### 重建操作
+### 重建操作 {#mdadm-rebuild}
 
 与 LVM 一章类似，这里展示在一块盘丢失（损坏）情况下的操作：
 
@@ -224,7 +224,7 @@ Consistency Policy : resync
 
 添加新盘后，可以看到重建操作会自动开始。
 
-### 完整性检查
+### 完整性检查 {#mdadm-scrub}
 
 这里展示三盘 RAID 1 下进行检查与修复的场景：
 
@@ -272,7 +272,7 @@ $ # 修复完成后，mismatch_cnt 中仍然记录的是不一致的数量
 $ # 再执行一次 check 后 mismatch_cnt 值会变为 0
 ```
 
-## 硬件 RAID 方案
+## 硬件 RAID 方案 {#hardware-raid}
 
 不同的服务器可能提供了不同的硬件 RAID 方案，目前最常见的是 MegaRAID 方案。
 在服务器启动时，按下指定的按键，可以进入 RAID 卡的设置界面进行操作。
@@ -314,7 +314,7 @@ HPE 的 Smart Array 可以使用 `ssacli` 等。
     当然了，如果你在使用 Windows Server，那么硬件 RAID……大概仍然还是一个挺不错的选择？
     如果愿意吃螃蟹的话，也可以试试 ReFS……
 
-### 获取管理软件
+### 获取管理软件 {#get-megaraid-tools}
 
 MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
 由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
@@ -363,7 +363,7 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
     （以下省略）
     ```
 
-### 基础概念
+### 基础概念 {#megaraid-basics}
 
 MegaRAID 支持管理多个 RAID 控制器（Adapter/Controller），每个控制器可以连接一个或多个机柜（Enclosure），
 机柜中有物理磁盘（Physical Drive, PD），这些磁盘可以组成虚拟磁盘（Virtual Drive, VD 或 Logical Drive, LD）。
@@ -471,9 +471,9 @@ DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name
     （以下省略）
     ```
 
-### 维护操作
+### 维护操作 {#megaraid-maintenance}
 
-#### 电池状态
+#### 电池状态 {#megaraid-battery}
 
 MegaRAID 控制器一般会有一个电池（Battery Backup Unit, BBU）用于保护缓存中的数据。
 当意外断电的情况发生时，电池会支撑控制器将缓存中的数据写入磁盘，以避免数据丢失。
@@ -537,7 +537,7 @@ State       Optimal
 
     ZFS 的 raidz1/2/3 不受 write hole 影响。
 
-#### 完整性检查
+#### 完整性检查 {#megaraid-scrub}
 
 !!! note "下面的部分内容没有命令输出展示"
 
@@ -616,7 +616,7 @@ PR MaxConcurrentPd      255
     Exit Code: 0x00
     ```
 
-#### 重建操作
+#### 重建操作 {#megaraid-rebuild}
 
 在替换坏盘后，阵列卡会自动开始重建操作。
 如果在有盘损坏时有热备盘（Spare），那么阵列卡会自动将热备盘加入阵列并开始重建。
@@ -677,7 +677,7 @@ sudo ./storcli64 /c0 /sx show rebuild nolog
     Exit Code: 0x00
     ```
 
-#### 磁盘识别
+#### 磁盘识别 {#megaraid-ident}
 
 在磁盘损坏的时候，托架上的 LED 灯一般会亮红或黄灯，便于搜索。
 但是有的时候我们有找到某块硬盘的需求（即使它还没有被阵列卡识别为损坏）。
@@ -717,7 +717,7 @@ sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
     ----------------
     ```
 
-## RAID 与文件系统
+## RAID 与文件系统 {#raid-fs}
 
 在 RAID 阵列中，"chunk" 指每块盘上的数据块大小，例如以下 RAID 0 的布局表：
 
@@ -742,7 +742,7 @@ sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
 - `sunit` 是 chunk 除以扇区（512B）的结果
 - `swidth` 则是 `sunit` 乘以实际数据盘数
 
-## 监控
+## 监控 {#monitor}
 
 ### SMART 信息 {#smart}
 
@@ -1204,7 +1204,7 @@ DEVICESCAN -d removable -n standby -m root -M exec /usr/share/smartmontools/smar
 
 在配置中添加 `-M test` 可以在启动时发送测试邮件。更多配置详情请参考 [`smartd.conf(5)`][smartd.conf.5]。
 
-### RAID 信息
+### RAID 信息 {#raid-info}
 
 Linux 系统下的软件 RAID 方案一般都会提供使用邮件通知管理员异常情况的功能。
 mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，需要系统管理员额外设置定时任务来检查。
@@ -1224,7 +1224,7 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 
     可用于导入的 [Grafana.com Dashboard 分享页面](https://grafana.com/grafana/dashboards/20645-raid-and-ssd/)，[Grafana Dashboard JSON](../../assets/RAID%20and%20SSD-1709828565742.json)，以及[参考效果](https://monitor.ustclug.org/d/SonKmbWnk/raid-and-ssd?orgId=1)。
 
-## 紧急救援
+## 紧急救援 {#emergency-rescue}
 
 !!! danger "数据无价，谨慎操作！"
 
