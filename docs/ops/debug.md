@@ -72,6 +72,13 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 - `strace -e openat ls`：只跟踪 `openat` 系统调用
 - `strace -ff -o /tmp/test.log bash`：将 `bash` 及其 fork 出的子进程的系统调用输出到 `/tmp/test.log.*`
 
+!!! tip "Sysinternals' Procmon"
+
+    Windows 系统上的类似工具是 Sysinternals 的 [Procmon](https://docs.microsoft.com/en-us/sysinternals/downloads/procmon)，
+    可以查看所有进程对文件系统、注册表等的操作。
+    有趣的是，Sysinternals 在多年前也推出了 Procmon 的 [Linux 版本](https://github.com/Sysinternals/ProcMon-for-Linux)，
+    使用了 eBPF 技术实现（详见下文）。
+
 !!! example "案例：CentOS 7 容器使用 `yum` 安装软件的 bug"
 
     在某些配置下，可以注意到 `centos:7` 容器中使用 `yum` 安装软件时会卡住：
@@ -270,16 +277,104 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 此外在调试时，很可能需要阅读内核源码，[elixir.bootlin.com](https://elixir.bootlin.com/linux/latest/source)
 提供了在浏览器中方便的内核源码阅读功能，支持快速跳转到符号等功能。
 
-bcc 与 bpftrace 是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
-此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示：
+[bcc](https://github.com/iovisor/bcc/) 与 [bpftrace](https://github.com/bpftrace/bpftrace)
+是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
+此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示
+（以下工具的使用请自行查阅资料）：
 
 ![Linux bcc/BPF Tracing Tools](https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png)
 
 ![bpftrace/eBPF Tools](https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png)
 
 考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。
+bpftrace 中包含了几种内核态的「探针」（probe）：
 
-<!-- TODO: not fin -->
+- kprobe：默认在函数入口处插入 probe，也可以指定偏移量，从而在函数的任意位置插入 probe
+- kretprobe：在函数返回时插入 probe，可以获取函数的返回值，不能获取函数的参数
+- tracepoint：在内核预先定义的 tracepoint 处插入 probe
+- kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数
+
+!!! tip "用户态调试支持"
+
+    eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。
+
+使用 `bpftrace -l` 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。
+
+```console
+$ sudo bpftrace -l
+（省略）
+tracepoint:xhci-hcd:xhci_setup_addressable_virt_device
+tracepoint:xhci-hcd:xhci_setup_device
+tracepoint:xhci-hcd:xhci_setup_device_slot
+tracepoint:xhci-hcd:xhci_stop_device
+tracepoint:xhci-hcd:xhci_urb_dequeue
+tracepoint:xhci-hcd:xhci_urb_enqueue
+tracepoint:xhci-hcd:xhci_urb_giveback
+```
+
+一个简单的例子是获取系统之后执行的所有程序（[execsnoop](https://github.com/bpftrace/bpftrace/blob/master/tools/execsnoop.bt)）。
+以下是一个简化的版本，输出执行了 `execve()` 的程序，以及其参数（文件路径）：
+
+```console
+$ sudo bpftrace -e 'tracepoint:syscalls:sys_enter_execve { printf("%s %s\n", comm, str(args->filename)); }'
+Attaching 1 probe...
+code /home/username/.nix-profile/bin/docker
+code /usr/lib/rustup/bin/docker
+code /home/username/.local/bin/docker
+code /home/username/.cargo/bin/docker
+^C
+```
+
+这里我们可以直接使用 `args->filename` 获取到 `execve()` 的参数，因为 bpftrace 能够获取到相关的类型信息：
+
+```console
+$ sudo bpftrace -lv tracepoint:syscalls:sys_enter_execve
+tracepoint:syscalls:sys_enter_execve
+    int __syscall_nr
+    const char * filename
+    const char *const * argv
+    const char *const * envp
+```
+
+有的时候，你需要追踪的函数不在 tracepoint 中，此时就需要使用 kprobe/kretprobe（或者 kfunc/kretfunc），
+例如下面这个追踪 [`try_charge_memcg`](https://elixir.bootlin.com/linux/v6.8.1/source/mm/memcontrol.c#L2728) 的第三个参数 `nr_pages` 的例子：
+
+```console
+$ sudo bpftrace -e 'kprobe:try_charge_memcg { printf("%d\n", arg2); }'  # 第一个参数是 arg0
+1
+1
+1
+2
+...
+^C
+$ # 通常情况下，我们不希望追踪整个系统对某个内核函数的调用，只需要追踪某个进程的调用，因此可以这么写：
+$ # 假设 PID 为 1234567
+$ sudo bpftrace -e 'kprobe:try_charge_memcg /pid == 1234567/ { printf("%d\n", arg2); }'
+1
+1
+...
+```
+
+使用 kprobe 和 kretprobe 时，一个常见的 pattern 是：kprobe 记录某种状态（例如时间或者调用参数），然后在 kretprobe 中输出。
+相关的例子可以参考 bpftrace 的示例与文档。
+
+在支持 kfunc 的环境下，可以使用 kfunc 让逻辑更加清晰：
+
+```console
+$ sudo bpftrace -lv kfunc:try_charge_memcg
+kfunc:vmlinux:try_charge_memcg
+    struct mem_cgroup * memcg
+    gfp_t gfp_mask
+    unsigned int nr_pages
+    int retval
+$ sudo bpftrace -e 'kfunc:try_charge_memcg { printf("%d\n", args->nr_pages); }'
+...
+```
+
+更多的例子与说明可以参考：
+
+- [The bpftrace One-Liner Tutorial](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md)（[中文版](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md)）
+- [bpftrace(8) Manual Page](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
 
 ## 补充阅读 {#supplement}
 
