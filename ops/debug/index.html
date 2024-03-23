@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.14">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.10ba22f1.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -1659,6 +1659,13 @@
 <li><code>strace -e openat ls</code>：只跟踪 <code>openat</code> 系统调用</li>
 <li><code>strace -ff -o /tmp/test.log bash</code>：将 <code>bash</code> 及其 fork 出的子进程的系统调用输出到 <code>/tmp/test.log.*</code></li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">Sysinternals' Procmon</p>
+<p>Windows 系统上的类似工具是 Sysinternals 的 <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/procmon">Procmon</a>，
+可以查看所有进程对文件系统、注册表等的操作。
+有趣的是，Sysinternals 在多年前也推出了 Procmon 的 <a href="https://github.com/Sysinternals/ProcMon-for-Linux">Linux 版本</a>，
+使用了 eBPF 技术实现（详见下文）。</p>
+</div>
 <div class="admonition example">
 <p class="admonition-title">案例：CentOS 7 容器使用 <code>yum</code> 安装软件的 bug</p>
 <p>在某些配置下，可以注意到 <code>centos:7</code> 容器中使用 <code>yum</code> 安装软件时会卡住：</p>
@@ -1827,13 +1834,86 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 在遇到疑难问题时，eBPF 可以帮助我们在线上系统中获取内核态更多的信息。
 此外在调试时，很可能需要阅读内核源码，<a href="https://elixir.bootlin.com/linux/latest/source">elixir.bootlin.com</a>
 提供了在浏览器中方便的内核源码阅读功能，支持快速跳转到符号等功能。</p>
-<p>bcc 与 bpftrace 是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
-此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示：</p>
+<p><a href="https://github.com/iovisor/bcc/">bcc</a> 与 <a href="https://github.com/bpftrace/bpftrace">bpftrace</a>
+是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
+此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示
+（以下工具的使用请自行查阅资料）：</p>
 <p><img alt="Linux bcc/BPF Tracing Tools" src="https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png" /></p>
 <p><img alt="bpftrace/eBPF Tools" src="https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png" /></p>
-<p>考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。</p>
-<!-- TODO: not fin -->
-
+<p>考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。
+bpftrace 中包含了几种内核态的「探针」（probe）：</p>
+<ul>
+<li>kprobe：默认在函数入口处插入 probe，也可以指定偏移量，从而在函数的任意位置插入 probe</li>
+<li>kretprobe：在函数返回时插入 probe，可以获取函数的返回值，不能获取函数的参数</li>
+<li>tracepoint：在内核预先定义的 tracepoint 处插入 probe</li>
+<li>kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">用户态调试支持</p>
+<p>eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。</p>
+</div>
+<p>使用 <code>bpftrace -l</code> 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-l
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_addressable_virt_device</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device_slot</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">tracepoint:xhci-hcd:xhci_stop_device</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_dequeue</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_enqueue</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_giveback</span>
+</code></pre></div>
+<p>一个简单的例子是获取系统之后执行的所有程序（<a href="https://github.com/bpftrace/bpftrace/blob/master/tools/execsnoop.bt">execsnoop</a>）。
+以下是一个简化的版本，输出执行了 <code>execve()</code> 的程序，以及其参数（文件路径）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;tracepoint:syscalls:sys_enter_execve { printf(&quot;%s %s\n&quot;, comm, str(args-&gt;filename)); }&#39;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">Attaching 1 probe...</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">code /home/username/.nix-profile/bin/docker</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">code /usr/lib/rustup/bin/docker</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">code /home/username/.local/bin/docker</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">code /home/username/.cargo/bin/docker</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">^C</span>
+</code></pre></div>
+<p>这里我们可以直接使用 <code>args-&gt;filename</code> 获取到 <code>execve()</code> 的参数，因为 bpftrace 能够获取到相关的类型信息：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>tracepoint:syscalls:sys_enter_execve
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">tracepoint:syscalls:sys_enter_execve</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">    int __syscall_nr</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="go">    const char * filename</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">    const char *const * argv</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">    const char *const * envp</span>
+</code></pre></div>
+<p>有的时候，你需要追踪的函数不在 tracepoint 中，此时就需要使用 kprobe/kretprobe（或者 kfunc/kretfunc），
+例如下面这个追踪 <a href="https://elixir.bootlin.com/linux/v6.8.1/source/mm/memcontrol.c#L2728"><code>try_charge_memcg</code></a> 的第三个参数 <code>nr_pages</code> 的例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg { printf(&quot;%d\n&quot;, arg2); }&#39;</span><span class="w">  </span><span class="c1"># 第一个参数是 arg0</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">1</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">1</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">1</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">2</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">...</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">^C</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="gp">$ </span><span class="c1"># 通常情况下，我们不希望追踪整个系统对某个内核函数的调用，只需要追踪某个进程的调用，因此可以这么写：</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="gp">$ </span><span class="c1"># 假设 PID 为 1234567</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg /pid == 1234567/ { printf(&quot;%d\n&quot;, arg2); }&#39;</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="go">1</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="go">1</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="go">...</span>
+</code></pre></div>
+<p>使用 kprobe 和 kretprobe 时，一个常见的 pattern 是：kprobe 记录某种状态（例如时间或者调用参数），然后在 kretprobe 中输出。
+相关的例子可以参考 bpftrace 的示例与文档。</p>
+<p>在支持 kfunc 的环境下，可以使用 kfunc 让逻辑更加清晰：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>kfunc:try_charge_memcg
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">kfunc:vmlinux:try_charge_memcg</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">    struct mem_cgroup * memcg</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">    gfp_t gfp_mask</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">    unsigned int nr_pages</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="go">    int retval</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kfunc:try_charge_memcg { printf(&quot;%d\n&quot;, args-&gt;nr_pages); }&#39;</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">...</span>
+</code></pre></div>
+<p>更多的例子与说明可以参考：</p>
+<ul>
+<li><a href="https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md">The bpftrace One-Liner Tutorial</a>（<a href="https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md">中文版</a>）</li>
+<li><a href="https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc">bpftrace(8) Manual Page</a></li>
+</ul>
 <h2 id="supplement">补充阅读<a class="headerlink" href="#supplement" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="https://bootlin.com/doc/training/debugging/">Linux debugging, profiling and tracing training Course by bootlin</a>：Bootlin 公司提供的 Linux 调试等有关的资料，包括 slides 和练习实验</li>
