@@ -139,6 +139,20 @@ mdadm: /dev/loop2 appears to be part of a raid array:
 此外，尽管这里不展示 RAID10 的创建过程，但是 mdadm 的 RAID10 涉及到 near, far 和 offset 三种布局的选择。
 详细的介绍可参考 [md(4)][md.4] 的 "About the RAID10 Layout Examples" 部分。
 
+!!! warning "有关 raid456 的性能争议"
+
+    内核 md 的 raid456 模块中定义了一个固定大小的 4K "stripe"，所有的块 IO 操作都会被先被分成 4K 的块，
+    commit 到设备上后再合并操作。并且目前合并操作无法正确处理 trim 指令，这就导致了对 raid4/5/6 进行 trim
+    的时候，全盘 trim 会被拆分成大量的 4k trim，从而导致 trim 卡住。在进行其他操作时，也可能发现性能不及预期。
+
+    相关邮件讨论：
+
+    - https://lore.kernel.org/linux-block/ED5B1993-9D44-4B9C-A7DF-72BD2375A216@gmail.com/T/
+    - https://lore.kernel.org/all/5EAED86C53DED2479E3E145969315A2385841062@UMECHPA7B.easf.csd.disa.mil/T/
+    - https://lore.kernel.org/all/20220207152735.27381-1-vverma@digitalocean.com/
+
+    感谢 @shankerwangmiao 提供的相关信息。
+
 ### 重建操作 {#mdadm-rebuild}
 
 与 LVM 一章类似，这里展示在一块盘丢失（损坏）情况下的操作：
