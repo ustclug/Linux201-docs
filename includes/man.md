@@ -25,6 +25,9 @@
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 
+<!-- man 7 -->
+[namespaces.7]: https://man7.org/linux/man-pages/man7/namespaces.7.html
+
 <!-- man 8 -->
 
 [logrotate.8]: https://linux.die.net/man/8/logrotate
