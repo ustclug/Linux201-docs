@@ -251,6 +251,14 @@ $ mount | grep nfs
 192.168.122.47:/srv/abcde on /mnt/nfs type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=rdma,port=20049,timeo=600,retrans=2,sec=sys,clientaddr=192.168.122.47,local_lock=none,addr=192.168.122.47)
 ```
 
+如果要查看某个 IP 导出的目录，可以使用 `showmount`：
+
+```console
+$ showmount -e 10.1.2.3
+Export list for 10.1.2.3:
+/mnt      10.0.0.0/8,100.0.0.0/8
+```
+
 但是最常见的问题，还是 `hard` 与 `soft`（或者 Linux 5.6 之后新增的 `softerr`）的选择。
 NFS 客户端在每次重试之前会等待 `timeo` / 10（默认 600 / 10 = 60）秒。
 在 `hard` 模式下，如果服务器没有响应，那么客户端会永远重试下去，直到服务器恢复；
