@@ -961,6 +961,33 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#cgroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cgroups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seccomp" class="md-nav__link">
+    <span class="md-ellipsis">
+      Seccomp
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overlayfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      OverlayFS
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1571,6 +1598,33 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#cgroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cgroups
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#seccomp" class="md-nav__link">
+    <span class="md-ellipsis">
+      Seccomp
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overlayfs" class="md-nav__link">
+    <span class="md-ellipsis">
+      OverlayFS
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1670,6 +1724,122 @@
 <a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="go">root           1  0.0  0.0  10876  4468 pts/16   S    21:46   0:00 bash</span>
 <a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="go">root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">命名空间的魔法</p>
+<p>在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。</p>
+<p>作为其中一个「花式操作」的例子，可以阅读这篇 USENIX ATC 2018 的论文：<a href="https://www.usenix.org/conference/atc18/presentation/thalheim">Cntr: Lightweight OS Containers</a>（以及目前仍然在维护的<a href="https://github.com/Mic92/cntr">代码仓库</a>）。这篇工作实现了在不包含调试工具的容器中使用包含调试工具的镜像（或者 host 的调试工具）进行调试的功能。</p>
+</div>
+<h3 id="cgroups">Cgroups<a class="headerlink" href="#cgroups" title="Permanent link">&para;</a></h3>
+<p>Cgroups（<a href="https://man7.org/linux/man-pages/man7/cgroups.7.html">cgroups(7)</a>）是 Linux 内核提供的限制与统计进程资源使用的机制。
+Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/fs/cgroup/</code>。
+相比于传统的 <code>setrlimit</code> 等系统调用，cgroups 能够有效地管理一组进程（以及它们新建的子进程）的资源使用。</p>
+<p>在使用 systemd 的系统中，cgroups 由 systemd 负责管理。
+仔细观察 <code>systemctl status</code> 的输出，可以发现其就展示了一颗 cgroup 树（注意看 <code>init.scope</code> 上一行）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>status
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">● example</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">    State: running</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">    Units: 271 loaded (incl. loaded aliases)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">     Jobs: 0 queued</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">   Failed: 0 units</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">    Since: Sun 2023-06-11 15:42:13 CST; 9 months 14 days ago</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="go">  systemd: 252.19-1~deb12u1</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">   CGroup: /</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">           ├─init.scope</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">           │ └─1 /lib/systemd/systemd --system --deserialize=34</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">           ├─system.slice</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="go">           │ ├─caddy.service</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="go">           │ │ └─2398446 /usr/bin/caddy run --environ --config /etc/caddy/Caddyfile</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="go">           │ ├─containerd.service</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="go">           │ │ └─3923123 /usr/bin/containerd</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="go">           │ ├─cron.service</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="go">           │ │ └─649 /usr/sbin/cron -f</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="go">           │ ├─dbus.service</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="go">           │ │ └─650 /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="go">           │ ├─docker.service</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="go">           │ │ └─3926029 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="go">（省略）</span>
+</code></pre></div>
+<p>也可以使用 <code>systemd-cgtop</code> 实时查看 cgroup 的使用情况。</p>
+<p>Cgroups 有 v1 与 v2 两个版本。
+较新的发行版默认仅支持 cgroups v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroups v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroups v2，因此下文讨论 cgroups 时，默认为 v2。</p>
+<p>可以手工通过读写文件控制 cgroups：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sleep<span class="w"> </span>1d<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">[1] 1910225</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>-i
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gp"># </span><span class="nb">cd</span><span class="w"> </span>/sys/fs/cgroup
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp"># </span>mkdir<span class="w"> </span><span class="nb">test</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="gp"># </span><span class="nb">cd</span><span class="w"> </span><span class="nb">test</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gp"># </span><span class="nb">echo</span><span class="w"> </span><span class="m">1910225</span><span class="w"> </span>&gt;<span class="w"> </span>cgroup.procs
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="gp"># </span>cat<span class="w"> </span>cgroup.procs
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="go">1910225</span>
+</code></pre></div>
+<p>这样，我们就将刚刚创建的 <code>sleep 1d</code> 的进程<strong>移动</strong>到了 <code>test</code> cgroup 中。
+（注意 cgroup 树包含了系统的所有进程，因此写入到 <code>cgroup.procs</code> 的实际语义是移动进程所属的 cgroup）。</p>
+<p>由于 <code>test</code> 创建在根下面，因此其包含了所有的「控制器」（Controller）。
+不同的控制器对应不同的系统资源，例如内存、CPU、IO 等。
+可以通过 <code>ls</code> 确认：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp"># </span>ls
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">cgroup.controllers  cpu.max.burst            cpu.weight.nice       hugetlb.2MB.rsvd.max  memory.low       memory.zswap.current</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">cgroup.events       cpu.pressure             hugetlb.1GB.current       io.bfq.weight     memory.max       memory.zswap.max</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">cgroup.freeze       cpuset.cpus          hugetlb.1GB.events    io.latency        memory.min       misc.current</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">cgroup.kill     cpuset.cpus.effective        hugetlb.1GB.events.local  io.low        memory.numa_stat     misc.events</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">cgroup.max.depth    cpuset.cpus.exclusive        hugetlb.1GB.max       io.max        memory.oom.group     misc.max</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">cgroup.max.descendants  cpuset.cpus.exclusive.effective  hugetlb.1GB.numa_stat     io.pressure       memory.peak          pids.current</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">cgroup.pressure     cpuset.cpus.partition        hugetlb.1GB.rsvd.current  io.prio.class     memory.pressure      pids.events</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">cgroup.procs        cpuset.mems          hugetlb.1GB.rsvd.max      io.stat       memory.reclaim       pids.max</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">cgroup.stat     cpuset.mems.effective        hugetlb.2MB.current       io.weight         memory.stat          pids.peak</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="go">cgroup.subtree_control  cpu.stat             hugetlb.2MB.events    irq.pressure      memory.swap.current  rdma.current</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">cgroup.threads      cpu.stat.local           hugetlb.2MB.events.local  memory.current    memory.swap.events   rdma.max</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">cgroup.type     cpu.uclamp.max           hugetlb.2MB.max       memory.events     memory.swap.high</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">cpu.idle        cpu.uclamp.min           hugetlb.2MB.numa_stat     memory.events.local   memory.swap.max</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="go">cpu.max         cpu.weight           hugetlb.2MB.rsvd.current  memory.high       memory.swap.peak</span>
+</code></pre></div>
+<p>控制器可以通过 <code>cgroup.subtree_control</code> 控制是否启用。
+需要注意的是，根据 cgroup v2 的 "no internal processes" 规则，
+除根节点以外，其他的 cgroup 不能同时本身既包含进程，又设置了 <code>subtree_control</code>。</p>
+<div class="admonition lab">
+<p class="admonition-title">尝试操作 <code>subtree_control</code></p>
+<p>请根据 cgroups 手册以及上文的说明，在 <code>test</code> cgroup 下创建一个新的 cgroup，并且使其仅包含内存控制器。
+想一想：上面的 <code>sleep</code> 进程应该怎么操作？</p>
+</div>
+<p>实验完成后，杀掉 <code>sleep</code> 进程，并且使用 <code>rmdir</code> 删除 <code>test</code> cgroup：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp"># </span><span class="nb">cd</span><span class="w"> </span>/sys/fs/cgroup
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="gp"># </span><span class="nb">kill</span><span class="w"> </span><span class="m">1910225</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gp"># </span>rmdir<span class="w"> </span>/sys/fs/cgroup/test
+</code></pre></div>
+<div class="admonition question">
+<p class="admonition-title">为什么不使用 <code>rm -r</code></p>
+<p>思考这个问题：
+<code>/sys/fs/cgroup/test</code> 并非我们传统意义上的「空目录」，为什么这里要用 <code>rmdir</code>，而不是用 <code>rm -r</code> 递归删除？</p>
+</div>
+<p>Cgroups 有命令行工具可以帮助管理，安装 <code>cgroup-tools</code> 后，可以使用 <code>cgcreate</code>、<code>cgexec</code> 等命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>cgcreate<span class="w"> </span>-g<span class="w"> </span>memory:test<span class="w">  </span><span class="c1"># 创建一个名为 test 的 cgroup</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>cgset<span class="w"> </span>-r<span class="w"> </span>memory.max<span class="o">=</span><span class="m">16777216</span><span class="w"> </span><span class="nb">test</span><span class="w">  </span><span class="c1"># 限制使用 16 MiB 内存</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>cgexec<span class="w"> </span>-g<span class="w"> </span>memory:test<span class="w"> </span>python3<span class="w">  </span><span class="c1"># 在 test 下运行 python3</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">&gt;&gt;&gt; a = [0] * 4000000  # 尝试占用至少 32 MB 内存</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">Killed</span>
+</code></pre></div>
+<div class="admonition lab">
+<p class="admonition-title">观察这些命令的行为</p>
+<p>请使用系统调用分析工具 <code>strace</code> 观察 <code>cgcreate</code>、<code>cgset</code>、<code>cgexec</code> 的文件系统操作。</p>
+</div>
+<p>具体的控制器使用方法这里不再赘述。</p>
+<h3 id="seccomp">Seccomp<a class="headerlink" href="#seccomp" title="Permanent link">&para;</a></h3>
+<p>Seccomp 是 Linux 内核提供的限制进程系统调用的机制。
+如果没有 seccomp，即使使用上面提到的命名空间、cgroups，容器内的进程仍然可以执行任意的系统调用：
+root 权限的进程可以随意进行诸如关机、操作内核模块等危险操作，这通常是非预期的；
+即使通过用户机制限制了权限，暴露所有的系统调用仍然大幅度增加了攻击面。</p>
+<p>从程序员的角度，可以使用 libseccomp 库简化 seccomp 的使用。</p>
+<div class="admonition lab">
+<p class="admonition-title">执行 Python 3 解释器最少需要多少系统调用？</p>
+<p>使用 libseccomp 编写程序，设置系统调用白名单限制。
+尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。</p>
+</div>
+<h3 id="overlayfs">OverlayFS<a class="headerlink" href="#overlayfs" title="Permanent link">&para;</a></h3>
+<!-- TODO: not fin -->
+
 <!--
   Links to man pages
 
@@ -1684,6 +1854,7 @@
 <!-- man 5 -->
 
 <!-- man 7 -->
+
 <!-- man 8 -->
 
 
