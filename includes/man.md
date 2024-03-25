@@ -26,6 +26,8 @@
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 
 <!-- man 7 -->
+
+[cgroups.7]: https://man7.org/linux/man-pages/man7/cgroups.7.html
 [namespaces.7]: https://man7.org/linux/man-pages/man7/namespaces.7.html
 
 <!-- man 8 -->

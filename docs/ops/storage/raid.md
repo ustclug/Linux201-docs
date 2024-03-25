@@ -147,9 +147,9 @@ mdadm: /dev/loop2 appears to be part of a raid array:
 
     相关邮件讨论：
 
-    - https://lore.kernel.org/linux-block/ED5B1993-9D44-4B9C-A7DF-72BD2375A216@gmail.com/T/
-    - https://lore.kernel.org/all/5EAED86C53DED2479E3E145969315A2385841062@UMECHPA7B.easf.csd.disa.mil/T/
-    - https://lore.kernel.org/all/20220207152735.27381-1-vverma@digitalocean.com/
+    - <https://lore.kernel.org/linux-block/ED5B1993-9D44-4B9C-A7DF-72BD2375A216@gmail.com/T/>
+    - <https://lore.kernel.org/all/5EAED86C53DED2479E3E145969315A2385841062@UMECHPA7B.easf.csd.disa.mil/T/>
+    - <https://lore.kernel.org/all/20220207152735.27381-1-vverma@digitalocean.com/>
 
     感谢 @shankerwangmiao 提供的相关信息。
 
