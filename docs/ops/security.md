@@ -1,16 +1,20 @@
+---
+icon: material/security
+---
+
 # 安全
 
 !!! warning "本文初稿编写中"
 
-## 「安全」是什么？
+## 「安全」是什么？ {#what-is-security}
 
-## 攻击方视角：常见安全问题简介
+## 攻击方视角：常见安全问题简介 {#attackers}
 
-## 防守方视角：如何防御攻击
+## 防守方视角：如何防御攻击 {#defenders}
 
-### 教训
+### 教训 {#lessons}
 
-#### 保护个人计算机的安全
+#### 保护个人计算机的安全 {#personal-computer-security}
 
 !!! example "新闻选摘：SSH 软件与后门"
 
