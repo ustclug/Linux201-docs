@@ -215,11 +215,12 @@ Python 3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> a = [0] * 4000000  # 尝试占用至少 32 MB 内存
 Killed
+$ sudo cgdelete memory:test  # 清理现场
 ```
 
 !!! lab "观察这些命令的行为"
 
-    请使用系统调用分析工具 `strace` 观察 `cgcreate`、`cgset`、`cgexec` 的文件系统操作。
+    请使用系统调用分析工具 `strace` 观察 `cgcreate`、`cgset`、`cgexec`、`cgdelete` 的文件系统操作。
 
 具体的控制器使用方法这里不再赘述。
 
