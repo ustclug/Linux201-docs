@@ -238,6 +238,119 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
     使用 libseccomp 编写程序，设置系统调用白名单限制。
     尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。
 
-### OverlayFS
+### Overlay 文件系统 {#overlayfs}
 
-<!-- TODO: not fin -->
+[Overlay 文件系统](https://docs.kernel.org/filesystems/overlayfs.html)（OverlayFS）不是容器所必需的——比如说，一些容器运行时支持像 chroot 一样，直接从一个 rootfs 目录启动容器（例如 systemd-nspawn）。
+但是对于 Docker 这样的容器运行时，其 image 的分层结构使得 OverlayFS 成为了一个非常重要的技术。
+尽管对于 Docker 来说，其也支持其他的写时复制的存储驱动，例如 Btrfs 和 ZFS，但是 OverlayFS 仍然是最常见的选择——因为它不需要特殊的文件系统支持。
+
+挂载 OverlayFS 需要三个目录：
+
+- lowerdir: 只读的底层目录（支持多个）
+- upperdir: 可读写的上层目录
+- workdir: 需要为与上层目录处于同一文件系统的目录，用于处理文件系统的原子操作
+
+最终合成的文件系统会将 lowerdir 与 upperdir 合并，对于相同的文件，upperdir 优先。
+让我们试一试：
+
+```console
+$ mkdir lower upper work merged
+$ echo "lower" > lower/lower
+$ echo "upper" > upper/upper
+$ mkdir lower/dir upper/dir
+$ echo "lower1" > lower/dir/file1
+$ echo "upper1" > upper/dir/file1
+$ echo "lower2" > lower/dir/file2
+$ echo "upper2" > upper/dir/file2
+$ echo "lower4" > lower/dir/file4
+$ echo "upper3" > upper/dir/file3
+$ sudo mount -t overlay overlay -o lowerdir=lower,upperdir=upper,workdir=work merged
+$ tree merged
+merged/
+├── dir
+│   ├── file1
+│   ├── file2
+│   ├── file3
+│   └── file4
+├── lower
+└── upper
+
+2 directories, 6 files
+```
+
+可以看到 merged 目录下的文件是合并后的结果，同时存在 lower 和 upper 目录的文件。
+
+```console
+$ cat merged/lower
+lower
+$ cat merged/dir/file1
+upper1
+$ cat merged/dir/file2
+upper2
+$ cat merged/dir/file3
+upper3
+$ cat merged/dir/file4
+lower4
+```
+
+上面只有 upper 不存在的 dir/file4 是 lower 的内容，因此可以印证 upper 优先。
+
+```console
+$ echo "merged" > merged/merged
+$ echo "modified-lower" > merged/lower
+$ cat upper/merged
+merged
+$ cat upper/lower
+modified-lower
+$ cat lower/merged
+cat: lower/merged: No such file or directory
+$ cat lower/lower
+lower
+```
+
+可以显然发现写入操作会被应用到 upperdir 中。
+
+传统上，OverlayFS 最常见的用途是在 LiveCD/LiveUSB 上使用：在只读的底层文件系统上，挂载一个可写的上层文件系统，用于保存用户的数据。
+而在容器（特别是 Docker）上，由于容器镜像的分层设计，OverlayFS 就成为了一个非常好的选择。
+假设某个容器镜像有三层，每一层都做了一些修改。由于 OverlayFS 支持多个 lowerdir，
+所以最后合成出来的 image 就是第一层基底 + 第二层的变化作为 lowerdir，第三层作为 upperdir，
+这也可以从 `docker image inspect` 的结果印证：
+
+```console
+$ sudo docker image inspect 201test
+（省略）
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/9d15ee29579c96414c51ea2e693d2fe764da2e704a005e2d398025bf8c2b85b6/diff:/var/lib/docker/overlay2/38eb305239012877d40fc4f06620d0293d7632f188b986a0ff7f30a57b6feb32/diff",
+                "MergedDir": "/var/lib/docker/overlay2/a66d2956c278d83a86454659dba3b2f75b99b41ddb39c5227b02afde898efe55/merged",
+                "UpperDir": "/var/lib/docker/overlay2/a66d2956c278d83a86454659dba3b2f75b99b41ddb39c5227b02afde898efe55/diff",
+                "WorkDir": "/var/lib/docker/overlay2/a66d2956c278d83a86454659dba3b2f75b99b41ddb39c5227b02afde898efe55/work"
+            },
+            "Name": "overlay2"
+        },
+（省略）
+```
+
+（当然，这里容器镜像不会，也没有必要挂载，因此如果尝试访问 merged 目录，会发现不存在）
+
+使用容器镜像启动的容器则将镜像作为 lowerdir，在容器里面的写入操作则会被保存在 upperdir 中。
+
+```console
+$ sudo docker run -it --rm --name test 201test
+root@1522be2f7d29:/# echo 'test' > /test
+root@1522be2f7d29:/# # 切换到另一个终端
+$ sudo docker inspect test
+（省略）
+"GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5-init/diff:/var/lib/docker/overlay2/a66d2956c278d83a86454659dba3b2f75b99b41ddb39c5227b02afde898efe55/diff:/var/lib/docker/overlay2/9d15ee29579c96414c51ea2e693d2fe764da2e704a005e2d398025bf8c2b85b6/diff:/var/lib/docker/overlay2/38eb305239012877d40fc4f06620d0293d7632f188b986a0ff7f30a57b6feb32/diff",
+                "MergedDir": "/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/merged",
+                "UpperDir": "/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/diff",
+                "WorkDir": "/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/work"
+            },
+            "Name": "overlay2"
+        },
+（省略）
+$ sudo ls /var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/diff/
+test
+```
