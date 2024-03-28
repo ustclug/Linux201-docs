@@ -1160,7 +1160,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#git-config" class="md-nav__link">
+  <a href="#git-config-file" class="md-nav__link">
     <span class="md-ellipsis">
       本地配置
     </span>
@@ -1179,9 +1179,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#git-config-file" class="md-nav__link">
+  <a href="#git-config" class="md-nav__link">
     <span class="md-ellipsis">
-      配置文件
+      常用配置
     </span>
   </a>
   
@@ -1728,7 +1728,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#git-config" class="md-nav__link">
+  <a href="#git-config-file" class="md-nav__link">
     <span class="md-ellipsis">
       本地配置
     </span>
@@ -1747,9 +1747,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#git-config-file" class="md-nav__link">
+  <a href="#git-config" class="md-nav__link">
     <span class="md-ellipsis">
-      配置文件
+      常用配置
     </span>
   </a>
   
@@ -1929,11 +1929,11 @@
 <p class="admonition-title">本文仍在编辑中</p>
 </div>
 <h2 id="git">Git 使用技巧<a class="headerlink" href="#git" title="Permanent link">&para;</a></h2>
-<h3 id="git-config">本地配置<a class="headerlink" href="#git-config" title="Permanent link">&para;</a></h3>
+<h3 id="git-config-file">本地配置<a class="headerlink" href="#git-config-file" title="Permanent link">&para;</a></h3>
 <div class="admonition note">
 <p class="admonition-title">配置文件</p>
-<p>Git 的配置文件一般存放于 <code>~/.gitconfig</code> 或 <code>~/.config/git/config</code> 中, 你可以直接将下面的内容拷贝到你的配置文件中。</p>
-<p>下文中会讲解部分配置文件的作用及注意事项。</p>
+<p>Git 的配置文件一般存放于 <code>~/.gitconfig</code> 或 <code>~/.config/git/config</code> 中, 你可以直接将下面的内容拷贝到你的配置文件中（如果没有，新建一个）。</p>
+<p>下文中会讲解部分配置的作用及注意事项。</p>
 </div>
 <h4 id="git-alias">常用别名<a class="headerlink" href="#git-alias" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[alias]</span>
@@ -1947,7 +1947,7 @@
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="na">push-with-lease</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">push --force-with-lease</span>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="na">uncommit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">reset --soft HEAD~1</span>
 </code></pre></div>
-<h4 id="git-config-file">配置文件<a class="headerlink" href="#git-config-file" title="Permanent link">&para;</a></h4>
+<h4 id="git-config">常用配置<a class="headerlink" href="#git-config" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[color]</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="na">ui</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">auto</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">[color &quot;branch&quot;]</span>
@@ -1969,7 +1969,26 @@
 <div class="admonition warning">
 <p class="admonition-title"><code>.env</code> 文件与 <code>.gitignore</code></p>
 <p>有些项目在开发的途中，可能引入<code>.env</code>用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到<code>.gitignore</code>中。</p>
-<p>但是请注意，当<code>git reset</code>到一个<code>.gitignore</code>中尚不包含<code>.env</code>的 commit 时，（回退时）<code>.env</code>会被忽略，但再次提交时并不会。此时需手动将<code>.env</code> 移除版本控制，例如 <code>mv ./.env ../.env.bk</code> 以防止<code>.env</code>被提交。</p>
+<p>请注意，回退时 <code>.env</code> 会被忽略，如果此时 <code>.gitignore</code> 不含 <code>.env</code>， <code>.env</code> 会被视作 untracked files。</p>
+<pre class="mermaid"><code>classDiagram
+direction LR
+CommitA --|&gt; CommitB : "Add .env to .gitignore"
+CommitB --|&gt; CommitA_revert : reset --hard
+CommitA: .gitignore (without .env)
+CommitB: .gitignore (including .env)
+CommitB: .env
+CommitA_revert: .env (untracked)
+CommitA_revert: .gitignore (without .env)</code></pre>
+<p>此时需手动将<code>.env</code> 移除版本控制，例如 <code>mv ./.env ../.env.bk</code> 以防止<code>.env</code>被提交。</p>
+</div>
+<div class="admonition note 仅本地的 gitignore">
+<p class="admonition-title">Note</p>
+<p>本地的 <code>.git/info/exclude</code> 起到与 <code>.gitignore</code> 相同的作用，但是不会被提交到版本库中，适用于以下的情况：</p>
+<ul>
+<li>项目不允许修改 <code>.gitignore</code></li>
+<li>你的工作流程中有一些特殊的文件不希望被提交</li>
+</ul>
+<p>详细的文档可以参考<a href="https://git-scm.com/docs/gitignore#_description">这里</a>。</p>
 </div>
 <h4 id="git-global-gitignore">Global gitignore<a class="headerlink" href="#git-global-gitignore" title="Permanent link">&para;</a></h4>
 <p>对于一些常见的文件类型，可以在全局配置文件中指定：</p>
@@ -1981,11 +2000,32 @@
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>.DS_Store # for macOS
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>.idea
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>*.cache
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>.vscode
 </code></pre></div>
 <h3 id="git-hooks">Git Hook<a class="headerlink" href="#git-hooks" title="Permanent link">&para;</a></h3>
-<p>TBC</p>
+<p>对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 Git Hook 来自动化。</p>
+<p>一个叫较为成熟的框架是 <a href="https://pre-commit.com/">pre-commit</a>，它支持多种语言和工具，例如 <code>black</code>、<code>flake8</code>、<code>eslint</code> 等，<a href="https://github.com/pre-commit/pre-commit-hooks">这里</a> 提供了一些常用的 hook.</p>
+<p>如果只需要在 commit 后运行一段脚本，可以按照如下方法进行配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 在项目根目录下创建 .git/hooks/post-commit</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>touch<span class="w"> </span>.git/hooks/__hook_name__
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>.git/hooks/__hook_name__
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># .git/hooks/post-commit</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">#!/bin/bash</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># 在这里写入你的脚本</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--cached<span class="w"> </span>--name-only<span class="w"> </span>--diff-filter<span class="o">=</span>ACM<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;\.py$&#39;</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span>black<span class="w"> </span><span class="nv">$file</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">done</span>
+</code></pre></div>
 <h3 id="git-submodule">Git Submodule<a class="headerlink" href="#git-submodule" title="Permanent link">&para;</a></h3>
-<p>TBC</p>
+<p>Submodule 可以用来添加外部项目，例如向一个 C++ 项目中添加 Eigen：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>git<span class="w"> </span>submodule<span class="w"> </span>add<span class="w"> </span>https://gitlab.com/libeigen/eigen.git<span class="w"> </span>src/eigen
+</code></pre></div>
+<p>如果已经 clone 到了子目录 <code>src/eigen</code> 下，可以通过如下方法添加：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>git<span class="w"> </span>rm<span class="w"> </span>--cached<span class="w"> </span>-f<span class="w"> </span>src/eigen<span class="w"> </span><span class="c1"># if you&#39;ve already added it to the index</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>git<span class="w"> </span>submodule<span class="w"> </span>add<span class="w"> </span>&lt;url_of_eigen&gt;<span class="w"> </span>src/eigen
+</code></pre></div>
 <h3 id="git-rebase-merge">Rebase 与 Merge<a class="headerlink" href="#git-rebase-merge" title="Permanent link">&para;</a></h3>
 <p>TBC</p>
 <h3 id="git-commit-message">Commit Message Convention<a class="headerlink" href="#git-commit-message" title="Permanent link">&para;</a></h3>
@@ -1993,11 +2033,11 @@
 <div class="admonition note">
 <p class="admonition-title">Conventional Commits</p>
 <p>一种常见的 Commit Message 格式是 <a href="https://www.conventionalcommits.org/">Conventional Commits</a>，它的格式是：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;type&gt;[optional scope]: &lt;description&gt;
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[optional body]
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>[optional footer(s)]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&lt;type&gt;[optional scope]: &lt;description&gt;
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>[optional body]
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>[optional footer(s)]
 </code></pre></div>
 <p>其中：</p>
 <ul>
@@ -2013,9 +2053,9 @@
 <p class="admonition-title">Commit Message 模板</p>
 <p>即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 <a href="https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file">这里的例子</a> 添加到 <code>~/.gitmessage</code>：</p>
 <p>添加后不要忘记在首行添加空行，这样 <code>git commit</code> 时无需新建一行。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># ~/.gitconfig</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">[commit]</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="na">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitmessage</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># ~/.gitconfig</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">[commit]</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="na">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitmessage</span>
 </code></pre></div>
 </div>
 <h2 id="github">GitHub 使用技巧<a class="headerlink" href="#github" title="Permanent link">&para;</a></h2>
