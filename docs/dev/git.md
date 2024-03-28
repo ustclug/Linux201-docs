@@ -4,13 +4,13 @@
 
 ## Git 使用技巧
 
-### 本地配置 {#git-config}
+### 本地配置 {#git-config-file}
 
 !!! note "配置文件"
 
-    Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 你可以直接将下面的内容拷贝到你的配置文件中。
+    Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 你可以直接将下面的内容拷贝到你的配置文件中（如果没有，新建一个）。
 
-    下文中会讲解部分配置文件的作用及注意事项。
+    下文中会讲解部分配置的作用及注意事项。
 
 #### 常用别名 {#git-alias}
 
@@ -27,7 +27,7 @@
     uncommit = reset --soft HEAD~1
 ```
 
-#### 配置文件 {#git-config-file}
+#### 常用配置 {#git-config}
 
 ```ini
 [color]
@@ -55,7 +55,30 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
 
     有些项目在开发的途中，可能引入`.env`用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到`.gitignore`中。
 
-    但是请注意，当`git reset`到一个`.gitignore`中尚不包含`.env`的 commit 时，（回退时）`.env`会被忽略，但再次提交时并不会。此时需手动将`.env` 移除版本控制，例如 `mv ./.env ../.env.bk` 以防止`.env`被提交。
+    请注意，回退时 `.env` 会被忽略，如果此时 `.gitignore` 不含 `.env`， `.env` 会被视作 untracked files。
+
+    ```mermaid
+    classDiagram
+    direction LR
+    CommitA --|> CommitB : "Add .env to .gitignore"
+    CommitB --|> CommitA_revert : reset --hard
+    CommitA: .gitignore (without .env)
+    CommitB: .gitignore (including .env)
+    CommitB: .env
+    CommitA_revert: .env (untracked)
+    CommitA_revert: .gitignore (without .env)
+    ```
+
+    此时需手动将`.env` 移除版本控制，例如 `mv ./.env ../.env.bk` 以防止`.env`被提交。
+
+!!! note 仅本地的 gitignore
+
+    本地的 `.git/info/exclude` 起到与 `.gitignore` 相同的作用，但是不会被提交到版本库中，适用于以下的情况：
+
+    - 项目不允许修改 `.gitignore`
+    - 你的工作流程中有一些特殊的文件不希望被提交
+
+    详细的文档可以参考[这里](https://git-scm.com/docs/gitignore#_description)。
 
 #### Global gitignore {#git-global-gitignore}
 
@@ -72,15 +95,47 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
 .DS_Store # for macOS
 .idea
 *.cache
+.vscode
 ```
 
 ### Git Hook {#git-hooks}
 
-TBC
+对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 Git Hook 来自动化。
+
+一个叫较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[这里](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook.
+
+如果只需要在 commit 后运行一段脚本，可以按照如下方法进行配置：
+
+```bash
+# 在项目根目录下创建 .git/hooks/post-commit
+touch .git/hooks/__hook_name__
+chmod +x .git/hooks/__hook_name__
+```
+
+```bash
+# .git/hooks/post-commit
+#!/bin/bash
+
+# 在这里写入你的脚本
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.py$'); do
+    black $file
+done
+```
 
 ### Git Submodule {#git-submodule}
 
-TBC
+Submodule 可以用来添加外部项目，例如向一个 C++ 项目中添加 Eigen：
+
+```bash
+git submodule add https://gitlab.com/libeigen/eigen.git src/eigen
+```
+
+如果已经 clone 到了子目录 `src/eigen` 下，可以通过如下方法添加：
+
+```bash
+git rm --cached -f src/eigen # if you've already added it to the index
+git submodule add <url_of_eigen> src/eigen
+```
 
 ### Rebase 与 Merge {#git-rebase-merge}
 
