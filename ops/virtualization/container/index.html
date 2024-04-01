@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.16">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.7e359304.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.bcfcd587.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -993,6 +993,30 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-basic" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念复习
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1632,6 +1656,30 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-basic" class="md-nav__link">
+    <span class="md-ellipsis">
+      基础概念复习
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1938,6 +1986,63 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 <a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/diff/
 <a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="go">test</span>
 </code></pre></div>
+<h2 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h2>
+<h3 id="docker-basic">基础概念复习<a class="headerlink" href="#docker-basic" title="Permanent link">&para;</a></h3>
+<p>Docker 是众多容器运行时中的一种（也是最流行的一种）。用户可以从 <strong>registry</strong> 获取 <strong>image</strong>，
+获得的 image 可以直接创建 <strong>container</strong> 运行，也可以使用 Dockerfile 来定制 image。
+除此之外，Docker 也提供了与存储（<strong>volume</strong>）、网络（<strong>network</strong>）等相关的功能。
+Docker 的设计主要考虑了开发与部署的便利性。</p>
+<p>Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（<code>/run/docker.sock</code>），
+用户通过 <code>docker</code> 这个 CLI 工具，或者自行编写程序与其通信。
+这个 daemon 的容器操作则是与 containerd 进行交互。</p>
+<div class="admonition info">
+<p class="admonition-title">Podman</p>
+<p>对比 Docker 的 C-S 架构，红帽主推的 <a href="https://podman.io/">Podman</a> 则不再依赖于 daemon 进行容器管理。</p>
+</div>
+<p>最简单的创建容器的方法是：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">sudo docker run -it --rm --name test ubuntu:22.04</span>
+</code></pre></div>
+<div class="admonition danger">
+<p class="admonition-title">加入 docker 用户组等价于提供 root 权限</p>
+<p>在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
+将用户加入 docker 用户组即授权了对应的用户与 dockerd 任意通信的权限。
+用户可以通过创建特权容器、任意挂载宿主机目录等操作来实际做和 root 一模一样的事情。</p>
+<p>2023 年的 Hackergame 有一道相关的题目：<a href="https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone">Docker for Everyone</a>。</p>
+<p>以下所有块代码示例中均会使用 <code>sudo</code>。</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">保持环境整洁：给容器起名，并且为临时使用的容器加上 <code>--rm</code></p>
+<p>一个非常常见的问题是，很多人启动容器的时候直接这么做：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">sudo docker run -it ubuntu:22.04</span>
+</code></pre></div>
+<p>然后做了一些操作之后就直接退出了。这么做的后果，就是<strong>在 <code>docker ps -a</code> 的时候，发现一大堆已经处于退出状态的容器</strong>。</p>
+<p>加上 <code>--name</code> 参数命名，可以帮助之后判断容器的用途；加上 <code>--rm</code> 参数则会在容器退出后自动删除容器。</p>
+</div>
+<p>另外创建容器时非常常见的需求：</p>
+<ul>
+<li><code>-e KEY=VALUE</code>：设置环境变量</li>
+<li><code>-v HOST_PATH:CONTAINER_PATH</code>：挂载宿主机目录<ul>
+<li>相对路径需要自行加上 <code>$(pwd)</code>，像这样：<code>-v $(pwd)/data:/data</code></li>
+</ul>
+</li>
+<li><code>-p HOST_PORT:CONTAINER_PORT</code>：映射端口</li>
+</ul>
+<div class="admonition danger">
+<p class="admonition-title">映射端口的安全性</p>
+<p>默认情况下，Docker 会自行维护 iptables 规则，并且这样的规则不受 ufw 等工具的管理。
+这会导致暴露的端口绕过了系统的防火墙。</p>
+<p><strong>如果不需要其他机器访问，使用 <code>-p 127.0.0.1:xxxx:xxxx</code>，而非 <code>-p xxxx:xxxx</code></strong>。
+作为一个真实的案例，某服务器这样启动了一个 MongoDB 数据库容器：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">sudo docker run -p 27017:27017 -tid --name mongo mongo:3.6</span>
+</code></pre></div>
+<p>过了几个月，发现程序功能不正常，再一看才发现数据被加密勒索了——万幸的是里面没有重要的内容。</p>
+</div>
+<p>以及常见的容器管理命令：</p>
+<ul>
+<li><code>docker ps</code>：查看容器</li>
+<li><code>docker exec -it CONTAINER COMMAND</code>：在容器内执行命令</li>
+<li><code>docker inspect CONTAINER</code>：查看容器详细信息</li>
+</ul>
 <!--
   Links to man pages
 
