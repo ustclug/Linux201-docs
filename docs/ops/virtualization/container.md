@@ -354,3 +354,75 @@ $ sudo docker inspect test
 $ sudo ls /var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/diff/
 test
 ```
+
+## Docker
+
+### 基础概念复习 {#docker-basic}
+
+Docker 是众多容器运行时中的一种（也是最流行的一种）。用户可以从 **registry** 获取 **image**，
+获得的 image 可以直接创建 **container** 运行，也可以使用 Dockerfile 来定制 image。
+除此之外，Docker 也提供了与存储（**volume**）、网络（**network**）等相关的功能。
+Docker 的设计主要考虑了开发与部署的便利性。
+
+Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（`/run/docker.sock`），
+用户通过 `docker` 这个 CLI 工具，或者自行编写程序与其通信。
+这个 daemon 的容器操作则是与 containerd 进行交互。
+
+!!! info "Podman"
+
+    对比 Docker 的 C-S 架构，红帽主推的 [Podman](https://podman.io/) 则不再依赖于 daemon 进行容器管理。
+
+最简单的创建容器的方法是：
+
+```console
+sudo docker run -it --rm --name test ubuntu:22.04
+```
+
+!!! danger "加入 docker 用户组等价于提供 root 权限"
+
+    在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
+    将用户加入 docker 用户组即授权了对应的用户与 dockerd 任意通信的权限。
+    用户可以通过创建特权容器、任意挂载宿主机目录等操作来实际做和 root 一模一样的事情。
+
+    2023 年的 Hackergame 有一道相关的题目：[Docker for Everyone](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone)。
+
+    以下所有块代码示例中均会使用 `sudo`。
+
+!!! warning "保持环境整洁：给容器起名，并且为临时使用的容器加上 `--rm`"
+
+    一个非常常见的问题是，很多人启动容器的时候直接这么做：
+
+    ```console
+    sudo docker run -it ubuntu:22.04
+    ```
+
+    然后做了一些操作之后就直接退出了。这么做的后果，就是**在 `docker ps -a` 的时候，发现一大堆已经处于退出状态的容器**。
+
+    加上 `--name` 参数命名，可以帮助之后判断容器的用途；加上 `--rm` 参数则会在容器退出后自动删除容器。
+
+另外创建容器时非常常见的需求：
+
+- `-e KEY=VALUE`：设置环境变量
+- `-v HOST_PATH:CONTAINER_PATH`：挂载宿主机目录
+    - 相对路径需要自行加上 `$(pwd)`，像这样：`-v $(pwd)/data:/data`
+- `-p HOST_PORT:CONTAINER_PORT`：映射端口
+
+!!! danger "映射端口的安全性"
+
+    默认情况下，Docker 会自行维护 iptables 规则，并且这样的规则不受 ufw 等工具的管理。
+    这会导致暴露的端口绕过了系统的防火墙。
+
+    **如果不需要其他机器访问，使用 `-p 127.0.0.1:xxxx:xxxx`，而非 `-p xxxx:xxxx`**。
+    作为一个真实的案例，某服务器这样启动了一个 MongoDB 数据库容器：
+
+    ```console
+    sudo docker run -p 27017:27017 -tid --name mongo mongo:3.6
+    ```
+
+    过了几个月，发现程序功能不正常，再一看才发现数据被加密勒索了——万幸的是里面没有重要的内容。
+
+以及常见的容器管理命令：
+
+- `docker ps`：查看容器
+- `docker exec -it CONTAINER COMMAND`：在容器内执行命令
+- `docker inspect CONTAINER`：查看容器详细信息
