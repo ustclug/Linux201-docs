@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.16">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.17">
     
     
       
@@ -1480,12 +1480,13 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="基本扫描">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
-      端口扫描
+      指定地址
     </span>
   </a>
   
@@ -1494,7 +1495,7 @@
           <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
-      服务和版本检测
+      指定端口
     </span>
   </a>
   
@@ -1502,6 +1503,29 @@
         
           <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      指定网络协议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务和版本检测
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       操作系统检测
     </span>
@@ -1515,7 +1539,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       输出格式
     </span>
@@ -1687,12 +1711,13 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="基本扫描">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
-      端口扫描
+      指定地址
     </span>
   </a>
   
@@ -1701,7 +1726,7 @@
           <li class="md-nav__item">
   <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
-      服务和版本检测
+      指定端口
     </span>
   </a>
   
@@ -1709,6 +1734,29 @@
         
           <li class="md-nav__item">
   <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      指定网络协议
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务和版本检测
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
     <span class="md-ellipsis">
       操作系统检测
     </span>
@@ -1722,7 +1770,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_5" class="md-nav__link">
+  <a href="#_7" class="md-nav__link">
     <span class="md-ellipsis">
       输出格式
     </span>
@@ -1766,12 +1814,18 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>pacman<span class="w"> </span>-S<span class="w"> </span>nmap
 </code></pre></div>
 <h2 id="nmap_2">Nmap 基本用法举例<a class="headerlink" href="#nmap_2" title="Permanent link">&para;</a></h2>
+<div class="admonition question">
+<p class="admonition-title">Question</p>
+<p>你的室友有一台服务器，在上面运行了很多服务。有些是只给自己仅限他自己本机使用的，有些也许不小心对外开放了。你非常热心，想帮它检查一下意外暴露的服务，要怎么做呢？</p>
+</div>
 <h3 id="_1">基本扫描<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
-<p>扫描网络中的主机，开放的端口和对应的运行的服务</p>
+<p>扫描网络中的主机，开放的端口和对应的运行的服务。</p>
+<p><img alt="nmap扫描结果示例" src="../../images/nmap-result.png" /></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>在扫描中按下任意键可以显示进度</p>
 </div>
+<h4 id="_2">指定地址<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
 <p>扫描单个主机：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>nmap<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
@@ -1785,28 +1839,37 @@
 <p class="admonition-title">Tip</p>
 <p>如果你想扫描整个网络，但需要跳过某些主机，可以使用 --exclude 选项。</p>
 </div>
-<p>执行 SYN 扫描：</p>
-<p>（可能需要 root 权限，否则无法发送原始报文）</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>nmap<span class="w"> </span>-sS<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
-</code></pre></div>
-<p>执行 UDP 扫描（可能需要较长时间）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>sudo<span class="w"> </span>nmap<span class="w"> </span>-sU<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
-</code></pre></div>
-<h3 id="_2">端口扫描<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<div class="admonition question">
+<p class="admonition-title">Question</p>
+<p>你的服务器在大机房里，你记得你在上面开了一个运行在25565端口上的服务。但是……你忘记它的ip了。怎么快速找到它呢</p>
+</div>
+<h4 id="_3">指定端口<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
 <p>扫描特定端口：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>port<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>port<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
 <p>扫描多个端口：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>port1<span class="o">]</span>,<span class="o">[</span>port2<span class="o">]</span>,<span class="o">[</span>port3<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>port1<span class="o">]</span>,<span class="o">[</span>port2<span class="o">]</span>,<span class="o">[</span>port3<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
 <p>扫描一个范围内的端口：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>start_port<span class="o">]</span>-<span class="o">[</span>end_port<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>nmap<span class="w"> </span>-p<span class="w"> </span><span class="o">[</span>start_port<span class="o">]</span>-<span class="o">[</span>end_port<span class="o">]</span><span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
-<h3 id="_3">服务和版本检测<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<h4 id="_4">指定网络协议<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
+<p>执行 SYN 扫描：</p>
+<p>（可能需要 root 权限，否则无法发送原始报文）</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sudo<span class="w"> </span>nmap<span class="w"> </span>-sS<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
+</code></pre></div>
+<p>执行 UDP 扫描（可能需要较长时间）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>sudo<span class="w"> </span>nmap<span class="w"> </span>-sU<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
+</code></pre></div>
+<h3 id="_5">服务和版本检测<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
 <p>检测服务的版本信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>nmap<span class="w"> </span>-sV<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
-<h3 id="_4">操作系统检测<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<div class="admonition question">
+<p class="admonition-title">Question</p>
+<p>实验室跑了 20 年的古董服务器是什么操作系统呢？🤔</p>
+</div>
+<h3 id="_6">操作系统检测<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
 <p>检测某个主机的操作系统：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>nmap<span class="w"> </span>-O<span class="w"> </span><span class="o">[</span>target<span class="o">]</span>
 </code></pre></div>
@@ -1814,7 +1877,7 @@
 <p class="admonition-title">Tip</p>
 <p>使用 -T 选项可以设置 Nmap 的扫描速度，-T4 和 -T5 选项可以加快扫描速度，但也更容易被入侵检测系统（IDS）发现。如果想要更隐蔽地扫描，可以选择 -T2 或 -T3。</p>
 </div>
-<h2 id="_5">输出格式<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h2 id="_7">输出格式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h2>
 <p>Nmap 支持的输出格式包括：</p>
 <ul>
 <li>标准输出到控制台。</li>
@@ -1933,7 +1996,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      <script src="../../assets/javascripts/bundle.1e8ae164.min.js"></script>
       
     
   </body>
