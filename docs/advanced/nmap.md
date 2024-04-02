@@ -30,13 +30,21 @@ sudo pacman -S nmap
 
 ## Nmap 基本用法举例
 
+!!! question
+
+    你的室友有一台服务器，在上面运行了很多服务。有些是只给自己仅限他自己本机使用的，有些也许不小心对外开放了。你非常热心，想帮它检查一下意外暴露的服务，要怎么做呢？
+
 ### 基本扫描
 
-扫描网络中的主机，开放的端口和对应的运行的服务
+扫描网络中的主机，开放的端口和对应的运行的服务。
+
+![nmap扫描结果示例](../images/nmap-result.png)
 
 !!! tip
 
     在扫描中按下任意键可以显示进度
+
+#### 指定地址
 
 扫描单个主机：
 
@@ -60,21 +68,11 @@ nmap [subnet]/24
 
     如果你想扫描整个网络，但需要跳过某些主机，可以使用 --exclude 选项。
 
-执行 SYN 扫描：
+!!! question
 
-（可能需要 root 权限，否则无法发送原始报文）
+    你的服务器在大机房里，你记得你在上面开了一个运行在25565端口上的服务。但是……你忘记它的ip了。怎么快速找到它呢
 
-```shell
-sudo nmap -sS [target]
-```
-
-执行 UDP 扫描（可能需要较长时间）：
-
-```shell
-sudo nmap -sU [target]
-```
-
-### 端口扫描
+#### 指定端口
 
 扫描特定端口：
 
@@ -94,6 +92,22 @@ nmap -p [port1],[port2],[port3] [target]
 nmap -p [start_port]-[end_port] [target]
 ```
 
+#### 指定网络协议
+
+执行 SYN 扫描：
+
+（可能需要 root 权限，否则无法发送原始报文）
+
+```shell
+sudo nmap -sS [target]
+```
+
+执行 UDP 扫描（可能需要较长时间）：
+
+```shell
+sudo nmap -sU [target]
+```
+
 ### 服务和版本检测
 
 检测服务的版本信息：
@@ -101,6 +115,10 @@ nmap -p [start_port]-[end_port] [target]
 ```shell
 nmap -sV [target]
 ```
+
+!!! question
+
+    实验室跑了 20 年的古董服务器是什么操作系统呢？🤔
 
 ### 操作系统检测
 
