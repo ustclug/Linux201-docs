@@ -2,35 +2,17 @@
 
 !!! warning "本文初稿（也许）已完成，但可能仍需大幅度修改"
 
-CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发套件，它允许软件开发人员使用 NVIDIA 的 GPU（图形处理单元）进行通用计算。
+CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发套件，它允许软件开发人员使用 NVIDIA 的 GPU（图形处理单元）进行通用计算，利用 GPU 强大的并行处理能力来加速计算密集型任务，常用于科学计算、工程模拟、机器学习等领域。
 
-包含的组件有：
+包含的组件包括：
 
-- CUDA Runtime API：CUDA 编程的高级 API，为开发者提供了管理 GPU 设备、内存分配、数据传输和执行计算任务等功能的接口。
+- CUDA 驱动和运行时：这是连接你的软件和 GPU 硬件的基础层，它允许你的程序在 GPU 上执行。
 
-- CUDA Driver API：CUDA 的低级 API，提供了更细粒度的控制，允许开发者直接与 CUDA 驱动程序交互。对于需要更精细管理资源和执行模型的高级用户来说，这是一个有用的工具。
+- CUDA 编译器（nvcc）：这是一个将 CUDA 代码转换成 GPU 可以理解的形式的编译器。
 
-- CUDA Toolkit：一系列编译工具、库和技术文档。包括 `nvcc`（NVIDIA 的 CUDA 编译器）、CUDA 库、CUDA 调试器、性能分析工具（如 `nvprof`）以及其他开发工具。
+- CUDA 库：这些库包括一系列预制的、高效的函数，比如线性代数运算（cuBLAS）、傅里叶变换（cuFFT）等。
 
-- CUDA Libraries：一组为加速不同类型的计算任务而优化的库
-
-    - cuBLAS：基本线性代数子程序（`BLAS`）的 GPU 加速版本。
-
-    - cuFFT：在 GPU 上进行快速傅里叶变换的库。
-
-    - cuRAND：在 GPU 上生成随机数的库。
-
-    - cuDNN：用于深度神经网络的 GPU 加速的原语和函数库。
-
-    - NCCL：多 GPU 和多节点上的集合通信的库。
-
-    - Thrust：类似于 C++ 标准模板库（`STL`）的并行算法库。
-
-- CUDA Samples：示例代码，涵盖了基本的`Hello World`程序到更复杂的应用程序。
-
-- NVIDIA Nsight Tools：集成开发环境和调试工具，用于帮助开发者优化 CUDA 应用程序的性能和可靠性。包括 `Nsight Eclipse Edition`、`Nsight Visual Studio Edition`、`Nsight Compute` 和 `Nsight Systems`。
-
-- CUDA Documentation：包括 API 参考、编程指南、最佳实践指南和其他技术资源等
+- CUDA 工具：比如性能分析器（NVIDIA Nsight 和 Visual Profiler）和调试工具，它们帮助开发者优化和调试 CUDA 应用程序。
 
 ## 配置 CUDA 环境
 
