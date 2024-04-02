@@ -38,7 +38,7 @@ sudo pacman -S nmap
 
 扫描网络中的主机，开放的端口和对应的运行的服务。
 
-![nmap扫描结果示例](../images/nmap-result.png)
+![nmap 扫描结果示例](../images/nmap-result.png)
 
 !!! tip
 
