@@ -355,6 +355,18 @@ $ sudo ls /var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea6
 test
 ```
 
+!!! question "解释 Dockerfile 编写中的实践"
+
+    从 OverlayFS 的角度，解释以下 Dockerfile 存在的问题：
+
+    ```Dockerfile
+    # 以上部分省略
+    RUN wget -O /tmp/example.tar.gz https://example.com/example.tar.gz
+    RUN tar -zxvf /tmp/example.tar.gz -C /tmp
+    RUN make && make install
+    RUN rm -rf /tmp/*
+    ```
+
 ## Docker
 
 ### 基础概念复习 {#docker-basic}
@@ -402,10 +414,12 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
 另外创建容器时非常常见的需求：
 
-- `-e KEY=VALUE`：设置环境变量
+- `-e KEY=VALUE`/`--env KEY=VALUE`：设置环境变量
 - `-v HOST_PATH:CONTAINER_PATH`：挂载宿主机目录
     - 相对路径需要自行加上 `$(pwd)`，像这样：`-v $(pwd)/data:/data`
 - `-p HOST_PORT:CONTAINER_PORT`：映射端口
+- `--restart=always`/`--restart=unless-stopped`：设置容器启动、重启策略（可以使用 `docker update` 修改）
+- `--memory=512m --memory-swap=512m`：限制容器内存使用
 
 !!! danger "映射端口的安全性"
 
@@ -426,3 +440,35 @@ sudo docker run -it --rm --name test ubuntu:22.04
 - `docker ps`：查看容器
 - `docker exec -it CONTAINER COMMAND`：在容器内执行命令
 - `docker inspect CONTAINER`：查看容器详细信息
+
+### 多阶段构建 {#docker-multi-stage}
+
+在制作容器镜像的时候，一个常见的场景是：编译软件和实际运行的环境是不同的。
+如果将两者写在不同的 Dockerfile 中，实际操作会很麻烦（需要先构建编译容器、运行容器、再构建运行环境容器）；
+如果写在同一个 Dockerfile 里面，并且需要清理掉实际运行时不需要的文件，也会非常非常麻烦：
+
+```dockerfile
+# 那么可能只能这么写，否则编译环境仍然会残留在镜像中
+RUN apt install -y some-dev-package another-dev-package ... && \
+    wget https://example.com/some-source.tar.gz && \
+    tar -zxvf some-source.tar.gz && \
+    ./configure --some-option && make && make install && \
+    rm -rf /some-source.tar.gz /some-source && \
+    apt remove -y some-dev-package another-dev-package ... && \
+```
+
+Dockerfile 对多阶段（multi-stage）的支持很好地解决了这个问题，一个简单的例子如下：
+
+```dockerfile
+FROM alpine:3.15 AS builder
+RUN apk add --no-cache build-base
+WORKDIR /tmp
+ADD example.c .
+RUN gcc -o example example.c
+
+FROM alpine:3.15
+COPY --from=builder /tmp/example /usr/local/bin/example
+```
+
+可以发现，这个 Dockerfile 有多个 `FROM` 代表了多个阶段。
+第一阶段的 `FROM` 后面加上了 `AS builder`，这样就可以在第二阶段使用 `COPY --from=builder` 从第一阶段拷贝文件。
