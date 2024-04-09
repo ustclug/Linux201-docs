@@ -2021,7 +2021,7 @@
 <p>SSH 支持三种端口转发：</p>
 <ul>
 <li>
-<p>本地端口转发（<strong>L</strong>ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。例如：</p>
+<p>本地端口转发（<strong>L</strong>ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。<strong>即将远程主机上某个服务的端口转发到本地</strong>。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ssh<span class="w"> </span>-L<span class="w"> </span><span class="m">8080</span>:localhost:80<span class="w"> </span>example
 </code></pre></div>
 <p>本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：</p>
@@ -2030,14 +2030,14 @@
 <p>虽然 SSH 客户端也有一个 <code>GatewayPorts</code> 选项，但它只影响没有指定监听地址的语法模式（即三段式 <code>localport:remotehost:remoteport</code>）。指定四段式语法后，<code>GatewayPorts</code> 选项不再起作用。</p>
 </li>
 <li>
-<p>远程端口转发（<strong>R</strong>emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。例如：</p>
+<p>远程端口转发（<strong>R</strong>emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。<strong>即将本地某个服务的端口转发到远程主机上</strong>。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ssh<span class="w"> </span>-R<span class="w"> </span><span class="m">8080</span>:localhost:80<span class="w"> </span>example
 </code></pre></div>
 <p>上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。</p>
 <p>注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 <code>sshd_config</code> 中设置 <code>GatewayPorts yes</code>。与另外两种端口转发不同，客户端无法覆盖服务端的 <code>GatewayPorts</code> 设定。</p>
 </li>
 <li>
-<p>动态端口转发（<strong>D</strong>ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。例如：</p>
+<p>动态端口转发（<strong>D</strong>ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。<strong>相当于利用了远程主机作为代理</strong>。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ssh<span class="w"> </span>-D<span class="w"> </span><span class="m">1080</span><span class="w"> </span>example
 </code></pre></div>
 <p>由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。</p>
