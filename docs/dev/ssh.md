@@ -48,7 +48,7 @@ Host example
 
 SSH 支持三种端口转发：
 
-- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。例如：
+- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。**即将远程主机上某个服务的端口转发到本地**。例如：
 
     ```shell
     ssh -L 8080:localhost:80 example
@@ -62,7 +62,7 @@ SSH 支持三种端口转发：
 
     虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
-- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。例如：
+- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。**即将本地某个服务的端口转发到远程主机上**。例如：
 
     ```shell
     ssh -R 8080:localhost:80 example
@@ -72,7 +72,7 @@ SSH 支持三种端口转发：
 
     注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
-- 动态端口转发（**D**ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。例如：
+- 动态端口转发（**D**ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。**相当于利用了远程主机作为代理**。例如：
 
     ```shell
     ssh -D 1080 example
