@@ -270,11 +270,11 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
-## 内核态调试 {#kernel-debugging}
+## eBPF
 
-本部分主要介绍 eBPF 的使用（而不是类似在操作系统课程中使用 gdb attach 到 qemu 的「调试」）。
-在遇到疑难问题时，eBPF 可以帮助我们在线上系统中获取内核态更多的信息。
-此外在调试时，很可能需要阅读内核源码，[elixir.bootlin.com](https://elixir.bootlin.com/linux/latest/source)
+本部分主要介绍 eBPF 的使用。
+在遇到疑难问题时，eBPF 可以帮助我们以非常低的代价在线上系统中获取内核态与应用程序更多的信息。
+对于需要获取内核信息的场景，很可能需要阅读内核源码，[elixir.bootlin.com](https://elixir.bootlin.com/linux/latest/source)
 提供了在浏览器中方便的内核源码阅读功能，支持快速跳转到符号等功能。
 
 [bcc](https://github.com/iovisor/bcc/) 与 [bpftrace](https://github.com/bpftrace/bpftrace)
@@ -287,16 +287,15 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 ![bpftrace/eBPF Tools](https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png)
 
 考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。
+
+### 内核态 {#kernel-ebpf}
+
 bpftrace 中包含了几种内核态的「探针」（probe）：
 
 - kprobe：默认在函数入口处插入 probe，也可以指定偏移量，从而在函数的任意位置插入 probe
 - kretprobe：在函数返回时插入 probe，可以获取函数的返回值，不能获取函数的参数
 - tracepoint：在内核预先定义的 tracepoint 处插入 probe
 - kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数
-
-!!! tip "用户态调试支持"
-
-    eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。
 
 使用 `bpftrace -l` 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。
 
@@ -370,6 +369,113 @@ kfunc:vmlinux:try_charge_memcg
 $ sudo bpftrace -e 'kfunc:try_charge_memcg { printf("%d\n", args->nr_pages); }'
 ...
 ```
+
+### 用户态 {#user-space-ebpf}
+
+eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。
+
+以下面的 C++ 程序为例子：
+
+```cpp
+#include <iostream>
+
+int example(int a, int b) {
+    return a + b;
+}
+
+int main(void) {
+    for (int i = 0; i < 1024; i++) {
+        int a = i, b = i + 1;
+        std::cout << example(a, b) << std::endl;
+    }
+    return 0;
+}
+```
+
+编译并查看符号：
+
+```console
+$ g++ example.cpp -O0 -o example
+$ nm example
+0000000000004040 B __bss_start
+                 w __cxa_finalize@GLIBC_2.2.5
+0000000000004028 D __data_start
+0000000000004028 W data_start
+0000000000004030 D __dso_handle
+0000000000003db0 d _DYNAMIC
+0000000000004038 D _edata
+0000000000004158 B _end
+...
+```
+
+我们可以找到 `example()` 函数对应的符号：
+
+```console
+$ nm example | grep example
+0000000000001220 T _Z7exampleii
+```
+
+!!! note "符号的名称修饰（Name mangling）"
+
+    可以注意到，上面的符号名不是 `example`，而是 `_Z7exampleii`。
+    C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名称，以便支持函数重载等特性。
+    这里的名字经过 demangle 之后就是 `example(int, int)`。
+
+!!! tip "`nm`"
+
+    `nm` 是一个用于查看二进制文件中符号的工具，可以用于查看函数、变量等的地址。
+    如果不加参数，那么其会列出文件中的静态符号（例如全局变量、函数等）。
+    对于动态链接库（`.so` 文件），可以使用 `nm -D` 来查看其暴露给应用的动态符号。
+
+使用 uprobe 追踪 `example()` 函数的调用：
+
+```console
+$ sudo bpftrace -e 'uprobe:/path/to/example:_Z7exampleii { printf("example(%d, %d)\n", arg0, arg1); }'
+Attaching 1 probe...
+（在另一个终端执行 ./example 之后）
+example(0, 1)
+example(1, 2)
+...
+example(1023, 1024)
+```
+
+!!! note "编译器优化"
+
+    如果上面的例子使用 `-O2`，那么你可能会发现这里的 bpftrace 没有输出任何内容。
+    这是因为编译器进行了内联优化，将 `example()` 函数内联到了 `main()` 函数中，省去了函数调用的开销。
+    既然没有函数调用，那么也就没有 uprobe 可以追踪的地方。
+
+    可以使用 `objdump -d` 来查看编译后的汇编代码，以确认是否发生了内联优化。
+
+!!! lab "使用 uprobe 追踪容器中的程序"
+
+    在容器中编译并运行下面的程序：
+
+    ```cpp
+    #include <iostream>
+    #include <random>
+    #include <unistd.h>
+
+    int example(int a, int b) {
+        return a + b;
+    }
+
+    int main(void) {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> distr(1, 1024);
+        for (;;) {
+            int a = distr(gen), b = distr(gen);
+            std::cout << example(a, b) << std::endl;
+            sleep(1);
+        }
+        return 0;
+    }
+    ```
+
+    尝试追踪对应程序的 `example()` 函数调用。
+
+    提示：procfs 中的 `/proc/<pid>/root` 目录可能会有所帮助。
 
 更多的例子与说明可以参考：
 
