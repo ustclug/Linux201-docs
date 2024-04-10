@@ -890,11 +890,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kernel-debugging" class="md-nav__link">
+  <a href="#ebpf" class="md-nav__link">
     <span class="md-ellipsis">
-      内核态调试
+      eBPF
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="eBPF">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kernel-ebpf" class="md-nav__link">
+    <span class="md-ellipsis">
+      内核态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-space-ebpf" class="md-nav__link">
+    <span class="md-ellipsis">
+      用户态
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1603,11 +1627,35 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#kernel-debugging" class="md-nav__link">
+  <a href="#ebpf" class="md-nav__link">
     <span class="md-ellipsis">
-      内核态调试
+      eBPF
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="eBPF">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#kernel-ebpf" class="md-nav__link">
+    <span class="md-ellipsis">
+      内核态
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-space-ebpf" class="md-nav__link">
+    <span class="md-ellipsis">
+      用户态
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1870,10 +1918,10 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 <code>valgrind</code> 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。</p>
-<h2 id="kernel-debugging">内核态调试<a class="headerlink" href="#kernel-debugging" title="Permanent link">&para;</a></h2>
-<p>本部分主要介绍 eBPF 的使用（而不是类似在操作系统课程中使用 gdb attach 到 qemu 的「调试」）。
-在遇到疑难问题时，eBPF 可以帮助我们在线上系统中获取内核态更多的信息。
-此外在调试时，很可能需要阅读内核源码，<a href="https://elixir.bootlin.com/linux/latest/source">elixir.bootlin.com</a>
+<h2 id="ebpf">eBPF<a class="headerlink" href="#ebpf" title="Permanent link">&para;</a></h2>
+<p>本部分主要介绍 eBPF 的使用。
+在遇到疑难问题时，eBPF 可以帮助我们以非常低的代价在线上系统中获取内核态与应用程序更多的信息。
+对于需要获取内核信息的场景，很可能需要阅读内核源码，<a href="https://elixir.bootlin.com/linux/latest/source">elixir.bootlin.com</a>
 提供了在浏览器中方便的内核源码阅读功能，支持快速跳转到符号等功能。</p>
 <p><a href="https://github.com/iovisor/bcc/">bcc</a> 与 <a href="https://github.com/bpftrace/bpftrace">bpftrace</a>
 是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
@@ -1881,18 +1929,15 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 （以下工具的使用请自行查阅资料）：</p>
 <p><img alt="Linux bcc/BPF Tracing Tools" src="https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png" /></p>
 <p><img alt="bpftrace/eBPF Tools" src="https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png" /></p>
-<p>考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。
-bpftrace 中包含了几种内核态的「探针」（probe）：</p>
+<p>考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。</p>
+<h3 id="kernel-ebpf">内核态<a class="headerlink" href="#kernel-ebpf" title="Permanent link">&para;</a></h3>
+<p>bpftrace 中包含了几种内核态的「探针」（probe）：</p>
 <ul>
 <li>kprobe：默认在函数入口处插入 probe，也可以指定偏移量，从而在函数的任意位置插入 probe</li>
 <li>kretprobe：在函数返回时插入 probe，可以获取函数的返回值，不能获取函数的参数</li>
 <li>tracepoint：在内核预先定义的 tracepoint 处插入 probe</li>
 <li>kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数</li>
 </ul>
-<div class="admonition tip">
-<p class="admonition-title">用户态调试支持</p>
-<p>eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。</p>
-</div>
 <p>使用 <code>bpftrace -l</code> 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-l
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">（省略）</span>
@@ -1950,6 +1995,94 @@ bpftrace 中包含了几种内核态的「探针」（probe）：</p>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kfunc:try_charge_memcg { printf(&quot;%d\n&quot;, args-&gt;nr_pages); }&#39;</span>
 <a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">...</span>
 </code></pre></div>
+<h3 id="user-space-ebpf">用户态<a class="headerlink" href="#user-space-ebpf" title="Permanent link">&para;</a></h3>
+<p>eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。</p>
+<p>以下面的 C++ 程序为例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="p">}</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1024</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="p">}</span>
+</code></pre></div>
+<p>编译并查看符号：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>g++<span class="w"> </span>example.cpp<span class="w"> </span>-O0<span class="w"> </span>-o<span class="w"> </span>example
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">$ </span>nm<span class="w"> </span>example
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">0000000000004040 B __bss_start</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">                 w __cxa_finalize@GLIBC_2.2.5</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">0000000000004028 D __data_start</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">0000000000004028 W data_start</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">0000000000004030 D __dso_handle</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go">0000000000003db0 d _DYNAMIC</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="go">0000000000004038 D _edata</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="go">0000000000004158 B _end</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="go">...</span>
+</code></pre></div>
+<p>我们可以找到 <code>example()</code> 函数对应的符号：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>nm<span class="w"> </span>example<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>example
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">0000000000001220 T _Z7exampleii</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">符号的名称修饰（Name mangling）</p>
+<p>可以注意到，上面的符号名不是 <code>example</code>，而是 <code>_Z7exampleii</code>。
+C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名称，以便支持函数重载等特性。
+这里的名字经过 demangle 之后就是 <code>example(int, int)</code>。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title"><code>nm</code></p>
+<p><code>nm</code> 是一个用于查看二进制文件中符号的工具，可以用于查看函数、变量等的地址。
+如果不加参数，那么其会列出文件中的静态符号（例如全局变量、函数等）。
+对于动态链接库（<code>.so</code> 文件），可以使用 <code>nm -D</code> 来查看其暴露给应用的动态符号。</p>
+</div>
+<p>使用 uprobe 追踪 <code>example()</code> 函数的调用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;uprobe:/path/to/example:_Z7exampleii { printf(&quot;example(%d, %d)\n&quot;, arg0, arg1); }&#39;</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">Attaching 1 probe...</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">（在另一个终端执行 ./example 之后）</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">example(0, 1)</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">example(1, 2)</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">...</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">example(1023, 1024)</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">编译器优化</p>
+<p>如果上面的例子使用 <code>-O2</code>，那么你可能会发现这里的 bpftrace 没有输出任何内容。
+这是因为编译器进行了内联优化，将 <code>example()</code> 函数内联到了 <code>main()</code> 函数中，省去了函数调用的开销。
+既然没有函数调用，那么也就没有 uprobe 可以追踪的地方。</p>
+<p>可以使用 <code>objdump -d</code> 来查看编译后的汇编代码，以确认是否发生了内联优化。</p>
+</div>
+<div class="admonition lab">
+<p class="admonition-title">使用 uprobe 追踪容器中的程序</p>
+<p>在容器中编译并运行下面的程序：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;random&gt;</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;unistd.h&gt;</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="p">}</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">random_device</span><span class="w"> </span><span class="n">rd</span><span class="p">;</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">mt19937</span><span class="w"> </span><span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">uniform_int_distribution</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="p">);</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">),</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">);</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="w">        </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="p">}</span>
+</code></pre></div>
+<p>尝试追踪对应程序的 <code>example()</code> 函数调用。</p>
+<p>提示：procfs 中的 <code>/proc/&lt;pid&gt;/root</code> 目录可能会有所帮助。</p>
+</div>
 <p>更多的例子与说明可以参考：</p>
 <ul>
 <li><a href="https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md">The bpftrace One-Liner Tutorial</a>（<a href="https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md">中文版</a>）</li>
