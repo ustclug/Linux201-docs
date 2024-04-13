@@ -393,10 +393,13 @@ sudo docker run -it --rm --name test ubuntu:22.04
 !!! danger "加入 docker 用户组等价于提供 root 权限"
 
     在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
-    将用户加入 docker 用户组即授权了对应的用户与 dockerd 任意通信的权限。
+    将用户加入 docker 用户组即授权了对应的用户与 Docker 的 UNIX socket，或者说与 dockerd 服务端，任意通信的权限。
     用户可以通过创建特权容器、任意挂载宿主机目录等操作来实际做和 root 一模一样的事情。
 
     2023 年的 Hackergame 有一道相关的题目：[Docker for Everyone](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone)。
+
+    基于相同的理由，如果需要跨机器操作 Docker，也**不**应该用 `-H tcp://` 的方式开启远程访问。
+    请阅读 <https://docs.docker.com/engine/security/protect-access/> 了解安全配置远程访问 Docker 的方法。
 
     以下所有块代码示例中均会使用 `sudo`。
 
@@ -472,3 +475,75 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 
 可以发现，这个 Dockerfile 有多个 `FROM` 代表了多个阶段。
 第一阶段的 `FROM` 后面加上了 `AS builder`，这样就可以在第二阶段使用 `COPY --from=builder` 从第一阶段拷贝文件。
+
+### 运行图形应用 {#docker-gui}
+
+<!-- TODO: 链接到高级内容中的显示与窗口系统部分 -->
+
+在容器中运行图形程序也是相当常见的需求。
+以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。
+
+!!! tip "X 客户端与服务器"
+
+    X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。
+
+    如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。
+    如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。
+
+    对于 SSH 连接到远程服务器的场景，可以使用 `ssh -X`（或 `ssh -Y` (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。
+    {: .annotate }
+
+    1. 当使用 `-X` 时，服务端会假设客户端是不可信任的，因此会限制一些操作；`-Y` 选项则会放宽这些限制。详见 [ssh_config(5)][ssh_config.5] 对 `ForwardX11Trusted` 的介绍。
+
+X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 `DISPLAY` 环境变量指定的，一般是 `:0`，代表连接到 `/tmp/.X11-unix/X0` 这个 UNIX socket。
+此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 `DISPLAY=host:port` 的方式连接。
+
+因此，首先需要传递 `DISPLAY` 环境变量，并且将 `/tmp/.X11-unix` 挂载到容器中：
+
+```console
+sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -v /tmp/.X11-unix:/tmp/.X11-unix ustclug/debian:12
+```
+
+为了测试，可以在容器里安装 `x11-apps`，然后运行 `xeyes`。如果配置正确，可以看到一双眼睛在跟随鼠标。
+但是上面的配置是不够的：
+
+```console
+root@6f640b929f0e:/# xeyes
+Authorization required, but no authorization protocol specified
+
+Error: Can't open display: :0
+```
+
+这是因为 X 服务器需要认证信息才能够连接，对应的认证信息就在名为 "Xauthority" 的文件中，对应 `XAUTHORITY` 环境变量：
+
+```console
+$ echo $XAUTHORITY  # 一个例子，实际值会根据环境不同而不同
+/run/user/1000/.mutter-Xwaylandauth.5S15L2
+```
+
+!!! warning "避免直接关闭认证的做法"
+
+    如果阅读网络上的一些教程，它们可能会建议直接关闭 X 服务器的认证，就像这样：
+
+    ```console
+    xhost +
+    ```
+
+    这在安全性上是**非常糟糕**的做法，因为这样的话就会允许所有能访问到 X 服务器的人/程序连接。
+
+所以也需要将这一对环境变量和文件塞进来：
+
+```console
+sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -e "XAUTHORITY=$XAUTHORITY" -v /tmp/.X11-unix:/tmp/.X11-unix -v $XAUTHORITY:$XAUTHORITY ustclug/debian:12
+```
+
+这样就可以在容器中运行基本的图形应用了。
+不过，如果实际需求是在类似沙盒的环境中运行图形应用，有一些更合适的选择，例如 [bubblewrap](https://github.com/containers/bubblewrap) 以及基于此的 [Flatpak](https://flatpak.org/) 等。
+
+??? note "GPU"
+
+    **（以下内容不完全适用于使用 NVIDIA 专有驱动的 NVIDIA GPU）**
+
+    在 Linux 下，GPU 设备文件位于 `/dev/dri` 目录下。每张显卡会暴露两个设备文件，其中 `cardX` 代表了完整的 GPU 设备（有写入权限相当于有控制 GPU 的完整权限），而 `renderDXXX` 代表了 GPU 的渲染设备。对于需要 GPU 加速渲染的场景，为其挂载 `/dev/dri/renderDXXX` 设备即可。
+
+    与此同时，容器内还需要安装对应的 GPU **用户态**驱动。对于开源驱动来说，安装 Mesa 即可。
