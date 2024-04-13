@@ -1021,6 +1021,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#docker-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      运行图形应用
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1693,6 +1702,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#docker-gui" class="md-nav__link">
+    <span class="md-ellipsis">
+      运行图形应用
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2033,9 +2051,11 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <div class="admonition danger">
 <p class="admonition-title">加入 docker 用户组等价于提供 root 权限</p>
 <p>在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
-将用户加入 docker 用户组即授权了对应的用户与 dockerd 任意通信的权限。
+将用户加入 docker 用户组即授权了对应的用户与 Docker 的 UNIX socket，或者说与 dockerd 服务端，任意通信的权限。
 用户可以通过创建特权容器、任意挂载宿主机目录等操作来实际做和 root 一模一样的事情。</p>
 <p>2023 年的 Hackergame 有一道相关的题目：<a href="https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone">Docker for Everyone</a>。</p>
+<p>基于相同的理由，如果需要跨机器操作 Docker，也<strong>不</strong>应该用 <code>-H tcp://</code> 的方式开启远程访问。
+请阅读 <a href="https://docs.docker.com/engine/security/protect-access/">https://docs.docker.com/engine/security/protect-access/</a> 了解安全配置远程访问 Docker 的方法。</p>
 <p>以下所有块代码示例中均会使用 <code>sudo</code>。</p>
 </div>
 <div class="admonition warning">
@@ -2097,6 +2117,55 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 </code></pre></div>
 <p>可以发现，这个 Dockerfile 有多个 <code>FROM</code> 代表了多个阶段。
 第一阶段的 <code>FROM</code> 后面加上了 <code>AS builder</code>，这样就可以在第二阶段使用 <code>COPY --from=builder</code> 从第一阶段拷贝文件。</p>
+<h3 id="docker-gui">运行图形应用<a class="headerlink" href="#docker-gui" title="Permanent link">&para;</a></h3>
+<!-- TODO: 链接到高级内容中的显示与窗口系统部分 -->
+
+<p>在容器中运行图形程序也是相当常见的需求。
+以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。</p>
+<div class="admonition tip">
+<p class="admonition-title">X 客户端与服务器</p>
+<p>X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。</p>
+<p>如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。
+如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。</p>
+<p class="annotate">对于 SSH 连接到远程服务器的场景，可以使用 <code>ssh -X</code>（或 <code>ssh -Y</code> (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。</p>
+<ol>
+<li>当使用 <code>-X</code> 时，服务端会假设客户端是不可信任的，因此会限制一些操作；<code>-Y</code> 选项则会放宽这些限制。详见 <a href="https://man.openbsd.org/ssh_config">ssh_config(5)</a> 对 <code>ForwardX11Trusted</code> 的介绍。</li>
+</ol>
+</div>
+<p>X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 <code>DISPLAY</code> 环境变量指定的，一般是 <code>:0</code>，代表连接到 <code>/tmp/.X11-unix/X0</code> 这个 UNIX socket。
+此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 <code>DISPLAY=host:port</code> 的方式连接。</p>
+<p>因此，首先需要传递 <code>DISPLAY</code> 环境变量，并且将 <code>/tmp/.X11-unix</code> 挂载到容器中：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="go">sudo docker run -it --rm -e &quot;DISPLAY=$DISPLAY&quot; -v /tmp/.X11-unix:/tmp/.X11-unix ustclug/debian:12</span>
+</code></pre></div>
+<p>为了测试，可以在容器里安装 <code>x11-apps</code>，然后运行 <code>xeyes</code>。如果配置正确，可以看到一双眼睛在跟随鼠标。
+但是上面的配置是不够的：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">root@6f640b929f0e:/# </span>xeyes
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">Authorization required, but no authorization protocol specified</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">Error: Can&#39;t open display: :0</span>
+</code></pre></div>
+<p>这是因为 X 服务器需要认证信息才能够连接，对应的认证信息就在名为 "Xauthority" 的文件中，对应 <code>XAUTHORITY</code> 环境变量：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$XAUTHORITY</span><span class="w">  </span><span class="c1"># 一个例子，实际值会根据环境不同而不同</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">/run/user/1000/.mutter-Xwaylandauth.5S15L2</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">避免直接关闭认证的做法</p>
+<p>如果阅读网络上的一些教程，它们可能会建议直接关闭 X 服务器的认证，就像这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="go">xhost +</span>
+</code></pre></div>
+<p>这在安全性上是<strong>非常糟糕</strong>的做法，因为这样的话就会允许所有能访问到 X 服务器的人/程序连接。</p>
+</div>
+<p>所以也需要将这一对环境变量和文件塞进来：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="go">sudo docker run -it --rm -e &quot;DISPLAY=$DISPLAY&quot; -e &quot;XAUTHORITY=$XAUTHORITY&quot; -v /tmp/.X11-unix:/tmp/.X11-unix -v $XAUTHORITY:$XAUTHORITY ustclug/debian:12</span>
+</code></pre></div>
+<p>这样就可以在容器中运行基本的图形应用了。
+不过，如果实际需求是在类似沙盒的环境中运行图形应用，有一些更合适的选择，例如 <a href="https://github.com/containers/bubblewrap">bubblewrap</a> 以及基于此的 <a href="https://flatpak.org/">Flatpak</a> 等。</p>
+<details class="note">
+<summary>GPU</summary>
+<p><strong>（以下内容不完全适用于使用 NVIDIA 专有驱动的 NVIDIA GPU）</strong></p>
+<p>在 Linux 下，GPU 设备文件位于 <code>/dev/dri</code> 目录下。每张显卡会暴露两个设备文件，其中 <code>cardX</code> 代表了完整的 GPU 设备（有写入权限相当于有控制 GPU 的完整权限），而 <code>renderDXXX</code> 代表了 GPU 的渲染设备。对于需要 GPU 加速渲染的场景，为其挂载 <code>/dev/dri/renderDXXX</code> 设备即可。</p>
+<p>与此同时，容器内还需要安装对应的 GPU <strong>用户态</strong>驱动。对于开源驱动来说，安装 Mesa 即可。</p>
+</details>
 <!--
   Links to man pages
 
