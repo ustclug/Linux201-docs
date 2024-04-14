@@ -547,3 +547,80 @@ sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -e "XAUTHORITY=$XAUTHORITY" -v /t
     在 Linux 下，GPU 设备文件位于 `/dev/dri` 目录下。每张显卡会暴露两个设备文件，其中 `cardX` 代表了完整的 GPU 设备（有写入权限相当于有控制 GPU 的完整权限），而 `renderDXXX` 代表了 GPU 的渲染设备。对于需要 GPU 加速渲染的场景，为其挂载 `/dev/dri/renderDXXX` 设备即可。
 
     与此同时，容器内还需要安装对应的 GPU **用户态**驱动。对于开源驱动来说，安装 Mesa 即可。
+
+### Volume
+
+Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
+上面介绍了使用 `-v HOST_PATH:CONTAINER_PATH` 的方式挂载宿主机的目录，不过如果将参数写成 `-v VOLUME_NAME:CONTAINER_PATH` 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。
+
+```console
+$ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
+root@c273ee70fe7a:/# touch /myvolume/a
+root@c273ee70fe7a:/# ls /myvolume/
+a
+```
+
+Volume 在这里不会因为容器销毁被删除：
+
+```console
+root@c273ee70fe7a:/#
+$ # 原来的容器没了，挂载相同的 volume 开个新的
+$ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
+root@38e2da3a59f7:/# ls /myvolume/
+a
+```
+
+可以查看 Docker 管理的所有 volume，它们在文件系统中的实际位置：
+
+```console
+$ sudo docker volume ls
+DRIVER    VOLUME NAME
+local     2aa17ad1c2ee9bf3b2933d241a5196bdaff5e144abcfbf4c1d161198f0f35912
+（省略）
+local     myvolume
+（省略）
+$ sudo docker inspect myvolume
+[
+    {
+        "CreatedAt": "2024-04-14T22:54:12+08:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/myvolume/_data",
+        "Name": "myvolume",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+```
+
+此外，在上面列出的 volume 里面，有一些没有名字，显示为哈希值的 volume。这些被称为「匿名 volume」。
+例如，如果在创建容器的时候不指定 volume 名字，那么 Docker 就会自动创建一个匿名 volume：
+
+```console
+$ sudo docker run -it --rm --name test -v /myvolume ustclug/debian:12
+root@ec434eb92714:/# # 打开另一个终端
+$ sudo docker inspect test
+（省略）
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976",
+                "Source": "/var/lib/docker/volumes/e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976/_data",
+                "Destination": "/myvolume",
+                "Driver": "local",
+                "Mode": "",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+```
+
+如果在 `docker run` 时添加了 `--rm` 参数，那么匿名 volume 会在容器销毁时被删除。
+反之，手动 `docker rm` 一个容器时，它对应的匿名 volume 不会被删除。
+
+同时，Dockerfile 中也可以使用 `VOLUME` 指令声明 volume。如果用户在运行容器的时候没有指定 volume，那么 Docker 就会自动创建一个匿名 volume。
+一个例子是 [`mariadb` 容器镜像](https://hub.docker.com/layers/library/mariadb/lts/images/sha256-e0a092f10ea8a4c33e88b790606b68dab3d00e6b1ef417f6f5d8e825574e1fa6?context=explore)：
+
+```dockerfile
+VOLUME [/var/lib/mysql]  # Layer 18
+```
