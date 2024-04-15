@@ -1031,6 +1031,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Registry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#volume" class="md-nav__link">
     <span class="md-ellipsis">
       Volume
@@ -1721,6 +1730,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Registry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#volume" class="md-nav__link">
     <span class="md-ellipsis">
       Volume
@@ -2184,65 +2202,80 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>在 Linux 下，GPU 设备文件位于 <code>/dev/dri</code> 目录下。每张显卡会暴露两个设备文件，其中 <code>cardX</code> 代表了完整的 GPU 设备（有写入权限相当于有控制 GPU 的完整权限），而 <code>renderDXXX</code> 代表了 GPU 的渲染设备。对于需要 GPU 加速渲染的场景，为其挂载 <code>/dev/dri/renderDXXX</code> 设备即可。</p>
 <p>与此同时，容器内还需要安装对应的 GPU <strong>用户态</strong>驱动。对于开源驱动来说，安装 Mesa 即可。</p>
 </details>
+<h3 id="registry">Registry<a class="headerlink" href="#registry" title="Permanent link">&para;</a></h3>
+<p>Registry 是存储与分发容器镜像的服务。在大部分时候，我们使用的 registry 是 <a href="https://hub.docker.com/">Docker Hub</a>。</p>
+<div class="admonition warning">
+<p class="admonition-title">区分 Docker 和 Docker Hub</p>
+<p>Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
+这些服务提供的容器镜像也可以正常在 Docker 中使用。</p>
+</div>
+<p>镜像名称的格式是 <code>registry.example.com:username/image:tag</code>，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub；而如果没有指定 username，则默认会指定为 <code>library</code>，其代表 Docker Hub 中的「官方」镜像。</p>
+<p>Registry 服务大多允许用户上传自己的容器镜像。在对应的服务注册帐号，使用 <code>docker login</code> 登录之后，需要先使用 <code>docker tag</code> 为自己的镜像打上对应的标签：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="go">sudo docker tag example:latest registry.example.com:username/example:latest</span>
+</code></pre></div>
+<p>然后再 <code>docker push</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="go">sudo docker push registry.example.com:username/example:latest</span>
+</code></pre></div>
+<p>除了 Docker Hub 以外，另一个比较常见的 registry 服务是 <a href="https://ghcr.io">GitHub Container Registry (ghcr)</a>。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 <code>${{ secrets.GITHUB_TOKEN }}</code> 来登录到 ghcr）。<a href="https://gcr.io">谷歌</a>和<a href="https://quay.io">红帽</a>也提供了自己的 registry 服务。</p>
 <h3 id="volume">Volume<a class="headerlink" href="#volume" title="Permanent link">&para;</a></h3>
 <p>Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
 上面介绍了使用 <code>-v HOST_PATH:CONTAINER_PATH</code> 的方式挂载宿主机的目录，不过如果将参数写成 <code>-v VOLUME_NAME:CONTAINER_PATH</code> 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="gp">root@c273ee70fe7a:/# </span>touch<span class="w"> </span>/myvolume/a
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="gp">root@c273ee70fe7a:/# </span>ls<span class="w"> </span>/myvolume/
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">a</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gp">root@c273ee70fe7a:/# </span>touch<span class="w"> </span>/myvolume/a
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="gp">root@c273ee70fe7a:/# </span>ls<span class="w"> </span>/myvolume/
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">a</span>
 </code></pre></div>
 <p>Volume 在这里不会因为容器销毁被删除：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">root@c273ee70fe7a:/#</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="gp">$ </span><span class="c1"># 原来的容器没了，挂载相同的 volume 开个新的</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="gp">root@38e2da3a59f7:/# </span>ls<span class="w"> </span>/myvolume/
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">a</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">root@c273ee70fe7a:/#</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">$ </span><span class="c1"># 原来的容器没了，挂载相同的 volume 开个新的</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">root@38e2da3a59f7:/# </span>ls<span class="w"> </span>/myvolume/
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">a</span>
 </code></pre></div>
 <p>可以查看 Docker 管理的所有 volume，它们在文件系统中的实际位置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>volume<span class="w"> </span>ls
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">DRIVER    VOLUME NAME</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">local     2aa17ad1c2ee9bf3b2933d241a5196bdaff5e144abcfbf4c1d161198f0f35912</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">（省略）</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="go">local     myvolume</span>
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">（省略）</span>
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>myvolume
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="go">[</span>
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="go">    {</span>
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="go">        &quot;CreatedAt&quot;: &quot;2024-04-14T22:54:12+08:00&quot;,</span>
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="go">        &quot;Driver&quot;: &quot;local&quot;,</span>
-<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="go">        &quot;Labels&quot;: null,</span>
-<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="go">        &quot;Mountpoint&quot;: &quot;/var/lib/docker/volumes/myvolume/_data&quot;,</span>
-<a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a><span class="go">        &quot;Name&quot;: &quot;myvolume&quot;,</span>
-<a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a><span class="go">        &quot;Options&quot;: null,</span>
-<a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a><span class="go">        &quot;Scope&quot;: &quot;local&quot;</span>
-<a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a><span class="go">    }</span>
-<a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a><span class="go">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>volume<span class="w"> </span>ls
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">DRIVER    VOLUME NAME</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">local     2aa17ad1c2ee9bf3b2933d241a5196bdaff5e144abcfbf4c1d161198f0f35912</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="go">local     myvolume</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="go">（省略）</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>myvolume
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="go">[</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="go">    {</span>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="go">        &quot;CreatedAt&quot;: &quot;2024-04-14T22:54:12+08:00&quot;,</span>
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="go">        &quot;Driver&quot;: &quot;local&quot;,</span>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="go">        &quot;Labels&quot;: null,</span>
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="go">        &quot;Mountpoint&quot;: &quot;/var/lib/docker/volumes/myvolume/_data&quot;,</span>
+<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="go">        &quot;Name&quot;: &quot;myvolume&quot;,</span>
+<a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a><span class="go">        &quot;Options&quot;: null,</span>
+<a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a><span class="go">        &quot;Scope&quot;: &quot;local&quot;</span>
+<a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a><span class="go">    }</span>
+<a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a><span class="go">]</span>
 </code></pre></div>
 <p>此外，在上面列出的 volume 里面，有一些没有名字，显示为哈希值的 volume。这些被称为「匿名 volume」。
 例如，如果在创建容器的时候不指定 volume 名字，那么 Docker 就会自动创建一个匿名 volume：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>/myvolume<span class="w"> </span>ustclug/debian:12
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">root@ec434eb92714:/# # </span>打开另一个终端
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span><span class="nb">test</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="go">（省略）</span>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">        &quot;Mounts&quot;: [</span>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="go">            {</span>
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">                &quot;Type&quot;: &quot;volume&quot;,</span>
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="go">                &quot;Name&quot;: &quot;e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976&quot;,</span>
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="go">                &quot;Source&quot;: &quot;/var/lib/docker/volumes/e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976/_data&quot;,</span>
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="go">                &quot;Destination&quot;: &quot;/myvolume&quot;,</span>
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="go">                &quot;Driver&quot;: &quot;local&quot;,</span>
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="go">                &quot;Mode&quot;: &quot;&quot;,</span>
-<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="go">                &quot;RW&quot;: true,</span>
-<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a><span class="go">                &quot;Propagation&quot;: &quot;&quot;</span>
-<a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a><span class="go">            }</span>
-<a id="__codelineno-30-16" name="__codelineno-30-16" href="#__codelineno-30-16"></a><span class="go">        ],</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span><span class="nb">test</span><span class="w"> </span>-v<span class="w"> </span>/myvolume<span class="w"> </span>ustclug/debian:12
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="gp">root@ec434eb92714:/# # </span>打开另一个终端
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span><span class="nb">test</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">        &quot;Mounts&quot;: [</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="go">            {</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="go">                &quot;Type&quot;: &quot;volume&quot;,</span>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">                &quot;Name&quot;: &quot;e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976&quot;,</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="go">                &quot;Source&quot;: &quot;/var/lib/docker/volumes/e97304e5a0d8a981b4f0c62b776f6fcaed8d8a6a7263d8e8b7b2f1ea60018976/_data&quot;,</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="go">                &quot;Destination&quot;: &quot;/myvolume&quot;,</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="go">                &quot;Driver&quot;: &quot;local&quot;,</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="go">                &quot;Mode&quot;: &quot;&quot;,</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="go">                &quot;RW&quot;: true,</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="go">                &quot;Propagation&quot;: &quot;&quot;</span>
+<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="go">            }</span>
+<a id="__codelineno-32-16" name="__codelineno-32-16" href="#__codelineno-32-16"></a><span class="go">        ],</span>
 </code></pre></div>
 <p>如果在 <code>docker run</code> 时添加了 <code>--rm</code> 参数，那么匿名 volume 会在容器销毁时被删除。
 反之，手动 <code>docker rm</code> 一个容器时，它对应的匿名 volume 不会被删除。</p>
 <p>同时，Dockerfile 中也可以使用 <code>VOLUME</code> 指令声明 volume。如果用户在运行容器的时候没有指定 volume，那么 Docker 就会自动创建一个匿名 volume。
 一个例子是 <a href="https://hub.docker.com/layers/library/mariadb/lts/images/sha256-e0a092f10ea8a4c33e88b790606b68dab3d00e6b1ef417f6f5d8e825574e1fa6?context=explore"><code>mariadb</code> 容器镜像</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">VOLUME</span><span class="w"> </span><span class="p">[</span><span class="err">/var/lib/mysql</span><span class="p">]</span><span class="w">  </span>#<span class="w"> </span>Layer<span class="w"> </span><span class="m">18</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">VOLUME</span><span class="w"> </span><span class="p">[</span><span class="err">/var/lib/mysql</span><span class="p">]</span><span class="w">  </span>#<span class="w"> </span>Layer<span class="w"> </span><span class="m">18</span>
 </code></pre></div>
 <!--
   Links to man pages
