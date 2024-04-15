@@ -12,6 +12,10 @@
 
     下文中会讲解部分配置的作用及注意事项。
 
+!!! warning "缩进问题"
+
+    下面的文档中，`.gitconfig` 的配置文件均使用 4 个空格而不是 `tab` 进行缩进。
+
 #### 常用别名 {#git-alias}
 
 ```ini
@@ -51,7 +55,7 @@
 
 ### gitignore {#git-gitignore}
 
-GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用[gitignore.io](https://www.gitignore.io/) 生成。
+GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用[gitignore.io](https://www.gitignore.io/) 生成。
 
 !!! warning "`.env` 文件与 `.gitignore`"
 
@@ -242,7 +246,7 @@ GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
         resolve(s, d) #123
         ```
 
-- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开[ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如 <https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
+- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开 [ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如 <https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
     - 这样的链接可以在 Issue 中直接粘贴，会被以代码框的形式渲染到 Issue 中，方便其他人迅速了解问题。
     - 点击后也可以直接复制地址栏中的 URL，这样的链接总是指向某个 branch 或者 tag 的，而不是特定 commit，但这样的作法可能会导致链接失效。
 
