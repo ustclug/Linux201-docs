@@ -1065,6 +1065,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      草船借箭，看看你的
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#lessons" class="md-nav__link">
     <span class="md-ellipsis">
       教训
@@ -1616,6 +1625,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      草船借箭，看看你的
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#lessons" class="md-nav__link">
     <span class="md-ellipsis">
       教训
@@ -1669,6 +1687,20 @@
 <h2 id="what-is-security">「安全」是什么？<a class="headerlink" href="#what-is-security" title="Permanent link">&para;</a></h2>
 <h2 id="attackers">攻击方视角：常见安全问题简介<a class="headerlink" href="#attackers" title="Permanent link">&para;</a></h2>
 <h2 id="defenders">防守方视角：如何防御攻击<a class="headerlink" href="#defenders" title="Permanent link">&para;</a></h2>
+<h3 _fakessh="$fakessh" id="_2">草船借箭，看看你的<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:2022:2022<span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span>-v<span class="w"> </span>sshesame-data:/data<span class="se">\</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="o">[</span>-v<span class="w"> </span><span class="nv">$PWD</span>/sshesame.yaml:/config.yaml<span class="o">]</span><span class="se">\</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span>ghcr.io/jaksi/sshesame
+</code></pre></div>
+<p>sshesame 会将所有记录的行为打印到 stdout, 可以使用 <code>docker logs</code> 查看。</p>
+<div class="admonition warning">
+<p class="admonition-title">docker port</p>
+<p>docker 会修改 iptables 规则，通过 <code>-p</code> 放通的端口默认设置在 <code>0.0.0.0</code> （允许所有 IP 访问），在这个例子里这是预期的行为。</p>
+<p>如果你只希望本地访问（如数据库），请指定 <code>-p 127.0.0.1:2022:2022</code> 这样的参数。</p>
+</div>
 <h3 id="lessons">教训<a class="headerlink" href="#lessons" title="Permanent link">&para;</a></h3>
 <h4 id="personal-computer-security">保护个人计算机的安全<a class="headerlink" href="#personal-computer-security" title="Permanent link">&para;</a></h4>
 <div class="admonition example">
