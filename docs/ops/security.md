@@ -12,7 +12,7 @@ icon: material/security
 
 ## 防守方视角：如何防御攻击 {#defenders}
 
-### 草船借箭，看看你的 {$fakessh}
+### 草船借箭，看看你的 {#fakessh}
 
 公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。
 
