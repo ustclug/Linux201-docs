@@ -12,6 +12,26 @@ icon: material/security
 
 ## 防守方视角：如何防御攻击 {#defenders}
 
+### 草船借箭，看看你的 {$fakessh}
+
+公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。
+
+```bash
+docker run -it --rm\
+    -p 127.0.0.1:2022:2022\
+    -v sshesame-data:/data\
+    [-v $PWD/sshesame.yaml:/config.yaml]\
+    ghcr.io/jaksi/sshesame
+```
+
+sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs` 查看。
+
+!!! warning "docker port"
+
+    docker 会修改 iptables 规则，通过 `-p` 放通的端口默认设置在 `0.0.0.0` （允许所有 IP 访问），在这个例子里这是预期的行为。
+
+    如果你只希望本地访问（如数据库），请指定 `-p 127.0.0.1:2022:2022` 这样的参数。
+
 ### 教训 {#lessons}
 
 #### 保护个人计算机的安全 {#personal-computer-security}
