@@ -548,6 +548,31 @@ sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -e "XAUTHORITY=$XAUTHORITY" -v /t
 
     与此同时，容器内还需要安装对应的 GPU **用户态**驱动。对于开源驱动来说，安装 Mesa 即可。
 
+### Registry
+
+Registry 是存储与分发容器镜像的服务。在大部分时候，我们使用的 registry 是 [Docker Hub](https://hub.docker.com/)。
+
+!!! warning "区分 Docker 和 Docker Hub"
+
+    Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
+    这些服务提供的容器镜像也可以正常在 Docker 中使用。
+
+镜像名称的格式是 `registry.example.com:username/image:tag`，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub；而如果没有指定 username，则默认会指定为 `library`，其代表 Docker Hub 中的「官方」镜像。
+
+Registry 服务大多允许用户上传自己的容器镜像。在对应的服务注册帐号，使用 `docker login` 登录之后，需要先使用 `docker tag` 为自己的镜像打上对应的标签：
+
+```console
+sudo docker tag example:latest registry.example.com:username/example:latest
+```
+
+然后再 `docker push`：
+
+```console
+sudo docker push registry.example.com:username/example:latest
+```
+
+除了 Docker Hub 以外，另一个比较常见的 registry 服务是 [GitHub Container Registry (ghcr)](https://ghcr.io)。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 `${{ secrets.GITHUB_TOKEN }}` 来登录到 ghcr）。[谷歌](https://gcr.io)和[红帽](https://quay.io)也提供了自己的 registry 服务。
+
 ### Volume
 
 Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
