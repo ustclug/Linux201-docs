@@ -1,6 +1,6 @@
 # 版本管理与合作
 
-!!! warning "本文仍在编辑中"
+!!! warning Pending Review
 
 ## Git 使用技巧
 
@@ -8,7 +8,7 @@
 
 !!! note "配置文件"
 
-    Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 你可以直接将下面的内容拷贝到你的配置文件中（如果没有，新建一个）。
+    Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 可以使用 `git config --global --edit` 快速打开配置文件, 你可以直接拷贝下面的内容。
 
     下文中会讲解部分配置的作用及注意事项。
 
@@ -40,6 +40,8 @@
     excludesfile = ~/.gitignore_global
 [commit]
     template = ~/.gitmessage
+[pull]
+    ff = only
 [push]
     default = upstream
     followTags = true
@@ -76,7 +78,8 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
     本地的 `.git/info/exclude` 起到与 `.gitignore` 相同的作用，但是不会被提交到版本库中，适用于以下的情况：
 
     - 项目不允许修改 `.gitignore`
-    - 你的工作流程中有一些特殊的文件不希望被提交
+    - 目录名称本身包含敏感信息
+    - 不希望 `.gitignore` 参与到版本控制中
 
     详细的文档可以参考[这里](https://git-scm.com/docs/gitignore#_description)。
 
@@ -104,23 +107,24 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
 
 一个叫较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[这里](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook.
 
-如果只需要在 commit 后运行一段脚本，可以按照如下方法进行配置：
+!!! note 如果只需要在 commit 后运行一段脚本
 
-```bash
-# 在项目根目录下创建 .git/hooks/post-commit
-touch .git/hooks/__hook_name__
-chmod +x .git/hooks/__hook_name__
-```
+    可以按照如下方法进行配置：
+    ```bash
+    # 在项目根目录下创建 .git/hooks/post-commit
+    touch .git/hooks/__hook_name__
+    chmod +x .git/hooks/__hook_name__
+    ```
 
-```bash
-# .git/hooks/post-commit
-#!/bin/bash
+    ```bash
+    # .git/hooks/post-commit
+    #!/bin/bash
 
-# 在这里写入你的脚本
-for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.py$'); do
-    black $file
-done
-```
+    # 在这里写入你的脚本
+    for file in $(git diff --cached --name-only --diff-filter=ACM | grep '\.py$'); do
+        black $file
+    done
+    ```
 
 ### Git Submodule {#git-submodule}
 
@@ -139,7 +143,23 @@ git submodule add <url_of_eigen> src/eigen
 
 ### Rebase 与 Merge {#git-rebase-merge}
 
-TBC
+一般来说，我们希望保持项目有线性的提交历史，这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
+
+```bash
+git checkout -b feature
+git commit -a --alow-empty -m "feat: aaaaaa"
+git checkout master
+git commit -a --alow-empty -m "feat: bbbbbb"
+git checkout feature
+git rebase master
+```
+
+通过如下设置，可以使得 `rebase` 成为默认行为：
+
+```ini
+[pull]
+    rebase = true
+```
 
 ### Commit Message Convention {#git-commit-message}
 
@@ -171,32 +191,164 @@ TBC
 
     即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 [这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file) 添加到 `~/.gitmessage`：
 
-    添加后不要忘记在首行添加空行，这样 `git commit` 时无需新建一行。
-
     ```ini
     # ~/.gitconfig
     [commit]
         template = ~/.gitmessage
     ```
 
+    添加后不要忘记在首行添加空行，这样 `git commit` 时无需新建一行。
+
 ## GitHub 使用技巧
+
+### [GitHub CLI](https://cli.github.com/)
+
+GitHub CLI 是 GitHub 官方提供的命令行工具，可以用于管理 GitHub 仓库、Issue、Pull Request 等。
+
+例如，给 `ustclug/Linux201-docs` 修 bug 的流程可以简化为：
+
+```bash
+gh repo clone ustclug/Linux201-docs
+git commit -a -m "fix: some bug"
+gh pr create
+```
 
 ### GPG 签名 {#github-gpg}
 
-TBC
+SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commit 的真实性。
+
+GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
+
+- [生成 GPG Key](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key)
+    - [修改 GPG Key 信息](https://docs.github.com/en/authentication/managing-commit-signature-verification/associating-an-email-with-your-gpg-key)
+- [设置 Git 使用 GPG Sign](https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key)
+- [在 GitHub 上关联 GPG Key](https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account)
 
 ### Issue {#github-issue}
 
+下面关于 Markdown 的特性并不限于 Issue，也适用于 Pull Request 等。
+
+#### GitHub 链接 {#github-link}
+
+我们以 [ustclug/mirrorrequest#213](https://github.com/ustclug/mirrorrequest/issues/213) 为例：
+
+- 在 Issue 中，可以使用 `#` 来引用其他 Issue / PR，例如 `#133`
+- 可以通过 `user/repo#issue_number` 的方式引用其他仓库的 Issue / PR，例如 `tuna/issues#341`
+    - 当一个 PR 包含如下关键字，并且按照上述方法连接到一个 Issue 时，合并这个 PR 会关闭对应的 issue：
+
+        ```txt
+        close(s,d) #123
+        fix(es, ed) #123
+        resolve(s, d) #123
+        ```
+
+- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开[ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如<https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
+    - 这样的链接可以在 Issue 中直接粘贴，会被以代码框的形式渲染到 Issue 中，方便其他人迅速了解问题。
+    - 点击后也可以直接复制地址栏中的 URL，这样的链接总是指向某个 branch 或者 tag 的，而不是特定 commit，但这样的作法可能会导致链接失效。
+
+#### GitHub Flavor Markdown {#github-gfm}
+
+正如其他编辑器对 Markdown 的支持一样，GitHub 支持一个 Markdown 方言（超集）的写法，称为 [GitHub Flavor Markdown](https://github.github.com/gfm/)。
+
+我们在这里介绍一些你可能感兴趣的 feature：
+
+- [Mermaid 关系图](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams)
+
+    Mermaid 是一种简单且强大的关系图/流程图语法，例如可以通过如下方式创建一个简单的关系图：
+
+    ````txt
+    ```mermaid
+    graph LR;
+        A-->B;
+        A-->C;
+        B-->D;
+        C-->D;
+    ```
+    ````
+
+    ```mermaid
+    graph LR;
+        A-->B;
+        A-->C;
+        B-->D;
+        C-->D;
+    ```
+
+- [MathJax 支持](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/writing-mathematical-expressions)
+
+    GitHub 通过 MathJax 支持 LaTeX 公式，可以通过 `$ \frac 12 $` 的形式创建行内公式， `$$ \frac 12 $$` 的形式创建块级公式。
+
+- [进度跟踪](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists)
+
+    在 Issue 正文中创建一个任务列表，例如：
+
+    ```markdown
+    - [x] Task 1 #123
+    - [ ] Task 2
+    ```
+
+    此时可以将这个 Issue 转化为一个任务列表，方便追踪任务的进度，同时 `#123` 会被标记为 `Tracked by #xxx`。
+
 #### Issue 模板 {#github-issue-template}
 
-TBC
+对于大型项目，使用 Issue template 可以使得 Issue 更加规范化，例如，可以在 `.github/ISSUE_TEMPLATE/bug_report.yml` 中添加如下内容：
+
+```yaml
+name: Bug Report
+about: Create a report to help us improve
+labels:
+    - bug
+body:
+    - type: textarea
+      id: bug-description
+      attributes:
+        label: Describe the bug
+        description: A clear and concise description of what the bug is.
+        placeholder: I'm always frustrated when...
+      validations:
+        required: true
+```
+
+可以参考 [ustclug/mirrorrequest/.../01-mirror-request.yml](https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1), [GitHub 文档](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository).
 
 ### Pull Request {#github-pr}
 
-TBC
+对于 Maintainer 来说，Pull Request 更像是 Merge Request, 他们会检查代码、测试代码、review 代码，然后将代码合并到主分支中。
+
+GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request) 介绍了合并 PR 的方式，简单来说跟本地 merge / rebase 没有太大区别。
+
+- PR 中仅有一个 commit 时，推荐使用 Rebase 合并 PR
+- 当 PR 中包含多次 commit，但实际上应当合并为一个时（例如经过 Review 后），推荐使用 Squash 合并 PR
+- 多次 commit 来提交新 feature 时，推荐使用 Merge 合并 PR
 
 ### GitHub Actions {#github-actions}
 
-TBC
+GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建、测试、部署等。
+
+!!! note GitHub Actions Pricing
+
+    对于 Public 仓库，GitHub 提供了免费的服务，对于 Private 仓库，GitHub 提供了 2000 分钟的免费服务。
+
+    关于计费问题，可以参考[这里](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions#included-storage-and-minutes)。
+
+对于 GitHub Actions 的写法，只需要关心如下几件事情：
+
+- 何时应当触发 Action：例如 `on: push, pull_request`
+- 如何在 GitHub Actions 上搭建环境（例如安装依赖、配置环境变量等）
+- 产物的存放位置：例如 `artifacts`、`release`
+
+如果涉及到 Secret Key，还应当注意安全问题（限制触发条件、产物等）。
+
+GitHub 在 [这里](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) 提供了详细的文档。
 
 #### Other CI/CD systems {#ci-cd}
+
+以下是一些其他常用的 CI/CD 提供商，它们提供了类似的服务：
+
+- [Travis CI](https://docs.travis-ci.com/)
+- [Circle CI](https://circleci.com/docs/)
+- [GitLab CI](https://docs.gitlab.com/ee/ci/)
+- [Jenkins](https://www.jenkins.io/doc/)
+- [Azure Pipelines](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
+
+考虑到 GitHub Actions 的免费额度，以及与 GitHub 的无缝集成等，已经足够满足大多数项目的需求，因此我们在这里不再详细介绍其他 CI/CD 系统。
