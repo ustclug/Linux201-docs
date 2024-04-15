@@ -1,6 +1,6 @@
 # 版本管理与合作
 
-!!! warning Pending Review
+!!! warning "Pending Review"
 
 ## Git 使用技巧
 
@@ -73,7 +73,7 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
 
     此时需手动将`.env` 移除版本控制，例如 `mv ./.env ../.env.bk` 以防止`.env`被提交。
 
-!!! note 仅本地的 gitignore
+!!! note "仅本地的 gitignore"
 
     本地的 `.git/info/exclude` 起到与 `.gitignore` 相同的作用，但是不会被提交到版本库中，适用于以下的情况：
 
@@ -107,7 +107,7 @@ GitHub 在[这里](https://github.com/github/gitignore) 提供了一些常见的
 
 一个叫较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[这里](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook.
 
-!!! note 如果只需要在 commit 后运行一段脚本
+!!! note "如果只需要在 commit 后运行一段脚本"
 
     可以按照如下方法进行配置：
     ```bash
@@ -242,7 +242,7 @@ GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
         resolve(s, d) #123
         ```
 
-- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开[ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如<https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
+- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开[ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如 <https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
     - 这样的链接可以在 Issue 中直接粘贴，会被以代码框的形式渲染到 Issue 中，方便其他人迅速了解问题。
     - 点击后也可以直接复制地址栏中的 URL，这样的链接总是指向某个 branch 或者 tag 的，而不是特定 commit，但这样的作法可能会导致链接失效。
 
@@ -325,7 +325,7 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
 GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建、测试、部署等。
 
-!!! note GitHub Actions Pricing
+!!! note "GitHub Actions Pricing"
 
     对于 Public 仓库，GitHub 提供了免费的服务，对于 Private 仓库，GitHub 提供了 2000 分钟的免费服务。
 
