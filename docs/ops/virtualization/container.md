@@ -444,6 +444,33 @@ sudo docker run -it --rm --name test ubuntu:22.04
 - `docker exec -it CONTAINER COMMAND`：在容器内执行命令
 - `docker inspect CONTAINER`：查看容器详细信息
 
+### 导入与导出 {#docker-import-export}
+
+Docker 支持导出容器与镜像，并以镜像的形式导入，格式均为 tar。可以通过管道的方式实现压缩：
+
+```console
+$ # 镜像导入/导出
+$ sudo docker image save hello-world:latest | zstd -o hello-world.tar.zst
+/*stdin*\            : 15.11%   (  26.0 KiB =>   3.93 KiB, hello-world.tar.zst)
+$ sudo docker image rm hello-world:latest
+$ zstd -d -c hello-world.tar.zst | sudo docker image load
+e07ee1baac5f: Loading layer [==================================================>]  14.85kB/14.85kB
+Loaded image: hello-world:latest
+$ # 容器导出，并以镜像形式导入
+$ sudo docker run -it --name test ustclug/debian:12 touch /test
+$ sudo docker container export test | zstd -o test.tar.zst
+/*stdin*\            : 33.93%   (   116 MiB =>   39.2 MiB, test.tar.zst)
+$ sudo docker rm test
+$ zstd -d -c test.tar.zst | sudo docker import - test
+sha256:21a35d8f910941f4913ada5f3600c04234d13860fe498ac5cb301ba1801aa82c
+$ sudo docker run -it --rm test ls /test
+/test
+```
+
+其中镜像导出（save）后仍然有层级结构，但是容器导出（export）后则是一个完整的文件系统。
+
+也有一些工具，例如 [dive](https://github.com/wagoodman/dive)，可以方便地查看镜像每一层的内容。
+
 ### 多阶段构建 {#docker-multi-stage}
 
 在制作容器镜像的时候，一个常见的场景是：编译软件和实际运行的环境是不同的。
@@ -649,3 +676,7 @@ $ sudo docker inspect test
 ```dockerfile
 VOLUME [/var/lib/mysql]  # Layer 18
 ```
+
+### 网络
+
+<!-- TODO: not fin -->
