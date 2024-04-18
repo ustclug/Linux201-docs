@@ -867,3 +867,57 @@ Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
 
 于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。
 如果不希望自行管理 `DOCKER-USER` 链，建议将端口映射设置为只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节。）；或者配置让容器直接使用 host 网络。
+
+#### IPv6
+
+Docker 默认未开启 IPv6，并且在比较老的版本中，配置 IPv6 会比较麻烦。
+一个重要的原因是：Docker 对 IPv4 的策略是配置 NAT 网络，但在 IPv6 的设计中，NAT 不是很「原教旨主义」（毕竟 IPv6 的地址多得用不完，为什么还要有状态的 NAT 呢？）。这就导致了在之前，Docker 中配置可用的 IPv6 就需要：
+
+- 要么每个容器一个公网 IPv6 地址（否则容器无法连接外部的 IPv6 网络）。要这么做的前提是得知道自己能控制的 IPv6 段，并且容器打开的所有端口都会暴露在公网上。
+- 使用[第三方的方案](https://github.com/robbertkl/docker-ipv6nat)帮忙做 IPv6 NAT，同时给容器分配 IPv6 的 ULA（Unique Local Address）地址段（目前可以分配 fd00::/8 内的地址段）。
+
+不过好消息是，目前 Docker 添加了对 IPv6 NAT 的实验性支持，尽管默认的 bridge 网络的 IPv6 支持仍然不是默认打开的。
+参考[对应的文档](https://docs.docker.com/config/daemon/ipv6/)[^ipv6-docaddr]，一个配置 daemon.json 的例子如下：
+
+```json
+{
+    "ipv6": true,
+    "fixed-cidr-v6": "fd00::/80",
+    "experimental": true,
+    "ip6tables": true
+}
+```
+
+这样新建的容器就能得到一个在 fd00::/80 内的 IPv6 地址，并且顺利访问外部的 IPv6 网络了：
+
+```console
+root@14354a8c5349:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+52: eth0@if53: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 02:42:ac:11:00:03 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.17.0.3/24 brd 172.17.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fd00::242:ac11:3/80 scope global nodad 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:acff:fe11:3/64 scope link 
+       valid_lft forever preferred_lft forever
+root@14354a8c5349:/# ping6 mirrors.ustc.edu.cn
+PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data bytes
+64 bytes from 2001:da8:d800:95::110 (2001:da8:d800:95::110): icmp_seq=1 ttl=62 time=2.42 ms
+```
+
+#### VLAN
+
+VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。
+Docker 支持 `macvlan` 和 `ipvlan` 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。
+这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。
+此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。
+
+<!-- TODO: ... -->
+
+[^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
