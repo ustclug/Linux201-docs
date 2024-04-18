@@ -444,6 +444,11 @@ sudo docker run -it --rm --name test ubuntu:22.04
 - `docker exec -it CONTAINER COMMAND`：在容器内执行命令
 - `docker inspect CONTAINER`：查看容器详细信息
 
+与查看、清理 Docker 磁盘占用等操作：
+
+- `docker system df`：查看镜像、容器、volume 与构建缓存的磁盘占用
+- `docker system prune --volumes --all`：清理不再使用的镜像、容器、volume、network 与全部构建缓存
+
 ### 导入与导出 {#docker-import-export}
 
 Docker 支持导出容器与镜像，并以镜像的形式导入，格式均为 tar。可以通过管道的方式实现压缩：
@@ -679,4 +684,121 @@ VOLUME [/var/lib/mysql]  # Layer 18
 
 ### 网络
 
-<!-- TODO: not fin -->
+Docker 的网络隔离基于 Linux 的网络命名空间等特性。
+默认情况下，Docker 会创建三种网络：
+
+```console
+$ sudo docker network ls
+NETWORK ID     NAME                   DRIVER    SCOPE
+47bf1753e571   bridge                 bridge    local
+a490cc0dc175   host                   host      local
+4ad7868e3a47   none                   null      local
+```
+
+其中 `bridge` 为容器默认使用的网络，`host` 为容器与宿主机共享网络，`none` 则是不使用网络（只保留本地回环）。
+可以使用 `--network` 参数指定容器使用的网络。
+
+在计算机网络中，网桥（bridge）负责连接两个网络，提供在网络之间过滤与转发数据包等功能。
+而在 Docker 中，bridge 网络也可以看作是连接容器网络和主机网络之间的桥。
+连接到相同 bridge 的容器之间可以互相通信。
+
+!!! note "bridge 在 Linux 上的实现"
+
+    首先，Docker 会创建一个虚拟的 `docker0` 网络设备作为网桥，这个设备默认对应了 IP 段 `172.17.0.1/16`，
+    创建的容器会被分配到这个网段中的一个 IP 地址。路由表也会将对这个网段的请求转发到 `docker0` 设备上：
+
+    ```console
+    $ ip a show docker0
+    20: docker0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+        link/ether 02:42:e0:cb:d8:81 brd ff:ff:ff:ff:ff:ff
+        inet 172.17.0.1/16 brd 172.17.0.255 scope global docker0
+            valid_lft forever preferred_lft forever
+        inet6 fe80::42:e0ff:fecb:d881/64 scope link proto kernel_ll 
+            valid_lft forever preferred_lft forever
+    $ ip route get 172.17.0.2
+    172.17.0.2 dev docker0 src 172.17.0.1 uid 1000 
+        cache
+    ```
+
+    在默认网络配置下，如果创建了容器，可以发现增加了对应数量的 `veth`（虚拟以太网）设备：
+
+    ```console
+    $ # 开启了两个容器的情况下
+    $ ip a
+    （省略）
+    7: veth5669cd1@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default 
+        link/ether 96:2b:10:03:cc:36 brd ff:ff:ff:ff:ff:ff link-netnsid 1
+        inet6 fe80::942b:10ff:fe03:cc36/64 scope link 
+            valid_lft forever preferred_lft forever
+    9: veth9219d7b@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master docker0 state UP group default 
+        link/ether d2:b8:23:74:49:2a brd ff:ff:ff:ff:ff:ff link-netnsid 2
+        inet6 fe80::d0b8:23ff:fe74:492a/64 scope link 
+            valid_lft forever preferred_lft forever
+    ```
+
+    `veth` 设备可以看作是一根虚拟的网线，一端连接到容器内部（容器内部安装 `iproute2` 之后可以 `ip a` 看到 eth0 这个设备），另一端连接到 `docker0` 网桥。
+    但是仅仅有设备是不够的，Docker 还需要配置主机的 iptables 规则，否则尽管容器与主机之间能够正常通信，容器无法通过主机访问外部网络。
+    换句话讲，我们需要主机为容器扮演「路由器」的角色进行 NAT。
+
+    查看 iptables 的 `nat` 表：
+
+    ```console
+    $ sudo iptables -t nat -vnL
+    Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+    
+    Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+    
+    Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+    
+    Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
+    
+    Chain DOCKER (2 references)
+     pkts bytes target     prot opt in     out     source               destination         
+        0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0
+    ```
+
+    对于容器访问外部网络的数据包，会经过 `POSTROUTING` 链的 `MASQUERADE` 规则，将源地址替换为主机的地址。
+    同时，Docker 也会控制 iptables 处理端口映射等规则，例如如果启动这样一个容器：
+
+    ```console
+    sudo docker run -it --rm -p 8080:80 nginx
+    ```
+
+    那么 `DOCKER` 和 `POSTROUTING` 链就会变成这样：
+
+    ```console
+    $ sudo iptables -t nat -vnL
+    Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
+    
+    Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+    
+    Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+    
+    Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+     pkts bytes target     prot opt in     out     source               destination         
+        4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
+        0     0 MASQUERADE  tcp  --  *      *       172.17.0.4           172.17.0.4           tcp dpt:80
+    
+    Chain DOCKER (2 references)
+     pkts bytes target     prot opt in     out     source               destination         
+        0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
+        0     0 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:8080 to:172.17.0.4:80
+    ```
+
+    对于外部到本机的访问，`PREROUTING` 链在跳转到 `DOCKER` 链之后，对于未进入 `docker0` 的 TCP 数据包，会根据 `DNAT` 规则将端口 `8080` 的数据包的目的地址修改为到该容器内部的 `80` 端口。
+
+    <!-- TODO: 到网络部分的链接 -->
+
+    特别地，到本地回环 8080 端口的连接，会由用户态的 `docker-proxy` 程序负责「转发」到容器对应的端口上。
