@@ -682,7 +682,7 @@ $ sudo docker inspect test
 VOLUME [/var/lib/mysql]  # Layer 18
 ```
 
-### 网络
+### 网络 {#docker-network}
 
 Docker 的网络隔离基于 Linux 的网络命名空间等特性。
 默认情况下，Docker 会创建三种网络：
@@ -697,6 +697,8 @@ a490cc0dc175   host                   host      local
 
 其中 `bridge` 为容器默认使用的网络，`host` 为容器与宿主机共享网络，`none` 则是不使用网络（只保留本地回环）。
 可以使用 `--network` 参数指定容器使用的网络。
+
+#### Bridge 介绍 {#docker-bridge}
 
 在计算机网络中，网桥（bridge）负责连接两个网络，提供在网络之间过滤与转发数据包等功能。
 而在 Docker 中，bridge 网络也可以看作是连接容器网络和主机网络之间的桥。
@@ -743,25 +745,16 @@ a490cc0dc175   host                   host      local
     查看 iptables 的 `nat` 表：
 
     ```console
-    $ sudo iptables -t nat -vnL
-    Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
-    
-    Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-    
-    Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
-    
-    Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
-    
-    Chain DOCKER (2 references)
-     pkts bytes target     prot opt in     out     source               destination         
-        0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0
+    $ sudo iptables -t nat -S
+    -P PREROUTING ACCEPT
+    -P INPUT ACCEPT
+    -P OUTPUT ACCEPT
+    -P POSTROUTING ACCEPT
+    -N DOCKER
+    -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
+    -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
+    -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+    -A DOCKER -i docker0 -j RETURN
     ```
 
     对于容器访问外部网络的数据包，会经过 `POSTROUTING` 链的 `MASQUERADE` 规则，将源地址替换为主机的地址。
@@ -774,27 +767,18 @@ a490cc0dc175   host                   host      local
     那么 `DOCKER` 和 `POSTROUTING` 链就会变成这样：
 
     ```console
-    $ sudo iptables -t nat -vnL
-    Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
-    
-    Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-    
-    Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
-    
-    Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
-     pkts bytes target     prot opt in     out     source               destination         
-        4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
-        0     0 MASQUERADE  tcp  --  *      *       172.17.0.4           172.17.0.4           tcp dpt:80
-    
-    Chain DOCKER (2 references)
-     pkts bytes target     prot opt in     out     source               destination         
-        0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
-        0     0 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:8080 to:172.17.0.4:80
+    $ sudo iptables -t nat -S
+    -P PREROUTING ACCEPT
+    -P INPUT ACCEPT
+    -P OUTPUT ACCEPT
+    -P POSTROUTING ACCEPT
+    -N DOCKER
+    -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
+    -A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
+    -A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+    -A POSTROUTING -s 172.17.0.4/32 -d 172.17.0.4/32 -p tcp -m tcp --dport 80 -j MASQUERADE
+    -A DOCKER -i docker0 -j RETURN
+    -A DOCKER ! -i docker0 -p tcp -m tcp --dport 8080 -j DNAT --to-destination 172.17.0.4:80
     ```
 
     对于外部到本机的访问，`PREROUTING` 链在跳转到 `DOCKER` 链之后，对于未进入 `docker0` 的 TCP 数据包，会根据 `DNAT` 规则将端口 `8080` 的数据包的目的地址修改为到该容器内部的 `80` 端口。
@@ -802,3 +786,84 @@ a490cc0dc175   host                   host      local
     <!-- TODO: 到网络部分的链接 -->
 
     特别地，到本地回环 8080 端口的连接，会由用户态的 `docker-proxy` 程序负责「转发」到容器对应的端口上。
+    对该用户态程序的讨论，可以阅读 <https://github.com/moby/moby/issues/11185>。
+
+可以通过 `docker network create` 创建自己的网络。
+对于新的 bridge 类型的网络，在主机上也会创建新的以 `br-` 开头的网桥设备。
+如果使用 docker compose 管理容器服务，那么其也会为对应的服务自动创建 bridge 类型的网络。
+有关用户创建的 bridge 网络相比于默认网络的优势，可参考官方文档：[Bridge network driver](https://docs.docker.com/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)。
+
+默认情况下，Docker 创建的网络会[分配很大的 IP 段](https://github.com/moby/moby/blob/b7c059886c0898436db90b4615a27cfb4d93ce34/libnetwork/ipamutils/utils.go#L18-L26)。
+在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 `/etc/docker/daemon.json`，将 `default-address-pools` 设置为一个较小的 IP 段：
+
+```json
+{
+	"default-address-pools": [
+		{
+			"base": "172.17.1.0/24",
+			"size": 28
+		},
+		{
+			"base": "172.17.2.0/23",
+			"size": 28
+		}
+	],
+}
+```
+
+此外，默认 `docker0` 的地址段也可以修改，对应 `bip` 选项：
+
+```json
+{
+    "bip": "172.17.0.1/24"
+}
+```
+
+#### 防火墙配置 {#docker-firewall}
+
+在 Linux 上，防火墙功能一般的实现方式是在 iptables 的 filter 表中添加规则。
+而由于 Docker 自身支持为容器配置不同的网络，因此也需要操作 filter 表来保证容器之间的网络隔离。
+Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
+
+```iptables
+-A FORWARD -j DOCKER-USER
+-A FORWARD -j DOCKER-ISOLATION-STAGE-1
+-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -o docker0 -j DOCKER
+-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+-A FORWARD -i docker0 -o docker0 -j ACCEPT
+```
+
+这些规则在 `FORWARD` 链最前面——即使自行添加了规则，Docker 服务重启之后它也会在最前面重新添加。
+
+其中 `DOCKER-USER` 链允许用户自定义规则，其他以 `DOCKER` 开头的链则由 Docker 自行管理。
+在有端口映射的情况下，`DOCKER` 链会直接允许对应的数据包，不经过之后的规则：
+
+```iptables
+-A DOCKER -d 172.17.0.4/32 ! -i docker0 -o docker0 -p tcp -m tcp --dport 80 -j ACCEPT
+```
+
+而例如在 Ubuntu/Debian 上比较常见的 ufw 工具，它的规则会在 Docker 的规则后面。
+一个例子如下：
+
+```iptables
+-A FORWARD -j DOCKER-USER
+-A FORWARD -j DOCKER-ISOLATION-STAGE-1
+-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -o docker0 -j DOCKER
+-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+-A FORWARD -i docker0 -o docker0 -j ACCEPT
+-A FORWARD -o br-3e32bdc5bc2a -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A FORWARD -o br-3e32bdc5bc2a -j DOCKER
+-A FORWARD -i br-3e32bdc5bc2a ! -o br-3e32bdc5bc2a -j ACCEPT
+-A FORWARD -i br-3e32bdc5bc2a -o br-3e32bdc5bc2a -j ACCEPT
+-A FORWARD -j ufw-before-logging-forward
+-A FORWARD -j ufw-before-forward
+-A FORWARD -j ufw-after-forward
+-A FORWARD -j ufw-after-logging-forward
+-A FORWARD -j ufw-reject-forward
+-A FORWARD -j ufw-track-forward
+```
+
+于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。
+如果不希望自行管理 `DOCKER-USER` 链，建议将端口映射设置为只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节。）；或者配置让容器直接使用 host 网络。
