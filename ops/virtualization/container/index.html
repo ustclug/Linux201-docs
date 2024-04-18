@@ -2165,6 +2165,11 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <li><code>docker exec -it CONTAINER COMMAND</code>：在容器内执行命令</li>
 <li><code>docker inspect CONTAINER</code>：查看容器详细信息</li>
 </ul>
+<p>与查看、清理 Docker 磁盘占用等操作：</p>
+<ul>
+<li><code>docker system df</code>：查看镜像、容器、volume 与构建缓存的磁盘占用</li>
+<li><code>docker system prune --volumes --all</code>：清理不再使用的镜像、容器、volume、network 与全部构建缓存</li>
+</ul>
 <h3 id="docker-import-export">导入与导出<a class="headerlink" href="#docker-import-export" title="Permanent link">&para;</a></h3>
 <p>Docker 支持导出容器与镜像，并以镜像的形式导入，格式均为 tar。可以通过管道的方式实现压缩：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span><span class="c1"># 镜像导入/导出</span>
@@ -2335,8 +2340,102 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">VOLUME</span><span class="w"> </span><span class="p">[</span><span class="err">/var/lib/mysql</span><span class="p">]</span><span class="w">  </span>#<span class="w"> </span>Layer<span class="w"> </span><span class="m">18</span>
 </code></pre></div>
 <h3 id="_2">网络<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
-<!-- TODO: not fin -->
-
+<p>Docker 的网络隔离基于 Linux 的网络命名空间等特性。
+默认情况下，Docker 会创建三种网络：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>network<span class="w"> </span>ls
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">NETWORK ID     NAME                   DRIVER    SCOPE</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="go">47bf1753e571   bridge                 bridge    local</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="go">a490cc0dc175   host                   host      local</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="go">4ad7868e3a47   none                   null      local</span>
+</code></pre></div>
+<p>其中 <code>bridge</code> 为容器默认使用的网络，<code>host</code> 为容器与宿主机共享网络，<code>none</code> 则是不使用网络（只保留本地回环）。
+可以使用 <code>--network</code> 参数指定容器使用的网络。</p>
+<p>在计算机网络中，网桥（bridge）负责连接两个网络，提供在网络之间过滤与转发数据包等功能。
+而在 Docker 中，bridge 网络也可以看作是连接容器网络和主机网络之间的桥。
+连接到相同 bridge 的容器之间可以互相通信。</p>
+<div class="admonition note">
+<p class="admonition-title">bridge 在 Linux 上的实现</p>
+<p>首先，Docker 会创建一个虚拟的 <code>docker0</code> 网络设备作为网桥，这个设备默认对应了 IP 段 <code>172.17.0.1/16</code>，
+创建的容器会被分配到这个网段中的一个 IP 地址。路由表也会将对这个网段的请求转发到 <code>docker0</code> 设备上：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>ip<span class="w"> </span>a<span class="w"> </span>show<span class="w"> </span>docker0
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">20: docker0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default </span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="go">    link/ether 02:42:e0:cb:d8:81 brd ff:ff:ff:ff:ff:ff</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">    inet 172.17.0.1/16 brd 172.17.0.255 scope global docker0</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="go">        valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="go">    inet6 fe80::42:e0ff:fecb:d881/64 scope link proto kernel_ll </span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="go">        valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>get<span class="w"> </span><span class="m">172</span>.17.0.2
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">172.17.0.2 dev docker0 src 172.17.0.1 uid 1000 </span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="go">    cache</span>
+</code></pre></div>
+<p>在默认网络配置下，如果创建了容器，可以发现增加了对应数量的 <code>veth</code>（虚拟以太网）设备：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">$ </span><span class="c1"># 开启了两个容器的情况下</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="gp">$ </span>ip<span class="w"> </span>a
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="go">（省略）</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="go">7: veth5669cd1@if6: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default </span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="go">    link/ether 96:2b:10:03:cc:36 brd ff:ff:ff:ff:ff:ff link-netnsid 1</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="go">    inet6 fe80::942b:10ff:fe03:cc36/64 scope link </span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="go">        valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="go">9: veth9219d7b@if8: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default </span>
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="go">    link/ether d2:b8:23:74:49:2a brd ff:ff:ff:ff:ff:ff link-netnsid 2</span>
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="go">    inet6 fe80::d0b8:23ff:fe74:492a/64 scope link </span>
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a><span class="go">        valid_lft forever preferred_lft forever</span>
+</code></pre></div>
+<p><code>veth</code> 设备可以看作是一根虚拟的网线，一端连接到容器内部（容器内部安装 <code>iproute2</code> 之后可以 <code>ip a</code> 看到 eth0 这个设备），另一端连接到 <code>docker0</code> 网桥。
+但是仅仅有设备是不够的，Docker 还需要配置主机的 iptables 规则，否则尽管容器与主机之间能够正常通信，容器无法通过主机访问外部网络。
+换句话讲，我们需要主机为容器扮演「路由器」的角色进行 NAT。</p>
+<p>查看 iptables 的 <code>nat</code> 表：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-vnL
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="go">Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="go">    9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL</span>
+<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>
+<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="go">Chain INPUT (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a>
+<a id="__codelineno-38-9" name="__codelineno-38-9" href="#__codelineno-38-9"></a><span class="go">Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-38-10" name="__codelineno-38-10" href="#__codelineno-38-10"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-38-11" name="__codelineno-38-11" href="#__codelineno-38-11"></a><span class="go">    0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL</span>
+<a id="__codelineno-38-12" name="__codelineno-38-12" href="#__codelineno-38-12"></a>
+<a id="__codelineno-38-13" name="__codelineno-38-13" href="#__codelineno-38-13"></a><span class="go">Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-38-14" name="__codelineno-38-14" href="#__codelineno-38-14"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-38-15" name="__codelineno-38-15" href="#__codelineno-38-15"></a><span class="go">    4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           </span>
+<a id="__codelineno-38-16" name="__codelineno-38-16" href="#__codelineno-38-16"></a>
+<a id="__codelineno-38-17" name="__codelineno-38-17" href="#__codelineno-38-17"></a><span class="go">Chain DOCKER (2 references)</span>
+<a id="__codelineno-38-18" name="__codelineno-38-18" href="#__codelineno-38-18"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-38-19" name="__codelineno-38-19" href="#__codelineno-38-19"></a><span class="go">    0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0</span>
+</code></pre></div>
+<p>对于容器访问外部网络的数据包，会经过 <code>POSTROUTING</code> 链的 <code>MASQUERADE</code> 规则，将源地址替换为主机的地址。
+同时，Docker 也会控制 iptables 处理端口映射等规则，例如如果启动这样一个容器：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="go">sudo docker run -it --rm -p 8080:80 nginx</span>
+</code></pre></div>
+<p>那么 <code>DOCKER</code> 和 <code>POSTROUTING</code> 链就会变成这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-vnL
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="go">Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="go">    9   540 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL</span>
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>
+<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="go">Chain INPUT (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>
+<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="go">Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a><span class="go">    0     0 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL</span>
+<a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a>
+<a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a><span class="go">Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)</span>
+<a id="__codelineno-40-14" name="__codelineno-40-14" href="#__codelineno-40-14"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-40-15" name="__codelineno-40-15" href="#__codelineno-40-15"></a><span class="go">    4   250 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           </span>
+<a id="__codelineno-40-16" name="__codelineno-40-16" href="#__codelineno-40-16"></a><span class="go">    0     0 MASQUERADE  tcp  --  *      *       172.17.0.4           172.17.0.4           tcp dpt:80</span>
+<a id="__codelineno-40-17" name="__codelineno-40-17" href="#__codelineno-40-17"></a>
+<a id="__codelineno-40-18" name="__codelineno-40-18" href="#__codelineno-40-18"></a><span class="go">Chain DOCKER (2 references)</span>
+<a id="__codelineno-40-19" name="__codelineno-40-19" href="#__codelineno-40-19"></a><span class="go"> pkts bytes target     prot opt in     out     source               destination         </span>
+<a id="__codelineno-40-20" name="__codelineno-40-20" href="#__codelineno-40-20"></a><span class="go">    0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           </span>
+<a id="__codelineno-40-21" name="__codelineno-40-21" href="#__codelineno-40-21"></a><span class="go">    0     0 DNAT       tcp  --  !docker0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:8080 to:172.17.0.4:80</span>
+</code></pre></div>
+<p>对于外部到本机的访问，<code>PREROUTING</code> 链在跳转到 <code>DOCKER</code> 链之后，对于未进入 <code>docker0</code> 的 TCP 数据包，会根据 <code>DNAT</code> 规则将端口 <code>8080</code> 的数据包的目的地址修改为到该容器内部的 <code>80</code> 端口。</p>
+<!-- TODO: 到网络部分的链接 -->
+<p>特别地，到本地回环 8080 端口的连接，会由用户态的 <code>docker-proxy</code> 程序负责「转发」到容器对应的端口上。</p>
+</div>
 <!--
   Links to man pages
 
