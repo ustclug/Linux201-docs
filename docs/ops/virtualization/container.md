@@ -43,6 +43,10 @@ $ sudo nsenter --target 117426 --uts bash # 进入 UTS 命名空间
 [root@9213a075a2f4 example]# # 可以看到 hostname 已经改变
 ```
 
+!!! note "ustclug Docker image"
+
+    本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦。
+
 那么 PID 命名空间也是同理吗？
 
 ```console
@@ -788,10 +792,7 @@ a490cc0dc175   host                   host      local
     特别地，到本地回环 8080 端口的连接，会由用户态的 `docker-proxy` 程序负责「转发」到容器对应的端口上。
     对该用户态程序的讨论，可以阅读 <https://github.com/moby/moby/issues/11185>。
 
-可以通过 `docker network create` 创建自己的网络。
-对于新的 bridge 类型的网络，在主机上也会创建新的以 `br-` 开头的网桥设备。
-如果使用 docker compose 管理容器服务，那么其也会为对应的服务自动创建 bridge 类型的网络。
-有关用户创建的 bridge 网络相比于默认网络的优势，可参考官方文档：[Bridge network driver](https://docs.docker.com/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)。
+可以通过 `docker network create` 创建自己的网络。对于新的 bridge 类型的网络，在主机上也会创建新的以 `br-` 开头的网桥设备。如果使用 docker compose 管理容器服务，那么其也会为对应的服务自动创建 bridge 类型的网络。有关用户创建的 bridge 网络相比于默认网络的优势（例如同网络容器间自动的 DNS 解析支持），可参考官方文档：[Bridge network driver](https://docs.docker.com/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)。
 
 默认情况下，Docker 创建的网络会[分配很大的 IP 段](https://github.com/moby/moby/blob/b7c059886c0898436db90b4615a27cfb4d93ce34/libnetwork/ipamutils/utils.go#L18-L26)。
 在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 `/etc/docker/daemon.json`，将 `default-address-pools` 设置为一个较小的 IP 段：
@@ -913,23 +914,129 @@ PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data 
 
 #### VLAN
 
-VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。
-Docker 支持 `macvlan` 和 `ipvlan` 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。
-这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。
-此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。
+VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。Docker 支持 `macvlan` 和 `ipvlan` 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。
 
 !!! note "Bridge 与 macvlan"
 
     如果你曾经有过使用类似于 VMware 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
     
-    Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。
-    同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。
-    Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。
-    这个 bridge 不对应到具体的物理设备。
+    Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。这个 bridge 不对应到具体的物理设备（Docker 未提供相关的配置方式）。
 
-    而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。
-    从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上。
+    而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上，但是具体实现是不同的。
 
-<!-- TODO: ... -->
+    Macvlan 与 IPvlan 功能也支持对接基于 IEEE 802.1Q 的 VLAN 配置，但是这里不做详细介绍。
+
+##### Macvlan
+
+由于每个容器都有不同于对应网络设备的 MAC 地址，因此 macvlan 模式要求网络设备支持混杂模式（promiscuous mode），即处理所有经过的数据包，即使数据包的 MAC 地址不是自己的。
+
+以下以一台 Linux 虚拟机为例，对应的「物理」网络设备为 `enp1s0`：
+
+```console
+$ ip a show enp1s0
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:d3:7d:6f brd ff:ff:ff:ff:ff:ff
+    inet 192.168.122.247/24 brd 192.168.122.255 scope global dynamic noprefixroute enp1s0
+       valid_lft 3577sec preferred_lft 3577sec
+    inet6 fe80::5054:ff:fed3:7d6f/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+```
+
+我们创建一个 macvlan 网络，并且启动多个容器：
+
+```console
+$ sudo docker network create -d macvlan --subnet=192.168.122.0/25 --gateway=192.168.122.1 -o parent=enp1s0 macvlan_test
+047c9f91cb1a6962d45a916f60c612b0174be5425dcf75d55da1b964037d518f
+$ sudo docker run -it --network macvlan_test --name ct1 -d --ip 192.168.122.10 ustclug/debian:12
+83570467e991dea9fe9f221d7e4e6256f37d193a000b23777a4d37429cdd5e47
+$ sudo docker run -it --network macvlan_test --name ct2 -d --ip 192.168.122.11 ustclug/debian:12
+ea0ef56a73d940dad0b860099e2d8fe26ddcba1d424824e3f45bf4f492dd54f1
+```
+
+由于 macvlan 的实现原因，这两个 IP 在主机上无法 ping 通，但是容器之间，以及与虚拟机处在同一个子网的其他设备之间可以通信。
+
+```console
+$ # 该虚拟机
+$ ping 192.168.122.10
+PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.
+From 192.168.122.247 icmp_seq=1 Destination Host Unreachable
+...
+$ # ct1 内部——需要先安装 iputils-ping
+$ sudo docker exec -it ct1 ping 192.168.122.11
+PING 192.168.122.11 (192.168.122.11) 56(84) bytes of data.
+64 bytes from 192.168.122.11: icmp_seq=1 ttl=64 time=0.095 ms
+...
+$ # 同子网其他设备（例如宿主机）
+$ ping 192.168.122.10
+PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.
+64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.284 ms
+...
+```
+
+同时，也可以验证它们的 MAC 地址不同：
+
+```console
+$ sudo arping 192.168.122.10
+ARPING 192.168.122.10 from 192.168.122.1 virbr0
+Unicast reply from 192.168.122.10 [02:42:C0:A8:7A:0A]  1.091ms
+...
+$ sudo arping 192.168.122.11
+ARPING 192.168.122.11 from 192.168.122.1 virbr0
+Unicast reply from 192.168.122.11 [02:42:C0:A8:7A:0B]  0.979ms
+...
+```
+
+解决这个问题的一种方法是在主机上添加一个（和容器的 macvlan 一样的）新的 macvlan 接口，这样就可以互相通信了：
+
+```console
+$ sudo ip link add macvlan-enp1s0 link enp1s0 type macvlan mode bridge
+$ sudo ip addr add 192.168.122.9/25 dev macvlan-enp1s0
+$ sudo ip link set macvlan-enp1s0 up
+$ ping 192.168.122.10
+PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.
+64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.172 ms
+```
+
+##### IPvlan
+
+这里主要关注 IPvlan 的 L2 模式（也是 IPvlan 的默认模式），L3 模式与上文的场景不同，更加关注网络的隔离，和 bridge 网络类似（主机外部网络无法访问到其中的容器）。
+同时由于不需要额外的 MAC 地址，IPvlan 可以避免混杂模式的开启。
+
+和 macvlan 非常相似，仍然是创建网络与容器：
+
+```console
+$ # 在执行命令之前，需要先清除上文的 macvlan 网络，否则网段会冲突，无法创建
+$ # 清理之后就可以：
+$ sudo docker network create -d ipvlan --subnet=192.168.122.0/25 --gateway=192.168.122.1 -o parent=enp1s0 ipvlan_test
+1d7118ac1a4520b08d4420260700550bb1bcf2ff2badf6f2aeae830b7119502c
+$ # 下面的内容和 macvlan 是几乎一致的，省略
+```
+
+主机无法连通容器 IP 的问题仍然存在，解决方法也几乎一致：
+
+```console
+$ sudo ip link add ipvlan-enp1s0 link enp1s0 type ipvlan mode l2
+$ # 后面省略……
+$ ping 192.168.122.10
+PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.
+64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.154 ms
+```
+
+同时，容器与主机共享相同的 MAC 地址：
+
+```console
+$ sudo arping 192.168.122.10
+ARPING 192.168.122.10 from 192.168.122.1 virbr0
+Unicast reply from 192.168.122.10 [52:54:00:D3:7D:6F]  0.687ms
+...
+$ sudo arping 192.168.122.11
+ARPING 192.168.122.11 from 192.168.122.1 virbr0
+Unicast reply from 192.168.122.11 [52:54:00:D3:7D:6F]  0.721ms
+...
+$ sudo arping 192.168.122.247  # 虚拟机主机
+ARPING 192.168.122.247 from 192.168.122.1 virbr0
+Unicast reply from 192.168.122.247 [52:54:00:D3:7D:6F]  0.852ms
+...
+```
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
