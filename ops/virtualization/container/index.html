@@ -1132,6 +1132,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker Compose
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker Compose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      版本
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1907,6 +1931,30 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docker Compose
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker Compose">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      版本
+    </span>
+  </a>
   
 </li>
         
@@ -2744,6 +2792,73 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-55-11" name="__codelineno-55-11" href="#__codelineno-55-11"></a><span class="go">Unicast reply from 192.168.122.247 [52:54:00:D3:7D:6F]  0.852ms</span>
 <a id="__codelineno-55-12" name="__codelineno-55-12" href="#__codelineno-55-12"></a><span class="go">...</span>
 </code></pre></div>
+<h3 id="docker-compose">Docker Compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h3>
+<p>Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工具：用户编写 YAML 描述如何启动容器，然后使用 <code>docker-compose</code> 命令启动、停止、删除服务。</p>
+<p>作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a><span class="go">docker run -it --rm -e &quot;DISPLAY=$DISPLAY&quot; \</span>
+<a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="go">                    -e &quot;XAUTHORITY=$XAUTHORITY&quot; \</span>
+<a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a><span class="go">                    -v /tmp/.X11-unix:/tmp/.X11-unix \</span>
+<a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a><span class="go">                    -v &quot;$XAUTHORITY:$XAUTHORITY&quot; \</span>
+<a id="__codelineno-56-5" name="__codelineno-56-5" href="#__codelineno-56-5"></a><span class="go">                    -v /dev/dri/renderD128:/dev/dri/renderD128 \</span>
+<a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a><span class="go">                    -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \</span>
+<a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a><span class="go">                    -v /run/user/1000/pulse:/run/pulse/native \</span>
+<a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a><span class="go">                    local/example-desktop-1</span>
+</code></pre></div>
+<p>可以发现这样写不直观，并且容易出错（对于这里的例子，把 <code>-e</code> 和 <code>-v</code> 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 <code>docker-compose.yml</code> 文件：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
+<a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a><span class="w">  </span><span class="nt">desktop</span><span class="p">:</span>
+<a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local/example-desktop-1</span>
+<a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISPLAY=$DISPLAY</span>
+<a id="__codelineno-57-7" name="__codelineno-57-7" href="#__codelineno-57-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">XAUTHORITY=$XAUTHORITY</span>
+<a id="__codelineno-57-8" name="__codelineno-57-8" href="#__codelineno-57-8"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-57-9" name="__codelineno-57-9" href="#__codelineno-57-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/.X11-unix:/tmp/.X11-unix</span>
+<a id="__codelineno-57-10" name="__codelineno-57-10" href="#__codelineno-57-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$XAUTHORITY:$XAUTHORITY</span>
+<a id="__codelineno-57-11" name="__codelineno-57-11" href="#__codelineno-57-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/dev/dri/renderD128:/dev/dri/renderD128</span>
+<a id="__codelineno-57-12" name="__codelineno-57-12" href="#__codelineno-57-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
+<a id="__codelineno-57-13" name="__codelineno-57-13" href="#__codelineno-57-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
+</code></pre></div>
+<p>然后跑一下 <code>docker compose run</code>，容器就可以启动。相比于上述的命令来讲直观得多了。</p>
+<h4 id="_2">版本<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
+<p>Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 <a href="https://docs.docker.com/compose/compose-file/">Compose Specification</a> 四种版本，容易造成混乱。</p>
+<p>Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果你是从 Debian 的官方源安装的 <code>docker-compose</code> 包，那么就是 v1 版本的 compose：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="gp">$ </span>docker-compose<span class="w"> </span>--version
+<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a><span class="go">docker-compose version 1.29.2, build unknown</span>
+<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="go">docker-py version: 5.0.3</span>
+<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a><span class="go">CPython version: 3.11.2</span>
+<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a><span class="go">OpenSSL version: OpenSSL 3.0.11 19 Sep 2023</span>
+</code></pre></div>
+<p>从 Docker 源（docker-ce）安装的 <code>docker-compose-plugin</code> 则是 v2 版本的（基于 Go 语言）。v2 版本的 compose 此时作为 Docker 的插件，推荐的运行方式是 <code>docker compose</code>（不含横线）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>version
+<a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a><span class="go">Docker Compose version v2.24.5</span>
+</code></pre></div>
+<p>从 v1 迁移到 v2 的细节问题参见 <a href="https://docs.docker.com/compose/migrate/">Migrate to Compose V2</a>（主要是容器名称与环境变量处理上存在差异）。</p>
+<p>特别地，Ubuntu 在官方源中打包了 <code>docker-compose-v2</code> 这个包。</p>
+<p>对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。</p>
+<div class="admonition warning">
+<p class="admonition-title">避免在非 swarm 集群场合使用 version 3 compose 文件格式</p>
+<p>Version 3 格式令人诟病一点的是其<a href="https://docs.docker.com/compose/compose-file/compose-versioning/#version-2x-to-3x">抛弃了对资源限制的支持</a>。最为糟糕的是，如果配置了资源限制，docker-compose 不会输出警告，而是直接忽略：</p>
+<blockquote>
+<p><code>cpu_shares</code>, <code>cpu_quota</code>, <code>cpuset</code>, <code>mem_limit</code>, <code>memswap_limit</code>: These have been replaced by the <a href="https://docs.docker.com/compose/compose-file/compose-file-v3/#resources">resources</a> key under <code>deploy</code>. <code>deploy</code> configuration only takes effect when using <code>docker stack deploy</code>, and is ignored by <code>docker-compose</code>.</p>
+</blockquote>
+<details class="note">
+<summary>测试用 <code>docker-compose.yml</code> 文件</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.8&#39;</span>
+<a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a><span class="w">  </span><span class="nt">python-app</span><span class="p">:</span>
+<a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python:3.10-slim</span>
+<a id="__codelineno-60-5" name="__codelineno-60-5" href="#__codelineno-60-5"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -c &quot;print(&#39;Init&#39;); a = [0] * 4000000; print(&#39;Array created&#39;)&quot;</span>
+<a id="__codelineno-60-6" name="__codelineno-60-6" href="#__codelineno-60-6"></a><span class="w">    </span><span class="nt">mem_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
+<a id="__codelineno-60-7" name="__codelineno-60-7" href="#__codelineno-60-7"></a><span class="w">    </span><span class="nt">memswap_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
+<a id="__codelineno-60-8" name="__codelineno-60-8" href="#__codelineno-60-8"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-60-9" name="__codelineno-60-9" href="#__codelineno-60-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
+</code></pre></div>
+<p>如果运行的 compose 环境支持 Compose Specification，那么这个容器不会输出 Array created（在分配内存时即被杀死）。</p>
+</details>
+<p>如果不知道这一点，那么就只会在容器把机器资源耗尽之后才能发现问题。就目前的情况而言，如果仍然有使用旧版 docker-compose（不支持 Compose Specification 格式，即 1.27.0 以下的版本）的需求，建议使用 version 2 格式。相关讨论可以参考：<a href="https://github.com/docker/compose/issues/4513">https://github.com/docker/compose/issues/4513</a>。</p>
+</div>
+<p>考虑到 Docker compose v1 已经不再维护，并且 Compose Specification 保持了对旧版 compose 文件的兼容性，因此下文仅考虑最新的 compose v2 与 Compose Specification 文件格式。</p>
 <!--
   Links to man pages
 
