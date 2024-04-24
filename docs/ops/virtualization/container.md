@@ -1039,4 +1039,94 @@ Unicast reply from 192.168.122.247 [52:54:00:D3:7D:6F]  0.852ms
 ...
 ```
 
+### Docker Compose
+
+Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工具：用户编写 YAML 描述如何启动容器，然后使用 `docker-compose` 命令启动、停止、删除服务。
+
+作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：
+
+```console
+docker run -it --rm -e "DISPLAY=$DISPLAY" \
+                    -e "XAUTHORITY=$XAUTHORITY" \
+                    -v /tmp/.X11-unix:/tmp/.X11-unix \
+                    -v "$XAUTHORITY:$XAUTHORITY" \
+                    -v /dev/dri/renderD128:/dev/dri/renderD128 \
+                    -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \
+                    -v /run/user/1000/pulse:/run/pulse/native \
+                    local/example-desktop-1
+```
+
+可以发现这样写不直观，并且容易出错（对于这里的例子，把 `-e` 和 `-v` 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 `docker-compose.yml` 文件：
+
+```yaml
+version: "2"
+services:
+  desktop:
+    image: local/example-desktop-1
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - $XAUTHORITY:$XAUTHORITY
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /run/user/1000/pipewire-0:/run/pipewire/pipewire-0
+      - /run/user/1000/pulse:/run/pulse/native
+```
+
+然后跑一下 `docker compose run`，容器就可以启动。相比于上述的命令来讲直观得多了。
+
+#### 版本
+
+Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 [Compose Specification](https://docs.docker.com/compose/compose-file/) 四种版本，容易造成混乱。
+
+Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果你是从 Debian 的官方源安装的 `docker-compose` 包，那么就是 v1 版本的 compose：
+
+```console
+$ docker-compose --version
+docker-compose version 1.29.2, build unknown
+docker-py version: 5.0.3
+CPython version: 3.11.2
+OpenSSL version: OpenSSL 3.0.11 19 Sep 2023
+```
+
+从 Docker 源（docker-ce）安装的 `docker-compose-plugin` 则是 v2 版本的（基于 Go 语言）。v2 版本的 compose 此时作为 Docker 的插件，推荐的运行方式是 `docker compose`（不含横线）：
+
+```console
+$ docker compose version
+Docker Compose version v2.24.5
+```
+
+从 v1 迁移到 v2 的细节问题参见 [Migrate to Compose V2](https://docs.docker.com/compose/migrate/)（主要是容器名称与环境变量处理上存在差异）。
+
+特别地，Ubuntu 在官方源中打包了 `docker-compose-v2` 这个包。
+
+对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。
+
+!!! warning "避免在非 swarm 集群场合使用 version 3 compose 文件格式"
+
+    Version 3 格式令人诟病一点的是其[抛弃了对资源限制的支持](https://docs.docker.com/compose/compose-file/compose-versioning/#version-2x-to-3x)。最为糟糕的是，如果配置了资源限制，docker-compose 不会输出警告，而是直接忽略：
+
+    > `cpu_shares`, `cpu_quota`, `cpuset`, `mem_limit`, `memswap_limit`: These have been replaced by the [resources](https://docs.docker.com/compose/compose-file/compose-file-v3/#resources) key under `deploy`. `deploy` configuration only takes effect when using `docker stack deploy`, and is ignored by `docker-compose`.
+
+    ??? note "测试用 `docker-compose.yml` 文件"
+
+        ```yaml
+        version: '3.8'
+        services:
+          python-app:
+            image: python:3.10-slim
+            command: python -c "print('Init'); a = [0] * 4000000; print('Array created')"
+            mem_limit: 16m
+            memswap_limit: 16m
+            environment:
+              - PYTHONUNBUFFERED=1
+        ```
+
+        如果运行的 compose 环境支持 Compose Specification，那么这个容器不会输出 Array created（在分配内存时即被杀死）。
+
+    如果不知道这一点，那么就只会在容器把机器资源耗尽之后才能发现问题。就目前的情况而言，如果仍然有使用旧版 docker-compose（不支持 Compose Specification 格式，即 1.27.0 以下的版本）的需求，建议使用 version 2 格式。相关讨论可以参考：<https://github.com/docker/compose/issues/4513>。
+
+考虑到 Docker compose v1 已经不再维护，并且 Compose Specification 保持了对旧版 compose 文件的兼容性，因此下文仅考虑最新的 compose v2 与 Compose Specification 文件格式。
+
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
