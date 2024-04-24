@@ -2407,9 +2407,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <div class="admonition tip">
 <p class="admonition-title">X 客户端与服务器</p>
 <p>X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。</p>
-<p>如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。
-如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。</p>
-<p class="annotate">对于 SSH 连接到远程服务器的场景，可以使用 <code>ssh -X</code>（或 <code>ssh -Y</code> (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。</p>
+<p>如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。</p>
+<p class="annotate">对于 SSH 连接到远程服务器的场景，可以使用 <code>ssh -X</code>（或 <code>ssh -Y</code> (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。下面的例子假设了 X 服务器 socket 是一个本地的 UNIX socket 文件，但是这对 SSH X forwarding 的场景来说并不适用（SSH 会使用 TCP 转发 X 端口）。对应的，如果正在使用 SSH 测试下面的内容，那么在传递环境变量与 <code>$HOME/.Xauthority</code> 文件的同时，还需要设置容器与主机使用相同的网络（<code>--network host</code>）。</p>
 <ol>
 <li>当使用 <code>-X</code> 时，服务端会假设客户端是不可信任的，因此会限制一些操作；<code>-Y</code> 选项则会放宽这些限制。详见 <a href="https://man.openbsd.org/ssh_config">ssh_config(5)</a> 对 <code>ForwardX11Trusted</code> 的介绍。</li>
 </ol>
@@ -2430,6 +2429,7 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$XAUTHORITY</span><span class="w">  </span><span class="c1"># 一个例子，实际值会根据环境不同而不同</span>
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">/run/user/1000/.mutter-Xwaylandauth.5S15L2</span>
 </code></pre></div>
+<p>如果这个环境变量不存在，那么就会使用默认值：当前用户的家目录下的 <code>.Xauthority</code> 文件。</p>
 <div class="admonition warning">
 <p class="admonition-title">避免直接关闭认证的做法</p>
 <p>如果阅读网络上的一些教程，它们可能会建议直接关闭 X 服务器的认证，就像这样：</p>
