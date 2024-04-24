@@ -523,10 +523,9 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 
     X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。
 
-    如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。
-    如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。
+    如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。
 
-    对于 SSH 连接到远程服务器的场景，可以使用 `ssh -X`（或 `ssh -Y` (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。
+    对于 SSH 连接到远程服务器的场景，可以使用 `ssh -X`（或 `ssh -Y` (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。下面的例子假设了 X 服务器 socket 是一个本地的 UNIX socket 文件，但是这对 SSH X forwarding 的场景来说并不适用（SSH 会使用 TCP 转发 X 端口）。对应的，如果正在使用 SSH 测试下面的内容，那么在传递环境变量与 `$HOME/.Xauthority` 文件的同时，还需要设置容器与主机使用相同的网络（`--network host`）。
     {: .annotate }
 
     1. 当使用 `-X` 时，服务端会假设客户端是不可信任的，因此会限制一些操作；`-Y` 选项则会放宽这些限制。详见 [ssh_config(5)][ssh_config.5] 对 `ForwardX11Trusted` 的介绍。
@@ -556,6 +555,8 @@ Error: Can't open display: :0
 $ echo $XAUTHORITY  # 一个例子，实际值会根据环境不同而不同
 /run/user/1000/.mutter-Xwaylandauth.5S15L2
 ```
+
+如果这个环境变量不存在，那么就会使用默认值：当前用户的家目录下的 `.Xauthority` 文件。
 
 !!! warning "避免直接关闭认证的做法"
 
