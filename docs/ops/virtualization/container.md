@@ -1075,9 +1075,9 @@ services:
       - /run/user/1000/pulse:/run/pulse/native
 ```
 
-然后跑一下 `docker compose run`，容器就可以启动。相比于上述的命令来讲直观得多了。
+然后跑一下 `docker compose up`，容器就可以启动。相比于上述的命令来讲直观得多了。
 
-#### 版本
+#### 版本 {#compose-version}
 
 Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 [Compose Specification](https://docs.docker.com/compose/compose-file/) 四种版本，容易造成混乱。
 
@@ -1129,5 +1129,32 @@ Docker Compose version v2.24.5
     如果不知道这一点，那么就只会在容器把机器资源耗尽之后才能发现问题。就目前的情况而言，如果仍然有使用旧版 docker-compose（不支持 Compose Specification 格式，即 1.27.0 以下的版本）的需求，建议使用 version 2 格式。相关讨论可以参考：<https://github.com/docker/compose/issues/4513>。
 
 考虑到 Docker compose v1 已经不再维护，并且 Compose Specification 保持了对旧版 compose 文件的兼容性，因此下文仅考虑最新的 compose v2 与 Compose Specification 文件格式。
+
+#### 配置文件与基本使用 {#compose-format-and-usage}
+
+Compose Specification 规定了以下这些 "top-level" 元素：
+
+- Version 和 name
+- Services
+- Network
+- Volumes
+- Configs
+- Secrets
+
+其中前四项是最常见的。同时 Compose Specification 已经不再需要写版本号（已有的会被忽略），而项目名称也是可选的（默认为当前目录名），所以一个最简单的 compose 文件可以只有 `services` 一项：
+
+```yaml
+services:
+  hello-world:
+    image: hello-world
+```
+
+假设当前目录名为 `helloworld`，运行 `docker compose up` 之后，可以看到 compose 会创建一个名为 `helloworld-hello-world-1` 的容器，并且为容器创建 `helloworld-hello-world-1` 的 bridge 网络——由于 `hello-world` 的唯一功能是输出一段文字，所以容器会立即退出。
+
+在测试完成后，使用 `docker compose down` 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。
+
+#### 案例 1：Hackergame 的 nc 类题目 Docker 容器环境 {#compose-hackergame-nc}
+
+<!-- TODO: not fin -->
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
