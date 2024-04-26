@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.18">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
     
     
       
@@ -1143,9 +1143,27 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#compose-version" class="md-nav__link">
     <span class="md-ellipsis">
       版本
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-format-and-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置文件与基本使用
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-hackergame-nc" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例 1：Hackergame 的 nc 类题目 Docker 容器环境
     </span>
   </a>
   
@@ -1950,9 +1968,27 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#compose-version" class="md-nav__link">
     <span class="md-ellipsis">
       版本
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-format-and-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置文件与基本使用
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compose-hackergame-nc" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例 1：Hackergame 的 nc 类题目 Docker 容器环境
     </span>
   </a>
   
@@ -2819,8 +2855,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-57-12" name="__codelineno-57-12" href="#__codelineno-57-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
 <a id="__codelineno-57-13" name="__codelineno-57-13" href="#__codelineno-57-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
 </code></pre></div>
-<p>然后跑一下 <code>docker compose run</code>，容器就可以启动。相比于上述的命令来讲直观得多了。</p>
-<h4 id="_2">版本<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
+<p>然后跑一下 <code>docker compose up</code>，容器就可以启动。相比于上述的命令来讲直观得多了。</p>
+<h4 id="compose-version">版本<a class="headerlink" href="#compose-version" title="Permanent link">&para;</a></h4>
 <p>Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 <a href="https://docs.docker.com/compose/compose-file/">Compose Specification</a> 四种版本，容易造成混乱。</p>
 <p>Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果你是从 Debian 的官方源安装的 <code>docker-compose</code> 包，那么就是 v1 版本的 compose：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="gp">$ </span>docker-compose<span class="w"> </span>--version
@@ -2859,6 +2895,26 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>如果不知道这一点，那么就只会在容器把机器资源耗尽之后才能发现问题。就目前的情况而言，如果仍然有使用旧版 docker-compose（不支持 Compose Specification 格式，即 1.27.0 以下的版本）的需求，建议使用 version 2 格式。相关讨论可以参考：<a href="https://github.com/docker/compose/issues/4513">https://github.com/docker/compose/issues/4513</a>。</p>
 </div>
 <p>考虑到 Docker compose v1 已经不再维护，并且 Compose Specification 保持了对旧版 compose 文件的兼容性，因此下文仅考虑最新的 compose v2 与 Compose Specification 文件格式。</p>
+<h4 id="compose-format-and-usage">配置文件与基本使用<a class="headerlink" href="#compose-format-and-usage" title="Permanent link">&para;</a></h4>
+<p>Compose Specification 规定了以下这些 "top-level" 元素：</p>
+<ul>
+<li>Version 和 name</li>
+<li>Services</li>
+<li>Network</li>
+<li>Volumes</li>
+<li>Configs</li>
+<li>Secrets</li>
+</ul>
+<p>其中前四项是最常见的。同时 Compose Specification 已经不再需要写版本号（已有的会被忽略），而项目名称也是可选的（默认为当前目录名），所以一个最简单的 compose 文件可以只有 <code>services</code> 一项：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a><span class="w">  </span><span class="nt">hello-world</span><span class="p">:</span>
+<a id="__codelineno-61-3" name="__codelineno-61-3" href="#__codelineno-61-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span>
+</code></pre></div>
+<p>假设当前目录名为 <code>helloworld</code>，运行 <code>docker compose up</code> 之后，可以看到 compose 会创建一个名为 <code>helloworld-hello-world-1</code> 的容器，并且为容器创建 <code>helloworld-hello-world-1</code> 的 bridge 网络——由于 <code>hello-world</code> 的唯一功能是输出一段文字，所以容器会立即退出。</p>
+<p>在测试完成后，使用 <code>docker compose down</code> 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。</p>
+<h4 id="compose-hackergame-nc">案例 1：Hackergame 的 nc 类题目 Docker 容器环境<a class="headerlink" href="#compose-hackergame-nc" title="Permanent link">&para;</a></h4>
+<!-- TODO: not fin -->
+
 <!--
   Links to man pages
 
@@ -2971,7 +3027,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.3220b9d7.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.dd8806f2.min.js"></script>
       
     
   </body>
