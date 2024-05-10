@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.19">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.21">
     
     
       
@@ -1718,35 +1718,35 @@
 </ul>
 <h2 id="cuda_1">配置 CUDA 环境<a class="headerlink" href="#cuda_1" title="Permanent link">&para;</a></h2>
 <h3 id="_1">硬件准备<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
-<p>在开始之前，你需要确认显卡是否支持支持 CUDA。在这里可以查看支持的列表：<a href="https://developer.nvidia.com/CUDA-gpus">https://developer.nvidia.com/CUDA-gpus</a></p>
-<p>表中的<code>Compute Capability</code>代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。</p>
+<p>在开始之前，你需要确认显卡是否支持所需的 CUDA 版本。在这里可以查看支持的列表：<a href="https://developer.nvidia.com/CUDA-gpus">https://developer.nvidia.com/CUDA-gpus</a>。</p>
+<p>表中的 <code>Compute Capability</code> 代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。</p>
 <h3 id="cuda_2">安装 CUDA<a class="headerlink" href="#cuda_2" title="Permanent link">&para;</a></h3>
-<p>虽然在不同的操作系统下，CUDA 的多种不同的安装方式，但总的来说，在 Linux 下，CUDA 的安装方式大致分为：</p>
+<p>虽然在不同的操作系统下，CUDA 有多种不同的安装方式，但总的来说，在 Linux 下，CUDA 的安装方式大致分为：</p>
 <ol>
 <li>
 <p>使用操作系统本身的仓库和包管理系统进行安装（推荐）</p>
 <ul>
-<li>部分 linux 发行版不支持使用这种方式安装 cuda</li>
+<li>部分 Linux 发行版不支持使用这种方式安装 CUDA</li>
 </ul>
 </li>
 <li>
 <p>从官网下载安装包，并用包管理系统进行安装</p>
 </li>
 <li>
-<p>使用官方 runfile 一键安装</p>
+<p>使用官方 runfile 一键安装（不推荐）</p>
 <ul>
 <li>使用官方 runfile 一键安装的方式较为方便，但是在安装过程中会覆盖系统中的某些文件，<strong>可能会破坏系统</strong>。另外 runfile 安装管理麻烦，不能像包管理器在安装软件时会自动处理依赖关系，需要用户手动处理依赖问题。</li>
 </ul>
 </li>
 </ol>
-<p>对于后两种方式，可以在官网下载页面<a href="https://developer.nvidia.com/CUDA-downloads">https://developer.nvidia.com/CUDA-downloads</a>选择合适的操作系统，网页将给出对应操作系统的安装指令。</p>
+<p>对于后两种方式，可以在官网下载页面 <a href="https://developer.nvidia.com/CUDA-downloads">https://developer.nvidia.com/CUDA-downloads</a> 选择合适的操作系统，网页将给出对应操作系统的安装指令。其中 "Install Type" 中 local 代表安装包包含了完整的 CUDA 运行时和驱动，包管理器在需要时从本地获取；而 network 单纯只包含了源配置，由包管理器在需要时联网获取。"runfile (local)" 则是上面所说的第三种不推荐的安装方式。</p>
 <p>对于第一种安装方式，这里以常用的 Ubuntu 为例：</p>
 <h4 id="_2">安装预编译的内核模块<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-modules-nvidia-<span class="si">${</span><span class="nv">DRIVER_BRANCH</span><span class="si">}${</span><span class="nv">SERVER</span><span class="si">}</span>-<span class="si">${</span><span class="nv">LINUX_FLAVOUR</span><span class="si">}</span>
 </code></pre></div>
-<p><code>${DRIVER_BRANCH}</code>是 Nvidia 驱动的版本号，例如<code>525</code>,<code>535</code>等</p>
-<p><code>${SERVER}</code>可以是<code>-server</code>或为空，代表是否选择为服务器优化的版本。</p>
-<p><code>${LINUX_FLAVOUR}</code>可以是<code>generic</code>，<code>lowlatency</code>等。通常情况下，选择前者，除非希望系统尽可能的实时，同时又不希望降低太多的性能。</p>
+<p><code>${DRIVER_BRANCH}</code> 是 Nvidia 驱动的版本号，例如 <code>525</code>、<code>535</code> 等</p>
+<p><code>${SERVER}</code> 可以是 <code>-server</code> 或为空，代表是否选择为服务器优化的版本。</p>
+<p><code>${LINUX_FLAVOUR}</code> 可以是 <code>generic</code>，<code>lowlatency</code> 等，需要根据目前已经安装的内核选择。</p>
 <p>例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>linux-modules-nvidia-525-generic
 </code></pre></div>
@@ -1764,16 +1764,16 @@
 <p>如果能够查看到你的显卡，那么恭喜你，显卡已经可以使用了。</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p><code>nvidia-smi</code>界面右上角显示的 CUDA 版本是指当前系统上安装的 NVIDIA 驱动支持的最高 CUDA 版本，并不是已安装的 CUDA 版本</p>
+<p><code>nvidia-smi</code> 界面右上角显示的 CUDA 版本是指当前系统上安装的 NVIDIA 驱动支持的最高 CUDA 版本，并不是已安装的 CUDA 版本。</p>
 </div>
 <h3 id="_5">添加环境变量（可选）<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
-<p>如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到<code>PATH</code>环境变量中</p>
-<p>在<code>~/.bashrc</code>等文件中添加这一行</p>
+<p>如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到 <code>PATH</code> 环境变量中。</p>
+<p>在 <code>~/.bashrc</code> 等文件中添加这一行：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/cuda/bin<span class="si">${</span><span class="nv">PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">PATH</span><span class="si">}}</span>
 </code></pre></div>
 <p>以便执行 nvcc 等程序。</p>
 <p>如果编译项目时找不到 CUDA 库，则需要更新动态链接库路径。</p>
-<p>在<code>~/.bashrc</code>等文件中添加这一行</p>
+<p>在 <code>~/.bashrc</code> 等文件中添加这一行：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="si">}}</span>
 </code></pre></div>
 <!--
@@ -1879,7 +1879,7 @@
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.dd8806f2.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a7c05c9e.min.js"></script>
       
     
   </body>
