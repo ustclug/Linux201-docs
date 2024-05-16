@@ -1,3 +1,7 @@
+---
+icon: octicons/checklist-16
+---
+
 # 运维检查单
 
 !!! warning "本文仍在编辑中"

@@ -1,3 +1,7 @@
+---
+icon: material/ssh
+---
+
 # SSH 使用技巧
 
 !!! warning "本文仍在编辑中"

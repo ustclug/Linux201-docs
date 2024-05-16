@@ -1,3 +1,7 @@
+---
+icon: material/package
+---
+
 # 包管理器
 
 在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。

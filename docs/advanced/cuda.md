@@ -1,3 +1,7 @@
+---
+icon: simple/nvidia
+---
+
 # CUDA 环境简介
 
 !!! warning "本文初稿（也许）已完成，但可能仍需大幅度修改"
