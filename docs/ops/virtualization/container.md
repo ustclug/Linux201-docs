@@ -1155,6 +1155,166 @@ services:
 
 #### 案例 1：Hackergame 的 nc 类题目 Docker 容器环境 {#compose-hackergame-nc}
 
-<!-- TODO: not fin -->
+[Hackergame nc 类题目的 Docker 容器资源限制、动态 flag、网页终端](https://github.com/USTC-Hackergame/hackergame-challenge-docker) 提供了两个服务。其中 `dynamic_flag` 由 xinetd 暴露一个 TCP 端口，在客户端（nc）连接时，xinetd 会执行 `front.py` 脚本处理请求。脚本会要求用户输入 token，检查 token 有效性与连接频率，然后根据预先设置的规则生成 flag，创建并启动容器，由对应的题目容器与用户交互。题目容器内不需要做诸如验证 token、限制资源、处理网络连接等工作，只需要与用户使用标准输入输出交互即可。而 `web_netcat` 服务则是一个网页终端，用户可以通过浏览器连接到这个服务，然后在网页上输入命令与 `dynamic_flag` 交互。
+
+[`dynamic_flag` 的 `docker-compose.yml`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/dynamic_flag/docker-compose.yml) 文件类似如下：
+
+```yaml
+version: '2.4'
+services:
+  front:
+    build: .
+    ports:
+      - ${port}:2333
+    restart: always
+    read_only: true
+    ipc: shareable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    environment:
+      - hackergame_conn_interval=${conn_interval}
+      - hackergame_token_timeout=${token_timeout}
+      - hackergame_challenge_timeout=${challenge_timeout}
+      - hackergame_pids_limit=${pids_limit}
+      - hackergame_mem_limit=${mem_limit}
+      - hackergame_flag_path=${flag_path}
+      - hackergame_flag_rule=${flag_rule}
+      - hackergame_challenge_docker_name=${challenge_docker_name}
+      - hackergame_read_only=${read_only}
+      - hackergame_flag_suid=${flag_suid}
+      - hackergame_challenge_network=${challenge_network}
+      - hackergame_shm_exec=${shm_exec}
+      - TZ=Asia/Shanghai
+```
+
+其中 `build: .` 表示使用当前目录下的 Dockerfile 构建镜像，其他的配置项都可以找到 `docker run` 的对应参数。配置中形如 `${port}` 的部分被称为 [Interpolation](https://docs.docker.com/compose/compose-file/12-interpolation/)，在运行时会被替换——这里替换这些变量的值位于同一目录的 `.env`，目前最新版本使用的格式定义可参考[文档说明](https://docs.docker.com/compose/compose-file/05-services/#env_file-format)。
+
+[`web_netcat` 的 `docker-compose.yml`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/web_netcat/docker-compose.yml) 也类似：
+
+```yaml
+version: '2.4'
+services:
+  web:
+    build: .
+    ports:
+      - ${web_port}:3000
+    environment:
+      - nc_host=${nc_host}
+      - nc_port=${nc_port}
+      - nc_raw=${nc_raw}
+    restart: always
+    init: true
+```
+
+其中 [`init: true`](https://docs.docker.com/reference/cli/docker/container/run/#init) 表示 Docker 会在容器启动时使用基于 [tini](https://github.com/krallin/tini) 的 `docker-init` 管理容器内进程。
+
+用户需要运行的题目的示例则在 `example` 目录下，可以看一下[这里的 `docker-compose.yml`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/docker-compose.yml) 文件：
+
+```yaml
+version: '2.4'
+services:
+  challenge:
+    build: .
+    entrypoint: ["/bin/true"]
+  front:
+    extends:
+      file: ../dynamic_flag/docker-compose.yml
+      service: front
+    depends_on:
+      - challenge
+  web:
+    extends:
+      file: ../web_netcat/docker-compose.yml
+      service: web
+```
+
+其中 `challenge` 服务代表题目本身。`front` 与 `web` 使用了 [`extends` 指令](https://docs.docker.com/compose/compose-file/05-services/#extends)来继承对应的 compose 配置；在 `extends` 之后 interpolation 会优先使用当前目录的 `.env` 文件，因此 [`example/.env`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env) 文件中可以覆盖掉上述两个目录下 `.env` 的配置。
+
+最终生成的配置可以使用 `docker compose config` 查看。
+
+??? note "Example 最后的实际配置"
+
+    ```console
+    $ docker compose config
+    WARN[0000] /example/hackergame-challenge-docker/example/docker-compose.yml: `version` is obsolete
+    name: example
+    services:
+      challenge:
+        build:
+          context: /example/hackergame-challenge-docker/example
+          dockerfile: Dockerfile
+        entrypoint:
+          - /bin/true
+        networks:
+          default: null
+      front:
+        build:
+          context: /example/hackergame-challenge-docker/dynamic_flag
+          dockerfile: Dockerfile
+        depends_on:
+          challenge:
+            condition: service_started
+            required: true
+        environment:
+          TZ: Asia/Shanghai
+          hackergame_challenge_docker_name: example_challenge
+          hackergame_challenge_network: ""
+          hackergame_challenge_timeout: "300"
+          hackergame_conn_interval: "10"
+          hackergame_flag_path: /flag1,/flag2
+          hackergame_flag_rule: f"flag{{this_is_an_example_{sha256('example1'+token)[:10]}}}",f"flag{{this_is_the_second_flag_{sha256('example2'+token)[:10]}}}"
+          hackergame_flag_suid: ""
+          hackergame_mem_limit: 256m
+          hackergame_pids_limit: "16"
+          hackergame_read_only: "1"
+          hackergame_shm_exec: "0"
+          hackergame_token_timeout: "30"
+        ipc: shareable
+        networks:
+          default: null
+        ports:
+          - mode: ingress
+            target: 2333
+            published: "10000"
+            protocol: tcp
+        read_only: true
+        restart: always
+        ulimits:
+          nofile:
+            soft: 65536
+            hard: 65536
+        volumes:
+          - type: bind
+            source: /var/run/docker.sock
+            target: /var/run/docker.sock
+            bind:
+              create_host_path: true
+      web:
+        build:
+          context: /example/hackergame-challenge-docker/web_netcat
+          dockerfile: Dockerfile
+        environment:
+          nc_host: front
+          nc_port: "2333"
+          nc_raw: "0"
+        init: true
+        networks:
+          default: null
+        ports:
+          - mode: ingress
+            target: 3000
+            published: "10001"
+            protocol: tcp
+        restart: always
+    networks:
+      default:
+        name: example_default
+    ```
+
+`depends_on` 指令表示 `front` 服务依赖于 `challenge` 服务，即 `challenge` 服务启动后 `front` 服务才会启动。
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
