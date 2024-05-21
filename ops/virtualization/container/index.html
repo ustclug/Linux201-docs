@@ -1175,6 +1175,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#compose-hackergame-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例 2：Hackergame 比赛平台的 Docker compose 部署方案
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2008,6 +2017,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#compose-hackergame-platform" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例 2：Hackergame 比赛平台的 Docker compose 部署方案
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2515,7 +2533,7 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>除了 Docker Hub 以外，另一个比较常见的 registry 服务是 <a href="https://ghcr.io">GitHub Container Registry (ghcr)</a>。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 <code>${{ secrets.GITHUB_TOKEN }}</code> 来登录到 ghcr）。<a href="https://gcr.io">谷歌</a>和<a href="https://quay.io">红帽</a>也提供了自己的 registry 服务。</p>
 <h3 id="volume">Volume<a class="headerlink" href="#volume" title="Permanent link">&para;</a></h3>
 <p>Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
-上面介绍了使用 <code>-v HOST_PATH:CONTAINER_PATH</code> 的方式挂载宿主机的目录，不过如果将参数写成 <code>-v VOLUME_NAME:CONTAINER_PATH</code> 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。</p>
+上面介绍了使用 <code>-v HOST_PATH:CONTAINER_PATH</code> 的方式挂载宿主机的目录（这种方式也被称为 bind mount），不过如果将参数写成 <code>-v VOLUME_NAME:CONTAINER_PATH</code> 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
 <a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">root@c273ee70fe7a:/# </span>touch<span class="w"> </span>/myvolume/a
 <a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">root@c273ee70fe7a:/# </span>ls<span class="w"> </span>/myvolume/
@@ -2992,7 +3010,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-64-14" name="__codelineno-64-14" href="#__codelineno-64-14"></a><span class="w">      </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../web_netcat/docker-compose.yml</span>
 <a id="__codelineno-64-15" name="__codelineno-64-15" href="#__codelineno-64-15"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span>
 </code></pre></div>
-<p>其中 <code>challenge</code> 服务代表题目本身。<code>front</code> 与 <code>web</code> 使用了 <a href="https://docs.docker.com/compose/compose-file/05-services/#extends"><code>extends</code> 指令</a>来继承对应的 compose 配置；在 <code>extends</code> 之后 interpolation 会优先使用当前目录的 <code>.env</code> 文件，因此 <a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env"><code>example/.env</code></a> 文件中可以覆盖掉上述两个目录下 <code>.env</code> 的配置。</p>
+<p>其中 <code>challenge</code> 服务代表题目本身，这里修改 <code>entrypoint</code>，让运行时行为变成直接退出，只是为了能让 compose 创建出对应的容器镜像（选手在连接时由拥有 Docker socket 的 <code>front</code> 操作为每个选手创建、运行容器）。<code>front</code> 与 <code>web</code> 使用了 <a href="https://docs.docker.com/compose/compose-file/05-services/#extends"><code>extends</code> 指令</a>来继承对应的 compose 配置。另外，<code>depends_on</code> 指令表示 <code>front</code> 服务依赖于 <code>challenge</code> 服务，即 <code>challenge</code> 服务启动后 <code>front</code> 服务才会启动。</p>
+<p>在 <code>extends</code> 之后 interpolation 会优先使用当前目录的 <code>.env</code> 文件，因此 <a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env"><code>example/.env</code></a> 文件中可以覆盖掉上述两个目录下 <code>.env</code> 的配置。</p>
 <p>最终生成的配置可以使用 <code>docker compose config</code> 查看。</p>
 <details class="note">
 <summary>Example 最后的实际配置</summary>
@@ -3072,7 +3091,65 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-65-74" name="__codelineno-65-74" href="#__codelineno-65-74"></a><span class="go">    name: example_default</span>
 </code></pre></div>
 </details>
-<p><code>depends_on</code> 指令表示 <code>front</code> 服务依赖于 <code>challenge</code> 服务，即 <code>challenge</code> 服务启动后 <code>front</code> 服务才会启动。</p>
+<h4 id="compose-hackergame-platform">案例 2：Hackergame 比赛平台的 Docker compose 部署方案<a class="headerlink" href="#compose-hackergame-platform" title="Permanent link">&para;</a></h4>
+<p>（以下内容基于 <a href="https://github.com/ustclug/hackergame/pull/175/files">https://github.com/ustclug/hackergame/pull/175/files</a>）</p>
+<p>Hackergame 比赛平台可以算是一个比较复杂的 Web 应用了：</p>
+<ul>
+<li>平台使用 Django 框架，在生产环境中，需要使用 uWSGI 作为 WSGI 服务器。</li>
+<li>平台需要使用 PostgreSQL 作为数据库。<ul>
+<li>由于 uWSGI 使用了 gevent，因此 Django 自带的数据库连接池无法正常工作，需要使用 pgBouncer 在 Django 与 PostgreSQL 之间建立连接池。</li>
+</ul>
+</li>
+<li>平台使用 Memcached 作为内存缓存数据库。</li>
+<li>在 uWSGI 外是 Nginx 作为反向代理，为用户暴露服务。</li>
+</ul>
+<p>对于这里的 <a href="https://github.com/ustclug/hackergame/blob/3d0d2dcc08cb5a75b724fe4601e4f5e7043c4c6a/docker-compose.yml"><code>docker-compose.yml</code></a>，首先看数据库有关的三个服务：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="nt">memcached</span><span class="p">:</span>
+<a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-memcached</span>
+<a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
+<a id="__codelineno-66-4" name="__codelineno-66-4" href="#__codelineno-66-4"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-66-5" name="__codelineno-66-5" href="#__codelineno-66-5"></a><span class="nt">postgresql</span><span class="p">:</span>
+<a id="__codelineno-66-6" name="__codelineno-66-6" href="#__codelineno-66-6"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql</span>
+<a id="__codelineno-66-7" name="__codelineno-66-7" href="#__codelineno-66-7"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
+<a id="__codelineno-66-8" name="__codelineno-66-8" href="#__codelineno-66-8"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-66-9" name="__codelineno-66-9" href="#__codelineno-66-9"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-66-10" name="__codelineno-66-10" href="#__codelineno-66-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_USER=hackergame</span>
+<a id="__codelineno-66-11" name="__codelineno-66-11" href="#__codelineno-66-11"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-66-12" name="__codelineno-66-12" href="#__codelineno-66-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_DB=hackergame</span>
+<a id="__codelineno-66-13" name="__codelineno-66-13" href="#__codelineno-66-13"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-66-14" name="__codelineno-66-14" href="#__codelineno-66-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql:/var/lib/postgresql/data/</span>
+<a id="__codelineno-66-15" name="__codelineno-66-15" href="#__codelineno-66-15"></a><span class="nt">pgbouncer</span><span class="p">:</span>
+<a id="__codelineno-66-16" name="__codelineno-66-16" href="#__codelineno-66-16"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-pgbouncer</span>
+<a id="__codelineno-66-17" name="__codelineno-66-17" href="#__codelineno-66-17"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">edoburu/pgbouncer:latest</span>
+<a id="__codelineno-66-18" name="__codelineno-66-18" href="#__codelineno-66-18"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-66-19" name="__codelineno-66-19" href="#__codelineno-66-19"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-66-20" name="__codelineno-66-20" href="#__codelineno-66-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_USER=hackergame</span>
+<a id="__codelineno-66-21" name="__codelineno-66-21" href="#__codelineno-66-21"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-66-22" name="__codelineno-66-22" href="#__codelineno-66-22"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_HOST=postgresql</span>
+<a id="__codelineno-66-23" name="__codelineno-66-23" href="#__codelineno-66-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POOL_MODE=transaction</span>
+<a id="__codelineno-66-24" name="__codelineno-66-24" href="#__codelineno-66-24"></a><span class="w">    </span><span class="c1"># 坑: pg14+ 默认使用 scram-sha-256, 而 pgbouncer 默认是 md5</span>
+<a id="__codelineno-66-25" name="__codelineno-66-25" href="#__codelineno-66-25"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AUTH_TYPE=scram-sha-256</span>
+<a id="__codelineno-66-26" name="__codelineno-66-26" href="#__codelineno-66-26"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-66-27" name="__codelineno-66-27" href="#__codelineno-66-27"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql</span>
+</code></pre></div>
+<p>除去案例 1 中已经介绍的配置，这里设置了容器名称与 volume。对于数据库而言，添加 volume 进行持久化是有必要的，否则容器重启后数据就会丢失。而这里额外设置 <code>container_name</code>（容器名）的目的是，在内网中可以使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 <code>hackergame-</code> 开头，可以方便地区分平台容器与其他的容器。</p>
+<div class="admonition note">
+<p class="admonition-title"><code>docker compose down</code> 与 volume</p>
+<p>默认情况下，<code>docker compose down</code> 不会删除 volume。如果需要删除 volume，可以使用 <code>docker compose down -v</code>。</p>
+</div>
+<div class="admonition danger">
+<p class="admonition-title">映射端口的安全性（Compose）</p>
+<p>如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="nt">postgresql</span><span class="p">:</span>
+<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
+<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5432:5432&quot;</span>
+</code></pre></div>
+<p>除非有确切的需求需要数据库从该 compose 文件管理的容器之外的地方访问，否则<strong>不应该这么设置</strong>，理由和<a href="#docker-basic">基础概念部分</a>中提到的一样。</p>
+<p>由于 compose 会为其管理的服务创建专门的 bridge 网络，而 bridge 网络内部的容器可以互相直接使用主机名通信，因此不需要像这么暴露端口也可以正常工作。</p>
+</div>
+<!-- not fin -->
+
 <!--
   Links to man pages
 
