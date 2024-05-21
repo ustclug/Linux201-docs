@@ -613,7 +613,7 @@ sudo docker push registry.example.com:username/example:latest
 ### Volume
 
 Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
-上面介绍了使用 `-v HOST_PATH:CONTAINER_PATH` 的方式挂载宿主机的目录，不过如果将参数写成 `-v VOLUME_NAME:CONTAINER_PATH` 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。
+上面介绍了使用 `-v HOST_PATH:CONTAINER_PATH` 的方式挂载宿主机的目录（这种方式也被称为 bind mount），不过如果将参数写成 `-v VOLUME_NAME:CONTAINER_PATH` 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。
 
 ```console
 $ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
@@ -1232,7 +1232,9 @@ services:
       service: web
 ```
 
-其中 `challenge` 服务代表题目本身。`front` 与 `web` 使用了 [`extends` 指令](https://docs.docker.com/compose/compose-file/05-services/#extends)来继承对应的 compose 配置；在 `extends` 之后 interpolation 会优先使用当前目录的 `.env` 文件，因此 [`example/.env`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env) 文件中可以覆盖掉上述两个目录下 `.env` 的配置。
+其中 `challenge` 服务代表题目本身，这里修改 `entrypoint`，让运行时行为变成直接退出，只是为了能让 compose 创建出对应的容器镜像（选手在连接时由拥有 Docker socket 的 `front` 操作为每个选手创建、运行容器）。`front` 与 `web` 使用了 [`extends` 指令](https://docs.docker.com/compose/compose-file/05-services/#extends)来继承对应的 compose 配置。另外，`depends_on` 指令表示 `front` 服务依赖于 `challenge` 服务，即 `challenge` 服务启动后 `front` 服务才会启动。
+
+在 `extends` 之后 interpolation 会优先使用当前目录的 `.env` 文件，因此 [`example/.env`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env) 文件中可以覆盖掉上述两个目录下 `.env` 的配置。
 
 最终生成的配置可以使用 `docker compose config` 查看。
 
@@ -1315,6 +1317,71 @@ services:
         name: example_default
     ```
 
-`depends_on` 指令表示 `front` 服务依赖于 `challenge` 服务，即 `challenge` 服务启动后 `front` 服务才会启动。
+#### 案例 2：Hackergame 比赛平台的 Docker compose 部署方案 {#compose-hackergame-platform}
+
+（以下内容基于 <https://github.com/ustclug/hackergame/pull/175/files>）
+
+Hackergame 比赛平台可以算是一个比较复杂的 Web 应用了：
+
+- 平台使用 Django 框架，在生产环境中，需要使用 uWSGI 作为 WSGI 服务器。
+- 平台需要使用 PostgreSQL 作为数据库。
+    - 由于 uWSGI 使用了 gevent，因此 Django 自带的数据库连接池无法正常工作，需要使用 pgBouncer 在 Django 与 PostgreSQL 之间建立连接池。
+- 平台使用 Memcached 作为内存缓存数据库。
+- 在 uWSGI 外是 Nginx 作为反向代理，为用户暴露服务。
+
+对于这里的 [`docker-compose.yml`](https://github.com/ustclug/hackergame/blob/3d0d2dcc08cb5a75b724fe4601e4f5e7043c4c6a/docker-compose.yml)，首先看数据库有关的三个服务：
+
+```yaml
+memcached:
+  container_name: hackergame-memcached
+  image: memcached
+  restart: always
+postgresql:
+  container_name: hackergame-postgresql
+  image: postgres:15
+  restart: always
+  environment:
+    - POSTGRES_USER=hackergame
+    - POSTGRES_PASSWORD=${DB_PASSWORD}
+    - POSTGRES_DB=hackergame
+  volumes:
+    - hackergame-postgresql:/var/lib/postgresql/data/
+pgbouncer:
+  container_name: hackergame-pgbouncer
+  image: edoburu/pgbouncer:latest
+  restart: always
+  environment:
+    - DB_USER=hackergame
+    - DB_PASSWORD=${DB_PASSWORD}
+    - DB_HOST=postgresql
+    - POOL_MODE=transaction
+    # 坑: pg14+ 默认使用 scram-sha-256, 而 pgbouncer 默认是 md5
+    - AUTH_TYPE=scram-sha-256
+  depends_on:
+    - postgresql
+```
+
+除去案例 1 中已经介绍的配置，这里设置了容器名称与 volume。对于数据库而言，添加 volume 进行持久化是有必要的，否则容器重启后数据就会丢失。而这里额外设置 `container_name`（容器名）的目的是，在内网中可以使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 `hackergame-` 开头，可以方便地区分平台容器与其他的容器。
+
+!!! note "`docker compose down` 与 volume"
+
+    默认情况下，`docker compose down` 不会删除 volume。如果需要删除 volume，可以使用 `docker compose down -v`。
+
+!!! danger "映射端口的安全性（Compose）"
+
+    如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：
+
+    ```yaml
+    postgresql:
+      image: postgres:15
+      ports:
+        - "5432:5432"
+    ```
+
+    除非有确切的需求需要数据库从该 compose 文件管理的容器之外的地方访问，否则**不应该这么设置**，理由和[基础概念部分](#docker-basic)中提到的一样。
+
+    由于 compose 会为其管理的服务创建专门的 bridge 网络，而 bridge 网络内部的容器可以互相直接使用主机名通信，因此不需要像这么暴露端口也可以正常工作。
+
+<!-- not fin -->
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
