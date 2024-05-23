@@ -1178,7 +1178,7 @@
           <li class="md-nav__item">
   <a href="#compose-hackergame-platform" class="md-nav__link">
     <span class="md-ellipsis">
-      案例 2：Hackergame 比赛平台的 Docker compose 部署方案
+      案例 2：Hackergame 比赛平台的 Docker compose 测试方案
     </span>
   </a>
   
@@ -2020,7 +2020,7 @@
           <li class="md-nav__item">
   <a href="#compose-hackergame-platform" class="md-nav__link">
     <span class="md-ellipsis">
-      案例 2：Hackergame 比赛平台的 Docker compose 部署方案
+      案例 2：Hackergame 比赛平台的 Docker compose 测试方案
     </span>
   </a>
   
@@ -3091,7 +3091,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-65-74" name="__codelineno-65-74" href="#__codelineno-65-74"></a><span class="go">    name: example_default</span>
 </code></pre></div>
 </details>
-<h4 id="compose-hackergame-platform">案例 2：Hackergame 比赛平台的 Docker compose 部署方案<a class="headerlink" href="#compose-hackergame-platform" title="Permanent link">&para;</a></h4>
+<h4 id="compose-hackergame-platform">案例 2：Hackergame 比赛平台的 Docker compose 测试方案<a class="headerlink" href="#compose-hackergame-platform" title="Permanent link">&para;</a></h4>
 <p>（以下内容基于 <a href="https://github.com/ustclug/hackergame/pull/175/files">https://github.com/ustclug/hackergame/pull/175/files</a>）</p>
 <p>Hackergame 比赛平台可以算是一个比较复杂的 Web 应用了：</p>
 <ul>
@@ -3103,7 +3103,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li>平台使用 Memcached 作为内存缓存数据库。</li>
 <li>在 uWSGI 外是 Nginx 作为反向代理，为用户暴露服务。</li>
 </ul>
-<p>对于这里的 <a href="https://github.com/ustclug/hackergame/blob/3d0d2dcc08cb5a75b724fe4601e4f5e7043c4c6a/docker-compose.yml"><code>docker-compose.yml</code></a>，首先看数据库有关的三个服务：</p>
+<p>对于这里的 <a href="https://github.com/ustclug/hackergame/blob/3d0d2dcc08cb5a75b724fe4601e4f5e7043c4c6a/docker-compose.yml"><code>docker-compose.yml</code></a>，首先看 <code>services</code> 内部与数据库有关的三个服务：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="nt">memcached</span><span class="p">:</span>
 <a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-memcached</span>
 <a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
@@ -3132,24 +3132,106 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-66-26" name="__codelineno-66-26" href="#__codelineno-66-26"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
 <a id="__codelineno-66-27" name="__codelineno-66-27" href="#__codelineno-66-27"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql</span>
 </code></pre></div>
-<p>除去案例 1 中已经介绍的配置，这里设置了容器名称与 volume。对于数据库而言，添加 volume 进行持久化是有必要的，否则容器重启后数据就会丢失。而这里额外设置 <code>container_name</code>（容器名）的目的是，在内网中可以使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 <code>hackergame-</code> 开头，可以方便地区分平台容器与其他的容器。</p>
+<p>除去案例 1 中已经介绍的配置，这里设置了容器名称与 volume。对于数据库而言，添加 volume 进行持久化是有必要的，否则容器重启后数据就会丢失。如果定义了 volume，还需要在最外层的 <code>volumes</code> 中定义这个 volume。该 compose 文件定义了三个使用的 volume：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="w">  </span><span class="nt">hackergame-static</span><span class="p">:</span>
+<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="w">  </span><span class="nt">nginx-log</span><span class="p">:</span>
+<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="w">  </span><span class="nt">hackergame-postgresql</span><span class="p">:</span>
+</code></pre></div>
 <div class="admonition note">
 <p class="admonition-title"><code>docker compose down</code> 与 volume</p>
 <p>默认情况下，<code>docker compose down</code> 不会删除 volume。如果需要删除 volume，可以使用 <code>docker compose down -v</code>。</p>
 </div>
+<p>而这里额外设置 <code>container_name</code>（容器名）的目的是，在这些容器组成的内网中，Docker 提供的 DNS 就允许使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 <code>hackergame-</code> 开头，可以方便地区分平台容器与其他的容器。</p>
+<details class="note">
+<summary><code>resolv.conf</code> 配置，与 <code>ping</code> 主机名与容器名的输出</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a><span class="gp">root@hackergame:/# </span>cat<span class="w"> </span>/etc/resolv.conf
+<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a><span class="gp"># </span>Generated<span class="w"> </span>by<span class="w"> </span>Docker<span class="w"> </span>Engine.
+<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a><span class="gp"># </span>This<span class="w"> </span>file<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>edited<span class="p">;</span><span class="w"> </span>Docker<span class="w"> </span>Engine<span class="w"> </span>will<span class="w"> </span>not<span class="w"> </span>make<span class="w"> </span>further<span class="w"> </span>changes<span class="w"> </span>once<span class="w"> </span>it
+<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="gp"># </span>has<span class="w"> </span>been<span class="w"> </span>modified.
+<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a>
+<a id="__codelineno-68-6" name="__codelineno-68-6" href="#__codelineno-68-6"></a><span class="go">nameserver 127.0.0.11</span>
+<a id="__codelineno-68-7" name="__codelineno-68-7" href="#__codelineno-68-7"></a><span class="go">search example.com</span>
+<a id="__codelineno-68-8" name="__codelineno-68-8" href="#__codelineno-68-8"></a><span class="go">options ndots:0</span>
+<a id="__codelineno-68-9" name="__codelineno-68-9" href="#__codelineno-68-9"></a>
+<a id="__codelineno-68-10" name="__codelineno-68-10" href="#__codelineno-68-10"></a><span class="gp"># </span>Based<span class="w"> </span>on<span class="w"> </span>host<span class="w"> </span>file:<span class="w"> </span><span class="s1">&#39;/etc/resolv.conf&#39;</span><span class="w"> </span><span class="o">(</span>internal<span class="w"> </span>resolver<span class="o">)</span>
+<a id="__codelineno-68-11" name="__codelineno-68-11" href="#__codelineno-68-11"></a><span class="gp"># </span>ExtServers:<span class="w"> </span><span class="o">[</span><span class="m">192</span>.168.0.1<span class="o">]</span>
+<a id="__codelineno-68-12" name="__codelineno-68-12" href="#__codelineno-68-12"></a><span class="gp"># </span>Overrides:<span class="w"> </span><span class="o">[]</span>
+<a id="__codelineno-68-13" name="__codelineno-68-13" href="#__codelineno-68-13"></a><span class="gp"># </span>Option<span class="w"> </span>ndots<span class="w"> </span>from:<span class="w"> </span>internal
+<a id="__codelineno-68-14" name="__codelineno-68-14" href="#__codelineno-68-14"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>nginx
+<a id="__codelineno-68-15" name="__codelineno-68-15" href="#__codelineno-68-15"></a><span class="go">PING nginx (172.17.1.118) 56(84) bytes of data.</span>
+<a id="__codelineno-68-16" name="__codelineno-68-16" href="#__codelineno-68-16"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.184 ms</span>
+<a id="__codelineno-68-17" name="__codelineno-68-17" href="#__codelineno-68-17"></a><span class="go">^C</span>
+<a id="__codelineno-68-18" name="__codelineno-68-18" href="#__codelineno-68-18"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>hackergame-nginx
+<a id="__codelineno-68-19" name="__codelineno-68-19" href="#__codelineno-68-19"></a><span class="go">PING hackergame-nginx (172.17.1.118) 56(84) bytes of data.</span>
+<a id="__codelineno-68-20" name="__codelineno-68-20" href="#__codelineno-68-20"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.233 ms</span>
+<a id="__codelineno-68-21" name="__codelineno-68-21" href="#__codelineno-68-21"></a><span class="go">^C</span>
+</code></pre></div>
+</details>
 <div class="admonition danger">
 <p class="admonition-title">映射端口的安全性（Compose）</p>
 <p>如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="nt">postgresql</span><span class="p">:</span>
-<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
-<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5432:5432&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-69-1" name="__codelineno-69-1" href="#__codelineno-69-1"></a><span class="nt">postgresql</span><span class="p">:</span>
+<a id="__codelineno-69-2" name="__codelineno-69-2" href="#__codelineno-69-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
+<a id="__codelineno-69-3" name="__codelineno-69-3" href="#__codelineno-69-3"></a><span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-69-4" name="__codelineno-69-4" href="#__codelineno-69-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;5432:5432&quot;</span>
 </code></pre></div>
 <p>除非有确切的需求需要数据库从该 compose 文件管理的容器之外的地方访问，否则<strong>不应该这么设置</strong>，理由和<a href="#docker-basic">基础概念部分</a>中提到的一样。</p>
 <p>由于 compose 会为其管理的服务创建专门的 bridge 网络，而 bridge 网络内部的容器可以互相直接使用主机名通信，因此不需要像这么暴露端口也可以正常工作。</p>
 </div>
-<!-- not fin -->
-
+<p>Django 部分的配置如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="nt">hackergame</span><span class="p">:</span>
+<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;name</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame</span>
+<a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="w">  </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="nv">*name</span>
+<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a><span class="w">  </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-70-6" name="__codelineno-70-6" href="#__codelineno-70-6"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DJANGO_SETTINGS_MODULE=conf.settings.docker</span>
+<a id="__codelineno-70-8" name="__codelineno-70-8" href="#__codelineno-70-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-70-9" name="__codelineno-70-9" href="#__codelineno-70-9"></a><span class="w">    </span><span class="c1"># 调试用</span>
+<a id="__codelineno-70-10" name="__codelineno-70-10" href="#__codelineno-70-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG=True</span>
+<a id="__codelineno-70-11" name="__codelineno-70-11" href="#__codelineno-70-11"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-70-12" name="__codelineno-70-12" href="#__codelineno-70-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.:/opt/hackergame/:ro</span>
+<a id="__codelineno-70-13" name="__codelineno-70-13" href="#__codelineno-70-13"></a><span class="w">    </span><span class="c1"># 存储静态网页与题目文件</span>
+<a id="__codelineno-70-14" name="__codelineno-70-14" href="#__codelineno-70-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-static:/var/opt/hackergame/</span>
+<a id="__codelineno-70-15" name="__codelineno-70-15" href="#__codelineno-70-15"></a><span class="w">    </span><span class="c1"># 很不幸，你可能还需要 bind 完整的题目目录进来（不然不方便导入）</span>
+<a id="__codelineno-70-16" name="__codelineno-70-16" href="#__codelineno-70-16"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-70-17" name="__codelineno-70-17" href="#__codelineno-70-17"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
+<a id="__codelineno-70-18" name="__codelineno-70-18" href="#__codelineno-70-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pgbouncer</span>
+</code></pre></div>
+<p>这里的 <code>&amp;name</code> 和 <code>*name</code> 利用了 YAML 的 <a href="https://yaml.org/spec/1.2/spec.html#id2765878">Anchor 与 Alias</a> 功能。这里 <code>&amp;name hackergame</code> 定义了一个名为 <code>name</code>，值为 <code>hackergame</code> 的 Anchor，而 <code>*name</code> 则表示使用 <code>name</code> 这个 Anchor 的值。</p>
+<p>在这个例子中，使用这个特性或许有些小题大做，但是在一些复杂的配置中，可以使用 Anchor 定义一系列映射，类似这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;env</span>
+<a id="__codelineno-71-2" name="__codelineno-71-2" href="#__codelineno-71-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EXAMPLE=1</span>
+<a id="__codelineno-71-3" name="__codelineno-71-3" href="#__codelineno-71-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHON_UNBUFFERED=1</span>
+<a id="__codelineno-71-4" name="__codelineno-71-4" href="#__codelineno-71-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Asia/Shanghai</span>
+<a id="__codelineno-71-5" name="__codelineno-71-5" href="#__codelineno-71-5"></a><span class="w">  </span><span class="c1"># ...</span>
+</code></pre></div>
+<p>然后在其他地方使用 <code>*env</code> 引用这个映射：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
+<a id="__codelineno-72-2" name="__codelineno-72-2" href="#__codelineno-72-2"></a>
+<a id="__codelineno-72-3" name="__codelineno-72-3" href="#__codelineno-72-3"></a><span class="c1"># 或者，如果需要再添加其他的值</span>
+<a id="__codelineno-72-4" name="__codelineno-72-4" href="#__codelineno-72-4"></a><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-72-5" name="__codelineno-72-5" href="#__codelineno-72-5"></a><span class="w">  </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
+<a id="__codelineno-72-6" name="__codelineno-72-6" href="#__codelineno-72-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OTHER_ENV=2</span>
+</code></pre></div>
+<p>Nginx 的 compose 配置没有新的特性，因此不再赘述。不过，另一点需要特别提及的是，在不使用 Docker compose 部署时，服务之间的通信使用了 UNIX socket，例如 <a href="https://github.com/ustclug/hackergame/blob/99bfb728670393757247f45679f9216cd64ae5ad/conf/uwsgi-apps/hackergame.ini#L2C1-L2C47">uwsgi 暴露的 socket 配置</a>如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="k">[uwsgi]</span>
+<a id="__codelineno-73-2" name="__codelineno-73-2" href="#__codelineno-73-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">unix:///run/uwsgi/app/hackergame/socket</span>
+<a id="__codelineno-73-3" name="__codelineno-73-3" href="#__codelineno-73-3"></a><span class="c1"># ...</span>
+</code></pre></div>
+<p>而 <a href="https://github.com/ustclug/hackergame/blob/f1754f0c93d90458cd29dbe288634f8bf01aae5c/conf/uwsgi-apps/hackergame-docker.ini#L2">compose 实现替换为了 TCP socket</a>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-74-1" name="__codelineno-74-1" href="#__codelineno-74-1"></a><span class="k">[uwsgi]</span>
+<a id="__codelineno-74-2" name="__codelineno-74-2" href="#__codelineno-74-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">:2018</span>
+<a id="__codelineno-74-3" name="__codelineno-74-3" href="#__codelineno-74-3"></a><span class="c1"># ...</span>
+</code></pre></div>
+<p>一个重要的原因是，UNIX socket 是有用户所有者和权限的，但是在多个容器的场合下，保证所有容器的 <code>/etc/passwd</code> 映射的用户一致是比较困难的。而 TCP socket 则解决了这个问题。但是其<strong>安全性</strong>需要考虑，例如 uWSGI 的 TCP socket 默认是没有额外的鉴权的，而能够连接到这个 socket 的进程就可以<a href="https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi-rce-zh.md">执行任意命令</a>，<a href="https://github.com/PKU-GeekGame/geekgame-1st/tree/master/writeups/xmcp#%E6%97%A9%E6%9C%9F%E4%BA%BA%E7%B1%BB%E7%9A%84%E8%81%8A%E5%A4%A9%E5%AE%A4-uwsgi">在某些不正确的设置下，即使在配置中将 uWSGI 降权运行，也可以以此获取到更高的权限</a>。即使 uWSGI 的端口没有暴露到容器内网外部，如果有其他容器被攻破，那么攻击者也可以轻松横向移动到 uWSGI 所在容器。</p>
+<div class="admonition lab">
+<p class="admonition-title">Health check</p>
+<p>在上面的例子中，我们限制了一些容器在其他容器启动之后再启动。但是在某些场景下，「容器启动」并不意味着「容器已经准备好接受请求」，在「启动」和「准备好」这个时间间隔中，启动需要对应服务的容器可能会失败。</p>
+<p>Docker 提供了 <a href="https://docs.docker.com/reference/dockerfile/#healthcheck">Health check</a> 功能，可以定义健康检查的命令，在容器启动后，Docker 会定期执行这个命令，根据返回值判断容器是否「健康」。</p>
+<p>尝试编写一个 compose 文件，其中一个容器启动一个数据库（你可能需要自行定义 health check 命令），另一个容器需要在数据库准备好之后才能启动。</p>
+</div>
 <!--
   Links to man pages
 
