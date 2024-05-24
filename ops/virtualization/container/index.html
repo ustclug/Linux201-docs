@@ -1194,6 +1194,57 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#container-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      容器运行时
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="容器运行时">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#podman" class="md-nav__link">
+    <span class="md-ellipsis">
+      Podman
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lxc" class="md-nav__link">
+    <span class="md-ellipsis">
+      LXC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#systemd-nspawn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Systemd-nspawn
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-sandbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      基于容器技术的沙盒
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2028,6 +2079,57 @@
         
       </ul>
     </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-runtime" class="md-nav__link">
+    <span class="md-ellipsis">
+      容器运行时
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="容器运行时">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#podman" class="md-nav__link">
+    <span class="md-ellipsis">
+      Podman
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lxc" class="md-nav__link">
+    <span class="md-ellipsis">
+      LXC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#systemd-nspawn" class="md-nav__link">
+    <span class="md-ellipsis">
+      Systemd-nspawn
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-sandbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      基于容器技术的沙盒
+    </span>
+  </a>
   
 </li>
         
@@ -3232,6 +3334,54 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>Docker 提供了 <a href="https://docs.docker.com/reference/dockerfile/#healthcheck">Health check</a> 功能，可以定义健康检查的命令，在容器启动后，Docker 会定期执行这个命令，根据返回值判断容器是否「健康」。</p>
 <p>尝试编写一个 compose 文件，其中一个容器启动一个数据库（你可能需要自行定义 health check 命令），另一个容器需要在数据库准备好之后才能启动。</p>
 </div>
+<h2 id="container-runtime">容器运行时<a class="headerlink" href="#container-runtime" title="Permanent link">&para;</a></h2>
+<p>Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux Foundation 的项目，始于 2015 年，目标是为容器技术制定开放标准。目前有三个标准：</p>
+<ul>
+<li>Runtime Specification：容器运行时规范，runc 是其参考实现。上文的 Docker 使用 containerd 操作 runc 来运行容器。</li>
+<li>Image Specification：容器镜像规范，Docker 的镜像格式与之兼容。</li>
+<li>Distribution Specification：容器镜像分发规范，这和 registry 有关。</li>
+</ul>
+<p>这一部分主要介绍其他的运行时。</p>
+<h3 id="podman">Podman<a class="headerlink" href="#podman" title="Permanent link">&para;</a></h3>
+<p><a href="https://podman.io/">Podman</a> 是红帽主推的容器方案，在 Fedora 和 RHEL 上自带。相比于 Docker，其最主要的特点是，没有 daemon，因此在一些操作上和 Docker 有显著的不同，例如：</p>
+<ul>
+<li>Podman 使用 rootless container 的方式让普通用户创建容器，而不是像 Docker 那样需要向用户授予与 root 等价的权限。</li>
+<li>由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。</li>
+</ul>
+<p>Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。</p>
+<h3 id="lxc">LXC<a class="headerlink" href="#lxc" title="Permanent link">&para;</a></h3>
+<p><a href="https://linuxcontainers.org/lxc/introduction/">LXC</a> 是一个 low level 的容器工具，提供了一些底层的 API 与命令行工具。在实际使用中，用户一般不会直接使用 LXC 的工具，而是使用 LXC 的高层次封装工具；开发者也可以基于 LXC 自行开发工具。Proxmox VE 的容器支持就是基于 LXC 的封装，而 LXD 则是 Canonical 开发的基于 LXC 的工具。</p>
+<p>由于在 2023 年，Canonical 将 LXD 从 <a href="https://linuxcontainers.org">Linux Containers 项目</a>中分离出来，因此出现了一个新社区 fork <a href="https://linuxcontainers.org/incus/">Incus</a>。以上工具相比于 Docker 更加注重于系统级的容器，而不是应用级的容器。</p>
+<h3 id="systemd-nspawn">Systemd-nspawn<a class="headerlink" href="#systemd-nspawn" title="Permanent link">&para;</a></h3>
+<p>Systemd-nspawn 是由 systemd 提供的轻量级容器工具，提供了与 systemd 的集成。以下是一个简单的使用例子，其中初始化了一个 Debian Bookworm 的 rootfs，并且启动了这个 "Debian"：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-75-1" name="__codelineno-75-1" href="#__codelineno-75-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>debootstrap<span class="w"> </span>bookworm<span class="w"> </span>debian<span class="w"> </span>https://mirrors.ustc.edu.cn/debian
+<a id="__codelineno-75-2" name="__codelineno-75-2" href="#__codelineno-75-2"></a><span class="go">W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg</span>
+<a id="__codelineno-75-3" name="__codelineno-75-3" href="#__codelineno-75-3"></a><span class="go">I: Retrieving InRelease</span>
+<a id="__codelineno-75-4" name="__codelineno-75-4" href="#__codelineno-75-4"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-75-5" name="__codelineno-75-5" href="#__codelineno-75-5"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>debian
+<a id="__codelineno-75-6" name="__codelineno-75-6" href="#__codelineno-75-6"></a><span class="gp">$ </span><span class="c1"># 由于 debootstrap 创建的 root 没有密码，需要设置密码</span>
+<a id="__codelineno-75-7" name="__codelineno-75-7" href="#__codelineno-75-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>passwd<span class="w"> </span>root
+<a id="__codelineno-75-8" name="__codelineno-75-8" href="#__codelineno-75-8"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-75-9" name="__codelineno-75-9" href="#__codelineno-75-9"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-75-10" name="__codelineno-75-10" href="#__codelineno-75-10"></a><span class="go">New password:</span>
+<a id="__codelineno-75-11" name="__codelineno-75-11" href="#__codelineno-75-11"></a><span class="go">Retype new password:</span>
+<a id="__codelineno-75-12" name="__codelineno-75-12" href="#__codelineno-75-12"></a><span class="go">passwd: password updated successfully</span>
+<a id="__codelineno-75-13" name="__codelineno-75-13" href="#__codelineno-75-13"></a><span class="go">Container debian exited successfully.</span>
+<a id="__codelineno-75-14" name="__codelineno-75-14" href="#__codelineno-75-14"></a><span class="gp">$ </span><span class="c1"># 引导容器</span>
+<a id="__codelineno-75-15" name="__codelineno-75-15" href="#__codelineno-75-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>--boot<span class="w"> </span>.
+<a id="__codelineno-75-16" name="__codelineno-75-16" href="#__codelineno-75-16"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-75-17" name="__codelineno-75-17" href="#__codelineno-75-17"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-75-18" name="__codelineno-75-18" href="#__codelineno-75-18"></a><span class="go">systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)</span>
+<a id="__codelineno-75-19" name="__codelineno-75-19" href="#__codelineno-75-19"></a><span class="go">Detected virtualization systemd-nspawn.</span>
+<a id="__codelineno-75-20" name="__codelineno-75-20" href="#__codelineno-75-20"></a><span class="go">Detected architecture x86-64.</span>
+<a id="__codelineno-75-21" name="__codelineno-75-21" href="#__codelineno-75-21"></a>
+<a id="__codelineno-75-22" name="__codelineno-75-22" href="#__codelineno-75-22"></a><span class="go">Welcome to Debian GNU/Linux 12 (bookworm)!</span>
+<a id="__codelineno-75-23" name="__codelineno-75-23" href="#__codelineno-75-23"></a><span class="go">（以下省略）</span>
+</code></pre></div>
+<h3 id="container-sandbox">基于容器技术的沙盒<a class="headerlink" href="#container-sandbox" title="Permanent link">&para;</a></h3>
+<p>以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。</p>
+<!-- not fin -->
+
 <!--
   Links to man pages
 
