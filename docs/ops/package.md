@@ -2,11 +2,46 @@
 icon: material/package
 ---
 
-# 包管理器
+# 包管理系统
 
 !!! warning "本文初稿编写中"
 
-在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。
+<!-- 简介 -->
+
+## APT 系列工具
+
+### 常用操作
+
+<!-- automatic 和 manual 安装的区别，autoremove 的功能 -->
+<!-- "Recommends", "Suggests" 等是什么；在需要精简的场合使用 --no-install-recommends 避免安装不必要的软件包 -->
+<!-- 查找某个文件可以由什么包提供，查找某个包提供了什么文件 -->
+<!-- APT pattern（例如查找系统中状态为 local 的软件包） -->
+<!-- 如何固定一个软件包的版本（避免被升级） -->
+<!-- 配置自动升级 (unattended-upgrade) -->
+<!-- aptitude 简介 -->
+<!-- 检查已安装软件包完整性 -->
+
+### 软件包优先级
+
+<!-- 介绍 apt-cache policy 工具的使用 -->
+<!-- 如何编写 /etc/apt/preferences.d/ 配置，举一些例子 -->
+
+## 软件源
+
+### 目录结构
+
+### 构建一个自己的 DEB 软件源
+
+<!-- 可参考 https://github.com/USTC-vlab/deb -->
+
+## 软件包构建
+
+<!-- DEB 软件包的结构 -->
+<!-- 如何从已有的 DEB 源码包打自己的 patch 并重新打包 -->
+<!-- 如何为第三方软件打包 -->
+
+<!-- ------ -->
+<!-- 在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。
 
 包管理器的范畴较广：管理系统的，比如 apt，zypper；管理环境的，比如 conda；管理语言包的，比如 pip，gem；有一些包管理器甚至是语言的“附属”，如 cargo
 
@@ -86,4 +121,4 @@ TODO
 
 ## 重要而不常见的功能
 
-TODO
+TODO -->
