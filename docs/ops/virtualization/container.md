@@ -1489,4 +1489,65 @@ socket=:2018
 
     尝试编写一个 compose 文件，其中一个容器启动一个数据库（你可能需要自行定义 health check 命令），另一个容器需要在数据库准备好之后才能启动。
 
+## 容器运行时 {#container-runtime}
+
+Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux Foundation 的项目，始于 2015 年，目标是为容器技术制定开放标准。目前有三个标准：
+
+- Runtime Specification：容器运行时规范，runc 是其参考实现。上文的 Docker 使用 containerd 操作 runc 来运行容器。
+- Image Specification：容器镜像规范，Docker 的镜像格式与之兼容。
+- Distribution Specification：容器镜像分发规范，这和 registry 有关。
+
+这一部分主要介绍其他的运行时。
+
+### Podman
+
+[Podman](https://podman.io/) 是红帽主推的容器方案，在 Fedora 和 RHEL 上自带。相比于 Docker，其最主要的特点是，没有 daemon，因此在一些操作上和 Docker 有显著的不同，例如：
+
+- Podman 使用 rootless container 的方式让普通用户创建容器，而不是像 Docker 那样需要向用户授予与 root 等价的权限。
+- 由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。
+
+Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。
+
+### LXC
+
+[LXC](https://linuxcontainers.org/lxc/introduction/) 是一个 low level 的容器工具，提供了一些底层的 API 与命令行工具。在实际使用中，用户一般不会直接使用 LXC 的工具，而是使用 LXC 的高层次封装工具；开发者也可以基于 LXC 自行开发工具。Proxmox VE 的容器支持就是基于 LXC 的封装，而 LXD 则是 Canonical 开发的基于 LXC 的工具。
+
+由于在 2023 年，Canonical 将 LXD 从 [Linux Containers 项目](https://linuxcontainers.org)中分离出来，因此出现了一个新社区 fork [Incus](https://linuxcontainers.org/incus/)。以上工具相比于 Docker 更加注重于系统级的容器，而不是应用级的容器。
+
+### Systemd-nspawn
+
+Systemd-nspawn 是由 systemd 提供的轻量级容器工具，提供了与 systemd 的集成。以下是一个简单的使用例子，其中初始化了一个 Debian Bookworm 的 rootfs，并且启动了这个 "Debian"：
+
+```console
+$ sudo debootstrap bookworm debian https://mirrors.ustc.edu.cn/debian
+W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg
+I: Retrieving InRelease
+（以下省略）
+$ cd debian
+$ # 由于 debootstrap 创建的 root 没有密码，需要设置密码
+$ sudo systemd-nspawn passwd root
+Spawning container debian on /home/taoky/tmp/debian/debian.
+Press Ctrl-] three times within 1s to kill container.
+New password:
+Retype new password:
+passwd: password updated successfully
+Container debian exited successfully.
+$ # 引导容器
+$ sudo systemd-nspawn --boot .
+Spawning container debian on /home/taoky/tmp/debian/debian.
+Press Ctrl-] three times within 1s to kill container.
+systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)
+Detected virtualization systemd-nspawn.
+Detected architecture x86-64.
+
+Welcome to Debian GNU/Linux 12 (bookworm)!
+（以下省略）
+```
+
+### 基于容器技术的沙盒 {#container-sandbox}
+
+以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。
+
+<!-- not fin -->
+
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
