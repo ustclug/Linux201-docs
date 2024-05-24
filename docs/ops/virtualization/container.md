@@ -1548,6 +1548,43 @@ Welcome to Debian GNU/Linux 12 (bookworm)!
 
 以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。
 
+Bubblewrap 是目前相对常用的底层沙盒工具之一，它支持使用 user namespace 或 setuid 来创建沙盒。以下是[使用 bubblewrap 创建 shell 沙盒的例子](https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh)：
+
+```shell
+set -euo pipefail
+(exec bwrap --ro-bind /usr /usr \
+      --dir /tmp \
+      --dir /var \
+      --symlink ../tmp var/tmp \
+      --proc /proc \
+      --dev /dev \
+      --ro-bind /etc/resolv.conf /etc/resolv.conf \
+      --symlink usr/lib /lib \
+      --symlink usr/lib64 /lib64 \
+      --symlink usr/bin /bin \
+      --symlink usr/sbin /sbin \
+      --chdir / \
+      --unshare-all \
+      --share-net \
+      --die-with-parent \
+      --dir /run/user/$(id -u) \
+      --setenv XDG_RUNTIME_DIR "/run/user/`id -u`" \
+      --setenv PS1 "bwrap-demo$ " \
+      --file 11 /etc/passwd \
+      --file 12 /etc/group \
+      /bin/sh) \
+    11< <(getent passwd $UID 65534) \
+    12< <(getent group $(id -g) 65534)
+```
+
+这个「沙盒」只读绑定了主机的 `/usr` 目录，并且处理了一些 `/etc` 下的配置。
+
+在实践中，更常见的面向用户的方案有 [Flatpak](https://flatpak.org/) 和 [Snap](https://snapcraft.io/) 等。这些方案提供了应用沙盒与应用商店的功能，用户可以从它们的商店中安装应用，而这些应用会根据具体的需求以不同的配置隔离在沙盒中；而开发者也可以在公用的「运行时」上开发，保证自己的应用能够跨发行版顺利运行。
+
+近年来，Linux 桌面社区也在推动桌面应用的沙盒化，其中非常重要的部分是 [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/)。Portal 的一个代表性例子是，应用需要显示文件选择对话框时，不直接访问文件系统，而是通过 Portal 请求文件选择器，Portal 会弹出一个文件选择器的窗口，用户选择文件后，Portal 会将文件的路径传递给应用。这样做的好处是，应用不需要直接访问文件系统，而是通过 Portal 与用户交互，Portal 可以根据用户的选择来限制应用的访问权限。
+
+## Rootless 容器 {#rootless-container}
+
 <!-- not fin -->
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
