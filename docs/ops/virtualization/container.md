@@ -1,6 +1,6 @@
 # 容器
 
-!!! warning "本文初稿编写中"
+!!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
 容器是近十几年来兴起的一种轻量级的虚拟化技术，在 Linux 内核支持的基础上实现了共享内核的虚拟化，让应用的部署与管理变得更加简单。
 
@@ -1548,7 +1548,7 @@ Welcome to Debian GNU/Linux 12 (bookworm)!
 
 以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。
 
-Bubblewrap 是目前相对常用的底层沙盒工具之一，它支持使用 user namespace 或 setuid 来创建沙盒。以下是[使用 bubblewrap 创建 shell 沙盒的例子](https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh)：
+Bubblewrap 是目前相对常用的底层沙盒工具之一，并且允许非 root 用户使用。以下是[使用 bubblewrap 创建 shell 沙盒的例子](https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh)：
 
 ```shell
 set -euo pipefail
@@ -1585,6 +1585,10 @@ set -euo pipefail
 
 ## Rootless 容器 {#rootless-container}
 
-<!-- not fin -->
+在 Docker 部分，我们提到将用户加入 `docker` 组就相当于给予了用户 root 权限，而传统的基于 SUID 的方式，如果 SUID 程序存在漏洞，那么也很容易被利用提权。那么是否有办法让普通用户创建容器，而不产生这样的安全风险呢？[Rootless 容器](https://rootlesscontaine.rs/)基于非特权 user namespace 技术，可以让普通用户创建容器，而不需要 root 权限。在这样的容器中，用户「看起来」获得了 root 权限，并且能够在容器中做 root 能做的事情，但是实际上容器内的 root 用户对应的是宿主机上的一个普通用户。
+
+Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（[Docker](https://docs.docker.com/engine/security/rootless/)、[Podman](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md)）。
+
+不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
