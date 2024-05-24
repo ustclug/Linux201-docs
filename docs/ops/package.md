@@ -49,7 +49,7 @@ icon: material/package
 
 Debian 的包管理器是 APT（**A**dvanced **p**ackage **t**ool）& dpkg 其中，dpkg 负责中低层操作，包括.deb 包的安装，卸载，以及信息查询，dpkg 还可以检查依赖的安装情况。
 
-APT 主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb 软件包，然后按照合理的顺序调用`dpkg`，在必要时使用`--force`。
+APT 主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb 软件包，然后按照合理的顺序调用 `dpkg`，在必要时使用`--force`。
 
 ## dpkg 安装一个包（.deb）的过程
 
