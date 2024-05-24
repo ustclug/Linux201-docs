@@ -4,6 +4,8 @@ icon: material/package
 
 # 包管理器
 
+!!! warning "本文初稿编写中"
+
 在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。
 
 包管理器的范畴较广：管理系统的，比如 apt，zypper；管理环境的，比如 conda；管理语言包的，比如 pip，gem；有一些包管理器甚至是语言的“附属”，如 cargo
@@ -14,11 +16,14 @@ Debian 的包管理器是 APT（**A**dvanced **p**ackage **t**ool）& dpkg 其�
 
 APT 主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb 软件包，然后按照合理的顺序调用`dpkg`，在必要时使用`--force`。
 
-## 安装一个包（.deb）的过程
+## dpkg 安装一个包（.deb）的过程
 
-在这一段中，可以自己手操（其实建议不要）安装若干包，这里以`apt-utils`为例进行演示，这个包的依赖在 debian 环境中应当已经被配置完成。
+!!! warning "请勿手动安装包"
+    在生产环境中，请使用 apt 安装 deb 包。本部分仅用于展示 dpkg 实际完成的工作。
 
-1. 准备工作：获得`apt-utils`的下载地址，并且在系统中下载。创建/tmp/install-temp 文件夹。
+在这一段中，可以自己手操（其实建议不要）安装若干包，这里以 `apt-utils` 为例进行演示，这个包的依赖在 debian 环境中应当已经被配置完成。
+
+1. 准备工作：获得 `apt-utils` 的下载地址，并且在系统中下载。创建 /tmp/install-temp 文件夹。
 
     ```bash
     cd /tmp
@@ -67,15 +72,15 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
     tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
     ```
 
-    这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 gpkg 等工具进行包的操作。
+    这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 dpkg 等工具进行包的操作。
 
 ## 配置文件与辅助文件
 
-`dpkg`的配置文件位于`/etc/dpkg/`，辅助文件位于`/var/lib/dpkg/`
+`dpkg` 的配置文件位于 `/etc/dpkg/`，辅助文件位于 `/var/lib/dpkg/`。
 
-APT 的配置文件位于`/etc/apt`，辅助文件位于`/var/lib/apt`
+APT 的配置文件位于 `/etc/apt`，辅助文件位于 `/var/lib/apt`。
 
-可以观察`/var/lib/apt/lists`中的文件作为参考
+可以观察 `/var/lib/apt/lists` 中的文件作为参考
 
 TODO
 
