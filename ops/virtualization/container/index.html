@@ -2176,7 +2176,7 @@
 
 <h1 id="_1">容器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">本文初稿编写中</p>
+<p class="admonition-title">本文初稿已完成，但可能仍需大幅度修改</p>
 </div>
 <p>容器是近十几年来兴起的一种轻量级的虚拟化技术，在 Linux 内核支持的基础上实现了共享内核的虚拟化，让应用的部署与管理变得更加简单。</p>
 <p>本部分假设读者了解基本的 Docker 使用。</p>
@@ -3398,7 +3398,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </code></pre></div>
 <h3 id="container-sandbox">基于容器技术的沙盒<a class="headerlink" href="#container-sandbox" title="Permanent link">&para;</a></h3>
 <p>以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。</p>
-<p>Bubblewrap 是目前相对常用的底层沙盒工具之一，它支持使用 user namespace 或 setuid 来创建沙盒。以下是<a href="https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh">使用 bubblewrap 创建 shell 沙盒的例子</a>：</p>
+<p>Bubblewrap 是目前相对常用的底层沙盒工具之一，并且允许非 root 用户使用。以下是<a href="https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh">使用 bubblewrap 创建 shell 沙盒的例子</a>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
 <a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="o">(</span><span class="nb">exec</span><span class="w"> </span>bwrap<span class="w"> </span>--ro-bind<span class="w"> </span>/usr<span class="w"> </span>/usr<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a><span class="w">      </span>--dir<span class="w"> </span>/tmp<span class="w"> </span><span class="se">\</span>
@@ -3428,8 +3428,9 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>在实践中，更常见的面向用户的方案有 <a href="https://flatpak.org/">Flatpak</a> 和 <a href="https://snapcraft.io/">Snap</a> 等。这些方案提供了应用沙盒与应用商店的功能，用户可以从它们的商店中安装应用，而这些应用会根据具体的需求以不同的配置隔离在沙盒中；而开发者也可以在公用的「运行时」上开发，保证自己的应用能够跨发行版顺利运行。</p>
 <p>近年来，Linux 桌面社区也在推动桌面应用的沙盒化，其中非常重要的部分是 <a href="https://flatpak.github.io/xdg-desktop-portal/">XDG Desktop Portal</a>。Portal 的一个代表性例子是，应用需要显示文件选择对话框时，不直接访问文件系统，而是通过 Portal 请求文件选择器，Portal 会弹出一个文件选择器的窗口，用户选择文件后，Portal 会将文件的路径传递给应用。这样做的好处是，应用不需要直接访问文件系统，而是通过 Portal 与用户交互，Portal 可以根据用户的选择来限制应用的访问权限。</p>
 <h2 id="rootless-container">Rootless 容器<a class="headerlink" href="#rootless-container" title="Permanent link">&para;</a></h2>
-<!-- not fin -->
-
+<p>在 Docker 部分，我们提到将用户加入 <code>docker</code> 组就相当于给予了用户 root 权限，而传统的基于 SUID 的方式，如果 SUID 程序存在漏洞，那么也很容易被利用提权。那么是否有办法让普通用户创建容器，而不产生这样的安全风险呢？<a href="https://rootlesscontaine.rs/">Rootless 容器</a>基于非特权 user namespace 技术，可以让普通用户创建容器，而不需要 root 权限。在这样的容器中，用户「看起来」获得了 root 权限，并且能够在容器中做 root 能做的事情，但是实际上容器内的 root 用户对应的是宿主机上的一个普通用户。</p>
+<p>Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（<a href="https://docs.docker.com/engine/security/rootless/">Docker</a>、<a href="https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md">Podman</a>）。</p>
+<p>不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。</p>
 <!--
   Links to man pages
 
