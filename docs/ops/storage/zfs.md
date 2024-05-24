@@ -22,7 +22,7 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
     !!! note "Debian backports"
 
-        受限于 Debian 的稳定性政策，stable 的软件源中的 ZFS 版本可能较老。如果需要使用较新的 ZFS 版本，可以考虑使用 Debian 的 backports 仓库（`apt install -t bookworm-backports zfs-dkms`）。
+        受限于 Debian 的稳定性政策，stable 的软件源中的 ZFS 版本可能较老。如果需要使用较新的 ZFS 版本，可以考虑使用 Debian 的 backports 仓库（例如在 Debian Bookworm 中，对应使用 backports 的命令是 `apt install -t bookworm-backports zfs-dkms`）。
 
 - Ubuntu 自 20.04 LTS 起提供预编译好的 `zfs.ko`（软件包 `linux-modules-$(uname -r)`），因此无需再安装 `zfs-dkms`。Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`。
 
