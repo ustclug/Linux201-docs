@@ -18,7 +18,7 @@ icon: simple/git
 
 !!! warning "缩进问题"
 
-    下面的文档中，`.gitconfig` 的配置文件均使用 4 个空格而不是 `tab` 进行缩进。
+    下面的文档中，`.gitconfig` 的配置文件均使用 4 个空格而不是 Tab 进行缩进。
 
 #### 常用别名 {#git-alias}
 
@@ -55,6 +55,12 @@ icon: simple/git
     followTags = true
 [tag]
     sort = version:refname
+```
+
+我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
+
+```bash
+curl -sS  https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
 ```
 
 ### gitignore {#git-gitignore}
