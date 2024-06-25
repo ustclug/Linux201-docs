@@ -13,7 +13,7 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 对于未定稿的内容，根据状态不同，请在 h1 标题下方添加如下内容：
 
 ```markdown
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿编写中"
 ```
 
 或
