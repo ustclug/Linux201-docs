@@ -118,7 +118,7 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 
 ### 编写原则 {#principle}
 
-请阅读[首页](/)，了解我们的四条编写原则。
+请阅读[首页](../index.md)，了解我们的四条编写原则。
 
 ### 请勿抄袭 {#no-plagiarism}
 
