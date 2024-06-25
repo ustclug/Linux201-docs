@@ -15,6 +15,7 @@
 
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
+[sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
 [smartd.conf.5]: https://linux.die.net/man/5/smartd.conf
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config

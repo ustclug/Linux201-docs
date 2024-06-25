@@ -191,6 +191,12 @@ notify 和 dbus
 :   类似 `simple` 和 `exec`，但是服务会在启动完成后主动通知 systemd。
     与前面的类型不同的是，这类服务需要程序主动支持 `sd_notify` 或者 D-Bus 接口。
 
+    ??? tip "sd_notify"
+
+        [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 对应用传递一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以向对应 socket 发送 `READY=1` 来通知 systemd 服务已经成功启动。
+
+        通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 xz 后门事件之所以能够影响 sshd 逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 `sd_notify()`，而 libsystemd 又依赖于（被植入后门的）liblzma。
+
 ### 定时任务 {#timers}
 
 Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer unit 通常会对应一个 service unit，即在指定的时间点或者时间间隔触发 service 的启动。
