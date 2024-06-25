@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.26">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.27">
     
     
       
@@ -1971,6 +1971,11 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>类似 <code>simple</code> 和 <code>exec</code>，但是服务会在启动完成后主动通知 systemd。
 与前面的类型不同的是，这类服务需要程序主动支持 <code>sd_notify</code> 或者 D-Bus 接口。</p>
+<details class="tip">
+<summary>sd_notify</summary>
+<p><a href="https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html">sd_notify(3)</a> 是一个非常简单的协议。Systemd 对于标注自己支持 <code>notify</code> 的服务，会通过环境变量 <code>NOTIFY_SOCKET</code> 对应用传递一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以向对应 socket 发送 <code>READY=1</code> 来通知 systemd 服务已经成功启动。</p>
+<p>通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 xz 后门事件之所以能够影响 sshd 逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 <code>sd_notify()</code>，而 libsystemd 又依赖于（被植入后门的）liblzma。</p>
+</details>
 </dd>
 </dl>
 <h3 id="timers">定时任务<a class="headerlink" href="#timers" title="Permanent link">&para;</a></h3>
