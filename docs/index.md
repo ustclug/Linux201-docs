@@ -22,3 +22,7 @@ icon: material/heart
 除此之外，部分章节可能依赖于其他计算机科学的知识，例如数据库、计算机网络等。如果对前置要求不熟悉，建议先学习相关的知识。作为参考，[cs-self-learning](https://csdiy.wiki/) 提供了不错的自学教程目录。
 
 本教程分为两大部分：**运维基础**与**开发速查手册**，分别介绍系统运维（ops）和简单的开发（dev）两个方面的内容。其他较为不常见，或不够成熟的内容，在**高级内容**部分介绍。
+
+本教程使用 [CC BY-NC-SA 4.0 协议](https://creativecommons.org/licenses/by-nc-sa/4.0/)开放。请注意，与 Linux 101 相比，我们添加了**「禁止商用」**的条款。
+
+我们非常欢迎读者通过 [GitHub 仓库（待公开）](https://github.com/ustclug/Linux201-docs) 提交 issue，或邮件致信![我们](https://lug.ustc.edu.cn/static/email.png){: .img-inline }。读者的建议对我们的改进非常重要。
