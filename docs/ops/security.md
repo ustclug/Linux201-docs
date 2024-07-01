@@ -165,6 +165,12 @@ int main() {
 
 国内最知名的供应链攻击案例之一是 [XcodeGhost](https://en.wikipedia.org/wiki/XcodeGhost)。由于 Xcode 特别大，国内下载 Xcode 缓慢，有人在百度网盘上传了一个 Xcode 安装包「加速」下载，并且四处散播网盘下载链接，但是这个安装包被篡改，插入了恶意代码，再加上许多人关闭了 Gatekeeper 签名检查，导致了国内包括微信、网易云音乐在内的大量的 iOS 应用被感染。
 
+!!! comment "@tiankaima 关于 XcodeGhost"
+
+    上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考下文的 [新闻选摘：SSH 软件与后门](#lessons)，以及 [xz-utils 后门](https://en.wikipedia.org/wiki/XZ_Utils_backdoor)，[VSCode 插件后门](https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/)。
+
+    预防这类攻击的基本原则是，对包括开源项目在内的所有工具保持怀疑，并总是从可信来源安装软件，例如从官方网站下载，或者使用包管理器安装。避免可疑的第三方源（可疑镜像站、网盘再分发、汉化版、破解版等）, 安全程度未知的软件（<1k 下载的 VSCode 插件）。部分开源项目也可能被攻击者利用，适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本，关注安全通告和安全新闻。
+
 #### 近源渗透 {#close-access-penetration}
 
 网络攻击不一定必须要远程进行，对于重要的高价值目标，攻击者可能会选择近源渗透。例如，一些机构的管理可能不严格，攻击者可以本人光明正大的进入，把网线插到自己电脑上，然后直接开始攻击内网（当然，这样容易被抓住）。攻击者也可能会尝试破解机构内网的 Wi-Fi 密码等。此外，如果能够物理接触到计算机，攻击者可以使用感染病毒的 U 盘，或是能够模拟键盘/鼠标等行为的 [BadUSB](https://en.wikipedia.org/wiki/BadUSB) 入侵设备，或者添加[硬件形式的键盘记录器](https://en.wikipedia.org/wiki/Hardware_keylogger)，以便为后续行动做好准备。
@@ -330,7 +336,7 @@ sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs`
     进一步分析发现，这个压缩包仅仅只是个恶意软件下载器：它会从 Pastebin 服务 (1) 获取恶意软件的下载链接，下载后运行。而运行的恶意软件又会从攻击者创建的 Steam 的个人页面与 Telegram 频道获取攻击指令：
     {: .annotate }
 
-    1. Pastebin 是一个文本分享服务，用户可以在上面分享文本、代码等。由于其匿名性，也经常被用于分享恶意软件的配置文件、下载链接等。
+    2. Pastebin 是一个文本分享服务，用户可以在上面分享文本、代码等。由于其匿名性，也经常被用于分享恶意软件的配置文件、下载链接等。
 
     ![Steam Community](../images/security-example-steam-malware.png)
 
