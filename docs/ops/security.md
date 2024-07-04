@@ -167,9 +167,20 @@ int main() {
 
 !!! comment "@tiankaima 关于 XcodeGhost"
 
-    上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考下文的 [新闻选摘：SSH 软件与后门](#lessons)，以及 [xz-utils 后门](https://en.wikipedia.org/wiki/XZ_Utils_backdoor)，[VSCode 插件后门](https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/)。
+    上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考：
 
-    预防这类攻击的基本原则是，对包括开源项目在内的所有工具保持怀疑，并总是从可信来源安装软件，例如从官方网站下载，或者使用包管理器安装。避免可疑的第三方源（可疑镜像站、网盘再分发、汉化版、破解版等）, 安全程度未知的软件（<1k 下载的 VSCode 插件）。部分开源项目也可能被攻击者利用，适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本，关注安全通告和安全新闻。
+    - [新闻选摘：SSH 软件与后门](#lessons)
+    - [VSCode 插件后门](https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/)
+    - [xz-utils 后门](https://en.wikipedia.org/wiki/XZ_Utils_backdoor)
+    - [polyfill\.io 安全问题（页面备份）](https://web.archive.org/web/20240314202054/https://github.com/polyfillpolyfill/polyfill-service/issues/2834)
+
+    预防这类攻击的基本原则是，对包括开源项目在内的所有工具**保持怀疑**，并总是从**可信来源**安装软件：
+
+    - 从官方网站下载，或者使用包管理器安装
+    - 避免可疑的第三方源（可疑镜像站、可疑 CDN 站点、网盘再分发、汉化版、破解版等）
+    - 安全程度未知的软件（<1k 下载的 VSCode 插件）
+    - 适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本
+    - **密切关注安全新闻**，例如在上面 polyfill\.io 的例子中，Cloudflare 注意到了域名出售等问题，并及时通知了[供应链风险](https://blog.cloudflare.com/polyfill-io-now-available-on-cdnjs-reduce-your-supply-chain-risk)，以及[后续措施](https://blog.cloudflare.com/automatically-replacing-polyfill-io-links-with-cloudflares-mirror-for-a-safer-internet)。
 
 #### 近源渗透 {#close-access-penetration}
 
