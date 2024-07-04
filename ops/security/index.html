@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.27">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.28">
     
     
       
@@ -2161,8 +2161,21 @@
 <p>国内最知名的供应链攻击案例之一是 <a href="https://en.wikipedia.org/wiki/XcodeGhost">XcodeGhost</a>。由于 Xcode 特别大，国内下载 Xcode 缓慢，有人在百度网盘上传了一个 Xcode 安装包「加速」下载，并且四处散播网盘下载链接，但是这个安装包被篡改，插入了恶意代码，再加上许多人关闭了 Gatekeeper 签名检查，导致了国内包括微信、网易云音乐在内的大量的 iOS 应用被感染。</p>
 <div class="admonition comment">
 <p class="admonition-title">@tiankaima 关于 XcodeGhost</p>
-<p>上述问题 Apple 已经通过分发 <code>.xip</code> 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 <code>.xip</code> 文件能被正确解压。但供应链攻击仍然时有发生，参考下文的 <a href="#lessons">新闻选摘：SSH 软件与后门</a>，以及 <a href="https://en.wikipedia.org/wiki/XZ_Utils_backdoor">xz-utils 后门</a>，<a href="https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/">VSCode 插件后门</a>。</p>
-<p>预防这类攻击的基本原则是，对包括开源项目在内的所有工具保持怀疑，并总是从可信来源安装软件，例如从官方网站下载，或者使用包管理器安装。避免可疑的第三方源（可疑镜像站、网盘再分发、汉化版、破解版等）, 安全程度未知的软件（&lt;1k 下载的 VSCode 插件）。部分开源项目也可能被攻击者利用，适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本，关注安全通告和安全新闻。</p>
+<p>上述问题 Apple 已经通过分发 <code>.xip</code> 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 <code>.xip</code> 文件能被正确解压。但供应链攻击仍然时有发生，参考：</p>
+<ul>
+<li><a href="#lessons">新闻选摘：SSH 软件与后门</a></li>
+<li><a href="https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/">VSCode 插件后门</a></li>
+<li><a href="https://en.wikipedia.org/wiki/XZ_Utils_backdoor">xz-utils 后门</a></li>
+<li><a href="https://web.archive.org/web/20240314202054/https://github.com/polyfillpolyfill/polyfill-service/issues/2834">polyfill.io 安全问题（页面备份）</a></li>
+</ul>
+<p>预防这类攻击的基本原则是，对包括开源项目在内的所有工具<strong>保持怀疑</strong>，并总是从<strong>可信来源</strong>安装软件：</p>
+<ul>
+<li>从官方网站下载，或者使用包管理器安装</li>
+<li>避免可疑的第三方源（可疑镜像站、可疑 CDN 站点、网盘再分发、汉化版、破解版等）</li>
+<li>安全程度未知的软件（&lt;1k 下载的 VSCode 插件）</li>
+<li>适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本</li>
+<li><strong>密切关注安全新闻</strong>，例如在上面 polyfill.io 的例子中，Cloudflare 注意到了域名出售等问题，并及时通知了<a href="https://blog.cloudflare.com/polyfill-io-now-available-on-cdnjs-reduce-your-supply-chain-risk">供应链风险</a>，以及<a href="https://blog.cloudflare.com/automatically-replacing-polyfill-io-links-with-cloudflares-mirror-for-a-safer-internet">后续措施</a>。</li>
+</ul>
 </div>
 <h4 id="close-access-penetration">近源渗透<a class="headerlink" href="#close-access-penetration" title="Permanent link">&para;</a></h4>
 <p>网络攻击不一定必须要远程进行，对于重要的高价值目标，攻击者可能会选择近源渗透。例如，一些机构的管理可能不严格，攻击者可以本人光明正大的进入，把网线插到自己电脑上，然后直接开始攻击内网（当然，这样容易被抓住）。攻击者也可能会尝试破解机构内网的 Wi-Fi 密码等。此外，如果能够物理接触到计算机，攻击者可以使用感染病毒的 U 盘，或是能够模拟键盘/鼠标等行为的 <a href="https://en.wikipedia.org/wiki/BadUSB">BadUSB</a> 入侵设备，或者添加<a href="https://en.wikipedia.org/wiki/Hardware_keylogger">硬件形式的键盘记录器</a>，以便为后续行动做好准备。</p>
@@ -2398,7 +2411,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.ad660dcc.min.js"></script>
+      <script src="../../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
       
     
   </body>
