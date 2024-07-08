@@ -1746,10 +1746,11 @@
 <p><code>ashift</code> 参数是 ZFS 对“磁盘扇区大小”的理解，且在创建 pool 后<strong>无法更改</strong>。
 为了确保最佳的性能，<code>ashift</code> 参数应当与硬盘的真实扇区大小相匹配，既不宜过大也不宜过小。
 默认情况下，在创建 zpool 的时候，ZFS 会自动检测硬盘的扇区大小（<code>ioctl(BLKPBSZGET)</code>）并设置合适的 <code>ashift</code> 参数。
-对于固态硬盘，建议查阅硬盘的规格，然后手动指定 <code>zpool create -o ashift=...</code>。</p>
+对于固态硬盘，建议查阅硬盘的规格，然后手动指定 <code>zpool create -o ashift=...</code>。
+如果你不确定硬盘的物理扇区大小（尤其是对于消费级固态硬盘），使用 4K（<code>ashift=12</code>）是一个保守但合理的选择。</p>
 <p>在生产环境中，请<strong>不要</strong>将 ZFS 用于任何虚拟硬盘或软件/硬件 RAID 阵列上。
 只有当 ZFS 直接管理每块硬盘时，才能获得最佳的性能和 ZFS 提供的数据完整性保证。
-如果你的阵列卡不支持直通，可以考虑为每块盘建立一个单盘阵列。</p>
+如果你的阵列卡不支持直通，可以考虑为每块盘建立一个单盘阵列以最小化阵列卡的影响。</p>
 </div>
 <p>在实际应用中，如果你使用 <code>sda</code>、<code>nvme0n1</code> 等设备名来创建 pool，ZFS 会自动对其进行分区，然后使用 <code>sda1</code>、<code>nvme0n1p1</code> 等分区名来创建 pool，并在每个盘的末尾创建一个 8 MB 的分区（<code>sda9</code>、<code>nvme0n1p9</code>）。分区的目的可能出于某些历史原因，目前无从考证，且这个编号为 9 的分区是没有任何用途的。</p>
 <p>在创建好 pool 之后，可以使用 <code>zpool status</code> 和 <code>zpool list</code> 查看 pool 的状态和使用情况。</p>
@@ -1783,10 +1784,17 @@
 <p>Zpool 层面的参数可以通过 <code>zpool set</code> 命令进行调整，以下是一些推荐修改的参数：</p>
 <ul>
 <li>
+<p><code>ashift</code>：详见上面的介绍。注意 <code>ashift</code> 参数在创建 pool 后<strong>无法更改</strong>，因此请在创建 pool 时指定。</p>
+</li>
+<li>
 <p><code>autotrim=on</code>：如果你使用硬盘是 SSD，启用此选项后 ZFS 会自动为已删除的数据块向硬盘发送 TRIM 指令。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>zpool<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">autotrim</span><span class="o">=</span>on<span class="w"> </span>tank
 </code></pre></div>
 </li>
+</ul>
+<p>以下是一些在特定情况下有用的参数：</p>
+<ul>
+<li><code>bootfs=pool0/ROOT/debian</code>：如果你使用 root on ZFS，该参数是常见的 grub 配置及 initramfs 生成脚本所需的参数。</li>
 </ul>
 <h3 id="tuning-zfs">ZFS 文件系统<a class="headerlink" href="#tuning-zfs" title="Permanent link">&para;</a></h3>
 <p>ZFS（文件系统）层面的参数可以通过 <code>zfs set</code> 命令进行调整，语法与 <code>zpool set</code> 类似。以下是一些推荐修改的参数：</p>
@@ -1797,11 +1805,16 @@
 <p>该选项的默认值为 <code>xattr=on</code>，即扩展属性存储在额外的数据块中。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 <code>xattr=sa</code> 或 <code>xattr=off</code>。</p>
 </li>
 <li>
+<p><code>relatime=on</code>：启用相对时间戳。默认情况下，Linux 会在<strong>每次</strong>访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 <code>relatime</code> 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。</p>
+<p>此 ZFS 参数与 Linux 的挂载选项 <code>relatime</code> 完全相同。</p>
+</li>
+<li>
 <p><code>compression=on</code> 或 <code>compression=zstd</code>：启用 ZFS 的透明压缩功能。对于大多数数据，压缩后的数据量会显著减小，从而减少磁盘 I/O。</p>
 <p>一般建议启用透明压缩功能，除非你的 CPU 性能较差（例如 10 年前的服务器）或者预期的数据量不会因压缩而减小（例如归档存储已经压缩过的数据）。</p>
 <div class="admonition note">
 <p class="admonition-title">压缩算法</p>
-<p>截至 2024 年，ZFS 默认使用 LZ4 算法进行压缩，这是一种速度较快的单线程算法。如果你的 CPU 不是上古级别的，可以考虑使用 Zstd，这是一种更加现代化的压缩算法，支持多线程和更高的压缩比。</p>
+<p>截至 2024 年，ZFS 的默认（<code>compression=on</code>）压缩算法为 LZ4，这是一种速度较快的单线程算法。如果你的 CPU 不是上古级别的，可以考虑使用 Zstd，这是一种更加现代化的压缩算法，支持多线程和更高的压缩比。</p>
+<p>OpenZFS 在 2.2 版本中为 3 级以上的 Zstd 启用了 early abort（默认等级刚好是 3 级），即 ZFS 会先使用 LZ4 和 Zstd-1 尝试压缩，如果压缩比不理想，则放弃压缩。Early abort 机制可以避免在难以压缩的数据上浪费 CPU，因此一般情况下无需担心压缩会带来性能问题。</p>
 </div>
 </li>
 </ul>
@@ -1822,7 +1835,7 @@
 <p>如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 <code>zfs_arc_min</code> 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。</p>
 <p class="annotate">在 Linux 下，受限于 kernel 的设计 (1)，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。</p>
 <ol>
-<li>在 FreeBSD 中，ZFS ARC 占用的内存会正确地显示为 cached。</li>
+<li>在 FreeBSD 和 htop &ge; 3.3.0 中，ZFS ARC 占用的内存会正确地显示为 cached。</li>
 </ol>
 <div class="admonition tip">
 <p class="admonition-title">强制释放 ARC</p>
@@ -1838,7 +1851,7 @@
 <ul>
 <li><code>zdb</code> 不关心 pool 或者文件系统是否挂载，它都会直接访问块设备。因此在正在使用的 pool 或者文件系统上使用 <code>zdb</code> 可能会得到不一致的结果；</li>
 <li><code>zdb</code> 的输出格式没有文档说明，因为其假设使用者了解 ZFS 的内部结构；</li>
-<li><code>zdb</code> 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议仅使用 <code>zdb</code> 读取 pool 和文件系统的结构内容。</li>
+<li><code>zdb</code> 支持写入内容，但是在不了解 ZFS 内部结构的情况下，建议以只读方式使用 <code>zdb</code>。</li>
 </ul>
 <p>以下提供了一个使用 <code>zdb</code> 调试出生产环境「未解之谜」的例子：</p>
 <details class="example">
