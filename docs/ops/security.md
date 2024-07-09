@@ -318,8 +318,8 @@ sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs`
 
 一些密码管理器支持存储 TOTP 一次性密码凭证，但是是否应该让密码管理器管理两步验证是一个有争议性的话题（如果密码管理器出现问题，那么 2FA 就形同虚设了）。推荐的做法是在手机上安装 TOTP 应用，常见的应用包括 Google Authenticator、Microsoft Authenticator 等。[南大的 Yao Ge 老师整理了在移动设备（iOS 与 Android）可以使用的 TOTP 客户端](https://doc.nju.edu.cn/books/37693/page/a5bfc)，目前包括如下：
 
-- iOS：Google Authenticator, Microsoft Authenticator, Red Hat FreeOTP, LassPass Authenticator
-- Android：Google Authenticator, Microsoft Authenticator, FreeOTP Plus, andOTP, Aegis Authenticator, Red Hat FreeOTP, OTP Authenticator, LassPass Authenticator
+- iOS: Google Authenticator, Microsoft Authenticator, Red Hat FreeOTP, LassPass Authenticator
+- Android: Google Authenticator, Microsoft Authenticator, FreeOTP Plus, andOTP, Aegis Authenticator, Red Hat FreeOTP, OTP Authenticator, LassPass Authenticator
 
 请注意从官方渠道下载应用程序。鉴于国内安卓生态的特殊性，安装部分应用可能会有一些额外的麻烦。
 
