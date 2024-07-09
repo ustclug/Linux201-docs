@@ -249,13 +249,14 @@ Linux：
 
     以下是使用 dd 命令测试一块希捷 4TB 机械硬盘的例子：
 
-    ```console
-    # 测试写
+    ```console title="写入测试"
     $ dd if=/dev/zero of=test.img bs=1M count=1000 oflag=direct
     1000+0 records in
     1000+0 records out
     1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s
-    # 测试读
+    ```
+
+    ```console title="读取测试"
     $ dd if=/dev/sda1 of=/dev/null bs=1M count=1000 iflag=direct
     1000+0 records in
     1000+0 records out
@@ -437,9 +438,11 @@ Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和
     iodepth=1
     rw=randwrite
     ```
+
     保存为`fio_CrystalDiskMark.ini`，然后运行
-    ```console
-    fio --filename=xxx fio_CrystalDiskMark.ini
+
+    ```shell
+    fio --filename=./test.bin fio_CrystalDiskMark.ini
     ```
 
 fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提交延迟 (slat)、完成延迟 (clat)、以及 iodepth 分布等。输出内容具体含义可以参考 man 手册 OUTPUT 节。
@@ -469,7 +472,7 @@ UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount
 sharing	/mnt/sharing	virtiofs	defaults,nofail	0	0
 ```
 
-可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考[分区与文件系统](./filesystem.md)中对 `/dev/disk` 的介绍。`/dev/sda1` 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
+可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考[分区与文件系统](filesystem.md)中对 `/dev/disk` 的介绍。`/dev/sda1` 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
 对特殊的文件系统，这里的内容由对应的实现决定，例如 `tmpfs` 的话，这里可能就是 `none` 或者 `tmpfs`；
 例子中的 `virtiofs` 是 QEMU 的虚拟文件系统，用于与宿主机共享文件，
 由于设置中的 `target` 是 `sharing`，因此这里的设备名是 `sharing`。
