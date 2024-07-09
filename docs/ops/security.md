@@ -299,6 +299,10 @@ sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs`
 
 上文提到，如果有网站使用明文存储密码，那么一旦数据库泄漏，那么攻击者就能利用明文密码在其他的平台上尝试。因此存储密码需要**加盐哈希**存储，盐（salt）是一串足够长的固定的私密的字符串，与密码拼接之后哈希得到的数据才可以持久化存储（这也意味着不同用户如果设置了相同的密码，最后存储的哈希也应当是不同的）。如果不加盐哈希，那么使用[**彩虹表（Rainbow table）**](https://en.wikipedia.org/wiki/Rainbow_table)就可以比较轻松地反推明文密码。
 
+!!! tip "Have I Been Pwned?"
+
+    [Have I Been Pwned](https://haveibeenpwned.com/) 提供了检查密码是否曾被泄漏的服务。当然，把自己的密码随便输入到乱七八糟的网站里面绝对不是一个好主意，所以该站[解释了自己如何保障用户输入的密码查询不包含明文密码信息](https://www.troyhunt.com/ive-just-launched-pwned-passwords-version-2/#cloudflareprivacyandkanonymity)。当然了，在输入密码前，需要确认他们是否真的这么实现了，并且也要信服这个匿名算法的正确性。
+
 对于网站或系统维护者，为用户设置合适的密码策略也是保障安全重要的一环。常见的系统一般提供了相关功能，例如限制密码最小长度、不允许密码为纯数字、不允许密码过于常见、不允许密码与用户名相似等。请注意一些密码策略是不合理的，恰当设计的系统**不应当这么做**，包括：
 
 - 限制密码最大长度，或者限制密码不允许包含某些字符（这也是密码可能被明文存储的征兆！当然，限制密码长度不能超过 1MB 之类的要求还是合理的。）
@@ -312,7 +316,14 @@ sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs`
 
 两步验证（2FA）要求在密码验证通过之后，用户使用其他方式（例如短信、电话、TOTP (Time-based one-time password) 应用）再验证一次。这保证了即使用户密码泄漏，攻击者使用用户的密码也无法登录。**我们推荐在所有支持 2FA 的应用中为自己的账户设置 2FA**。
 
-一些密码管理器支持存储 TOTP 一次性密码凭证，但是是否应该让密码管理器管理两步验证是一个有争议性的话题（如果密码管理器出现问题，那么 2FA 就形同虚设了）。推荐的做法是在手机上安装 TOTP 应用，常见的应用包括 Google Authenticator、Microsoft Authenticator 等。南大的 Yao Ge 老师整理了在移动设备（iOS 与 Android）可以使用的 TOTP 客户端，内容参见 <https://doc.nju.edu.cn/books/37693/page/a5bfc>。设置完成后，登录时就需要额外输入 TOTP 应用显示的定时刷新的一次性密码。
+一些密码管理器支持存储 TOTP 一次性密码凭证，但是是否应该让密码管理器管理两步验证是一个有争议性的话题（如果密码管理器出现问题，那么 2FA 就形同虚设了）。推荐的做法是在手机上安装 TOTP 应用，常见的应用包括 Google Authenticator、Microsoft Authenticator 等。[南大的 Yao Ge 老师整理了在移动设备（iOS 与 Android）可以使用的 TOTP 客户端](https://doc.nju.edu.cn/books/37693/page/a5bfc)，目前包括如下：
+
+- iOS：Google Authenticator, Microsoft Authenticator, Red Hat FreeOTP, LassPass Authenticator
+- Android：Google Authenticator, Microsoft Authenticator, FreeOTP Plus, andOTP, Aegis Authenticator, Red Hat FreeOTP, OTP Authenticator, LassPass Authenticator
+
+请注意从官方渠道下载应用程序。鉴于国内安卓生态的特殊性，安装部分应用可能会有一些额外的麻烦。
+
+设置完成后，登录时就需要额外输入 TOTP 应用显示的定时刷新的一次性密码。
 
 Passkey（通行密钥）则是目前最新的「无密码登录」技术，在注册账号时，操作系统/浏览器/硬件密钥会创建一对公私钥，并且将公钥发送给服务端替代传统的密码，之后认证用户身份的事情就可以在本地完成（例如通过指纹、人脸认证等）。需要登录的时候，服务端会用公钥加密认证信息，如果本地确认用户确为此人，那么就会用对应的私钥解密认证信息，证明了用户可以登录，这样就实现了方便安全的无密码登录。
 
