@@ -673,6 +673,8 @@
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
   
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M0 64c0-17.7 14.3-32 32-32h320c12.4 0 23.7 7.2 29 18.4s3.6 24.5-4.4 34.1L100.3 416H352c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-12.4 0-23.7-7.2-29-18.4s-3.6-24.5 4.4-34.1L283.7 96H32C14.3 96 0 81.7 0 64z"/></svg>
+  
   <span class="md-ellipsis">
     ZFS
   </span>
@@ -683,6 +685,8 @@
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M0 64c0-17.7 14.3-32 32-32h320c12.4 0 23.7 7.2 29 18.4s3.6 24.5-4.4 34.1L100.3 416H352c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-12.4 0-23.7-7.2-29-18.4s-3.6-24.5 4.4-34.1L283.7 96H32C14.3 96 0 81.7 0 64z"/></svg>
   
   <span class="md-ellipsis">
     ZFS
@@ -759,6 +763,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="ZFS 文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recordsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      关于 recordsize
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -774,6 +793,15 @@
   <a href="#arc" class="md-nav__link">
     <span class="md-ellipsis">
       关于 ARC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tuning-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例
     </span>
   </a>
   
@@ -1635,6 +1663,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="ZFS 文件系统">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recordsize" class="md-nav__link">
+    <span class="md-ellipsis">
+      关于 recordsize
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1650,6 +1693,15 @@
   <a href="#arc" class="md-nav__link">
     <span class="md-ellipsis">
       关于 ARC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tuning-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      案例
     </span>
   </a>
   
@@ -1818,13 +1870,29 @@
 </div>
 </li>
 </ul>
+<h4 id="recordsize">关于 <code>recordsize</code><a class="headerlink" href="#recordsize" title="Permanent link">&para;</a></h4>
+<p>文件在 ZFS 中是以“块”（block）为单位存储的，一个文件块占用一个或多个“扇区”（sector，即上文提到的 <code>ashift</code>）的大小。<code>recordsize</code> 参数用于指定文件块的最大大小，以便在读写文件时能够更好地利用磁盘 I/O。</p>
+<p>由于 ZFS 中所有的文件块和元信息都是有校验（checksum）的，因此所有读写都是以文件块为单位的，从而块大小应该与预期的文件访问模式相匹配。例如，对于影音娱乐资源，可以将 <code>recordsize</code> 设置为 1 MiB，以便更好地利用硬盘的顺序读写性能；对于 MySQL 的数据文件，可以将 <code>recordsize</code> 设置为 16 KiB。ZFS 提供的默认大小为 128 KiB，对于日常使用等不固定的场景是一个较为均衡的选择。</p>
+<p>与其他文件系统的不同之处在于，<code>recordsize</code> 指定了文件块的<strong>最大</strong>大小，而不是固定的大小。具体来说：</p>
+<ul>
+<li>若文件大小不超过 <code>recordsize</code>，则文件块大小为文件大小（向上取整到 ashift 大小的整数倍）。<ul>
+<li>例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 <code>ashift=12</code>）。</li>
+</ul>
+</li>
+<li>若文件大小超过 <code>recordsize</code>，则文件会被拆成多个大小为 <code>recordsize</code> 的块，其中最后一个块会以零字节补齐至 <code>recordsize</code>。<ul>
+<li>例如，一个 129 KiB 的文件将会存储为两个 128 KiB 的块，在默认情况下会占用 256 KiB 磁盘空间。</li>
+<li>因此在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。</li>
+</ul>
+</li>
+</ul>
 <h3 id="tuning-zfs-ko">ZFS 内核模块参数<a class="headerlink" href="#tuning-zfs-ko" title="Permanent link">&para;</a></h3>
 <p>ZFS 的内核模块具有<strong>非常</strong>多的可调节参数，其中大部分参数可以通过读写 <code>/sys/module/zfs/parameters</code> 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：</p>
 <ul>
-<li><strong>仅加载时生效</strong>：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般通过在 <code>/etc/modprobe.d</code> 中创建 <code>.conf</code> 文件来指定。</li>
+<li><strong>仅加载时生效</strong>：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 <code>/etc/modprobe.d/zfs.conf</code> 文件来指定。</li>
 <li><strong>import 时生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 <code>zpool export</code> 再 <code>zpool import</code>。</li>
 <li><strong>立即生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。</li>
 </ul>
+<p>完整的内核模块参数列表请参阅 <code>zfs(4)</code>。</p>
 <p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。</p>
 <h3 id="arc">关于 ARC<a class="headerlink" href="#arc" title="Permanent link">&para;</a></h3>
 <p>ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
@@ -1844,6 +1912,124 @@
 <p>ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 <code>/proc/spl/kstat/zfs/arcstats</code> 查看，并且 ZFS 也提供了 <code>arc_summary</code> 命令将该接口的数据以更易读的方式输出。由于 <code>arc_summary</code> 输出量较大，建议使用 less 等分页工具查看。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
 </code></pre></div>
+<h3 id="tuning-example">案例<a class="headerlink" href="#tuning-example" title="Permanent link">&para;</a></h3>
+<details class="example">
+<summary>案例：通过调节参数降低镜像站的磁盘</summary>
+<p>USTC 镜像站的 Rsync 服务器采用 11 块盘的 RAID-Z3（另有一块热备盘，共 12 块机械硬盘），绝大多数参数使用默认配置，所有机械硬盘长期处于 90% 以上的负载，读写性能较差。</p>
+<p>2024 年 6 月底，USTCLUG 的同学们经过调研，决定拆除 RAID-Z3，改为每 6 块盘一组 RAID-Z2，总可用容量仍然相当于 8 块盘。在建立用于存储各镜像仓库的 dataset 时，我们设置了以下参数：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">参数</th>
+<th style="text-align: center;">旧值</th>
+<th style="text-align: center;">新值</th>
+<th>考虑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">recordsize</td>
+<td style="text-align: center;">128K<br>（默认）</td>
+<td style="text-align: center;">1M</td>
+<td>镜像站的主要负载（不论是 HTTP 还是 Rsync）为整个文件的顺序读写，因此将 recordsize 设为允许的最大值可以减少随机读写。</td>
+</tr>
+<tr>
+<td style="text-align: center;">compression</td>
+<td style="text-align: center;">off<br>（默认）</td>
+<td style="text-align: center;">zstd</td>
+<td>尽管镜像站的大部分数据都是已经压缩过的（如软件压缩包），但是 <code>compression=zstd</code> 仍然为我们带来了 1.0625 的整体压缩率，节省了约 2.4 TiB 的磁盘空间。对于一个长期使用超过 90% 容量的 ZFS pool 而言，更多的空闲空间意味着更好的读写性能。</td>
+</tr>
+<tr>
+<td style="text-align: center;">xattr<br>atime</td>
+<td style="text-align: center;">off</td>
+<td style="text-align: center;">off<br>（未修改）</td>
+<td>镜像仓库数据不需要扩展属性，也无需记录 atime。</td>
+</tr>
+<tr>
+<td style="text-align: center;">setuid<br>exec<br>devices</td>
+<td style="text-align: center;">on<br>（默认）</td>
+<td style="text-align: center;">off</td>
+<td>镜像仓库不需要可执行 / SUID / 设备文件等功能。</td>
+</tr>
+<tr>
+<td style="text-align: center;">sync</td>
+<td style="text-align: center;">standard<br>（默认）</td>
+<td style="text-align: center;">disabled</td>
+<td>镜像仓库的数据不需要保证写入完整性，因此可以牺牲 sync 语义换取更好的写入性能和更少的碎片。</td>
+</tr>
+<tr>
+<td style="text-align: center;">secondarycache</td>
+<td style="text-align: center;">all<br>（默认）</td>
+<td style="text-align: center;">metadata</td>
+<td>作为 Rsync 服务器，不同文件的热度不会差太多，因此将 L2ARC 只用于缓存 ZFS 元数据可以降低固态硬盘的磨损。</td>
+</tr>
+<tr>
+<td style="text-align: center;">redundant_metadata</td>
+<td style="text-align: center;">all<br>（默认）</td>
+<td style="text-align: center;">some</td>
+<td>镜像站的数据可以接受一定程度的损坏（很容易恢复），因此可以牺牲一部分冗余度换取更高的性能。</td>
+</tr>
+</tbody>
+</table>
+<p>我们也调节了 ZFS 的运行参数：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">参数</th>
+<th style="text-align: center;">旧值</th>
+<th style="text-align: center;">新值</th>
+<th>考虑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">zfs_arc_max<br>zfs_arc_min</td>
+<td style="text-align: center;">150 GiB</td>
+<td style="text-align: center;">150 GiB<br>（未修改）</td>
+<td>镜像站服务器具有 256 GB 内存，因此我们将 ARC 的设为固定的 150 GiB，以保证 ZFS 能够充分利用内存。</td>
+</tr>
+<tr>
+<td style="text-align: center;">zfs_dmu_offset_next_sync</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">1<br>（默认）</td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M80 160c0-35.3 28.7-64 64-64h32c35.3 0 64 28.7 64 64v3.6c0 21.8-11.1 42.1-29.4 53.8l-42.2 27.1a87.983 87.983 0 0 0-40.4 74v1.5c0 17.7 14.3 32 32 32s32-14.3 32-32v-1.4c0-8.2 4.2-15.8 11-20.2l42.2-27.1c36.6-23.6 58.8-64.1 58.8-107.7V160c0-70.7-57.3-128-128-128h-32C73.3 32 16 89.3 16 160c0 17.7 14.3 32 32 32s32-14.3 32-32zm80 320a40 40 0 1 0 0-80 40 40 0 1 0 0 80z"/></svg></span></td>
+</tr>
+<tr>
+<td style="text-align: center;">zfs_arc_dnode_limit_percent</td>
+<td style="text-align: center;">10%<br>（默认）</td>
+<td style="text-align: center;">80%</td>
+<td>Rsync 服务需要反复访问文件的元信息（inode），因此允许 ZFS ARC 缓存更大比例的这些内容。</td>
+</tr>
+<tr>
+<td style="text-align: center;">zfs_immediate_write_sz</td>
+<td style="text-align: center;">32 KiB<br>（默认）</td>
+<td style="text-align: center;">16 MiB</td>
+<td>镜像站的数据写入是批量的，因此将此参数调大可以减少写入碎片。</td>
+</tr>
+<tr>
+<td style="text-align: center;">zfs_vdev_async_read_max_active<br>zfs_vdev_async_read_min_active<br>zfs_vdev_scrub_max_active<br>zfs_vdev_max_active</td>
+<td style="text-align: center;">（未知）</td>
+<td style="text-align: center;">8<br>2<br>5<br>20000</td>
+<td>允许 ZFS 使用更深的 I/O 队列。</td>
+</tr>
+<tr>
+<td style="text-align: center;">zfs_arc_lotsfree_percent</td>
+<td style="text-align: center;">10%<br>（默认）</td>
+<td style="text-align: center;">0</td>
+<td>镜像服务器内存充足，ARC 无需理会内存压力。</td>
+</tr>
+<tr>
+<td style="text-align: center;">l2arc_headroom<br>l2arc_write_max<br>l2arc_noprefetch</td>
+<td style="text-align: center;">（未知）</td>
+<td style="text-align: center;">8<br>67108864<br>0</td>
+<td><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M80 160c0-35.3 28.7-64 64-64h32c35.3 0 64 28.7 64 64v3.6c0 21.8-11.1 42.1-29.4 53.8l-42.2 27.1a87.983 87.983 0 0 0-40.4 74v1.5c0 17.7 14.3 32 32 32s32-14.3 32-32v-1.4c0-8.2 4.2-15.8 11-20.2l42.2-27.1c36.6-23.6 58.8-64.1 58.8-107.7V160c0-70.7-57.3-128-128-128h-32C73.3 32 16 89.3 16 160c0 17.7 14.3 32 32 32s32-14.3 32-32zm80 320a40 40 0 1 0 0-80 40 40 0 1 0 0 80z"/></svg></span></td>
+</tr>
+</tbody>
+</table>
+<p>使用新的 RAID 组合和 ZFS 参数调节后，镜像站磁盘的稳定负载从 90% 降低到了 20% 以下：</p>
+<p><img alt="Disk I/O load on mirrors2" src="../../../images/mirrors2-zfs-io.png" /></p>
+<p>值得一提的是，由于重建阵列后重新同步的所有仓库数据，新的阵列中碎片化程度显著下降。由于我们没有记录具体的数据，我们无法确定碎片化程度对阵列读性能的影响。</p>
+</details>
 <h2 id="debugging">调试<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
 <p>ZFS 提供了调试工具 <code>zdb</code>，可以用于查看 pool 和文件系统的内部结构。
 在遇到无法解释的问题时，使用 <code>zdb</code> 可能可以帮助调试问题。</p>
@@ -1982,6 +2168,9 @@
 
 
 
+
+  
+  
 
 
 
