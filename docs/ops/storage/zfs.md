@@ -1,3 +1,7 @@
+---
+icon: fontawesome/solid/z
+---
+
 # ZFS
 
 !!! warning "本文初稿编写中"
@@ -142,13 +146,29 @@ ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，
 
         OpenZFS 在 2.2 版本中为 3 级以上的 Zstd 启用了 early abort（默认等级刚好是 3 级），即 ZFS 会先使用 LZ4 和 Zstd-1 尝试压缩，如果压缩比不理想，则放弃压缩。Early abort 机制可以避免在难以压缩的数据上浪费 CPU，因此一般情况下无需担心压缩会带来性能问题。
 
+#### 关于 `recordsize` {#recordsize}
+
+文件在 ZFS 中是以“块”（block）为单位存储的，一个文件块占用一个或多个“扇区”（sector，即上文提到的 `ashift`）的大小。`recordsize` 参数用于指定文件块的最大大小，以便在读写文件时能够更好地利用磁盘 I/O。
+
+由于 ZFS 中所有的文件块和元信息都是有校验（checksum）的，因此所有读写都是以文件块为单位的，从而块大小应该与预期的文件访问模式相匹配。例如，对于影音娱乐资源，可以将 `recordsize` 设置为 1 MiB，以便更好地利用硬盘的顺序读写性能；对于 MySQL 的数据文件，可以将 `recordsize` 设置为 16 KiB。ZFS 提供的默认大小为 128 KiB，对于日常使用等不固定的场景是一个较为均衡的选择。
+
+与其他文件系统的不同之处在于，`recordsize` 指定了文件块的**最大**大小，而不是固定的大小。具体来说：
+
+- 若文件大小不超过 `recordsize`，则文件块大小为文件大小（向上取整到 ashift 大小的整数倍）。
+    - 例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 `ashift=12`）。
+- 若文件大小超过 `recordsize`，则文件会被拆成多个大小为 `recordsize` 的块，其中最后一个块会以零字节补齐至 `recordsize`。
+    - 例如，一个 129 KiB 的文件将会存储为两个 128 KiB 的块，在默认情况下会占用 256 KiB 磁盘空间。
+    - 因此在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。
+
 ### ZFS 内核模块参数 {#tuning-zfs-ko}
 
 ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
 
-- **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般通过在 `/etc/modprobe.d` 中创建 `.conf` 文件来指定。
+- **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 `/etc/modprobe.d/zfs.conf` 文件来指定。
 - **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
 - **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
+
+完整的内核模块参数列表请参阅 `zfs(4)`。
 
 最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。
 
@@ -179,6 +199,42 @@ ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可
 ```shell
 arc_summary | less
 ```
+
+### 案例 {#tuning-example}
+
+??? example "案例：通过调节参数降低镜像站的磁盘"
+
+    USTC 镜像站的 Rsync 服务器采用 11 块盘的 RAID-Z3（另有一块热备盘，共 12 块机械硬盘），绝大多数参数使用默认配置，所有机械硬盘长期处于 90% 以上的负载，读写性能较差。
+
+    2024 年 6 月底，USTCLUG 的同学们经过调研，决定拆除 RAID-Z3，改为每 6 块盘一组 RAID-Z2，总可用容量仍然相当于 8 块盘。在建立用于存储各镜像仓库的 dataset 时，我们设置了以下参数：
+
+    | 参数 | 旧值 | 新值 | 考虑 |
+    | :--: | :--: | :--: | --- |
+    | recordsize | 128K<br>（默认） | 1M | 镜像站的主要负载（不论是 HTTP 还是 Rsync）为整个文件的顺序读写，因此将 recordsize 设为允许的最大值可以减少随机读写。 |
+    | compression | off<br>（默认） | zstd | 尽管镜像站的大部分数据都是已经压缩过的（如软件压缩包），但是 `compression=zstd` 仍然为我们带来了 1.0625 的整体压缩率，节省了约 2.4 TiB 的磁盘空间。对于一个长期使用超过 90% 容量的 ZFS pool 而言，更多的空闲空间意味着更好的读写性能。 |
+    | xattr<br>atime | off | off<br>（未修改） | 镜像仓库数据不需要扩展属性，也无需记录 atime。 |
+    | setuid<br>exec<br>devices | on<br>（默认） | off | 镜像仓库不需要可执行 / SUID / 设备文件等功能。 |
+    | sync | standard<br>（默认） | disabled | 镜像仓库的数据不需要保证写入完整性，因此可以牺牲 sync 语义换取更好的写入性能和更少的碎片。 |
+    | secondarycache | all<br>（默认） | metadata | 作为 Rsync 服务器，不同文件的热度不会差太多，因此将 L2ARC 只用于缓存 ZFS 元数据可以降低固态硬盘的磨损。 |
+    | redundant_metadata | all<br>（默认） | some | 镜像站的数据可以接受一定程度的损坏（很容易恢复），因此可以牺牲一部分冗余度换取更高的性能。 |
+
+    我们也调节了 ZFS 的运行参数：
+
+    | 参数 | 旧值 | 新值 | 考虑 |
+    | :--: | :--: | :--: | --- |
+    | zfs_arc_max<br>zfs_arc_min | 150 GiB | 150 GiB<br>（未修改） | 镜像站服务器具有 256 GB 内存，因此我们将 ARC 的设为固定的 150 GiB，以保证 ZFS 能够充分利用内存。 |
+    | zfs_dmu_offset_next_sync | 1 | 1<br>（默认） | :fontawesome-solid-question: |
+    | zfs_arc_dnode_limit_percent | 10%<br>（默认） | 80% | Rsync 服务需要反复访问文件的元信息（inode），因此允许 ZFS ARC 缓存更大比例的这些内容。 |
+    | zfs_immediate_write_sz | 32 KiB<br>（默认） | 16 MiB | 镜像站的数据写入是批量的，因此将此参数调大可以减少写入碎片。 |
+    | zfs_vdev_async_read_max_active<br>zfs_vdev_async_read_min_active<br>zfs_vdev_scrub_max_active<br>zfs_vdev_max_active | （未知） | 8<br>2<br>5<br>20000 | 允许 ZFS 使用更深的 I/O 队列。 |
+    | zfs_arc_lotsfree_percent | 10%<br>（默认） | 0 | 镜像服务器内存充足，ARC 无需理会内存压力。 |
+    | l2arc_headroom<br>l2arc_write_max<br>l2arc_noprefetch | （未知） | 8<br>67108864<br>0 | :fontawesome-solid-question: |
+
+    使用新的 RAID 组合和 ZFS 参数调节后，镜像站磁盘的稳定负载从 90% 降低到了 20% 以下：
+
+    ![Disk I/O load on mirrors2](../../images/mirrors2-zfs-io.png)
+
+    值得一提的是，由于重建阵列后重新同步的所有仓库数据，新的阵列中碎片化程度显著下降。由于我们没有记录具体的数据，我们无法确定碎片化程度对阵列读性能的影响。
 
 ## 调试 {#debugging}
 
@@ -227,7 +283,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
     检查输出，发现一个特别大的文件：
 
-    ```
+    ```text
     Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
       6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
                                                168   bonus  System attributes
@@ -249,7 +305,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
     "6426" 这个对象也出现在了 ZFS delete queue 中：
 
-    ```
+    ```text
     Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
          3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
 	dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
@@ -261,7 +317,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
     看起来是这个文件不停增大，但是 ZFS 没有删除。检查 6426 的 parent 7279：
 
-    ```
+    ```text
     Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
       7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
                                                168   bonus  System attributes
