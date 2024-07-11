@@ -427,7 +427,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 - Linux 桌面用户的基数很小，并且大部分使用 Linux 的桌面用户都有着良好的安全习惯。Linux 上最常见的「杀毒软件」ClamAV 的一般用途是在邮件服务器中检查邮件附件是否存在病毒。
 - macOS 默认启用了包括 GateKeeper、XProtect 等安全机制，感染相对困难。
 
-而防火墙的主要作用则是阻止入站连接：一些软件会在本地启动服务器（bind 到 `0.0.0.0`）并且监听端口。如果不做限制，那么所有能够连接到设备的程序都可以与对应的软件交互，这在某些情况下是非预期的，**特别是在校园网等能够获得公网 IP 地址的场合**。某些软件可能会（错误地描述自己）提供「局域网连接」功能，启用功能后将自己设置为允许任意连接。
+而防火墙的主要作用则是阻止入站连接：一些软件会在本地启动服务器（bind 到 `0.0.0.0`）并且监听端口。如果不做限制，那么所有能够连接到设备的程序都可以与对应的软件交互，这在某些情况下是非预期的，**特别是在校园网等能够获得公网 IP 地址的场合**。某些软件可能会（错误地描述自己）的功能只会提供「局域网连接」，而在启用功能后就将自己设置为允许任意连接。如果这样的程序存在安全问题（例如设置了弱密码或无密码），那么外部的攻击者就可以借此入侵。
 
 对于 Linux，可以使用 `netstat -tulnp` 或 `ss -tulnp` 命令检查监听的端口情况。
 
@@ -438,3 +438,37 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 保证物理安全也是个人设备安全的重要一环。建议不要配置自动登录，至少保证本地账户有足够长的口令（或者强度足够的 PIN），并且养成在离开时**锁屏**的好习惯。除此之外，如果可能有攻击者物理接触设备的风险，那么配置**全盘加密（FDE）**也是重要的一步。对桌面系统，Windows 在新的设备上会自动启用 BitLocker，macOS 也会在有 T2 芯片的设备上自动开启 FileVault。而 Linux 用户则需要自行配置 LUKS（Linux Unified Key Setup）。
 
 如果有对攻击者物理接触设备后篡改设备的担忧，那么还需要关心**安全启动（Secure Boot）**。在有必要的情况下，需要设置 UEFI 口令（否则攻击者可以直接关掉安全启动），并且（对 Linux 用户来说）正确配置安全启动。
+
+### 编写安全的应用程序 {#write-applications}
+
+#### 了解常见的应用程序安全问题 {#know-vulnerabilities}
+
+如果不了解常见的安全问题，那么在编写程序时，就很有可能写下出现问题的逻辑而不自知。尽管本章介绍了一些常见的问题，但是介绍并不全面。OWASP（Open Web Application Security Project）是一个专注于 Web 应用安全的项目，以下的资料可能会有帮助：
+
+- [OWASP 安全编码规范快速参考指南](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)
+- [OWASP 十大安全风险榜单](https://owasp.org/Top10/)
+
+同时，如果有空闲的时间，可以尝试完成一些简单的 CTF 题目（所谓「未知攻，焉知防」）。其中 Web 分类对应网络应用，Reverse/Pwn 分类对应二进制程序的逆向与漏洞利用，一些相关的参考信息：
+
+- [CTF Wiki](https://ctf-wiki.org/)
+- [CTF101](https://ctf101.org/)
+
+#### 手册与编码规范 {#manual-code-guideline}
+
+为了编写安全的程序，阅读编程语言与使用的框架的手册是很有必要的，否则很容易产生意料之外的问题。
+
+!!! example "Flask `render_template()`"
+
+    Flask 是一个 Python 的网页框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：
+
+    ```python
+    render_template("index.jinja2")
+    ```
+
+    上线一段时间后，TA 感觉页面的渲染不对劲，再一测试，结果发现 Flask 居然没有帮他转义用户输入的特殊字符！原来在 [Flask 文档中关于模板](https://flask.palletsprojects.com/en/3.0.x/templating/)的部分是这么写的：
+
+    > autoescaping is enabled for all templates ending in `.html`, `.htm`, `.xml`, `.xhtml`, as well as `.svg` when using **`render_template()`**.
+
+    但是 TA 使用的不是 HTML 的后缀，因此 Flask 没有做自动转义，使得 TA 的网站陷入了被 XSS 的风险中。万幸的是，在发现问题的时候，还没有人真的去 XSS，否则就贻笑大方了。
+
+同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (`-fsanitize=address`) 和 `_FORTIFY_SOURCE`）加固程序。
