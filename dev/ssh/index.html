@@ -2136,7 +2136,7 @@
 </ul>
 <p>sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。<code>sshd -t</code> 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 <code>ssh.service</code> 中指定的 <code>ExecStartPre=</code> 命令和第一条 <code>ExecReload=</code> 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。</p>
 <h2 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h2>
-<p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中。因此一个（不太常见的）坑是：</p>
+<p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中，出现在这两个块中的 <code>Include</code> 会被视作条件包含。因此一个（不太常见的）坑是：</p>
 <details class="failure">
 <summary>错误写法</summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Host<span class="w"> </span>example
