@@ -459,7 +459,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 !!! example "Flask `render_template()`"
 
-    Flask 是一个 Python 的网页框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：
+    Flask 是一个 Python 的网站框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：
 
     ```python
     render_template("index.jinja2")
