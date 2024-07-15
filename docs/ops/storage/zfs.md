@@ -396,19 +396,5 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 ## 参考资料 {#references}
 
-  [cks]: https://utcc.utoronto.ca/~cks/space/blog/
-  [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
-  [delphix-spreadsheet]: https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/
-  [dilger]: https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf
-  [zfs-4599]: https://github.com/openzfs/zfs/issues/4599
-  [zfsprops.7]: https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html
-  [tuning]: https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html
 
-  [^acct-128k]: Mike Gerdts (2019) [(Code comment in `libzfs_dataset.c`)](https://github.com/illumos/illumos-gate/blob/b73ccab03ec36581b1ae5945ef1fee1d06c79ccf/usr/src/lib/libzfs/common/libzfs_dataset.c#L5118)
   [^cks-1]: Chris Siebenmann (2017) [ZFS's recordsize, holes in files, and partial blocks](https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSFilePartialAndHoleStorage)
-  [^delphix]: Matthew Ahrens (2014) [How I Learned to Stop Worrying and Love RAIDZ][delphix]
-  [^delphix-spreadsheet]: [RAID-Z parity cost][delphix-spreadsheet] (Google Sheets)
-  [^dilger]: Andreas Dilger (2010) [ZFS Features & Concepts TOI][dilger]
-  [^tuning]: OpenZFS [Workload Tuning][tuning]
-  [^zfs101]: Jim Salter (2020) [ZFS 101 &ndash; Understanding ZFS storage and performance](https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/)
-  [^zfs-4599]: openzfs/zfs#4599 (2016) [disk usage wrong when using larger recordsize, raidz and ashift=12][zfs-4599]
