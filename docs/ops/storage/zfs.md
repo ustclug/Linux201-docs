@@ -396,6 +396,8 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 ## 参考资料 {#references}
 
+<!-- markdownlint-disable MD053 -->
+
   [cks]: https://utcc.utoronto.ca/~cks/space/blog/
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
   [delphix-spreadsheet]: https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/
