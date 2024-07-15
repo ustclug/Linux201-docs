@@ -150,9 +150,9 @@ ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，
 
 文件在 ZFS 中是以“块”（block）为单位存储的，一个文件块占用一个或多个“扇区”（sector，即上文提到的 `ashift`）的大小。`recordsize` 参数用于指定文件块的最大大小，以便在读写文件时能够更好地利用磁盘 I/O。
 
-由于 ZFS 中所有的文件块和元信息都是有校验（checksum）的，因此所有读写都是以文件块为单位的，从而块大小应该与预期的文件访问模式相匹配。例如，对于影音娱乐资源，可以将 `recordsize` 设置为 1 MiB，以便更好地利用硬盘的顺序读写性能；对于 MySQL 的数据文件，可以将 `recordsize` 设置为 16 KiB。ZFS 提供的默认大小为 128 KiB，对于日常使用等不固定的场景是一个较为均衡的选择。
+由于 ZFS 中所有的文件块和元信息都是有校验（checksum）的，因此所有读写都是以文件块为单位的，从而块大小应该与预期的文件访问模式相匹配。例如，对于影音娱乐资源，可以将 `recordsize` 设置为 1 MiB，以便更好地利用硬盘的顺序读写性能；对于 MySQL 的数据文件，可以将 `recordsize` 设置为 16 KiB，以匹配 MySQL InnoDB 引擎的默认页（page）大小。ZFS 提供的默认值为 128 KiB，对于日常使用等不固定的场景是一个较为均衡的选择。
 
-与其他文件系统的不同之处在于，`recordsize` 指定了文件块的**最大**大小，而不是固定的大小。具体来说：
+与其他文件系统的不同之处在于，`recordsize` 指定了文件块的**最大**大小，而不是固定的大小。具体来说[^cks-1]：
 
 - 若文件大小不超过 `recordsize`，则文件块大小为文件大小（向上取整到 ashift 大小的整数倍）。
     - 例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 `ashift=12`）。
@@ -165,6 +165,17 @@ ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，
 ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
 
 - **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 `/etc/modprobe.d/zfs.conf` 文件来指定。
+
+    ??? example "使用 modprobe.d 配置 ZFS 模块参数的自动加载"
+
+        在 `/etc/modprobe.d/zfs.conf` 中添加以下内容：
+
+        ```shell
+        options zfs zfs_arc_max=4294967296
+        ```
+
+        这样在下次加载 ZFS 模块时，`zfs_arc_max` 参数就会被设置为 4 GiB。
+
 - **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
 - **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
 
@@ -182,6 +193,8 @@ ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数�
 # Set ARC memory limit to 4 GiB
 echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
 ```
+
+或者使用 `/etc/modprobe.d/zfs.conf`（见上）。
 
 如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 `zfs_arc_min` 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。
 
@@ -202,7 +215,7 @@ arc_summary | less
 
 ### 案例 {#tuning-example}
 
-??? example "案例：通过调节参数降低镜像站的磁盘"
+??? example "案例：通过调节参数降低镜像站的磁盘负载"
 
     USTC 镜像站的 Rsync 服务器采用 11 块盘的 RAID-Z3（另有一块热备盘，共 12 块机械硬盘），绝大多数参数使用默认配置，所有机械硬盘长期处于 90% 以上的负载，读写性能较差。
 
@@ -234,7 +247,7 @@ arc_summary | less
 
     ![Disk I/O load on mirrors2](../../images/mirrors2-zfs-io.png)
 
-    USTC 镜像站 Rsync 服务器一段 30 天内的磁盘活动时间。左边为旧的 RAID-Z3 阵列，正中间为重建期间（3 天），右边为新的 RAID-Z2 阵列。
+    USTC 镜像站 Rsync 服务器一段 30 天内的磁盘活动时间。<br>左边为旧的 RAID-Z3 阵列，正中间为重建期间（3 天），右边为新的 RAID-Z2 阵列。
     {: .caption }
 
     值得一提的是，由于重建阵列后重新同步了所有仓库数据，新的阵列中碎片化程度显著下降。由于我们没有记录具体的数据，我们无法确定碎片化程度对阵列读性能的影响。
@@ -380,3 +393,22 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
     在收到 issue 回复之后检查了 Debian 的 acct 的 cron daily 脚本，发现其使用了 `invoke-rc.d` 重启服务。
     但是 `/usr/sbin/policy-rc.d` 在多年前被设置为 `exit 101`，因此 `invoke-rc.d` 无法启动服务，
     导致了 process accounting 服务一直未被重启，内核仍然在写入文件。
+
+## 参考资料 {#references}
+
+  [cks]: https://utcc.utoronto.ca/~cks/space/blog/
+  [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
+  [delphix-spreadsheet]: https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/
+  [dilger]: https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf
+  [zfs-4599]: https://github.com/openzfs/zfs/issues/4599
+  [zfsprops.7]: https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html
+  [tuning]: https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html
+
+  [^acct-128k]: Mike Gerdts (2019) [(Code comment in `libzfs_dataset.c`)](https://github.com/illumos/illumos-gate/blob/b73ccab03ec36581b1ae5945ef1fee1d06c79ccf/usr/src/lib/libzfs/common/libzfs_dataset.c#L5118)
+  [^cks-1]: Chris Siebenmann (2017) [ZFS's recordsize, holes in files, and partial blocks](https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSFilePartialAndHoleStorage)
+  [^delphix]: Matthew Ahrens (2014) [How I Learned to Stop Worrying and Love RAIDZ][delphix]
+  [^delphix-spreadsheet]: [RAID-Z parity cost][delphix-spreadsheet] (Google Sheets)
+  [^dilger]: Andreas Dilger (2010) [ZFS Features & Concepts TOI][dilger]
+  [^tuning]: OpenZFS [Workload Tuning][tuning]
+  [^zfs101]: Jim Salter (2020) [ZFS 101 &ndash; Understanding ZFS storage and performance](https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/)
+  [^zfs-4599]: openzfs/zfs#4599 (2016) [disk usage wrong when using larger recordsize, raidz and ashift=12][zfs-4599]
