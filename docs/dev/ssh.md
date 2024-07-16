@@ -50,12 +50,18 @@ Host example
 
 ### 端口转发 {#port-forwarding}
 
-SSH 支持三种端口转发：
+SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SSH 支持三种端口转发：
 
-- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。**即将远程主机上某个服务的端口转发到本地**。例如：
+- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。**即将远程主机上某个服务的端口转发到本地**。例如将远程主机的 80 端口转发到本地的 8080：
 
     ```shell
     ssh -L 8080:localhost:80 example
+    ```
+
+    也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
+
+    ```shell
+    ssh -L 8080:internalserver:80 example
     ```
 
     本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
@@ -66,13 +72,19 @@ SSH 支持三种端口转发：
 
     虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
-- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。**即将本地某个服务的端口转发到远程主机上**。例如：
+- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。**即将本地某个服务的端口转发到远程主机上**。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
 
     ```shell
     ssh -R 8080:localhost:80 example
     ```
 
     上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
+
+    同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
+
+    ```shell
+    ssh -R 8080:myinternalserver:80 example
+    ```
 
     注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
