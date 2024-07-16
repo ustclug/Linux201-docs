@@ -1463,6 +1463,8 @@ environment:
   - OTHER_ENV=2
 ```
 
+此外，可以发现在 `volumes` 的定义中，不再需要使用 `$(pwd)` 处理相对路径的问题：Docker compose 会帮我们搞定相对路径到绝对路径的转换。
+
 Nginx 的 compose 配置没有新的特性，因此不再赘述。不过，另一点需要特别提及的是，在不使用 Docker compose 部署时，服务之间的通信使用了 UNIX socket，例如 [uwsgi 暴露的 socket 配置](https://github.com/ustclug/hackergame/blob/99bfb728670393757247f45679f9216cd64ae5ad/conf/uwsgi-apps/hackergame.ini#L2C1-L2C47)如下：
 
 ```ini
