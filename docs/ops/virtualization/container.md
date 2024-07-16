@@ -1212,6 +1212,39 @@ services:
 
 其中 [`init: true`](https://docs.docker.com/reference/cli/docker/container/run/#init) 表示 Docker 会在容器启动时使用基于 [tini](https://github.com/krallin/tini) 的 `docker-init` 管理容器内进程。
 
+!!! note "容器里的 PID 1，与信号处理"
+
+    在 Unix 系列的操作系统中，PID 1（init）是最重要的用户态程序，如果 init 退出，那么整个系统就会崩溃。在 Linux 的 PID 命名空间里面也是如此，如果其中 PID 为 1 的程序退出，那么 PID 命名空间里的其他程序都会收到内核发送的 SIGKILL 一起陪葬。对于容器来说，除了启动容器实际的服务程序以外，PID 1 至少还需要：
+
+    1. 处理僵尸进程。当一个进程的父进程结束之后，这个进程的父进程就会变成 PID 1。当该进程结束之后，PID 1 需要妥善「收尸」，否则系统中会存在大量的僵尸进程占用资源。
+    2. 传递信号。PID 1 需要将 `SIGTERM`、`SIGINT` 等信号转发给实际的服务程序。
+
+    根据 [tini Issue #8](https://github.com/krallin/tini/issues/8#issuecomment-146135930) 的讨论，如果 `bash` 为 PID 1，那么处理僵尸进程的事情确实不需要操心，但是 `bash` 默认不会帮忙传递信号——这意味着如果执行 `docker stop`，那么 `bash` 自己吞掉信号之后什么都不会发生——这个命令会卡住比较长的时间，直到超时之后被强制杀死，无法做到优雅地退出（gracefully exit）。
+
+    特别地，实际的服务程序也需要恰当处理信号。一个反例是默认的 Python 收到 `SIGTERM`（`docker stop` 发送的信号）时，什么都不会做：
+
+    ```console
+    $ sudo docker run -it --rm --name=python-signal python bash
+    root@ecdc8fe55f36:/# exec python -c "import time; time.sleep(10000000)"  # 使用 `exec` 确保 PID 1 从 bash 变成 python
+
+    $ # 另一个终端
+    $ sudo docker stop python-signal
+    （卡住直到超时，SIGKILL）
+    ```
+
+    如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。对于 Python 而言，可以这么解决：
+
+    ```python
+    import signal
+    import sys
+
+    def handler(signum, frame):
+      sys.exit(0)  # 或者给全局变量赋值，然后在主程序中检查对应的值来实现「优雅退出」
+
+    signal.signal(signal.SIGTERM, handler)
+    # ...
+    ```
+
 用户需要运行的题目的示例则在 `example` 目录下，可以看一下[这里的 `docker-compose.yml`](https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/docker-compose.yml) 文件：
 
 ```yaml
