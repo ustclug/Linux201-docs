@@ -52,7 +52,7 @@ Host example
 
 SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SSH 支持三种端口转发：
 
-- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。**即将远程主机上某个服务的端口转发到本地**。例如将远程主机的 80 端口转发到本地的 8080：
+- 本地端口转发（**L**ocal port forwarding）：在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
 
     ```shell
     ssh -L 8080:localhost:80 example
@@ -72,7 +72,7 @@ SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SS
 
     虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
-- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。**即将本地某个服务的端口转发到远程主机上**。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
+- 远程端口转发（**R**emote port forwarding）：在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
 
     ```shell
     ssh -R 8080:localhost:80 example
@@ -88,7 +88,7 @@ SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SS
 
     注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
-- 动态端口转发（**D**ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机。**相当于利用了远程主机作为代理**。例如：
+- 动态端口转发（**D**ynamic port forwarding）：在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
 
     ```shell
     ssh -D 1080 example
@@ -144,11 +144,26 @@ Host realhost
   ProxyJump jumphost
 ```
 
-### 文件传输
+### 高级功能：连接复用 {#connection-reuse}
+
+SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
+
+启用连接复用需要在配置文件中同时指定 `ControlMaster`、`ControlPath` 和 `ControlPersist` 三个选项（它们的默认值都是禁用或者很不友好的值）：
+
+```shell
+Host *
+  ControlMaster auto
+  ControlPath /tmp/sshcontrol-%C
+  ControlPersist yes
+```
+
+其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。**但是**，如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 `ControlPath`。
+
+## 文件传输
 
 SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
 
-#### SCP
+### SCP
 
 SCP 是基于 SSH (Secure Shell) 协议的文件传输工具，它允许用户在本地和远程主机之间安全地复制文件。SCP 使用 SSH 进行数据传输，提供同 SSH 相同级别的安全性，包括数据加密和用户认证。
 
@@ -160,7 +175,7 @@ scp [选项] [源文件] [目标文件]
 
 其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 `用户名@主机名:文件路径`。
 
-##### 文件复制
+#### 文件复制
 
 从本地复制到远程服务器
 
@@ -181,7 +196,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
     你可以一次性传输多个文件或目录，将它们作为源路径的参数。
     例如：`scp file1.txt file2.txt username@remotehost:/path/to/remote/directory`
 
-##### 复制目录
+#### 复制目录
 
 如果需要复制整个目录，需要使用 `-r` 选项，这表示递归复制：
 
@@ -189,7 +204,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 scp -r /path/to/local/directory username@remotehost:/path/to/remote/directory
 ```
 
-##### 使用非标准端口
+#### 使用非标准端口
 
 如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 `-P` 选项指定端口：
 
@@ -197,7 +212,7 @@ scp -r /path/to/local/directory username@remotehost:/path/to/remote/directory
 scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
 ```
 
-##### 限制带宽
+#### 限制带宽
 
 使用 `-l` 选项可以限制 SCP 使用的带宽，单位是 `Kbit/s`：
 
@@ -205,7 +220,7 @@ scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
 scp -l 1024 /path/to/local/file username@remotehost:/path/to/remote/directory
 ```
 
-##### 保留文件属性
+#### 保留文件属性
 
 使用 `-p` 选项可以保留原文件的修改时间和访问权限：
 
@@ -213,7 +228,7 @@ scp -l 1024 /path/to/local/file username@remotehost:/path/to/remote/directory
 scp -p /path/to/local/file username@remotehost:/path/to/remote/directory
 ```
 
-##### 开启压缩
+#### 开启压缩
 
 使用 `-C` 选项开启压缩，可以减少传输数据量并提升传输速度，特别对于文本文件效果显著。
 
@@ -221,11 +236,11 @@ scp -p /path/to/local/file username@remotehost:/path/to/remote/directory
 scp -C /path/to/local/file username@remotehost:/path/to/remote/directory
 ```
 
-#### SFTP
+### SFTP
 
 SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。
 
-##### 启动 SFTP 会话
+#### 启动 SFTP 会话
 
 要连接到远程服务器，可以使用以下命令：
 
@@ -239,7 +254,7 @@ sftp username@remotehost
 sftp -P 2233 username@remotehost
 ```
 
-##### 文件和目录操作
+#### 文件和目录操作
 
 - `ls`：列出远程目录的内容。
 - `get remote-file [local-file]`：下载文件。
@@ -253,7 +268,7 @@ sftp -P 2233 username@remotehost
 - `cd directory-name`：改变远程工作目录。
 - `lcd directory-name`：改变本地工作目录。
 
-##### 退出 SFTP 会话
+#### 退出 SFTP 会话
 
 输入 `exit` 或 `bye` 来终止 SFTP 会话。
 
@@ -268,21 +283,6 @@ sftp -P 2233 username@remotehost
     quit
     ```
     然后使用命令 `sftp -b upload.txt username@remotehost` 来自动上传文件。
-
-### 高级功能：连接复用 {#connection-reuse}
-
-SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
-
-启用连接复用需要在配置文件中同时指定 `ControlMaster`、`ControlPath` 和 `ControlPersist` 三个选项（它们的默认值都是禁用或者很不友好的值）：
-
-```shell
-Host *
-  ControlMaster auto
-  ControlPath /tmp/sshcontrol-%C
-  ControlPersist yes
-```
-
-其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。**但是**，如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 `ControlPath`。
 
 ## 服务端配置 {#sshd-config}
 
