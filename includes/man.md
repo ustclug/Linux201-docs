@@ -4,11 +4,12 @@
   See <https://squidfunk.github.io/mkdocs-material/reference/tooltips/#adding-a-glossary> for how this file is used.
 -->
 
-<!-- markdownlint-disable-file MD053 -->
+<!-- markdownlint-disable-file MD041 MD053 -->
 
 <!-- man 1 -->
 
 <!-- man 4 -->
+
 [md.4]: https://man7.org/linux/man-pages/man4/md.4.html
 
 <!-- man 5 -->
@@ -34,4 +35,5 @@
 <!-- man 8 -->
 
 [logrotate.8]: https://linux.die.net/man/8/logrotate
+[sshd.8]: https://linux.die.net/man/8/sshd
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs
