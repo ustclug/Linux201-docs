@@ -878,8 +878,7 @@ Docker 默认未开启 IPv6，并且在比较老的版本中，配置 IPv6 会�
 - 要么每个容器一个公网 IPv6 地址（否则容器无法连接外部的 IPv6 网络）。要这么做的前提是得知道自己能控制的 IPv6 段，并且容器打开的所有端口都会暴露在公网上。
 - 使用[第三方的方案](https://github.com/robbertkl/docker-ipv6nat)帮忙做 IPv6 NAT，同时给容器分配 IPv6 的 ULA（Unique Local Address）地址段（目前可以分配 fd00::/8 内的地址段）。
 
-不过好消息是，目前 Docker 添加了对 IPv6 NAT 的实验性支持，尽管默认的 bridge 网络的 IPv6 支持仍然不是默认打开的。
-参考[对应的文档](https://docs.docker.com/config/daemon/ipv6/)[^ipv6-docaddr]，一个配置 daemon.json 的例子如下：
+不过好消息是，目前 Docker 添加了对 IPv6 NAT 的实验性支持，尽管默认的 bridge 网络的 IPv6 支持（基于 ip6tables）[在 27.0 版本后才默认打开](https://docs.docker.com/engine/release-notes/27.0/#ipv6)。如果正在使用 27.0 之前的版本，参考[对应的文档](https://docs.docker.com/config/daemon/ipv6/)[^ipv6-docaddr]，一个配置 daemon.json 的例子如下：
 
 ```json
 {
