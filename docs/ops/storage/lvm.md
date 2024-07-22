@@ -608,6 +608,8 @@ LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm
     不过，随着 SSD 单位空间成本逐渐降低，SSD 缓存的意义也在逐渐减小。
     甚至也[有预测表明](https://thecuberesearch.com/flash-native-drives-real-time-business-process/)，到 2026 年后 SSD 的成本甚至会低于 HDD。内核中 `dm-cache` 的开发也不活跃。
 
+    科大镜像站于 2024 年 7 月将缓存方案由 lvmcache（基于 SSD）迁移至了 ZFS ARC（基于内存），以减小下文中提到的相关问题导致的运维压力。
+
     在考虑缓存方案的选择时，需要考虑各种因素，下文会做一些简单的介绍。
 
 首先删除上面创建的 LV 与 PV，然后创建一个大的 image 和一个小的 image 作为 HDD 与 SSD：
