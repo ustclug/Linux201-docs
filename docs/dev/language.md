@@ -39,13 +39,13 @@ icon: material/xml
 
 参考资料：
 
--   [Linux 101/Ch06](https://101.lug.ustc.edu.cn/Ch06/)
--   [The Missing Semester of Your CS Education/shell-tools](https://missing-semester-cn.github.io/2020/shell-tools/)
+- [Linux 101/Ch06](https://101.lug.ustc.edu.cn/Ch06/)
+- [The Missing Semester of Your CS Education/shell-tools](https://missing-semester-cn.github.io/2020/shell-tools/)
 
 作为补充，可以查阅：
 
--   [jq](https://jqlang.github.io/jq/): 用于处理 JSON 数据
--   [yq](https://github.com/mikefarah/yq): 用于处理 YAML 数据
+- [jq](https://jqlang.github.io/jq/): 用于处理 JSON 数据
+- [yq](https://github.com/mikefarah/yq): 用于处理 YAML 数据
 
 ??? comment "Shell tools"
 
@@ -66,20 +66,20 @@ icon: material/xml
 
 参考资料：
 
--   [Linux 101/Ch07](https://101.lug.ustc.edu.cn/Ch07/#py)
--   [Python 官方文档](https://docs.python.org/zh-cn/3/)
+- [Linux 101/Ch07](https://101.lug.ustc.edu.cn/Ch07/#py)
+- [Python 官方文档](https://docs.python.org/zh-cn/3/)
 
 在掌握基础的工具链、语法之后，可以从下面几个方面进一步学习：
 
--   [FastAPI](https://fastapi.tiangolo.com/): 尝试写一个简单的 API 服务
--   [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/): 了解 Python 在数据科学领域的应用
--   [TensorFlow](https://tensorflow.google.cn/tutorials?hl=zh-cn): 了解 TensorFlow 的使用
--   [Python Cookbook](https://python3-cookbook.readthedocs.io/zh_CN/latest/): 深入了解 Python 的一些特性
+- [FastAPI](https://fastapi.tiangolo.com/): 尝试写一个简单的 API 服务
+- [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/): 了解 Python 在数据科学领域的应用
+- [TensorFlow](https://tensorflow.google.cn/tutorials?hl=zh-cn): 了解 TensorFlow 的使用
+- [Python Cookbook](https://python3-cookbook.readthedocs.io/zh_CN/latest/): 深入了解 Python 的一些特性
 
 在这些过程中，Python 语言本身可能不会是一个较大的障碍，但是安装、配置等方面可能存在一点障碍，以下是一些常见的问题，我们提前整理在这里：
 
--   [Python 3.12 importlib](https://docs.python.org/3/whatsnew/3.12.html#importlib): 导致了部分库历史版本的兼容问题 (例如 `numpy~=1.23`), 如果需要对应包的历史版本，可能需要降级 Python (或者指定 `python310` / 使用 conda 等)
--   [Poetry Pytorch](https://github.com/python-poetry/poetry/issues/4231): Poetry 与 Pytorch 的兼容问题，可能需要手动安装 Pytorch
+- [Python 3.12 importlib](https://docs.python.org/3/whatsnew/3.12.html#importlib): 导致了部分库历史版本的兼容问题 (例如 `numpy~=1.23`), 如果需要对应包的历史版本，可能需要降级 Python (或者指定 `python310` / 使用 conda 等)
+- [Poetry Pytorch](https://github.com/python-poetry/poetry/issues/4231): Poetry 与 Pytorch 的兼容问题，可能需要手动安装 Pytorch
 
 ## Golang
 
@@ -100,24 +100,24 @@ icon: material/xml
 
 参考资料：
 
--   [MDN Web Docs](https://developer.mozilla.org/zh-CN/docs/Web): 百科全书
+- [MDN Web Docs](https://developer.mozilla.org/zh-CN/docs/Web): 百科全书
 
 常用工具：
 
--   作为 JavaScript 的替代品，TypeScript 提供了静态类型检查、更好的 OOP 支持，范型、装饰器，更好的 ECMAScript 特性支持
-    -   伴随着这些特性，一般而言，IDE 支持也更加友好。
-    -   TypeScript 一般作为 npm 脚手架使用，在编译期转为无类型检查的 JavaScript。
--   SCSS: 一个 CSS 预处理器，提供了变量、嵌套、混合等功能，可以提高 CSS 的可维护性。
--   Webpack: 一个模块打包工具，可以将多个 JavaScript 文件打包成一个文件，提高页面加载速度。
+- 作为 JavaScript 的替代品，TypeScript 提供了静态类型检查、更好的 OOP 支持，范型、装饰器，更好的 ECMAScript 特性支持
+    - 伴随着这些特性，一般而言，IDE 支持也更加友好。
+    - TypeScript 一般作为 npm 脚手架使用，在编译期转为无类型检查的 JavaScript。
+- SCSS: 一个 CSS 预处理器，提供了变量、嵌套、混合等功能，可以提高 CSS 的可维护性。
+- Webpack: 一个模块打包工具，可以将多个 JavaScript 文件打包成一个文件，提高页面加载速度。
 
 常用框架：
 
--   前端开发
-    -   [React](https://react.dev/): 一个用于构建用户界面的 JavaScript 库
-    -   [Vue](https://cn.vuejs.org/): 一套用于构建用户界面的渐进式框架
--   跨平台应用开发
-    -   [Electron](https://www.electronjs.org/): 使用 Web 技术构建跨平台桌面应用
-    -   [React Native](https://reactnative.dev/): 使用 React 构建原生应用，主要用于移动端开发
+- 前端开发
+    - [React](https://react.dev/): 一个用于构建用户界面的 JavaScript 库
+    - [Vue](https://cn.vuejs.org/): 一套用于构建用户界面的渐进式框架
+- 跨平台应用开发
+    - [Electron](https://www.electronjs.org/): 使用 Web 技术构建跨平台桌面应用
+    - [React Native](https://reactnative.dev/): 使用 React 构建原生应用，主要用于移动端开发
 
 ## C/C++
 
@@ -131,8 +131,8 @@ icon: material/xml
 
 参考资料：
 
--   [Linux 101/Ch07](https://101.lug.ustc.edu.cn/Ch07/#c)
--   [C++ Reference](https://en.cppreference.com/w/)
+- [Linux 101/Ch07](https://101.lug.ustc.edu.cn/Ch07/#c)
+- [C++ Reference](https://en.cppreference.com/w/)
 
 ## 开发指南
 
