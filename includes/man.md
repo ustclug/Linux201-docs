@@ -8,6 +8,8 @@
 
 <!-- man 1 -->
 
+[git-bisect.1]: https://git-scm.com/docs/git-bisect
+
 <!-- man 4 -->
 
 [md.4]: https://man7.org/linux/man-pages/man4/md.4.html

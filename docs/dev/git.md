@@ -175,6 +175,22 @@ git rebase master
     rebase = true
 ```
 
+### Bisect {#git-bisect}
+
+在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 `git bisect` 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：
+
+```console
+git bisect start
+git bisect good <old-commit>
+git bisect bad <new-commit>
+```
+
+之后 `git bisect` 就会帮助你做二分搜索，跳转到两者中间的 commit 以供测试，之后提供 `git bisect good` 或者 `git bisect bad` 引导 git 搜索，最终找到对应的 commit。
+
+!!! question "good or bad?"
+
+    有时候我们会需要确认哪个 commit **修复**（而不是导致）了问题，但是 `git bisect` 默认 good 需要早于 bad，直接 `git bisect start` 的话很容易误操作。请阅读 [git-bisect(1)][git-bisect.1] 了解应该如何处理此类情况。
+
 ### Commit Message Convention {#git-commit-message}
 
 对于多人协作的项目，良好的 commit message 是非常重要的。胡乱使用诸如 `update`、`fix`、`change` 等无意义的 Commit Message，会使得项目的历史记录变得难以理解，也会给后续的维护带来困难。
