@@ -24,7 +24,7 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 ### 常用操作
 
-0. 安装软件包
+1. 安装软件包
 
    如果我们需要安装一个名称为 name 的包
 
@@ -38,23 +38,24 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
    如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force** 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
 
-0. 卸载软件包
+2. 卸载软件包
 
    使用 dpkg 直接卸载：
 
-   `dpkg -r <name>**
+   `dpkg -r <name>`
 
    使用 apt 卸载：
 
-   `apt remove name**
+   `apt remove name`
 
    那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
 
-   因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
+   因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
+   那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
 
    这样，我们可以使用`apt autoremove`来卸载不必要的包以释放存储空间。
 
-0. 推荐与建议
+3. 推荐与建议
 
    安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。还会提示你可以安装建议（Suggested）的包以拓展原包的功能。
 
@@ -66,11 +67,12 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
    还可以在配置文件中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
 
-   当这类包被安装的时候，它们的类型为 automatic，也就是说在默认情况下，如果没有软件**推荐或者建议它们**，它们会被 `apt autoremove` 卸载。
+   当这类包被安装的时候，它们的类型为 automatic，也就是说在默认情况下，
+   如果没有软件**推荐或者建议它们**，它们会被 `apt autoremove` 卸载。
 
    使用 `apt-mark (automatic|manual) <name>` 修改包的状态。
 
-0. 查找包中文件与文件所属的包，替换 command not found
+4. 查找包中文件与文件所属的包，替换 command not found
 
    APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
 
@@ -90,13 +92,14 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
    其安装方式十分简单，只需 `apt install command-not-found` 即可。
 
-0. 查找包
+5. 查找包
 
    `apt search <name>` 可以进行包的查找。
 
    也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
 
-   比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc` ，如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
+   比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
+   如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
 
    以下是一些常见的 apt-patterns 单位
 
@@ -108,7 +111,7 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
    - `~U` 可以升级的包。
    - `~nREGEX` 包名称满足正则表达式的包。
 
-0. 固定包
+6. 固定包
 
    有时我们希望固定一个包，使得这个包不会被改变或升级。
 
