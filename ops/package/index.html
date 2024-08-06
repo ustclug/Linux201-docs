@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.30">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.31">
     
     
       
@@ -1696,8 +1696,78 @@
 </div>
 <!-- 简介 -->
 
+<p>APT(Advanced Package Tool) 是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。</p>
 <h2 id="apt">APT 系列工具<a class="headerlink" href="#apt" title="Permanent link">&para;</a></h2>
+<p>Debian 是一个基于二进制（而非源码）的发行版，其软件包格式为 .deb ，这代表这是一个二进制包。</p>
+<p>Debian 的初等包管理器是 dpkg ，其负责管理包的安装，删除，查询，替换，校验。</p>
+<p>dpkg 一般不会被直接使用。而是作为 apt 以及其他一些高等包管理器的后端使用。</p>
+<p>Debian 自带的高等包管理器是 APT ，负责进行依赖解析与安装包下载，并且以最优的顺序调用 dpkg ，其没有直接安装 .deb 包的能力。</p>
+<p>Debian 下还有很多包管理软件，如 Synaptics 、 Aptitude ，这里不一一详细展开。</p>
 <h3 id="_2">常用操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<ol>
+<li>安装软件包</li>
+</ol>
+<p>如果我们需要安装一个名称为 name 的包</p>
+<p>在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：</p>
+<p><code>dpkg -i &lt;name_version.deb&gt;</code></p>
+<p>使用 apt 安装软件包：</p>
+<p><code>apt install &lt;name&gt;</code></p>
+<p>如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force** 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。</p>
+<ol>
+<li>卸载软件包</li>
+</ol>
+<p>使用 dpkg 直接卸载：</p>
+<p>`dpkg -r <name>**</p>
+<p>使用 apt 卸载：</p>
+<p>`apt remove name**</p>
+<p>那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。</p>
+<p>因此，在使用 APT 安装一个包时，我们将其标记为 manual ，在安装依赖时，我们将其标记为 automatic ，那么我们知道<strong>所有没有被 manual 直接或者间接依赖的 automatic 包</strong>都是不必要的。</p>
+<p>这样，我们可以使用<code>apt autoremove</code>来卸载不必要的包以释放存储空间。</p>
+<ol>
+<li>推荐与建议</li>
+</ol>
+<p>安装软件包时， APT 在默认配置下会安装推荐（ Recommended ）的包。 还会提示你可以安装建议（ Suggested ）的包以拓展原包的功能。</p>
+<p>比如： apt包的推荐有 ca-certificates ，建议包有 aptitude 、 synaptic 、 gnupg 、 powermgmt-base 和 dpkg-dev</p>
+<p>那么安装这个包时，会默认安装 ca-certificates ， 结束后会给出后面的包的提示。</p>
+<p>为了精简安装的软件包，可以使用 <code>--no-install-recommends</code> 的选项，以跳过推荐的软件包。</p>
+<p>还可以在配置文件中添加 <code>Apt::Install-Recommends "false"</code> 以使默认配置不会安装推荐的包。</p>
+<p>当这类包被安装的时候，它们的类型为 automatic ，也就是说在默认情况下，如果没有软件<strong>推荐或者建议它们</strong>，它们会被 <code>apt autoremove</code> 卸载。</p>
+<p>使用 <code>apt-mark (automatic|manual) &lt;name&gt;</code> 修改包的状态。</p>
+<ol>
+<li>查找包中文件与文件所属的包，替换 command not found</li>
+</ol>
+<p>APT 家族中存在一个用于查找文件所属包的工具 <code>apt-file</code></p>
+<p>使用 <code>apt-file update</code> 进行数据库的初始化及更新。</p>
+<p>使用 <code>apt-file search &lt;file&gt;</code> 进行搜索。</p>
+<p>可以使用 <code>dpkg -S &lt;file&gt;</code> 搜索所有<strong>已安装</strong>包中的文件。</p>
+<p>反过来，想要查看一个包包含什么文件，可以使用 <code>apt-file list &lt;name&gt;</code>。</p>
+<p>使用 <code>dpkg-deb -c &lt;name_version.deb&gt;</code> 查看 .deb 中内容。</p>
+<p>也可以使用 <code>dpkg-query -L &lt;name&gt;</code> ，但是这只对已经安装的包生效。</p>
+<p>在使用了一个未安装的命令时，可以选择使用 <code>command-not-found</code>。</p>
+<p>其安装方式十分简单，只需 <code>apt install command-not-found</code> 即可。</p>
+<ol>
+<li>查找包</li>
+</ol>
+<p><code>apt search &lt;name&gt;</code> 可以进行包的查找。</p>
+<p>也可以通过使用一种特殊的语法（ apt-patterns ）来进行更具体的查找。</p>
+<p>比如你想寻找已经安装，并且名称包含gcc的软件，可以使用 <code>~i ~ngcc</code> ，如果要求名称完全匹配， 可以使用 <code>~i ?exact-name(gcc)</code></p>
+<p>以下是一些常见的 apt-patterns 单位</p>
+<ul>
+<li><code>?and()</code> 也可以使用空格分隔若干个 apt-patterns 简写。</li>
+<li><code>?or()</code> 也可以使用 <code>|</code> 分隔若干个 apt-patterns 简写。</li>
+<li><code>?not()</code> 可以使用 <code>!</code> 进行简写。</li>
+<li><code>~g</code> 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。</li>
+<li><code>~i</code> 为已经安装的包。</li>
+<li><code>~U</code> 可以升级的包。</li>
+<li>
+<p><code>~nREGEX</code> 包名称满足正则表达式的包。</p>
+</li>
+<li>
+<p>固定包</p>
+</li>
+</ul>
+<p>有时我们希望固定一个包，使得这个包不会被改变或升级。</p>
+<p>这时可以使用 <code>apt-mark hold &lt;name&gt;</code> ，这个包将会被固定，其不会被升级。</p>
 <!-- automatic 和 manual 安装的区别，autoremove 的功能 -->
 <!-- "Recommends", "Suggests" 等是什么；在需要精简的场合使用 --no-install-recommends 避免安装不必要的软件包 -->
 <!-- 查找某个文件可以由什么包提供，查找某个包提供了什么文件 -->
