@@ -46,7 +46,7 @@ icon: material/security
 
 - 软件攻击面：例如暴露在公网的 Web 应用常常是攻击者首选的目标，因为这些应用直接暴露在公网，并且需要处理各种用户输入，更容易受到攻击；此外，其他的服务器软件（例如数据库）可能存在漏洞或者配置不当，也是攻击者的目标。
 - 网络攻击面：指在数据传输过程中存在的各种可能被攻击利用的脆弱点，主要涉及网络协议和数据传输。例如，老旧的协议（HTTP、早期的 SSL/TLS 版本等）容易受到中间人攻击；诸如 DNS 劫持、ARP 欺骗等攻击也是常见的网络攻击方式。
-- 人为攻击面：人类自己通常是计算机安全中最薄弱的一环。社会工程学攻击（例如钓鱼邮件、电话诈骗等）是攻击者获取信息的常见方式。此外，一些用户也可能会因为自己的疏忽或者不当操作导致系统被攻击。
+- 人为攻击面：很多时候，从人入手比从机器入手攻击更简单。社会工程学攻击（例如钓鱼邮件、电话诈骗等）是攻击者获取信息的常见方式。此外，一些用户也可能会因为自己的疏忽或者不当操作导致自己成为更庞大的系统被攻击的跳板。
 
 ### 常见漏洞与攻击方法 {#common-vulnerabilities}
 
@@ -140,11 +140,11 @@ int main() {
 
 ##### 0-day/1-day/n-day 漏洞 {#0day-1day-nday}
 
-包含复杂功能的计算机程序几乎不可能做到没有漏洞，攻击者与安全研究人员都会不断寻找诸如常用软件、操作系统、网络设备等的漏洞。其中 0-day 漏洞指代软件开发者（通常）不知情，并且也没有补丁的漏洞，1-day 漏洞则指代漏洞已经公布、已经有补丁或者缓解措施，但是由于时间较短，仍然有很多系统没有安装补丁的漏洞，n-day 漏洞则是指代漏洞已经公布很久，但是仍然有系统没有安装补丁的漏洞。
+包含复杂功能的计算机程序几乎不可能做到没有漏洞，攻击者与安全研究人员都会不断寻找诸如常用软件、操作系统、网络设备等的漏洞。其中 0-day 漏洞指代软件开发者（通常）不知情，并且也没有补丁的漏洞，1-day 漏洞则指代漏洞已经公布、已经有补丁或者缓解措施，但是由于时间较短，仍然有很多系统没有安装补丁的漏洞，n-day 漏洞则是指代漏洞已经公布很久，但是仍然有一部分系统没有安装补丁的漏洞。
 
-0-day 漏洞通常价值不菲，并且没有很好的通用防御方法。当然，大部分读者都不值得被 0-day 漏洞攻击，虽然这不代表你不会被攻击——例如 2023 年前，���就在自己的安卓安装包中加入了一些 0-day 漏洞，以此窃取用户手机的隐私数据。
+0-day 漏洞通常价值不菲，并且没有很好的通用防御方法。尽管大部分读者都不值得被 0-day 漏洞攻击，但这不代表你不会被攻击——例如 2023 年前，���就在自己的安卓安装包中加入了一些 0-day 漏洞，以此窃取用户手机的隐私数据。
 
-而 1-day 漏洞则需要运维及时响应，因为此时 PoC（Proof of Concept，漏洞利用的示例代码）一般已经公开，攻击者可以很快地利用这个漏洞。n-day 漏洞一般已经有非常成熟的攻击工具，如果维护人员管理不当，就很容易中招（例如 2017 年公布的[永恒之蓝漏洞 MS17-010](https://en.wikipedia.org/wiki/EternalBlue)，即使已经时隔超过 7 年，由于一些单位的内网管理不当，时至今日依然是攻击者在内网渗透中很有用的工具）。
+而 1-day 漏洞则需要运维及时响应，因为此时 PoC（Proof of Concept，漏洞利用的示例代码）一般已经公开，攻击者可以很快地利用这个漏洞；即使暂时没有公开，也会有很多人尝试编写 PoC。n-day 漏洞一般已经有非常成熟的攻击工具，如果维护人员管理不当，就很容易中招（例如 2017 年公布的[永恒之蓝漏洞 MS17-010](https://en.wikipedia.org/wiki/EternalBlue)，即使已经时隔超过 7 年，由于一些单位的内网管理不当，时至今日依然是攻击者在内网渗透中很有用的工具）。
 
 #### 社会工程学 {#social-engineering}
 
@@ -152,6 +152,32 @@ int main() {
 
 - 钓鱼邮件：例如伪装成发票、上级通知、退税邮件等，欺骗用户点击恶意链接、执行恶意附件。
 - 利诱：例如有偿购买用户的校园卡/工卡/VPN 认证账号等。
+
+!!! example "钓鱼邮件示例"
+
+    尽管我们一般收到的很多钓鱼邮件都能够一眼识破，但是也存在精心制作的钓鱼邮件。特别是针对高价值目标，如果精心制作的钓鱼邮件能够为攻击者打开侵入的大门，那么尽可能伪装钓鱼邮件的成本是值得的。这也是 APT（Advanced Persistent Threat，高级持续性威胁）攻击常见的起始步骤。
+
+    以下分享一则我们真实收到精心制作的钓鱼邮件，隐去了部分细节：
+
+    ```
+    FROM: xxxxx <xxxxx@163.com>
+    TO: xxxxx@ustc.edu.cn
+    SUBJECT: 关于中国科学技术大学统一电子签章平台上线试运行的通知
+    
+    各单位：
+    为落实“智慧科大”数字化发展战略，推进无纸化办公目标，缓解师生线下办事难题，学校规划建设的科大统一电子签名平台已试运行。
+
+    平台提供安全可靠的电子签名服务能力，包括统一电子签名平台，欢迎全校各单位及师生使用统一电子签名平台。
+
+    电子签名平台使用说明见附件
+
+    密码：12345
+
+    中国科学技术大学
+    63602393
+    ```
+
+    如果不看 `FROM`，邮件看起来还比较真实，因为邮件中的内容都是公开信息。附件 `21333.rar` 为加密压缩包（逃避邮件系统对附件内容的病毒检查），压缩包内包含了 Windows 快捷方式文件 `21333.pdf.lnk`，图标为 Microsoft Edge 的。而这个快捷方式的目标是 `powershell.exe`，命令行参数包含了从外部网站下载 PDF 与攻击负载，打开 PDF 与运行攻击负载的内容。如果不慎点击就会中招，并且由于真的会打开 PDF，中招之后可能第一时间无法发现。
 
 #### 拒绝服务攻击 {#dos-attacks}
 
@@ -210,11 +236,31 @@ int main() {
 
 #### 蜜罐 {#honeypots}
 
-蜜罐是一种特殊的系统，从外表来看它和正常运行的系统没有区别，但是它实际上没有实际用途，只用来吸引攻击者。蜜罐可以用来收集攻击者的信息，例如攻击者的 IP 地址、行为等。蜜罐还可以用来分散攻击者的注意力，让攻击者在蜜罐上浪费时间，从而减少对真正系统的攻击。
+蜜罐是一种特殊的系统，从外表来看它和正常运行的系统没有区别，但是它实际上没有实际用途，只用来吸引攻击者。蜜罐可以用来收集攻击者的信息，例如攻击者的 IP 地址、行为等。蜜罐还可以用来分散攻击者的注意力，让攻击者在蜜罐上浪费时间，从而推迟对真正系统的攻击，留出更多的时间供系统管理员响应。
+
+!!! example "蜜罐示例：SSH"
+
+    公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。以下是一些 SSH 蜜罐的实现：
+
+    - <https://github.com/jaksi/sshesame>
+    - <https://github.com/iBug/fakessh>
+    - <https://github.com/skeeto/endlessh/>
+
+    作为参考，以下是在 2022 端口公开一个 sshesame 蜜罐容器的命令：
+
+    ```bash
+    docker run -it --rm \
+        -p 2022:2022 \
+        -v sshesame-data:/data \
+        -v $(pwd)/sshesame.yaml:/config.yaml \
+        ghcr.io/jaksi/sshesame
+    ```
+
+    sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs` 查看。
 
 #### 入侵检测 {#intrusion-detection}
 
-对于需要较高安全性的系统，可以考虑部署入侵检测系统（IDS，Intrusion Detection System）。常见的入侵检测系统有 snort、suricata 等。两者均需要监控网络流量（例如，snort 需要使用 libpcap 抓包），根据预先设定的规则检测是否存在异常。对于内网部署的 IDS 系统，如果检测到了异常流量（例如短时间大量 SSH 连接），那么就说明很有可能有攻击者在内网中活动，在配置报警（例如发送邮件）之后，管理员就能够及时发现并且响应。
+对于需要较高安全性的系统，可以考虑部署入侵检测系统（IDS，Intrusion Detection System）。常见的入侵检测系统有 [snort](https://www.snort.org/)、[suricata](https://suricata.io/) 等。两者均需要监控网络流量（例如，snort 需要使用 libpcap 抓包），根据预先设定的规则检测是否存在异常。对于内网部署的 IDS 系统，如果检测到了异常流量（例如短时间大量 SSH 连接），那么就说明很有可能有攻击者在内网中活动，在配置报警（例如发送邮件）之后，管理员就能够及时发现并且响应。
 
 ### 应急响应 {#incident-response}
 
@@ -223,7 +269,7 @@ int main() {
 1. 隔离：断开网络连接、关闭服务等，避免攻击者继续操作被攻击的机器或服务。
 2. 分析：检查日志、监控数据，分析入侵方式。
 3. 修复：修复漏洞、清除恶意代码，对受到影响的用户重置密码等。
-4. 总结：总结事件，记录经验教训，以便未来避免类似事件发生。
+4. 总结：总结事件，记录经验教训，避免未来发生类似事件。
 
 ## 事后：溯源与修复 {#forensics-repair}
 
@@ -252,28 +298,6 @@ int main() {
 ### 修复 {#repair}
 
 如果确认攻击者已经获取了系统的 root 权限，推荐的做法是在备份数据（数据本身也需要检查是否可能被感染）之后直接重新安装系统，因为没有非常可靠的方式来确认系统是否已经被完全清理。同时也需要确认攻击者使用的入侵方式已经被修复，否则即使重新安装系统，攻击者仍然可以通过相同的方式重新入侵。
-
-<!-- ## 防守方视角：如何防御攻击 {#defenders}
-
-### 草船借箭，看看你的 {#fakessh}
-
-公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。
-
-```bash
-docker run -it --rm \
-    -p 127.0.0.1:2022:2022 \
-    -v sshesame-data:/data \
-    -v $PWD/sshesame.yaml:/config.yaml \
-    ghcr.io/jaksi/sshesame
-```
-
-sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs` 查看。
-
-!!! warning "docker port"
-
-    docker 会修改 iptables 规则，通过 `-p` 放通的端口默认设置在 `0.0.0.0`（允许所有 IP 访问），在这个例子里这是预期的行为。
-
-    如果你只希望本地访问（如数据库），请指定 `-p 127.0.0.1:2022:2022` 这样的参数。 -->
 
 ## 案例与建议 {#lessons}
 
@@ -316,12 +340,9 @@ sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs`
 
 两步验证（2FA）要求在密码验证通过之后，用户使用其他方式（例如短信、电话、TOTP (Time-based one-time password) 应用）再验证一次。这保证了即使用户密码泄漏，攻击者使用用户的密码也无法登录。**我们推荐在所有支持 2FA 的应用中为自己的账户设置 2FA**。
 
-一些密码管理器支持存储 TOTP 一次性密码凭证，但是是否应该让密码管理器管理两步验证是一个有争议性的话题（如果密码管理器出现问题，那么 2FA 就形同虚设了）。推荐的做法是在手机上安装 TOTP 应用，常见的应用包括 Google Authenticator、Microsoft Authenticator 等。[南大的 Yao Ge 老师整理了在移动设备（iOS 与 Android）可以使用的 TOTP 客户端](https://doc.nju.edu.cn/books/37693/page/a5bfc)，目前包括如下：
+一些密码管理器支持存储 TOTP 一次性密码凭证，但是是否应该让密码管理器管理两步验证是一个有争议性的话题（如果密码管理器出现问题，那么 2FA 就形同虚设了）。推荐的做法是在手机上安装 TOTP 应用，常见的应用包括 Google Authenticator、Microsoft Authenticator 等。[南大的 Yao Ge 老师整理了在移动设备（iOS 与 Android）可以使用的 TOTP 客户端](https://doc.nju.edu.cn/books/37693/page/a5bfc)。常见的选择包括 Google Authenticator, Microsoft Authenticator, FreeOTP Plus 等。
 
-- iOS: Google Authenticator, Microsoft Authenticator, Red Hat FreeOTP, LassPass Authenticator
-- Android: Google Authenticator, Microsoft Authenticator, FreeOTP Plus, andOTP, Aegis Authenticator, Red Hat FreeOTP, OTP Authenticator, LassPass Authenticator
-
-请注意从官方渠道下载应用程序。鉴于国内安卓生态的特殊性，安装部分应用可能会有一些额外的麻烦。
+请注意**务必从官方渠道下载应用程序**。鉴于国内安卓生态的特殊性，安装部分应用可能会有一些额外的麻烦。
 
 设置完成后，登录时就需要额外输入 TOTP 应用显示的定时刷新的一次性密码。
 
@@ -439,6 +460,12 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 如果有对攻击者物理接触设备后篡改设备的担忧，那么还需要关心**安全启动（Secure Boot）**。在有必要的情况下，需要设置 UEFI 口令（否则攻击者可以直接关掉安全启动），并且（对 Linux 用户来说）正确配置安全启动。
 
+!!! example "从个人设备入侵服务器的真实案例"
+
+    2015 年中旬的真实案例，详见 [LUG 服务器被入侵事件始末](https://01.me/2015/06/lug-servers-hacked/)。
+
+    入侵的路径为：U 盘病毒入侵笔记本，植入键盘记录器，收集信息，半个月后使用键盘记录器得到的密码登录大量服务器并插入恶意内核模块，侵入了 LDAP 数据库并修改了某用户的密码以进一步入侵。
+
 ### 编写安全的应用程序 {#write-applications}
 
 #### 了解常见的应用程序安全问题 {#know-vulnerabilities}
@@ -472,3 +499,106 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     但是 TA 使用的不是 HTML 的后缀，因此 Flask 没有做自动转义，使得 TA 的网站陷入了被 XSS 的风险中。万幸的是，在发现问题的时候，还没有人真的去 XSS，否则就贻笑大方了。
 
 同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (`-fsanitize=address`) 和 `_FORTIFY_SOURCE`）加固程序。
+
+!!! example "使用 ASAN 运行时检查 C 代码的内存安全问题"
+
+    对于下面这个例子：
+
+    ```c
+    #include <stdio.h>
+    #include <string.h>
+
+    int main() {
+        char input[32];
+
+        printf("Enter a string: ");
+        scanf("%32s", input);
+        printf("Echo: %s (%d)\n", input, strlen(input));
+        return 0;
+    }
+    ```
+
+    由于 C 语言的字符串以 `\0` 结尾，`scanf` 会多写入 0 到 `input` 以外的地址，并且当代码规模庞大的时候，这样的问题不容易直接被发现。
+    不过，如果加入 ASAN 并编译：
+
+    ```shell
+    gcc test.c -g -fsanitize=address
+    ```
+
+    之后运行时就会直接报错：
+
+    ```console
+    $ ./a.out
+    Enter a string: a
+    =================================================================
+    ==2987262==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x72bfab309040 at pc 0x72bfada6b934 bp 0x7ffceee9d380 sp 0x7ffceee9cb08
+    WRITE of size 33 at 0x72bfab309040 thread T0
+        #0 0x72bfada6b933 in scanf_common /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342
+        #1 0x72bfada859ba in __isoc99_vscanf /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1489
+        #2 0x72bfada864d3 in __isoc99_scanf /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1520
+        #3 0x56cd690a1270 in main /example/test.c:8
+        #4 0x72bfad834e07 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+        #5 0x72bfad834ecb in __libc_start_main_impl ../csu/libc-start.c:360
+        #6 0x56cd690a10e4 in _start (/example/a.out+0x10e4) (BuildId: 1b5d9db6c98221b5cb99988ed43d50ecc2a732c8)
+
+    Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame
+        #0 0x56cd690a11c8 in main /example/test.c:4
+
+    This frame has 1 object(s):
+        [32, 64) 'input' (line 5) <== Memory access at offset 64 overflows this variable
+    HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+        (longjmp and C++ exceptions *are* supported)
+    SUMMARY: AddressSanitizer: stack-buffer-overflow /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342 in scanf_common
+    Shadow bytes around the buggy address:
+    0x72bfab308d80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab308e00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab308e80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab308f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab308f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    =>0x72bfab309000: f1 f1 f1 f1 00 00 00 00[f3]f3 f3 f3 00 00 00 00
+    0x72bfab309080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab309100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab309180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab309200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    0x72bfab309280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    Shadow byte legend (one shadow byte represents 8 application bytes):
+    Addressable:           00
+    Partially addressable: 01 02 03 04 05 06 07
+    Heap left redzone:       fa
+    Freed heap region:       fd
+    Stack left redzone:      f1
+    Stack mid redzone:       f2
+    Stack right redzone:     f3
+    Stack after return:      f5
+    Stack use after scope:   f8
+    Global redzone:          f9
+    Global init order:       f6
+    Poisoned by user:        f7
+    Container overflow:      fc
+    Array cookie:            ac
+    Intra object redzone:    bb
+    ASan internal:           fe
+    Left alloca redzone:     ca
+    Right alloca redzone:    cb
+    ==2987262==ABORTING
+    ```
+
+    由于相比于 Valgrind，ASAN 的开销低很多，因此在不需要极致性能的场景下，甚至可以直接将开启 ASAN 编译后的程序上线到生产环境中，以减轻未知的内存安全问题带来的影响。
+
+#### 不要自制密码学协议/算法 {#no-homebrew-crypto}
+
+作为现代密码学的常识，密码学算法**不应该**以算法保密为假设，而是应该在算法公开的前提下，保证在密钥不泄漏的时候加密的安全性。同时，也不应该自制安全协议，而是采用成熟的密码学库与算法实现安全目标。如果你不是密码学专家，你永远无法预料到自制的方法会受到什么类型的攻击。
+
+!!! example "搜狗输入法，与 CBC padding oracle 攻击"
+
+    2023 年 8 月，[有安全研究者发现](https://citizenlab.ca/2023/08/vulnerabilities-in-sogou-keyboard-encryption/)国内包括搜狗输入法在内的许多输入法的云输入功能没有实现正确的加密，导致中间人可以轻而易举地知道用户输入的内容。其中，搜狗输入法实现了自制的 "EncryptWall" 加密系统，但是其实现会被 CBC padding oracle 攻击。
+
+    AES 是一种常用的对称加密算法，而 CBC（Cipher Block Chaining）模式是链式的，每一个块的密文与前一个块的密文存在依赖关系，但是每个块大小都需要是相同的。由于密文很多时候大小不是块大小的整数倍，因此块多出来的部分需要填充 padding。某些程序会检测 padding 填充内容是否正确，并且返回这些信息，被称为 "padding orcale"。通过 padding oracle 返回的正确性信息，攻击者可以逐步确认 padding 的正确性，进而推测出明文内容。
+
+    对于搜狗云输入的例子，如果填充不正确，服务器会返回 HTTP 400，否则会返回 HTTP 200 或者 500，因此就充当了一个 padding oracle，暴露了密码学安全问题。因此，即使是这样的「国民级应用」的开发者，实现密码学协议也会存在问题，如果没有足够的能力确认安全性，使用成熟的 TLS 显然是更好的方案。
+
+### 服务器安全 {#server-security}
+
+#### 对外服务与登录方式 {#public-service-and-login}
+
+在做服务器加固之前，需要知道服务器对外提供的服务端口等信息，可以在服务器上使用 `netstat` 或 `ss` 命令获取，也可以（模拟攻击者）在外部使用 [`nmap` 扫描](../advanced/nmap.md)，来了解攻击者可能的攻击路径。如果对应的服务不需要对外暴露，则需要考虑关闭该服务对外监听的端口。
