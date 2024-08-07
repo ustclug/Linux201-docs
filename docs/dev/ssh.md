@@ -92,6 +92,14 @@ SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SS
 
     注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
+    在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
+
+    ```shell
+    ssh -R 1080 example
+    # 指定远程主机上的监听地址
+    ssh -R 127.0.0.1:1080 example
+    ```
+
 动态端口转发（**D**ynamic port forwarding）
 
 :   在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
