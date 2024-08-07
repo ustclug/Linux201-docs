@@ -602,3 +602,44 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 #### 对外服务与登录方式 {#public-service-and-login}
 
 在做服务器加固之前，需要知道服务器对外提供的服务端口等信息，可以在服务器上使用 `netstat` 或 `ss` 命令获取，也可以（模拟攻击者）在外部使用 [`nmap` 扫描](../advanced/nmap.md)，来了解攻击者可能的攻击路径。如果对应的服务不需要对外暴露，则需要考虑关闭该服务对外监听的端口。
+
+对于图形登录方式，Windows 服务器常见的登录方式为 RDP，而 Linux 的 RDP 和 VNC 都是常见的登录方式。由于协议设计复杂性，不建议将 RDP 或 VNC 的端口直接暴露在公网（历史上 RDP 也暴露过大量的漏洞），并且需要确保连接被加密，以防止可能的中间人窃取密码。
+
+对于 SSH 登录，**强烈建议关闭密码认证**（即使系统设置了密码强度要求也是如此），使用密钥登录。有条件的情况下，可以额外设置使用 2FA 登录，或者配置 SSH 证书。
+
+!!! warning "SSH 与中间人攻击"
+
+    在首次登录某台机器时，你会看到 SSH 这样的输出：
+
+    ```console
+    The authenticity of host 'localhost (127.0.0.1)' can't be established.
+    ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.
+    Are you sure you want to continue connecting (yes/no/[fingerprint])?
+    ```
+
+    如果之前连接过的服务器发生了变化，或者有中间人在网络攻击，那么会看到下面的内容：
+
+    ```console
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+    Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+    It is also possible that a host key has just been changed.
+    The fingerprint for the RSA key sent by the remote host is
+    12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.
+    Please contact your system administrator.
+    Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.
+    Offending RSA key in /home/ustc/.ssh/known_hosts:12
+    RSA host key for 127.0.0.1 has changed and you have requested strict checking.
+    Host key verification failed.
+    ```
+
+    不要忽略相关的提示与警告。如果可行，请验证 fingerprint 与远程服务器的 fingerprint 是切实相符的：
+
+    ```console
+    $ ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
+    3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com
+    $ ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E md5
+    3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com
+    ```
