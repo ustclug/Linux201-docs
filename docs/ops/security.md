@@ -589,6 +589,10 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 作为现代密码学的常识，密码学算法**不应该**以算法保密为假设，而是应该在算法公开的前提下，保证在密钥不泄漏的时候加密的安全性。同时，也不应该自制安全协议，而是采用成熟的密码学库与算法实现安全目标。如果你不是密码学专家，你永远无法预料到自制的方法会受到什么类型的攻击。
 
+!!! tip "越隐蔽越安全？"
+
+    一种常见的认识是：为了防止别人攻击，技术细节应该隐藏得越深越好（Security through obscurity）。在某些场景下，这么做确实可以让攻击者提升攻击的难度。但是安全的系统设计绝对不应该依赖于「设计细节不被外界所知」这件事情。
+
 !!! example "搜狗输入法，与 CBC padding oracle 攻击"
 
     2023 年 8 月，[有安全研究者发现](https://citizenlab.ca/2023/08/vulnerabilities-in-sogou-keyboard-encryption/)国内包括搜狗输入法在内的许多输入法的云输入功能没有实现正确的加密，导致中间人可以轻而易举地知道用户输入的内容。其中，搜狗输入法实现了自制的 "EncryptWall" 加密系统，但是其实现会被 CBC padding oracle 攻击。
@@ -643,3 +647,16 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     $ ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E md5
     3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com
     ```
+
+#### 关注安全通告 {#security-bullet}
+
+成熟的软件与系统提供商会维护安全通告，用户可以以邮件或 RSS 等方式订阅。以下是一些例子：
+
+- Debian: Debian 会在 <https://www.debian.org/security/> 发布安全通告，用户可以订阅 [RSS](https://www.debian.org/security/dsa) 或者 [debian-security-announce](https://lists.debian.org/debian-security-announce/) 邮件列表。
+- Ubuntu: Ubuntu 的安全通告位于 <https://ubuntu.com/security/notices>，同样可以使用 [RSS](https://ubuntu.com/security/notices/rss.xml) 或是[邮件列表](https://lists.ubuntu.com/mailman/listinfo/ubuntu-security-announce)的形式订阅。
+- GitLab: GitLab 会在 <https://about.gitlab.com/releases/categories/releases/> 公布每次版本更新的内容，其中安全相关的更新可以在[联系页面](https://about.gitlab.com/company/contact/)订阅邮件列表。其也同样提供 [RSS](https://about.gitlab.com/security-releases.xml)。
+- Grafana: Grafana 会在自己的博客中发布安全更新，可以订阅 [security 分类的 RSS](https://grafana.com/tags/security/index.xml)。
+
+#### 最小权限原则 {#principle-of-least-privilege}
+
+简单来讲，最小权限原则要求只给用户/程序必要的权限。
