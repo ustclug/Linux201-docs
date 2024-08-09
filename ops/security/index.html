@@ -1494,6 +1494,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#security-event-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      安全事件处理示例
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="安全事件处理示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#password-leak-rce-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      从泄漏密码到 RCE
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2387,6 +2411,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#security-event-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      安全事件处理示例
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="安全事件处理示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#password-leak-rce-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      从泄漏密码到 RCE
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2412,7 +2460,7 @@
 
 <h1 id="_1">安全<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
-<p class="admonition-title">本文初稿编写中</p>
+<p class="admonition-title">本文初稿已完成，但可能仍需大幅度修改</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">阅读注意事项</p>
@@ -2574,7 +2622,8 @@
 <p>假设攻击者获取到了目标网站某个用户的权限，由于一般网站登录后会提供更多功能，攻击者可能会尝试利用复杂的功能来获取更多的权限，例如上传文件得到 Webshell。最常见的 PHP Webshell 代码如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="cp">&lt;?php</span> <span class="k">eval</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;cmd&#39;</span><span class="p">]);</span> <span class="cp">?&gt;</span>
 </code></pre></div>
-<p>如果上传文件的目标目录没有限制，Web 服务器就可能将攻击者上传的文件当作 PHP 脚本执行，攻击者就可以通过 POST 请求执行任意代码。在成功上传之后，攻击者可以使用相当成熟的图形界面工具「登录」Webshell，就像用 VS Code Remote SSH 连接服务器一样顺畅地执行命令、上传下载文件等。此时攻击者就有了和 Web 服务器进程对应用户相同的权限，之后可以利用同样成熟的工具（例如 Metasploit）进一步提权、扫描内网、横向移动。此时这台机器就沦陷了，并且同一内网中的其他机器也面临着同样的风险。</p>
+<p>如果上传文件的目标目录没有限制，Web 服务器就可能将攻击者上传的文件当作 PHP 脚本执行，攻击者就可以通过 POST 请求执行任意代码。这一类可以让攻击者在远程服务器上执行任意代码的漏洞，也被称为 RCE（Remote Code Execution，远程代码执行）。</p>
+<p>在成功上传之后，攻击者可以使用相当成熟的图形界面工具「登录」Webshell，就像用 VS Code Remote SSH 连接服务器一样顺畅地执行命令、上传下载文件等。此时攻击者就有了和 Web 服务器进程对应用户相同的权限，之后可以利用同样成熟的工具（例如 Metasploit）进一步提权、扫描内网、横向移动。此时这台机器就沦陷了，并且同一内网中的其他机器也面临着同样的风险。</p>
 <h2 id="detection-response">事中：检测与响应<a class="headerlink" href="#detection-response" title="Permanent link">&para;</a></h2>
 <h3 id="monitoring-alerting">监控与告警<a class="headerlink" href="#monitoring-alerting" title="Permanent link">&para;</a></h3>
 <p>攻击者的行为很多时候都会产生异常的日志、性能数据等。有关日志的内容可参考<a href="../service/">服务与日志管理</a>，有关监控与告警的具体内容可参考<a href="../monitor/">指标监控与告警</a>。以下介绍一些与安全相关的内容。</p>
@@ -2865,6 +2914,10 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <h4 id="public-service-and-login">对外服务与登录方式<a class="headerlink" href="#public-service-and-login" title="Permanent link">&para;</a></h4>
 <p>在做服务器加固之前，需要知道服务器对外提供的服务端口等信息，可以在服务器上使用 <code>netstat</code> 或 <code>ss</code> 命令获取，也可以（模拟攻击者）在外部使用 <a href="../../advanced/nmap/"><code>nmap</code> 扫描</a>，来了解攻击者可能的攻击路径。如果对应的服务不需要对外暴露，则需要考虑关闭该服务对外监听的端口。</p>
 <p>对于图形登录方式，Windows 服务器常见的登录方式为 RDP，而 Linux 的 RDP 和 VNC 都是常见的登录方式。由于协议设计复杂性，不建议将 RDP 或 VNC 的端口直接暴露在公网（历史上 RDP 也暴露过大量的漏洞），并且需要确保连接被加密，以防止可能的中间人窃取密码。</p>
+<div class="admonition tip">
+<p class="admonition-title">使用 SSH 转发端口</p>
+<p>相比于 RDP 和 VNC，SSH 是一种相对安全的远程登录方式。可以参考 <a href="../../dev/ssh/#port-forwarding">SSH 使用技巧中端口转发部分</a>的内容，实现通过 SSH 访问内网的 RDP/VNC 以及其他内部机器的 SSH 服务。</p>
+</div>
 <p>对于 SSH 登录，<strong>强烈建议关闭密码认证</strong>（即使系统设置了密码强度要求也是如此），使用密钥登录。有条件的情况下，可以额外设置使用 2FA 登录，或者配置 SSH 证书。</p>
 <div class="admonition warning">
 <p class="admonition-title">SSH 与中间人攻击</p>
@@ -2903,8 +2956,61 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <li>GitLab: GitLab 会在 <a href="https://about.gitlab.com/releases/categories/releases/">https://about.gitlab.com/releases/categories/releases/</a> 公布每次版本更新的内容，其中安全相关的更新可以在<a href="https://about.gitlab.com/company/contact/">联系页面</a>订阅邮件列表。其也同样提供 <a href="https://about.gitlab.com/security-releases.xml">RSS</a>。</li>
 <li>Grafana: Grafana 会在自己的博客中发布安全更新，可以订阅 <a href="https://grafana.com/tags/security/index.xml">security 分类的 RSS</a>。</li>
 </ul>
+<p>绝大多数时候，公布的漏洞都会有一个 <strong>CVE 编号</strong>与漏洞描述信息。可以根据描述信息判断漏洞的严重程度，进而安排合适的时间安装更新。</p>
+<div class="admonition note">
+<p class="admonition-title">有关「安全」的开闭源之争</p>
+<p>开源软件与闭源软件何者在安全性上更占优势？有关于此存在不同的观点。开源软件由于源代码是公开的，攻击者寻找漏洞、编写 PoC 等会比闭源软件容易，但是开源软件也因此代码更容易被审计，也就更容易让安全研究人员在漏洞在野利用之前就发现漏洞并且及时反馈。并且开源软件的开发者也更容易接纳来自外部的漏洞报告与修复补丁提交。知名度高且重视安全的闭源软件公司/项目也有不少，但是同样也存在研究人员提交漏洞之后相关方拒绝回应，以及漏洞没有及时公布并修复的情况，特别是用户量较小的、社区较小的闭源软件。</p>
+<p>当然，前提永远是：运维需要承担这一方面的责任，并且保持相关的软件与系统是受到支持的、安全的版本。否则攻击者随便找到公开的针对老版本漏洞的工具就能够攻破这一条防线。</p>
+</div>
 <h4 id="principle-of-least-privilege">最小权限原则<a class="headerlink" href="#principle-of-least-privilege" title="Permanent link">&para;</a></h4>
-<p>简单来讲，最小权限原则要求只给用户/程序必要的权限。</p>
+<p>简单来讲，最小权限原则要求只给用户/程序必要的权限。在实践上的一些具体的点有：</p>
+<ul>
+<li>root/sudo/IPMI 的权限不随意提供给运维无关人员。<ul>
+<li>这也包括了诸如 <code>docker</code> 的情况。</li>
+</ul>
+</li>
+<li>服务（包括容器在内）不随意暴露端口（特别是无限制 bind 到所有接口的情况），容器运行不随意提供 <code>--privileged</code>，运行的服务需要有自己的用户。</li>
+<li>对于 systemd 服务，考虑使用 systemd 提供的安全加固功能。</li>
+</ul>
+<!-- TODO: 服务部分需要介绍 -->
+
+<h3 id="security-event-example">安全事件处理示例<a class="headerlink" href="#security-event-example" title="Permanent link">&para;</a></h3>
+<p>以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。</p>
+<h4 id="password-leak-rce-example">从泄漏密码到 RCE<a class="headerlink" href="#password-leak-rce-example" title="Permanent link">&para;</a></h4>
+<p>2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 <code>docker top</code> 检查发现容器里出现了奇怪的进程，如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
+</code></pre></div>
+<p>检查容器文件系统，发现 <code>/tmp</code> 下面多了很多文件，一些 log 文件似乎是内网扫描器的输出。因此管理员 C 立刻关闭了容器，并且导出了容器文件系统以及数据库（在另一个容器中）以进一步检查。</p>
+<p>由于配置问题，容器外的 Nginx 日志记录的 IP 均为 CDN 的 IP，没有记录到真实 IP 地址。不过，观察访问的 URL，发现存在可疑的访问主题编辑器的 <code>POST</code> 请求，根据相关的 User agent 记录，发现攻击者似乎在尝试登录网站后台。</p>
+<p>检查 WordPress 本地文件的修改日期，发现某个主题文件的修改日期不正常，开头插入了以下的 PHP：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="cp">&lt;?php</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="p">}</span>
+</code></pre></div>
+<p>可以推测，攻击者在修改了主题之后，就可以利用主题的 PHP 文件执行任意命令了。</p>
+<p>管理员 C 之前配置了 WordPress 本体与插件的自动升级，因此大概率是某个管理员用户的密码泄漏导致的。由于该网站重要性不高，因此可以花一些时间仔细检查后再考虑重新上线。几日后，攻击者向另一名管理员发送邮件致歉，并且提供了入侵手段：从某个俄罗斯 botnet 中获取了泄漏的用户名与密码（攻击者认为是安装了有问题的破解程序导致的），之后登录入侵后尝试做了内网扫描，并且该密码同样也可以登录此人在该组织的 GitLab 账号。在第一时间封禁了该 GitLab 账号后，检查 Nginx 日志获取了所有攻击者访问的仓库，万幸的是，这些仓库中不包含敏感信息。</p>
+<p>在检查确认其他机器不受影响后，应急处理部分告一段落。之后管理员 C 采取了以下的修复措施：</p>
+<ul>
+<li>修复了部分情况下 Nginx 日志记录 IP 错误的问题。</li>
+<li>对确认密码泄漏的成员重置密码。</li>
+<li>强制要求组织 GitLab 内重要成员开启 2FA。</li>
+<li>检查 GitLab 内有权限访问重要仓库的成员列表，并且移除了一些不再参与事务的成员。</li>
+<li>花了一些时间从 WordPress 迁移至了静态的 Jekyll 方案，减小了对外暴露的攻击面。</li>
+</ul>
+<div class="admonition question">
+<p class="admonition-title">你的看法？</p>
+<p>受到时间、成本与技术的限制，以上的处理不是完美的。如果你是管理员 C，你会做什么？</p>
+</div>
 <!--
   Links to man pages
 
