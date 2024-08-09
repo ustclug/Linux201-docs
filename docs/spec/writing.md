@@ -22,6 +22,18 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 ```
 
+或
+
+```markdown
+!!! warning "本文已完成，等待校对"
+```
+
+或
+
+```markdown
+!!! success "本文已完成并校对"
+```
+
 ### 使用提示框（Admonition） {#admonition}
 
 提示框是 mkdocs-material 的特色功能。格式类似于如下：
