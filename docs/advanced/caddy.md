@@ -26,11 +26,11 @@ sudo systemctl stop caddy
 sudo systemctl restart caddy
 ```
 
-默认的 `Caddyfile` 的目录在 `/etc/caddy/Caddyfile`，可以通过修改 `Caddyfile` 来配置 Caddy 的行为。
+默认的 `Caddyfile` 的目录在 `/etc/caddy/Caddyfile`，可以通过修改 `Caddyfile` 来配置 Caddy 的行为。修改 Caddyfile 之后，可以使用 `sudo systemctl reload caddy` 让 Caddy 重新加载配置，而无须重启服务。
 
 !!! note "Validate"
 
-    在修改配置文件后，重启 Caddy 之前，可以通过如下命令检查 Caddyfile 格式，避免配置错误导致服务停机（类似 `nginx -t`）：
+    在修改配置文件后，可以通过如下命令检查 Caddyfile 格式（类似 `nginx -t`）：
 
     ```bash
     caddy validate --config /etc/caddy/Caddyfile
