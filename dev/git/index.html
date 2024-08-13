@@ -2042,8 +2042,8 @@
 <p>GitHub 在 <a href="https://github.com/github/gitignore">这里</a> 提供了一些常见的 <code>.gitignore</code> 文件，对于较为复杂的项目，也可以使用<a href="https://www.gitignore.io/">gitignore.io</a> 生成。</p>
 <div class="admonition warning">
 <p class="admonition-title"><code>.env</code> 文件与 <code>.gitignore</code></p>
-<p>有些项目在开发的途中，可能引入<code>.env</code>用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到<code>.gitignore</code>中。</p>
-<p>请注意，回退时 <code>.env</code> 会被忽略，如果此时 <code>.gitignore</code> 不含 <code>.env</code>， <code>.env</code> 会被视作 untracked files。</p>
+<p>有些项目在开发的途中，可能引入 <code>.env</code> 用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到 <code>.gitignore</code> 中。</p>
+<p>值得注意的是, <code>.gitignore</code> 文件本身也会进行版本管理, 这意味着, 当使用 <code>git reset</code> 回退版本时, <code>.gitignore</code> 也会被回退, 这可能会导致 <code>.env</code> 文件重新被 <code>git</code> 管理, 在马虎的操作下 (如 <code>git commit -a</code>), <code>.env</code> 文件可能会被提交到版本库中。</p>
 <pre class="mermaid"><code>classDiagram
 direction LR
 CommitA --|&gt; CommitB : "Add .env to .gitignore"
@@ -2053,7 +2053,12 @@ CommitB: .gitignore (including .env)
 CommitB: .env
 CommitA_revert: .env (untracked)
 CommitA_revert: .gitignore (without .env)</code></pre>
-<p>此时需手动将<code>.env</code> 移除版本控制，例如 <code>mv ./.env ../.env.bk</code> 以防止<code>.env</code>被提交。</p>
+<p>此时可以考虑：</p>
+<ul>
+<li>将 <code>.env</code> 移除版本控制，例如 <code>mv ./.env ../.env.bk</code></li>
+<li>将 <code>.env</code> 添加到 <code>.git/info/exclude</code> 或 <code>~/.gitignore_global</code> 中，</li>
+</ul>
+<p>以防止<code>.env</code>被提交。</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">仅本地的 gitignore</p>
