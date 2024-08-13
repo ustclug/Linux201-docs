@@ -69,9 +69,9 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 
 !!! warning "`.env` 文件与 `.gitignore`"
 
-    有些项目在开发的途中，可能引入`.env`用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到`.gitignore`中。
+    有些项目在开发的途中，可能引入 `.env` 用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到 `.gitignore` 中。
 
-    请注意，回退时 `.env` 会被忽略，如果此时 `.gitignore` 不含 `.env`， `.env` 会被视作 untracked files。
+    值得注意的是, `.gitignore` 文件本身也会进行版本管理, 这意味着, 当使用 `git reset` 回退版本时, `.gitignore` 也会被回退, 这可能会导致 `.env` 文件重新被 `git` 管理, 在马虎的操作下 (如 `git commit -a`), `.env` 文件可能会被提交到版本库中。
 
     ```mermaid
     classDiagram
@@ -85,7 +85,12 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
     CommitA_revert: .gitignore (without .env)
     ```
 
-    此时需手动将`.env` 移除版本控制，例如 `mv ./.env ../.env.bk` 以防止`.env`被提交。
+    此时可以考虑：
+
+    -   将 `.env` 移除版本控制，例如 `mv ./.env ../.env.bk`
+    -   将 `.env` 添加到 `.git/info/exclude` 或 `~/.gitignore_global` 中，
+
+    以防止`.env`被提交。
 
 !!! note "仅本地的 gitignore"
 
