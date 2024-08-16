@@ -25,24 +25,25 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 ### 常用操作
 
 #### 安装软件包
+
    如果我们需要安装一个名称为 name 的包
-   
+
    在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：
-   
+
    `dpkg -i <name_version.deb>`
-   
+
    使用 apt 安装软件包：
-   
+
    `apt install <name>`
-   
+
    如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force` 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
-   
+
 #### 卸载软件包
 
    使用 dpkg 直接卸载：
-   
+
    `dpkg -r <name>`
-   
+
    使用 apt 卸载：
 
    `apt remove name`
@@ -102,40 +103,40 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
    以下是一些常见的 apt-patterns 单位
 
-   - `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
-   - `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
-   - `?not()` 可以使用 `!` 进行简写。
-   - `~g` 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。
-   - `~i` 为已经安装的包。
-   - `~U` 可以升级的包。
-   - `~nREGEX` 包名称满足正则表达式的包。
+- `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
+- `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
+- `?not()` 可以使用 `!` 进行简写。
+- `~g` 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。
+- `~i` 为已经安装的包。
+- `~U` 可以升级的包。
+- `~nREGEX` 包名称满足正则表达式的包。
 
 #### 固定包
 
    有时我们希望固定一个包，使得这个包不会被改变或升级。
 
    这时可以使用 `apt-mark hold <name>` ，这个包将会被固定，其不会被升级。
-   
+
 #### 自动更新
 
    一般而言，使用 apt 的系统默认安装了`unattended-upgrades`包，如果系统上没有，可以使用
-   
+
    ```sh
    apt install unattended-upgrades
    ```
-   
+
    进行安装
-   
+
    可以使用
-   
+
    ```sh
    sudo unattended-upgrades --dry-run --debug
    ```
-   
+
    检验系统自动更新是否可用
-   
+
    unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新
-   
+
    ```sh
    sudo systemctl enable unattended-upgrades
    sudo systemctl start unattended-upgrades
@@ -144,25 +145,25 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 #### 使用 aptitude 作为替代前端
 
    aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。
-   
+
    在终端里直接运行 `aptitude` 命令即可
-   
+
    可以使用 `?` 键查看说明，使用 `q` 退出
-   
+
 #### 进行完整性校验
 
    dpkg 可以对已经安装的包进行完整性校验。
-   
+
    通过
-   
+
    ```sh
    dpkg -V <name>
    ```
-   
+
    对已经安装的包的完整性进行检查
-   
+
    可以省略 `<name>` 选项，以对于所有包进行检查。
-   
+
    注意，该操作并不能可靠地用于防范病毒入侵，其主要用途是防范意外的数据丢失或修改。
 
 <!-- automatic 和 manual 安装的区别，autoremove 的功能 -->
