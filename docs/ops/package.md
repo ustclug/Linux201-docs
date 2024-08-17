@@ -26,82 +26,82 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 #### 安装软件包
 
-   如果我们需要安装一个名称为 name 的包
+如果我们需要安装一个名称为 name 的包
 
-   在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：
+在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：
 
-   `dpkg -i <name_version.deb>`
+`dpkg -i <name_version.deb>`
 
-   使用 apt 安装软件包：
+使用 apt 安装软件包：
 
-   `apt install <name>`
+`apt install <name>`
 
-   如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force` 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
+如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force` 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
 
 #### 卸载软件包
 
-   使用 dpkg 直接卸载：
+使用 dpkg 直接卸载：
 
-   `dpkg -r <name>`
+`dpkg -r <name>`
 
-   使用 apt 卸载：
+使用 apt 卸载：
 
-   `apt remove name`
+`apt remove name`
 
-   那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
+那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
 
-   因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
-   那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
+因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
+那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
 
-   这样，我们可以使用`apt autoremove`来卸载不必要的包以释放存储空间。
+这样，我们可以使用`apt autoremove`来卸载不必要的包以释放存储空间。
 
 #### 推荐与建议
 
-   安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。还会提示你可以安装建议（Suggested）的包以拓展原包的功能。
+安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。还会提示你可以安装建议（Suggested）的包以拓展原包的功能。
 
-   比如：apt 包的推荐有 ca-certificates，建议包有 aptitude、synaptic、gnupg、powermgmt-base 和 dpkg-dev
+比如：apt 包的推荐有 ca-certificates，建议包有 aptitude、synaptic、gnupg、powermgmt-base 和 dpkg-dev
 
-   那么安装这个包时，会默认安装 ca-certificates，结束后会给出后面的包的提示。
+那么安装这个包时，会默认安装 ca-certificates，结束后会给出后面的包的提示。
 
-   为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。
+为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。
 
-   还可以在配置文件中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
+还可以在配置文件中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
 
-   当这类包被安装的时候，它们的类型为 automatic，也就是说在默认情况下，
-   如果没有软件**推荐或者建议它们**，它们会被 `apt autoremove` 卸载。
+当这类包被安装的时候，它们的类型为 automatic，也就是说在默认情况下，
+如果没有软件**推荐或者建议它们**，它们会被 `apt autoremove` 卸载。
 
-   使用 `apt-mark (automatic|manual) <name>` 修改包的状态。
+使用 `apt-mark (automatic|manual) <name>` 修改包的状态。
 
 #### 查找包中文件与文件所属的包，替换 command not found
 
-   APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
+APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
 
-   使用 `apt-file update` 进行数据库的初始化及更新。
+使用 `apt-file update` 进行数据库的初始化及更新。
 
-   使用 `apt-file search <file>` 进行搜索。
+使用 `apt-file search <file>` 进行搜索。
 
-   可以使用 `dpkg -S <file>` 搜索所有**已安装**包中的文件。
+可以使用 `dpkg -S <file>` 搜索所有**已安装**包中的文件。
 
-   反过来，想要查看一个包包含什么文件，可以使用 `apt-file list <name>`。
+反过来，想要查看一个包包含什么文件，可以使用 `apt-file list <name>`。
 
-   使用 `dpkg-deb -c <name_version.deb>` 查看 .deb 中内容。
+使用 `dpkg-deb -c <name_version.deb>` 查看 .deb 中内容。
 
-   也可以使用 `dpkg-query -L <name>` ，但是这只对已经安装的包生效。
+也可以使用 `dpkg-query -L <name>` ，但是这只对已经安装的包生效。
 
-   在使用了一个未安装的命令时，可以选择使用 `command-not-found`。
+在使用了一个未安装的命令时，可以选择使用 `command-not-found`。
 
-   其安装方式十分简单，只需 `apt install command-not-found` 即可。
+其安装方式十分简单，只需 `apt install command-not-found` 即可。
 
 #### 查找包
 
-   `apt search <name>` 可以进行包的查找。
+`apt search <name>` 可以进行包的查找。
 
-   也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
+也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
 
-   比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
-   如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
+比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
+如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
 
-   以下是一些常见的 apt-patterns 单位
+以下是一些常见的 apt-patterns 单位
 
 - `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
 - `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
@@ -113,58 +113,58 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 #### 固定包
 
-   有时我们希望固定一个包，使得这个包不会被改变或升级。
+有时我们希望固定一个包，使得这个包不会被改变或升级。
 
-   这时可以使用 `apt-mark hold <name>` ，这个包将会被固定，其不会被升级。
+这时可以使用 `apt-mark hold <name>` ，这个包将会被固定，其不会被升级。
 
 #### 自动更新
 
-   一般而言，使用 apt 的系统默认安装了`unattended-upgrades`包，如果系统上没有，可以使用
+一般而言，使用 apt 的系统默认安装了`unattended-upgrades`包，如果系统上没有，可以使用
 
-   ```sh
-   apt install unattended-upgrades
-   ```
+```sh
+apt install unattended-upgrades
+```
 
-   进行安装
+进行安装
 
-   可以使用
+可以使用
 
-   ```sh
-   sudo unattended-upgrades --dry-run --debug
-   ```
+```sh
+sudo unattended-upgrades --dry-run --debug
+```
 
-   检验系统自动更新是否可用
+检验系统自动更新是否可用
 
-   unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新
+unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新
 
-   ```sh
-   sudo systemctl enable unattended-upgrades
-   sudo systemctl start unattended-upgrades
-   ```
+```sh
+sudo systemctl enable unattended-upgrades
+sudo systemctl start unattended-upgrades
+```
 
 #### 使用 aptitude 作为替代前端
 
-   aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。
+aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。
 
-   在终端里直接运行 `aptitude` 命令即可
+在终端里直接运行 `aptitude` 命令即可
 
-   可以使用 `?` 键查看说明，使用 `q` 退出
+可以使用 `?` 键查看说明，使用 `q` 退出
 
 #### 进行完整性校验
 
-   dpkg 可以对已经安装的包进行完整性校验。
+dpkg 可以对已经安装的包进行完整性校验。
 
-   通过
+通过
 
-   ```sh
-   dpkg -V <name>
-   ```
+```sh
+dpkg -V <name>
+```
 
-   对已经安装的包的完整性进行检查
+对已经安装的包的完整性进行检查
 
-   可以省略 `<name>` 选项，以对于所有包进行检查。
+可以省略 `<name>` 选项，以对于所有包进行检查。
 
-   注意，该操作并不能可靠地用于防范病毒入侵，其主要用途是防范意外的数据丢失或修改。
+注意，该操作并不能可靠地用于防范病毒入侵，其主要用途是防范意外的数据丢失或修改。
 
 <!-- automatic 和 manual 安装的区别，autoremove 的功能 -->
 <!-- "Recommends", "Suggests" 等是什么；在需要精简的场合使用 --no-install-recommends 避免安装不必要的软件包 -->
