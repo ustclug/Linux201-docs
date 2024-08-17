@@ -26,4 +26,4 @@ icon: material/heart
 
 本教程使用 [CC BY-NC-SA 4.0 协议](https://creativecommons.org/licenses/by-nc-sa/4.0/)开放。请注意，与 Linux 101 相比，我们添加了**「禁止商用」**的条款。
 
-我们非常欢迎读者通过 [GitHub 仓库（待公开）](https://github.com/ustclug/Linux201-docs) 提交 issue，或邮件致信![我们](https://lug.ustc.edu.cn/static/email.png){: .img-inline }。读者的建议对我们的改进非常重要。
+我们非常欢迎读者通过 [GitHub 仓库](https://github.com/ustclug/Linux201-docs) 提交 issue，或邮件致信![我们](https://lug.ustc.edu.cn/static/email.png){: .img-inline }。读者的建议对我们的改进非常重要。
