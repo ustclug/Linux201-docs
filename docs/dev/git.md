@@ -67,31 +67,6 @@ curl -sS  https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
 
 GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用[gitignore.io](https://www.gitignore.io/) 生成。
 
-!!! warning "`.env` 文件与 `.gitignore`"
-
-    有些项目在开发的途中，可能引入 `.env` 用于存放测试环境的配置，这类文件通常包含敏感信息，因此应该被加入到 `.gitignore` 中。
-
-    值得注意的是, `.gitignore` 文件本身也会进行版本管理, 这意味着, 当使用 `git reset` 回退版本时, `.gitignore` 也会被回退, 这可能会导致 `.env` 文件重新被 `git` 管理, 在马虎的操作下 (如 `git commit -a`), `.env` 文件可能会被提交到版本库中。
-
-    ```mermaid
-    classDiagram
-    direction LR
-    CommitA --|> CommitB : "Add .env to .gitignore"
-    CommitB --|> CommitA_revert : reset --hard
-    CommitA: .gitignore (without .env)
-    CommitB: .gitignore (including .env)
-    CommitB: .env
-    CommitA_revert: .env (untracked)
-    CommitA_revert: .gitignore (without .env)
-    ```
-
-    此时可以考虑：
-
-    -   将 `.env` 移除版本控制，例如 `mv ./.env ../.env.bk`
-    -   将 `.env` 添加到 `.git/info/exclude` 或 `~/.gitignore_global` 中，
-
-    以防止`.env`被提交。
-
 !!! note "仅本地的 gitignore"
 
     本地的 `.git/info/exclude` 起到与 `.gitignore` 相同的作用，但是不会被提交到版本库中，适用于以下的情况：
@@ -220,7 +195,7 @@ git bisect bad <new-commit>
     - `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
     - `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
 
-    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`.
+    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
 
 !!! note "Commit Message 模板"
 
@@ -248,6 +223,33 @@ git commit -a -m "fix: some bug"
 gh pr create
 ```
 
+其他常用的 GitHub CLI 命令包括：
+
+- `gh repo view --web`：在浏览器中打开当前仓库
+- `gh issue list`：列出当前仓库的 Issue
+- `gh run watch`：查看当前仓库的 GitHub Actions 运行状态
+
+??? note "`gh run watch`"
+
+    默认情况下 `gh run watch` 需要手动选择关注的 GitHub workflow, 如果只想关注最新的 workflow 可以将如下函数添加到 `~/.bashrc` 或 `~/.zshrc`:
+
+    ```bash
+    watch_latest_run() {
+      # Fetch the latest run ID using gh and jq
+      local latest_run_id=$(gh run list --limit 1 --json databaseId --jq '.[0].databaseId')
+
+      if [ -z "$latest_run_id" ]; then
+        echo "No runs found."
+        return 1
+      fi
+
+      # Pass the latest run ID to gh run watch
+      gh run watch "$latest_run_id"
+    }
+    ```
+
+    之后可以直接使用 `watch_latest_run` 命令即可。
+
 ### GPG 签名 {#github-gpg}
 
 SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commit 的真实性。
@@ -255,9 +257,24 @@ SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commi
 GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
 
 - [生成 GPG Key](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key)
-    - [修改 GPG Key 信息](https://docs.github.com/en/authentication/managing-commit-signature-verification/associating-an-email-with-your-gpg-key)
+- [修改 GPG Key 信息](https://docs.github.com/en/authentication/managing-commit-signature-verification/associating-an-email-with-your-gpg-key)
 - [设置 Git 使用 GPG Sign](https://docs.github.com/en/authentication/managing-commit-signature-verification/telling-git-about-your-signing-key)
 - [在 GitHub 上关联 GPG Key](https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account)
+
+请注意备份 GPG Key, 并额外向其他 Key Server 发布 GPG Key, 以防止 GPG Key 丢失：
+
+```bash
+gpg --list-secret-keys --keyid-format LONG
+gpg --armor --export <GPG Key ID> | tee gpg.key
+gpg --keyserver keyserver.ubuntu.com --send-keys <GPG Key ID>
+gpg --keyserver pgp.mit.edu --send-keys <GPG Key ID>
+```
+
+!!! warning "过期的 GPG Key"
+
+    过期的 GPG Key 是可以更新的, 参考 [这个 StackOverflow 回答](https://superuser.com/a/1141251).
+    在 GitHub 上 rotate 只需要删除旧的 GPG Key, 然后重新添加新的 GPG Key 即可.
+    值得注意的是过期的 GPG Key 签名的 commit 依然会显示成 Verified, 因此**不要轻易删除过期的 GPG Key**.
 
 ### Issue {#github-issue}
 
