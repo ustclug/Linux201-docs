@@ -71,6 +71,7 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 - `strace -p <pid>`：跟踪指定 PID 的进程的系统调用
 - `strace -e openat ls`：只跟踪 `openat` 系统调用
 - `strace -ff -o /tmp/test.log bash`：将 `bash` 及其 fork 出的子进程的系统调用输出到 `/tmp/test.log.*`
+- `strace -k -yy -e mmap ls`: 跟踪 `ls` 的 `mmap` 系统调用，并打印出执行此系统调用时的堆栈（`-k`），同时解码所有文件描述符（`-yy`）。这样即可追踪到每个被 `mmap` 的文件在程序的何处被引入。
 
 !!! tip "Sysinternals' Procmon"
 
@@ -137,6 +138,10 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 
     而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
     不仅是 `yum`，诸如 `xinetd` 等也有类似的问题（[ref](https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4)）。
+
+strace 的输出格式并不总是最可读的形式，所以，还有一些专注于特定领域的系统调用追踪工具，比如：
+
+- [tracexec](https://github.com/kxxt/tracexec) 专注于追踪 exec 系列的系统调用，能够重新构造执行的程序的 shell 命令行并显示环境变量和文件描述符相较于原始环境的差异。除此之外，在用 gdb 调试程序时可能遇到比较复杂的场景，比如被调试的程序是被一个 python 脚本启动的，或者两个需要被调试的程序之间需要通过管道通信（`a | b`），[这时可以通过 tracexec 方便地在 `execve{,at}` 系统调用结束时，程序开始执行前将 gdb 调试器接入想要调试的所有程序](https://github.com/kxxt/tracexec/tree/main/demonstration/gdb-launcher)。
 
 除 strace 以外，Linux 中还有很多用于监控、追踪系统状态的工具，如图所示：
 
@@ -270,6 +275,8 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
+如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
+
 ## eBPF
 
 本部分主要介绍 eBPF 的使用。
@@ -369,6 +376,10 @@ kfunc:vmlinux:try_charge_memcg
 $ sudo bpftrace -e 'kfunc:try_charge_memcg { printf("%d\n", args->nr_pages); }'
 ...
 ```
+
+除了 bpftrace 这类通用型的调试工具之外，还有很多用来调试特定的问题的调试工具，比如：
+
+- [retsnoop](https://github.com/anakryiko/retsnoop) 可以找出内核返回一个错误码的具体位置，方便在错误码含义不够明确的情况下定位更具体的出错原因。
 
 ### 用户态 {#user-space-ebpf}
 
