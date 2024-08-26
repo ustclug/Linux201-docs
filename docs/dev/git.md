@@ -141,9 +141,9 @@ git submodule add <url_of_eigen> src/eigen
 
 ```bash
 git checkout -b feature
-git commit -a --alow-empty -m "feat: aaaaaa"
+git commit -a --allow-empty -m "feat: aaaaaa"
 git checkout master
-git commit -a --alow-empty -m "feat: bbbbbb"
+git commit -a --allow-empty -m "feat: bbbbbb"
 git checkout feature
 git rebase master
 ```
