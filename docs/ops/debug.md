@@ -71,6 +71,7 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 - `strace -p <pid>`：跟踪指定 PID 的进程的系统调用
 - `strace -e openat ls`：只跟踪 `openat` 系统调用
 - `strace -ff -o /tmp/test.log bash`：将 `bash` 及其 fork 出的子进程的系统调用输出到 `/tmp/test.log.*`
+- `strace -k -yy -e mmap ls`: 跟踪 `ls` 的 `mmap` 系统调用，并打印出执行此系统调用时的堆栈（`-k`），同时解码所有文件描述符（`-yy`）。这样即可追踪到每个被 `mmap` 的文件在程序的何处被引入。
 
 !!! tip "Sysinternals' Procmon"
 
