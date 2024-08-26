@@ -271,6 +271,8 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
+如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
+
 ## eBPF
 
 本部分主要介绍 eBPF 的使用。
