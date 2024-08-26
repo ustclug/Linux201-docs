@@ -26,42 +26,44 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 #### 安装软件包
 
-如果我们需要安装一个名称为 name 的包
+如果我们需要安装一个 `package.deb` 软件包：
 
-在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：
-
-```shell
-dpkg -i <name_version.deb>
-```
-
-使用 apt 安装软件包：
+在手动下载 .deb 包后，使用 apt 安装软件包：
 
 ```shell
-apt install <name>
+apt install <path/to/package.deb>
 ```
 
-如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force` 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
+对于没有额外依赖的软件，也可以使用 dpkg 直接安装：
+
+```shell
+dpkg -i <path/to/package.deb>
+```
+
+如果该软件包有未在系统上安装的依赖的话，那么 `dpkg` 命令会失败（除非使用 `--force` 选项），因此**在绝大多数情况下，我们不推荐直接操作 `dpkg` 等底层命令**。
 
 #### 卸载软件包
-
-使用 dpkg 直接卸载：
-
-```shell
-dpkg -r <name>
-```
 
 使用 apt 卸载：
 
 ```shell
-apt remove name
+apt remove package_name
 ```
+
+使用 dpkg 直接卸载：
+
+```shell
+dpkg -r <package_name>
+```
+
+与安装时的情况类似，如果 package_name 被其他软件包依赖，apt 会尝试将被依赖的软件包一并卸载（**请一定要看清楚 apt 列出的清单再确认**），而 `dpkg` 会失败。
 
 那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
 
 因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
 那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
 
-这样，我们可以使用`apt autoremove`来卸载不必要的包以释放存储空间。
+这样，我们可以使用 `apt autoremove` 来卸载不必要的包以释放存储空间。
 
 #### 推荐与建议
 
@@ -69,7 +71,7 @@ apt remove name
 
 比如：apt 包的推荐有 ca-certificates，建议包有 aptitude、synaptic、gnupg、powermgmt-base 和 dpkg-dev
 
-那么安装这个包时，会默认安装 ca-certificates，结束后会给出后面的包的提示。
+那么安装这个包时，会默认安装 ca-certificates，并给出后面的包的提示。
 
 为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。
 
