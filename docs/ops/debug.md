@@ -139,6 +139,10 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
     而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
     不仅是 `yum`，诸如 `xinetd` 等也有类似的问题（[ref](https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4)）。
 
+strace 的输出格式并不总是最可读的形式，所以，还有一些专注于特定领域的系统调用追踪工具，比如：
+
+- [tracexec](https://github.com/kxxt/tracexec) 专注于追踪 exec 系列的系统调用，能够重新构造执行的程序的 shell 命令行并显示环境变量和文件描述符相较于原始环境的差异。除此之外，在用 gdb 调试程序时可能遇到比较复杂的场景，比如被调试的程序是被一个 python 脚本启动的，或者两个需要被调试的程序之间需要通过管道通信（`a | b`），[这时可以通过 tracexec 方便地在 `execve{,at}` 系统调用结束时，程序开始执行前将 gdb 调试器接入想要调试的所有程序](https://github.com/kxxt/tracexec/tree/main/demonstration/gdb-launcher)。
+
 除 strace 以外，Linux 中还有很多用于监控、追踪系统状态的工具，如图所示：
 
 ![Linux tools](https://www.brendangregg.com/Perf/linux_observability_tools.png)
