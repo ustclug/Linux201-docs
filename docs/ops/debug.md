@@ -373,6 +373,10 @@ $ sudo bpftrace -e 'kfunc:try_charge_memcg { printf("%d\n", args->nr_pages); }'
 ...
 ```
 
+除了 bpftrace 这类通用型的调试工具之外，还有很多用来调试特定的问题的调试工具，比如：
+
+- [retsnoop](https://github.com/anakryiko/retsnoop) 可以找出内核返回一个错误码的具体位置，方便在错误码含义不够明确的情况下定位更具体的出错原因。
+
 ### 用户态 {#user-space-ebpf}
 
 eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。
