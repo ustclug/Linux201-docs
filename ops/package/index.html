@@ -2157,7 +2157,7 @@
 </div>
 <!-- 简介 -->
 
-<p>APT(Advanced Package Tool) 是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。</p>
+<p>APT（Advanced Package Tool）是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。</p>
 <h2 id="apt">APT 系列工具<a class="headerlink" href="#apt" title="Permanent link">&para;</a></h2>
 <p>Debian 是一个基于二进制（而非源码）的发行版，其软件包格式为 .deb，这代表这是一个二进制包。</p>
 <p>Debian 的初等包管理器是 dpkg，其负责管理包的安装，删除，查询，替换，校验。</p>
@@ -2168,15 +2168,19 @@
 <h4 id="_3">安装软件包<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
 <p>如果我们需要安装一个名称为 name 的包</p>
 <p>在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：</p>
-<p><code>dpkg -i &lt;name_version.deb&gt;</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>dpkg<span class="w"> </span>-i<span class="w"> </span>&lt;name_version.deb&gt;
+</code></pre></div>
 <p>使用 apt 安装软件包：</p>
-<p><code>apt install &lt;name&gt;</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>apt<span class="w"> </span>install<span class="w"> </span>&lt;name&gt;
+</code></pre></div>
 <p>如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 <code>--force</code> 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。</p>
 <h4 id="_4">卸载软件包<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
 <p>使用 dpkg 直接卸载：</p>
-<p><code>dpkg -r &lt;name&gt;</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dpkg<span class="w"> </span>-r<span class="w"> </span>&lt;name&gt;
+</code></pre></div>
 <p>使用 apt 卸载：</p>
-<p><code>apt remove name</code></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>apt<span class="w"> </span>remove<span class="w"> </span>name
+</code></pre></div>
 <p>那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。</p>
 <p>因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
 那么我们知道<strong>所有没有被 manual 直接或者间接依赖的 automatic 包</strong>都是不必要的。</p>
@@ -2220,16 +2224,16 @@
 <p>这时可以使用 <code>apt-mark hold &lt;name&gt;</code> ，这个包将会被固定，其不会被升级。</p>
 <h4 id="_8">自动更新<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h4>
 <p>一般而言，使用 apt 的系统默认安装了<code>unattended-upgrades</code>包，如果系统上没有，可以使用</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>apt<span class="w"> </span>install<span class="w"> </span>unattended-upgrades
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>apt<span class="w"> </span>install<span class="w"> </span>unattended-upgrades
 </code></pre></div>
 <p>进行安装</p>
 <p>可以使用</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
 </code></pre></div>
 <p>检验系统自动更新是否可用</p>
 <p>unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>unattended-upgrades
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>unattended-upgrades
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>unattended-upgrades
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>unattended-upgrades
 </code></pre></div>
 <h4 id="aptitude">使用 aptitude 作为替代前端<a class="headerlink" href="#aptitude" title="Permanent link">&para;</a></h4>
 <p>aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。</p>
@@ -2238,7 +2242,7 @@
 <h4 id="_9">进行完整性校验<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h4>
 <p>dpkg 可以对已经安装的包进行完整性校验。</p>
 <p>通过</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dpkg<span class="w"> </span>-V<span class="w"> </span>&lt;name&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>dpkg<span class="w"> </span>-V<span class="w"> </span>&lt;name&gt;
 </code></pre></div>
 <p>对已经安装的包的完整性进行检查</p>
 <p>可以省略 <code>&lt;name&gt;</code> 选项，以对于所有包进行检查。</p>
@@ -2267,14 +2271,14 @@ apt.conf 最后被读取，拥有最高的优先级。</p>
 <p>使用 apt-cache 工具查询相关信息。</p>
 <p>例子：</p>
 <p>使用 apt-cache 查看软件包相关 metadata</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>apt-cache<span class="w"> </span>show<span class="w"> </span>&lt;name&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>apt-cache<span class="w"> </span>show<span class="w"> </span>&lt;name&gt;
 </code></pre></div>
 <p>使用 apt-cache 查看软件包的依赖和反向依赖</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>apt-cache<span class="w"> </span>depends<span class="w"> </span>&lt;name&gt;
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>apt-cache<span class="w"> </span>rdepends<span class="w"> </span>&lt;name&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>apt-cache<span class="w"> </span>depends<span class="w"> </span>&lt;name&gt;
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>apt-cache<span class="w"> </span>rdepends<span class="w"> </span>&lt;name&gt;
 </code></pre></div>
 <p>检查未被满足的依赖，用来修复一些依赖地狱问题</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>apt-cache<span class="w"> </span>unmet
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>apt-cache<span class="w"> </span>unmet
 </code></pre></div>
 <h4 id="varlibdpkgavailable"><code>/var/lib/dpkg/available</code><a class="headerlink" href="#varlibdpkgavailable" title="Permanent link">&para;</a></h4>
 <p>dpkg 的数据库，结构与 apt 相似，在现在随着 dpkg 本身的使用逐渐减少，已经基本停止使用。</p>
@@ -2296,69 +2300,69 @@ apt.conf 最后被读取，拥有最高的优先级。</p>
 <p>我们通过 <code>apt-cache policy &lt;name&gt;</code> 查看包的安装状态与优先级信息。</p>
 <p>例子：</p>
 <p>在安装 sudo 前：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>root@c8338bbdbf69:/var/lib/apt#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>sudo:
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="o">(</span>none<span class="o">)</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">     </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>root@c8338bbdbf69:/var/lib/apt#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>sudo:
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="o">(</span>none<span class="o">)</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">     </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
 </code></pre></div>
 <p>在安装 sudo 后</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>root@c8338bbdbf69:/var/lib/apt#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo<span class="w"> </span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>sudo:
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>root@c8338bbdbf69:/var/lib/apt#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo<span class="w"> </span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>sudo:
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
 </code></pre></div>
 <p>在添加另一软件源后：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sudo:
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>Version<span class="w"> </span>table:
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.nju.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sudo:
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>Version<span class="w"> </span>table:
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">500</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">        </span><span class="m">500</span><span class="w"> </span>http://mirrors.nju.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
 </code></pre></div>
 <p>在声明默认安装目标时（注意<code>-t stable</code>选项）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>root@c8338bbdbf69:/etc/apt/preferences.d#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>-t<span class="w"> </span>stable<span class="w"> </span>sudo
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>sudo:
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">990</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.nju.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>root@c8338bbdbf69:/etc/apt/preferences.d#<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>-t<span class="w"> </span>stable<span class="w"> </span>sudo
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>sudo:
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">990</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.nju.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
 </code></pre></div>
 <p>如果有两个源同时拥有最高的优先级并且在同优先级下有最新的版本，但是其 metadata 有差异，那么安装<strong>被卸载的</strong>包。</p>
 <h4 id="_11">编写优先级配置<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h4>
 <p>优先级配置条目的一般格式如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Package: &lt;name&gt;
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Pin: &lt;clause&gt;
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Pin-Priority: &lt;priority&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;name&gt;</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;clause&gt;</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;priority&gt;</span>
 </code></pre></div>
 <p>例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Package: sudo
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Pin: version 1.9.13p3*
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>Pin-Priority: 1001
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sudo</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">version 1.9.13p3*</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1001</span>
 </code></pre></div>
 <p>那么在安装 sudo 包时会最优先安装任何 1.9.13p3 版本。在这之后会安装最新版本。</p>
 <p>可以选择调整不同源的优先级，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Package: *
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Pin: origin &quot;mirrors.ustc.edu.cn&quot;
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Pin-Priority: 999
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="err">*</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">origin &quot;mirrors.ustc.edu.cn&quot;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">999</span>
 </code></pre></div>
 <p>如果 origin 后使用空字符串，那么代表本地。</p>
 <p><strong>对于优先级大于等于 1000 的来源，安装时可以允许降级。</strong></p>
 <p>对于优先级介于 990 与 999 之间的来源，就算发行目标不一致也会进行安装，除非本地的优先级更高。因此可以优先安装一些包，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Package: vim
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>Pin: release a=experimental
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>Pin-Priority: 991
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vim</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">release a=experimental</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">991</span>
 </code></pre></div>
 <p>这会使得 vim 优先安装来自 experimental 的版本。</p>
 <p>对于优先级介于 500 与 989 之间的来源，其会优先于一般来源安装。</p>
@@ -2383,12 +2387,12 @@ apt.conf 最后被读取，拥有最高的优先级。</p>
 <p>对源码进行简单的修改，你可以修改编译选项以开启额外功能。</p>
 <p>如果额外功能需要更多依赖，需要修改下载的 <code>.dsc</code> 文件与 <code>source/debian/control</code>，添加对应的依赖。</p>
 <p>在源码目录下使用</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>dch<span class="w"> </span>--local<span class="w"> </span>+&lt;changed_proc&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>dch<span class="w"> </span>--local<span class="w"> </span>+&lt;changed_proc&gt;
 </code></pre></div>
 <p>来自动生成版本号并且修改 changelogs</p>
 <h3 id="_14">编译修改后的源代码<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
 <p>运行</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>dpkg-buildpackage<span class="w"> </span>-us<span class="w"> </span>-uc
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>dpkg-buildpackage<span class="w"> </span>-us<span class="w"> </span>-uc
 </code></pre></div>
 <p>以编译源代码并生成安装包。</p>
 <h2 id="_15">软件源<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
@@ -2421,25 +2425,25 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
 1. 准备工作：获得 `apt-utils` 的下载地址，并且在系统中下载。创建 /tmp/install-temp 文件夹。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>mkdir<span class="w"> </span>install-temp
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nb">cd</span><span class="w"> </span>install-temp
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>wget<span class="w"> </span>http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="c1"># 可以观察包的内容</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="c1"># dpkg -c apt-utils_2.7.12_amd64.deb</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="c1"># apt-file list apt-utils # 这个命令位于 apt-file 包中</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>mkdir<span class="w"> </span>install-temp
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="nb">cd</span><span class="w"> </span>install-temp
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>wget<span class="w"> </span>http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="c1"># 可以观察包的内容</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="c1"># dpkg -c apt-utils_2.7.12_amd64.deb</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="c1"># apt-file list apt-utils # 这个命令位于 apt-file 包中</span>
 </code></pre></div>
 
 2. 解包
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>ar<span class="w"> </span>-x<span class="w"> </span>apt-utils_2.7.12_amd64.deb
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="c1"># 可以使用以下命令代替</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>dpkg-deb<span class="w"> </span>-R<span class="w"> </span>apt-utils_2.7.12_amd64.deb<span class="w"> </span>.
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="c1"># 注意两者结果不同，可以尝试并且观察区别</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>ar<span class="w"> </span>-x<span class="w"> </span>apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="c1"># 可以使用以下命令代替</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>dpkg-deb<span class="w"> </span>-R<span class="w"> </span>apt-utils_2.7.12_amd64.deb<span class="w"> </span>.
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="c1"># 注意两者结果不同，可以尝试并且观察区别</span>
 </code></pre></div>
 
 3. 移动文件
@@ -2448,11 +2452,11 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
     这个过程其实包含在解包中。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>tar<span class="w"> </span>xpvf<span class="w"> </span>data.tar.xf<span class="w"> </span>--directory<span class="o">=</span>/
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1"># 或者......</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>sudo<span class="w"> </span>tar<span class="w"> </span>xpvf<span class="w"> </span>data.tar.xf<span class="w"> </span>--directory<span class="o">=</span>/
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># 或者......</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
 </code></pre></div>
 
 4. 在 dpkg 的辅助文件中修改为已安装
@@ -2461,7 +2465,7 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
     将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
 </code></pre></div>
 
     这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 dpkg 等工具进行包的操作。
