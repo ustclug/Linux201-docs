@@ -1738,6 +1738,7 @@
 <li><code>strace -p &lt;pid&gt;</code>：跟踪指定 PID 的进程的系统调用</li>
 <li><code>strace -e openat ls</code>：只跟踪 <code>openat</code> 系统调用</li>
 <li><code>strace -ff -o /tmp/test.log bash</code>：将 <code>bash</code> 及其 fork 出的子进程的系统调用输出到 <code>/tmp/test.log.*</code></li>
+<li><code>strace -k -yy -e mmap ls</code>: 跟踪 <code>ls</code> 的 <code>mmap</code> 系统调用，并打印出执行此系统调用时的堆栈（<code>-k</code>），同时解码所有文件描述符（<code>-yy</code>）。这样即可追踪到每个被 <code>mmap</code> 的文件在程序的何处被引入。</li>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Sysinternals' Procmon</p>
@@ -1796,6 +1797,10 @@
 <p>而某些程序无法正确处理这种情况（默认文件描述符范围不大，然后一个一个去尝试操作）。
 不仅是 <code>yum</code>，诸如 <code>xinetd</code> 等也有类似的问题（<a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/pull/4">ref</a>）。</p>
 </div>
+<p>strace 的输出格式并不总是最可读的形式，所以，还有一些专注于特定领域的系统调用追踪工具，比如：</p>
+<ul>
+<li><a href="https://github.com/kxxt/tracexec">tracexec</a> 专注于追踪 exec 系列的系统调用，能够重新构造执行的程序的 shell 命令行并显示环境变量和文件描述符相较于原始环境的差异。除此之外，在用 gdb 调试程序时可能遇到比较复杂的场景，比如被调试的程序是被一个 python 脚本启动的，或者两个需要被调试的程序之间需要通过管道通信（<code>a | b</code>），<a href="https://github.com/kxxt/tracexec/tree/main/demonstration/gdb-launcher">这时可以通过 tracexec 方便地在 <code>execve{,at}</code> 系统调用结束时，程序开始执行前将 gdb 调试器接入想要调试的所有程序</a>。</li>
+</ul>
 <p>除 strace 以外，Linux 中还有很多用于监控、追踪系统状态的工具，如图所示：</p>
 <p><img alt="Linux tools" src="https://www.brendangregg.com/Perf/linux_observability_tools.png" /></p>
 <p>需要根据具体情况选择合适的工具。本文亦无法详细介绍每一个工具的使用方法，因此请参考对应工具的手册。</p>
@@ -1909,6 +1914,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 <code>valgrind</code> 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。</p>
+<p>如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 <a href="https://github.com/peadar/pstack"><code>pstack</code></a> 工具。</p>
 <h2 id="ebpf">eBPF<a class="headerlink" href="#ebpf" title="Permanent link">&para;</a></h2>
 <p>本部分主要介绍 eBPF 的使用。
 在遇到疑难问题时，eBPF 可以帮助我们以非常低的代价在线上系统中获取内核态与应用程序更多的信息。
@@ -1986,6 +1992,10 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kfunc:try_charge_memcg { printf(&quot;%d\n&quot;, args-&gt;nr_pages); }&#39;</span>
 <a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">...</span>
 </code></pre></div>
+<p>除了 bpftrace 这类通用型的调试工具之外，还有很多用来调试特定的问题的调试工具，比如：</p>
+<ul>
+<li><a href="https://github.com/anakryiko/retsnoop">retsnoop</a> 可以找出内核返回一个错误码的具体位置，方便在错误码含义不够明确的情况下定位更具体的出错原因。</li>
+</ul>
 <h3 id="user-space-ebpf">用户态<a class="headerlink" href="#user-space-ebpf" title="Permanent link">&para;</a></h3>
 <p>eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。</p>
 <p>以下面的 C++ 程序为例子：</p>
