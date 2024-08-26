@@ -8,7 +8,7 @@ icon: material/package
 
 <!-- 简介 -->
 
-APT(Advanced Package Tool) 是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。
+APT（Advanced Package Tool）是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。
 
 ## APT 系列工具
 
@@ -30,11 +30,15 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 在手动下载 .deb 包后，使用 dpkg 直接安装 .deb 包：
 
-`dpkg -i <name_version.deb>`
+```shell
+dpkg -i <name_version.deb>
+```
 
 使用 apt 安装软件包：
 
-`apt install <name>`
+```shell
+apt install <name>
+```
 
 如果 name 有未在系统上安装的依赖的话，那么第一个命令会失败（除非使用 `--force` 选项），第二个命令会下载对应的安装包及其依赖，并且进行安装。
 
@@ -42,11 +46,15 @@ Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一�
 
 使用 dpkg 直接卸载：
 
-`dpkg -r <name>`
+```shell
+dpkg -r <name>
+```
 
 使用 apt 卸载：
 
-`apt remove name`
+```shell
+apt remove name
+```
 
 那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
 
@@ -317,7 +325,7 @@ sudo:
 
 优先级配置条目的一般格式如下：
 
-```
+```yaml
 Package: <name>
 Pin: <clause>
 Pin-Priority: <priority>
@@ -325,7 +333,7 @@ Pin-Priority: <priority>
 
 例如：
 
-```
+```yaml
 Package: sudo
 Pin: version 1.9.13p3*
 Pin-Priority: 1001
@@ -335,7 +343,7 @@ Pin-Priority: 1001
 
 可以选择调整不同源的优先级，例如：
 
-```
+```yaml
 Package: *
 Pin: origin "mirrors.ustc.edu.cn"
 Pin-Priority: 999
@@ -347,7 +355,7 @@ Pin-Priority: 999
 
 对于优先级介于 990 与 999 之间的来源，就算发行目标不一致也会进行安装，除非本地的优先级更高。因此可以优先安装一些包，例如：
 
-```
+```yaml
 Package: vim
 Pin: release a=experimental
 Pin-Priority: 991
