@@ -205,7 +205,10 @@ echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
 
 !!! tip "强制释放 ARC"
 
-    与 cached 内存一样，在 `echo 3 > /proc/sys/vm/drop_caches` 时，ZFS ARC 会一同释放。注意这会短暂地增加磁盘的读取压力。
+    与 cached 内存一样，在 `echo 3 > /proc/sys/vm/drop_caches` 时，ZFS ARC 会一同释放。注意：
+
+    - 较新的 ZFS 版本会限制每次 reclaim 操作的页数，这项限制由 `zfs_arc_shrinker_limit` 参数控制，默认为 10000。如果需要强制释放 ARC，需要将该参数设置为 0，否则[可能不能起到预期的效果](https://github.com/openzfs/zfs/issues/12810)。
+    - 这会短暂地增加磁盘的读取压力。
 
 ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 `/proc/spl/kstat/zfs/arcstats` 查看，并且 ZFS 也提供了 `arc_summary` 命令将该接口的数据以更易读的方式输出。由于 `arc_summary` 输出量较大，建议使用 less 等分页工具查看。例如：
 
