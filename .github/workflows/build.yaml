@@ -45,6 +45,15 @@ jobs:
             docs/**/*.md
             README.md
 
+      - name: Stop and report errors if not master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          git add -A
+          if ! git diff-index --quiet --cached HEAD --; then
+            echo "Stop."
+            exit 1
+          fi
+
       - name: Determine if a PR should be submitted
         if: github.ref == 'refs/heads/master'
         id: file_changes
