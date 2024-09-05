@@ -365,13 +365,15 @@ body:
 
 ### Pull Request {#github-pr}
 
-对于 Maintainer 来说，Pull Request 更像是 Merge Request, 他们会检查代码、测试代码、review 代码，然后将代码合并到主分支中。
+对于维护者（Maintainer）来说，Pull Request 更像是 Merge Request, 他们会检查代码、测试代码、review 代码，然后将代码合并到主分支中。
 
 GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request) 介绍了合并 PR 的方式，简单来说跟本地 merge / rebase 没有太大区别。
 
 - PR 中仅有一个 commit 时，推荐使用 Rebase 合并 PR
 - 当 PR 中包含多次 commit，但实际上应当合并为一个时（例如经过 Review 后），推荐使用 Squash 合并 PR
 - 多次 commit 来提交新 feature 时，推荐使用 Merge 合并 PR
+
+维护者有时会需要将 PR checkout 到本地以测试。可以使用 GitHub CLI 的 `gh pr checkout` 命令快速完成，也可以采用手工方式：使用 `git fetch origin pull/PR_NUMBER/head:BRANCH_NAME` 的形式将编号为 `PR_NUMBER` 的 PR 对应的 head 同步到本地的 `BRANCH_NAME` 分支，之后 `git checkout` 即可。维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
 
 ### GitHub Actions {#github-actions}
 
