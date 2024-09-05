@@ -2274,13 +2274,14 @@
 </code></pre></div>
 <p>可以参考 <a href="https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1">ustclug/mirrorrequest/.../01-mirror-request.yml</a>, <a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository">GitHub 文档</a>.</p>
 <h3 id="github-pr">Pull Request<a class="headerlink" href="#github-pr" title="Permanent link">&para;</a></h3>
-<p>对于 Maintainer 来说，Pull Request 更像是 Merge Request, 他们会检查代码、测试代码、review 代码，然后将代码合并到主分支中。</p>
+<p>对于维护者（Maintainer）来说，Pull Request 更像是 Merge Request, 他们会检查代码、测试代码、review 代码，然后将代码合并到主分支中。</p>
 <p>GitHub 在 <a href="https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request">这里</a> 介绍了合并 PR 的方式，简单来说跟本地 merge / rebase 没有太大区别。</p>
 <ul>
 <li>PR 中仅有一个 commit 时，推荐使用 Rebase 合并 PR</li>
 <li>当 PR 中包含多次 commit，但实际上应当合并为一个时（例如经过 Review 后），推荐使用 Squash 合并 PR</li>
 <li>多次 commit 来提交新 feature 时，推荐使用 Merge 合并 PR</li>
 </ul>
+<p>维护者有时会需要将 PR checkout 到本地以测试。可以使用 GitHub CLI 的 <code>gh pr checkout</code> 命令快速完成，也可以采用手工方式：使用 <code>git fetch origin pull/PR_NUMBER/head:BRANCH_NAME</code> 的形式将编号为 <code>PR_NUMBER</code> 的 PR 对应的 head 同步到本地的 <code>BRANCH_NAME</code> 分支，之后 <code>git checkout</code> 即可。维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。</p>
 <h3 id="github-actions">GitHub Actions<a class="headerlink" href="#github-actions" title="Permanent link">&para;</a></h3>
 <p>GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建、测试、部署等。</p>
 <div class="admonition note">
