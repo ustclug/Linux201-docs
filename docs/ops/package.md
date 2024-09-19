@@ -129,28 +129,29 @@ APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
 
 #### 自动更新
 
-一般而言，使用 apt 的系统默认安装了`unattended-upgrades`包，如果系统上没有，可以使用
+一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：
 
 ```sh
-apt install unattended-upgrades
+debconf-get-selections | grep unattended-upgrades/enable_auto_updates
 ```
 
-进行安装
+如果输出的内容类似下面：
 
-可以使用
+```console
+unattended-upgrades	unattended-upgrades/enable_auto_updates	boolean	false
+```
+
+则代表自动更新被关闭，反之则启用。可以执行 `dpkg-reconfigure unattended-upgrades` 修改配置。当自动更新启用时，`/etc/apt/apt.conf.d/20auto-upgrades` 文件应当存在。
+
+可以使用以下命令：
 
 ```sh
 sudo unattended-upgrades --dry-run --debug
 ```
 
-检验系统自动更新是否可用
+查看并确认系统自动更新时的行为。
 
-unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新
-
-```sh
-sudo systemctl enable unattended-upgrades
-sudo systemctl start unattended-upgrades
-```
+此外，systemd 服务 `unattended-upgrades.service` 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。
 
 #### 使用 aptitude 作为替代前端
 
