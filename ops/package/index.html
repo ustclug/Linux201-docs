@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.34">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.35">
     
     
       
@@ -2224,18 +2224,18 @@
 <p>有时我们希望固定一个包，使得这个包不会被改变或升级。</p>
 <p>这时可以使用 <code>apt-mark hold &lt;name&gt;</code> ，这个包将会被固定，其不会被升级。</p>
 <h4 id="_8">自动更新<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h4>
-<p>一般而言，使用 apt 的系统默认安装了<code>unattended-upgrades</code>包，如果系统上没有，可以使用</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>apt<span class="w"> </span>install<span class="w"> </span>unattended-upgrades
+<p>一般而言，使用 apt 的系统默认安装了 <code>unattended-upgrades</code> 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>debconf-get-selections<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>unattended-upgrades/enable_auto_updates
 </code></pre></div>
-<p>进行安装</p>
-<p>可以使用</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
+<p>如果输出的内容类似下面：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">unattended-upgrades unattended-upgrades/enable_auto_updates boolean false</span>
 </code></pre></div>
-<p>检验系统自动更新是否可用</p>
-<p>unattended-upgrades 以 systemd 服务形式存在，通过以下命令启动自动更新</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>unattended-upgrades
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>unattended-upgrades
+<p>则代表自动更新被关闭，反之则启用。可以执行 <code>dpkg-reconfigure unattended-upgrades</code> 修改配置。当自动更新启用时，<code>/etc/apt/apt.conf.d/20auto-upgrades</code> 文件应当存在。</p>
+<p>可以使用以下命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
 </code></pre></div>
+<p>查看并确认系统自动更新时的行为。</p>
+<p>此外，systemd 服务 <code>unattended-upgrades.service</code> 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。</p>
 <h4 id="aptitude">使用 aptitude 作为替代前端<a class="headerlink" href="#aptitude" title="Permanent link">&para;</a></h4>
 <p>aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。</p>
 <p>在终端里直接运行 <code>aptitude</code> 命令即可</p>
@@ -2589,7 +2589,7 @@ TODO -->
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.07f07601.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.56dfad97.min.js"></script>
