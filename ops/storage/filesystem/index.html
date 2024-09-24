@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.35">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.35f28582.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.06209087.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -654,6 +654,75 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#blk-dev-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      块设备命名规则
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="块设备命名规则">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scsi" class="md-nav__link">
+    <span class="md-ellipsis">
+      SCSI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nvme" class="md-nav__link">
+    <span class="md-ellipsis">
+      NVMe
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      MMC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scsi-optical" class="md-nav__link">
+    <span class="md-ellipsis">
+      SCSI 光盘驱动器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#virtio-virtio" class="md-nav__link">
+    <span class="md-ellipsis">
+      VirtIO 块设备（虚拟磁盘）{#virtio}
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      分区
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#loop" class="md-nav__link">
     <span class="md-ellipsis">
       本地回环
@@ -785,6 +854,15 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      引用来源
+    </span>
+  </a>
   
 </li>
       
@@ -1675,6 +1753,75 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#blk-dev-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      块设备命名规则
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="块设备命名规则">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scsi" class="md-nav__link">
+    <span class="md-ellipsis">
+      SCSI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nvme" class="md-nav__link">
+    <span class="md-ellipsis">
+      NVMe
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mmc" class="md-nav__link">
+    <span class="md-ellipsis">
+      MMC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scsi-optical" class="md-nav__link">
+    <span class="md-ellipsis">
+      SCSI 光盘驱动器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#virtio-virtio" class="md-nav__link">
+    <span class="md-ellipsis">
+      VirtIO 块设备（虚拟磁盘）{#virtio}
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#partition" class="md-nav__link">
+    <span class="md-ellipsis">
+      分区
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#loop" class="md-nav__link">
     <span class="md-ellipsis">
       本地回环
@@ -1809,6 +1956,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      引用来源
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1874,6 +2030,74 @@
 <p>每个分区需要被格式化成某种文件系统后，才能存储文件。</p>
 </dd>
 </dl>
+<h2 id="blk-dev-naming">块设备命名规则<a class="headerlink" href="#blk-dev-naming" title="Permanent link">&para;</a></h2>
+<p>块设备名的前缀指定了操作块设备时使用的驱动子系统。</p>
+<h3 id="scsi">SCSI<a class="headerlink" href="#scsi" title="Permanent link">&para;</a></h3>
+<p>支持 SCSI 命令 (SCSI、SAS、UASP)、ATA (PATA、SATA) 的存储设备和 USB 大容量存储设备，比如固态硬盘、SATA 接口的机械硬盘和 U 盘，均由 SCSI 驱动子系统处理。
+这些设备的命名以 <code>sd</code> 开头，之后是一个从 <code>a</code> 开始的小写字母，<code>a</code> 表示第一个发现的设备，<code>b</code> 表示第二个发现的设备，以此类推。</p>
+<p>例如：</p>
+<ul>
+<li>
+<p><code>/dev/sda</code> - 设备 <code>a</code>，第一个发现的设备。</p>
+</li>
+<li>
+<p><code>/dev/sde</code> - 设备 <code>e</code>，第五个发现的设备。</p>
+</li>
+</ul>
+<h3 id="nvme">NVMe<a class="headerlink" href="#nvme" title="Permanent link">&para;</a></h3>
+<p>使用 NVMe 协议的设备，比如 NVMe 固态硬盘，名称以 <code>nvme</code> 开头。
+之后是一个从 <code>0</code> 开始的数字，表示设备控制器 (Controller) 号。
+<code>nvme0</code> 表示第一个发现的 NVMe 控制器，<code>nvme1</code> 表示第二个发现的，以此类推。
+然后是字母 <code>n</code> 和一个从 <code>1</code> 开始的数字，表示控制器上的命名空间 (Namespace)。
+比如 <code>nvme0n1</code> 表示第一个控制器上的第一个命名空间，<code>nvme0n2</code> 表示第一个控制器上的第二个命名空间，以此类推。</p>
+<p>例如：</p>
+<ul>
+<li><code>/dev/nvme0n1</code> - 控制器 <code>0</code> 上的命名空间 <code>1</code>，第一个控制器上的第一个命名空间。</li>
+<li><code>/dev/nvme2n5</code> - 控制器 <code>2</code> 上的命名空间 <code>5</code>，第三个控制器上的第五个命名空间。</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">命名空间 (Namespace)</p>
+<p>命名空间是 NVMe 用于保存用户数据的结构。一个 NVMe 控制器可以包含多个命名空间。目前，大多数 NVMe 固态硬盘都只有一个命名空间，但在虚拟化、安全等领域需要使用多个命名空间。</p>
+</div>
+<h3 id="mmc">MMC<a class="headerlink" href="#mmc" title="Permanent link">&para;</a></h3>
+<p>SD 卡、多媒体存储卡 (MMC 卡) 和 eMMC 存储设备由 <code>mmc</code> 驱动处理。这些设备的名称以 <code>mmcblk</code> 开头，之后是一个从 <code>0</code> 开始的数字表示设备号。
+比如 <code>mmcblk0</code> 表示第一个发现的设备，<code>mmcblk1</code> 表示第二个发现的设备，以此类推。</p>
+<p>例如：</p>
+<ul>
+<li><code>/dev/mmcblk0</code> - 设备 <code>0</code>，第一个发现的设备。</li>
+<li><code>/dev/mmcblk4</code> - 设备 <code>4</code>，第五个发现的设备。</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">注意</p>
+<p>如果 SD/MMC 读卡器使用 USB 接口，则对应的块设备将由 <a href="#scsi">SCSI 驱动子系统</a>处理，并遵循其命名规则。</p>
+</div>
+<h3 id="scsi-optical">SCSI 光盘驱动器<a class="headerlink" href="#scsi-optical" title="Permanent link">&para;</a></h3>
+<p>通过 SCSI 驱动子系统支持的接口连接的光盘驱动器，其名称以 <code>sr</code> 开头。之后是一个从 <code>0</code> 开始的数字，表示设备号。比如 <code>sr0</code> 表示第一个发现的设备，<code>sr1</code> 表示第二个发现的设备，以此类推。
+udev 也提供到 <code>/dev/sr0</code> 的软链接，名为 <code>/dev/cdrom</code>。软链接的名称 <code>/dev/cdrom</code> 与驱动器支持的光盘类型和插入的介质无关。</p>
+<p>例如：</p>
+<ul>
+<li><code>/dev/sr0</code> - 光盘驱动器 <code>0</code>，第一个发现的光盘驱动器。</li>
+<li><code>/dev/sr4</code> - 光盘驱动器 <code>4</code>，第五个发现的光盘驱动器。</li>
+<li><code>/dev/cdrom</code> - 到 <code>/dev/sr0</code> 的符号链接。</li>
+</ul>
+<h3 id="virtio-virtio">VirtIO 块设备（虚拟磁盘）{#virtio}<a class="headerlink" href="#virtio-virtio" title="Permanent link">&para;</a></h3>
+<p>VirtIO 块设备的名称以 <code>vd</code> 开头。之后是一个从 <code>a</code> 开始的小写字母，<code>a</code> 表示第一个发现的设备 (<code>vda</code>)，b 表示第二个发现的设备 (<code>vdb</code>)，以此类推。</p>
+<p>例如：</p>
+<ul>
+<li><code>/dev/vda</code> - 设备 <code>a</code>，第一个发现的设备。</li>
+<li><code>/dev/vde</code> - 设备 <code>e</code>，第五个发现的设备。</li>
+</ul>
+<h3 id="partition">分区<a class="headerlink" href="#partition" title="Permanent link">&para;</a></h3>
+<p>将驱动器设备名与对应的分区编号（从 1 开始）组合起来，就得到了分区设备名。
+对于设备名以数字结尾的驱动器，需要用字母 <code>p</code> 分隔驱动器名和分区编号。</p>
+<p>例如：</p>
+<ul>
+<li><code>/dev/sda1</code> - <code>/dev/sda</code> 上的分区 <code>1</code>。</li>
+<li><code>/dev/nvme2n5p3</code> - <code>/dev/nvme2n5</code> 上的分区 <code>3</code>。</li>
+<li><code>/dev/mmcblk3p4</code> - <code>/dev/mmcblk3</code> 上的分区 <code>4</code>。</li>
+<li><code>/dev/vda1</code> - <code>/dev/vda</code> 上的分区 <code>1</code>。</li>
+<li><code>/dev/loop0p2</code> - <code>/dev/loop0</code> 上的分区 <code>2</code>。</li>
+</ul>
 <h2 id="loop">本地回环<a class="headerlink" href="#loop" title="Permanent link">&para;</a></h2>
 <p>Linux 支持「本地回环设备」，支持挂载一个文件作为块设备使用，类似于「虚拟光驱」类软件。
 因此，可以通过本地回环的方式，在不购买新硬件的情况下进行一些磁盘相关的实验。</p>
@@ -2652,6 +2876,11 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 </dl>
 <h3 id="zfs">ZFS<a class="headerlink" href="#zfs" title="Permanent link">&para;</a></h3>
 <p>参见 <a href="../zfs/">ZFS</a>。</p>
+<h2 class="no-underline" id="references">引用来源<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://wiki.archlinux.org/title/Device_file">Device file (Arch Wiki)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Device_file#Block_devices">Device file (Wikipedia)</a></li>
+</ul>
 <!--
   Links to man pages
 
