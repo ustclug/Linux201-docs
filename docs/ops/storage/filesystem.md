@@ -51,6 +51,85 @@
 
 :   每个分区需要被格式化成某种文件系统后，才能存储文件。
 
+## 块设备命名规则 {#blk-dev-naming}
+
+块设备名的前缀指定了操作块设备时使用的驱动子系统。
+
+### SCSI {#scsi}
+
+支持 SCSI 命令 (SCSI、SAS、UASP)、ATA (PATA、SATA) 的存储设备和 USB 大容量存储设备，比如固态硬盘、SATA 接口的机械硬盘和 U 盘，均由 SCSI 驱动子系统处理。
+这些设备的命名以 `sd` 开头，之后是一个从 `a` 开始的小写字母，`a` 表示第一个发现的设备，`b` 表示第二个发现的设备，以此类推。
+
+例如：
+
+- `/dev/sda` - 设备 `a`，第一个发现的设备。
+
+- `/dev/sde` - 设备 `e`，第五个发现的设备。
+
+### NVMe {#nvme}
+
+使用 NVMe 协议的设备，比如 NVMe 固态硬盘，名称以 `nvme` 开头。
+之后是一个从 `0` 开始的数字，表示设备控制器 (Controller) 号。
+`nvme0` 表示第一个发现的 NVMe 控制器，`nvme1` 表示第二个发现的，以此类推。
+然后是字母 `n` 和一个从 `1` 开始的数字，表示控制器上的命名空间 (Namespace)。
+比如 `nvme0n1` 表示第一个控制器上的第一个命名空间，`nvme0n2` 表示第一个控制器上的第二个命名空间，以此类推。
+
+例如：
+
+- `/dev/nvme0n1` - 控制器 `0` 上的命名空间 `1`，第一个控制器上的第一个命名空间。
+- `/dev/nvme2n5` - 控制器 `2` 上的命名空间 `5`，第三个控制器上的第五个命名空间。
+
+!!! note "命名空间 (Namespace)"
+
+    命名空间是 NVMe 用于保存用户数据的结构。一个 NVMe 控制器可以包含多个命名空间。目前，大多数 NVMe 固态硬盘都只有一个命名空间，但在虚拟化、安全等领域需要使用多个命名空间。
+
+### MMC {#mmc}
+
+SD 卡、多媒体存储卡 (MMC 卡) 和 eMMC 存储设备由 `mmc` 驱动处理。这些设备的名称以 `mmcblk` 开头，之后是一个从 `0` 开始的数字表示设备号。
+比如 `mmcblk0` 表示第一个发现的设备，`mmcblk1` 表示第二个发现的设备，以此类推。
+
+例如：
+
+- `/dev/mmcblk0` - 设备 `0`，第一个发现的设备。
+- `/dev/mmcblk4` - 设备 `4`，第五个发现的设备。
+
+!!! note "注意"
+
+    如果 SD/MMC 读卡器使用 USB 接口，则对应的块设备将由 [SCSI 驱动子系统](#scsi)处理，并遵循其命名规则。
+
+### SCSI 光盘驱动器 {#scsi-optical}
+
+通过 SCSI 驱动子系统支持的接口连接的光盘驱动器，其名称以 `sr` 开头。之后是一个从 `0` 开始的数字，表示设备号。比如 `sr0` 表示第一个发现的设备，`sr1` 表示第二个发现的设备，以此类推。
+udev 也提供到 `/dev/sr0` 的软链接，名为 `/dev/cdrom`。软链接的名称 `/dev/cdrom` 与驱动器支持的光盘类型和插入的介质无关。
+
+例如：
+
+- `/dev/sr0` - 光盘驱动器 `0`，第一个发现的光盘驱动器。
+- `/dev/sr4` - 光盘驱动器 `4`，第五个发现的光盘驱动器。
+- `/dev/cdrom` - 到 `/dev/sr0` 的符号链接。
+
+### VirtIO 块设备（虚拟磁盘）{#virtio}
+
+VirtIO 块设备的名称以 `vd` 开头。之后是一个从 `a` 开始的小写字母，`a` 表示第一个发现的设备 (`vda`)，b 表示第二个发现的设备 (`vdb`)，以此类推。
+
+例如：
+
+- `/dev/vda` - 设备 `a`，第一个发现的设备。
+- `/dev/vde` - 设备 `e`，第五个发现的设备。
+
+### 分区 {#partition}
+
+将驱动器设备名与对应的分区编号（从 1 开始）组合起来，就得到了分区设备名。
+对于设备名以数字结尾的驱动器，需要用字母 `p` 分隔驱动器名和分区编号。
+
+例如：
+
+- `/dev/sda1` - `/dev/sda` 上的分区 `1`。
+- `/dev/nvme2n5p3` - `/dev/nvme2n5` 上的分区 `3`。
+- `/dev/mmcblk3p4` - `/dev/mmcblk3` 上的分区 `4`。
+- `/dev/vda1` - `/dev/vda` 上的分区 `1`。
+- `/dev/loop0p2` - `/dev/loop0` 上的分区 `2`。
+
 ## 本地回环 {#loop}
 
 Linux 支持「本地回环设备」，支持挂载一个文件作为块设备使用，类似于「虚拟光驱」类软件。
@@ -879,3 +958,8 @@ Check
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
+
+## 引用来源 {#references .no-underline}
+
+- [Device file (Arch Wiki)](https://wiki.archlinux.org/title/Device_file)
+- [Device file (Wikipedia)](https://en.wikipedia.org/wiki/Device_file#Block_devices)
