@@ -38,7 +38,7 @@
     I/O size (minimum/optimal): 512 bytes / 512 bytes
     Disklabel type: gpt
     Disk identifier: BAF03C52-854E-41AD-9C42-6DD5C0E9F156
-    
+
     Device             Start        End    Sectors  Size Type
     /dev/nvme0n1p1      2048     534527     532480  260M EFI System
     /dev/nvme0n1p2    534528  117975039  117440512   56G Linux swap
@@ -108,7 +108,7 @@ udev 也提供到 `/dev/sr0` 的软链接，名为 `/dev/cdrom`。软链接的�
 - `/dev/sr4` - 光盘驱动器 `4`，第五个发现的光盘驱动器。
 - `/dev/cdrom` - 到 `/dev/sr0` 的符号链接。
 
-### VirtIO 块设备（虚拟磁盘）{#virtio}
+### VirtIO 块设备（虚拟磁盘） {#virtio}
 
 VirtIO 块设备的名称以 `vd` 开头。之后是一个从 `a` 开始的小写字母，`a` 表示第一个发现的设备 (`vda`)，b 表示第二个发现的设备 (`vdb`)，以此类推。
 
@@ -428,7 +428,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
     观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
     这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。
-    
+
     在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
     2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
 
@@ -516,7 +516,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
         dr-xr-xr-x 13 root root 0 Feb 29 15:58 ../
         lrwxrwxrwx  1 root root 0 Feb 27 18:24 nvme0n1 -> ../devices/pci0000:00/0000:00:06.0/0000:02:00.0/nvme/nvme0/nvme0n1/
         ```
-    
+
     即使对于单硬盘的用户，这些信息也可能会在一些地方使用到（例如配置 GRUB 启动器的时候）。
     并且有必要小心文件系统的 label/uuid 与 GPT 分区表的 label/uuid 的区别：
     例如格式化为新文件系统后，文件系统的信息会被重置；而在虚拟化场景进行分区扩容后，GPT 分区表中对应的分区信息可能会被重置。
