@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.36">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.06209087.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
@@ -2029,6 +2029,10 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w">  </span><span class="c1"># 列出发现的 target</span>
 <a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">iSCSI node</p>
+<p>Node 在 iSCSI 中是代表 target 和 initiator 的单位。Initiator node 就是发起连接的一端（客户端），target node 就是提供存储资源的一端（服务端）。可以认为在 <code>iscsiadm</code> 的操作中，<code>node</code> 就代表 target。</p>
+</div>
 <p>第二步是「登录」。但是直接登录会吃到闭门羹：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1:3260<span class="w"> </span>--login
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
@@ -2086,6 +2090,10 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="go">└─vda1 254:1    0    50G  0 part </span>
 <a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="gp">$ </span><span class="c1"># 多出了新添加的 sdb</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">iSCSI session</p>
+<p>当 initiator 连接到 target 后，会创建一个 iSCSI session，同个 initiator 可以对同个 target 创建多个 session。可以使用 <code>iscsiadm -m session</code> 查看当前所有的 session。</p>
+</div>
 <p>另一点需要注意的是开机时的配置，虽然 <code>iscsid.service</code> 会在开机时自动启用，但是登录操作默认不是自动的。
 这一点可以从配置文件中确认：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/iscsi/iscsid.conf<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>node.startup
@@ -2100,6 +2108,25 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic</span>
 </code></pre></div>
 <p><code>open-iscsi.service</code> 在开机时会自动登录所有配置好的 target。</p>
+<div class="admonition warning">
+<p class="admonition-title">避免修改（override）<code>open-iscsi.service</code></p>
+<p>在按照以上方法恰当配置 <code>startup</code> 为 <code>automatic</code> 后，<code>open-iscsi.service</code> 会自动启动这些 node。一些资料可能会建议通过 <code>systemctl edit open-iscsi.service</code> 的方式覆盖掉其原先的 <code>ExecStart</code>，并且自行添加 <code>iscsiadm</code> 登录指令。请避免这么做。</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">重启 <code>open-iscsi.service</code> 会 logout 当前挂载的所有 iSCSI 块设备</p>
+<p>可以看一下这个服务在开启与关闭时的行为：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/sbin/iscsiadm -m node --loginall=automatic</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/lib/open-iscsi/activate-storage.sh</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/umountiscsi.sh</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/bin/sync</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/logout-all.sh</span>
+</code></pre></div>
+<p>可以发现 <code>ExecStop</code> 中包含了 logout all 的操作，logout 后会导致当前所有使用对应 iSCSI 块设备的程序无法正常工作。如果修改了登录配置（例如添加了新 node 并设置为了自动登录），并且不希望现有的程序发生错误，那么可以尝试只运行该服务 <code>ExecStart</code> 的部分。对于已经创建了 session 的 node，<code>iscsiadm</code> 不会尝试重复连接：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--loginall<span class="o">=</span>automatic
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="go">iscsiadm: default: 1 session requested, but 1 already present.</span>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="go">iscsiadm: Could not log into all portals</span>
+</code></pre></div>
+</div>
 <!--
   Links to man pages
 
@@ -2204,7 +2231,7 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
     <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.56dfad97.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
       
     
   </body>
