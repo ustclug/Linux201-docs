@@ -464,6 +464,10 @@ $ sudo iscsiadm -m node  # 列出发现的 target
 127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target
 ```
 
+!!! tip "iSCSI node"
+
+    Node 在 iSCSI 中是代表 target 和 initiator 的单位。Initiator node 就是发起连接的一端（客户端），target node 就是提供存储资源的一端（服务端）。可以认为在 `iscsiadm` 的操作中，`node` 就代表 target。
+
 第二步是「登录」。但是直接登录会吃到闭门羹：
 
 ```console
@@ -540,6 +544,10 @@ vda    254:0    0    50G  0 disk
 $ # 多出了新添加的 sdb
 ```
 
+!!! tip "iSCSI session"
+
+    当 initiator 连接到 target 后，会创建一个 iSCSI session，同个 initiator 可以对同个 target 创建多个 session。可以使用 `iscsiadm -m session` 查看当前所有的 session。
+
 另一点需要注意的是开机时的配置，虽然 `iscsid.service` 会在开机时自动启用，但是登录操作默认不是自动的。
 这一点可以从配置文件中确认：
 
@@ -560,3 +568,27 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
 ```
 
 `open-iscsi.service` 在开机时会自动登录所有配置好的 target。
+
+!!! warning "避免修改（override）`open-iscsi.service`"
+
+    在按照以上方法恰当配置 `startup` 为 `automatic` 后，`open-iscsi.service` 会自动启动这些 node。一些资料可能会建议通过 `systemctl edit open-iscsi.service` 的方式覆盖掉其原先的 `ExecStart`，并且自行添加 `iscsiadm` 登录指令。请避免这么做。
+
+!!! warning "重启 `open-iscsi.service` 会 logout 当前挂载的所有 iSCSI 块设备"
+
+    可以看一下这个服务在开启与关闭时的行为：
+
+    ```ini
+    ExecStart=/sbin/iscsiadm -m node --loginall=automatic
+    ExecStart=/lib/open-iscsi/activate-storage.sh
+    ExecStop=/lib/open-iscsi/umountiscsi.sh
+    ExecStop=/bin/sync
+    ExecStop=/lib/open-iscsi/logout-all.sh
+    ```
+
+    可以发现 `ExecStop` 中包含了 logout all 的操作，logout 后会导致当前所有使用对应 iSCSI 块设备的程序无法正常工作。如果修改了登录配置（例如添加了新 node 并设置为了自动登录），并且不希望现有的程序发生错误，那么可以尝试只运行该服务 `ExecStart` 的部分。对于已经创建了 session 的 node，`iscsiadm` 不会尝试重复连接：
+
+    ```console
+    $ sudo iscsiadm -m node --loginall=automatic
+    iscsiadm: default: 1 session requested, but 1 already present.
+    iscsiadm: Could not log into all portals
+    ```
