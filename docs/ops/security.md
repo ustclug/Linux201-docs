@@ -681,6 +681,41 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 - 对于 systemd 服务，考虑使用 systemd 提供的安全加固功能。
 <!-- TODO: 服务部分需要介绍 -->
 
+#### 使用扫描器检查已知的安全问题 {#scanner-known-vulnerabilities}
+
+一些扫描器工具可以帮助检查已经部署的程序是否存在已知的安全问题，例如专门用于扫描 WordPress 网站的 [WPScan](https://wpscan.com/)，通用的漏洞扫描器 [nuclei](https://github.com/projectdiscovery/nuclei) 等。
+
+!!! danger "请勿进行未经授权的扫描操作"
+
+    扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。
+
+以下是多年前使用 nuclei 扫描一个长时间未升级的 Grafana 实例的结果：
+
+```console
+$ nuclei -u https://grafana.example.com -tags grafana
+
+                     __     _
+   ____  __  _______/ /__  (_)
+  / __ \/ / / / ___/ / _ \/ /
+ / / / / /_/ / /__/ /  __/ /
+/_/ /_/\__,_/\___/_/\___/_/   2.5.4
+
+  projectdiscovery.io
+
+[WRN] Use with caution. You are responsible for your actions.
+[WRN] Developers assume no liability and are not responsible for any misuse or damage.
+[INF] Using Nuclei Engine 2.5.4 (latest)
+[INF] Using Nuclei Templates 8.7.0 (latest)
+[INF] Using Interactsh Server https://interactsh.com
+[INF] Templates added in last update: 2681
+[INF] Templates loaded for scan: 7
+[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots
+[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key
+[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots
+```
+
+可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。
+
 ### 安全事件处理示例 {#security-event-example}
 
 以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。
