@@ -1509,6 +1509,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#scanner-known-vulnerabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用扫描器检查已知的安全问题
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2405,6 +2414,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#scanner-known-vulnerabilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用扫描器检查已知的安全问题
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2973,28 +2991,57 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 </ul>
 <!-- TODO: 服务部分需要介绍 -->
 
+<h4 id="scanner-known-vulnerabilities">使用扫描器检查已知的安全问题<a class="headerlink" href="#scanner-known-vulnerabilities" title="Permanent link">&para;</a></h4>
+<p>一些扫描器工具可以帮助检查已经部署的程序是否存在已知的安全问题，例如专门用于扫描 WordPress 网站的 <a href="https://wpscan.com/">WPScan</a>，通用的漏洞扫描器 <a href="https://github.com/projectdiscovery/nuclei">nuclei</a> 等。</p>
+<div class="admonition danger">
+<p class="admonition-title">请勿进行未经授权的扫描操作</p>
+<p>扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。</p>
+</div>
+<p>以下是多年前使用 nuclei 扫描一个长时间未升级的 Grafana 实例的结果：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">                     __     _</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">  projectdiscovery.io</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
+</code></pre></div>
+<p>可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。</p>
 <h3 id="security-event-example">安全事件处理示例<a class="headerlink" href="#security-event-example" title="Permanent link">&para;</a></h3>
 <p>以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。</p>
 <h4 id="password-leak-rce-example">从泄漏密码到 RCE<a class="headerlink" href="#password-leak-rce-example" title="Permanent link">&para;</a></h4>
 <p>2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 <code>docker top</code> 检查发现容器里出现了奇怪的进程，如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
 </code></pre></div>
 <p>检查容器文件系统，发现 <code>/tmp</code> 下面多了很多文件，一些 log 文件似乎是内网扫描器的输出。因此管理员 C 立刻关闭了容器，并且导出了容器文件系统以及数据库（在另一个容器中）以进一步检查。</p>
 <p>由于配置问题，容器外的 Nginx 日志记录的 IP 均为 CDN 的 IP，没有记录到真实 IP 地址。不过，观察访问的 URL，发现存在可疑的访问主题编辑器的 <code>POST</code> 请求，根据相关的 User agent 记录，发现攻击者似乎在尝试登录网站后台。</p>
 <p>检查 WordPress 本地文件的修改日期，发现某个主题文件的修改日期不正常，开头插入了以下的 PHP：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="cp">&lt;?php</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="cp">&lt;?php</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="p">}</span>
 </code></pre></div>
 <p>可以推测，攻击者在修改了主题之后，就可以利用主题的 PHP 文件执行任意命令了。</p>
 <p>管理员 C 之前配置了 WordPress 本体与插件的自动升级，因此大概率是某个管理员用户的密码泄漏导致的。由于该网站重要性不高，因此可以花一些时间仔细检查后再考虑重新上线。几日后，攻击者向另一名管理员发送邮件致歉，并且提供了入侵手段：从某个俄罗斯 botnet 中获取了泄漏的用户名与密码（攻击者认为是安装了有问题的破解程序导致的），之后登录入侵后尝试做了内网扫描，并且该密码同样也可以登录此人在该组织的 GitLab 账号。在第一时间封禁了该 GitLab 账号后，检查 Nginx 日志获取了所有攻击者访问的仓库，万幸的是，这些仓库中不包含敏感信息。</p>
