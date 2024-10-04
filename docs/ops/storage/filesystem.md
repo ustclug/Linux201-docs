@@ -1080,6 +1080,12 @@ umount mountpoint/
 # 或者 fusermount -u mountpoint/
 ```
 
+!!! tip "FUSE 的代价"
+
+    用户态文件系统虽然方便，但是其代价之一是性能。FAST '17 的论文 [To FUSE or Not to FUSE: Performance of User-Space File Systems](https://www.usenix.org/conference/fast17/technical-sessions/presentation/vangoor) 对此做了详细的量化分析。
+
+    此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，[存在潜在的安全问题](https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications)，在生产环境使用时需要注意。
+
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
