@@ -3030,6 +3030,11 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>umount<span class="w"> </span>mountpoint/
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="c1"># 或者 fusermount -u mountpoint/</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">FUSE 的代价</p>
+<p>用户态文件系统虽然方便，但是其代价之一是性能。FAST '17 的论文 <a href="https://www.usenix.org/conference/fast17/technical-sessions/presentation/vangoor">To FUSE or Not to FUSE: Performance of User-Space File Systems</a> 对此做了详细的量化分析。</p>
+<p>此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，<a href="https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications">存在潜在的安全问题</a>，在生产环境使用时需要注意。</p>
+</div>
 <h2 class="no-underline" id="references">引用来源<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="https://wiki.archlinux.org/title/Device_file">Device file (Arch Wiki)</a></li>
