@@ -545,6 +545,8 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 | HFS+                                            | 只读                                                   | :fontawesome-solid-check:{: .limegreen } | 只读，Bootcamp                           | macOS 较早期版本最常见的文件系统。                                                                                    |
 | APFS                                            | :fontawesome-solid-xmark:{: .orangered }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | macOS 较新版本的 CoW 文件系统。                                                                                       |
 
+此外，Linux 还支持用户态文件系统（FUSE）。FUSE 允许在不编写内核代码的情况下支持新的文件系统。
+
 !!! comment "@taoky: 关于 ReiserFS"
 
     ReiserFS 其实有一个其他文件系统不能有效替代的优势：它是目前主线中唯一一个能够只使用几个 GB 的空间就能存储上千万个文件元数据的文件系统。
@@ -961,6 +963,122 @@ Check
 ### ZFS
 
 参见 [ZFS](./zfs.md)。
+
+### FUSE
+
+FUSE 是在用户态实现的文件系统，依赖于用户态的 `libfuse` 库与内核的 `fuse` 模块（对应 `/dev/fuse` 设备）。目前在常见的发行版中你可能会注意到用户态的 FUSE 库有两个版本：`fuse2`（`fuse`）和 `fuse3`。一部分旧程序仍然依赖于 `fuse2`，但是其已经多年未维护，因此新的程序应当尽量使用 `fuse3`。
+
+常见的 FUSE 文件系统包括[用户态的 NTFS 实现（NTFS-3G）](https://github.com/tuxera/ntfs-3g)、网盘/对象存储的挂载（例如 [S3FS](https://github.com/s3fs-fuse/s3fs-fuse)）、[SSHFS](https://github.com/libfuse/sshfs) 等。
+
+可以使用你喜欢的编程语言编写 FUSE 文件系统，下面以 C 为例，在官方的 [example/hello.c](https://github.com/libfuse/libfuse/blob/c37518ff0bfff308e747a6989fe1a86857629e61/example/hello.c) 的基础上简化。在安装 `libfuse3-dev` 之后编写以下代码：
+
+```c
+#define FUSE_USE_VERSION 31
+
+#include <errno.h>
+#include <fuse.h>
+#include <string.h>
+
+static const char *filename = "hello";
+static const char *contents = "Hello, world!\n";
+
+static int hello_getattr(const char *path, struct stat *stbuf,
+                         struct fuse_file_info *fi) {
+  int res = 0;
+
+  memset(stbuf, 0, sizeof(struct stat));
+  if (strcmp(path, "/") == 0) {
+    stbuf->st_mode = S_IFDIR | 0755;
+    stbuf->st_nlink = 2;
+  } else if (strcmp(path + 1, filename) == 0) {
+    stbuf->st_mode = S_IFREG | 0444;
+    stbuf->st_nlink = 1;
+    stbuf->st_size = strlen(contents);
+  } else {
+    res = -ENOENT;
+  }
+  return res;
+}
+
+static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                         off_t offset, struct fuse_file_info *fi,
+                         enum fuse_readdir_flags flags) {
+  if (strcmp(path, "/") != 0)
+    return -ENOENT;
+
+  filler(buf, ".", NULL, 0, 0);
+  filler(buf, "..", NULL, 0, 0);
+  filler(buf, filename, NULL, 0, 0);
+
+  return 0;
+}
+
+static int hello_open(const char *path, struct fuse_file_info *fi) {
+  if (strcmp(path + 1, filename) != 0)
+    return -ENOENT;
+
+  if ((fi->flags & O_ACCMODE) != O_RDONLY)
+    return -EACCES;
+
+  return 0;
+}
+
+static int hello_read(const char *path, char *buf, size_t size, off_t offset,
+                      struct fuse_file_info *fi) {
+  size_t len;
+  if (strcmp(path + 1, filename) != 0)
+    return -ENOENT;
+
+  len = strlen(contents);
+  if (offset < len) {
+    if (offset + size > len) {
+      size = len - offset;
+    }
+    memcpy(buf, contents + offset, size);
+  } else {
+    size = 0;
+  }
+
+  return size;
+}
+
+static const struct fuse_operations hello_oper = {
+    .getattr = hello_getattr,
+    .readdir = hello_readdir,
+    .open = hello_open,
+    .read = hello_read,
+};
+
+int main(int argc, char *argv[]) {
+  return fuse_main(argc, argv, &hello_oper, NULL);
+}
+```
+
+可以看到，我们为自己的这个自制「文件系统」定义了四个方法：`getattr`（获取文件属性）、`readdir`（读取目录）、`open`（打开文件）和 `read`（读取文件），在方法中虚拟出了一个 `hello` 文件。
+
+使用以下命令编译执行：
+
+```shell
+gcc fuse.c -Wall $(pkg-config fuse3 --cflags --libs) -o fuse
+mkdir -p mountpoint
+./fuse mountpoint
+```
+
+然后就可以看到 `mountpoint` 目录下多出了我们自定义的文件：
+
+```console
+$ ls mountpoint/
+hello
+$ cat mountpoint/hello 
+Hello, world!
+```
+
+完成之后，记得解除挂载：
+
+```shell
+umount mountpoint/
+# 或者 fusermount -u mountpoint/
+```
 
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
