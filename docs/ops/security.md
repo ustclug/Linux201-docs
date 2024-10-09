@@ -678,8 +678,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 - root/sudo/IPMI 的权限不随意提供给运维无关人员。
     - 这也包括了诸如 `docker` 的情况。
 - 服务（包括容器在内）不随意暴露端口（特别是无限制 bind 到所有接口的情况），容器运行不随意提供 `--privileged`，运行的服务需要有自己的用户。
-- 对于 systemd 服务，考虑使用 systemd 提供的安全加固功能。
-<!-- TODO: 服务部分需要介绍 -->
+- 对于 systemd 服务，考虑使用 systemd 提供的安全加固功能。详见[服务与日志管理中对 `systemd-analyze security` 的介绍](./service.md#service)。
 
 #### 使用扫描器检查已知的安全问题 {#scanner-known-vulnerabilities}
 

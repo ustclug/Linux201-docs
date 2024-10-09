@@ -160,7 +160,17 @@ Service 也就是我们最常见的服务，它的配置文件中有一个 `[Ser
 
     !!! tip
 
-        如果你有额外的安全需求，可以参考 [Sandboxing][systemd.exec.5#Sandboxing] 一节使用 systemd 提供的高级隔离功能。
+        如果你有额外的安全需求，可以参考 [Sandboxing][systemd.exec.5#Sandboxing] 一节使用 systemd 提供的高级隔离功能。可以使用 `systemd-analyze security` 命令检查整个系统的服务安全性配置情况，与单个服务的具体配置是否安全。该命令会根据服务配置计算 "exposure level" 分数，并且提供相关配置以及解释，类似如下：
+
+        ```console
+        $ systemd-analyze security --no-pager caddy.service
+          NAME                                         DESCRIPTION                                  EXPOSURE
+        ✗ RemoveIPC=                                   Service user may leave SysV IPC objects aro…      0.1
+        ✗ RootDirectory=/RootImage=                    Service runs within the host's root directo…      0.1
+        ✓ User=/DynamicUser=                           Service runs under a static non-root user i…
+        ✗ CapabilityBoundingSet=~CAP_SYS_TIME          Service processes may change the system clo…      0.2
+        （以下省略）
+        ```
 
 #### Service Type {#service-type}
 
