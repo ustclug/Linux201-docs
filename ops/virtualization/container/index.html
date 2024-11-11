@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.41">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
     
     
       
@@ -2623,8 +2623,11 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <li>当使用 <code>-X</code> 时，服务端会假设客户端是不可信任的，因此会限制一些操作；<code>-Y</code> 选项则会放宽这些限制。详见 <a href="https://man.openbsd.org/ssh_config">ssh_config(5)</a> 对 <code>ForwardX11Trusted</code> 的介绍。</li>
 </ol>
 </div>
-<p>X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 <code>DISPLAY</code> 环境变量指定的，一般是 <code>:0</code>，代表连接到 <code>/tmp/.X11-unix/X0</code> 这个 UNIX socket。
-此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 <code>DISPLAY=host:port</code> 的方式连接。</p>
+<p>X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 <code>DISPLAY</code> 环境变量指定的，一般是 <code>:0</code>，代表连接到 <code>/tmp/.X11-unix/X0</code> 这个 UNIX socket。此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 <code>DISPLAY=host:port</code> 的方式连接。</p>
+<div class="admonition warning">
+<p class="admonition-title">X 与抽象套接字（abstract socket）</p>
+<p>目前，X server 会默认开启 abstract socket 支持，即使不共享 <code>/tmp/.X11-unix</code>，X 客户端也可以以此连接到 X 服务器。Abstract socket 只能通过网络命名空间隔离。详情见<a href="../../../advanced/desktop/">高级内容的「Linux 桌面与窗口系统」部分</a>。</p>
+</div>
 <p>因此，首先需要传递 <code>DISPLAY</code> 环境变量，并且将 <code>/tmp/.X11-unix</code> 挂载到容器中：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="go">sudo docker run -it --rm -e &quot;DISPLAY=$DISPLAY&quot; -v /tmp/.X11-unix:/tmp/.X11-unix ustclug/debian:12</span>
 </code></pre></div>
