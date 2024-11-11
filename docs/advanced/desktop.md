@@ -30,7 +30,18 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
     （省略）
     ```
 
-    事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会会优先连接 `@/tmp/.X11-unix/X0`。
+    X 在 2008 年引入这个特性时的[相关说明](https://cgit.freedesktop.org/xorg/lib/libxtrans/commit/Xtranssock.c?id=2afe206ec9569e0d62caa6d91c3fb057b0efa23d)如下：
+
+    ```
+    Unlike normal unix sockets, the abstract namespace is not bound to the
+    filesystem.  This has some notable advantages; /tmp need not exist, the
+    socket directory need not have magic permissions, etc.  xtrans servers
+    will listen on both the normal and abstract socket endpoints; clients
+    will attempt to connect to the abstract socket before connecting to the
+    corresponding filesystem socket.
+    ```
+
+    所以事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会会优先连接 `@/tmp/.X11-unix/X0`。
 
     抽象套接字在如今带来了一些安全性的挑战，因为和文件系统上的 `/tmp/.X11-unix/X0` 可以依靠文件级别的权限控制不同，抽象套接字只能通过网络命名空间实现隔离。但是如果直接关闭 X server 的抽象套接字，攻击者可以创建虚假的名为 `@/tmp/.X11-unix/X0` 的套接字，欺骗 X 客户端连接。不过连接到 X server 还需要经过一层认证机制（XAuthority），因此如果不去 `xhost +` 的话，攻击者必须要能够获取 XAuthority 信息，才能够连接到对应的 X server。
 
