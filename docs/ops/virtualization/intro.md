@@ -94,7 +94,7 @@ Type-1 Hypervisor 通常效率更高，但配置相对复杂，且灵活性稍�
 
 与硬件虚拟化相比，操作系统级虚拟化的开销较小，也不依赖于硬件支持，但其不能实现跨操作系统，目前一般用于应用隔离与部署、环境复现等场景。
 
-关于 Linux 下容器技术的详细介绍，可以阅读本文档的 [容器](/ops/virtualization/container) 部分。
+关于 Linux 下容器技术的详细介绍，可以阅读本文档的 [容器](./container.md) 部分。
 
 !!! note "API 兼容层"
 
@@ -108,7 +108,7 @@ Type-1 Hypervisor 通常效率更高，但配置相对复杂，且灵活性稍�
 
 ### 底层：QEMU/KVM
 
-关于 QEMU/KVM 的详细介绍，可以阅读本文档的 [QEMU/KVM](/ops/virtualization/qemu-kvm) 部分。
+关于 QEMU/KVM 的详细介绍，可以阅读本文档的 [QEMU/KVM](./qemu-kvm.md) 部分。
 
 ### 高层：Proxmox VE
 
