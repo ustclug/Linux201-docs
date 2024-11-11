@@ -530,8 +530,11 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 
     1. 当使用 `-X` 时，服务端会假设客户端是不可信任的，因此会限制一些操作；`-Y` 选项则会放宽这些限制。详见 [ssh_config(5)][ssh_config.5] 对 `ForwardX11Trusted` 的介绍。
 
-X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 `DISPLAY` 环境变量指定的，一般是 `:0`，代表连接到 `/tmp/.X11-unix/X0` 这个 UNIX socket。
-此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 `DISPLAY=host:port` 的方式连接。
+X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 `DISPLAY` 环境变量指定的，一般是 `:0`，代表连接到 `/tmp/.X11-unix/X0` 这个 UNIX socket。此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 `DISPLAY=host:port` 的方式连接。
+
+!!! warning "X 与抽象套接字（abstract socket）"
+
+    目前，X server 会默认开启 abstract socket 支持，即使不共享 `/tmp/.X11-unix`，X 客户端也可以以此连接到 X 服务器。Abstract socket 只能通过网络命名空间隔离。详情见[高级内容的「Linux 桌面与窗口系统」部分](../../advanced/desktop.md)。
 
 因此，首先需要传递 `DISPLAY` 环境变量，并且将 `/tmp/.X11-unix` 挂载到容器中：
 
