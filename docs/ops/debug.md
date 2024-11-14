@@ -497,3 +497,4 @@ example(1023, 1024)
 
 - [Linux debugging, profiling and tracing training Course by bootlin](https://bootlin.com/doc/training/debugging/)：Bootlin 公司提供的 Linux 调试等有关的资料，包括 slides 和练习实验
 - [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：著名的系统性能分析专家 Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
+- [Linux Crisis Tools](https://www.brendangregg.com/blog/2024-03-24/linux-crisis-tools.html)：Brendan Gregg 整理的 Linux 应急响应工具集列表，建议在服务器上预先安装
