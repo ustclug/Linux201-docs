@@ -153,3 +153,89 @@ sudo wg
 ```shell
 sudo wg-quick down wg0
 ```
+
+## Headscale
+
+在部分场景下，单纯 Wireguard 不能很好满足需求，例如需要 peer-to-peer 之间的互联（不经过中心节点），或者在更复杂的网络环境下。[Tailscale](https://tailscale.com/kb/1151/what-is-tailscale) 便是一个解决方案，我们这里介绍 Headscale，一个开源的 Tailscale 服务端实现。
+
+> Headscale 仅是 Tailscale 的一个开源、可自行部署的实现，客户端仍需要使用 Tailscale。
+
+### 安装 Headscale
+
+截止编辑时，Headscale 尚不提供 apt repo，需要在 [GitHub Release](https://github.com/juanfont/headscale/releases) 选择 `.deb` 安装：
+
+```shell
+wget --output-document=headscale.deb <URL>
+sudo apt install ./headscale.deb
+```
+
+### 配置 Headscale
+
+配置文件位于 `/etc/headscale/config.yaml`，默认配置文件：<https://github.com/juanfont/headscale/blob/main/config-example.yaml>
+
+### 启动 Headscale
+
+```shell
+sudo systemctl enable --now headscale
+sudo systemctl status headscale
+```
+
+### 安装 Headscale-ui
+
+与 Tailscale 不同，Headscale 目前没有集成的 Admin Console，可以部署 [headscale-ui](https://github.com/gurucomputing/headscale-ui) 替代部分功能。这是一个纯静态的 Web 界面，可以在 [GitHub Release](https://github.com/gurucomputing/headscale-ui/releases) 下载 `headscale-ui.zip`。
+
+```shell
+wget --output-document=headscale-ui.zip <URL>
+unzip headscale-ui.zip -d /var/www/headscale-ui
+```
+
+### 配置反向代理
+
+以 Caddy 为例，我们演示如何配置 Headscale & Headscale-ui：
+
+```txt title="/etc/caddy/Caddyfile"
+headscale.****.**** {
+        handle_path /web* {
+                root * /var/www/headscale-ui
+                file_server
+        }
+
+        reverse_proxy * 127.0.0.1:8080
+}
+```
+
+Nginx 配置文件可以参考：<https://headscale.net/ref/integration/reverse-proxy/#nginx>
+
+### 设置 API Key
+
+```shell
+sudo headscale apikeys create --expiration 9999d
+```
+
+通过浏览器访问 `/web`，在 Settings 界面中填写 API Key。
+
+### 添加用户
+
+```shell
+sudo headscale users create <NAME>
+```
+
+### 客户端设置
+
+与一般连接 Tailscale 方法不同，需要指定 `--login-server` 和 `--auth-key`：
+
+```shell
+tailscale up --login-server <URL> --authkey <KEY>
+```
+
+其中 `authkey` 可以在管理面板（headscale-ui）中获取，也可以使用下面的命令：
+
+```shell
+sudo headscale preauthkeys create --user <NAME>
+```
+
+### 列出其他节点
+
+```shell
+tailscale status
+```
