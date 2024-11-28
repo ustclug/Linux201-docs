@@ -74,6 +74,17 @@ $
 
 在实际应用中，如果你使用 `sda`、`nvme0n1` 等设备名来创建 pool，ZFS 会自动对其进行分区，然后使用 `sda1`、`nvme0n1p1` 等分区名来创建 pool，并在每个盘的末尾创建一个 8 MB 的分区（`sda9`、`nvme0n1p9`）。分区的目的可能出于某些历史原因，目前无从考证，且这个编号为 9 的分区是没有任何用途的。
 
+!!! warning "不建议使用块设备名创建 zpool"
+
+    [块设备名](./filesystem.md#blk-dev-naming)在 Linux 上不是稳定的，对于存在多块硬盘的情况，在每次重启之后，块设备名无法保证不变。这会导致 ZFS 无法正确识别 zpool 中的设备，并且认为所有对应的设备都已经掉线，导致 pool 进入降级或不可用状态。
+
+    建议使用 [`/dev/disk`](./filesystem.md#partition-exp) 来创建 zpool。如果已经创建，可以先 export（取消挂载）之后再 import：
+
+    ```sh
+    zpool export tank
+    zpool import tank -d /dev/disk/by-id
+    ```
+
 在创建好 pool 之后，可以使用 `zpool status` 和 `zpool list` 查看 pool 的状态和使用情况。
 
 ```console
