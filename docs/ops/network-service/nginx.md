@@ -1,7 +1,7 @@
 
 # Nginx 速通指南
 
-*2024.12.8 | Cherrling*
+- Author: [Cherrling](https://cherr.cc)
 
 ***WebServer 不能失去 Nginx ，就如同西方不能失去耶路撒冷***
 
