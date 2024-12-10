@@ -1971,7 +1971,7 @@
 </code></pre></div>
 <p>注意 SSH config 没有提供密码配置，因为这是不安全的，请使用密钥登录。</p>
 <h3 id="public-key-authentication">公钥认证<a class="headerlink" href="#public-key-authentication" title="Permanent link">&para;</a></h3>
-<p>默认情况下，SSH 会寻找 <code>~/.ssh/id_*</code> 作为私钥，其中 <code>*</code> 部分可以是 <code>rsa</code>、<code>dsa</code>、<code>ecdsa</code>、<code>ed25519</code> 等，也可以通过 <code>-i</code> 参数指定私钥文件。私钥的文件名加上 <code>.pub</code> 后缀就是公钥文件，暂时没有方法指定公钥文件的路径。如果要在配置文件中指定一个或多个私钥，可以使用 <code>IdentityFile</code> 选项，例如：</p>
+<p>默认情况下，SSH 会寻找 <code>~/.ssh/id_*</code> 作为私钥，其中 <code>*</code> 部分可以是 <code>rsa</code>、<code>ecdsa</code>、<code>ed25519</code> 等，也可以通过 <code>-i</code> 参数指定私钥文件。私钥的文件名加上 <code>.pub</code> 后缀就是公钥文件，暂时没有方法指定公钥文件的路径。如果要在配置文件中指定一个或多个私钥，可以使用 <code>IdentityFile</code> 选项，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Host<span class="w"> </span>example
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>IdentityFile<span class="w"> </span>~/.ssh/id_rsa
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="c1">#CertificateFile ~/.ssh/id_rsa-cert.pub</span>
@@ -1994,12 +1994,6 @@
 <td>曾经的推荐长度是 2048 位，但 2020 年以后认为这个长度已不够安全</td>
 </tr>
 <tr>
-<td style="text-align: center;">DSA<br>（不推荐）</td>
-<td style="text-align: center;">1024</td>
-<td style="text-align: center;">1024</td>
-<td>由于安全性问题，OpenSSH 7.0 以后不再默认支持 DSA 密钥</td>
-</tr>
-<tr>
 <td style="text-align: center;">ECDSA</td>
 <td style="text-align: center;">256 / 384 / 521</td>
 <td style="text-align: center;">256 / 384 / 521</td>
@@ -2013,6 +2007,7 @@
 </tr>
 </tbody>
 </table>
+<p>另外，较早版本的 SSH 还有 DSA 算法（公钥以 <code>ssh-dss</code> 开头），它仅有 1024 位一种长度，安全性比 RSA 还差。因此 OpenSSH 7.0 开始默认不再生成或使用 DSA 密钥，OpenSSH 9.8 开始在编译期禁用 DSA 算法，并将很快从代码库中完全移除 DSA 相关代码。</p>
 <h3 id="port-forwarding">端口转发<a class="headerlink" href="#port-forwarding" title="Permanent link">&para;</a></h3>
 <p>SSH 配置 TCP 端口转发的格式为 <code>[bind_address:]port:host:hostport</code>，SSH 支持三种端口转发：</p>
 <dl>
