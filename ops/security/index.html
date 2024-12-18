@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
     
     
       
@@ -2884,79 +2884,105 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>但是 TA 使用的不是 HTML 的后缀，因此 Flask 没有做自动转义，使得 TA 的网站陷入了被 XSS 的风险中。万幸的是，在发现问题的时候，还没有人真的去 XSS，否则就贻笑大方了。</p>
 </div>
 <p>同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (<code>-fsanitize=address</code>) 和 <code>_FORTIFY_SOURCE</code>）加固程序。</p>
+<div class="admonition question">
+<p class="admonition-title">思考题：代码问题分析</p>
+<p>以下的 Python <a href="https://fastapi.tiangolo.com/">FastAPI</a> 代码修改自互联网上某篇博客的教程（提示：<strong>在使用其他人的代码前，请总是检查一下是否存在可能的安全问题！</strong>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span> <span class="nn">fastapi.responses</span> <span class="kn">import</span> <span class="n">FileResponse</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="kn">import</span> <span class="nn">os</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">index</span><span class="p">():</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="k">return</span> <span class="s2">&quot;Hello, world!&quot;</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/{whatever:path}&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">get_static_files_or_404</span><span class="p">(</span><span class="n">whatever</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">,</span> <span class="n">whatever</span><span class="p">)</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>        <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>    <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="s2">&quot;dist/404.html&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ol>
+<li>请分析该程序存在的安全问题，并复现（提示：你可能会对 <a href="https://en.wikipedia.org/wiki/Percent-encoding">URL encoding</a> 感兴趣）。</li>
+<li>对于规模较大的程序，人类肉眼检查类似的问题的开销是很大的。请尝试<strong>在本地</strong>使用自动化的代码扫描工具（例如 <a href="https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli">CodeQL</a>）扫描出这个问题。</li>
+<li>如果你不得不需要部署一个有可能存在这一类安全问题的应用，并且无法修改代码（该程序可能是闭源的应用）。可以采取哪些措施防止相关问题被利用，以及被利用之后影响到其他的应用？</li>
+</ol>
+</div>
 <div class="admonition example">
 <p class="admonition-title">使用 ASAN 运行时检查 C 代码的内存安全问题</p>
 <p>对于下面这个例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">input</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Enter a string: &quot;</span><span class="p">);</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%32s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Echo: %s (%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">input</span><span class="p">));</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">input</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Enter a string: &quot;</span><span class="p">);</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%32s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Echo: %s (%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">input</span><span class="p">));</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>由于 C 语言的字符串以 <code>\0</code> 结尾，<code>scanf</code> 会多写入 0 到 <code>input</code> 以外的地址，并且当代码规模庞大的时候，这样的问题不容易直接被发现。
 不过，如果加入 ASAN 并编译：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>gcc<span class="w"> </span>test.c<span class="w"> </span>-g<span class="w"> </span>-fsanitize<span class="o">=</span>address
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>gcc<span class="w"> </span>test.c<span class="w"> </span>-g<span class="w"> </span>-fsanitize<span class="o">=</span>address
 </code></pre></div>
 <p>之后运行时就会直接报错：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>./a.out
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">Enter a string: a</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">=================================================================</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">==2987262==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x72bfab309040 at pc 0x72bfada6b934 bp 0x7ffceee9d380 sp 0x7ffceee9cb08</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">WRITE of size 33 at 0x72bfab309040 thread T0</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x72bfada6b933<span class="w"> </span><span class="k">in</span><span class="w"> </span>scanf_common<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="gp">    #</span><span class="m">1</span><span class="w"> </span>0x72bfada859ba<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_vscanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1489
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="gp">    #</span><span class="m">2</span><span class="w"> </span>0x72bfada864d3<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_scanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1520
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="gp">    #</span><span class="m">3</span><span class="w"> </span>0x56cd690a1270<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:8
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gp">    #</span><span class="m">4</span><span class="w"> </span>0x72bfad834e07<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_call_main<span class="w"> </span>../sysdeps/nptl/libc_start_call_main.h:58
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="gp">    #</span><span class="m">5</span><span class="w"> </span>0x72bfad834ecb<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_main_impl<span class="w"> </span>../csu/libc-start.c:360
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="gp">    #</span><span class="m">6</span><span class="w"> </span>0x56cd690a10e4<span class="w"> </span><span class="k">in</span><span class="w"> </span>_start<span class="w"> </span><span class="o">(</span>/example/a.out+0x10e4<span class="o">)</span><span class="w"> </span><span class="o">(</span>BuildId:<span class="w"> </span>1b5d9db6c98221b5cb99988ed43d50ecc2a732c8<span class="o">)</span>
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="go">Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame</span>
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x56cd690a11c8<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:4
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="go">This frame has 1 object(s):</span>
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="go">    [32, 64) &#39;input&#39; (line 5) &lt;== Memory access at offset 64 overflows this variable</span>
-<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="go">HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork</span>
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="go">    (longjmp and C++ exceptions *are* supported)</span>
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="go">SUMMARY: AddressSanitizer: stack-buffer-overflow /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342 in scanf_common</span>
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="go">Shadow bytes around the buggy address:</span>
-<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="go">0x72bfab308d80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="go">0x72bfab308e00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="go">0x72bfab308e80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="go">0x72bfab308f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="go">0x72bfab308f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a><span class="go">=&gt;0x72bfab309000: f1 f1 f1 f1 00 00 00 00[f3]f3 f3 f3 00 00 00 00</span>
-<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a><span class="go">0x72bfab309080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a><span class="go">0x72bfab309100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a><span class="go">0x72bfab309180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a><span class="go">0x72bfab309200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a><span class="go">0x72bfab309280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a><span class="go">Shadow byte legend (one shadow byte represents 8 application bytes):</span>
-<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="go">Addressable:           00</span>
-<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a><span class="go">Partially addressable: 01 02 03 04 05 06 07</span>
-<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a><span class="go">Heap left redzone:       fa</span>
-<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a><span class="go">Freed heap region:       fd</span>
-<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a><span class="go">Stack left redzone:      f1</span>
-<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a><span class="go">Stack mid redzone:       f2</span>
-<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a><span class="go">Stack right redzone:     f3</span>
-<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a><span class="go">Stack after return:      f5</span>
-<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a><span class="go">Stack use after scope:   f8</span>
-<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a><span class="go">Global redzone:          f9</span>
-<a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a><span class="go">Global init order:       f6</span>
-<a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a><span class="go">Poisoned by user:        f7</span>
-<a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a><span class="go">Container overflow:      fc</span>
-<a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a><span class="go">Array cookie:            ac</span>
-<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a><span class="go">Intra object redzone:    bb</span>
-<a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a><span class="go">ASan internal:           fe</span>
-<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a><span class="go">Left alloca redzone:     ca</span>
-<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a><span class="go">Right alloca redzone:    cb</span>
-<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a><span class="go">==2987262==ABORTING</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>./a.out
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">Enter a string: a</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">=================================================================</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">==2987262==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x72bfab309040 at pc 0x72bfada6b934 bp 0x7ffceee9d380 sp 0x7ffceee9cb08</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">WRITE of size 33 at 0x72bfab309040 thread T0</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x72bfada6b933<span class="w"> </span><span class="k">in</span><span class="w"> </span>scanf_common<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="gp">    #</span><span class="m">1</span><span class="w"> </span>0x72bfada859ba<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_vscanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1489
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="gp">    #</span><span class="m">2</span><span class="w"> </span>0x72bfada864d3<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_scanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1520
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="gp">    #</span><span class="m">3</span><span class="w"> </span>0x56cd690a1270<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:8
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="gp">    #</span><span class="m">4</span><span class="w"> </span>0x72bfad834e07<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_call_main<span class="w"> </span>../sysdeps/nptl/libc_start_call_main.h:58
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="gp">    #</span><span class="m">5</span><span class="w"> </span>0x72bfad834ecb<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_main_impl<span class="w"> </span>../csu/libc-start.c:360
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="gp">    #</span><span class="m">6</span><span class="w"> </span>0x56cd690a10e4<span class="w"> </span><span class="k">in</span><span class="w"> </span>_start<span class="w"> </span><span class="o">(</span>/example/a.out+0x10e4<span class="o">)</span><span class="w"> </span><span class="o">(</span>BuildId:<span class="w"> </span>1b5d9db6c98221b5cb99988ed43d50ecc2a732c8<span class="o">)</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="go">Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x56cd690a11c8<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:4
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="go">This frame has 1 object(s):</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="go">    [32, 64) &#39;input&#39; (line 5) &lt;== Memory access at offset 64 overflows this variable</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="go">HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="go">    (longjmp and C++ exceptions *are* supported)</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="go">SUMMARY: AddressSanitizer: stack-buffer-overflow /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342 in scanf_common</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="go">Shadow bytes around the buggy address:</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="go">0x72bfab308d80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="go">0x72bfab308e00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="go">0x72bfab308e80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="go">0x72bfab308f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="go">0x72bfab308f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="go">=&gt;0x72bfab309000: f1 f1 f1 f1 00 00 00 00[f3]f3 f3 f3 00 00 00 00</span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="go">0x72bfab309080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="go">0x72bfab309100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="go">0x72bfab309180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="go">0x72bfab309200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="go">0x72bfab309280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="go">Shadow byte legend (one shadow byte represents 8 application bytes):</span>
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="go">Addressable:           00</span>
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="go">Partially addressable: 01 02 03 04 05 06 07</span>
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a><span class="go">Heap left redzone:       fa</span>
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a><span class="go">Freed heap region:       fd</span>
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="go">Stack left redzone:      f1</span>
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="go">Stack mid redzone:       f2</span>
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="go">Stack right redzone:     f3</span>
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="go">Stack after return:      f5</span>
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="go">Stack use after scope:   f8</span>
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a><span class="go">Global redzone:          f9</span>
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a><span class="go">Global init order:       f6</span>
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a><span class="go">Poisoned by user:        f7</span>
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a><span class="go">Container overflow:      fc</span>
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a><span class="go">Array cookie:            ac</span>
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a><span class="go">Intra object redzone:    bb</span>
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a><span class="go">ASan internal:           fe</span>
+<a id="__codelineno-13-51" name="__codelineno-13-51" href="#__codelineno-13-51"></a><span class="go">Left alloca redzone:     ca</span>
+<a id="__codelineno-13-52" name="__codelineno-13-52" href="#__codelineno-13-52"></a><span class="go">Right alloca redzone:    cb</span>
+<a id="__codelineno-13-53" name="__codelineno-13-53" href="#__codelineno-13-53"></a><span class="go">==2987262==ABORTING</span>
 </code></pre></div>
 <p>由于相比于 Valgrind，ASAN 的开销低很多，因此在不需要极致性能的场景下，甚至可以直接将开启 ASAN 编译后的程序上线到生产环境中，以减轻未知的内存安全问题带来的影响。</p>
 </div>
@@ -2984,30 +3010,30 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition warning">
 <p class="admonition-title">SSH 与中间人攻击</p>
 <p>在首次登录某台机器时，你会看到 SSH 这样的输出：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
 </code></pre></div>
 <p>如果之前连接过的服务器发生了变化，或者有中间人在网络攻击，那么会看到下面的内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">Please contact your system administrator.</span>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="go">Host key verification failed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">Please contact your system administrator.</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">Host key verification failed.</span>
 </code></pre></div>
 <p>不要忽略相关的提示与警告。如果可行，请验证 fingerprint 与远程服务器的 fingerprint 是切实相符的：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
 </code></pre></div>
 </div>
 <h4 id="security-bullet">关注安全通告<a class="headerlink" href="#security-bullet" title="Permanent link">&para;</a></h4>
@@ -3041,50 +3067,50 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。</p>
 </div>
 <p>以下是多年前使用 nuclei 扫描一个长时间未升级的 Grafana 实例的结果：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">                     __     _</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">  projectdiscovery.io</span>
-<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>
-<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
-<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
-<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
-<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
-<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
-<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
-<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
-<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
-<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
-<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">                     __     _</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="go">  projectdiscovery.io</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
 </code></pre></div>
 <p>可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。</p>
 <h3 id="security-event-example">安全事件处理示例<a class="headerlink" href="#security-event-example" title="Permanent link">&para;</a></h3>
 <p>以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。</p>
 <h4 id="password-leak-rce-example">从泄漏密码到 RCE<a class="headerlink" href="#password-leak-rce-example" title="Permanent link">&para;</a></h4>
 <p>2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 <code>docker top</code> 检查发现容器里出现了奇怪的进程，如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
 </code></pre></div>
 <p>检查容器文件系统，发现 <code>/tmp</code> 下面多了很多文件，一些 log 文件似乎是内网扫描器的输出。因此管理员 C 立刻关闭了容器，并且导出了容器文件系统以及数据库（在另一个容器中）以进一步检查。</p>
 <p>由于配置问题，容器外的 Nginx 日志记录的 IP 均为 CDN 的 IP，没有记录到真实 IP 地址。不过，观察访问的 URL，发现存在可疑的访问主题编辑器的 <code>POST</code> 请求，根据相关的 User agent 记录，发现攻击者似乎在尝试登录网站后台。</p>
 <p>检查 WordPress 本地文件的修改日期，发现某个主题文件的修改日期不正常，开头插入了以下的 PHP：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="cp">&lt;?php</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
-<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="cp">&lt;?php</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="p">}</span>
 </code></pre></div>
 <p>可以推测，攻击者在修改了主题之后，就可以利用主题的 PHP 文件执行任意命令了。</p>
 <p>管理员 C 之前配置了 WordPress 本体与插件的自动升级，因此大概率是某个管理员用户的密码泄漏导致的。由于该网站重要性不高，因此可以花一些时间仔细检查后再考虑重新上线。几日后，攻击者向另一名管理员发送邮件致歉，并且提供了入侵手段：从某个俄罗斯 botnet 中获取了泄漏的用户名与密码（攻击者认为是安装了有问题的破解程序导致的），之后登录入侵后尝试做了内网扫描，并且该密码同样也可以登录此人在该组织的 GitLab 账号。在第一时间封禁了该 GitLab 账号后，检查 Nginx 日志获取了所有攻击者访问的仓库，万幸的是，这些仓库中不包含敏感信息。</p>
@@ -3207,7 +3233,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
     <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.annotate", "content.code.copy", "navigation.indexes", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      <script src="../../assets/javascripts/bundle.88dd0f4e.min.js"></script>
       
     
   </body>
