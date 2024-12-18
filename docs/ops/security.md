@@ -502,6 +502,33 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (`-fsanitize=address`) 和 `_FORTIFY_SOURCE`）加固程序。
 
+!!! question "思考题：代码问题分析"
+
+    以下的 Python [FastAPI](https://fastapi.tiangolo.com/) 代码修改自互联网上某篇博客的教程（提示：**在使用其他人的代码前，请总是检查一下是否存在可能的安全问题！**）：
+
+    ```python
+    from fastapi import FastAPI
+    from fastapi.responses import FileResponse
+    import os
+
+    app = FastAPI()
+
+    @app.get("/")
+    async def index():
+        return "Hello, world!"
+
+    @app.get("/{whatever:path}")
+    async def get_static_files_or_404(whatever: str):
+        file_path = os.path.join("dist", whatever)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse("dist/404.html")
+    ```
+
+    1. 请分析该程序存在的安全问题，并复现（提示：你可能会对 [URL encoding](https://en.wikipedia.org/wiki/Percent-encoding) 感兴趣）。
+    2. 对于规模较大的程序，人类肉眼检查类似的问题的开销是很大的。请尝试**在本地**使用自动化的代码扫描工具（例如 [CodeQL](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli)）扫描出这个问题。
+    3. 如果你不得不需要部署一个有可能存在这一类安全问题的应用，并且无法修改代码（该程序可能是闭源的应用）。可以采取哪些措施防止相关问题被利用，以及被利用之后影响到其他的应用？
+
 !!! example "使用 ASAN 运行时检查 C 代码的内存安全问题"
 
     对于下面这个例子：
