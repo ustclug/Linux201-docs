@@ -504,7 +504,9 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 !!! question "思考题：代码问题分析"
 
-    以下的 Python [FastAPI](https://fastapi.tiangolo.com/) 代码修改自互联网上某篇博客的教程（提示：**在使用其他人的代码前，请总是检查一下是否存在可能的安全问题！**）：
+    以下的 Python [FastAPI](https://fastapi.tiangolo.com/) 代码修改自互联网上某篇博客的教程。
+
+    提示：**在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！**对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码[^prompt]。
 
     ```python
     from fastapi import FastAPI
@@ -791,3 +793,7 @@ function downloadFile($url,$x){
 !!! question "你的看法？"
 
     受到时间、成本与技术的限制，以上的处理不是完美的。如果你是管理员 C，你会做什么？
+
+<!-- markdownlint-disable MD053 -->
+
+[^prompt]: 测试 prompt 内容：`我现在在用 FastAPI+Vue 编写一个网站，Vue 的导航方式为 history，编译后的静态 Vue 网页文件在 dist 目录下，入口文件名为 index.html。现在我要使用 FastAPI 同时作为前端和 API 的 server，API 在 /api/* 路径下，请编写代码，使得 dist 目录下没有对应文件时返回 index.html 的内容，以便即使 Vue 的路径不实际在 dist 目录下时也能正确显示对应的页面。`
