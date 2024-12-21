@@ -2886,7 +2886,8 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (<code>-fsanitize=address</code>) 和 <code>_FORTIFY_SOURCE</code>）加固程序。</p>
 <div class="admonition question">
 <p class="admonition-title">思考题：代码问题分析</p>
-<p>以下的 Python <a href="https://fastapi.tiangolo.com/">FastAPI</a> 代码修改自互联网上某篇博客的教程（提示：<strong>在使用其他人的代码前，请总是检查一下是否存在可能的安全问题！</strong>）：</p>
+<p>以下的 Python <a href="https://fastapi.tiangolo.com/">FastAPI</a> 代码修改自互联网上某篇博客的教程。</p>
+<p>提示：<strong>在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！</strong>对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码<sup id="fnref:prompt"><a class="footnote-ref" href="#fn:prompt">1</a></sup>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span> <span class="nn">fastapi.responses</span> <span class="kn">import</span> <span class="n">FileResponse</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="kn">import</span> <span class="nn">os</span>
@@ -3126,6 +3127,8 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p class="admonition-title">你的看法？</p>
 <p>受到时间、成本与技术的限制，以上的处理不是完美的。如果你是管理员 C，你会做什么？</p>
 </div>
+<!-- markdownlint-disable MD053 -->
+
 <!--
   Links to man pages
 
@@ -3143,6 +3146,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <!-- man 7 -->
 
 <!-- man 8 -->
+
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:prompt">
+<p>测试 prompt 内容：<code>我现在在用 FastAPI+Vue 编写一个网站，Vue 的导航方式为 history，编译后的静态 Vue 网页文件在 dist 目录下，入口文件名为 index.html。现在我要使用 FastAPI 同时作为前端和 API 的 server，API 在 /api/* 路径下，请编写代码，使得 dist 目录下没有对应文件时返回 index.html 的内容，以便即使 Vue 的路径不实际在 dist 目录下时也能正确显示对应的页面。</code>&#160;<a class="footnote-backref" href="#fnref:prompt" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
 
 
 
