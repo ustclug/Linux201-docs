@@ -2,7 +2,7 @@
 
 !!! note "主要作者"
 
-    [@taoky][taoky]、[@iBug][iBug]
+    [@taoky][taoky]、[@iBug][iBug]、[@TheRainstorm][TheRainstorm]
 
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
@@ -384,7 +384,7 @@ Linux：
 
 由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于修改和重复使用。
 
-fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负载。fio 支持输入多个 job 文件，每个 job 文件会依次运行。而 job 文件内的任务默认是并行运行的，可以使用`stonewall`参数来保证串行。
+fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负载。fio 支持输入多个 job 文件，每个 job 文件会依次运行。而 job 文件内的任务默认是并行运行的，可以使用 `stonewall` 参数来保证串行。
 
 Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。
 
