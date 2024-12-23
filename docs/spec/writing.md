@@ -8,6 +8,24 @@
 
 Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且使用 [autocorrect](https://github.com/huacnlee/autocorrect/) 进行中文格式检查，与 [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2) 做 Markdown 格式检查。请阅读[仓库下的 README.md](https://github.com/ustclug/Linux201-docs/blob/master/README.md) 了解基本环境的配置。
 
+### 主要作者 {#authors}
+
+如果你编写了某个章节的一部分或全部内容，或为某个章节的写作思路提供了重要的帮助，请在 `includes/authors.md` 中添加你的 ID，类似于这样（假设你叫 `example`）：
+
+```markdown
+[example]: https://github.com/example
+```
+
+然后章节开头的主要作者提示框格式类似如下：
+
+```markdown
+!!! note "主要作者"
+
+    [@example][example]、[@test][test]
+```
+
+不同名字之间使用**中文全角顿号**（即「、」）分隔。
+
 ### 章节编写状态 {#status}
 
 对于未定稿的内容，根据状态不同，请在 h1 标题下方添加如下内容：

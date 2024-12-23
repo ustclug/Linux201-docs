@@ -4,6 +4,10 @@ icon: material/security
 
 # 安全
 
+!!! note "主要作者"
+
+    [@taoky][taoky]、[@tiankaima][tiankaima]、[@Crabtux][Crabtux]
+
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
 !!! note "阅读注意事项"

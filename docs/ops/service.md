@@ -4,6 +4,10 @@ icon: material/room-service
 
 # 服务与日志管理
 
+!!! note "主要作者"
+
+    [@iBug][iBug]
+
 !!! warning "本文仍在编辑中"
 
 现代的 Linux 发行版都使用 systemd 来管理系统服务，因此本文主要介绍 systemd 环境下的服务与日志管理，<s>Gentoo 用户请绕道</s>。

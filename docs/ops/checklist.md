@@ -4,6 +4,10 @@ icon: octicons/checklist-16
 
 # 运维检查单
 
+!!! note "主要作者"
+
+    [@iBug][iBug]、[@libreliu][libreliu]
+
 !!! warning "本文仍在编辑中"
 
 本节主要提供如单/多台 Linux 服务器供多用户分享的情况下的运维配置和检查清单。

@@ -4,6 +4,10 @@ icon: material/bug
 
 # 问题调试
 
+!!! note "主要作者"
+
+    [@taoky][taoky]
+
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
 本部分介绍调试问题时的一般思路和方法。

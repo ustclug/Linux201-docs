@@ -4,6 +4,10 @@ icon: material/package
 
 # 包管理系统
 
+!!! note "主要作者"
+
+    [@2403772980ygy][2403772980ygy]
+
 !!! warning "本文初稿编写中"
 
 <!-- 简介 -->

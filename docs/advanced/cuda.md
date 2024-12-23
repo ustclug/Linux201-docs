@@ -4,6 +4,10 @@ icon: simple/nvidia
 
 # CUDA 环境简介
 
+!!! note "主要作者"
+
+    [@sscssc][sscssc]、[@taoky][taoky]
+
 !!! warning "本文初稿（也许）已完成，但可能仍需大幅度修改"
 
 CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发套件，它允许软件开发人员使用 NVIDIA 的 GPU（图形处理单元）进行通用计算，利用 GPU 强大的并行处理能力来加速计算密集型任务，常用于科学计算、工程模拟、机器学习等领域。

@@ -4,6 +4,10 @@ icon: material/xml
 
 # 编程语言概览
 
+!!! note "主要作者"
+
+    [@tiankaima][tiankaima]
+
 !!! warning "本文仍在编辑中"
 
 !!! note

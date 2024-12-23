@@ -4,6 +4,10 @@ icon: simple/git
 
 # 版本管理与合作
 
+!!! note "主要作者"
+
+    [@tiankaima][tiankaima]
+
 !!! warning "Pending Review"
 
 ## Git 使用技巧
