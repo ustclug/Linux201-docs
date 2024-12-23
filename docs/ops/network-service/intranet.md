@@ -2,7 +2,7 @@
 
 !!! note "主要作者"
 
-    [@yuanyiwei][yuanyiwei]、[@sscssc][sscssc]、[@tiankaima][tiankaima]
+    [@yuanyiwei][yuanyiwei]、[@sscscc][sscscc]、[@tiankaima][tiankaima]
 
 !!! warning "本文初稿编写中"
 

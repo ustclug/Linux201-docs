@@ -6,7 +6,7 @@ icon: material/skull-scan
 
 !!! note "主要作者"
 
-    [@sscssc][sscssc]
+    [@sscscc][sscscc]
 
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 

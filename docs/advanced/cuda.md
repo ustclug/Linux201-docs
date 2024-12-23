@@ -6,7 +6,7 @@ icon: simple/nvidia
 
 !!! note "主要作者"
 
-    [@sscssc][sscssc]、[@taoky][taoky]
+    [@sscscc][sscscc]、[@taoky][taoky]
 
 !!! warning "本文初稿已完成，但可能仍需大幅度修改"
 
