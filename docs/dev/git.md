@@ -8,7 +8,7 @@ icon: simple/git
 
     [@tiankaima][tiankaima]
 
-!!! warning "Pending Review"
+!!! warning "本文已完成，等待校对"
 
 ## Git 使用技巧
 

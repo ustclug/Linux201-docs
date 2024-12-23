@@ -8,7 +8,7 @@ icon: material/ssh
 
     [@iBug][iBug]、[@taoky][taoky]
 
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿编写中"
 
 尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，因此本教程只介绍 OpenSSH 的使用。
 

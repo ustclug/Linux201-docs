@@ -4,7 +4,7 @@
 
     [@RTXUX][RTXUX]
 
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿编写中"
 
 QEMU/KVM 是 Linux 服务器上常用的虚拟化方案。其分为运行在用户空间的 QEMU 和运行在内核空间的 KVM 两部分。QEMU 负责模拟硬件，KVM 则负责虚拟机的运行。
 

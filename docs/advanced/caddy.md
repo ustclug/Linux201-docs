@@ -4,7 +4,7 @@
 
     [@tiankaima][tiankaima]
 
-!!! warning "Pending Review"
+!!! warning "本文已完成，等待校对"
 
 Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。
 

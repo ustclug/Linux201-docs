@@ -8,7 +8,7 @@ icon: octicons/checklist-16
 
     [@iBug][iBug]、[@libreliu][libreliu]
 
-!!! warning "本文仍在编辑中"
+!!! warning "本文初稿编写中"
 
 本节主要提供如单/多台 Linux 服务器供多用户分享的情况下的运维配置和检查清单。
 
