@@ -8,7 +8,7 @@ icon: fontawesome/solid/z
 
     [@iBug][iBug]
 
-!!! warning "本文初稿编写中"
+!!! warning "本文编写中"
 
 ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存储管理功能，包括文件系统、卷管理、快照、数据完整性检查和修复等，常被称作“单机最强存储方案”。
 

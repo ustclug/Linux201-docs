@@ -4,7 +4,7 @@
 
     [@yuanyiwei][yuanyiwei]、[@sscscc][sscscc]、[@tiankaima][tiankaima]
 
-!!! warning "本文初稿编写中"
+!!! warning "本文编写中"
 
 在网络中，隧道是一种将数据包从一个网络节点封装并传输到另一个网络节点的技术。它可以用于在两个不同的网络之间建立虚拟连接，也可以用于绕过防火墙或其他网络限制。
 

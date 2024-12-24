@@ -8,7 +8,7 @@ icon: material/xml
 
     [@tiankaima][tiankaima]
 
-!!! warning "本文初稿编写中"
+!!! warning "本文编写中"
 
 !!! note
 
