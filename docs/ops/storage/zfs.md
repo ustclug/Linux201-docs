@@ -235,9 +235,11 @@ arc_summary | less
 
     阅读[问题调试的 eBPF 部分](../debug.md#ebpf)，可以注意到，基于 eBPF 的 `cachetop` 工具可以显示每个进程对 Linux 内核的页缓存（page cache）的命中率情况（如果还没有跑过的话，可以试一试，并阅读其源代码）。
 
-    ZFS ARC 也可以用相似的方式进行追踪（可以手动使用 `bpftrace`，或者修改 `cachetop` 的源码）。
+    ZFS ARC 也可以用相似的方式进行追踪（可以手动使用 `bpftrace`，或者修改 `cachetop` 的源码）。尝试编写工具，以进程为单位显示 ZFS ARC 的命中率情况。
 
     提示：你可能会想先 `sudo bpftrace -l | grep zfs | grep arc` 来查看 ZFS ARC 的相关内核函数。
+
+    目前，ZFS 的文件读写不会经过 Linux 自己的 page cache，除了 `mmap` 的情况需要同时在 ARC 和 page cache 保存两份缓存以外。尝试验证这一点。
 
 ### 案例 {#tuning-example}
 
