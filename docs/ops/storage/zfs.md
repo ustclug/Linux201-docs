@@ -231,6 +231,14 @@ ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可
 arc_summary | less
 ```
 
+!!! lab "追踪每个进程的 ARC 命中率"
+
+    阅读[问题调试的 eBPF 部分](../debug.md#ebpf)，可以注意到，基于 eBPF 的 `cachetop` 工具可以显示每个进程对 Linux 内核的页缓存（page cache）的命中率情况（如果还没有跑过的话，可以试一试，并阅读其源代码）。
+
+    ZFS ARC 也可以用相似的方式进行追踪（可以手动使用 `bpftrace`，或者修改 `cachetop` 的源码）。
+
+    提示：你可能会想先 `sudo bpftrace -l | grep zfs | grep arc` 来查看 ZFS ARC 的相关内核函数。
+
 ### 案例 {#tuning-example}
 
 ??? example "案例：通过调节参数降低镜像站的磁盘负载"
