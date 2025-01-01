@@ -8,7 +8,7 @@
 
 Nginx 是一个高性能的 HTTP 和反向代理服务器，它可以作为一个独立的 Web 服务器，也可以作为其他 Web 服务器的反向代理服务器。
 
-如果你只是需要简单快速的拉起一个网站，或许也可以试试 Caddy，它是一个更加简单的 Web 服务器。
+如果你只是需要简单快速的拉起一个网站，或许也可以试试 [Caddy](https://201.ustclug.org/advanced/caddy/)，它是一个更加简单的 Web 服务器。
 
 ## 安装
 
@@ -29,40 +29,61 @@ sudo systemctl status nginx # 查看 Nginx 状态
 ```
 
 常用命令：
-
 ```bash
 sudo nginx -t # 检查配置文件是否正确
 sudo nginx -s reload # 不停机重新加载配置文件
 sudo systemctl reload nginx # 不停机重新加载配置文件
 sudo nginx -s stop # 停止 Nginx
-sudo nginx -s quit # 安全停止 Nginx （完成当前请求后停止）
+sudo nginx -s quit # 安全停止 Nginx（完成当前请求后停止）
 ```
+
 
 ## 配置
 
 ### 配置文件在哪
 
+**对于 Debian & Ubuntu 系来说**
+
+nginx.conf:
+```nginx
+http {
+    …
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+```
+
 配置 Nginx 主要涉及到三个目录，分别是 `/etc/nginx/nginx.conf`、`/etc/nginx/sites-available` 和 `/etc/nginx/sites-enabled`。
 
-- `nginx.conf` 是 Nginx 的主配置文件，它包含了 Nginx 的全局配置。
-- `sites-available` 目录下存放的是所有的站点配置文件。
-- `sites-enabled` 目录下存放的是启用的站点配置文件的符号链接。
+* `nginx.conf` 是 Nginx 的主配置文件，它包含了 Nginx 的全局配置。
+* `sites-available` 目录下存放的是所有的站点配置文件。
+* `sites-enabled` 目录下存放的是启用的站点配置文件的符号链接。
 
-一般情况下，我们不直接修改 `nginx.conf` 文件，而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。
+一般情况下，我们不在 `nginx.conf` 文件中直接编写站点信息（`http` 块），而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。
 如果要暂时下线某个站点，只需要删除 `sites-enabled` 目录下的符号链接即可，而不需要删除配置文件。
 
-在一些较老版本的 Nginx 中，`sites-available` 和 `sites-enabled` 目录可能不存在，你可以在 `conf.d` 目录中新建 `*.conf` 文件来存放站点配置。
-一般情况下，`nginx.conf` 文件中会用 `include` 指令引入 `sites-enabled` 和 `conf.d` 目录下的配置文件。
+从 NGINX 的角度来看，唯一的区别在于来自 `conf.d` 的文件能够更早被处理，因此，如果您有相互冲突的配置，那么来自 `conf.d` 的配置会优先于 `sites-enabled` 中的配置。
 
-> ```nginx
-> # nginx.conf
-> include /etc/nginx/conf.d/*.conf;
-> include /etc/nginx/sites-enabled/*;
-> ```
+**对于其他发行版和官方源来说**
+
+nginx 官方上游包的 /etc/nginx/nginx.conf:
+```nginx
+http {
+    …
+    include /etc/nginx/conf.d/*.conf;
+}
+```
+
+并没有`/etc/nginx/sites-available` 和 `/etc/nginx/sites-enabled`这两个目录，你需要将你编写的配置文件放置于 `/etc/nginx/conf.d` 目录下，但当你需要禁用某些内容时，必须将其移出文件夹、删除或进行更改。当然，你也可以自己创建 `sites-available` 和 `sites-enabled` 目录，然后在 `nginx.conf` 中引入。
+
+所以其实 Debian & Ubuntu 系的配置文件中关于 `sites-*` 文件夹的抽象使事情更有条理，并允许你通过单独的脚本来管理它们。
+
+关于两者的区别，你可以查看[这篇文章](https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx)。
+
 
 ### 我该如何编辑？
 
-编辑默认站点配置文件：
+编辑默认站点配置文件
 
 ```bash
 sudo vim /etc/nginx/sites-available/default
@@ -130,6 +151,9 @@ sudo nginx -s reload
 sudo systemctl reload nginx
 ```
 
+需要注意的是，如果没有检查配置，并且配置中存在错误，`nginx -s reload` 会让 nginx 停止，而 `systemctl reload nginx` 不会，并且不会采用新的配置文件。
+
+
 ## 进阶教程
 
 ### Nginx 名词扫盲
@@ -141,7 +165,6 @@ sudo systemctl reload nginx
 Nginx 的配置文件中可以有多个 server 块，每个 server 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 server 块。
 Nginx 正是通过 server 块来实现多站点配置的。
 一个典型的 server 块：
-
 ```nginx
 server {
     listen 80;  # 监听的端口
@@ -175,9 +198,9 @@ location [modifier] /path/ {
 
 一个十分巧妙的负载均衡算法是一致性哈希算法，它可以保证在服务器数量变化时，尽可能少地改变已有的映射关系。推荐阅读：[一致性哈希算法](https://zh.wikipedia.org/wiki/%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C)。
 
-#### SSL/TLS
+#### TLS
 
-SSL/TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 SSL/TLS 协议，可以用来配置 HTTPS 站点。
+TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
 
 一般的 http 监听端口是 80，https 监听端口是 443。
 
@@ -210,7 +233,6 @@ server {
         try_files $uri $uri/ =404;
     }
 }
-
 server {
     listen 80;  # 监听的端口
     server_name example.org www.example.org;  # 指定的域名
@@ -218,8 +240,6 @@ server {
     location / {
         try_files $uri $uri/ =404;
     }
-}
-
 server {
     listen 80 default_server;  # 默认站点
     server_name _;  # 默认域名
@@ -229,9 +249,8 @@ server {
     }
 }
 ```
-
-注意到除了指定的域名外，还有一个 `_`，它表示默认域名。如果请求的域名不在 `server_name` 中，Nginx 会使用 `*` 对应的 server 块来处理请求。
-那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 `server_name` 中时，Nginx 会使用 `default_server` 对应的 server 块来处理请求。
+注意到除了指定的域名外，还有一个 `_`，它表示默认域名。如果请求的域名不在 server_name 中，Nginx 会使用 `_` 对应的 server 块来处理请求。
+那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 server_name 中时，Nginx 会使用 `default_server` 对应的 server 块来处理请求。
 一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
 
 但是要注意的是，如果你只写了 `listen 80 default_server;`，比如：
@@ -315,7 +334,6 @@ location ~ /example[0-9] {
     # 处理请求 /example1, /example2, ...
     return 200 "This is a case-sensitive regex match.";
 }
-
 location ~ \.php$ {
     # 处理以 .php 结尾的请求
     include fastcgi_params;
@@ -541,7 +559,6 @@ http {
 Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
 
 最少连接：
-
 ```nginx
 upstream backend {
     least_conn;  # 使用最少连接算法
