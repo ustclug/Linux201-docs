@@ -4,7 +4,7 @@
 
     [@taoky][taoky]
 
-!!! warning "本文初稿已完成，但可能仍需大幅度修改"
+!!! warning "本文已完成，等待校对"
 
 本文介绍常见的 RAID 方案的使用与维护。
 直接使用 LVM 创建 RAID 的方法请参考 [LVM](./lvm.md)；

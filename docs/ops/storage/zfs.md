@@ -8,7 +8,7 @@ icon: fontawesome/solid/z
 
     [@iBug][iBug]
 
-!!! warning "本文初稿编写中"
+!!! warning "本文编写中"
 
 ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存储管理功能，包括文件系统、卷管理、快照、数据完整性检查和修复等，常被称作“单机最强存储方案”。
 
@@ -230,6 +230,16 @@ ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可
 ```shell
 arc_summary | less
 ```
+
+!!! lab "追踪每个进程的 ARC 命中率"
+
+    阅读[问题调试的 eBPF 部分](../debug.md#ebpf)，可以注意到，基于 eBPF 的 `cachetop` 工具可以显示每个进程对 Linux 内核的页缓存（page cache）的命中率情况（如果还没有跑过的话，可以试一试，并阅读其源代码）。
+
+    ZFS ARC 也可以用相似的方式进行追踪（可以手动使用 `bpftrace`，或者修改 `cachetop` 的源码）。尝试编写工具，以进程为单位显示 ZFS ARC 的命中率情况。
+
+    提示：你可能会想先 `sudo bpftrace -l | grep zfs | grep arc` 来查看 ZFS ARC 的相关内核函数。
+
+    目前，ZFS 的文件读写不会经过 Linux 自己的 page cache，除了 `mmap` 的情况需要同时在 ARC 和 page cache 保存两份缓存以外。尝试验证这一点。
 
 ### 案例 {#tuning-example}
 

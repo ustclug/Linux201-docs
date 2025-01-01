@@ -6,9 +6,9 @@ icon: material/skull-scan
 
 !!! note "主要作者"
 
-    [@sscssc][sscssc]
+    [@sscscc][sscscc]
 
-!!! warning "本文初稿已完成，但可能仍需大幅度修改"
+!!! warning "本文已完成，等待校对"
 
 Nmap（Network Mapper）是一个开源的网络探测和安全检查工具。它由 Gordon Lyon（也被称为 Fyodor Vaskovich）创造，并首次发布于 1997 年。主要功能包括，主机发现，端口扫描，服务版本探测，操作系统检测，脚本扫描等。由于其强大的功能和灵活性，Nmap 已经成为世界上最受欢迎的网络扫描工具之一，并被广泛应用于安全社区和 IT 行业。
 

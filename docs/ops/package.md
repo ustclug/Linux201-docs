@@ -8,7 +8,7 @@ icon: material/package
 
     [@2403772980ygy][2403772980ygy]
 
-!!! warning "本文初稿编写中"
+!!! warning "本文编写中"
 
 <!-- 简介 -->
 

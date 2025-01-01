@@ -8,7 +8,7 @@ icon: material/security
 
     [@taoky][taoky]、[@tiankaima][tiankaima]、[@Crabtux][Crabtux]
 
-!!! warning "本文初稿已完成，但可能仍需大幅度修改"
+!!! warning "本文已完成，等待校对"
 
 !!! note "阅读注意事项"
 

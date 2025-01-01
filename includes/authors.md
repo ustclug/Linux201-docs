@@ -13,8 +13,9 @@
 [RTXUX]: https://github.com/RTXUX
 [tiankaima]: https://github.com/tiankaima
 [Crabtux]: https://github.com/Crabtux
-[sscssc]: https://github.com/sscssc
+[sscscc]: https://github.com/sscscc
 [Integral-Tech]: https://github.com/Integral-Tech
 [stevapple]: https://github.com/stevapple
 [yuanyiwei]: https://github.com/yuanyiwei
 [Cherrling]: https://cherr.cc
+[TheRainstorm]: https://github.com/TheRainstorm
