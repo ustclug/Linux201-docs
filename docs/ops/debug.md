@@ -18,20 +18,20 @@ icon: material/bug
 以下提供在系统遇到异常情况时，可以快速检查的一些项目：
 
 - 系统负载
-  - `uptime` 可以查看系统在过去 1 分钟、5 分钟、15 分钟的平均负载——这里的「负载」指的是正在等待 CPU 的进程数量（包括陷入不可中断睡眠的进程，大多数情况下处于这种状态的进程都在等待磁盘 I/O）。
-  - [PSI（Pressure Stall Information）信息](https://docs.kernel.org/accounting/psi.html)可以确认系统的具体的压力情况。在 `/proc/pressure` 目录下可以看到 CPU、I/O、IRQ 以及内存的压力情况。在每个文件中，`some` 代表至少一些进程需要等待对应资源的**时间比例**（0 到 100），`full` 代表所有进程需要等待对应资源的**时间比例**。
-    - PSI 可以精确到 [cgroup](./virtualization/container.md#cgroups)——每个 cgroup 下的 `*.pressure` 就是对应的压力信息。
-  - `htop` 可以快速查看系统的 CPU、内存（包括 swap）以及进程情况。在进程数量很多的时候，`top` 的性能会更好一些（虽然易用性不如 `htop`）。
-  - `iostat 1` 可以每隔 1 秒输出一次磁盘 I/O 情况。
+    - `uptime` 可以查看系统在过去 1 分钟、5 分钟、15 分钟的平均负载——这里的「负载」指的是正在等待 CPU 的进程数量（包括陷入不可中断睡眠的进程，大多数情况下处于这种状态的进程都在等待磁盘 I/O）。
+    - [PSI（Pressure Stall Information）信息](https://docs.kernel.org/accounting/psi.html)可以确认系统的具体的压力情况。在 `/proc/pressure` 目录下可以看到 CPU、I/O、IRQ 以及内存的压力情况。在每个文件中，`some` 代表至少一些进程需要等待对应资源的**时间比例**（0 到 100），`full` 代表所有进程需要等待对应资源的**时间比例**。
+        - PSI 可以精确到 [cgroup](./virtualization/container.md#cgroups)——每个 cgroup 下的 `*.pressure` 就是对应的压力信息。
+    - `htop` 可以快速查看系统的 CPU、内存（包括 swap）以及进程情况。在进程数量很多的时候，`top` 的性能会更好一些（虽然易用性不如 `htop`）。
+    - `iostat 1` 可以每隔 1 秒输出一次磁盘 I/O 情况。
 - 系统日志
-  - `journalctl -f`
-  - `dmesg -w`
+    - `journalctl -f`
+    - `dmesg -w`
 - 资源使用情况
-  - `df -h` 可以查看磁盘空间使用情况。
-  - `iotop` 可以按进程查看磁盘 I/O 情况。
-    - iotop 有两个不同的版本，在各个发行版中一般分为 `iotop` 和 `iotop-c`。前者已经停止维护，因此**推荐安装 `iotop-c`**。
-  - `iftop` 可以查看对应接口的网络流量情况。
-    - 如果需要按进程查看网络流量情况，可以使用 `nethogs`。
+    - `df -h` 可以查看磁盘空间使用情况。
+    - `iotop` 可以按进程查看磁盘 I/O 情况。
+        - iotop 有两个不同的版本，在各个发行版中一般分为 `iotop` 和 `iotop-c`。前者已经停止维护，因此**推荐安装 `iotop-c`**。
+    - `iftop` 可以查看对应接口的网络流量情况。
+        - 如果需要按进程查看网络流量情况，可以使用 `nethogs`。
 
 ## 服务状态与日志 {#status-and-logs}
 
