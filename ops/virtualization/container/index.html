@@ -3193,10 +3193,10 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-64-6" name="__codelineno-64-6" href="#__codelineno-64-6"></a><span class="go">（卡住直到超时，SIGKILL）</span>
 </code></pre></div>
 <p>如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。对于 Python 而言，可以这么解决：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="kn">import</span> <span class="nn">signal</span>
-<a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a><span class="kn">import</span> <span class="nn">sys</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
+<a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a>
-<a id="__codelineno-65-4" name="__codelineno-65-4" href="#__codelineno-65-4"></a><span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+<a id="__codelineno-65-4" name="__codelineno-65-4" href="#__codelineno-65-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
 <a id="__codelineno-65-5" name="__codelineno-65-5" href="#__codelineno-65-5"></a>  <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 或者给全局变量赋值，然后在主程序中检查对应的值来实现「优雅退出」</span>
 <a id="__codelineno-65-6" name="__codelineno-65-6" href="#__codelineno-65-6"></a>
 <a id="__codelineno-65-7" name="__codelineno-65-7" href="#__codelineno-65-7"></a><span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>

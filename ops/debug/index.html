@@ -933,6 +933,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      快速检查单
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#status-and-logs" class="md-nav__link">
     <span class="md-ellipsis">
       服务状态与日志
@@ -1671,6 +1680,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quick-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      快速检查单
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#status-and-logs" class="md-nav__link">
     <span class="md-ellipsis">
       服务状态与日志
@@ -1767,6 +1785,31 @@
 </div>
 <p>本部分介绍调试问题时的一般思路和方法。
 请注意本部分无法面面俱到，因此只能够提供一些在运维上常用的方法，具体问题需要具体分析。</p>
+<h2 id="quick-checklist">快速检查单<a class="headerlink" href="#quick-checklist" title="Permanent link">&para;</a></h2>
+<p>以下提供在系统遇到异常情况时，可以快速检查的一些项目：</p>
+<ul>
+<li>系统负载</li>
+<li><code>uptime</code> 可以查看系统在过去 1 分钟、5 分钟、15 分钟的平均负载——这里的「负载」指的是正在等待 CPU 的进程数量（包括陷入不可中断睡眠的进程，大多数情况下处于这种状态的进程都在等待磁盘 I/O）。</li>
+<li><a href="https://docs.kernel.org/accounting/psi.html">PSI（Pressure Stall Information）信息</a>可以确认系统的具体的压力情况。在 <code>/proc/pressure</code> 目录下可以看到 CPU、I/O、IRQ 以及内存的压力情况。在每个文件中，<code>some</code> 代表至少一些进程需要等待对应资源的<strong>时间比例</strong>（0 到 100），<code>full</code> 代表所有进程需要等待对应资源的<strong>时间比例</strong>。<ul>
+<li>PSI 可以精确到 <a href="../virtualization/container/#cgroups">cgroup</a>——每个 cgroup 下的 <code>*.pressure</code> 就是对应的压力信息。</li>
+</ul>
+</li>
+<li><code>htop</code> 可以快速查看系统的 CPU、内存（包括 swap）以及进程情况。在进程数量很多的时候，<code>top</code> 的性能会更好一些（虽然易用性不如 <code>htop</code>）。</li>
+<li><code>iostat 1</code> 可以每隔 1 秒输出一次磁盘 I/O 情况。</li>
+<li>系统日志</li>
+<li><code>journalctl -f</code></li>
+<li><code>dmesg -w</code></li>
+<li>资源使用情况</li>
+<li><code>df -h</code> 可以查看磁盘空间使用情况。</li>
+<li><code>iotop</code> 可以按进程查看磁盘 I/O 情况。<ul>
+<li>iotop 有两个不同的版本，在各个发行版中一般分为 <code>iotop</code> 和 <code>iotop-c</code>。前者已经停止维护，因此<strong>推荐安装 <code>iotop-c</code></strong>。</li>
+</ul>
+</li>
+<li><code>iftop</code> 可以查看对应接口的网络流量情况。<ul>
+<li>如果需要按进程查看网络流量情况，可以使用 <code>nethogs</code>。</li>
+</ul>
+</li>
+</ul>
 <h2 id="status-and-logs">服务状态与日志<a class="headerlink" href="#status-and-logs" title="Permanent link">&para;</a></h2>
 <p>当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
 <code>systemctl --failed</code> 可以列出当前失败的服务。
