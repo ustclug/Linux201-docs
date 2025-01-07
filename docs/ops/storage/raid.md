@@ -974,7 +974,7 @@ Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**�
     对于 NVMe SSD 来说，关注的重点是：
 
     - 写入量与寿命：Available Spare、Percentage Used、Data Units Written
-    - 出现错误的次数：Media and Data Integrity Errors
+    - 出现错误的次数：Media and Data Integrity Errors（也就是俗称的 0E 错误数量）。<b><span style="color: red">如果这个数字不是 0，需要立刻备份数据并且考虑更换！</span></b>
 
 ??? example "一块 SATA SSD 的 SMART 数据示例"
 
