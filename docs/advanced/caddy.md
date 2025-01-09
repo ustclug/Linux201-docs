@@ -1,3 +1,7 @@
+---
+icon: simple/caddy
+---
+
 # Caddy
 
 !!! note "主要作者"
