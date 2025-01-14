@@ -874,8 +874,12 @@ Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
 -A FORWARD -j ufw-track-forward
 ```
 
-于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。
-如果不希望自行管理 `DOCKER-USER` 链，建议将端口映射设置为只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节。）；或者配置让容器直接使用 host 网络。
+于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。可以考虑以下几种解决方案：
+
+- 自行维护 `DOCKER-USER` 链。可参考官方文档中 [Restrict external connections to containers](https://docs.docker.com/engine/network/packet-filtering-firewalls/#restrict-external-connections-to-containers) 的部分。
+- 使用 Docker 的 `--network host` 选项，不做网络隔离，直接使用主机的网络。
+- 设置端口映射只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节）。
+- 不让 Docker 维护 iptables。这会导致一些与容器网络有关的问题，例如容器网络之间的隔离失效、容器内部无法正常访问外部网络等等。
 
 #### IPv6
 
