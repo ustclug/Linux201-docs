@@ -133,6 +133,12 @@ origin
 
 可以使用 `git fetch <remote>` 从远程仓库拉取最新的 commit——注意这个命令**只会更新远程分支相关对象以及 ref**。之后可以使用 `git merge` 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，`git pull origin master` 等价于 `git fetch origin master && git merge origin/master`。
 
+!!! question "让本地分支与远程一致"
+
+    有的时候，我们的本地分支做了一些操作，与远程不一致，此时需要让本地分支与远程一致，那么怎么做呢？
+
+    提示：如果希望让远程和本地一致，那么可以 `git push -f`，但是 `git pull -f` 是**不正确的**。你可能需要 `git fetch` 与 `git reset`。
+
 #### Staging Area {#git-staging}
 
 在运行 `git status` 的时候，会看到类似如下的输出：
@@ -208,7 +214,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
 我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
 
 ```bash
-curl -sS  https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
+curl -sS https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
 ```
 
 ### gitignore {#git-gitignore}
@@ -343,7 +349,7 @@ git bisect bad <new-commit>
     - `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
     - `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
 
-    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
+    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉 `type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
 
 !!! note "Commit Message 模板"
 
