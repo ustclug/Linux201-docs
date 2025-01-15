@@ -2299,6 +2299,11 @@
 <li><code>git remote set-url &lt;name&gt; &lt;url&gt;</code>：设置 remote 的 URL</li>
 </ul>
 <p>可以使用 <code>git fetch &lt;remote&gt;</code> 从远程仓库拉取最新的 commit——注意这个命令<strong>只会更新远程分支相关对象以及 ref</strong>。之后可以使用 <code>git merge</code> 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，<code>git pull origin master</code> 等价于 <code>git fetch origin master &amp;&amp; git merge origin/master</code>。</p>
+<div class="admonition question">
+<p class="admonition-title">让本地分支与远程一致</p>
+<p>有的时候，我们的本地分支做了一些操作，与远程不一致，此时需要让本地分支与远程一致，那么怎么做呢？</p>
+<p>提示：如果希望让远程和本地一致，那么可以 <code>git push -f</code>，但是 <code>git pull -f</code> 是<strong>不正确的</strong>。你可能需要 <code>git fetch</code> 与 <code>git reset</code>。</p>
+</div>
 <h4 id="git-staging">Staging Area<a class="headerlink" href="#git-staging" title="Permanent link">&para;</a></h4>
 <p>在运行 <code>git status</code> 的时候，会看到类似如下的输出：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>git<span class="w"> </span>status
@@ -2357,7 +2362,7 @@
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">    </span><span class="na">sort</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">version:refname</span>
 </code></pre></div>
 <p>我们也将上述的 <code>.gitconfig</code> 正确使用 Tab 缩进的版本放在 <a href="../../assets/gitconfig_sample">这里</a>. 使用如下命令可以快速将我们提供的模板放入你的配置文件中：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-sS<span class="w">  </span>https://201.ustclug.org/assets/gitconfig_sample<span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.gitconfig
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>curl<span class="w"> </span>-sS<span class="w"> </span>https://201.ustclug.org/assets/gitconfig_sample<span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.gitconfig
 </code></pre></div>
 <h3 id="git-gitignore">gitignore<a class="headerlink" href="#git-gitignore" title="Permanent link">&para;</a></h3>
 <p>GitHub 在 <a href="https://github.com/github/gitignore">这里</a> 提供了一些常见的 <code>.gitignore</code> 文件，对于较为复杂的项目，也可以使用<a href="https://www.gitignore.io/">gitignore.io</a> 生成。</p>
@@ -2453,7 +2458,7 @@
 <li><code>body</code> 是 commit 的详细描述，通常会引用 issue、解释修改的原因等</li>
 <li><code>footer</code> 通常用于引用 issue、关闭 issue 等，例如 <code>Closes #123</code>，也可以用于指定 breaking change 等</li>
 </ul>
-<p>值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的<a href="https://github.com/ustclug/Linux201-docs">仓库</a>是一个文档类的项目，一般情况下可以直接省略掉<code>type</code>, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 <code>dev/git: fix typo</code>.</p>
+<p>值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的<a href="https://github.com/ustclug/Linux201-docs">仓库</a>是一个文档类的项目，一般情况下可以直接省略掉 <code>type</code>, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 <code>dev/git: fix typo</code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Commit Message 模板</p>
