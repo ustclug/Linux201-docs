@@ -10,7 +10,151 @@ icon: simple/git
 
 !!! warning "本文已完成，等待校对"
 
+本部分面向已经了解 git 最基本的操作的用户。如果你从未使用过 git，请参考网络上的其他教程，例如 USTC Vlab 项目的 [Git 简明教程](https://vlab.ustc.edu.cn/docs/tutorial/git/)。
+
 ## Git 使用技巧
+
+### 基本概念 {#basic-concepts}
+
+#### Object {#git-object}
+
+对象（Object）是 git 存储数据的基本单元，存储在 `.git/objects` 目录下，以内容的 SHA-1 值区分。可以使用以下命令获取当前 git 仓库所有的 object 信息：
+
+```shell
+$ git cat-file --batch-check --batch-all-objects
+000b2be4f2369ae78f788a92ee3fc00bb3cd64c7 tree 38
+000b50049d29b61c300e4ec2e5cdcce52685861e blob 49457
+000c536877dfda433b574fb37c6dc50048461505 blob 58088
+001fe807cffb8bdb3d9fcd8d98282e596345aee9 tree 183
+002e8efc4f94115882caec99b7b36e6a8f42e616 blob 331
+00344f3b943fa09dde4694487e818f19d84d63f1 blob 67539
+00392bcd6cec7e034d9996e5e17e506b8b7a7644 blob 243
+0040fffeb2037807b75c5b3e69572e6e0e93c309 blob 43519
+0046ec26cf4e99119ec2759d0580b894c1a7f344 tree 258
+004d2057d06042847ca109edd9ca12be7cc255cb tree 409
+（以下省略）
+```
+
+!!! tip "git 的文档"
+
+    可以使用诸如 `man git-xxx` 的方式查看 `git xxx` 命令的文档，例如上面的 `git cat-file` 对应的是 `man git-cat-file`。
+
+其中，`blob` 对象代表单个文件的内容，`tree` 对象代表目录结构，`commit` 对象代表提交，`tag` 对象代表标签。可以使用 `git cat-file -p <SHA-1>` 查看对象的内容。例如对于本仓库 hash 为 `74b5f6330f76d1e464deeff4d29935bba8d48c55` 的提交：
+
+!!! tip "Commit ID 就是 Commit Object 的 SHA-1 值"
+
+```shell
+$ git cat-file -p 74b5f6330f76d1e464deeff4d29935bba8d48c55
+tree 367ba031c357a771f2444048db71d109ec7e76d3
+parent 87d45ab1963b039931f426a1402403996bba0300
+author taoky <me@taoky.moe> 1736422437 +0800
+committer taoky <me@taoky.moe> 1736422437 +0800
+
+ops/storage: Take reciprocal for URE
+```
+
+可以看到，这个提交中除了 commit 内容以外，还包含了：
+
+- 这个提交对应的目录信息（`tree`）
+- 这个提交的父提交（`parent`）——这也是一个 commit 对象。
+    - 第一个提交没有父提交。
+    - Merge commit 有多个父提交，代表来自不同分支的合并。
+- 提交的作者（`author`）与提交者（`committer`）
+
+!!! tip "作者与提交者"
+
+    没错，commit 的作者和提交者可以是两个不同的人。一般来讲，作者是编写原始代码的人，提交者是实际执行 commit 操作的人。
+
+    默认情况下，作者和提交者都会采用 `git config` 中的配置。使用 `git commit --author="Name <email>"` 可以手动指定作者，设置环境变量 `GIT_COMMITTER_NAME` 和 `GIT_COMMITTER_EMAIL` 可以手动指定提交者。
+
+而 tree 对象的内容如下：
+
+```shell
+$ git cat-file -p 367ba031c357a771f2444048db71d109ec7e76d3
+040000 tree 9ffaaee6a500ec6fe9a8becced39bfcadca6320a	.github
+100644 blob 9331f5dd8db34e1cdc48fe663d662be8c976074c	.gitignore
+100644 blob 6ddd90df33d0b98e704b71f33910ae91152bb005	.markdownlint.jsonc
+100644 blob 7cdbe0b482f604a06a0988dad8877ae8d9257f7d	LICENSE
+100644 blob ab9868d501db1eba893afcff8cb428d9a0cdf534	Makefile
+100644 blob edc9f746d77a497fb08ba2dfac6bdf194b230c12	README.md
+040000 tree e4de763b60a9a9a2ddd5cbf56591e3d187da7d0a	docs
+040000 tree 4afa16d4c6461b534a002b432bdc5218e8826229	includes
+100644 blob 982322412bf8c459de35408c255358ca64705e36	mkdocs.yml
+100644 blob 81ed11cbdb707e57b178605d5aff73fdfa8b0dc4	requirements.txt
+040000 tree a0a863b399b5255c497d35837c2371e3b7f0ed36	scripts
+```
+
+可以看到，tree 对象就是其对应目录的文件列表。
+
+#### Ref {#git-ref}
+
+引用（Ref）是一个指向对象（commit）的指针，存储在 `.git/refs` 目录下。一般有以下几种引用：
+
+- 本地分支（`refs/heads`）
+- 远程分支（`refs/remotes`）
+- Tag（`refs/tags`）
+
+可以直接通过 `cat` 的方式查看引用对应的对象 SHA-1 值，例如查看本地 `master` 分支对应的 commit：
+
+```shell
+$ cat .git/refs/heads/master
+d959e182468be92957bd175d189472de91f614c8
+```
+
+除此之外，有一些特殊的（间接的）引用，对应的文件位于 `.git/` 下：
+
+- `HEAD`：指向当前所在（你正在操作的）分支的引用。
+- `ORIG_HEAD`：指向上一次操作前的 HEAD。
+- `FETCH_HEAD`：指向上一次 `git fetch` 操作的结果。
+- `MERGE_HEAD`：指向正在合并的分支。
+
+其中最重要的是 `HEAD`。例如，`git checkout some-branch` 就会将 `HEAD` 指向 `refs/heads/some-branch`；而 `git reset --hard HEAD~1` 就会将 `HEAD` 指向 `HEAD~1`（同时更新工作目录下面的文件）。
+
+!!! tip "HEAD~n"
+
+    `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
+
+#### Remote {#git-remote}
+
+绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
+
+默认情况下，remote 的名字是 `origin`，可以通过 `git remote` 查看当前的 remote 信息：
+
+```shell
+$ git remote
+origin
+```
+
+比较常用的相关命令：
+
+- `git remote add <name> <url>`：添加一个新的 remote
+- `git remote get-url <name>`：获取 remote 的 URL
+- `git remote set-url <name> <url>`：设置 remote 的 URL
+
+可以使用 `git fetch <remote>` 从远程仓库拉取最新的 commit——注意这个命令**只会更新远程分支相关对象以及 ref**。之后可以使用 `git merge` 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，`git pull origin master` 等价于 `git fetch origin master && git merge origin/master`。
+
+#### Staging Area {#git-staging}
+
+在运行 `git status` 的时候，会看到类似如下的输出：
+
+```shell
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   docs/dev/git.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+这里的 "Changes not staged for commit" 指的是工作目录下的修改还没有被添加到 staging area（暂存区，也叫 index）中。常用的诸如 `git add`、`git rm --cached` 等命令就是用来在 staging area 中添加、删除文件的。
+
+#### Stash {#git-stash}
+
+有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
 
 ### 本地配置 {#git-config-file}
 
@@ -141,7 +285,7 @@ git submodule add <url_of_eigen> src/eigen
 
 ### Rebase 与 Merge {#git-rebase-merge}
 
-一般来说，我们希望保持项目有线性的提交历史，这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
+一般来说，我们希望保持项目有线性的提交历史（即不包含有多个 parent 的 merge commit），这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
 
 ```bash
 git checkout -b feature
