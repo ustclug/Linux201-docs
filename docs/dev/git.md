@@ -6,7 +6,7 @@ icon: simple/git
 
 !!! note "主要作者"
 
-    [@tiankaima][tiankaima]
+    [@tiankaima][tiankaima]、[@taoky][taoky]
 
 !!! warning "本文已完成，等待校对"
 
@@ -158,10 +158,6 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 这里的 "Changes not staged for commit" 指的是工作目录下的修改还没有被添加到 staging area（暂存区，也叫 index）中。常用的诸如 `git add`、`git rm --cached` 等命令就是用来在 staging area 中添加、删除文件的。
 
-#### Stash {#git-stash}
-
-有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
-
 ### 本地配置 {#git-config-file}
 
 !!! note "配置文件"
@@ -289,6 +285,10 @@ git rm --cached -f src/eigen # if you've already added it to the index
 git submodule add <url_of_eigen> src/eigen
 ```
 
+### Stash {#git-stash}
+
+有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
+
 ### Rebase 与 Merge {#git-rebase-merge}
 
 一般来说，我们希望保持项目有线性的提交历史（即不包含有多个 parent 的 merge commit），这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
@@ -308,6 +308,12 @@ git rebase master
 [pull]
     rebase = true
 ```
+
+!!! question "更新一个有修改的本地仓库"
+
+    以下是一个现实的例子：某个代码 git 仓库（存储在 GitHub 上）的 `master` 分支部署在一台服务器上，并且在该服务器上不仅做了一些额外的 commit 用来记录一些服务器相关的配置，还有一些没有被 stage 的文件。现在该代码仓库在 GitHub 上的 `master` 分支有一些新的更新 commit（例如更新了依赖，修复了 bug 等），那么如何将这些 commit 部署在该服务器上呢？
+
+    提示：你可能会需要 `git fetch`、`git stash` 与 `git rebase`。
 
 ### Bisect {#git-bisect}
 
