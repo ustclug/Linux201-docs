@@ -103,52 +103,120 @@ The following packages will be REMOVED:
 
 Debian 与 Ubuntu 均提供了网页端搜索软件包的服务：[Debian 软件包](https://packages.debian.org/)、[Ubuntu Packages Search](https://packages.ubuntu.com/)。不过，使用 apt 工具搜索来快得多。
 
-##### 名称与描述搜索：`apt search` {#apt-search}
+##### `apt search` 与 apt 搜索模式 {#apt-search-pattern}
 
-`apt search <name>` 可以进行包的查找。
+`apt search <name>` 会根据包名与描述进行包的查找，支持正则表达式：
 
-也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
+```console
+$ apt search wayland
+Sorting... Done
+Full Text Search... Done
+bemenu/noble 0.6.15+dfsg-1build2 amd64
+  Dynamic menu inspired by dmenu
 
-比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
-如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
+cage/noble 0.1.5+20240127-2build1 amd64
+  Kiosk compositor for Wayland
+（以下省略）
+$ apt search ^docker
+Sorting... Done
+Full Text Search... Done
+debocker/noble 0.2.5 all
+  docker-powered package builder for Debian
 
-以下是一些常见的 apt-patterns 单位
+docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
+  Docker CLI plugin for extended build capabilities with BuildKit
+（以下省略）
+```
 
-- `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
-- `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
-- `?not()` 可以使用 `!` 进行简写。
-- `~g` 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。
-- `~i` 为已经安装的包。
-- `~U` 可以升级的包。
-- `~nREGEX` 包名称满足正则表达式的包。
+不过，有些时候这种搜索也不太符合需求，例如有些时候我们只想搜索包名等，此时可以使用 apt 搜索模式（search pattern）来进行更具体的查找。完整文档可以参考 [apt-patterns(7)][apt-patterns.7]。搜索模式不适用于 `apt search`，但适用于其他各类 apt 命令，例如 `apt list`、`apt show`、`apt remove` 等。
+
+以下是一些常见的 apt 搜索模式，句尾括号为更加繁琐的完整表示：
+
+- `~nREGEX` 包名称满足正则表达式的包（`?name(REGEX)`）。
+- `~c` 已经删除，但是仍然有配置残留的包，可以使用 `apt purge` 彻底删除（`?config-files`）。
+- `~i` 为已经安装的包（`?installed`）。
+- `~U` 可以升级的包（`?upgradable`）。
+- `~o` 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（`?obsolete`）。
+
+!!! question "搜索模式练习"
+
+    请尝试写出以下查询的搜索模式，并且在自己的环境中试一试：
+
+    - 输出（提示：`apt list`）所有未完全删除以及远程仓库不再提供的包（虽然 `apt purge` 也支持搜索模式，小心执行，因为所有配置都会被删除！）
+    - 输出本地安装的名字里有 `top` 的所有包
+        - 提示：可以像这样要求同时满足多个 pattern: `apt list 'P1 P2 P3'`
 
 ##### 文件搜索：`apt-file` {#apt-file}
 
-APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
+如果使用过默认安装的 Ubuntu 的话，可能会发现，在输入命令时，如果命令不存在，会有类似下面的提示：
 
-使用 `apt-file update` 进行数据库的初始化及更新。
+```console
+$ htop
+Command 'htop' not found, but can be installed with:
+sudo apt install htop
+```
 
-使用 `apt-file search <file>` 进行搜索。
+这是由 `command-not-found` 包支持的，不过可以注意到，这一项功能会拖慢与 shell 交互时的速度，因此这里更加推荐删除这个包，只在需要的时候用 `apt-file` 命令搜索。
 
-可以使用 `dpkg -S <file>` 搜索所有**已安装**包中的文件。
+在操作前，需要执行 `apt-file update` 命令更新本地文件与包关系的数据库的初始化及更新。之后使用 `apt-file search <file>` 就可以搜索包含某个文件的包：
 
-反过来，想要查看一个包包含什么文件，可以使用 `apt-file list <name>`。
+```console
+$ apt-file search execsnoop
+bpfcc-tools: /usr/sbin/execsnoop-bpfcc
+bpfcc-tools: /usr/share/doc/bpfcc-tools/examples/doc/execsnoop_example.txt
+bpfcc-tools: /usr/share/man/man8/execsnoop-bpfcc.8.gz
+bpftrace: /usr/sbin/execsnoop.bt
+bpftrace: /usr/share/doc/bpftrace/examples/execsnoop_example.txt
+bpftrace: /usr/share/man/man8/execsnoop.bt.8.gz
+golang-github-iovisor-gobpf-dev: /usr/share/gocode/src/github.com/iovisor/gobpf/examples/bcc/execsnoop/execsnoop.go
+golang-github-iovisor-gobpf-dev: /usr/share/gocode/src/github.com/iovisor/gobpf/examples/bcc/execsnoop/output.go
+libbpf-tools: /usr/sbin/execsnoop
+pcp: /usr/lib/pcp/pmdas/bcc/modules/execsnoop.bpf
+pcp: /usr/lib/pcp/pmdas/bcc/modules/execsnoop.python
+pcp: /usr/lib/pcp/pmdas/bpf/modules/execsnoop.so
+pcp: /usr/share/pcp/htop/screens/execsnoop
+pcp: /var/lib/pcp/pmdas/bcc/modules/execsnoop.bpf
+pcp: /var/lib/pcp/pmdas/bcc/modules/execsnoop.python
+pcp: /var/lib/pcp/pmdas/bpf/modules/execsnoop.so
+perf-tools-unstable: /usr/sbin/execsnoop-perf
+perf-tools-unstable: /usr/share/doc/perf-tools-unstable/examples/execsnoop_example.txt
+perf-tools-unstable: /usr/share/man/man8/execsnoop-perf.8.gz
+systemtap-doc: /usr/share/systemtap/examples/lwtools/execsnoop-nd.8
+systemtap-doc: /usr/share/systemtap/examples/lwtools/execsnoop-nd.meta
+systemtap-doc: /usr/share/systemtap/examples/lwtools/execsnoop-nd.stp
+systemtap-doc: /usr/share/systemtap/examples/lwtools/execsnoop-nd_example.txt
+```
 
-使用 `dpkg-deb -c <name_version.deb>` 查看 .deb 中内容。
+此外，`apt-file list <package>` 可以查看某个包中包含的文件：
 
-也可以使用 `dpkg-query -L <name>` ，但是这只对已经安装的包生效。
+```console
+$ apt-file list htop
+htop: /usr/bin/htop
+htop: /usr/share/applications/htop.desktop
+htop: /usr/share/doc/htop/AUTHORS
+htop: /usr/share/doc/htop/README.gz
+htop: /usr/share/doc/htop/changelog.Debian.gz
+htop: /usr/share/doc/htop/copyright
+htop: /usr/share/icons/hicolor/scalable/apps/htop.svg
+htop: /usr/share/man/man1/htop.1.gz
+htop: /usr/share/pixmaps/htop.png
+```
 
-在使用了一个未安装的命令时，可以选择使用 `command-not-found`。
+!!! tip "使用 dpkg 类命令在**已安装的包**内查找文件"
 
-其安装方式十分简单，只需 `apt install command-not-found` 即可。
+    `apt-file` 依赖于对完整仓库的索引，并且搜索也是一个略微耗时的过程。如果只需要确认本地已经安装的包，以及已有的 deb 包文件中的文件情况，有更快的方法：
 
-#### 固定包
+    - `dpkg -S <file>` 可以查找所有已安装包中的文件。
+    - `dpkg-deb -c <name_version.deb>` 可以查看 `.deb` 文件中的内容。
+    - `dpkg-query -L <name>` 查看给定的安装了的包提供了哪些文件。
 
-有时我们希望固定一个包，使得这个包不会被改变或升级。
+#### 固定包 {#hold}
 
-这时可以使用 `apt-mark hold <name>` ，这个包将会被固定，其不会被升级。
+有时我们希望固定一个包，使得这个包不会被改变或升级：一个例子是，我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 `apt-mark hold <name>` 来标记这个包为固定的。
 
-#### 自动更新
+`apt-mark unhold` 可以取消固定，而 `apt-mark showhold` 可以查看所有被固定的包。
+
+#### 自动更新 {#unattended-upgrade}
 
 一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：
 
@@ -170,7 +238,28 @@ unattended-upgrades	unattended-upgrades/enable_auto_updates	boolean	false
 sudo unattended-upgrades --dry-run --debug
 ```
 
-查看并确认系统自动更新时的行为。
+查看并确认系统自动更新时的行为。默认情况下，自动更新只会操作 Debian 官方上游的包，用户自己设置的源不会被自动更新，这一点可以在 `/etc/apt/apt.conf.d/50unattended-upgrades` 文件中验证：
+
+```apt.conf
+// Automatically upgrade packages from these (origin:archive) pairs
+//
+// Note that in Ubuntu security updates may pull in new dependencies
+// from non-security sources (e.g. chromium). By allowing the release
+// pocket these get automatically pulled in.
+Unattended-Upgrade::Allowed-Origins {
+	"${distro_id}:${distro_codename}";
+	"${distro_id}:${distro_codename}-security";
+	// Extended Security Maintenance; doesn't necessarily exist for
+	// every release and this system may not have it installed, but if
+	// available, the policy for updates is such that unattended-upgrades
+	// should also install from here by default.
+	"${distro_id}ESMApps:${distro_codename}-apps-security";
+	"${distro_id}ESM:${distro_codename}-infra-security";
+//	"${distro_id}:${distro_codename}-updates";
+//	"${distro_id}:${distro_codename}-proposed";
+//	"${distro_id}:${distro_codename}-backports";
+};
+```
 
 此外，systemd 服务 `unattended-upgrades.service` 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。
 

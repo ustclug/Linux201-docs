@@ -32,6 +32,7 @@
 
 <!-- man 7 -->
 
+[apt-patterns.7]: https://manpages.debian.org/unstable/apt/apt-patterns.7.en.html
 [cgroups.7]: https://man7.org/linux/man-pages/man7/cgroups.7.html
 [namespaces.7]: https://man7.org/linux/man-pages/man7/namespaces.7.html
 
