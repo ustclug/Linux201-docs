@@ -6,87 +6,123 @@ icon: material/package
 
 !!! note "主要作者"
 
-    [@2403772980ygy][2403772980ygy]
+    [@2403772980ygy][2403772980ygy]、[@taoky][taoky]
 
 !!! warning "本文编写中"
 
 <!-- 简介 -->
 
-APT（Advanced Package Tool）是 Debian 发行版最常用的包管理工具。其可以执行安装，卸载，更新，系统更新，校验与修复这些常见功能。
+包管理系统是现代 Linux 发行版的重要组成部分。以下介绍与 Debian 的包管理系统相关工具，例如 APT（Advanced Package Tool）。其他发行版的包管理系统会有所不同，可参考 [Arch Linux Wiki 的 pacman/Rosetta 页面](https://wiki.archlinux.org/title/Pacman/Rosetta)。
 
-## APT 系列工具
+本文假设读者了解最基础的 `apt` 使用方法，如 `apt install`, `apt remove`, `apt update`, `apt upgrade`。
 
-Debian 是一个基于二进制（而非源码）的发行版，其软件包格式为 .deb，这代表这是一个二进制包。
+## APT
 
-Debian 的初等包管理器是 dpkg，其负责管理包的安装，删除，查询，替换，校验。
+Debian 有多个与软件包管理相关的工具。
 
-dpkg 一般不会被直接使用。而是作为 apt 以及其他一些高等包管理器的后端使用。
+其中的底层工具为 dpkg。dpkg 不负责管理软件依赖关系，只管理具体某一个包的安装、卸载等操作。因此**除非需要排查疑难问题，否则不应该直接使用 dpkg**。
 
-Debian 自带的高等包管理器是 APT，负责进行依赖解析与安装包下载，并且以最优的顺序调用 dpkg，其没有直接安装 .deb 包的能力。
+!!! warning "避免在安装 deb 文件时使用 dpkg"
 
-Debian 下还有很多包管理软件，如 Synaptics、Aptitude，这里不一一详细展开。
+    网络上许多教程，甚至是一些官方文档，都会建议使用 `dpkg -i` 安装 deb 文件。当 deb 存在依赖，并且系统未安装满足要求的依赖时，直接使用 `dpkg` 会导致系统依赖管理出现问题，需要额外花费精力修复。
 
-### 常用操作
+    建议始终使用 `apt install ./path/to/package.deb` 的方式安装 deb 文件。
 
-#### 安装软件包
+从用户视角来看，最常使用的工具是 apt（以及其他以 `apt-` 开头的命令）。
 
-如果我们需要安装一个 `package.deb` 软件包：
+### 常用操作 {#common-operations}
 
-在手动下载 .deb 包后，使用 apt 安装软件包：
+#### 标记软件包为自动/手动安装 {#auto-manual}
 
-```shell
-apt install <path/to/package.deb>
+绝大多数软件包都不是孤立的：它们也有自己的依赖。那么，如果安装了一个带有其他依赖的软件，然后再删除这个软件，其引入的依赖不会被自动删除，不过：
+
+```console
+# apt install x11-apps
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following additional packages will be installed:
+  bsdextrautils bsdutils fontconfig-config fonts-dejavu-core groff-base libblkid1 libbrotli1 libbsd0 libexpat1 libfontconfig1 libfreetype6 libgdbm6 libice6 libmount1
+  libpipeline1 libpng16-16 libsm6 libsmartcols1 libuchardet0 libuuid1 libx11-6 libx11-data libx11-xcb1 libxau6 libxaw7 libxcb-damage0 libxcb-present0 libxcb-xfixes0 libxcb1
+  libxcursor1 libxdmcp6 libxext6 libxfixes3 libxft2 libxi6 libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrender1 libxt6 man-db mount util-linux util-linux-extra x11-common
+  xbitmaps
+Suggested packages:
+  groff gdbm-l10n cryptsetup-bin apparmor less www-browser nfs-common dosfstools kbd util-linux-locales mesa-utils
+Recommended packages:
+  uuid-runtime sensible-utils
+The following NEW packages will be installed:
+  bsdextrautils fontconfig-config fonts-dejavu-core groff-base libbrotli1 libbsd0 libexpat1 libfontconfig1 libfreetype6 libgdbm6 libice6 libpipeline1 libpng16-16 libsm6
+  libuchardet0 libx11-6 libx11-data libx11-xcb1 libxau6 libxaw7 libxcb-damage0 libxcb-present0 libxcb-xfixes0 libxcb1 libxcursor1 libxdmcp6 libxext6 libxfixes3 libxft2
+  libxi6 libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrender1 libxt6 man-db x11-apps x11-common xbitmaps
+The following packages will be upgraded:
+  bsdutils libblkid1 libmount1 libsmartcols1 libuuid1 mount util-linux util-linux-extra
+8 upgraded, 40 newly installed, 0 to remove and 4 not upgraded.
+（以下省略）
+# apt remove x11-apps
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  fontconfig-config fonts-dejavu-core groff-base libbrotli1 libbsd0 libexpat1 libfontconfig1 libfreetype6 libgdbm6 libice6 libpipeline1 libpng16-16 libsm6 libuchardet0
+  libx11-6 libx11-data libx11-xcb1 libxau6 libxaw7 libxcb-damage0 libxcb-present0 libxcb-xfixes0 libxcb1 libxcursor1 libxdmcp6 libxext6 libxfixes3 libxft2 libxi6
+  libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrender1 libxt6 man-db x11-common xbitmaps
+Use 'apt autoremove' to remove them.
+The following packages will be REMOVED:
+  x11-apps
+0 upgraded, 0 newly installed, 1 to remove and 4 not upgraded.
 ```
 
-对于没有额外依赖的软件，也可以使用 dpkg 直接安装：
+可以发现，虽然 `x11-apps` 在该环境中引入的依赖没有被自动删除，但是 APT 知道哪些依赖是不再被需要的了。这有赖于 APT 的软件包标记功能：用户直接安装的包会被标记为手动安装（manual），而被这样引入的依赖会被标记为自动安装（automatic）。于是，没有被任何手动安装的包直接以及间接依赖的自动安装的包就可以被 `apt autoremove` 移除。
 
-```shell
-dpkg -i <path/to/package.deb>
-```
+`apt-mark` 命令可以显示、修改标记：
 
-如果该软件包有未在系统上安装的依赖的话，那么 `dpkg` 命令会失败（除非使用 `--force` 选项），因此**在绝大多数情况下，我们不推荐直接操作 `dpkg` 等底层命令**。
+- `apt-mark showauto` 与 `apt-mark showmanual` 可以显示系统中被标记为自动安装与手动安装的包。
+- `apt-mark auto <package>` 与 `apt-mark manual <package>` 可以修改包的标记。
 
-#### 卸载软件包
+#### 推荐与建议 {#recommends-suggests}
 
-使用 apt 卸载：
+安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。建议（Suggested）的包会显示在安装界面，但是不会自动被安装。例如在 Debian 12 中，[docker.io 包](https://packages.debian.org/bookworm/docker.io)的推荐有 apparmor、ca-certificates 等，建议包有 btrfs-progs、debootstrap 等。那么在安装 `docker.io` 时，包括 apparmor、ca-certificates 等包就会默认被安装，并且用户也可以看到这些包建议，并且可以在当前包安装完成后自行安装。
 
-```shell
-apt remove package_name
-```
+大部分情况下，被设置为「推荐」的包是有意义的，如果不安装，可能程序仍然可以运行，但是会缺失一些重要的功能。不过在某些环境下，例如容器场景，我们需要安装的包尽可能得少。为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。还可以在 [`apt.conf`][apt.conf.5] 配置中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
 
-使用 dpkg 直接卸载：
+!!! tip "使用 `.conf.d` 目录形式，避免直接修改 `.conf` 配置文件"
 
-```shell
-dpkg -r <package_name>
-```
+    对于绝大多数 Debian 包来说，软件包对应的配置文件（以下称为 `.conf` 文件）是直接由软件包安装（管理）的。尽管直接修改配置也可以达到目的，但是在软件包升级，特别是系统大版本更新时，`apt` 会要求用户手工介入配置冲突问题（保留原配置，或者安装新配置），会带来一些困扰。
 
-与安装时的情况类似，如果 package_name 被其他软件包依赖，apt 会尝试将被依赖的软件包一并卸载（**请一定要看清楚 apt 列出的清单再确认**），而 `dpkg` 会失败。
+    目前大部分软件包的配置文件都支持 `.conf.d` 目录形式，允许用户以不同文件的形式添加自己的配置片段，对应的程序会「导入」这些配置。这种方式不仅可以避免直接修改软件包的配置文件，还可以更好地管理配置文件（例如，用户可以将不同目的的配置以不同的文件名存储，提升配置的可维护性）。
 
-那么现在产生了一个问题：要是我安装了一个有很多依赖的包，那么我们卸载它时依赖不会同时被卸载。这样依赖会一直占据我们电脑里面的空间。而手动卸载依赖并不直观，还可能破坏其他包的依赖。
+    以上文的 `apt.conf` 为例，这里推荐的做法是在 `/etc/apt/apt.conf.d/` 目录下创建一个新的 `.conf` 文件，在其中写入需要的配置，例如不安装推荐包：
 
-因此，在使用 APT 安装一个包时，我们将其标记为 manual，在安装依赖时，我们将其标记为 automatic，
-那么我们知道**所有没有被 manual 直接或者间接依赖的 automatic 包**都是不必要的。
+    ```shell
+    echo 'APT::Install-Recommends "false";' | sudo tee /etc/apt/apt.conf.d/99no-install-recommends
+    ```
 
-这样，我们可以使用 `apt autoremove` 来卸载不必要的包以释放存储空间。
+    某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 `99` 作为前缀，确保这个配置文件在其他配置文件之后被读取。
 
-#### 推荐与建议
+#### 搜索包 {#search}
 
-安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。还会提示你可以安装建议（Suggested）的包以拓展原包的功能。
+Debian 与 Ubuntu 均提供了网页端搜索软件包的服务：[Debian 软件包](https://packages.debian.org/)、[Ubuntu Packages Search](https://packages.ubuntu.com/)。不过，使用 apt 工具搜索来快得多。
 
-比如：apt 包的推荐有 ca-certificates，建议包有 aptitude、synaptic、gnupg、powermgmt-base 和 dpkg-dev
+##### 名称与描述搜索：`apt search` {#apt-search}
 
-那么安装这个包时，会默认安装 ca-certificates，并给出后面的包的提示。
+`apt search <name>` 可以进行包的查找。
 
-为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。
+也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
 
-还可以在配置文件中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
+比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
+如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
 
-当这类包被安装的时候，它们的类型为 automatic，也就是说在默认情况下，
-如果没有软件**推荐或者建议它们**，它们会被 `apt autoremove` 卸载。
+以下是一些常见的 apt-patterns 单位
 
-使用 `apt-mark (automatic|manual) <name>` 修改包的状态。
+- `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
+- `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
+- `?not()` 可以使用 `!` 进行简写。
+- `~g` 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。
+- `~i` 为已经安装的包。
+- `~U` 可以升级的包。
+- `~nREGEX` 包名称满足正则表达式的包。
 
-#### 查找包中文件与文件所属的包，替换 command not found
+##### 文件搜索：`apt-file` {#apt-file}
 
 APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
 
@@ -105,25 +141,6 @@ APT 家族中存在一个用于查找文件所属包的工具 `apt-file`
 在使用了一个未安装的命令时，可以选择使用 `command-not-found`。
 
 其安装方式十分简单，只需 `apt install command-not-found` 即可。
-
-#### 查找包
-
-`apt search <name>` 可以进行包的查找。
-
-也可以通过使用一种特殊的语法（apt-patterns）来进行更具体的查找。
-
-比如你想寻找已经安装，并且名称包含 gcc 的软件，可以使用 `~i ~ngcc`，
-如果要求名称完全匹配，可以使用 `~i ?exact-name(gcc)`
-
-以下是一些常见的 apt-patterns 单位
-
-- `?and()` 也可以使用空格分隔若干个 apt-patterns 简写。
-- `?or()` 也可以使用 `|` 分隔若干个 apt-patterns 简写。
-- `?not()` 可以使用 `!` 进行简写。
-- `~g` 为需要被 autoremove 的已安装包。在进行 autoremove 之前建议进行一次检查。
-- `~i` 为已经安装的包。
-- `~U` 可以升级的包。
-- `~nREGEX` 包名称满足正则表达式的包。
 
 #### 固定包
 

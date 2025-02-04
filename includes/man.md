@@ -16,6 +16,7 @@
 
 <!-- man 5 -->
 
+[apt.conf.5]: https://manpages.debian.org/unstable/apt/apt.conf.5.en.html
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
 [sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
