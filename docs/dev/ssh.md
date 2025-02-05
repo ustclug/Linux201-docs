@@ -59,46 +59,50 @@ SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SS
 
 本地端口转发（**L**ocal port forwarding）
 
+![](E:\erchius\Git\storage\igem\Linux201-docs\docs\images\ssh\local-forward.png)
+
 :   在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
 
     ```shell
     ssh -L 8080:localhost:80 example
     ```
-
+    
     也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
-
+    
     ```shell
     ssh -L 8080:internalserver:80 example
     ```
-
+    
     本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
-
+    
     ```shell
     ssh -L 0.0.0.0:8080:localhost:80 example
     ```
-
+    
     虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
 远程端口转发（**R**emote port forwarding）
+
+![](E:\erchius\Git\storage\igem\Linux201-docs\docs\images\ssh\remote-forward.png)
 
 :   在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
 
     ```shell
     ssh -R 8080:localhost:80 example
     ```
-
+    
     上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
-
+    
     同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
-
+    
     ```shell
     ssh -R 8080:myinternalserver:80 example
     ```
-
+    
     注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
-
+    
     在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
-
+    
     ```shell
     ssh -R 1080 example
     # 指定远程主机上的监听地址
@@ -107,20 +111,22 @@ SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SS
 
 动态端口转发（**D**ynamic port forwarding）
 
+![](E:\erchius\Git\storage\igem\Linux201-docs\docs\images\ssh\dynamic-forward.png)
+
 :   在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
 
     ```shell
     ssh -D 1080 example
     ```
-
+    
     由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。
-
+    
     与 LocalForward 类似，DynamicForward 也可以指定监听地址：
-
+    
     ```shell
     ssh -D 0.0.0.0:1080 example
     ```
-
+    
     同样地，`GatewayPorts` 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，`GatewayPorts` 选项不再起作用。
 
 以上三种端口转发都可以在配置文件中指定，例如：
@@ -185,7 +191,7 @@ SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是�
 !!! tip "Rsync"
 
     SCP 和 SFTP 能够提供的文件传输功能较为基础。如果你需要更多的功能，例如增量传输、断点续传、文件校验等，可以考虑使用 Rsync。Rsync 可以使用 SSH 作为传输层，因此可以替代 `scp` 命令。
-
+    
     详情可以参考[本教程关于 Rsync 的章节](../ops/storage/backup.md#rsync)。
 
 ### SCP
@@ -241,9 +247,9 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
     ```shell
     scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
     ```
-
+    
     !!! tip
-
+    
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Port 2222`，这样就不需要每次在命令行中指定端口了。
 
 限制带宽
@@ -269,9 +275,9 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
     ```shell
     scp -C /path/to/local/file username@remotehost:/path/to/remote/directory
     ```
-
+    
     !!! tip
-
+    
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Compression yes`，这样就不需要每次在命令行中启用压缩了。
 
 ### SFTP
@@ -313,7 +319,7 @@ sftp -P 2233 username@remotehost
 !!! 使用脚本进行自动化操作
 
     通过创建一个包含 SFTP 命令的批处理文件，你可以 让SFTP 会话自动执行这些命令。例如，你可以创建一个文件 `upload.txt`，其中包含以下内容：
-
+    
     ```shell
     put file1.txt
     put file2.jpg
@@ -350,7 +356,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 :   限制此公钥只能用于执行指定的命令，且不能登录 shell。如果使用此公钥登录时提供了额外的命令（例如 `ssh user@host some/other/command`），提供的命令将会在 `SSH_ORIGINAL_COMMAND` 环境变量中传递给指定的命令。
 
     指定命令的一个常用场景是为备份服务提供有限的访问，例如 `command="/usr/bin/rrsync /path/to/backup"`，这样备份服务就只能使用 rsync 命令访问指定的目录。
-
+    
     如果你需要使用 `command=` 的话，你很可能也需要 `restrict`（见下）。
 
 `no-port-forwarding`, `no-X11-forwarding`, `no-agent-forwarding`, `no-pty`, `no-user-rc`
@@ -362,7 +368,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 :   禁止所有可选功能，相当于同时使用上一条列出的（和没列出的，详情见 man page）所有选项。
 
     通常与 `command=` 搭配使用，确保指定公钥只能做指定的事情。
-
+    
     如果需要在 `restrict` 的基础上单独开放某些功能，可以使用 `port-forwarding` 等（也就是去掉前面的 `no-`）。
 
 完整的选项列表可以在 [sshd(8)][sshd.8] 的 `AUTHORIZED_KEYS FILE FORMAT` 部分找到。
@@ -383,7 +389,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
     Host example
       HostName example.com
       User user
-
+    
     Include ~/.ssh/global.conf
     ```
 
@@ -395,7 +401,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
     Host example
       HostName example.com
       User user
-
+    
     Match all
       Include ~/.ssh/global.conf
     ```
@@ -406,7 +412,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
     ```shell
     Include ~/.ssh/global.conf
-
+    
     Host example
       HostName example.com
       User user
