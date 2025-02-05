@@ -1918,7 +1918,7 @@
 <p>这里我们创建三个 1GB 的文件作为物理卷，并且加入到一个卷组中：</p>
 <div class="admonition warning">
 <p class="admonition-title">避免在物理磁盘上创建无分区表的文件系统/物理卷</p>
-<p>在实践中，尽管没有什么阻止这么做，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
+<p>在实践中，尽管技术上可行，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
 这会给其他人带来困惑，并且如果未来有在对应磁盘上启动系统等需要多分区的需求，会带来很多麻烦（可能只能备份数据后从头再来）。</p>
 <p>直接对物理磁盘设备格式化为文件系统也是操作时常见的输入错误：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>mkfs.ext4<span class="w"> </span>/dev/sdz<span class="w">  </span><span class="c1"># 错误 ❌</span>
@@ -2093,7 +2093,7 @@
 <p class="admonition-title">不要使用 <code>--type mirror</code></p>
 <p><code>mirror</code> 和 <code>raid1</code> 是两个<strong>不同</strong>的 type。除非有特殊需要，否则应该使用 <code>--type raid1</code> 创建 RAID 1 阵列。
 可以使用 <code>lvconvert</code> 将 mirror 转换为 raid1。</p>
-<p>相关讨论可查看 <a href="https://unix.stackexchange.com/questions/697364/in-what-cases-will-type-mirror-continue-to-be-a-good-choice-is-not-depre">In what case(s) will <code>--type mirror</code> continue to be a good choice / is not deprecated?</a>。</p>
+<p>相关讨论可查看 <a href="https://unix.stackexchange.com/q/697364">In what case(s) will <code>--type mirror</code> continue to be a good choice / is not deprecated?</a>。</p>
 <p>在后文的缺盘测试中，<code>mirror</code> 的行为也与预期不同——LVM 默认会拒绝挂载，如果强行挂载，会直接将缺失的盘丢掉。</p>
 </div>
 <div class="admonition note">
