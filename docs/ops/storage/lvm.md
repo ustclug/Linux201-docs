@@ -33,7 +33,7 @@ LVM 中有三个基本概念：
 
 !!! warning "避免在物理磁盘上创建无分区表的文件系统/物理卷"
 
-    在实践中，尽管没有什么阻止这么做，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
+    在实践中，尽管技术上可行，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
     这会给其他人带来困惑，并且如果未来有在对应磁盘上启动系统等需要多分区的需求，会带来很多麻烦（可能只能备份数据后从头再来）。
 
     直接对物理磁盘设备格式化为文件系统也是操作时常见的输入错误：
@@ -177,7 +177,7 @@ $ sudo lvs
     `mirror` 和 `raid1` 是两个**不同**的 type。除非有特殊需要，否则应该使用 `--type raid1` 创建 RAID 1 阵列。
     可以使用 `lvconvert` 将 mirror 转换为 raid1。
     
-    相关讨论可查看 [In what case(s) will `--type mirror` continue to be a good choice / is not deprecated?](https://unix.stackexchange.com/questions/697364/in-what-cases-will-type-mirror-continue-to-be-a-good-choice-is-not-depre)。
+    相关讨论可查看 [In what case(s) will `--type mirror` continue to be a good choice / is not deprecated?](https://unix.stackexchange.com/q/697364)。
 
     在后文的缺盘测试中，`mirror` 的行为也与预期不同——LVM 默认会拒绝挂载，如果强行挂载，会直接将缺失的盘丢掉。
 

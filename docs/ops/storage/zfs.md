@@ -18,6 +18,14 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 - 如果预期需要承载较重的读写负载，推荐使用大容量内存用于缓存（ZFS 官方推荐每 1 TB 存储容量配置 1 GB 内存）。
     - 如果打算启用 ZFS 的去重（deduplication）功能，推荐为每 TB 存储容量配备至少 5 GB 内存（但是官方推荐的比例是 30 GB）。
 - 如果预期的热数据量超出了内存容量，推荐使用 SSD 作为 L2ARC 缓存，但用于缓存的 SSD 容量不宜超过内存的 10 倍。
+
+    根据我们的经验，L2ARC 的实用性较小，因此我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
+    我们建议你在使用 ZFS 一段时间后，根据 `arc_summary` 的输出来决定是否需要添加 L2ARC。
+
+    作为参考，USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
+    这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。
+    因此对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。
+
 - 多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。
 
 如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。
@@ -32,9 +40,16 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
         受限于 Debian 的稳定性政策，stable 的软件源中的 ZFS 版本可能较老。如果需要使用较新的 ZFS 版本，可以考虑使用 Debian 的 backports 仓库（例如在 Debian Bookworm 中，对应使用 backports 的命令是 `apt install -t bookworm-backports zfs-dkms`）。
 
-- Ubuntu 自 20.04 LTS 起提供预编译好的 `zfs.ko`（软件包 `linux-modules-$(uname -r)`），因此无需再安装 `zfs-dkms`。Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`。
+- Ubuntu 自 20.04 LTS 起提供预编译好的 `zfs.ko`（软件包 `linux-modules-$(uname -r)`），因此无需再安装 `zfs-dkms`[^uuu1804]。
 
 不论是 Debian 还是 Ubuntu，都需要安装 `zfsutils-linux` 软件包，以便使用 ZFS 的命令行工具。
+
+??? tip "root on ZFS"
+
+    如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 `zfs-initramfs` 软件包，以便在启动时加载 ZFS 模块。
+
+    在这种配置下，我们**强烈建议**为 `/boot` 目录单独创建一个分区并使用 ext4 文件系统，以避免 GRUB 在特定条件下无法识别 ZFS 文件系统的问题。
+    另一种办法是使用 systemd-boot，还可以搭配 UKI 启动。
 
 ## 基础概念 {#concepts}
 
@@ -46,7 +61,9 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
     与 LVM 略有区别的地方是，ZFS 的文件系统是直接创建在 pool 上的，而无需像 LVM 一样先创建 LV，再将其格式化为某种文件系统。ZFS 的文件系统就是 ZFS。
 
-## 创建 pool {#create-pool}
+## ZFS pool {#zpool}
+
+### 创建 pool {#create-pool}
 
 同样与 LVM 不同的是，ZFS 推荐使用整块硬盘或尽可能整块的硬盘来创建 pool，以保证稳定的性能。作为一项适配操作，如果将整块硬盘用于创建 zpool，ZFS 会自动对其进行分区，以便在硬盘故障时能够更好地识别和处理。
 
@@ -115,17 +132,17 @@ tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -
 
 在创建好 zpool `tank` 后，ZFS 也自动创建了一个文件系统 `tank` 并挂载在了 `/tank` 目录，可以直接使用。
 
-!!! tip "参数调节"
+对于新建的 ZFS pool，我们推荐调整一些参数以获得最佳的性能。具体参见下一节。
 
-    对于新建的 ZFS pool，我们推荐调整一些参数以获得最佳的性能。具体参见下面的[参数调节](#tuning)。
+### 参数调节 {#tuning-zpool}
 
-## 参数调节 {#tuning}
+zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一些推荐修改的参数：
 
-### Zpool {#tuning-zpool}
+- `ashift`：详见上面的介绍。注意 `ashift` 参数在创建 pool 后**无法更改**，因此请在创建 pool 时指定。例如：
 
-Zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一些推荐修改的参数：
-
-- `ashift`：详见上面的介绍。注意 `ashift` 参数在创建 pool 后**无法更改**，因此请在创建 pool 时指定。
+    ```shell
+    zpool create -o ashift=12 tank /dev/loop0 /dev/loop1 /dev/loop2
+    ```
 
 - `autotrim=on`：如果你使用硬盘是 SSD，启用此选项后 ZFS 会自动为已删除的数据块向硬盘发送 TRIM 指令。例如：
 
@@ -136,6 +153,8 @@ Zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一�
 以下是一些在特定情况下有用的参数：
 
 - `bootfs=pool0/ROOT/debian`：如果你使用 root on ZFS，该参数是常见的 grub 配置及 initramfs 生成脚本所需的参数。
+
+## ZFS 数据集（dataset） {#dataset}
 
 ### ZFS 文件系统 {#tuning-zfs}
 
@@ -169,13 +188,70 @@ ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，
 
 与其他文件系统的不同之处在于，`recordsize` 指定了文件块的**最大**大小，而不是固定的大小。具体来说[^cks-1]：
 
-- 若文件大小不超过 `recordsize`，则文件块大小为文件大小（向上取整到 ashift 大小的整数倍）。
+- 若文件大小不超过 `recordsize`，则文件块大小为文件大小（向上取整到 ashift 对应大小的整数倍）。
     - 例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 `ashift=12`）。
 - 若文件大小超过 `recordsize`，则文件会被拆成多个大小为 `recordsize` 的块，其中最后一个块会以零字节补齐至 `recordsize`。
     - 例如，一个 129 KiB 的文件将会存储为两个 128 KiB 的块，在默认情况下会占用 256 KiB 磁盘空间。
     - 因此在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。
 
-### ZFS 内核模块参数 {#tuning-zfs-ko}
+### Zvol {#zvol}
+
+ZFS volume（zvol）是 ZFS 提供的块设备接口，可以用于虚拟机等需要块设备的场景。
+每个 zvol 都是一个独立的块设备，可以像硬盘一样分区、格式化并挂载。
+
+创建 zvol 的方法与创建 ZFS 文件系统相同，区别在于需要使用 `-V` 参数并指定大小：
+
+```shell
+zfs create -V 10G tank/vol
+```
+
+此时 ZFS 就会在 `/dev/zvol/tank/vol` 处将新建的 zvol 暴露出来，可以使用了。
+
+#### `volblocksize` {#volblocksize}
+
+#### Zvol 的容量 {#zvol-size}
+
+如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 `volsize` 属性：
+
+```shell
+zfs set volsize=20G tank/vol
+```
+
+此时 zvol 的大小就会立刻变为 20 GiB。
+
+!!! danger "该操作没有确认"
+
+    与其他 `zfs` 管理命令一样，这些操作没有任何确认提示，**请看清楚命令行后再执行**。
+
+    如果你用此方法缩小了 zvol 的大小，zvol 中超过新大小的数据将会立刻消失，因此请务必提前备份数据，并确保该“虚拟硬盘”的内容已经被缩小到新的大小以内。
+
+与 ZFS 文件系统的一个区别是，为了避免存储池满了而导致 zvol 无法写入，ZFS（在默认情况下）会为 zvol 全额预留空间。
+因此如果你创建了一个 10 GiB 的 zvol，那么存储池中就会少 10 GiB 的空间。
+注意 ZFS 并没有立刻向存储池写入 10 GiB 的数据，而是在 ZFS 的空间统计中预留了 10 GiB，因此新建的 zvol 会立刻显示 `used` 为 10 GiB。
+如果你需要查看此 zvol 实际占用的空间，可以查看它的 `referenced` 属性：
+
+```shell
+zfs get referenced tank/vol
+```
+
+或者直接列出该 zvol 的所有属性：
+
+```shell
+zfs get all tank/vol
+```
+
+此时你就会看到，`usedbydataset` 仅有 56K（或一个接近的小数字），而 `usedbyrefreservation` 占据了全部 10 GiB 的 `used`，这意味着 zvol 实际上并没有分配存储池空间。
+
+如果（因为各种原因）你不希望 zvol 预留全部空间，可以使用 `refreservation=none` 参数来关闭预留空间：
+
+```shell
+zfs set refreservation=none tank/vol
+```
+
+如果需要恢复预留空间，可以将 `refreservation` 设为 `auto`。
+注意 `auto` 这个值仅对 zvol 有意义，而 ZFS 文件系统并不支持 `auto` 值，毕竟 ZFS 文件系统并没有一个确定的大小。
+
+## ZFS 内核模块参数 {#zfs-ko}
 
 ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
 
@@ -298,15 +374,15 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
     一台使用 ZFS 的服务器将 `/var/log` 挂载在了 ZFS 文件系统中：
 
     ```text
-    NAME                                 USED  AVAIL  REFER  MOUNTPOINT
-    pool1/log                           2.88G   181G  2.88G  /var/log
+    NAME        USED  AVAIL  REFER  MOUNTPOINT
+    pool1/log  2.88G   181G  2.88G  /var/log
     ```
 
     但是系统管理员发现 `/var/log` 的使用空间会异常增大，直到大部分空间都被占用：
 
     ```text
-    NAME                                 USED  AVAIL     REFER  MOUNTPOINT
-    pool1/log                            173G  3.43G      173G  /var/log
+    NAME       USED  AVAIL     REFER  MOUNTPOINT
+    pool1/log  173G  3.43G      173G  /var/log
     ```
 
     但是实际的 log 大小只有不到 3G：
@@ -425,6 +501,8 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 ## 参考资料 {#references}
 
 <!-- markdownlint-disable MD053 -->
+
+  [^uuu1804]: Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`，但更重要的是，我们**不推荐使用已经 EOL 的发行版**。
 
   [cks]: https://utcc.utoronto.ca/~cks/space/blog/
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
