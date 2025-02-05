@@ -20,7 +20,7 @@ icon: material/package
 
 Debian 有多个与软件包管理相关的工具。
 
-其中的底层工具为 dpkg。dpkg 不负责管理软件依赖关系，只管理具体某一个包的安装、卸载等操作。因此**除非需要排查疑难问题，否则不应该直接使用 dpkg**。
+其中的底层工具为 dpkg。dpkg 不负责管理软件依赖关系，只管理具体某一个包的安装、卸载等操作。因此**除非需要排查疑难问题，否则不应该直接使用 dpkg 修改系统状态**。
 
 !!! warning "避免在安装 deb 文件时使用 dpkg"
 
@@ -263,38 +263,55 @@ Unattended-Upgrade::Allowed-Origins {
 
 此外，systemd 服务 `unattended-upgrades.service` 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。
 
-#### 使用 aptitude 作为替代前端
+#### APT 前端 {#apt-frontend}
 
-aptitude 是 dpkg 的一个 tui 前端，拥有更加简洁的操作以及更加完善的依赖解析机制。
+APT 面向用户使用的前端除了 `apt` 以外，还有 `apt-get`、`aptitude` 和 `synaptic` 等。其中 `apt-get` 是早期的 Debian 的包管理工具，基础功能与 `apt` 类似（如 `apt-get update`、`apt-get install` 等），但是用户体验不如 `apt` 友好，由于其交互界面不再变化，因此仅适用于需要使用脚本交互的场景；`synaptic` 是图形界面的包管理工具（中文名为「新立得软件包管理器」）。
 
-在终端里直接运行 `aptitude` 命令即可
+![Synaptic](../images/synaptic.png)
 
-可以使用 `?` 键查看说明，使用 `q` 退出
+Ubuntu 24.04 下的新立得软件包管理器截图
+{: .caption }
 
-#### 进行完整性校验
+`aptitude` 提供了 TUI 界面的包管理功能，不过对于运维的场景下，其更加重要的是相比于 `apt` 更灵活的依赖解析功能。在系统出现损坏包的情况下，`apt` 可能无法提供有效的解决方案，而 `aptitude` 会计算出多种解法，并且提供给用户选择。
 
-dpkg 可以对已经安装的包进行完整性校验。
+#### 进行完整性校验 {#verify}
 
-通过
+dpkg 可以对已经安装的包进行完整性校验。`dpkg --verify <name>` 可以校验已经安装的包的完整性，可以省略 `<name>` 选项，以对于所有包进行检查。如果怀疑软件包文件因意外被破坏（例如在升级时断电，或误删除等），可以使用该命令确认哪些软件包需要重新安装。
 
-```sh
-dpkg -V <name>
+!!! example "检查某系统强制重启后无法开机的问题"
+
+    一个现实发生的例子是，某系统强制重启后无法正常开机，提示：
+
+    ```console
+    [    4.634427] systemd[1]: Assertion 'close_nointr(fd) != -EBADF' failed at src/basic/fd-util.c:77, function safe_close(). Aborting.
+    [    4.635043] systemd[1]: Caught <ABRT> from our own process.
+    [    4.635624] systemd[1]: Caught <ABRT>, core dump failed (child 225, code=killed, status=6/ABRT).
+    [    4.635750] systemd[1]: Freezing execution.
+    ```
+
+    使用 ISO 引导后 `chroot` 到系统，执行 `dpkg --verify`，发现：
+
+    ```console
+    # dpkg --verify
+    （省略）
+    ??5??????   /usr/lib/x86_64-linux-gnu/systemd/libsystemd-core-252.so
+    ```
+
+    重新安装 `libsystemd-shared` 包后，问题解决。
+
+`dpkg --verify` 默认输出为 `rpm -V` 风格，类似如下：
+
+```rpm
+??5??????   /some/file
+??5?????? c /some/config_file
+missing     /some/missing_file
 ```
 
-对已经安装的包的完整性进行检查
+`dpkg` 目前只会检查文件的 MD5（即上面的 `5`），因此其他列均标记为 `?`（未检查）。`c` 代表是配置文件，`missing` 代表文件不存在。
 
-可以省略 `<name>` 选项，以对于所有包进行检查。
+!!! warning "`dpkg --verify` 不是为安全性用途设计的"
 
-注意，该操作并不能可靠地用于防范病毒入侵，其主要用途是防范意外的数据丢失或修改。
-
-<!-- automatic 和 manual 安装的区别，autoremove 的功能 -->
-<!-- "Recommends", "Suggests" 等是什么；在需要精简的场合使用 --no-install-recommends 避免安装不必要的软件包 -->
-<!-- 查找某个文件可以由什么包提供，查找某个包提供了什么文件 -->
-<!-- APT pattern（例如查找系统中状态为 local 的软件包） -->
-<!-- 如何固定一个软件包的版本（避免被升级） -->
-<!-- 配置自动升级 (unattended-upgrade) -->
-<!-- aptitude 简介 -->
-<!-- 检查已安装软件包完整性 -->
+    如果怀疑攻击者已经有对应机器的 root 权限，那么 `dpkg --verify` 的结果是不可信的，因为攻击者可以修改 `dpkg` 本身，或者修改本地的包数据库。
 
 ### 理解 apt 基本目录结构
 
