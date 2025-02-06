@@ -391,11 +391,101 @@ Pin-Priority: 1000
 
 详细文档请参考 [apt_preferences(5)][apt_preferences.5]。
 
-## 使用源码重编译包
+## DEB 软件包 {#deb-package}
 
-有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
+### 软件包结构 {#deb-structure}
 
-### 使用 apt 获得源码
+Deb 包是一个 ar 格式的包，包含三个文件（可以使用 `ar t` 查看，`ar x` 解压）：
+
+- `debian-binary`：包含版本号的文本文件，目前版本为 `2.0`。
+- `control.tar.xz`（或 `control.tar.zst` 等）：包含软件包的元数据，例如软件包的依赖、描述、安装脚本等。
+- `data.tar.xz`（或 `data.tar.zst` 等）：包含软件包的实际文件。
+
+!!! note "ar 与 tar"
+
+    ar 格式（1971）与 tar（1979）类似，都是归档格式。由于 ar 不支持目录，因此目前 ar 仅用于生成静态链接库（`.a` 文件）与 deb 包。
+
+`control.tar.xz` 中的 `control` 文件是包的元数据，包含版本、依赖、描述、维护者等等信息，类似如下：
+
+```control
+Package: sudo
+Version: 1.9.9-1ubuntu2.3
+Architecture: amd64
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Installed-Size: 2504
+Depends: libaudit1 (>= 1:2.2.1), libc6 (>= 2.34), libpam0g (>= 0.99.7.1), libselinux1 (>= 3.1~), zlib1g (>= 1:1.2.0.2), libpam-modules, lsb-base
+Conflicts: sudo-ldap
+Replaces: sudo-ldap
+Section: admin
+Priority: optional
+Homepage: https://www.sudo.ws/
+Description: Provide limited super user privileges to specific users
+ Sudo is a program designed to allow a sysadmin to give limited root
+ privileges to users and log root activity.  The basic philosophy is to give
+ as few privileges as possible but still allow people to get their work done.
+ .
+ This version is built with minimal shared library dependencies, use the
+ sudo-ldap package instead if you need LDAP support for sudoers.
+Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
+```
+
+此外，`control.tar.xz` 可以包含一些 hook 脚本，在安装与删除前后进行操作，包括 `preinst`, `prerm`, `postinst`, `postrm`。还可以包含以下文件：
+
+- `md5sums`，用于校验包文件的完整性。
+- `conffiles`，标志包安装的哪些文件是配置文件。
+- `shlibs`，如果软件包包含了动态库（`.so`），那么这个文件就需要包含库的版本信息，以帮助其他软件包解决相关的依赖问题。
+- `triggers`，定义了软件包感兴趣（interest）的触发器，以及软件包状态变化时会触发（activate）的触发器。
+
+### 获取软件包源码 {#apt-source}
+
+Debian 目前大多数的包的源代码都可以在 Debian Salsa GitLab 上找到，可以在 [Debian Package Tracker](https://tracker.debian.org/) 上找到相关信息。
+
+除了直接使用 git clone 之外，还可以使用 `apt source <package>` 来下载源码。需要注意的是，该功能需要安装 `dpkg-dev`，且需要在 `/etc/apt/sources.list` 或 `/etc/apt/sources.list.d/debian.sources` 中添加 `deb-src`，类似于这样：
+
+```debsources
+deb-src http://deb.debian.org/debian/ bookworm main
+```
+
+或者这样（DEB822）：
+
+```yaml
+Types: deb deb-src
+URIs: http://deb.debian.org/debian/
+Suites: bookworm
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+```
+
+!!! tip "DEB822"
+
+    DEB822 是 Debian 新的仓库配置格式，用于取代旧的 `sources.list` 格式（又被称为 One-Line-Style 格式）。详情可阅读 <https://repolib.readthedocs.io/en/latest/deb822-format.html>。
+
+`apt source` 会下载必要的文件、解压并应用 Debian 的补丁：
+
+```shell
+$ apt source sudo
+Reading package lists... Done
+NOTICE: 'sudo' packaging is maintained in the 'Git' version control system at:
+https://salsa.debian.org/sudo-team/sudo.git
+Please use:
+git clone https://salsa.debian.org/sudo-team/sudo.git
+to retrieve the latest (possibly unreleased) updates to the package.
+Skipping already downloaded file 'sudo_1.9.13p3-1+deb12u1.dsc'
+Skipping already downloaded file 'sudo_1.9.13p3.orig.tar.gz'
+Skipping already downloaded file 'sudo_1.9.13p3.orig.tar.gz.asc'
+Skipping already downloaded file 'sudo_1.9.13p3-1+deb12u1.debian.tar.xz'
+Need to get 0 B of source archives.
+dpkg-source: info: extracting sudo in sudo-1.9.13p3
+dpkg-source: info: unpacking sudo_1.9.13p3.orig.tar.gz
+dpkg-source: info: unpacking sudo_1.9.13p3-1+deb12u1.debian.tar.xz
+dpkg-source: info: using patch list from debian/patches/series
+dpkg-source: info: applying debian-bug-1039557
+dpkg-source: info: applying paths-in-samples.diff
+dpkg-source: info: applying Whitelist-DPKG_COLORS-environment-variable.diff
+dpkg-source: info: applying sudo-ldap-docs
+```
+
+<!-- 有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
 
 一般而言，使用 apt 可以获得一些软件包的源码。
 
@@ -427,17 +517,15 @@ dch --local +<changed_proc>
 dpkg-buildpackage -us -uc
 ```
 
-以编译源代码并生成安装包。
+以编译源代码并生成安装包。 -->
 
-## 软件源
+## 软件源 {#repo}
 
 ### 目录结构
 
 ### 构建一个自己的 DEB 软件源
 
 <!-- 可参考 https://github.com/USTC-vlab/deb -->
-
-## 软件包构建
 
 <!-- DEB 软件包的结构 -->
 <!-- 如何从已有的 DEB 源码包打自己的 patch 并重新打包 -->
