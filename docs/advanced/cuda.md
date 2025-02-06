@@ -146,7 +146,7 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PAT
 
 ## Nvidia Container Toolkit
 
-Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。它允许开发者使用 NVIDIA 的 GPU 进行计算，而无需在主机上安装 NVIDIA 驱动和 CUDA 运行时。
+Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。
 
 - [官方文档](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 - [USTC Mirror](https://mirrors.ustc.edu.cn/help/libnvidia-container.html)
