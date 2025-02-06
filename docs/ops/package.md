@@ -10,13 +10,11 @@ icon: material/package
 
 !!! warning "本文编写中"
 
-<!-- 简介 -->
-
 包管理系统是现代 Linux 发行版的重要组成部分。以下介绍与 Debian 的包管理系统相关工具，例如 APT（Advanced Package Tool）。其他发行版的包管理系统会有所不同，可参考 [Arch Linux Wiki 的 pacman/Rosetta 页面](https://wiki.archlinux.org/title/Pacman/Rosetta)。
 
 本文假设读者了解最基础的 `apt` 使用方法，如 `apt install`, `apt remove`, `apt update`, `apt upgrade`。
 
-## APT
+## APT 常用操作 {#apt-common-operations}
 
 Debian 有多个与软件包管理相关的工具。
 
@@ -30,9 +28,7 @@ Debian 有多个与软件包管理相关的工具。
 
 从用户视角来看，最常使用的工具是 apt（以及其他以 `apt-` 开头的命令）。
 
-### 常用操作 {#common-operations}
-
-#### 标记软件包为自动/手动安装 {#auto-manual}
+### 标记软件包为自动/手动安装 {#auto-manual}
 
 绝大多数软件包都不是孤立的：它们也有自己的依赖。那么，如果安装了一个带有其他依赖的软件，然后再删除这个软件，其引入的依赖不会被自动删除，不过：
 
@@ -79,7 +75,7 @@ The following packages will be REMOVED:
 - `apt-mark showauto` 与 `apt-mark showmanual` 可以显示系统中被标记为自动安装与手动安装的包。
 - `apt-mark auto <package>` 与 `apt-mark manual <package>` 可以修改包的标记。
 
-#### 推荐与建议 {#recommends-suggests}
+### 推荐与建议 {#recommends-suggests}
 
 安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。建议（Suggested）的包会显示在安装界面，但是不会自动被安装。例如在 Debian 12 中，[docker.io 包](https://packages.debian.org/bookworm/docker.io)的推荐有 apparmor、ca-certificates 等，建议包有 btrfs-progs、debootstrap 等。那么在安装 `docker.io` 时，包括 apparmor、ca-certificates 等包就会默认被安装，并且用户也可以看到这些包建议，并且可以在当前包安装完成后自行安装。
 
@@ -99,11 +95,11 @@ The following packages will be REMOVED:
 
     某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 `99` 作为前缀，确保这个配置文件在其他配置文件之后被读取。
 
-#### 搜索包 {#search}
+### 搜索包 {#search}
 
 Debian 与 Ubuntu 均提供了网页端搜索软件包的服务：[Debian 软件包](https://packages.debian.org/)、[Ubuntu Packages Search](https://packages.ubuntu.com/)。不过，使用 apt 工具搜索来快得多。
 
-##### `apt search` 与 apt 搜索模式 {#apt-search-pattern}
+#### `apt search` 与 apt 搜索模式 {#apt-search-pattern}
 
 `apt search <name>` 会根据包名与描述进行包的查找，支持正则表达式：
 
@@ -146,7 +142,7 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
     - 输出本地安装的名字里有 `top` 的所有包
         - 提示：可以像这样要求同时满足多个 pattern: `apt list 'P1 P2 P3'`
 
-##### 文件搜索：`apt-file` {#apt-file}
+#### 文件搜索：`apt-file` {#apt-file}
 
 如果使用过默认安装的 Ubuntu 的话，可能会发现，在输入命令时，如果命令不存在，会有类似下面的提示：
 
@@ -210,13 +206,13 @@ htop: /usr/share/pixmaps/htop.png
     - `dpkg-deb -c <name_version.deb>` 可以查看 `.deb` 文件中的内容。
     - `dpkg-query -L <name>` 查看给定的安装了的包提供了哪些文件。
 
-#### 固定包 {#hold}
+### 固定包 {#hold}
 
 有时我们希望固定一个包，使得这个包不会被改变或升级：一个例子是，我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 `apt-mark hold <name>` 来标记这个包为固定的。
 
 `apt-mark unhold` 可以取消固定，而 `apt-mark showhold` 可以查看所有被固定的包。
 
-#### 自动更新 {#unattended-upgrade}
+### 自动更新 {#unattended-upgrade}
 
 一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：
 
@@ -263,7 +259,7 @@ Unattended-Upgrade::Allowed-Origins {
 
 此外，systemd 服务 `unattended-upgrades.service` 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。
 
-#### APT 前端 {#apt-frontend}
+### APT 前端 {#apt-frontend}
 
 APT 面向用户使用的前端除了 `apt` 以外，还有 `apt-get`、`aptitude` 和 `synaptic` 等。其中 `apt-get` 是早期的 Debian 的包管理工具，基础功能与 `apt` 类似（如 `apt-get update`、`apt-get install` 等），但是用户体验不如 `apt` 友好，由于其交互界面不再变化，因此仅适用于需要使用脚本交互的场景；`synaptic` 是图形界面的包管理工具（中文名为「新立得软件包管理器」）。
 
@@ -274,7 +270,7 @@ Ubuntu 24.04 下的新立得软件包管理器截图
 
 `aptitude` 提供了 TUI 界面的包管理功能，不过对于运维的场景下，其更加重要的是相比于 `apt` 更灵活的依赖解析功能。在系统出现损坏包的情况下，`apt` 可能无法提供有效的解决方案，而 `aptitude` 会计算出多种解法，并且提供给用户选择。
 
-#### 进行完整性校验 {#verify}
+### 完整性校验 {#verify}
 
 dpkg 可以对已经安装的包进行完整性校验。`dpkg --verify <name>` 可以校验已经安装的包的完整性，可以省略 `<name>` 选项，以对于所有包进行检查。如果怀疑软件包文件因意外被破坏（例如在升级时断电，或误删除等），可以使用该命令确认哪些软件包需要重新安装。
 
@@ -313,147 +309,63 @@ missing     /some/missing_file
 
     如果怀疑攻击者已经有对应机器的 root 权限，那么 `dpkg --verify` 的结果是不可信的，因为攻击者可以修改 `dpkg` 本身，或者修改本地的包数据库。
 
-### 理解 apt 基本目录结构
+### 软件优先级 {#priority}
 
-apt 的工作依赖于一些文件，理解这些文件（与目录）的作用有助于更好的理解其工作原理。
+有时候，我们会设置多个不同的源，而这些源会提供相同名称的软件包，例如：
 
-#### `/etc/apt/sources.list` 与 `/etc/apt/sources.list.d/`
+- 正常安装的系统中，security 源提供了一些主源已有的软件包的，包含安全修复的更新版本。
+- 在 stable 版本的 Debian 中添加 [backports](https://backports.debian.org/) 源，以获取一些来自 testing 的，在 stable 下重新编译的新版本的软件包。
+- Ubuntu 源中的 `firefox` 为 Snap 包，而来自 Mozilla 的 APT 仓库的 `firefox` 为原生的 deb 包（[Mozilla 的帮助信息](https://support.mozilla.org/en-US/kb/install-firefox-linux#w_install-firefox-deb-package-for-debian-based-distributions-recommended)）。
 
-这些文件声明 apt 的软件源，在进行 `apt update` 这类操作时，会从这些软件源下载 metadata 并且进行缓存。
+APT 选择包的逻辑并非单纯的「版本越新越好」（比如，用户添加 backports 源**不代表**用户希望所有 backports 有的软件都安装最新版本），而是根据优先级来选择。默认的优先级为 500，如果优先级一致，才会根据版本号来选择。
 
-这些 metadata 包括软件源里所有包的基本信息，例如包名称，每个包的依赖，推荐与建议包，开发者与维护者等等。
+Backports 源的优先级为 100，因为其 `Release` 文件中 `NotAutomatic` 和 `ButAutomaticUpgrades` 字段都为 `yes`，[因此 APT 会授予 backports 100 的优先级](https://wiki.debian.org/DebianRepository/Format#NotAutomatic_and_ButAutomaticUpgrades)。如果只有 `NotAutomatic` 为 `yes`，则优先级为 1。
 
-#### `/etc/apt/apt.conf` 与 `/etc/apt/apt.conf.d/`
+我们通过 `apt-cache policy <name>` 查看包的安装状态与优先级信息，以某配置了 backports、[deb-multimedia](https://deb-multimedia.org/)，并且有一段时间未升级的系统为例：
 
-这些文件是 apt（以及其拓展）使用的配置文件。
-
-对于 apt.conf.d 里面的文件，其优先级由字典序决定。一般在文件前添加数字代表优先级，数字更大者读取越靠后，因而优先级更高。
-apt.conf 最后被读取，拥有最高的优先级。
-
-#### `/var/lib/apt/lists`
-
-我们之前提到的 metadata 的储存位置。
-
-需要注意的是，metadata 不止和软件源包含什么有关。
-
-使用 apt-cache 工具查询相关信息。
-
-例子：
-
-使用 apt-cache 查看软件包相关 metadata
-
-```sh
-apt-cache show <name>
-```
-
-使用 apt-cache 查看软件包的依赖和反向依赖
-
-```sh
-apt-cache depends <name>
-apt-cache rdepends <name>
-```
-
-检查未被满足的依赖，用来修复一些依赖地狱问题
-
-```sh
-apt-cache unmet
-```
-
-#### `/var/lib/dpkg/available`
-
-dpkg 的数据库，结构与 apt 相似，在现在随着 dpkg 本身的使用逐渐减少，已经基本停止使用。
-
-#### `/var/lib/dpkg/status`
-
-dpkg 的状态列表，相较于纯粹的 metadata，其添加了优先级和状态，去除了校验值。
-
-一般这里包含安装结束的包与部分安装的包。
-
-#### `/var/lib/dpkg/info`
-
-所有包的管理相关信息，例如包内文件的 md5sum 值，库包的符号列表，安装和卸载时需要的额外操作等等。
-
-#### `/var/lib/apt/extended_states`
-
-记录已经安装的包的类型：自动安装或者手动安装的。
-
-一般而言列表中的包都是自动安装的。
-
-在进行 `apt autoremove` 时用于判定是否要卸载，如果一个包没有被其他手动安装的包（直接或间接）依赖并且是自动安装的，那么其会被移除。
-
-通过 `apt-mark auto <name>` 和 `apt-mark manual <name>` 进行修改。
-
-#### `/etc/apt/preferences` 与 `/etc/apt/preferences.d/`
-
-apt 优先级的配置文件
-
-apt 在遇到相同软件包时，会选择优先级最高的安装包进行安装。在拥有相同优先级的情况下，会选择最高版本安装。
-
-### 软件包优先级
-
-如果你同时使用多个不同的源，而这两个源包含相同的包，那么在安装时会产生歧义。
-
-我们通过 `apt-cache policy <name>` 查看包的安装状态与优先级信息。
-
-例子：
-
-在安装 sudo 前：
-
-```sh
-root@c8338bbdbf69:/var/lib/apt# apt-cache policy sudo
-sudo:
-  Installed: (none)
-  Candidate: 1.9.13p3-1+deb12u1
+```console
+$ apt-cache policy yt-dlp
+yt-dlp:
+  Installed: 1:2024.10.07-dmo1
+  Candidate: 1:2025.01.26-dmo1
   Version table:
-     1.9.13p3-1+deb12u1 500
+     1:2025.01.26-dmo1 500
+        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages
+ *** 1:2024.10.07-dmo1 100
+        100 /var/lib/dpkg/status
+     2025.01.26-1~bpo12+1 100
+        100 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages
+     2023.03.04-1 500
         500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages
 ```
 
-在安装 sudo 后
+可以看到，APT 已知四个不同的 `yt-dlp` 版本，分别是 deb-multimedia 的 `1:2025.01.26-dmo1`、本地安装的 `1:2024.10.07-dmo1`、backports 的 `2025.01.26-1~bpo12+1` 以及官方源的 `2023.03.04-1`。特别地，本地的版本的优先级为 100。因此当执行更新命令时，APT 会首先选择优先级最高的（`deb-multimedia` 或者官方源），然后选择版本最高的（`1:2025.01.26-dmo1`）。
+
+如果需要指定从某个特定的源安装软件包，可以使用 `-t` 选项，例如：
 
 ```sh
-root@c8338bbdbf69:/var/lib/apt# apt-cache policy sudo 
-sudo:
-  Installed: 1.9.13p3-1+deb12u1
-  Candidate: 1.9.13p3-1+deb12u1
+apt install -t bookworm-backports yt-dlp
+```
+
+这样就会安装 backports 源中的 `yt-dlp`。其实际上是把 `bookworm-backports` 源的优先级临时拉高到了 990：
+
+```console
+$ apt-cache policy -t bookworm-backports yt-dlp
+yt-dlp:
+  Installed: 1:2024.10.07-dmo1
+  Candidate: 1:2025.01.26-dmo1
   Version table:
- *** 1.9.13p3-1+deb12u1 500
+     1:2025.01.26-dmo1 500
+        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages
+ *** 1:2024.10.07-dmo1 100
+        100 /var/lib/dpkg/status
+     2025.01.26-1~bpo12+1 990
+        990 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages
+     2023.03.04-1 500
         500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages
-        100 /var/lib/dpkg/status
 ```
 
-在添加另一软件源后：
-
-```sh
-sudo:
-  Installed: 1.9.13p3-1+deb12u1
-  Candidate: 1.9.13p3-1+deb12u1
-  Version table:
- *** 1.9.13p3-1+deb12u1 500
-        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages
-        500 http://mirrors.nju.edu.cn/debian bookworm/main amd64 Packages
-        100 /var/lib/dpkg/status
-```
-
-在声明默认安装目标时（注意`-t stable`选项）：
-
-```sh
-root@c8338bbdbf69:/etc/apt/preferences.d# apt-cache policy -t stable sudo
-sudo:
-  Installed: 1.9.13p3-1+deb12u1
-  Candidate: 1.9.13p3-1+deb12u1
-  Version table:
- *** 1.9.13p3-1+deb12u1 990
-        990 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages
-        990 http://mirrors.nju.edu.cn/debian bookworm/main amd64 Packages
-        100 /var/lib/dpkg/status
-```
-
-如果有两个源同时拥有最高的优先级并且在同优先级下有最新的版本，但是其 metadata 有差异，那么安装**被卸载的**包。
-
-#### 编写优先级配置
-
-优先级配置条目的一般格式如下：
+用户也可以手动配置软件的优先级，相关配置位于 `/etc/apt/preferences` 和 `/etc/apt/preferences.d/` 中。优先级配置条目的一般格式如下：
 
 ```yaml
 Package: <name>
@@ -464,53 +376,20 @@ Pin-Priority: <priority>
 例如：
 
 ```yaml
-Package: sudo
-Pin: version 1.9.13p3*
-Pin-Priority: 1001
-```
-
-那么在安装 sudo 包时会最优先安装任何 1.9.13p3 版本。在这之后会安装最新版本。
-
-可以选择调整不同源的优先级，例如：
-
-```yaml
 Package: *
-Pin: origin "mirrors.ustc.edu.cn"
-Pin-Priority: 999
+Pin: origin packages.mozilla.org
+Pin-Priority: 1000
 ```
 
-如果 origin 后使用空字符串，那么代表本地。
-
-**对于优先级大于等于 1000 的来源，安装时可以允许降级。**
-
-对于优先级介于 990 与 999 之间的来源，就算发行目标不一致也会进行安装，除非本地的优先级更高。因此可以优先安装一些包，例如：
+那么在安装所有 packages.mozilla.org 的包的时候，都会被优先选择。优先级系统也可以用来固定包，例如将 `mtr-tiny` 包固定在 0.87 版本：
 
 ```yaml
-Package: vim
-Pin: release a=experimental
-Pin-Priority: 991
+Package: mtr-tiny
+Pin: version 0.87*
+Pin-Priority: 1000
 ```
 
-这会使得 vim 优先安装来自 experimental 的版本。
-
-对于优先级介于 500 与 989 之间的来源，其会优先于一般来源安装。
-
-对于优先级介于 100 与 499 之间的来源，会落后于其他来源安装。
-
-对于优先级介于 1 与 99 之间的来源，只有系统没有安装的时候会进行安装。
-
-**对于优先级小于 0 的来源，不会安装该来源的包，可以用来屏蔽一些可能出问题的包。**
-
-**优先级为 0 是未定义的，不要使用。**
-
-对于一个具体包（例如 sudo），第一个出现的**针对**该包的条目决定其优先级。否则，
-
-这些配置有很多不同选项，详细请参考官方文档。
-
-关于 apt 优先级，可以通过 `man apt_preferences` 查看更具体的信息。
-
-<!-- 介绍 apt-cache policy 工具的使用 -->
-<!-- 如何编写 /etc/apt/preferences.d/ 配置，举一些例子 -->
+详细文档请参考 [apt_preferences(5)][apt_preferences.5]。
 
 ## 使用源码重编译包
 
@@ -646,3 +525,79 @@ TODO
 ## 重要而不常见的功能
 
 TODO -->
+
+<!-- ### 理解 apt 基本目录结构
+
+apt 的工作依赖于一些文件，理解这些文件（与目录）的作用有助于更好的理解其工作原理。
+
+#### `/etc/apt/sources.list` 与 `/etc/apt/sources.list.d/`
+
+这些文件声明 apt 的软件源，在进行 `apt update` 这类操作时，会从这些软件源下载 metadata 并且进行缓存。
+
+这些 metadata 包括软件源里所有包的基本信息，例如包名称，每个包的依赖，推荐与建议包，开发者与维护者等等。
+
+#### `/etc/apt/apt.conf` 与 `/etc/apt/apt.conf.d/`
+
+这些文件是 apt（以及其拓展）使用的配置文件。
+
+对于 apt.conf.d 里面的文件，其优先级由字典序决定。一般在文件前添加数字代表优先级，数字更大者读取越靠后，因而优先级更高。
+apt.conf 最后被读取，拥有最高的优先级。
+
+#### `/var/lib/apt/lists`
+
+我们之前提到的 metadata 的储存位置。
+
+需要注意的是，metadata 不止和软件源包含什么有关。
+
+使用 apt-cache 工具查询相关信息。
+
+例子：
+
+使用 apt-cache 查看软件包相关 metadata
+
+```sh
+apt-cache show <name>
+```
+
+使用 apt-cache 查看软件包的依赖和反向依赖
+
+```sh
+apt-cache depends <name>
+apt-cache rdepends <name>
+```
+
+检查未被满足的依赖，用来修复一些依赖地狱问题
+
+```sh
+apt-cache unmet
+```
+
+#### `/var/lib/dpkg/available`
+
+dpkg 的数据库，结构与 apt 相似，在现在随着 dpkg 本身的使用逐渐减少，已经基本停止使用。
+
+#### `/var/lib/dpkg/status`
+
+dpkg 的状态列表，相较于纯粹的 metadata，其添加了优先级和状态，去除了校验值。
+
+一般这里包含安装结束的包与部分安装的包。
+
+#### `/var/lib/dpkg/info`
+
+所有包的管理相关信息，例如包内文件的 md5sum 值，库包的符号列表，安装和卸载时需要的额外操作等等。
+
+#### `/var/lib/apt/extended_states`
+
+记录已经安装的包的类型：自动安装或者手动安装的。
+
+一般而言列表中的包都是自动安装的。
+
+在进行 `apt autoremove` 时用于判定是否要卸载，如果一个包没有被其他手动安装的包（直接或间接）依赖并且是自动安装的，那么其会被移除。
+
+通过 `apt-mark auto <name>` 和 `apt-mark manual <name>` 进行修改。
+
+#### `/etc/apt/preferences` 与 `/etc/apt/preferences.d/`
+
+apt 优先级的配置文件
+
+apt 在遇到相同软件包时，会选择优先级最高的安装包进行安装。在拥有相同优先级的情况下，会选择最高版本安装。 -->
