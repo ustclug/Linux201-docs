@@ -209,6 +209,13 @@ zfs create -V 10G tank/vol
 
 #### `volblocksize` {#volblocksize}
 
+作为块设备，zvol 自然也有“块大小”（block size）的概念，即 `volblocksize` 参数。
+与 `recordsize` 不同，`volblocksize` 是固定的，且只能在创建 zvol 时指定。
+自 ZFS 2.1 起，`volblocksize` 的默认值为 16K。
+
+一般来说，`volblocksize` 应该与你的应用程序的 I/O 模式相匹配，以获得最佳的性能。
+但我们并不推荐
+
 #### Zvol 的容量 {#zvol-size}
 
 如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 `volsize` 属性：
