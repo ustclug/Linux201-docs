@@ -1504,6 +1504,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#nvidia-container-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nvidia Container Toolkit
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1766,6 +1775,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#nvidia-container-toolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nvidia Container Toolkit
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1819,6 +1837,7 @@
 <li>安装 NVIDIA 的<strong>内核态</strong>驱动以及部分用户态组件（驱动），使得操作系统能够正确识别显卡并与之通信。</li>
 <li>安装 CUDA 运行时和开发工具（<strong>用户态</strong>），使得我们能够在程序中使用 CUDA API。</li>
 </ol>
+<p><img alt="CUDA components" src="../../images/cuda.png" /></p>
 <div class="admonition note">
 <p class="admonition-title">NVIDIA 内核驱动</p>
 <p>默认情况下，Linux 内核自带开源的 Nouveau 驱动。Nouveau 驱动大部分时候能够点亮屏幕，进行基础的图形渲染，对于没有计算和重度渲染需求（例如大型游戏）的用户来讲是可以尝试的选择<sup id="fnref:nouveau-performance"><a class="footnote-ref" href="#fn:nouveau-performance">1</a></sup>。但是很遗憾，Nouveau 不支持运行包括 CUDA 在内的计算任务<sup id="fnref:nouveau-matrix"><a class="footnote-ref" href="#fn:nouveau-matrix">2</a></sup>。</p>
@@ -1902,6 +1921,25 @@
 <p>如果编译项目时找不到 CUDA 库，则需要更新动态链接库路径，对应需要设置 <code>LD_LIBRARY_PATH</code> 环境变量：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="si">}}</span>
 </code></pre></div>
+<h2 id="nvidia-container-toolkit">Nvidia Container Toolkit<a class="headerlink" href="#nvidia-container-toolkit" title="Permanent link">&para;</a></h2>
+<p>Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。它允许开发者使用 NVIDIA 的 GPU 进行计算，而无需在主机上安装 NVIDIA 驱动和 CUDA 运行时。</p>
+<ul>
+<li><a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html">官方文档</a></li>
+<li><a href="https://mirrors.ustc.edu.cn/help/libnvidia-container.html">USTC Mirror</a></li>
+</ul>
+<p>安装后需修改：</p>
+<div class="highlight"><span class="filename">/etc/docker/daemon.json</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">&quot;runtimes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">&quot;nvidia&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">            </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">            </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nvidia-container-runtime&quot;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="p">},</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="p">}</span>
+</code></pre></div>
+<p>或使用 <code>nvidia-ctk</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>nvidia-ctk<span class="w"> </span>runtime<span class="w"> </span>configure<span class="w"> </span>--runtime<span class="o">=</span>docker
+</code></pre></div>
 <!--
   Links to man pages
 
@@ -1947,8 +1985,70 @@
 
 
   
+    
+  
   
 
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="最后更新">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">2025年2月6日</span>
+  </span>
+
+    
+    
+    
+    
+      
+  <span class="md-source-file__fact">
+    
+      
+  <span class="md-icon" title="贡献者">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </span>
+  <span>GitHub</span>
+
+    
+    <nav>
+      
+        <a href="https://github.com/tiankaima" class="md-author" title="@tiankaima">
+          
+          <img src="https://avatars.githubusercontent.com/u/91816094?v=4&size=72" alt="tiankaima">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/sscscc" class="md-author" title="@sscscc">
+          
+          <img src="https://avatars.githubusercontent.com/u/20487033?v=4&size=72" alt="sscscc">
+        </a>
+      
+        <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/15368?v=4&size=72" alt="github-actions[bot]">
+        </a>
+      
+      
+      
+        
+          <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/advanced/cuda.md" class="md-author md-author--more">
+            +1
+          </a>
+        
+      
+    </nav>
+  </span>
+
+    
+  </aside>
 
 
   
