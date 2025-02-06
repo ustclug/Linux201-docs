@@ -37,6 +37,8 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 1. 安装 NVIDIA 的**内核态**驱动以及部分用户态组件（驱动），使得操作系统能够正确识别显卡并与之通信。
 2. 安装 CUDA 运行时和开发工具（**用户态**），使得我们能够在程序中使用 CUDA API。
 
+![CUDA components](../images/cuda.png)
+
 !!! note "NVIDIA 内核驱动"
 
      默认情况下，Linux 内核自带开源的 Nouveau 驱动。Nouveau 驱动大部分时候能够点亮屏幕，进行基础的图形渲染，对于没有计算和重度渲染需求（例如大型游戏）的用户来讲是可以尝试的选择[^nouveau-performance]。但是很遗憾，Nouveau 不支持运行包括 CUDA 在内的计算任务[^nouveau-matrix]。
@@ -140,4 +142,30 @@ export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}
 
 ```shell
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+```
+
+## Nvidia Container Toolkit
+
+Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。它允许开发者使用 NVIDIA 的 GPU 进行计算，而无需在主机上安装 NVIDIA 驱动和 CUDA 运行时。
+
+- [官方文档](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+- [USTC Mirror](https://mirrors.ustc.edu.cn/help/libnvidia-container.html)
+
+安装后需修改：
+
+```json title="/etc/docker/daemon.json"
+{
+    "runtimes": {
+        "nvidia": {
+            "args": [],
+            "path": "nvidia-container-runtime"
+        }
+    },
+}
+```
+
+或使用 `nvidia-ctk`:
+
+```shell
+sudo nvidia-ctk runtime configure --runtime=docker
 ```
