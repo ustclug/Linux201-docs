@@ -489,7 +489,7 @@ dpkg-source: info: applying sudo-ldap-docs
 
 一般而言，使用 apt 可以获得一些软件包的源码。
 
-首先，添加源码源，添加方法参考[Debian - USTC Mirror help](https://mirrors.ustc.edu.cn/help/debian.html#__tabbed_1_2)
+首先，添加源码源，添加方法参考 [Debian - USTC Mirror help](https://mirrors.ustc.edu.cn/help/debian.html#__tabbed_1_2)
 
 通过 `apt source <package>` 获得源码。
 
