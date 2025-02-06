@@ -2103,8 +2103,8 @@
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>raid1<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">  Insufficient suitable allocatable extents for logical volume lvraid1: 516 more required</span>
 </code></pre></div>
-<p>但是 "extent" 是多大呢？在 LVM 中，有两种 extent: PE（Physical Extent）和 LE（Logical Extent），
-对应物理卷和逻辑卷的大小参数。这里指的是 PE，可以使用 <code>pvdisplay</code> 或 <code>vgdisplay</code> 查看。</p>
+<p>但是 "extent" 是多大呢？
+此时可以使用 <code>pvdisplay</code> 或 <code>vgdisplay</code> 查看物理卷的 PE（Physical Extent）大小：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgdisplay
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">  --- Volume group ---</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">  VG Name               vg201-test</span>
@@ -2160,8 +2160,8 @@
 <a id="__codelineno-5-53" name="__codelineno-5-53" href="#__codelineno-5-53"></a><span class="go">  Allocated PE          172</span>
 <a id="__codelineno-5-54" name="__codelineno-5-54" href="#__codelineno-5-54"></a><span class="go">  PV UUID               AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ</span>
 </code></pre></div>
-<p>可以看到 PE 是 4M，因此缺少 516 个 extent 指缺少 516 * 4M ~= 2G 空间。
-这里是因为 PV 数量不足，所以无法找到能够存储第四份副本的磁盘。</p>
+<p>可以看到 PE 是 4M，因此缺少 516 个 extent 指缺少 516 * 4M ≈ 2G 空间。
+这里报错实际的原因是 PV 数量不足，所以无法找到能够存储第四份副本的磁盘（即缺少满足条件的 extent，而非单纯的 VG 中空闲 extent）。</p>
 </div>
 <p><code>lvs</code> 支持指定参数查看 LV 的其他信息，这里我们查看逻辑卷实际使用的物理卷：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a<span class="w"> </span>-o<span class="w"> </span>+devices<span class="w"> </span>vg201-test

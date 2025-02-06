@@ -917,6 +917,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#arc" class="md-nav__link">
+    <span class="md-ellipsis">
+      ARC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ARC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l2arc" class="md-nav__link">
+    <span class="md-ellipsis">
+      L2ARC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#zfs-ko" class="md-nav__link">
     <span class="md-ellipsis">
       ZFS 内核模块参数
@@ -925,15 +949,6 @@
   
     <nav class="md-nav" aria-label="ZFS 内核模块参数">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arc" class="md-nav__link">
-    <span class="md-ellipsis">
-      关于 ARC
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#tuning-example" class="md-nav__link">
@@ -1946,6 +1961,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#arc" class="md-nav__link">
+    <span class="md-ellipsis">
+      ARC
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ARC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l2arc" class="md-nav__link">
+    <span class="md-ellipsis">
+      L2ARC
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#zfs-ko" class="md-nav__link">
     <span class="md-ellipsis">
       ZFS 内核模块参数
@@ -1954,15 +1993,6 @@
   
     <nav class="md-nav" aria-label="ZFS 内核模块参数">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#arc" class="md-nav__link">
-    <span class="md-ellipsis">
-      关于 ARC
-    </span>
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#tuning-example" class="md-nav__link">
@@ -2031,17 +2061,8 @@
 <li>如果打算启用 ZFS 的去重（deduplication）功能，推荐为每 TB 存储容量配备至少 5 GB 内存（但是官方推荐的比例是 30 GB）。</li>
 </ul>
 </li>
-<li>
-<p>如果预期的热数据量超出了内存容量，推荐使用 SSD 作为 L2ARC 缓存，但用于缓存的 SSD 容量不宜超过内存的 10 倍。</p>
-<p>根据我们的经验，L2ARC 的实用性较小，因此我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
-我们建议你在使用 ZFS 一段时间后，根据 <code>arc_summary</code> 的输出来决定是否需要添加 L2ARC。</p>
-<p>作为参考，USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
-这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。
-因此对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。</p>
-</li>
-<li>
-<p>多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。</p>
-</li>
+<li>一般来说，我们<strong>不推荐</strong>使用 L2ARC，具体原因较为复杂，请阅读本文的 ARC 章节与 <a href="#l2arc">L2ARC 章节</a>。</li>
+<li>多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。</li>
 </ul>
 <p>如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。</p>
 <h2 id="kernel-module">内核模块<a class="headerlink" href="#kernel-module" title="Permanent link">&para;</a></h2>
@@ -2200,7 +2221,8 @@
 与 <code>recordsize</code> 不同，<code>volblocksize</code> 是固定的，且只能在创建 zvol 时指定。
 自 ZFS 2.1 起，<code>volblocksize</code> 的默认值为 16K。</p>
 <p>一般来说，<code>volblocksize</code> 应该与你的应用程序的 I/O 模式相匹配，以获得最佳的性能。
-但我们并不推荐</p>
+但我们并不推荐太小的 <code>volblocksize</code>，因为这会增加 ZFS 的元数据负担、碎片率以及 RAIDZ 的额外开销，反而导致性能降低。
+我们推荐 <code>volblocksize</code> 不要小于 16K，除非你经过详细的测试证明更小的 <code>voblocksize</code> 能够带来性能提升。</p>
 <h4 id="zvol-size">Zvol 的容量<a class="headerlink" href="#zvol-size" title="Permanent link">&para;</a></h4>
 <p>如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 <code>volsize</code> 属性：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">volsize</span><span class="o">=</span>20G<span class="w"> </span>tank/vol
@@ -2226,31 +2248,11 @@
 </code></pre></div>
 <p>如果需要恢复预留空间，可以将 <code>refreservation</code> 设为 <code>auto</code>。
 注意 <code>auto</code> 这个值仅对 zvol 有意义，而 ZFS 文件系统并不支持 <code>auto</code> 值，毕竟 ZFS 文件系统并没有一个确定的大小。</p>
-<h2 id="zfs-ko">ZFS 内核模块参数<a class="headerlink" href="#zfs-ko" title="Permanent link">&para;</a></h2>
-<p>ZFS 的内核模块具有<strong>非常</strong>多的可调节参数，其中大部分参数可以通过读写 <code>/sys/module/zfs/parameters</code> 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：</p>
-<ul>
-<li>
-<p><strong>仅加载时生效</strong>：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 <code>/etc/modprobe.d/zfs.conf</code> 文件来指定。</p>
-<details class="example">
-<summary>使用 modprobe.d 配置 ZFS 模块参数的自动加载</summary>
-<p>在 <code>/etc/modprobe.d/zfs.conf</code> 中添加以下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>options<span class="w"> </span>zfs<span class="w"> </span><span class="nv">zfs_arc_max</span><span class="o">=</span><span class="m">4294967296</span>
-</code></pre></div>
-<p>这样在下次加载 ZFS 模块时，<code>zfs_arc_max</code> 参数就会被设置为 4 GiB。</p>
-</details>
-</li>
-<li>
-<p><strong>import 时生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 <code>zpool export</code> 再 <code>zpool import</code>。</p>
-</li>
-<li><strong>立即生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。</li>
-</ul>
-<p>完整的内核模块参数列表请参阅 <code>zfs(4)</code>。</p>
-<p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。</p>
-<h3 id="arc">关于 ARC<a class="headerlink" href="#arc" title="Permanent link">&para;</a></h3>
+<h2 id="arc">ARC<a class="headerlink" href="#arc" title="Permanent link">&para;</a></h2>
 <p>ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
 <p>由于 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
 </code></pre></div>
 <p>或者使用 <code>/etc/modprobe.d/zfs.conf</code>（见上）。</p>
 <p>如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 <code>zfs_arc_min</code> 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。</p>
@@ -2267,7 +2269,7 @@
 </ul>
 </div>
 <p>ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 <code>/proc/spl/kstat/zfs/arcstats</code> 查看，并且 ZFS 也提供了 <code>arc_summary</code> 命令将该接口的数据以更易读的方式输出。由于 <code>arc_summary</code> 输出量较大，建议使用 less 等分页工具查看。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
 </code></pre></div>
 <div class="admonition lab">
 <p class="admonition-title">追踪每个进程的 ARC 命中率</p>
@@ -2276,6 +2278,40 @@
 <p>提示：你可能会想先 <code>sudo bpftrace -l | grep zfs | grep arc</code> 来查看 ZFS ARC 的相关内核函数。</p>
 <p>目前，ZFS 的文件读写不会经过 Linux 自己的 page cache，除了 <code>mmap</code> 的情况需要同时在 ARC 和 page cache 保存两份缓存以外。尝试验证这一点。</p>
 </div>
+<h3 id="l2arc">L2ARC<a class="headerlink" href="#l2arc" title="Permanent link">&para;</a></h3>
+<p>L2ARC 是 ZFS 的二级缓存，用于缓存磁盘上的数据块，通常由一个或多个 SSD 组成，作为 ZFS 缓存系统中的<strong>次级、非易失（non-volatile）的读缓存</strong>。
+L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取（prefetch）的数据，来从机械硬盘阵列中分担读取压力。
+与 ARC 类似，L2ARC 不具备写缓存的功能，不会缓存或缓冲写入的数据。</p>
+<p>一般来说，在搭建存储系统的时候，如果预期的热数据量超出了内存容量（或计划分配给 ARC 的内存容量），可以考虑使用 SSD 作为 L2ARC 缓存，但用于缓存的 SSD 容量不宜超过内存的 10 倍。</p>
+<p>但根据我们的经验，L2ARC 的实用性较小，这是因为通常情况下 ZFS 存储系统会分配足够的内存作为 ARC，且 ARC 本身已经有极高的命中率，此时 L2ARC 能够带来的边际收益非常小。
+对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。</p>
+<div class="admonition abstract">
+<p class="admonition-title">USTC 镜像站上的 ARC 配置</p>
+<p>USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
+这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。</p>
+</div>
+<p>因此此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
+如果你仍然认为 L2ARC 有用，我们则建议你在使用 ZFS 一段时间后，根据 <code>arc_summary</code> 的输出来决定是否真的需要 L2ARC。</p>
+<h2 id="zfs-ko">ZFS 内核模块参数<a class="headerlink" href="#zfs-ko" title="Permanent link">&para;</a></h2>
+<p>ZFS 的内核模块具有<strong>非常</strong>多的可调节参数，其中大部分参数可以通过读写 <code>/sys/module/zfs/parameters</code> 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：</p>
+<ul>
+<li>
+<p><strong>仅加载时生效</strong>：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 <code>/etc/modprobe.d/zfs.conf</code> 文件来指定。</p>
+<details class="example">
+<summary>使用 modprobe.d 配置 ZFS 模块参数的自动加载</summary>
+<p>在 <code>/etc/modprobe.d/zfs.conf</code> 中添加以下内容：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>options<span class="w"> </span>zfs<span class="w"> </span><span class="nv">zfs_arc_max</span><span class="o">=</span><span class="m">4294967296</span>
+</code></pre></div>
+<p>这样在下次加载 ZFS 模块时，<code>zfs_arc_max</code> 参数就会被设置为 4 GiB。</p>
+</details>
+</li>
+<li>
+<p><strong>import 时生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 <code>zpool export</code> 再 <code>zpool import</code>。</p>
+</li>
+<li><strong>立即生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。</li>
+</ul>
+<p>完整的内核模块参数列表请参阅 <code>zfs(4)</code>。</p>
+<p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见<a href="#arc">前面的章节</a>。</p>
 <h3 id="tuning-example">案例<a class="headerlink" href="#tuning-example" title="Permanent link">&para;</a></h3>
 <details class="example">
 <summary>案例：通过调节参数降低镜像站的磁盘负载</summary>
@@ -2561,14 +2597,17 @@
 <li id="fn:dilger">
 <p>Andreas Dilger (2010) <a href="https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf">ZFS Features &amp; Concepts TOI</a>&#160;<a class="footnote-backref" href="#fnref:dilger" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
+<li id="fn:lfs">
+<p>University of Wisconsin-Madison <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Log-structured File Systems</a>&#160;<a class="footnote-backref" href="#fnref:lfs" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
 <li id="fn:tuning">
-<p>OpenZFS <a href="https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html">Workload Tuning</a>&#160;<a class="footnote-backref" href="#fnref:tuning" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+<p>OpenZFS <a href="https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html">Workload Tuning</a>&#160;<a class="footnote-backref" href="#fnref:tuning" title="Jump back to footnote 8 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zfs101">
-<p>Jim Salter (2020) <a href="https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/">ZFS 101 &ndash; Understanding ZFS storage and performance</a>&#160;<a class="footnote-backref" href="#fnref:zfs101" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+<p>Jim Salter (2020) <a href="https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/">ZFS 101 &ndash; Understanding ZFS storage and performance</a>&#160;<a class="footnote-backref" href="#fnref:zfs101" title="Jump back to footnote 9 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zfs-4599">
-<p>openzfs/zfs#4599 (2016) <a href="https://github.com/openzfs/zfs/issues/4599">disk usage wrong when using larger recordsize, raidz and ashift=12</a>&#160;<a class="footnote-backref" href="#fnref:zfs-4599" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+<p>openzfs/zfs#4599 (2016) <a href="https://github.com/openzfs/zfs/issues/4599">disk usage wrong when using larger recordsize, raidz and ashift=12</a>&#160;<a class="footnote-backref" href="#fnref:zfs-4599" title="Jump back to footnote 10 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
