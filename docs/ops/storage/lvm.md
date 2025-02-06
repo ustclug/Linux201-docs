@@ -191,8 +191,8 @@ $ sudo lvs
       Insufficient suitable allocatable extents for logical volume lvraid1: 516 more required
     ```
 
-    但是 "extent" 是多大呢？在 LVM 中，有两种 extent: PE（Physical Extent）和 LE（Logical Extent），
-    对应物理卷和逻辑卷的大小参数。这里指的是 PE，可以使用 `pvdisplay` 或 `vgdisplay` 查看。
+    但是 "extent" 是多大呢？
+    此时可以使用 `pvdisplay` 或 `vgdisplay` 查看物理卷的 PE（Physical Extent）大小：
 
     ```console
     $ sudo vgdisplay
@@ -251,8 +251,8 @@ $ sudo lvs
       PV UUID               AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ
     ```
 
-    可以看到 PE 是 4M，因此缺少 516 个 extent 指缺少 516 * 4M ~= 2G 空间。
-    这里是因为 PV 数量不足，所以无法找到能够存储第四份副本的磁盘。
+    可以看到 PE 是 4M，因此缺少 516 个 extent 指缺少 516 * 4M ≈ 2G 空间。
+    这里报错实际的原因是 PV 数量不足，所以无法找到能够存储第四份副本的磁盘（即缺少满足条件的 extent，而非单纯的 VG 中空闲 extent）。
 
 `lvs` 支持指定参数查看 LV 的其他信息，这里我们查看逻辑卷实际使用的物理卷：
 

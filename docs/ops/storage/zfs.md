@@ -17,15 +17,7 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 - 固态硬盘，或者多块规格相同的大容量机械硬盘（推荐 4 块或更多），尽量避免用单块机械硬盘。
 - 如果预期需要承载较重的读写负载，推荐使用大容量内存用于缓存（ZFS 官方推荐每 1 TB 存储容量配置 1 GB 内存）。
     - 如果打算启用 ZFS 的去重（deduplication）功能，推荐为每 TB 存储容量配备至少 5 GB 内存（但是官方推荐的比例是 30 GB）。
-- 如果预期的热数据量超出了内存容量，推荐使用 SSD 作为 L2ARC 缓存，但用于缓存的 SSD 容量不宜超过内存的 10 倍。
-
-    根据我们的经验，L2ARC 的实用性较小，因此我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
-    我们建议你在使用 ZFS 一段时间后，根据 `arc_summary` 的输出来决定是否需要添加 L2ARC。
-
-    作为参考，USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
-    这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。
-    因此对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。
-
+- 一般来说，我们**不推荐**使用 L2ARC，具体原因较为复杂，请阅读本文的 ARC 章节与 [L2ARC 章节](#l2arc)。
 - 多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。
 
 如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。
@@ -214,7 +206,8 @@ zfs create -V 10G tank/vol
 自 ZFS 2.1 起，`volblocksize` 的默认值为 16K。
 
 一般来说，`volblocksize` 应该与你的应用程序的 I/O 模式相匹配，以获得最佳的性能。
-但我们并不推荐
+但我们并不推荐太小的 `volblocksize`，因为这会增加 ZFS 的元数据负担、碎片率以及 RAIDZ 的额外开销，反而导致性能降低。
+我们推荐 `volblocksize` 不要小于 16K，除非你经过详细的测试证明更小的 `voblocksize` 能够带来性能提升。
 
 #### Zvol 的容量 {#zvol-size}
 
@@ -258,30 +251,7 @@ zfs set refreservation=none tank/vol
 如果需要恢复预留空间，可以将 `refreservation` 设为 `auto`。
 注意 `auto` 这个值仅对 zvol 有意义，而 ZFS 文件系统并不支持 `auto` 值，毕竟 ZFS 文件系统并没有一个确定的大小。
 
-## ZFS 内核模块参数 {#zfs-ko}
-
-ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
-
-- **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 `/etc/modprobe.d/zfs.conf` 文件来指定。
-
-    ??? example "使用 modprobe.d 配置 ZFS 模块参数的自动加载"
-
-        在 `/etc/modprobe.d/zfs.conf` 中添加以下内容：
-
-        ```shell
-        options zfs zfs_arc_max=4294967296
-        ```
-
-        这样在下次加载 ZFS 模块时，`zfs_arc_max` 参数就会被设置为 4 GiB。
-
-- **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
-- **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
-
-完整的内核模块参数列表请参阅 `zfs(4)`。
-
-最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见下面的章节。
-
-### 关于 ARC {#arc}
+## ARC {#arc}
 
 ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
 
@@ -323,6 +293,48 @@ arc_summary | less
     提示：你可能会想先 `sudo bpftrace -l | grep zfs | grep arc` 来查看 ZFS ARC 的相关内核函数。
 
     目前，ZFS 的文件读写不会经过 Linux 自己的 page cache，除了 `mmap` 的情况需要同时在 ARC 和 page cache 保存两份缓存以外。尝试验证这一点。
+
+### L2ARC {#l2arc}
+
+L2ARC 是 ZFS 的二级缓存，用于缓存磁盘上的数据块，通常由一个或多个 SSD 组成，作为 ZFS 缓存系统中的**次级、非易失（non-volatile）的读缓存**。
+L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取（prefetch）的数据，来从机械硬盘阵列中分担读取压力。
+与 ARC 类似，L2ARC 不具备写缓存的功能，不会缓存或缓冲写入的数据。
+
+一般来说，在搭建存储系统的时候，如果预期的热数据量超出了内存容量（或计划分配给 ARC 的内存容量），可以考虑使用 SSD 作为 L2ARC 缓存，但用于缓存的 SSD 容量不宜超过内存的 10 倍。
+
+但根据我们的经验，L2ARC 的实用性较小，这是因为通常情况下 ZFS 存储系统会分配足够的内存作为 ARC，且 ARC 本身已经有极高的命中率，此时 L2ARC 能够带来的边际收益非常小。
+对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。
+
+!!! abstract "USTC 镜像站上的 ARC 配置"
+
+    USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
+    这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。
+
+因此此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
+如果你仍然认为 L2ARC 有用，我们则建议你在使用 ZFS 一段时间后，根据 `arc_summary` 的输出来决定是否真的需要 L2ARC。
+
+## ZFS 内核模块参数 {#zfs-ko}
+
+ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数可以通过读写 `/sys/module/zfs/parameters` 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：
+
+- **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 `/etc/modprobe.d/zfs.conf` 文件来指定。
+
+    ??? example "使用 modprobe.d 配置 ZFS 模块参数的自动加载"
+
+        在 `/etc/modprobe.d/zfs.conf` 中添加以下内容：
+
+        ```shell
+        options zfs zfs_arc_max=4294967296
+        ```
+
+        这样在下次加载 ZFS 模块时，`zfs_arc_max` 参数就会被设置为 4 GiB。
+
+- **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
+- **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
+
+完整的内核模块参数列表请参阅 `zfs(4)`。
+
+最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见[前面的章节](#arc)。
 
 ### 案例 {#tuning-example}
 
@@ -515,6 +527,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
   [delphix-spreadsheet]: https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/
   [dilger]: https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf
+  [lfs]: https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf
   [zfs-4599]: https://github.com/openzfs/zfs/issues/4599
   [zfsprops.7]: https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html
   [tuning]: https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html
@@ -524,6 +537,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
   [^delphix]: Matthew Ahrens (2014) [How I Learned to Stop Worrying and Love RAIDZ][delphix]
   [^delphix-spreadsheet]: [RAID-Z parity cost][delphix-spreadsheet] (Google Sheets)
   [^dilger]: Andreas Dilger (2010) [ZFS Features & Concepts TOI][dilger]
+  [^lfs]: University of Wisconsin-Madison [Log-structured File Systems][lfs]
   [^tuning]: OpenZFS [Workload Tuning][tuning]
   [^zfs101]: Jim Salter (2020) [ZFS 101 &ndash; Understanding ZFS storage and performance](https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/)
   [^zfs-4599]: openzfs/zfs#4599 (2016) [disk usage wrong when using larger recordsize, raidz and ashift=12][zfs-4599]
