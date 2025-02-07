@@ -22,7 +22,7 @@ ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存
 
 如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。
 
-## 内核模块 {#kernel-module}
+## 安装 {#installation}
 
 尽管 OpenZFS 也是一个开源项目，但是由于开源协议不兼容（OpenZFS 采用 CDDL，Linux 内核采用 GPL），因此 OpenZFS 无法直接集成到 Linux 内核中。
 

@@ -1,10 +1,10 @@
 ---
-icon: material/heart
+icon: material/home
 ---
 
 # Linux 201 进阶教程
 
-欢迎来到 Linux 201 进阶教程！
+!!! welcome "欢迎来到 Linux 201 进阶教程"
 
 作为 [Linux 101](https://101.lug.ustc.edu.cn) 的进阶版，本教程主要面向**需要了解如何运维少量服务器**的用户，特别是和编者们一样的**学生运维**，因此和其他的教程在编写风格等方面存在不同。Linux 201 采取以下的编写原则：
 

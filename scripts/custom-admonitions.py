@@ -14,7 +14,11 @@ CUSTOM_ADMONITIONS = {
     "lab": {
         "icon": "material/flask",
         "rgb": [0xFF, 0xB3, 0x4D],
-    }
+    },
+    "welcome": {
+        "icon": "material/heart",
+        "rgb": [222, 49, 99],
+    },
 }
 
 # ensure we're in project root directory
