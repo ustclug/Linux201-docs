@@ -2365,6 +2365,10 @@
 <a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
 </code></pre></div>
 <p>可以看到，APT 已知四个不同的 <code>yt-dlp</code> 版本，分别是 deb-multimedia 的 <code>1:2025.01.26-dmo1</code>、本地安装的 <code>1:2024.10.07-dmo1</code>、backports 的 <code>2025.01.26-1~bpo12+1</code> 以及官方源的 <code>2023.03.04-1</code>。特别地，本地的版本的优先级为 100。因此当执行更新命令时，APT 会首先选择优先级最高的（<code>deb-multimedia</code> 或者官方源），然后选择版本最高的（<code>1:2025.01.26-dmo1</code>）。</p>
+<div class="admonition note">
+<p class="admonition-title">如果本地的版本比远程的版本更高……</p>
+<p>此时 APT <strong>不会降级</strong>软件包，除非远程对应的优先级超过 1000。如果需要手动降级，可以使用 <code>apt install &lt;name&gt;=&lt;version&gt;</code>。</p>
+</div>
 <p>如果需要指定从某个特定的源安装软件包，可以使用 <code>-t</code> 选项，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>apt<span class="w"> </span>install<span class="w"> </span>-t<span class="w"> </span>bookworm-backports<span class="w"> </span>yt-dlp
 </code></pre></div>
