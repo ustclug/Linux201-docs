@@ -6,7 +6,7 @@ icon: material/package
 
 !!! note "主要作者"
 
-    [@2403772980ygy][2403772980ygy]、[@taoky][taoky]
+    [@taoky][taoky]、[@2403772980ygy][2403772980ygy]
 
 !!! warning "本文编写中"
 
@@ -381,7 +381,7 @@ Pin: origin packages.mozilla.org
 Pin-Priority: 1000
 ```
 
-那么在安装所有 packages.mozilla.org 的包的时候，都会被优先选择。优先级系统也可以用来固定包，例如将 `mtr-tiny` 包固定在 0.87 版本：
+那么 packages.mozilla.org 拥有的包会优先于官方仓库被选择。优先级系统也可以用来固定包，例如将 `mtr-tiny` 包固定在 0.87 版本：
 
 ```yaml
 Package: mtr-tiny
@@ -392,6 +392,10 @@ Pin-Priority: 1000
 详细文档请参考 [apt_preferences(5)][apt_preferences.5]。
 
 ## DEB 软件包 {#deb-package}
+
+本节介绍 DEB 软件包包含的内容，以及如何在已有的基础上进行简单的修改与打包操作。
+
+如果对为 Debian 打包感兴趣，强烈建议阅读 [Debian 维护者指南](https://www.debian.org/doc/manuals/debmake-doc/index.zh-cn.html)。其包含了全面、完整的打包流程的介绍，以及最佳实践等。以下提供的步骤仅适用于简单、非官方的需求。
 
 ### 软件包结构 {#deb-structure}
 
@@ -483,6 +487,188 @@ dpkg-source: info: applying debian-bug-1039557
 dpkg-source: info: applying paths-in-samples.diff
 dpkg-source: info: applying Whitelist-DPKG_COLORS-environment-variable.diff
 dpkg-source: info: applying sudo-ldap-docs
+```
+
+### 修改软件包源码 {#debian-dir}
+
+得到的源码中除了软件包本身的代码以外，还有 `debian` 目录。这个目录包含了软件包的构建相关信息，包括 `control`、`changelog`、`patches/` 等等。
+
+#### 使用 quilt 管理补丁 {#quilt}
+
+!!! note "补丁简介"
+
+    补丁是后缀为 `patch` 的文件，由 `diff` 生成。补丁有多种不同的格式：unified diff (`diff -u`)、context diff (`diff -c`) 和 normal diff（默认）。其中最常见的是 unified diff 格式，类似如下（命令为 `diff -u test.txt test_new.txt`）：
+
+    ```diff
+    --- test.txt	2025-02-07 16:00:16.591987241 +0800
+    +++ test_new.txt	2025-02-07 16:00:28.462299382 +0800
+    @@ -1 +1 @@
+    -Hello, world!
+    +Goodbye, world!
+    ```
+
+    Git 也可以使用 `git diff` 来生成补丁，一个例子：
+
+    ```diff
+    diff --git a/pytorch/sync.py b/pytorch/sync.py
+    index 577a88f..0e6b4d8 100644
+    --- a/pytorch/sync.py
+    +++ b/pytorch/sync.py
+    @@ -4,7 +4,7 @@ import httpx
+    from pathlib import Path
+    import os
+    import re
+    -from urllib.parse import urlparse, urljoin
+    +from urllib.parse import urlparse, urljoin, unquote
+    import asyncio
+    import time
+
+    @@ -83,7 +83,7 @@ async def get_with_progress(client: httpx.AsyncClient, url: str):
+
+
+    async def recursive_download(client: httpx.AsyncClient, url: str):
+    -    path = urlparse(url).path
+    +    path = unquote(urlparse(url).path)
+        while path.startswith("/"):
+            path = path[1:]
+        if url.endswith("/"):
+    ```
+
+    生成的补丁可以使用 `patch` 命令应用在未打补丁的文件上：
+
+    ```shell
+    $ patch < test.patch
+    $ # git diff 生成的 patch 开头是 a/ b/，因此需要使用 -p1 剥离这一层前缀
+    $ # 当然也可以直接 git apply
+    $ patch -p1 < git_diff.patch
+    ```
+
+发行版打包的软件包很多时候需要在原始代码上做一些修改（例如修复 bug，添加功能等），而补丁管理工具可以省掉一些麻烦。尽管对简单修改代码的需求来说，也可以绕过补丁系统，直接编辑，但是这会在日后升级软件版本时带来麻烦，因此这里会介绍与补丁管理有关的主题。`quilt` 是一个栈式（stack）的补丁管理工具。首先配置 `~/.quiltrc` 如下：
+
+```ini title="~/.quiltrc"
+QUILT_PATCHES=debian/patches
+```
+
+之后就可以使用 quilt 查看当前目录的补丁情况：
+
+```shell
+$ quilt series
+debian-bug-1039557
+paths-in-samples.diff
+Whitelist-DPKG_COLORS-environment-variable.diff
+sudo-ldap-docs
+$ quilt applied
+debian-bug-1039557
+paths-in-samples.diff
+Whitelist-DPKG_COLORS-environment-variable.diff
+sudo-ldap-docs
+$ quilt unapplied
+File series fully applied, ends at patch sudo-ldap-docs
+$
+```
+
+可以看到，所有的补丁都已经被应用。可以使用 `quilt pop` 和 `quilt push` 取消/应用最底层的补丁。我们需要将我们的修改添加为新的补丁，因此：
+
+```shell
+$ quilt new custom-patch.diff
+$ quilt add src/sudo.c  # 将修改前的文件 add 到 quilt 中
+File src/sudo.c added to patch custom-patch.diff
+$ # 如果误操作将修改后的文件 add 了，quilt remove 即可。
+$ vim src/sudo.c  # 随便做一些修改，比如在 main() 最开始用 printf() 输出一行文本
+$ quilt refresh  # 刷新补丁
+Refreshed patch custom-patch.diff
+```
+
+可以验证：
+
+```diff title="debian/patches/custom-patch.diff"
+Index: sudo-1.9.13p3/src/sudo.c
+===================================================================
+--- sudo-1.9.13p3.orig/src/sudo.c	2025-02-07 17:37:38.372195671 +0800
++++ sudo-1.9.13p3/src/sudo.c	2025-02-07 17:37:50.968524513 +0800
+@@ -149,6 +149,7 @@
+     const char * const allowed_prognames[] = { "sudo", "sudoedit", NULL };
+     sigset_t mask;
+     debug_decl_vars(main, SUDO_DEBUG_MAIN);
++    printf("Hello, world!\n");
+ 
+     /* Only allow "sudo" or "sudoedit" as the program name. */
+     initprogname2(argc > 0 ? argv[0] : "sudo", allowed_prognames);
+```
+
+#### 更新修改记录 {#changelog}
+
+`debian/changelog` 文件包含了包完整的修改记录，格式类似如下：
+
+```changelog
+sudo (1.9.13p3-1+deb12u1) bookworm; urgency=medium
+
+  * add upstream patch to fix event log format.
+    Thanks to Kimmo Suominen (Closes: #1039557)
+
+ -- Marc Haber <mh+debian-packages@zugschlus.de>  Tue, 27 Jun 2023 13:45:00 +0200
+```
+
+建议使用 `dch` (`debchange`) 命令来更新这个文件，以下命令会创建一个新的版本号，并且打开编辑器以编辑修改记录：
+
+```shell
+EMAIL=youremail@example.com dch -i
+```
+
+编辑结果类似如下：
+
+```changelog
+sudo (1.9.13p3-1+deb12u1.1) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * Add "Hello, world!\n" in main().
+  * Test with very simple packaging.
+
+ -- yourname <youremail@example.com>  Fri, 07 Feb 2025 17:48:19 +0800
+```
+
+#### 构建软件包 {#build}
+
+在构建之前，我们需要确保构建需要的依赖已经安装：
+
+```shell
+sudo apt build-dep sudo
+```
+
+从源代码目录构建软件包的命令为 `dpkg-buildpackage`，执行以下命令即可：
+
+```shell
+dpkg-buildpackage -b -uc -us
+```
+
+`-b` 代表构建二进制包，而由于我们很明显没法签名，因此需要使用 `-uc` 和 `-us` 选项来跳过对变更（changes）与源代码包（source package）的签名。构建完成后，我们可以在上一级目录找到 `1.9.13p3-1+deb12u1.1` 这个版本的 `sudo` 的 deb 包，以及其调试符号包。
+
+可以试试安装一下：
+
+```shell
+$ sudo apt install ./sudo_1.9.13p3-1+deb12u1.1_amd64.deb
+$ sudo uname
+Hello, world!
+Linux
+```
+
+**试完记得装回正常的版本哦！**
+
+```shell
+$ apt-cache policy sudo
+sudo:
+  Installed: 1.9.13p3-1+deb12u1.1
+  Candidate: 1.9.13p3-1+deb12u1.1
+  Version table:
+ *** 1.9.13p3-1+deb12u1.1 100
+        100 /var/lib/dpkg/status
+     1.9.13p3-1+deb12u1 990
+        990 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages
+$ sudo apt install sudo=1.9.13p3-1+deb12u1
+Hello, world!
+（以下省略）
+$ sudo uname
+Linux
 ```
 
 <!-- 有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
