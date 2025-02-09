@@ -808,11 +808,156 @@ $ which rsync
 /usr/local/bin/rsync
 ```
 
-## 软件源 {#repo}
+在卸载前，建议手工检查生成的 deb 包，避免其他文件被删除。
 
-### 目录结构
+## 软件源目录结构 {#repo}
 
-### 构建一个自己的 DEB 软件源
+Debian 的软件源存储了多个软件包，以 APT 可以理解的格式提供给用户。
+
+### 简单结构与生成示例 {#simple-structure}
+
+最简单的软件源目录结构如下：
+
+```tree
+.
+├── firefox-vlab_1vlab3_all.deb
+├── Packages
+├── Release
+├── vlab-cli_1.0-1_all.deb
+├── vlab-earlyoom_1.1-5_all.deb
+├── vlab-earlyoom-static_1.1-5_amd64.deb
+└── vlab-vnc_1.0-3_all.deb
+```
+
+除了 `deb` 文件以外，两个关键的文件是 `Packages` 与 `Release`。`Packages` 文件类似于将所有包的 `control` 文件连接起来，像这样：
+
+```packages
+Package: firefox-vlab
+Version: 2:1vlab3
+Architecture: all
+Origin: Ubuntu
+Maintainer: USTC Vlab <vlab@ustc.edu.cn>
+Pre-Depends: debconf
+Depends: debconf (>= 0.5) | debconf-2.0
+Breaks: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+Replaces: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+Provides: gnome-www-browser, iceweasel, www-browser, x-www-browser
+Filename: ./firefox-vlab_1vlab3_all.deb
+Size: 7376
+MD5sum: 943c78a714ec598de5ccb1a1d704fa4d
+SHA1: 7818966860329bc18ff224b8ff549006a3ef8146
+SHA256: a9e1d012abe7dc4e341674770d6297b7acea0e3dfb541f189e02f1c8ffe9715a
+Section: web
+Priority: optional
+Description: System files for Firefox on Vlab Software
+
+Package: vlab-cli
+Version: 1.0-1
+Architecture: all
+Maintainer: USTC Vlab <vlab@ustc.edu.cn>
+Depends: bash (>= 4.2)
+Recommends: vlab-vnc
+Filename: ./vlab-cli_1.0-1_all.deb
+Size: 1440
+MD5sum: 8411c78ab73dc18c914c7409e3c22357
+SHA1: c3a5da87a8e5ebc3729a3afda5779413c6bc8b3a
+SHA256: 58a804b96e7b8bdd450436ca07c75d7a2e05cd121a680dd17474514736d7c99e
+Section: base
+Priority: optional
+Description: CLI for legacy Vlab VM settings
+```
+
+不过其包含一些新的字段，例如 `Filename`（仓库中的路径）、`Size`、`MD5sum`、`SHA1` 与 `SHA256`。该文件使用 `dpkg-scanpackages` 生成：
+
+```shell
+dpkg-scanpackages . > Packages
+```
+
+而 `Release` 文件则包含了软件源的元数据，例如：
+
+```release
+Date: Fri, 07 Feb 2025 16:21:05 +0000
+Label: Vlab
+Origin: vlab.ustc.edu.cn
+MD5Sum:
+ ddf53358082c24a5c89516c46eb00b0d             2770 Packages
+ 1e0a4d927bce3b4c809157264c731de9               75 Release
+SHA1:
+ 0be434c15790a9875f4217709996d1140abc330b             2770 Packages
+ 43414ec15d46888bf6752f8d4e65afb0a8c67b26               75 Release
+SHA256:
+ e65405d61f505b6c62c61adc4330820ce9a8d850b839ce9de3c8114da9313b1c             2770 Packages
+ f78327f58a7cf57703d206399bd693766c66c98a3296e3a84aef33c54f6c8b1f               75 Release
+SHA512:
+ 88ba61c27d624c01a61eff8722669a8e51d7055db4f4bdd49aa8ff965f44ab6388b6cd4aa502d22ef1a793e8fbf8510ed92946c6a9b53b313bddc0e2069421b3             2770 Packages
+ 30ef3ac9a9cabc3d40b63b2eaec615a77ef7eb33bb5a3c7c76cc95eab86cf74355a87811d985519b2d144952433b8c20e039aaca7eee26b6d459a86d78eaf9ee               75 Release
+```
+
+其中包含了生成时间、相关文件的哈希（`Release` 的哈希对应的是 `MD5Sum` 之前的部分），以及软件源相关的配置。该文件使用 `apt-ftparchive` 生成：
+
+```console
+$ cd ..
+$ cat main.conf
+APT::FTPArchive::Release::Origin "vlab.ustc.edu.cn";
+APT::FTPArchive::Release::Label "Vlab";
+$ apt-ftparchive -c main.conf release builddir > builddir/Release
+```
+
+实际使用时的配置为：
+
+```debsources
+deb [trusted=yes] https://deb.example.com/repo/ ./
+```
+
+或 DEB822 格式：
+
+```yaml
+Types: deb deb-src
+URIs: https://deb.example.com/repo/
+Suites: ./
+Trusted: yes
+```
+
+### 官方源结构 {#official-structure}
+
+如果观察过 Debian 或 Ubuntu 官方源的结构，可以发现它们会更加复杂，一般来讲，仓库的元数据会存储在 `dists` 目录下，而软件包则存储在 `pool` 目录下。`dists` 目录下第一层为发行版（Suites）目录。以 Debian 12 为例，最常使用的包含 `bookworm`, `bookworm-updates` 和 `bookworm-backports` 目录。
+
+再向里一层则包含上面提到的 `Release` 文件，除了 `Release` 以外：
+
+- `Release.gpg`：`Release` 文件的 GPG 签名。
+    - 正规的发行版都会自带维护者的 GPG 公钥，在安装软件包时会自动验证软件包的签名，避免恶意篡改。
+- `InRelease`：附加了 GPG 签名的 `Release` 文件。
+- `ChangeLog`：变更记录。
+- `contrib/`, `main/`, `non-free/`, `non-free-firmware/`：不同的组件（Components）。
+
+!!! comment "@taoky: 安全更新源与镜像站"
+
+    曾经有人问过这个问题：镜像站提供安全更新源的话，怎么保证镜像站本身不会通过拖延更新等方式阻止用户获取安全更新？
+
+    首先，Debian **不鼓励**修改默认的安全更新源，甚至其安装器在默认模式下，即使设置了镜像站，安全更新仍然会从官方获取（这也是 Debian 安装器在某些网络环境下很慢的一大原因），需要使用专家模式才能修改。
+
+    然后，安全更新源的 `Release` 文件有一个重要的字段：`Valid-Until`，例如：
+
+    ```release
+    Date: Sat, 08 Feb 2025 21:33:46 UTC
+    Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
+    ```
+
+    `Valid-Until` 距离 `Release` 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，**在生产环境下，谨慎使用任何镜像站提供安全更新源**。
+
+组件目录中则包含了：
+
+- `Contents-<arch>.gz`：用于帮助 `apt-file` 等工具快速查找包含某文件的软件包。
+- `binary-<arch>/`：二进制包。
+- `source/`：源代码包。
+- `by-hash/`：文件名为哈希值的元数据文件。APT 在读取 `Release` 之后，在 `Acquire-By-Hash: yes` 时，会首先根据哈希读取该目录下的需要的文件。这可以帮助使用 `rsync` 同步内容的镜像站点提升可用性，避免在同步过程中部分文件失效/未同步等导致的无法使用的问题。
+
+架构目录（二进制/源代码包）：
+
+- `Packages.{gz,xz}`：压缩后的 `Packages` 文件。
+    - 如果软件源不在本地文件系统上，那么 `Packages` 必须压缩，否则 APT 可能不会读取。
+- `Release`：该架构的元数据。
+- `by-hash/`：同上。
 
 <!-- markdownlint-disable MD053 -->
 
