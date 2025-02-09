@@ -301,6 +301,69 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
 如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
 
+## 性能问题分析 {#performance-analysis}
+
+本节介绍使用 `perf` 等工具进行基础的性能问题分析的方式。`perf` 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 `linux-perf`。
+
+### 火焰图 {#flamegraph}
+
+火焰图是最常用的用于分析程序性能的图表之一，它可以直观地展示程序中函数的调用关系与耗时。生成的 SVG 文件可以使用浏览器打开并交互。
+
+[![Flamegraph example](../images/flamegraph-example.png)](../images/flamegraph-example.svg)
+
+火焰图示例。点击图片可以查看完整的 SVG 文件。
+{: .caption }
+
+火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。
+
+SVG 火焰图由 [Brendan Gregg 的 FlameGraph](https://github.com/brendangregg/FlameGraph) 项目生成，其支持包括 `perf` 在内的多种性能分析工具的输出。以下以 `perf` 为例介绍。
+
+首先 clone FlameGraph 仓库，然后使用 `perf record` 命令对程序采样：
+
+```shell
+git clone https://github.com/brendangregg/FlameGraph
+# 从头执行程序
+perf record -F 499 --call-graph dwarf,64000 -g -- stress -c 1 -t 10
+# 附加到正在运行的程序
+perf record -F 499 --call-graph dwarf,64000 -g -p 12345
+```
+
+其中 `-F` 指定了采样频率为 499 Hz，`-g` 代表采样函数调用栈，`--call-graph` 参数指定了调用栈的采样方式。
+
+!!! note "为什么采样频率不使用整百的数字？"
+
+    以上内容中采样频率设置为了 499 Hz。如果阅读别的教程，可以发现不少也会设置为 99 Hz。避开 500 或者 100 的原因是，某些事件可能会恰好间隔 10ms（100 Hz）或者 2ms（500 Hz）发生，如果采样频率与这些事件的周期刚好匹配，就会导致结果出现偏差。设置为恰好整百减一可以最大程度避免这种情况。
+
+!!! tip "采样方式"
+
+    `perf` 支持三种采样方式：
+
+    - `fp`（默认情况）：根据 frame pointer 寄存器中的信息采样。在函数调用时，frame pointer 会指向当前函数的栈帧（即函数在栈上使用的内存空间，内容包括局部变量、返回地址等）。在 x86_64 架构中，frame pointer 是 RBP 寄存器。
+
+        不少编译器会选择优化掉 frame pointer 寄存器，因为其不是程序执行必需的。在 32 位的 x86 架构上，这种优化是非常有必要的，因为 x86 架构的通用寄存器数量非常少，多出一个寄存器可以有效提高程序性能。但是 x86_64 架构的通用寄存器数量提升了不少，因此一般认为这类优化对性能提升不显著，并且会给问题调试与性能调优带来困难。诸如 [Ubuntu](https://ubuntu.com/blog/ubuntu-performance-engineering-with-frame-pointers-by-default)、[Fedora](https://fedoraproject.org/wiki/Changes/fno-omit-frame-pointer)、[Arch Linux](https://gitlab.archlinux.org/archlinux/rfcs/-/merge_requests/26) 等均已经默认开启 frame pointer。
+
+        在编译时，可以添加 `-fno-omit-frame-pointer` 选项来禁用这种优化。
+    - `lbr`：使用 Last Branch Record 寄存器来采样，需要 CPU 架构支持。LBR 寄存器会记录最近的分支跳转信息，有权限的程序可以配置让 LBR 寄存器仅记录 `call` 和 `ret` 指令，从而实现函数调用栈的采样。虽然不需要程序调整编译参数，但是硬件寄存器的数量是有限的，因此这种方式无法处理过深的函数调用。
+    - `dwarf`：使用 DWARF 调试信息来采样。这种方式需要程序编译时开启 DWARF 调试信息（`gcc -g`），开销相对较高。上文中 `--call-graph dwarf,64000` 的 `64000` 代表每次采样时记录最多 64000 字节的 stack dump。
+
+采样完成后的数据存储在 `perf.data` 文件中（可以使用 `-o` 参数修改）。接下来使用 `perf script` 输出 trace，并在预处理数据后，使用 FlameGraph 生成火焰图：
+
+```shell
+perf script > out.perf
+FlameGraph/stackcollapse-perf.pl out.perf > out.folded
+FlameGraph/flamegraph.pl out.folded > out.svg
+```
+
+注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。
+
+!!! comment "@taoky: 快速生成火焰图"
+
+    我还是觉得每次都要写这么多命令有点麻烦，所以我自己一般直接用 [flamegraph-rs/flamegraph](https://github.com/flamegraph-rs/flamegraph)，于是直接这样就可以生成了：
+
+    ```shell
+    flamegraph -p 12345
+    ```
+
 ## eBPF
 
 本部分主要介绍 eBPF 的使用。
