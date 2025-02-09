@@ -8,7 +8,7 @@ icon: material/package
 
     [@taoky][taoky]、[@2403772980ygy][2403772980ygy]
 
-!!! warning "本文编写中"
+!!! warning "本文已完成，等待校对"
 
 包管理系统是现代 Linux 发行版的重要组成部分。以下介绍与 Debian 的包管理系统相关工具，例如 APT（Advanced Package Tool）。其他发行版的包管理系统会有所不同，可参考 [Arch Linux Wiki 的 pacman/Rosetta 页面](https://wiki.archlinux.org/title/Pacman/Rosetta)。
 
@@ -912,11 +912,15 @@ deb [trusted=yes] https://deb.example.com/repo/ ./
 或 DEB822 格式：
 
 ```yaml
-Types: deb deb-src
+Types: deb
 URIs: https://deb.example.com/repo/
 Suites: ./
 Trusted: yes
 ```
+
+!!! warning "`Signed-By` 与 GPG 签名"
+
+    [从 apt 2.9.24 开始，没有 `Signed-By` 字段的源会视作废弃状态](https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6)。以上不包含 GPG 签名的仓库在未来的 Debian 版本上可能会被拒绝使用。
 
 ### 官方源结构 {#official-structure}
 
