@@ -796,26 +796,26 @@
         <li class="md-nav__item">
   <a href="#repo" class="md-nav__link">
     <span class="md-ellipsis">
-      软件源
+      软件源目录结构
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="软件源">
+    <nav class="md-nav" aria-label="软件源目录结构">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#simple-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      目录结构
+      简单结构与生成示例
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#deb" class="md-nav__link">
+  <a href="#official-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      构建一个自己的 DEB 软件源
+      官方源结构
     </span>
   </a>
   
@@ -2186,26 +2186,26 @@
         <li class="md-nav__item">
   <a href="#repo" class="md-nav__link">
     <span class="md-ellipsis">
-      软件源
+      软件源目录结构
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="软件源">
+    <nav class="md-nav" aria-label="软件源目录结构">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#simple-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      目录结构
+      简单结构与生成示例
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#deb" class="md-nav__link">
+  <a href="#official-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      构建一个自己的 DEB 软件源
+      官方源结构
     </span>
   </a>
   
@@ -2241,7 +2241,7 @@
 <p><a href="https://github.com/taoky">@taoky</a>、<a href="https://github.com/2403772980ygy">@2403772980ygy</a></p>
 </div>
 <div class="admonition warning">
-<p class="admonition-title">本文编写中</p>
+<p class="admonition-title">本文已完成，等待校对</p>
 </div>
 <p>包管理系统是现代 Linux 发行版的重要组成部分。以下介绍与 Debian 的包管理系统相关工具，例如 APT（Advanced Package Tool）。其他发行版的包管理系统会有所不同，可参考 <a href="https://wiki.archlinux.org/title/Pacman/Rosetta">Arch Linux Wiki 的 pacman/Rosetta 页面</a>。</p>
 <p>本文假设读者了解最基础的 <code>apt</code> 使用方法，如 <code>apt install</code>, <code>apt remove</code>, <code>apt update</code>, <code>apt upgrade</code>。</p>
@@ -2844,9 +2844,133 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="gp">$ </span>which<span class="w"> </span>rsync
 <a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a><span class="go">/usr/local/bin/rsync</span>
 </code></pre></div>
-<h2 id="repo">软件源<a class="headerlink" href="#repo" title="Permanent link">&para;</a></h2>
-<h3 id="_3">目录结构<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<h3 id="deb">构建一个自己的 DEB 软件源<a class="headerlink" href="#deb" title="Permanent link">&para;</a></h3>
+<p>在卸载前，建议手工检查生成的 deb 包，避免其他文件被删除。</p>
+<h2 id="repo">软件源目录结构<a class="headerlink" href="#repo" title="Permanent link">&para;</a></h2>
+<p>Debian 的软件源存储了多个软件包，以 APT 可以理解的格式提供给用户。</p>
+<h3 id="simple-structure">简单结构与生成示例<a class="headerlink" href="#simple-structure" title="Permanent link">&para;</a></h3>
+<p>最简单的软件源目录结构如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>.
+<a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>├── firefox-vlab_1vlab3_all.deb
+<a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a>├── Packages
+<a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a>├── Release
+<a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a>├── vlab-cli_1.0-1_all.deb
+<a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a>├── vlab-earlyoom_1.1-5_all.deb
+<a id="__codelineno-46-7" name="__codelineno-46-7" href="#__codelineno-46-7"></a>├── vlab-earlyoom-static_1.1-5_amd64.deb
+<a id="__codelineno-46-8" name="__codelineno-46-8" href="#__codelineno-46-8"></a>└── vlab-vnc_1.0-3_all.deb
+</code></pre></div>
+<p>除了 <code>deb</code> 文件以外，两个关键的文件是 <code>Packages</code> 与 <code>Release</code>。<code>Packages</code> 文件类似于将所有包的 <code>control</code> 文件连接起来，像这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>Package: firefox-vlab
+<a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a>Version: 2:1vlab3
+<a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a>Architecture: all
+<a id="__codelineno-47-4" name="__codelineno-47-4" href="#__codelineno-47-4"></a>Origin: Ubuntu
+<a id="__codelineno-47-5" name="__codelineno-47-5" href="#__codelineno-47-5"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
+<a id="__codelineno-47-6" name="__codelineno-47-6" href="#__codelineno-47-6"></a>Pre-Depends: debconf
+<a id="__codelineno-47-7" name="__codelineno-47-7" href="#__codelineno-47-7"></a>Depends: debconf (&gt;= 0.5) | debconf-2.0
+<a id="__codelineno-47-8" name="__codelineno-47-8" href="#__codelineno-47-8"></a>Breaks: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+<a id="__codelineno-47-9" name="__codelineno-47-9" href="#__codelineno-47-9"></a>Replaces: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+<a id="__codelineno-47-10" name="__codelineno-47-10" href="#__codelineno-47-10"></a>Provides: gnome-www-browser, iceweasel, www-browser, x-www-browser
+<a id="__codelineno-47-11" name="__codelineno-47-11" href="#__codelineno-47-11"></a>Filename: ./firefox-vlab_1vlab3_all.deb
+<a id="__codelineno-47-12" name="__codelineno-47-12" href="#__codelineno-47-12"></a>Size: 7376
+<a id="__codelineno-47-13" name="__codelineno-47-13" href="#__codelineno-47-13"></a>MD5sum: 943c78a714ec598de5ccb1a1d704fa4d
+<a id="__codelineno-47-14" name="__codelineno-47-14" href="#__codelineno-47-14"></a>SHA1: 7818966860329bc18ff224b8ff549006a3ef8146
+<a id="__codelineno-47-15" name="__codelineno-47-15" href="#__codelineno-47-15"></a>SHA256: a9e1d012abe7dc4e341674770d6297b7acea0e3dfb541f189e02f1c8ffe9715a
+<a id="__codelineno-47-16" name="__codelineno-47-16" href="#__codelineno-47-16"></a>Section: web
+<a id="__codelineno-47-17" name="__codelineno-47-17" href="#__codelineno-47-17"></a>Priority: optional
+<a id="__codelineno-47-18" name="__codelineno-47-18" href="#__codelineno-47-18"></a>Description: System files for Firefox on Vlab Software
+<a id="__codelineno-47-19" name="__codelineno-47-19" href="#__codelineno-47-19"></a>
+<a id="__codelineno-47-20" name="__codelineno-47-20" href="#__codelineno-47-20"></a>Package: vlab-cli
+<a id="__codelineno-47-21" name="__codelineno-47-21" href="#__codelineno-47-21"></a>Version: 1.0-1
+<a id="__codelineno-47-22" name="__codelineno-47-22" href="#__codelineno-47-22"></a>Architecture: all
+<a id="__codelineno-47-23" name="__codelineno-47-23" href="#__codelineno-47-23"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
+<a id="__codelineno-47-24" name="__codelineno-47-24" href="#__codelineno-47-24"></a>Depends: bash (&gt;= 4.2)
+<a id="__codelineno-47-25" name="__codelineno-47-25" href="#__codelineno-47-25"></a>Recommends: vlab-vnc
+<a id="__codelineno-47-26" name="__codelineno-47-26" href="#__codelineno-47-26"></a>Filename: ./vlab-cli_1.0-1_all.deb
+<a id="__codelineno-47-27" name="__codelineno-47-27" href="#__codelineno-47-27"></a>Size: 1440
+<a id="__codelineno-47-28" name="__codelineno-47-28" href="#__codelineno-47-28"></a>MD5sum: 8411c78ab73dc18c914c7409e3c22357
+<a id="__codelineno-47-29" name="__codelineno-47-29" href="#__codelineno-47-29"></a>SHA1: c3a5da87a8e5ebc3729a3afda5779413c6bc8b3a
+<a id="__codelineno-47-30" name="__codelineno-47-30" href="#__codelineno-47-30"></a>SHA256: 58a804b96e7b8bdd450436ca07c75d7a2e05cd121a680dd17474514736d7c99e
+<a id="__codelineno-47-31" name="__codelineno-47-31" href="#__codelineno-47-31"></a>Section: base
+<a id="__codelineno-47-32" name="__codelineno-47-32" href="#__codelineno-47-32"></a>Priority: optional
+<a id="__codelineno-47-33" name="__codelineno-47-33" href="#__codelineno-47-33"></a>Description: CLI for legacy Vlab VM settings
+</code></pre></div>
+<p>不过其包含一些新的字段，例如 <code>Filename</code>（仓库中的路径）、<code>Size</code>、<code>MD5sum</code>、<code>SHA1</code> 与 <code>SHA256</code>。该文件使用 <code>dpkg-scanpackages</code> 生成：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>dpkg-scanpackages<span class="w"> </span>.<span class="w"> </span>&gt;<span class="w"> </span>Packages
+</code></pre></div>
+<p>而 <code>Release</code> 文件则包含了软件源的元数据，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>Date: Fri, 07 Feb 2025 16:21:05 +0000
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>Label: Vlab
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a>Origin: vlab.ustc.edu.cn
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a>MD5Sum:
+<a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a> ddf53358082c24a5c89516c46eb00b0d             2770 Packages
+<a id="__codelineno-49-6" name="__codelineno-49-6" href="#__codelineno-49-6"></a> 1e0a4d927bce3b4c809157264c731de9               75 Release
+<a id="__codelineno-49-7" name="__codelineno-49-7" href="#__codelineno-49-7"></a>SHA1:
+<a id="__codelineno-49-8" name="__codelineno-49-8" href="#__codelineno-49-8"></a> 0be434c15790a9875f4217709996d1140abc330b             2770 Packages
+<a id="__codelineno-49-9" name="__codelineno-49-9" href="#__codelineno-49-9"></a> 43414ec15d46888bf6752f8d4e65afb0a8c67b26               75 Release
+<a id="__codelineno-49-10" name="__codelineno-49-10" href="#__codelineno-49-10"></a>SHA256:
+<a id="__codelineno-49-11" name="__codelineno-49-11" href="#__codelineno-49-11"></a> e65405d61f505b6c62c61adc4330820ce9a8d850b839ce9de3c8114da9313b1c             2770 Packages
+<a id="__codelineno-49-12" name="__codelineno-49-12" href="#__codelineno-49-12"></a> f78327f58a7cf57703d206399bd693766c66c98a3296e3a84aef33c54f6c8b1f               75 Release
+<a id="__codelineno-49-13" name="__codelineno-49-13" href="#__codelineno-49-13"></a>SHA512:
+<a id="__codelineno-49-14" name="__codelineno-49-14" href="#__codelineno-49-14"></a> 88ba61c27d624c01a61eff8722669a8e51d7055db4f4bdd49aa8ff965f44ab6388b6cd4aa502d22ef1a793e8fbf8510ed92946c6a9b53b313bddc0e2069421b3             2770 Packages
+<a id="__codelineno-49-15" name="__codelineno-49-15" href="#__codelineno-49-15"></a> 30ef3ac9a9cabc3d40b63b2eaec615a77ef7eb33bb5a3c7c76cc95eab86cf74355a87811d985519b2d144952433b8c20e039aaca7eee26b6d459a86d78eaf9ee               75 Release
+</code></pre></div>
+<p>其中包含了生成时间、相关文件的哈希（<code>Release</code> 的哈希对应的是 <code>MD5Sum</code> 之前的部分），以及软件源相关的配置。该文件使用 <code>apt-ftparchive</code> 生成：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>..
+<a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a><span class="gp">$ </span>cat<span class="w"> </span>main.conf
+<a id="__codelineno-50-3" name="__codelineno-50-3" href="#__codelineno-50-3"></a><span class="go">APT::FTPArchive::Release::Origin &quot;vlab.ustc.edu.cn&quot;;</span>
+<a id="__codelineno-50-4" name="__codelineno-50-4" href="#__codelineno-50-4"></a><span class="go">APT::FTPArchive::Release::Label &quot;Vlab&quot;;</span>
+<a id="__codelineno-50-5" name="__codelineno-50-5" href="#__codelineno-50-5"></a><span class="gp">$ </span>apt-ftparchive<span class="w"> </span>-c<span class="w"> </span>main.conf<span class="w"> </span>release<span class="w"> </span>builddir<span class="w"> </span>&gt;<span class="w"> </span>builddir/Release
+</code></pre></div>
+<p>实际使用时的配置为：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a><span class="k">deb</span><span class="w"> </span><span class="sx">[trusted=yes]</span><span class="w"> </span><span class="kp">https://deb.example.com/repo/</span><span class="w"> </span><span class="kp">./</span>
+</code></pre></div>
+<p>或 DEB822 格式：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb</span>
+<a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://deb.example.com/repo/</span>
+<a id="__codelineno-52-3" name="__codelineno-52-3" href="#__codelineno-52-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span>
+<a id="__codelineno-52-4" name="__codelineno-52-4" href="#__codelineno-52-4"></a><span class="nt">Trusted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yes</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title"><code>Signed-By</code> 与 GPG 签名</p>
+<p><a href="https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6">从 apt 2.9.24 开始，没有 <code>Signed-By</code> 字段的源会视作废弃状态</a>。以上不包含 GPG 签名的仓库在未来的 Debian 版本上可能会被拒绝使用。</p>
+</div>
+<h3 id="official-structure">官方源结构<a class="headerlink" href="#official-structure" title="Permanent link">&para;</a></h3>
+<p>如果观察过 Debian 或 Ubuntu 官方源的结构，可以发现它们会更加复杂，一般来讲，仓库的元数据会存储在 <code>dists</code> 目录下，而软件包则存储在 <code>pool</code> 目录下。<code>dists</code> 目录下第一层为发行版（Suites）目录。以 Debian 12 为例，最常使用的包含 <code>bookworm</code>, <code>bookworm-updates</code> 和 <code>bookworm-backports</code> 目录。</p>
+<p>再向里一层则包含上面提到的 <code>Release</code> 文件，除了 <code>Release</code> 以外：</p>
+<ul>
+<li><code>Release.gpg</code>：<code>Release</code> 文件的 GPG 签名。<ul>
+<li>正规的发行版都会自带维护者的 GPG 公钥，在安装软件包时会自动验证软件包的签名，避免恶意篡改。</li>
+</ul>
+</li>
+<li><code>InRelease</code>：附加了 GPG 签名的 <code>Release</code> 文件。</li>
+<li><code>ChangeLog</code>：变更记录。</li>
+<li><code>contrib/</code>, <code>main/</code>, <code>non-free/</code>, <code>non-free-firmware/</code>：不同的组件（Components）。</li>
+</ul>
+<div class="admonition comment">
+<p class="admonition-title">@taoky: 安全更新源与镜像站</p>
+<p>曾经有人问过这个问题：镜像站提供安全更新源的话，怎么保证镜像站本身不会通过拖延更新等方式阻止用户获取安全更新？</p>
+<p>首先，Debian <strong>不鼓励</strong>修改默认的安全更新源，甚至其安装器在默认模式下，即使设置了镜像站，安全更新仍然会从官方获取（这也是 Debian 安装器在某些网络环境下很慢的一大原因），需要使用专家模式才能修改。</p>
+<p>然后，安全更新源的 <code>Release</code> 文件有一个重要的字段：<code>Valid-Until</code>，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>Date: Sat, 08 Feb 2025 21:33:46 UTC
+<a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a>Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
+</code></pre></div>
+<p><code>Valid-Until</code> 距离 <code>Release</code> 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，<strong>在生产环境下，谨慎使用任何镜像站提供安全更新源</strong>。</p>
+</div>
+<p>组件目录中则包含了：</p>
+<ul>
+<li><code>Contents-&lt;arch&gt;.gz</code>：用于帮助 <code>apt-file</code> 等工具快速查找包含某文件的软件包。</li>
+<li><code>binary-&lt;arch&gt;/</code>：二进制包。</li>
+<li><code>source/</code>：源代码包。</li>
+<li><code>by-hash/</code>：文件名为哈希值的元数据文件。APT 在读取 <code>Release</code> 之后，在 <code>Acquire-By-Hash: yes</code> 时，会首先根据哈希读取该目录下的需要的文件。这可以帮助使用 <code>rsync</code> 同步内容的镜像站点提升可用性，避免在同步过程中部分文件失效/未同步等导致的无法使用的问题。</li>
+</ul>
+<p>架构目录（二进制/源代码包）：</p>
+<ul>
+<li><code>Packages.{gz,xz}</code>：压缩后的 <code>Packages</code> 文件。<ul>
+<li>如果软件源不在本地文件系统上，那么 <code>Packages</code> 必须压缩，否则 APT 可能不会读取。</li>
+</ul>
+</li>
+<li><code>Release</code>：该架构的元数据。</li>
+<li><code>by-hash/</code>：同上。</li>
+</ul>
 <!-- markdownlint-disable MD053 -->
 
 <!--
