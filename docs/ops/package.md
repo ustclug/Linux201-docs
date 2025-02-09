@@ -763,39 +763,50 @@ case "$1" in
 esac
 ```
 
-<!-- 有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
+#### 使用 `checkinstall` 快速打包 {#checkinstall}
 
-一般而言，使用 apt 可以获得一些软件包的源码。
+!!! warning "checkinstall 工具仅适用于临时打包"
 
-首先，添加源码源，添加方法参考 [Debian - USTC Mirror help](https://mirrors.ustc.edu.cn/help/debian.html#__tabbed_1_2)
+    checkinstall 的工作原理是，在 `make install` 使用 `installwatch` 环节拦截文件相关系统调用（类似 `strace`），检查文件的变化，并将其打包为 deb 包。因此其只适用于使用 Makefile 构建系统（包括 `cmake`、`autotools` 等）的软件包。并且 checkinstall 的工作原理决定了其无法处理复杂的软件包，例如如果某软件包在安装时修改了 `/etc/passwd`，那么 checkinstall 无法正确打包这个软件包——在卸载时可能会破坏系统[^debian-system]。
 
-通过 `apt source <package>` 获得源码。
+    Debian 打包是一项复杂的工作。针对不同的编程语言与构建系统，Debian 提供了一些工具（例如 `dh-make-golang` 可以打包 Go 语言项目）辅助打包，建议在操作前先行搜索。`debmake` 工具也可以帮助生成一些 Debian 打包的模板文件。
 
-源码将被在当前文件夹下载并解压。
+以下以编译 rsync 为例子介绍。首先正常配置并编译：
 
-### 修改源码
-
-对源码进行简单的修改，你可以修改编译选项以开启额外功能。
-
-如果额外功能需要更多依赖，需要修改下载的 `.dsc` 文件与 `source/debian/control`，添加对应的依赖。
-
-在源码目录下使用
-
-```sh
-dch --local +<changed_proc>
+```shell
+git clone https://github.com/RsyncProject/rsync.git
+./configure
+make -j$(nproc)
 ```
 
-来自动生成版本号并且修改 changelogs
+然后执行 `checkinstall`:
 
-### 编译修改后的源代码
-
-运行
-
-```sh
-dpkg-buildpackage -us -uc
+```shell
+sudo checkinstall
 ```
 
-以编译源代码并生成安装包。 -->
+`checkinstall` 会询问一些问题，例如软件包的名称、版本、描述等等。版本默认为空，但是必须填写，否则后续步骤会报错。配置并安装完成后：
+
+```shell
+**********************************************************************
+
+ Done. The new package has been installed and saved to
+
+ /path/to/rsync/rsync_3.4.1-7_amd64.deb
+
+ You can remove it from your system anytime using: 
+
+      dpkg -r rsync
+
+**********************************************************************
+```
+
+可以看到 `rsync` 安装在了 `/usr/local/bin/` 下：
+
+```console
+$ which rsync
+/usr/local/bin/rsync
+```
 
 ## 软件源 {#repo}
 
@@ -803,167 +814,6 @@ dpkg-buildpackage -us -uc
 
 ### 构建一个自己的 DEB 软件源
 
-<!-- 可参考 https://github.com/USTC-vlab/deb -->
+<!-- markdownlint-disable MD053 -->
 
-<!-- DEB 软件包的结构 -->
-<!-- 如何从已有的 DEB 源码包打自己的 patch 并重新打包 -->
-<!-- 如何为第三方软件打包 -->
-
-<!-- ------ -->
-<!-- 在 Linux 系统中往往有一些系统负责软件的安装，升级，卸载。这个系统被称作包管理器（Package Manager）。
-
-包管理器的范畴较广：管理系统的，比如 apt，zypper；管理环境的，比如 conda；管理语言包的，比如 pip，gem；有一些包管理器甚至是语言的“附属”，如 cargo
-
-本文将着重讲解 Debian 的包管理器。
-
-Debian 的包管理器是 APT（**A**dvanced **p**ackage **t**ool）& dpkg 其中，dpkg 负责中低层操作，包括.deb 包的安装，卸载，以及信息查询，dpkg 还可以检查依赖的安装情况。
-
-APT 主要功能是解析包的依赖信息，从线上（或线下）的软件仓库（repository）下载（离线下载）.deb 软件包，然后按照合理的顺序调用 `dpkg`，在必要时使用 `--force`。
-
-## dpkg 安装一个包（.deb）的过程
-
-!!! warning "请勿手动安装包"
-    在生产环境中，请使用 apt 安装 deb 包。本部分仅用于展示 dpkg 实际完成的工作。
-
-在这一段中，可以自己手操（其实建议不要）安装若干包，这里以 `apt-utils` 为例进行演示，这个包的依赖在 debian 环境中应当已经被配置完成。
-
-1. 准备工作：获得 `apt-utils` 的下载地址，并且在系统中下载。创建 /tmp/install-temp 文件夹。
-
-    ```bash
-    cd /tmp
-    mkdir install-temp
-    cd install-temp
-    wget http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
-
-    # 可以观察包的内容
-    # dpkg -c apt-utils_2.7.12_amd64.deb
-    # apt-file list apt-utils # 这个命令位于 apt-file 包中
-    ```
-
-2. 解包
-
-    ```bash
-    ar -x apt-utils_2.7.12_amd64.deb
-
-    # 可以使用以下命令代替
-
-    dpkg-deb -R apt-utils_2.7.12_amd64.deb .
-
-    # 注意两者结果不同，可以尝试并且观察区别
-    ```
-
-3. 移动文件
-
-    将文件移动至其安装位置，该包结构十分简单，可以直接操作。
-
-    这个过程其实包含在解包中。
-
-    ```bash
-    sudo tar xpvf data.tar.xf --directory=/
-
-    # 或者......
-
-    sudo rsync -av usr /
-    ```
-
-4. 在 dpkg 的辅助文件中修改为已安装
-
-    复制 control.tar.xz 中的 control，并添加到/var/lib/dpkg/status 中的合适位置，添加 Status 行目
-
-    将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum
-
-    ```bash
-    tar tf /tmp/install-temp/data.tar.xz | sed -e 's/^.//' -e 's/^\/$/\/\./' > /var/lib/dpkg/list/包名.list
-    ```
-
-    这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 dpkg 等工具进行包的操作。
-
-## 配置文件与辅助文件
-
-`dpkg` 的配置文件位于 `/etc/dpkg/`，辅助文件位于 `/var/lib/dpkg/`。
-
-APT 的配置文件位于 `/etc/apt`，辅助文件位于 `/var/lib/apt`。
-
-可以观察 `/var/lib/apt/lists` 中的文件作为参考
-
-TODO
-
-## 重要而不常见的功能
-
-TODO -->
-
-<!-- ### 理解 apt 基本目录结构
-
-apt 的工作依赖于一些文件，理解这些文件（与目录）的作用有助于更好的理解其工作原理。
-
-#### `/etc/apt/sources.list` 与 `/etc/apt/sources.list.d/`
-
-这些文件声明 apt 的软件源，在进行 `apt update` 这类操作时，会从这些软件源下载 metadata 并且进行缓存。
-
-这些 metadata 包括软件源里所有包的基本信息，例如包名称，每个包的依赖，推荐与建议包，开发者与维护者等等。
-
-#### `/etc/apt/apt.conf` 与 `/etc/apt/apt.conf.d/`
-
-这些文件是 apt（以及其拓展）使用的配置文件。
-
-对于 apt.conf.d 里面的文件，其优先级由字典序决定。一般在文件前添加数字代表优先级，数字更大者读取越靠后，因而优先级更高。
-apt.conf 最后被读取，拥有最高的优先级。
-
-#### `/var/lib/apt/lists`
-
-我们之前提到的 metadata 的储存位置。
-
-需要注意的是，metadata 不止和软件源包含什么有关。
-
-使用 apt-cache 工具查询相关信息。
-
-例子：
-
-使用 apt-cache 查看软件包相关 metadata
-
-```sh
-apt-cache show <name>
-```
-
-使用 apt-cache 查看软件包的依赖和反向依赖
-
-```sh
-apt-cache depends <name>
-apt-cache rdepends <name>
-```
-
-检查未被满足的依赖，用来修复一些依赖地狱问题
-
-```sh
-apt-cache unmet
-```
-
-#### `/var/lib/dpkg/available`
-
-dpkg 的数据库，结构与 apt 相似，在现在随着 dpkg 本身的使用逐渐减少，已经基本停止使用。
-
-#### `/var/lib/dpkg/status`
-
-dpkg 的状态列表，相较于纯粹的 metadata，其添加了优先级和状态，去除了校验值。
-
-一般这里包含安装结束的包与部分安装的包。
-
-#### `/var/lib/dpkg/info`
-
-所有包的管理相关信息，例如包内文件的 md5sum 值，库包的符号列表，安装和卸载时需要的额外操作等等。
-
-#### `/var/lib/apt/extended_states`
-
-记录已经安装的包的类型：自动安装或者手动安装的。
-
-一般而言列表中的包都是自动安装的。
-
-在进行 `apt autoremove` 时用于判定是否要卸载，如果一个包没有被其他手动安装的包（直接或间接）依赖并且是自动安装的，那么其会被移除。
-
-通过 `apt-mark auto <name>` 和 `apt-mark manual <name>` 进行修改。
-
-#### `/etc/apt/preferences` 与 `/etc/apt/preferences.d/`
-
-apt 优先级的配置文件
-
-apt 在遇到相同软件包时，会选择优先级最高的安装包进行安装。在拥有相同优先级的情况下，会选择最高版本安装。 -->
+[^debian-system]: <https://askubuntu.com/a/1138405>，引用自 *The Debian System: Concepts and Techniques* 一书。
