@@ -212,6 +212,32 @@ htop: /usr/share/pixmaps/htop.png
 
 `apt-mark unhold` 可以取消固定，而 `apt-mark showhold` 可以查看所有被固定的包。
 
+### Alternatives {#alternatives}
+
+Debian 的 Alternatives 机制允许系统安装同一软件的多个版本（例如 Java），或者同一类型软件的多个实现（例如文本编辑器），并且用户可以切换默认使用的版本。`/etc/alternatives/` 目录包含了所有在 Alternatives 机制下的软链接。以 `editor` 为例，在 Debian 下 `/usr/bin/editor` 是一个指向 `/etc/alternatives/editor` 的软链接，而 `/etc/alternatives/editor` 指向的对象由用户配置决定。
+
+使用 `update-alternatives` 命令可以管理 Alternatives 机制的映射：
+
+```shell
+$ ls -lh /etc/alternatives/editor
+lrwxrwxrwx 1 root root 9 Aug  29 2022  /etc/alternatives/editor -> /bin/nano
+$ sudo update-alternatives --config editor
+There are 4 choices for the alternative editor (providing /usr/bin/editor).
+
+  Selection    Path                Priority   Status
+------------------------------------------------------------
+* 0            /bin/nano            40        auto mode
+  1            /bin/ed             -100       manual mode
+  2            /bin/nano            40        manual mode
+  3            /usr/bin/vim.basic   30        manual mode
+  4            /usr/bin/vim.tiny    15        manual mode
+
+Press <enter> to keep the current choice[*], or type selection number: 3
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/editor (editor) in manual mode
+$ ls -lh /etc/alternatives/editor
+lrwxrwxrwx 1 root root 18 Feb  9 15:54 /etc/alternatives/editor -> /usr/bin/vim.basic
+```
+
 ### 自动更新 {#unattended-upgrade}
 
 一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：
@@ -413,6 +439,8 @@ Deb 包是一个 ar 格式的包，包含三个文件（可以使用 `ar t` 查�
 
     ar 格式（1971）与 tar（1979）类似，都是归档格式。由于 ar 不支持目录，因此目前 ar 仅用于生成静态链接库（`.a` 文件）与 deb 包。
 
+#### `control`
+
 `control.tar.xz` 中的 `control` 文件是包的元数据，包含版本、依赖、描述、维护者等等信息，类似如下：
 
 ```control
@@ -436,6 +464,10 @@ Description: Provide limited super user privileges to specific users
  sudo-ldap package instead if you need LDAP support for sudoers.
 Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 ```
+
+有关具体各个字段的含义，可参考 [Debian Policy Manual](https://www.debian.org/doc/debian-policy/index.html) 的[第五章 Control files and their fields](https://www.debian.org/doc/debian-policy/ch-controlfields.html) 与[第七章 Declaring relationships between packages](https://www.debian.org/doc/debian-policy/ch-relationships.html)。
+
+#### 其他文件
 
 此外，`control.tar.xz` 可以包含一些 hook 脚本，在安装与删除前后进行操作，包括 `preinst`, `prerm`, `postinst`, `postrm`。还可以包含以下文件：
 
@@ -673,6 +705,62 @@ Hello, world!
 （以下省略）
 $ sudo uname
 Linux
+```
+
+### 简易软件包打包 {#packaging}
+
+以上介绍了从官方源代码包中打包的过程。不过有时候，我们的需求是从零开始打包一个软件包。以下提供一些简单的例子。
+
+#### 配置类软件包 {#config-package}
+
+[USTC-vlab/deb](https://github.com/ustc-vlab/deb) 是 Vlab 项目为学生虚拟机（容器）提供的一部分补充包仓库，所有的包均为简单的配置文件与脚本。
+
+这一类不需要编译操作的包目录树类似如下，`DEBIAN` 目录包含了打包后 `control.tar.xz` 的内容，剩下的内容则组成了 `data.tar.xz`：
+
+```tree
+.
+├── DEBIAN
+│   ├── control
+│   ├── postinst
+│   └── preinst
+└── etc
+    ├── lightdm
+    │   └── lightdm.conf
+    └── vlab
+        ├── greeter-setup.sh
+        └── vncserver-lightdm
+```
+
+`dpkg-deb --build -Z <dir> <output_dir>` 可以将 `<dir>` 目录下的内容打包为 deb 包，存储到 `<output_dir>` 目录中（`-Z` 压缩默认为 xz）。
+
+特别地，如果这一类软件包需要覆盖其他软件包的文件，可以使用 `dpkg-divert` 命令。例如，`vlab-vnc` 包需要覆盖 `lightdm` 的配置文件 `/etc/lightdm/lightdm.conf`，因此其在 `preinst` 中使用了以下命令：
+
+```shell
+dpkg-divert --package vlab-vnc --divert /etc/lightdm/lightdm.conf.dpkg-divert --add /etc/lightdm/lightdm.conf
+```
+
+再例如，该仓库中修改后的 `firefox` 需要移除/重命名 `/usr/share/mate/applications/firefox.desktop`，因此在 `preinst` 中使用了以下命令：
+
+```shell
+MATE_DESKTOP=/usr/share/mate/applications/firefox.desktop
+dpkg-divert --rename --divert "$MATE_DESKTOP".dpkg-divert "$MATE_DESKTOP"
+```
+
+同时，hook 脚本在执行时的 `argv[1]` 为用户执行的操作（例如 `install`, `upgrade` 等），因此脚本中可以根据操作执行不同的命令，类似如下：
+
+```shell
+case "$1" in
+    install)
+        # do something
+        ;;
+    upgrade|abort-upgrade)
+        # do something
+        ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 0
+        ;;
+esac
 ```
 
 <!-- 有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
