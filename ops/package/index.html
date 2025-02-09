@@ -612,6 +612,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternatives
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#unattended-upgrade" class="md-nav__link">
     <span class="md-ellipsis">
       自动更新
@@ -669,6 +678,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="软件包结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#control" class="md-nav__link">
+    <span class="md-ellipsis">
+      control
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      其他文件
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -722,6 +755,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      简易软件包打包
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="简易软件包打包">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置类软件包
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -738,7 +795,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       目录结构
     </span>
@@ -1936,6 +1993,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#alternatives" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternatives
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#unattended-upgrade" class="md-nav__link">
     <span class="md-ellipsis">
       自动更新
@@ -1993,6 +2059,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="软件包结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#control" class="md-nav__link">
+    <span class="md-ellipsis">
+      control
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      其他文件
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2046,6 +2136,30 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      简易软件包打包
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="简易软件包打包">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#config-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      配置类软件包
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2062,7 +2176,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#_3" class="md-nav__link">
     <span class="md-ellipsis">
       目录结构
     </span>
@@ -2276,36 +2390,57 @@
 <h3 id="hold">固定包<a class="headerlink" href="#hold" title="Permanent link">&para;</a></h3>
 <p>有时我们希望固定一个包，使得这个包不会被改变或升级：一个例子是，我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 <code>apt-mark hold &lt;name&gt;</code> 来标记这个包为固定的。</p>
 <p><code>apt-mark unhold</code> 可以取消固定，而 <code>apt-mark showhold</code> 可以查看所有被固定的包。</p>
+<h3 id="alternatives">Alternatives<a class="headerlink" href="#alternatives" title="Permanent link">&para;</a></h3>
+<p>Debian 的 Alternatives 机制允许系统安装同一软件的多个版本（例如 Java），或者同一类型软件的多个实现（例如文本编辑器），并且用户可以切换默认使用的版本。<code>/etc/alternatives/</code> 目录包含了所有在 Alternatives 机制下的软链接。以 <code>editor</code> 为例，在 Debian 下 <code>/usr/bin/editor</code> 是一个指向 <code>/etc/alternatives/editor</code> 的软链接，而 <code>/etc/alternatives/editor</code> 指向的对象由用户配置决定。</p>
+<p>使用 <code>update-alternatives</code> 命令可以管理 Alternatives 机制的映射：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>$<span class="w"> </span>ls<span class="w"> </span>-lh<span class="w"> </span>/etc/alternatives/editor
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>lrwxrwxrwx<span class="w"> </span><span class="m">1</span><span class="w"> </span>root<span class="w"> </span>root<span class="w"> </span><span class="m">9</span><span class="w"> </span>Aug<span class="w">  </span><span class="m">29</span><span class="w"> </span><span class="m">2022</span><span class="w">  </span>/etc/alternatives/editor<span class="w"> </span>-&gt;<span class="w"> </span>/bin/nano
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>$<span class="w"> </span>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>editor
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>There<span class="w"> </span>are<span class="w"> </span><span class="m">4</span><span class="w"> </span>choices<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>alternative<span class="w"> </span>editor<span class="w"> </span><span class="o">(</span>providing<span class="w"> </span>/usr/bin/editor<span class="o">)</span>.
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span>Selection<span class="w">    </span>Path<span class="w">                </span>Priority<span class="w">   </span>Status
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>------------------------------------------------------------
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>*<span class="w"> </span><span class="m">0</span><span class="w">            </span>/bin/nano<span class="w">            </span><span class="m">40</span><span class="w">        </span>auto<span class="w"> </span>mode
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="m">1</span><span class="w">            </span>/bin/ed<span class="w">             </span>-100<span class="w">       </span>manual<span class="w"> </span>mode
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="m">2</span><span class="w">            </span>/bin/nano<span class="w">            </span><span class="m">40</span><span class="w">        </span>manual<span class="w"> </span>mode
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="m">3</span><span class="w">            </span>/usr/bin/vim.basic<span class="w">   </span><span class="m">30</span><span class="w">        </span>manual<span class="w"> </span>mode
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="m">4</span><span class="w">            </span>/usr/bin/vim.tiny<span class="w">    </span><span class="m">15</span><span class="w">        </span>manual<span class="w"> </span>mode
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>Press<span class="w"> </span>&lt;enter&gt;<span class="w"> </span>to<span class="w"> </span>keep<span class="w"> </span>the<span class="w"> </span>current<span class="w"> </span>choice<span class="o">[</span>*<span class="o">]</span>,<span class="w"> </span>or<span class="w"> </span><span class="nb">type</span><span class="w"> </span>selection<span class="w"> </span>number:<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>update-alternatives:<span class="w"> </span>using<span class="w"> </span>/usr/bin/vim.basic<span class="w"> </span>to<span class="w"> </span>provide<span class="w"> </span>/usr/bin/editor<span class="w"> </span><span class="o">(</span>editor<span class="o">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span>manual<span class="w"> </span>mode
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>$<span class="w"> </span>ls<span class="w"> </span>-lh<span class="w"> </span>/etc/alternatives/editor
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>lrwxrwxrwx<span class="w"> </span><span class="m">1</span><span class="w"> </span>root<span class="w"> </span>root<span class="w"> </span><span class="m">18</span><span class="w"> </span>Feb<span class="w">  </span><span class="m">9</span><span class="w"> </span><span class="m">15</span>:54<span class="w"> </span>/etc/alternatives/editor<span class="w"> </span>-&gt;<span class="w"> </span>/usr/bin/vim.basic
+</code></pre></div>
 <h3 id="unattended-upgrade">自动更新<a class="headerlink" href="#unattended-upgrade" title="Permanent link">&para;</a></h3>
 <p>一般而言，使用 apt 的系统默认安装了 <code>unattended-upgrades</code> 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>debconf-get-selections<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>unattended-upgrades/enable_auto_updates
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>debconf-get-selections<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>unattended-upgrades/enable_auto_updates
 </code></pre></div>
 <p>如果输出的内容类似下面：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">unattended-upgrades unattended-upgrades/enable_auto_updates boolean false</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="go">unattended-upgrades unattended-upgrades/enable_auto_updates boolean false</span>
 </code></pre></div>
 <p>则代表自动更新被关闭，反之则启用。可以执行 <code>dpkg-reconfigure unattended-upgrades</code> 修改配置。当自动更新启用时，<code>/etc/apt/apt.conf.d/20auto-upgrades</code> 文件应当存在。</p>
 <p>可以使用以下命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sudo<span class="w"> </span>unattended-upgrades<span class="w"> </span>--dry-run<span class="w"> </span>--debug
 </code></pre></div>
 <p>查看并确认系统自动更新时的行为。默认情况下，自动更新只会操作 Debian 官方上游的包，用户自己设置的源不会被自动更新，这一点可以在 <code>/etc/apt/apt.conf.d/50unattended-upgrades</code> 文件中验证：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>// Automatically upgrade packages from these (origin:archive) pairs
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>//
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>// Note that in Ubuntu security updates may pull in new dependencies
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>// from non-security sources (e.g. chromium). By allowing the release
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>// pocket these get automatically pulled in.
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>Unattended-Upgrade::Allowed-Origins {
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    &quot;${distro_id}:${distro_codename}&quot;;
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    &quot;${distro_id}:${distro_codename}-security&quot;;
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    // Extended Security Maintenance; doesn&#39;t necessarily exist for
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    // every release and this system may not have it installed, but if
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    // available, the policy for updates is such that unattended-upgrades
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    // should also install from here by default.
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    &quot;${distro_id}ESMApps:${distro_codename}-apps-security&quot;;
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>    &quot;${distro_id}ESM:${distro_codename}-infra-security&quot;;
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>//  &quot;${distro_id}:${distro_codename}-updates&quot;;
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>//  &quot;${distro_id}:${distro_codename}-proposed&quot;;
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>//  &quot;${distro_id}:${distro_codename}-backports&quot;;
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>};
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>// Automatically upgrade packages from these (origin:archive) pairs
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>//
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>// Note that in Ubuntu security updates may pull in new dependencies
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>// from non-security sources (e.g. chromium). By allowing the release
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>// pocket these get automatically pulled in.
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>Unattended-Upgrade::Allowed-Origins {
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    &quot;${distro_id}:${distro_codename}&quot;;
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    &quot;${distro_id}:${distro_codename}-security&quot;;
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    // Extended Security Maintenance; doesn&#39;t necessarily exist for
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    // every release and this system may not have it installed, but if
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    // available, the policy for updates is such that unattended-upgrades
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>    // should also install from here by default.
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>    &quot;${distro_id}ESMApps:${distro_codename}-apps-security&quot;;
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>    &quot;${distro_id}ESM:${distro_codename}-infra-security&quot;;
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>//  &quot;${distro_id}:${distro_codename}-updates&quot;;
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>//  &quot;${distro_id}:${distro_codename}-proposed&quot;;
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>//  &quot;${distro_id}:${distro_codename}-backports&quot;;
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>};
 </code></pre></div>
 <p>此外，systemd 服务 <code>unattended-upgrades.service</code> 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。</p>
 <h3 id="apt-frontend">APT 前端<a class="headerlink" href="#apt-frontend" title="Permanent link">&para;</a></h3>
@@ -2318,22 +2453,22 @@
 <div class="admonition example">
 <p class="admonition-title">检查某系统强制重启后无法开机的问题</p>
 <p>一个现实发生的例子是，某系统强制重启后无法正常开机，提示：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">[    4.634427] systemd[1]: Assertion &#39;close_nointr(fd) != -EBADF&#39; failed at src/basic/fd-util.c:77, function safe_close(). Aborting.</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">[    4.635043] systemd[1]: Caught &lt;ABRT&gt; from our own process.</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">[    4.635624] systemd[1]: Caught &lt;ABRT&gt;, core dump failed (child 225, code=killed, status=6/ABRT).</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">[    4.635750] systemd[1]: Freezing execution.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="go">[    4.634427] systemd[1]: Assertion &#39;close_nointr(fd) != -EBADF&#39; failed at src/basic/fd-util.c:77, function safe_close(). Aborting.</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">[    4.635043] systemd[1]: Caught &lt;ABRT&gt; from our own process.</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">[    4.635624] systemd[1]: Caught &lt;ABRT&gt;, core dump failed (child 225, code=killed, status=6/ABRT).</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">[    4.635750] systemd[1]: Freezing execution.</span>
 </code></pre></div>
 <p>使用 ISO 引导后 <code>chroot</code> 到系统，执行 <code>dpkg --verify</code>，发现：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp"># </span>dpkg<span class="w"> </span>--verify
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">??5??????   /usr/lib/x86_64-linux-gnu/systemd/libsystemd-core-252.so</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp"># </span>dpkg<span class="w"> </span>--verify
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">??5??????   /usr/lib/x86_64-linux-gnu/systemd/libsystemd-core-252.so</span>
 </code></pre></div>
 <p>重新安装 <code>libsystemd-shared</code> 包后，问题解决。</p>
 </div>
 <p><code>dpkg --verify</code> 默认输出为 <code>rpm -V</code> 风格，类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>??5??????   /some/file
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>??5?????? c /some/config_file
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>missing     /some/missing_file
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>??5??????   /some/file
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>??5?????? c /some/config_file
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>missing     /some/missing_file
 </code></pre></div>
 <p><code>dpkg</code> 目前只会检查文件的 MD5（即上面的 <code>5</code>），因此其他列均标记为 <code>?</code>（未检查）。<code>c</code> 代表是配置文件，<code>missing</code> 代表文件不存在。</p>
 <div class="admonition warning">
@@ -2350,19 +2485,19 @@
 <p>APT 选择包的逻辑并非单纯的「版本越新越好」（比如，用户添加 backports 源<strong>不代表</strong>用户希望所有 backports 有的软件都安装最新版本），而是根据优先级来选择。默认的优先级为 500，如果优先级一致，才会根据版本号来选择。</p>
 <p>Backports 源的优先级为 100，因为其 <code>Release</code> 文件中 <code>NotAutomatic</code> 和 <code>ButAutomaticUpgrades</code> 字段都为 <code>yes</code>，<a href="https://wiki.debian.org/DebianRepository/Format#NotAutomatic_and_ButAutomaticUpgrades">因此 APT 会授予 backports 100 的优先级</a>。如果只有 <code>NotAutomatic</code> 为 <code>yes</code>，则优先级为 1。</p>
 <p>我们通过 <code>apt-cache policy &lt;name&gt;</code> 查看包的安装状态与优先级信息，以某配置了 backports、<a href="https://deb-multimedia.org/">deb-multimedia</a>，并且有一段时间未升级的系统为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>yt-dlp
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">yt-dlp:</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">  Installed: 1:2024.10.07-dmo1</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">  Candidate: 1:2025.01.26-dmo1</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">  Version table:</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">     1:2025.01.26-dmo1 500</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go"> *** 1:2024.10.07-dmo1 100</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="go">        100 /var/lib/dpkg/status</span>
-<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="go">     2025.01.26-1~bpo12+1 100</span>
-<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="go">        100 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages</span>
-<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="go">     2023.03.04-1 500</span>
-<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>yt-dlp
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">yt-dlp:</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">  Installed: 1:2024.10.07-dmo1</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">  Candidate: 1:2025.01.26-dmo1</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">  Version table:</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">     1:2025.01.26-dmo1 500</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go"> *** 1:2024.10.07-dmo1 100</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">        100 /var/lib/dpkg/status</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="go">     2025.01.26-1~bpo12+1 100</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">        100 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">     2023.03.04-1 500</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
 </code></pre></div>
 <p>可以看到，APT 已知四个不同的 <code>yt-dlp</code> 版本，分别是 deb-multimedia 的 <code>1:2025.01.26-dmo1</code>、本地安装的 <code>1:2024.10.07-dmo1</code>、backports 的 <code>2025.01.26-1~bpo12+1</code> 以及官方源的 <code>2023.03.04-1</code>。特别地，本地的版本的优先级为 100。因此当执行更新命令时，APT 会首先选择优先级最高的（<code>deb-multimedia</code> 或者官方源），然后选择版本最高的（<code>1:2025.01.26-dmo1</code>）。</p>
 <div class="admonition note">
@@ -2370,37 +2505,37 @@
 <p>此时 APT <strong>不会降级</strong>软件包，除非远程对应的优先级超过 1000。如果需要手动降级，可以使用 <code>apt install &lt;name&gt;=&lt;version&gt;</code>。</p>
 </div>
 <p>如果需要指定从某个特定的源安装软件包，可以使用 <code>-t</code> 选项，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>apt<span class="w"> </span>install<span class="w"> </span>-t<span class="w"> </span>bookworm-backports<span class="w"> </span>yt-dlp
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>apt<span class="w"> </span>install<span class="w"> </span>-t<span class="w"> </span>bookworm-backports<span class="w"> </span>yt-dlp
 </code></pre></div>
 <p>这样就会安装 backports 源中的 <code>yt-dlp</code>。其实际上是把 <code>bookworm-backports</code> 源的优先级临时拉高到了 990：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>-t<span class="w"> </span>bookworm-backports<span class="w"> </span>yt-dlp
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">yt-dlp:</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">  Installed: 1:2024.10.07-dmo1</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">  Candidate: 1:2025.01.26-dmo1</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">  Version table:</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">     1:2025.01.26-dmo1 500</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go"> *** 1:2024.10.07-dmo1 100</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">        100 /var/lib/dpkg/status</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">     2025.01.26-1~bpo12+1 990</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">        990 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">     2023.03.04-1 500</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>-t<span class="w"> </span>bookworm-backports<span class="w"> </span>yt-dlp
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">yt-dlp:</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">  Installed: 1:2024.10.07-dmo1</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">  Candidate: 1:2025.01.26-dmo1</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">  Version table:</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">     1:2025.01.26-dmo1 500</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">        500 http://mirrors.ustc.edu.cn/deb-multimedia bookworm/main amd64 Packages</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go"> *** 1:2024.10.07-dmo1 100</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">        100 /var/lib/dpkg/status</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">     2025.01.26-1~bpo12+1 990</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">        990 http://mirrors.ustc.edu.cn/debian bookworm-backports/main amd64 Packages</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">     2023.03.04-1 500</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
 </code></pre></div>
 <p>用户也可以手动配置软件的优先级，相关配置位于 <code>/etc/apt/preferences</code> 和 <code>/etc/apt/preferences.d/</code> 中。优先级配置条目的一般格式如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;name&gt;</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;clause&gt;</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;priority&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;name&gt;</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;clause&gt;</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;priority&gt;</span>
 </code></pre></div>
 <p>例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="err">*</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">origin packages.mozilla.org</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="err">*</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">origin packages.mozilla.org</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
 </code></pre></div>
 <p>那么 packages.mozilla.org 拥有的包会优先于官方仓库被选择。优先级系统也可以用来固定包，例如将 <code>mtr-tiny</code> 包固定在 0.87 版本：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mtr-tiny</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">version 0.87*</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nt">Package</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mtr-tiny</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nt">Pin</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">version 0.87*</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
 </code></pre></div>
 <p>详细文档请参考 <a href="https://manpages.debian.org/unstable/apt/apt_preferences.5.en.html">apt_preferences(5)</a>。</p>
 <h2 id="deb-package">DEB 软件包<a class="headerlink" href="#deb-package" title="Permanent link">&para;</a></h2>
@@ -2417,27 +2552,30 @@
 <p class="admonition-title">ar 与 tar</p>
 <p>ar 格式（1971）与 tar（1979）类似，都是归档格式。由于 ar 不支持目录，因此目前 ar 仅用于生成静态链接库（<code>.a</code> 文件）与 deb 包。</p>
 </div>
+<h4 id="control"><code>control</code><a class="headerlink" href="#control" title="Permanent link">&para;</a></h4>
 <p><code>control.tar.xz</code> 中的 <code>control</code> 文件是包的元数据，包含版本、依赖、描述、维护者等等信息，类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">Package</span><span class="p">:</span><span class="w"> </span><span class="s">sudo</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="k">Version</span><span class="p">:</span><span class="w"> </span><span class="m">1.9.9-1ubuntu2.3</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="k">Architecture</span><span class="p">:</span><span class="w"> </span><span class="s">amd64</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="k">Maintainer</span><span class="p">:</span><span class="w"> </span>Ubuntu Developers <span class="gs">&lt;ubuntu-devel-discuss@lists.ubuntu.com&gt;</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="k">Installed-Size</span><span class="p">:</span><span class="w"> </span><span class="m">2504</span>
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="k">Depends</span><span class="p">:</span><span class="w"> </span><span class="nf">libaudit1</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1:2.2.1</span><span class="p">)</span>, <span class="nf">libc6</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">2.34</span><span class="p">)</span>, <span class="nf">libpam0g</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">0.99.7.1</span><span class="p">)</span>, <span class="nf">libselinux1</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">3.1~</span><span class="p">)</span>, <span class="nf">zlib1g</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1:1.2.0.2</span><span class="p">)</span>, <span class="nf">libpam-modules</span>, <span class="nf">lsb-base</span>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="k">Conflicts</span><span class="p">:</span><span class="w"> </span><span class="nf">sudo-ldap</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="k">Replaces</span><span class="p">:</span><span class="w"> </span><span class="nf">sudo-ldap</span>
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="k">Section</span><span class="p">:</span><span class="w"> </span><span class="s">admin</span>
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="k">Priority</span><span class="p">:</span><span class="w"> </span><span class="s">optional</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="k">Homepage</span><span class="p">:</span><span class="w"> </span><span class="s">https://www.sudo.ws/</span>
-<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="k">Description</span><span class="gs">: Provide limited super user privileges to specific users</span>
-<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a> Sudo is a program designed to allow a sysadmin to give limited root
-<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a> privileges to users and log root activity.  The basic philosophy is to give
-<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a> as few privileges as possible but still allow people to get their work done.
-<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a> .
-<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a> This version is built with minimal shared library dependencies, use the
-<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a> sudo-ldap package instead if you need LDAP support for sudoers.
-<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="k">Original-Maintainer</span><span class="p">:</span><span class="w"> </span><span class="s">Sudo Maintainers &lt;sudo@packages.debian.org&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">Package</span><span class="p">:</span><span class="w"> </span><span class="s">sudo</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="k">Version</span><span class="p">:</span><span class="w"> </span><span class="m">1.9.9-1ubuntu2.3</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="k">Architecture</span><span class="p">:</span><span class="w"> </span><span class="s">amd64</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="k">Maintainer</span><span class="p">:</span><span class="w"> </span>Ubuntu Developers <span class="gs">&lt;ubuntu-devel-discuss@lists.ubuntu.com&gt;</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="k">Installed-Size</span><span class="p">:</span><span class="w"> </span><span class="m">2504</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="k">Depends</span><span class="p">:</span><span class="w"> </span><span class="nf">libaudit1</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1:2.2.1</span><span class="p">)</span>, <span class="nf">libc6</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">2.34</span><span class="p">)</span>, <span class="nf">libpam0g</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">0.99.7.1</span><span class="p">)</span>, <span class="nf">libselinux1</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">3.1~</span><span class="p">)</span>, <span class="nf">zlib1g</span> <span class="p">(</span><span class="o">&gt;=</span><span class="w"> </span><span class="m">1:1.2.0.2</span><span class="p">)</span>, <span class="nf">libpam-modules</span>, <span class="nf">lsb-base</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="k">Conflicts</span><span class="p">:</span><span class="w"> </span><span class="nf">sudo-ldap</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="k">Replaces</span><span class="p">:</span><span class="w"> </span><span class="nf">sudo-ldap</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="k">Section</span><span class="p">:</span><span class="w"> </span><span class="s">admin</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="k">Priority</span><span class="p">:</span><span class="w"> </span><span class="s">optional</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="k">Homepage</span><span class="p">:</span><span class="w"> </span><span class="s">https://www.sudo.ws/</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="k">Description</span><span class="gs">: Provide limited super user privileges to specific users</span>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a> Sudo is a program designed to allow a sysadmin to give limited root
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a> privileges to users and log root activity.  The basic philosophy is to give
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a> as few privileges as possible but still allow people to get their work done.
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a> .
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a> This version is built with minimal shared library dependencies, use the
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a> sudo-ldap package instead if you need LDAP support for sudoers.
+<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="k">Original-Maintainer</span><span class="p">:</span><span class="w"> </span><span class="s">Sudo Maintainers &lt;sudo@packages.debian.org&gt;</span>
 </code></pre></div>
+<p>有关具体各个字段的含义，可参考 <a href="https://www.debian.org/doc/debian-policy/index.html">Debian Policy Manual</a> 的<a href="https://www.debian.org/doc/debian-policy/ch-controlfields.html">第五章 Control files and their fields</a> 与<a href="https://www.debian.org/doc/debian-policy/ch-relationships.html">第七章 Declaring relationships between packages</a>。</p>
+<h4 id="_2">其他文件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
 <p>此外，<code>control.tar.xz</code> 可以包含一些 hook 脚本，在安装与删除前后进行操作，包括 <code>preinst</code>, <code>prerm</code>, <code>postinst</code>, <code>postrm</code>。还可以包含以下文件：</p>
 <ul>
 <li><code>md5sums</code>，用于校验包文件的完整性。</li>
@@ -2448,40 +2586,40 @@
 <h3 id="apt-source">获取软件包源码<a class="headerlink" href="#apt-source" title="Permanent link">&para;</a></h3>
 <p>Debian 目前大多数的包的源代码都可以在 Debian Salsa GitLab 上找到，可以在 <a href="https://tracker.debian.org/">Debian Package Tracker</a> 上找到相关信息。</p>
 <p>除了直接使用 git clone 之外，还可以使用 <code>apt source &lt;package&gt;</code> 来下载源码。需要注意的是，该功能需要安装 <code>dpkg-dev</code>，且需要在 <code>/etc/apt/sources.list</code> 或 <code>/etc/apt/sources.list.d/debian.sources</code> 中添加 <code>deb-src</code>，类似于这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">deb-src</span><span class="w"> </span><span class="s">http://deb.debian.org/debian/</span><span class="w"> </span><span class="kp">bookworm</span><span class="w"> </span><span class="kp">main</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">deb-src</span><span class="w"> </span><span class="s">http://deb.debian.org/debian/</span><span class="w"> </span><span class="kp">bookworm</span><span class="w"> </span><span class="kp">main</span>
 </code></pre></div>
 <p>或者这样（DEB822）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb deb-src</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://deb.debian.org/debian/</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bookworm</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="nt">Components</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="nt">Signed-By</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/share/keyrings/debian-archive-keyring.gpg</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb deb-src</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://deb.debian.org/debian/</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bookworm</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="nt">Components</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="nt">Signed-By</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/share/keyrings/debian-archive-keyring.gpg</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">DEB822</p>
 <p>DEB822 是 Debian 新的仓库配置格式，用于取代旧的 <code>sources.list</code> 格式（又被称为 One-Line-Style 格式）。详情可阅读 <a href="https://repolib.readthedocs.io/en/latest/deb822-format.html">https://repolib.readthedocs.io/en/latest/deb822-format.html</a>。</p>
 </div>
 <p><code>apt source</code> 会下载必要的文件、解压并应用 Debian 的补丁：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>$<span class="w"> </span>apt<span class="w"> </span><span class="nb">source</span><span class="w"> </span>sudo
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>Reading<span class="w"> </span>package<span class="w"> </span>lists...<span class="w"> </span>Done
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>NOTICE:<span class="w"> </span><span class="s1">&#39;sudo&#39;</span><span class="w"> </span>packaging<span class="w"> </span>is<span class="w"> </span>maintained<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span><span class="s1">&#39;Git&#39;</span><span class="w"> </span>version<span class="w"> </span>control<span class="w"> </span>system<span class="w"> </span>at:
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>https://salsa.debian.org/sudo-team/sudo.git
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>Please<span class="w"> </span>use:
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>git<span class="w"> </span>clone<span class="w"> </span>https://salsa.debian.org/sudo-team/sudo.git
-<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>to<span class="w"> </span>retrieve<span class="w"> </span>the<span class="w"> </span>latest<span class="w"> </span><span class="o">(</span>possibly<span class="w"> </span>unreleased<span class="o">)</span><span class="w"> </span>updates<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>package.
-<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3-1+deb12u1.dsc&#39;</span>
-<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3.orig.tar.gz&#39;</span>
-<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3.orig.tar.gz.asc&#39;</span>
-<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3-1+deb12u1.debian.tar.xz&#39;</span>
-<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>Need<span class="w"> </span>to<span class="w"> </span>get<span class="w"> </span><span class="m">0</span><span class="w"> </span>B<span class="w"> </span>of<span class="w"> </span><span class="nb">source</span><span class="w"> </span>archives.
-<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>extracting<span class="w"> </span>sudo<span class="w"> </span><span class="k">in</span><span class="w"> </span>sudo-1.9.13p3
-<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>unpacking<span class="w"> </span>sudo_1.9.13p3.orig.tar.gz
-<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>unpacking<span class="w"> </span>sudo_1.9.13p3-1+deb12u1.debian.tar.xz
-<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>using<span class="w"> </span>patch<span class="w"> </span>list<span class="w"> </span>from<span class="w"> </span>debian/patches/series
-<a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>debian-bug-1039557
-<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>paths-in-samples.diff
-<a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>Whitelist-DPKG_COLORS-environment-variable.diff
-<a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>sudo-ldap-docs
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>$<span class="w"> </span>apt<span class="w"> </span><span class="nb">source</span><span class="w"> </span>sudo
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>Reading<span class="w"> </span>package<span class="w"> </span>lists...<span class="w"> </span>Done
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>NOTICE:<span class="w"> </span><span class="s1">&#39;sudo&#39;</span><span class="w"> </span>packaging<span class="w"> </span>is<span class="w"> </span>maintained<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span><span class="s1">&#39;Git&#39;</span><span class="w"> </span>version<span class="w"> </span>control<span class="w"> </span>system<span class="w"> </span>at:
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>https://salsa.debian.org/sudo-team/sudo.git
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>Please<span class="w"> </span>use:
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>git<span class="w"> </span>clone<span class="w"> </span>https://salsa.debian.org/sudo-team/sudo.git
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>to<span class="w"> </span>retrieve<span class="w"> </span>the<span class="w"> </span>latest<span class="w"> </span><span class="o">(</span>possibly<span class="w"> </span>unreleased<span class="o">)</span><span class="w"> </span>updates<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>package.
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3-1+deb12u1.dsc&#39;</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3.orig.tar.gz&#39;</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3.orig.tar.gz.asc&#39;</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>Skipping<span class="w"> </span>already<span class="w"> </span>downloaded<span class="w"> </span>file<span class="w"> </span><span class="s1">&#39;sudo_1.9.13p3-1+deb12u1.debian.tar.xz&#39;</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>Need<span class="w"> </span>to<span class="w"> </span>get<span class="w"> </span><span class="m">0</span><span class="w"> </span>B<span class="w"> </span>of<span class="w"> </span><span class="nb">source</span><span class="w"> </span>archives.
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>extracting<span class="w"> </span>sudo<span class="w"> </span><span class="k">in</span><span class="w"> </span>sudo-1.9.13p3
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>unpacking<span class="w"> </span>sudo_1.9.13p3.orig.tar.gz
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>unpacking<span class="w"> </span>sudo_1.9.13p3-1+deb12u1.debian.tar.xz
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>using<span class="w"> </span>patch<span class="w"> </span>list<span class="w"> </span>from<span class="w"> </span>debian/patches/series
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>debian-bug-1039557
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>paths-in-samples.diff
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>Whitelist-DPKG_COLORS-environment-variable.diff
+<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a>dpkg-source:<span class="w"> </span>info:<span class="w"> </span>applying<span class="w"> </span>sudo-ldap-docs
 </code></pre></div>
 <h3 id="debian-dir">修改软件包源码<a class="headerlink" href="#debian-dir" title="Permanent link">&para;</a></h3>
 <p>得到的源码中除了软件包本身的代码以外，还有 <code>debian</code> 目录。这个目录包含了软件包的构建相关信息，包括 <code>control</code>、<code>changelog</code>、<code>patches/</code> 等等。</p>
@@ -2489,134 +2627,173 @@
 <div class="admonition note">
 <p class="admonition-title">补丁简介</p>
 <p>补丁是后缀为 <code>patch</code> 的文件，由 <code>diff</code> 生成。补丁有多种不同的格式：unified diff (<code>diff -u</code>)、context diff (<code>diff -c</code>) 和 normal diff（默认）。其中最常见的是 unified diff 格式，类似如下（命令为 <code>diff -u test.txt test_new.txt</code>）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gd">--- test.txt    2025-02-07 16:00:16.591987241 +0800</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="gi">+++ test_new.txt    2025-02-07 16:00:28.462299382 +0800</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gu">@@ -1 +1 @@</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="gd">-Hello, world!</span>
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="gi">+Goodbye, world!</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gd">--- test.txt    2025-02-07 16:00:16.591987241 +0800</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gi">+++ test_new.txt    2025-02-07 16:00:28.462299382 +0800</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="gu">@@ -1 +1 @@</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="gd">-Hello, world!</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="gi">+Goodbye, world!</span>
 </code></pre></div>
 <p>Git 也可以使用 <code>git diff</code> 来生成补丁，一个例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gh">diff --git a/pytorch/sync.py b/pytorch/sync.py</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gh">index 577a88f..0e6b4d8 100644</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="gd">--- a/pytorch/sync.py</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="gi">+++ b/pytorch/sync.py</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="gu">@@ -4,7 +4,7 @@ import httpx</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>from pathlib import Path
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>import os
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>import re
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="gd">-from urllib.parse import urlparse, urljoin</span>
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="gi">+from urllib.parse import urlparse, urljoin, unquote</span>
-<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a>import asyncio
-<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>import time
-<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>
-<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="gu">@@ -83,7 +83,7 @@ async def get_with_progress(client: httpx.AsyncClient, url: str):</span>
-<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a>
-<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>
-<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a>async def recursive_download(client: httpx.AsyncClient, url: str):
-<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="gd">-    path = urlparse(url).path</span>
-<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="gi">+    path = unquote(urlparse(url).path)</span>
-<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="w"> </span>   while path.startswith(&quot;/&quot;):
-<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="w"> </span>       path = path[1:]
-<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a><span class="w"> </span>   if url.endswith(&quot;/&quot;):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gh">diff --git a/pytorch/sync.py b/pytorch/sync.py</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="gh">index 577a88f..0e6b4d8 100644</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="gd">--- a/pytorch/sync.py</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="gi">+++ b/pytorch/sync.py</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="gu">@@ -4,7 +4,7 @@ import httpx</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>from pathlib import Path
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>import os
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>import re
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="gd">-from urllib.parse import urlparse, urljoin</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="gi">+from urllib.parse import urlparse, urljoin, unquote</span>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>import asyncio
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>import time
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="gu">@@ -83,7 +83,7 @@ async def get_with_progress(client: httpx.AsyncClient, url: str):</span>
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>async def recursive_download(client: httpx.AsyncClient, url: str):
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a><span class="gd">-    path = urlparse(url).path</span>
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a><span class="gi">+    path = unquote(urlparse(url).path)</span>
+<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a><span class="w"> </span>   while path.startswith(&quot;/&quot;):
+<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a><span class="w"> </span>       path = path[1:]
+<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a><span class="w"> </span>   if url.endswith(&quot;/&quot;):
 </code></pre></div>
 <p>生成的补丁可以使用 <code>patch</code> 命令应用在未打补丁的文件上：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>$<span class="w"> </span>patch<span class="w"> </span>&lt;<span class="w"> </span>test.patch
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>$<span class="w"> </span><span class="c1"># git diff 生成的 patch 开头是 a/ b/，因此需要使用 -p1 剥离这一层前缀</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>$<span class="w"> </span><span class="c1"># 当然也可以直接 git apply</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>$<span class="w"> </span>patch<span class="w"> </span>-p1<span class="w"> </span>&lt;<span class="w"> </span>git_diff.patch
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>$<span class="w"> </span>patch<span class="w"> </span>&lt;<span class="w"> </span>test.patch
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>$<span class="w"> </span><span class="c1"># git diff 生成的 patch 开头是 a/ b/，因此需要使用 -p1 剥离这一层前缀</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>$<span class="w"> </span><span class="c1"># 当然也可以直接 git apply</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>$<span class="w"> </span>patch<span class="w"> </span>-p1<span class="w"> </span>&lt;<span class="w"> </span>git_diff.patch
 </code></pre></div>
 </div>
 <p>发行版打包的软件包很多时候需要在原始代码上做一些修改（例如修复 bug，添加功能等），而补丁管理工具可以省掉一些麻烦。尽管对简单修改代码的需求来说，也可以绕过补丁系统，直接编辑，但是这会在日后升级软件版本时带来麻烦，因此这里会介绍与补丁管理有关的主题。<code>quilt</code> 是一个栈式（stack）的补丁管理工具。首先配置 <code>~/.quiltrc</code> 如下：</p>
-<div class="highlight"><span class="filename">~/.quiltrc</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="na">QUILT_PATCHES</span><span class="o">=</span><span class="s">debian/patches</span>
+<div class="highlight"><span class="filename">~/.quiltrc</span><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="na">QUILT_PATCHES</span><span class="o">=</span><span class="s">debian/patches</span>
 </code></pre></div>
 <p>之后就可以使用 quilt 查看当前目录的补丁情况：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>$<span class="w"> </span>quilt<span class="w"> </span>series
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>debian-bug-1039557
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>paths-in-samples.diff
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>Whitelist-DPKG_COLORS-environment-variable.diff
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>sudo-ldap-docs
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>$<span class="w"> </span>quilt<span class="w"> </span>applied
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>debian-bug-1039557
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>paths-in-samples.diff
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a>Whitelist-DPKG_COLORS-environment-variable.diff
-<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a>sudo-ldap-docs
-<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a>$<span class="w"> </span>quilt<span class="w"> </span>unapplied
-<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a>File<span class="w"> </span>series<span class="w"> </span>fully<span class="w"> </span>applied,<span class="w"> </span>ends<span class="w"> </span>at<span class="w"> </span>patch<span class="w"> </span>sudo-ldap-docs
-<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a>$
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>$<span class="w"> </span>quilt<span class="w"> </span>series
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>debian-bug-1039557
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>paths-in-samples.diff
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>Whitelist-DPKG_COLORS-environment-variable.diff
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>sudo-ldap-docs
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>$<span class="w"> </span>quilt<span class="w"> </span>applied
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>debian-bug-1039557
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>paths-in-samples.diff
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>Whitelist-DPKG_COLORS-environment-variable.diff
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>sudo-ldap-docs
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>$<span class="w"> </span>quilt<span class="w"> </span>unapplied
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>File<span class="w"> </span>series<span class="w"> </span>fully<span class="w"> </span>applied,<span class="w"> </span>ends<span class="w"> </span>at<span class="w"> </span>patch<span class="w"> </span>sudo-ldap-docs
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>$
 </code></pre></div>
 <p>可以看到，所有的补丁都已经被应用。可以使用 <code>quilt pop</code> 和 <code>quilt push</code> 取消/应用最底层的补丁。我们需要将我们的修改添加为新的补丁，因此：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>$<span class="w"> </span>quilt<span class="w"> </span>new<span class="w"> </span>custom-patch.diff
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>$<span class="w"> </span>quilt<span class="w"> </span>add<span class="w"> </span>src/sudo.c<span class="w">  </span><span class="c1"># 将修改前的文件 add 到 quilt 中</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>File<span class="w"> </span>src/sudo.c<span class="w"> </span>added<span class="w"> </span>to<span class="w"> </span>patch<span class="w"> </span>custom-patch.diff
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>$<span class="w"> </span><span class="c1"># 如果误操作将修改后的文件 add 了，quilt remove 即可。</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>$<span class="w"> </span>vim<span class="w"> </span>src/sudo.c<span class="w">  </span><span class="c1"># 随便做一些修改，比如在 main() 最开始用 printf() 输出一行文本</span>
-<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>$<span class="w"> </span>quilt<span class="w"> </span>refresh<span class="w">  </span><span class="c1"># 刷新补丁</span>
-<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>Refreshed<span class="w"> </span>patch<span class="w"> </span>custom-patch.diff
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>$<span class="w"> </span>quilt<span class="w"> </span>new<span class="w"> </span>custom-patch.diff
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>$<span class="w"> </span>quilt<span class="w"> </span>add<span class="w"> </span>src/sudo.c<span class="w">  </span><span class="c1"># 将修改前的文件 add 到 quilt 中</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>File<span class="w"> </span>src/sudo.c<span class="w"> </span>added<span class="w"> </span>to<span class="w"> </span>patch<span class="w"> </span>custom-patch.diff
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>$<span class="w"> </span><span class="c1"># 如果误操作将修改后的文件 add 了，quilt remove 即可。</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>$<span class="w"> </span>vim<span class="w"> </span>src/sudo.c<span class="w">  </span><span class="c1"># 随便做一些修改，比如在 main() 最开始用 printf() 输出一行文本</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>$<span class="w"> </span>quilt<span class="w"> </span>refresh<span class="w">  </span><span class="c1"># 刷新补丁</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>Refreshed<span class="w"> </span>patch<span class="w"> </span>custom-patch.diff
 </code></pre></div>
 <p>可以验证：</p>
-<div class="highlight"><span class="filename">debian/patches/custom-patch.diff</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gh">Index: sudo-1.9.13p3/src/sudo.c</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gh">===================================================================</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="gd">--- sudo-1.9.13p3.orig/src/sudo.c   2025-02-07 17:37:38.372195671 +0800</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="gi">+++ sudo-1.9.13p3/src/sudo.c    2025-02-07 17:37:50.968524513 +0800</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="gu">@@ -149,6 +149,7 @@</span>
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w"> </span>    const char * const allowed_prognames[] = { &quot;sudo&quot;, &quot;sudoedit&quot;, NULL };
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w"> </span>    sigset_t mask;
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w"> </span>    debug_decl_vars(main, SUDO_DEBUG_MAIN);
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="gi">+    printf(&quot;Hello, world!\n&quot;);</span>
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="w"> </span>    /* Only allow &quot;sudo&quot; or &quot;sudoedit&quot; as the program name. */
-<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="w"> </span>    initprogname2(argc &gt; 0 ? argv[0] : &quot;sudo&quot;, allowed_prognames);
+<div class="highlight"><span class="filename">debian/patches/custom-patch.diff</span><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gh">Index: sudo-1.9.13p3/src/sudo.c</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gh">===================================================================</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gd">--- sudo-1.9.13p3.orig/src/sudo.c   2025-02-07 17:37:38.372195671 +0800</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gi">+++ sudo-1.9.13p3/src/sudo.c    2025-02-07 17:37:50.968524513 +0800</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="gu">@@ -149,6 +149,7 @@</span>
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w"> </span>    const char * const allowed_prognames[] = { &quot;sudo&quot;, &quot;sudoedit&quot;, NULL };
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w"> </span>    sigset_t mask;
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w"> </span>    debug_decl_vars(main, SUDO_DEBUG_MAIN);
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="gi">+    printf(&quot;Hello, world!\n&quot;);</span>
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w"> </span>    /* Only allow &quot;sudo&quot; or &quot;sudoedit&quot; as the program name. */
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="w"> </span>    initprogname2(argc &gt; 0 ? argv[0] : &quot;sudo&quot;, allowed_prognames);
 </code></pre></div>
 <h4 id="changelog">更新修改记录<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h4>
 <p><code>debian/changelog</code> 文件包含了包完整的修改记录，格式类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>sudo (1.9.13p3-1+deb12u1) bookworm; urgency=medium
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>  * add upstream patch to fix event log format.
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    Thanks to Kimmo Suominen (Closes: #1039557)
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a> -- Marc Haber &lt;mh+debian-packages@zugschlus.de&gt;  Tue, 27 Jun 2023 13:45:00 +0200
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>sudo (1.9.13p3-1+deb12u1) bookworm; urgency=medium
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>  * add upstream patch to fix event log format.
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>    Thanks to Kimmo Suominen (Closes: #1039557)
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a> -- Marc Haber &lt;mh+debian-packages@zugschlus.de&gt;  Tue, 27 Jun 2023 13:45:00 +0200
 </code></pre></div>
 <p>建议使用 <code>dch</code> (<code>debchange</code>) 命令来更新这个文件，以下命令会创建一个新的版本号，并且打开编辑器以编辑修改记录：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nv">EMAIL</span><span class="o">=</span>youremail@example.com<span class="w"> </span>dch<span class="w"> </span>-i
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="nv">EMAIL</span><span class="o">=</span>youremail@example.com<span class="w"> </span>dch<span class="w"> </span>-i
 </code></pre></div>
 <p>编辑结果类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>sudo (1.9.13p3-1+deb12u1.1) UNRELEASED; urgency=medium
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>  * Non-maintainer upload.
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>  * Add &quot;Hello, world!\n&quot; in main().
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>  * Test with very simple packaging.
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a> -- yourname &lt;youremail@example.com&gt;  Fri, 07 Feb 2025 17:48:19 +0800
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>sudo (1.9.13p3-1+deb12u1.1) UNRELEASED; urgency=medium
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>  * Non-maintainer upload.
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>  * Add &quot;Hello, world!\n&quot; in main().
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>  * Test with very simple packaging.
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a> -- yourname &lt;youremail@example.com&gt;  Fri, 07 Feb 2025 17:48:19 +0800
 </code></pre></div>
 <h4 id="build">构建软件包<a class="headerlink" href="#build" title="Permanent link">&para;</a></h4>
 <p>在构建之前，我们需要确保构建需要的依赖已经安装：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>build-dep<span class="w"> </span>sudo
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>build-dep<span class="w"> </span>sudo
 </code></pre></div>
 <p>从源代码目录构建软件包的命令为 <code>dpkg-buildpackage</code>，执行以下命令即可：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>dpkg-buildpackage<span class="w"> </span>-b<span class="w"> </span>-uc<span class="w"> </span>-us
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>dpkg-buildpackage<span class="w"> </span>-b<span class="w"> </span>-uc<span class="w"> </span>-us
 </code></pre></div>
 <p><code>-b</code> 代表构建二进制包，而由于我们很明显没法签名，因此需要使用 <code>-uc</code> 和 <code>-us</code> 选项来跳过对变更（changes）与源代码包（source package）的签名。构建完成后，我们可以在上一级目录找到 <code>1.9.13p3-1+deb12u1.1</code> 这个版本的 <code>sudo</code> 的 deb 包，以及其调试符号包。</p>
 <p>可以试试安装一下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>./sudo_1.9.13p3-1+deb12u1.1_amd64.deb
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>$<span class="w"> </span>sudo<span class="w"> </span>uname
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>Hello,<span class="w"> </span>world!
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>Linux
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>./sudo_1.9.13p3-1+deb12u1.1_amd64.deb
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>$<span class="w"> </span>sudo<span class="w"> </span>uname
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>Hello,<span class="w"> </span>world!
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>Linux
 </code></pre></div>
 <p><strong>试完记得装回正常的版本哦！</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>$<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo
-<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>sudo:
-<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1
-<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1
-<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
-<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1<span class="w"> </span><span class="m">100</span>
-<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
-<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="w">     </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">990</span>
-<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
-<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span><span class="nv">sudo</span><span class="o">=</span><span class="m">1</span>.9.13p3-1+deb12u1
-<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a>Hello,<span class="w"> </span>world!
-<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a>（以下省略）
-<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a>$<span class="w"> </span>sudo<span class="w"> </span>uname
-<a id="__codelineno-36-14" name="__codelineno-36-14" href="#__codelineno-36-14"></a>Linux
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>$<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>sudo:
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="w">  </span>Candidate:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="w">  </span>Version<span class="w"> </span>table:
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="w"> </span>***<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1<span class="w"> </span><span class="m">100</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="w">        </span><span class="m">100</span><span class="w"> </span>/var/lib/dpkg/status
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="w">     </span><span class="m">1</span>.9.13p3-1+deb12u1<span class="w"> </span><span class="m">990</span>
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="w">        </span><span class="m">990</span><span class="w"> </span>http://mirrors.ustc.edu.cn/debian<span class="w"> </span>bookworm/main<span class="w"> </span>amd64<span class="w"> </span>Packages
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a>$<span class="w"> </span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span><span class="nv">sudo</span><span class="o">=</span><span class="m">1</span>.9.13p3-1+deb12u1
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a>Hello,<span class="w"> </span>world!
+<a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a>（以下省略）
+<a id="__codelineno-37-13" name="__codelineno-37-13" href="#__codelineno-37-13"></a>$<span class="w"> </span>sudo<span class="w"> </span>uname
+<a id="__codelineno-37-14" name="__codelineno-37-14" href="#__codelineno-37-14"></a>Linux
+</code></pre></div>
+<h3 id="packaging">简易软件包打包<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h3>
+<p>以上介绍了从官方源代码包中打包的过程。不过有时候，我们的需求是从零开始打包一个软件包。以下提供一些简单的例子。</p>
+<h4 id="config-package">配置类软件包<a class="headerlink" href="#config-package" title="Permanent link">&para;</a></h4>
+<p><a href="https://github.com/ustc-vlab/deb">USTC-vlab/deb</a> 是 Vlab 项目为学生虚拟机（容器）提供的一部分补充包仓库，所有的包均为简单的配置文件与脚本。</p>
+<p>这一类不需要编译操作的包目录树类似如下，<code>DEBIAN</code> 目录包含了打包后 <code>control.tar.xz</code> 的内容，剩下的内容则组成了 <code>data.tar.xz</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>.
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>├── DEBIAN
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>│   ├── control
+<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>│   ├── postinst
+<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>│   └── preinst
+<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a>└── etc
+<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a>    ├── lightdm
+<a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a>    │   └── lightdm.conf
+<a id="__codelineno-38-9" name="__codelineno-38-9" href="#__codelineno-38-9"></a>    └── vlab
+<a id="__codelineno-38-10" name="__codelineno-38-10" href="#__codelineno-38-10"></a>        ├── greeter-setup.sh
+<a id="__codelineno-38-11" name="__codelineno-38-11" href="#__codelineno-38-11"></a>        └── vncserver-lightdm
+</code></pre></div>
+<p><code>dpkg-deb --build -Z &lt;dir&gt; &lt;output_dir&gt;</code> 可以将 <code>&lt;dir&gt;</code> 目录下的内容打包为 deb 包，存储到 <code>&lt;output_dir&gt;</code> 目录中（<code>-Z</code> 压缩默认为 xz）。</p>
+<p>特别地，如果这一类软件包需要覆盖其他软件包的文件，可以使用 <code>dpkg-divert</code> 命令。例如，<code>vlab-vnc</code> 包需要覆盖 <code>lightdm</code> 的配置文件 <code>/etc/lightdm/lightdm.conf</code>，因此其在 <code>preinst</code> 中使用了以下命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>dpkg-divert<span class="w"> </span>--package<span class="w"> </span>vlab-vnc<span class="w"> </span>--divert<span class="w"> </span>/etc/lightdm/lightdm.conf.dpkg-divert<span class="w"> </span>--add<span class="w"> </span>/etc/lightdm/lightdm.conf
+</code></pre></div>
+<p>再例如，该仓库中修改后的 <code>firefox</code> 需要移除/重命名 <code>/usr/share/mate/applications/firefox.desktop</code>，因此在 <code>preinst</code> 中使用了以下命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="nv">MATE_DESKTOP</span><span class="o">=</span>/usr/share/mate/applications/firefox.desktop
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>dpkg-divert<span class="w"> </span>--rename<span class="w"> </span>--divert<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MATE_DESKTOP</span><span class="s2">&quot;</span>.dpkg-divert<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$MATE_DESKTOP</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>同时，hook 脚本在执行时的 <code>argv[1]</code> 为用户执行的操作（例如 <code>install</code>, <code>upgrade</code> 等），因此脚本中可以根据操作执行不同的命令，类似如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="k">case</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">    </span>install<span class="o">)</span>
+<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">        </span><span class="c1"># do something</span>
+<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="w">        </span><span class="p">;;</span>
+<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="w">    </span>upgrade<span class="p">|</span>abort-upgrade<span class="o">)</span>
+<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">        </span><span class="c1"># do something</span>
+<a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="w">        </span><span class="p">;;</span>
+<a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a><span class="w">    </span>*<span class="o">)</span>
+<a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a><span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;postinst called with unknown argument \`</span><span class="nv">$1</span><span class="s2">&#39;&quot;</span><span class="w"> </span>&gt;<span class="p">&amp;</span><span class="m">2</span>
+<a id="__codelineno-41-10" name="__codelineno-41-10" href="#__codelineno-41-10"></a><span class="w">        </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-41-11" name="__codelineno-41-11" href="#__codelineno-41-11"></a><span class="w">        </span><span class="p">;;</span>
+<a id="__codelineno-41-12" name="__codelineno-41-12" href="#__codelineno-41-12"></a><span class="k">esac</span>
 </code></pre></div>
 <!-- 有时，默认的编译设置并不满足实际的需求，有时，我们需要一些软件包的更新版本，但是这些版本的依赖难以满足，这时，我们可能可以尝试自己编译一个包。
 
@@ -2636,7 +2813,7 @@
 
 在源码目录下使用
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>dch<span class="w"> </span>--local<span class="w"> </span>+&lt;changed_proc&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>dch<span class="w"> </span>--local<span class="w"> </span>+&lt;changed_proc&gt;
 </code></pre></div>
 
 来自动生成版本号并且修改 changelogs
@@ -2645,13 +2822,13 @@
 
 运行
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>dpkg-buildpackage<span class="w"> </span>-us<span class="w"> </span>-uc
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>dpkg-buildpackage<span class="w"> </span>-us<span class="w"> </span>-uc
 </code></pre></div>
 
 以编译源代码并生成安装包。 -->
 
 <h2 id="repo">软件源<a class="headerlink" href="#repo" title="Permanent link">&para;</a></h2>
-<h3 id="_2">目录结构<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h3 id="_3">目录结构<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <h3 id="deb">构建一个自己的 DEB 软件源<a class="headerlink" href="#deb" title="Permanent link">&para;</a></h3>
 <!-- 可参考 https://github.com/USTC-vlab/deb -->
 
@@ -2679,25 +2856,25 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
 1. 准备工作：获得 `apt-utils` 的下载地址，并且在系统中下载。创建 /tmp/install-temp 文件夹。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>mkdir<span class="w"> </span>install-temp
-<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="nb">cd</span><span class="w"> </span>install-temp
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>wget<span class="w"> </span>http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
-<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a>
-<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="c1"># 可以观察包的内容</span>
-<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="c1"># dpkg -c apt-utils_2.7.12_amd64.deb</span>
-<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="c1"># apt-file list apt-utils # 这个命令位于 apt-file 包中</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="nb">cd</span><span class="w"> </span>/tmp
+<a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a>mkdir<span class="w"> </span>install-temp
+<a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="nb">cd</span><span class="w"> </span>install-temp
+<a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a>wget<span class="w"> </span>http://ftp.cn.debian.org/debian/pool/main/a/apt/apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-44-5" name="__codelineno-44-5" href="#__codelineno-44-5"></a>
+<a id="__codelineno-44-6" name="__codelineno-44-6" href="#__codelineno-44-6"></a><span class="c1"># 可以观察包的内容</span>
+<a id="__codelineno-44-7" name="__codelineno-44-7" href="#__codelineno-44-7"></a><span class="c1"># dpkg -c apt-utils_2.7.12_amd64.deb</span>
+<a id="__codelineno-44-8" name="__codelineno-44-8" href="#__codelineno-44-8"></a><span class="c1"># apt-file list apt-utils # 这个命令位于 apt-file 包中</span>
 </code></pre></div>
 
 2. 解包
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>ar<span class="w"> </span>-x<span class="w"> </span>apt-utils_2.7.12_amd64.deb
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="c1"># 可以使用以下命令代替</span>
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>dpkg-deb<span class="w"> </span>-R<span class="w"> </span>apt-utils_2.7.12_amd64.deb<span class="w"> </span>.
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="c1"># 注意两者结果不同，可以尝试并且观察区别</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>ar<span class="w"> </span>-x<span class="w"> </span>apt-utils_2.7.12_amd64.deb
+<a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>
+<a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="c1"># 可以使用以下命令代替</span>
+<a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a>
+<a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a>dpkg-deb<span class="w"> </span>-R<span class="w"> </span>apt-utils_2.7.12_amd64.deb<span class="w"> </span>.
+<a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a>
+<a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a><span class="c1"># 注意两者结果不同，可以尝试并且观察区别</span>
 </code></pre></div>
 
 3. 移动文件
@@ -2706,11 +2883,11 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
     这个过程其实包含在解包中。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>sudo<span class="w"> </span>tar<span class="w"> </span>xpvf<span class="w"> </span>data.tar.xf<span class="w"> </span>--directory<span class="o">=</span>/
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a>
-<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="c1"># 或者......</span>
-<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>
-<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a>sudo<span class="w"> </span>tar<span class="w"> </span>xpvf<span class="w"> </span>data.tar.xf<span class="w"> </span>--directory<span class="o">=</span>/
+<a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a>
+<a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a><span class="c1"># 或者......</span>
+<a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a>
+<a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a>sudo<span class="w"> </span>rsync<span class="w"> </span>-av<span class="w"> </span>usr<span class="w"> </span>/
 </code></pre></div>
 
 4. 在 dpkg 的辅助文件中修改为已安装
@@ -2719,7 +2896,7 @@ APT 主要功能是解析包的依赖信息，从线上（或线下）的软件�
 
     将 control.tar.xz 中的 md5sum 移动到/var/lib/dpkg/list/包名.md5sum
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>tar<span class="w"> </span>tf<span class="w"> </span>/tmp/install-temp/data.tar.xz<span class="w"> </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^.//&#39;</span><span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;s/^\/$/\/\./&#39;</span><span class="w"> </span>&gt;<span class="w"> </span>/var/lib/dpkg/list/包名.list
 </code></pre></div>
 
     这个包的结构十分简单，仅作参考用，大多数的包包含 preinst，postinst，conffiles，prerm，postrm 等附加属性，安装过程步骤比该例复杂很多，因此请慎重（不要）使用以上步骤！尽可能使用 dpkg 等工具进行包的操作。
@@ -2767,18 +2944,18 @@ apt.conf 最后被读取，拥有最高的优先级。
 
 使用 apt-cache 查看软件包相关 metadata
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>apt-cache<span class="w"> </span>show<span class="w"> </span>&lt;name&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>apt-cache<span class="w"> </span>show<span class="w"> </span>&lt;name&gt;
 </code></pre></div>
 
 使用 apt-cache 查看软件包的依赖和反向依赖
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>apt-cache<span class="w"> </span>depends<span class="w"> </span>&lt;name&gt;
-<a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a>apt-cache<span class="w"> </span>rdepends<span class="w"> </span>&lt;name&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>apt-cache<span class="w"> </span>depends<span class="w"> </span>&lt;name&gt;
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>apt-cache<span class="w"> </span>rdepends<span class="w"> </span>&lt;name&gt;
 </code></pre></div>
 
 检查未被满足的依赖，用来修复一些依赖地狱问题
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>apt-cache<span class="w"> </span>unmet
+<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>apt-cache<span class="w"> </span>unmet
 </code></pre></div>
 
 #### `/var/lib/dpkg/available`
@@ -2862,6 +3039,50 @@ apt 在遇到相同软件包时，会选择优先级最高的安装包进行安�
     
     
     
+    
+      
+  <span class="md-source-file__fact">
+    
+      
+  <span class="md-icon" title="贡献者">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </span>
+  <span>GitHub</span>
+
+    
+    <nav>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/15368?v=4&size=72" alt="github-actions[bot]">
+        </a>
+      
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
+          
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+      
+      
+        
+          <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/ops/package.md" class="md-author md-author--more">
+            +1
+          </a>
+        
+      
+    </nav>
+  </span>
+
     
   </aside>
 
