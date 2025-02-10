@@ -1367,6 +1367,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用代理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jump-host" class="md-nav__link">
     <span class="md-ellipsis">
       跳板
@@ -1858,6 +1867,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      使用代理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#jump-host" class="md-nav__link">
     <span class="md-ellipsis">
       跳板
@@ -2147,32 +2165,44 @@
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span>DynamicForward<span class="w"> </span><span class="m">1081</span>
 </code></pre></div>
 <p><code>-L</code>、<code>-R</code>、<code>-D</code> 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。</p>
+<h3 id="proxy">使用代理<a class="headerlink" href="#proxy" title="Permanent link">&para;</a></h3>
+<p>SSH 支持自定义代理命令，从而可以通过代理服务器连接目标主机。
+一个常见的用法是通过 SOCKS5 代理连接目标主机，可以借助 <code>nc</code> 命令实现<sup id="fnref:netcat-openbsd"><a class="footnote-ref" href="#fn:netcat-openbsd">1</a></sup>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>ProxyCommand<span class="w"> </span>nc<span class="w"> </span>-X<span class="w"> </span><span class="m">5</span><span class="w"> </span>-x<span class="w"> </span>proxy.example.com:1080<span class="w"> </span>%h<span class="w"> </span>%p
+</code></pre></div>
 <h3 id="jump-host">跳板<a class="headerlink" href="#jump-host" title="Permanent link">&para;</a></h3>
 <p>SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。</p>
 <p><code>ssh</code> 命令的 <code>-J</code> 选项可以指定跳板机，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ssh<span class="w"> </span>-J<span class="w"> </span>user@jumphost.example.com<span class="w"> </span>user@realhost.example.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ssh<span class="w"> </span>-J<span class="w"> </span>user@jumphost.example.com<span class="w"> </span>user@realhost.example.com
 </code></pre></div>
 <p>对应的配置文件语句是 <code>ProxyJump user@jumphost.example.com</code>。</p>
 <p>如果要给跳板机设置更多参数，如端口等，则必须使用配置文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Host<span class="w"> </span>jumphost
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>HostName<span class="w"> </span>jumphost.example.com
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>User<span class="w"> </span>jumphostuser
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span>Port<span class="w"> </span><span class="m">2333</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>Host<span class="w"> </span>realhost
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span>HostName<span class="w"> </span>realhost.example.com
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span>User<span class="w"> </span>realhostuser
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span>ProxyJump<span class="w"> </span>jumphost
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Host<span class="w"> </span>jumphost
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>HostName<span class="w"> </span>jumphost.example.com
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>User<span class="w"> </span>jumphostuser
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>Port<span class="w"> </span><span class="m">2333</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>Host<span class="w"> </span>realhost
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span>HostName<span class="w"> </span>realhost.example.com
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span>User<span class="w"> </span>realhostuser
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span>ProxyJump<span class="w"> </span>jumphost
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">跳板机需要支持 TCP 端口转发</p>
+<p>SSH 跳板机和前文所述的“<strong>本地</strong>端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。</p>
+</div>
 <h3 id="connection-reuse">高级功能：连接复用<a class="headerlink" href="#connection-reuse" title="Permanent link">&para;</a></h3>
 <p>SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。</p>
 <p>启用连接复用需要在配置文件中同时指定 <code>ControlMaster</code>、<code>ControlPath</code> 和 <code>ControlPersist</code> 三个选项（它们的默认值都是禁用或者很不友好的值）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Host<span class="w"> </span>*
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>ControlMaster<span class="w"> </span>auto
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>ControlPath<span class="w"> </span>/tmp/sshcontrol-%C
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>ControlPersist<span class="w"> </span>yes
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Host<span class="w"> </span>*
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>ControlMaster<span class="w"> </span>auto
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>ControlPath<span class="w"> </span>/tmp/sshcontrol-%C
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span>ControlPersist<span class="w"> </span>yes
 </code></pre></div>
-<p>其中 <code>%C</code> 是 <code>%l%h%p%r</code> 的 hash，因此连接不同主机的 control socket 不会冲突。<strong>但是</strong>如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 <code>git@github.com</code>），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 <code>ControlPath</code>，或者设置 <code>ControlPath=none</code> 暂时禁用连接复用功能。</p>
+<p>其中 <code>%C</code> 是 <code>%l%h%p%r</code> 的 hash，因此连接不同主机的 control socket 不会冲突。
+<strong>但是</strong>如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 <code>git@github.com</code>），由于没有新建连接的过程，你指定的公钥并不会生效。
+解决此问题的方法是再单独指定另一个 <code>ControlPath</code>，或者设置 <code>ControlPath=none</code> 暂时禁用连接复用功能。</p>
 <h2 id="_1">文件传输<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。</p>
 <div class="admonition tip">
@@ -2183,35 +2213,38 @@
 <h3 id="scp">SCP<a class="headerlink" href="#scp" title="Permanent link">&para;</a></h3>
 <p>SCP 是基于 SSH (Secure Shell) 协议的文件传输工具，它允许用户在本地和远程主机之间安全地复制文件。SCP 使用 SSH 进行数据传输，提供同 SSH 相同级别的安全性，包括数据加密和用户认证。</p>
 <p>SCP 命令的基本语法如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>scp<span class="w"> </span><span class="o">[</span>选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>源文件<span class="o">]</span><span class="w"> </span><span class="o">[</span>目标文件<span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>scp<span class="w"> </span><span class="o">[</span>选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>源文件<span class="o">]</span><span class="w"> </span><span class="o">[</span>目标文件<span class="o">]</span>
 </code></pre></div>
 <p>其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 <code>用户名@主机名:文件路径</code>。</p>
 <h4 id="_2">文件复制<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
 <p>从本地复制到远程服务器</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>scp<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>scp<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 <p>或从远程服务器复制到本地</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>scp<span class="w"> </span>username@remotehost:/path/to/remote/file<span class="w"> </span>/path/to/local/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>scp<span class="w"> </span>username@remotehost:/path/to/remote/file<span class="w"> </span>/path/to/local/directory
 </code></pre></div>
 <p>这个命令会提示您输入远程主机上用户的密码，除非您已经设置了 SSH 密钥认证。</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>你可以一次性传输多个文件或目录，将它们作为源路径的参数。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>scp<span class="w"> </span>file1.txt<span class="w"> </span>file2.txt<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>scp<span class="w"> </span>file1.txt<span class="w"> </span>file2.txt<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 </div>
+<p>或者经过本地流量中转，在两个远程主机之间复制文件</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>scp<span class="w"> </span>username1@remotehost1:/path/to/remote/file<span class="w"> </span>username2@remotehost2:/path/to/remote/directory
+</code></pre></div>
 <h4 id="_3">常用参数<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
 <dl>
 <dt>复制目录</dt>
 <dd>
 <p>如果需要复制整个目录，需要使用 <code>-r</code> 选项，这表示递归复制：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>scp<span class="w"> </span>-r<span class="w"> </span>/path/to/local/directory<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>scp<span class="w"> </span>-r<span class="w"> </span>/path/to/local/directory<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 </dd>
 <dt>使用非标准端口</dt>
 <dd>
-<p>如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 <code>-P</code> 选项指定端口：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>scp<span class="w"> </span>-P<span class="w"> </span><span class="m">2222</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<p>如果远程主机的 SSH 服务运行在非标准端口（22），则可以使用 <code>-P</code> 选项指定端口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>scp<span class="w"> </span>-P<span class="w"> </span><span class="m">2222</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -2221,34 +2254,44 @@
 <dt>限制带宽</dt>
 <dd>
 <p>使用 <code>-l</code> 选项可以限制 SCP 使用的带宽，单位是 <code>Kbit/s</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>scp<span class="w"> </span>-l<span class="w"> </span><span class="m">1024</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>scp<span class="w"> </span>-l<span class="w"> </span><span class="m">1024</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 </dd>
 <dt>保留文件属性</dt>
 <dd>
 <p><code>-p</code> 选项可以保留原文件的修改时间和访问权限：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>scp<span class="w"> </span>-p<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>scp<span class="w"> </span>-p<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 </dd>
 <dt>开启压缩</dt>
 <dd>
 <p>使用 <code>-C</code> 选项开启压缩，可以减少传输数据量并提升传输速度，特别对于文本文件效果显著。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>scp<span class="w"> </span>-C<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>scp<span class="w"> </span>-C<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
+<p>此选项等价于 <code>ssh</code> 的 <code>-C</code> 选项，即在 SSH 层面开启压缩，并非 SCP 协议层面的压缩。</p>
 <p>你也可以在 SSH 客户端配置文件中为 <code>Host remotehost</code> 指定 <code>Compression yes</code>，这样就不需要每次在命令行中启用压缩了。</p>
 </div>
 </dd>
 </dl>
+<div class="admonition tip">
+<p class="admonition-title">现代的 <code>scp</code> 命令已经默认使用 SFTP 协议</p>
+<p>从 OpenSSH 9.0 开始，<code>scp</code> 命令已经默认使用 SFTP 协议进行文件传输，而不再使用旧的 SCP 协议。对于一些不支持 SFTP 的远程主机（如使用 dropbear 的嵌入式设备或上古版本的 SSH 服务端等），这可能会导致问题，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>/usr/libexec/sftp-server: No such file or directory
+</code></pre></div>
+<p>如果你需要使用旧的 SCP 协议，可以使用 <code>-O</code> 选项：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>scp<span class="w"> </span>-O<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
+</code></pre></div>
+</div>
 <h3 id="sftp">SFTP<a class="headerlink" href="#sftp" title="Permanent link">&para;</a></h3>
 <p>SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。</p>
 <h4 id="sftp_1">启动 SFTP 会话<a class="headerlink" href="#sftp_1" title="Permanent link">&para;</a></h4>
 <p>要连接到远程服务器，可以使用以下命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>sftp<span class="w"> </span>username@remotehost
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>sftp<span class="w"> </span>username@remotehost
 </code></pre></div>
 <p>如果远程服务器的 SSH 服务使用的不是默认端口（22），可以使用 <code>-P</code> 选项指定端口：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>sftp<span class="w"> </span>-P<span class="w"> </span><span class="m">2233</span><span class="w"> </span>username@remotehost
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>sftp<span class="w"> </span>-P<span class="w"> </span><span class="m">2233</span><span class="w"> </span>username@remotehost
 </code></pre></div>
 <h4 id="_4">文件和目录操作<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
 <ul>
@@ -2269,10 +2312,10 @@
 <div class="admonition 使用脚本进行自动化操作">
 <p class="admonition-title">使用脚本进行自动化操作</p>
 <p>通过创建一个包含 SFTP 命令的批处理文件，你可以 让SFTP 会话自动执行这些命令。例如，你可以创建一个文件 <code>upload.txt</code>，其中包含以下内容：</p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>put<span class="w"> </span>file1.txt
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>put<span class="w"> </span>file2.jpg
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>put<span class="w"> </span>file3.pdf
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>quit
+<p><div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>put<span class="w"> </span>file1.txt
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>put<span class="w"> </span>file2.jpg
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>put<span class="w"> </span>file3.pdf
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>quit
 </code></pre></div>
 然后使用命令 <code>sftp -b upload.txt username@remotehost</code> 来自动上传文件。</p>
 </div>
@@ -2304,6 +2347,7 @@
 <dt><code>no-port-forwarding</code>, <code>no-X11-forwarding</code>, <code>no-agent-forwarding</code>, <code>no-pty</code>, <code>no-user-rc</code></dt>
 <dd>
 <p>禁止对应的功能。这些选项可以用于限制公钥的功能，例如禁止各种转发和使用终端等。</p>
+<p>特别地，禁止 TCP 端口转发之后，该公钥也不能用于将本机作为跳板机登录其他机器（即 <code>-J</code> 参数或 <code>ProxyJump</code> 配置项）。</p>
 </dd>
 <dt><code>restrict</code></dt>
 <dd>
@@ -2315,39 +2359,39 @@
 <p>完整的选项列表可以在 <a href="https://linux.die.net/man/8/sshd">sshd(8)</a> 的 <code>AUTHORIZED_KEYS FILE FORMAT</code> 部分找到。</p>
 <details class="example">
 <summary>案例：用于备份 LUG FTP 的公钥配置</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>restrict,from<span class="o">=</span><span class="s2">&quot;192.0.2.2&quot;</span>,command<span class="o">=</span><span class="s2">&quot;/usr/bin/rrsync -ro /mnt/lugftp&quot;</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>restrict,from<span class="o">=</span><span class="s2">&quot;192.0.2.2&quot;</span>,command<span class="o">=</span><span class="s2">&quot;/usr/bin/rrsync -ro /mnt/lugftp&quot;</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
 </code></pre></div>
 </details>
 <h2 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h2>
 <p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中，出现在这两个块中的 <code>Include</code> 会被视作条件包含。因此一个（不太常见的）坑是：</p>
 <details class="failure">
 <summary>错误写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
 <details class="success">
 <summary>正确写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>Match<span class="w"> </span>all
-<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>Match<span class="w"> </span>all
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>更加推荐的写法是将 <code>Include</code> 放在配置文件开头：</p>
 <div class="admonition success">
 <p class="admonition-title">推荐写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>Host<span class="w"> </span>example
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">  </span>User<span class="w"> </span>user
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>Host<span class="w"> </span>example
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">  </span>User<span class="w"> </span>user
 </code></pre></div>
 </div>
 <h2 id="traps">一些坑点<a class="headerlink" href="#traps" title="Permanent link">&para;</a></h2>
@@ -2390,6 +2434,15 @@
 
 <!-- markdownlint-disable-file MD041 MD053 -->
 
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:netcat-openbsd">
+<p>需要使用 OpenBSD 版本的 <code>nc</code> 命令，如 <code>apt install netcat-openbsd</code>。&#160;<a class="footnote-backref" href="#fnref:netcat-openbsd" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
 
 
 
@@ -2428,6 +2481,11 @@
     
     <nav>
       
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
@@ -2441,11 +2499,6 @@
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
