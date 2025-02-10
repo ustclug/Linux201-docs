@@ -783,6 +783,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Rsync">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rsync-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件传输
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      镜像同步
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1680,6 +1704,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Rsync">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rsync-transfer" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件传输
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      镜像同步
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1717,8 +1765,48 @@
 <li>使用诸如 <a href="https://duplicity.gitlab.io/">Duplicity</a>、<a href="https://www.borgbackup.org/">BorgBackup</a> 等备份工具。</li>
 <li>特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 <a href="https://proxmox.com/en/products/proxmox-backup-server/overview">Proxmox Backup Server</a>。</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">单纯的快照与 RAID 都不是备份</p>
+<p>快照是文件系统的特性，如果文件系统损坏，那么快照就都无法正常读取。而 RAID 只能在硬盘故障数量小于对应等级限制时才能保证数据完整性，无法防止在诸如误删除、自然灾害等情况下数据的丢失与损坏。</p>
+</div>
 <p>以下介绍一部分相关的工具。</p>
 <h2 id="rsync">Rsync<a class="headerlink" href="#rsync" title="Permanent link">&para;</a></h2>
+<p>Rsync 是最常用的文件同步工具之一，支持本地复制和远程复制。相比于 <code>cp</code>（本地）和 <code>scp</code>（SSH 远程），<code>rsync</code> 可以做到增量复制，只复制文件中发生变化的部分，并且能够保留文件完整的元数据信息。Rsync 也是从镜像站点同步完整镜像的事实标准。</p>
+<h3 id="rsync-transfer">文件传输<a class="headerlink" href="#rsync-transfer" title="Permanent link">&para;</a></h3>
+<p>最常用的命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>--delete<span class="w"> </span>/path/to/source<span class="w"> </span>/path/to/destination
+</code></pre></div>
+<p>其中 <code>-a</code> 代表归档模式，即 <code>-rlptgoD</code> 这几个参数的集合，分别代表：</p>
+<ul>
+<li><code>r</code>: 递归复制目录</li>
+<li><code>l</code>: 保留符号链接</li>
+<li><code>p</code>: 保留文件权限</li>
+<li><code>t</code>: 保留修改时间（mtime）</li>
+<li><code>g</code>: 保留 group 信息</li>
+<li><code>o</code>: 保留 owner 信息</li>
+<li><code>D</code>: 保留设备文件与特殊文件</li>
+</ul>
+<p><code>-v</code> 代表详细输出，<code>-P</code> 代表保留传输一部分的文件且显示进度，<code>--delete</code> 代表删除目标目录中源目录没有的文件。以下提供一些参考示例。</p>
+<p>将 <code>/A</code> 文件复制到 <code>/tmp/A</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/A
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># 或者</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/
+</code></pre></div>
+<p>将 <code>/etc</code> 文件夹复制为/复制到 <code>/tmp/example</code>。区别在 source 的结尾是否有 <code>/</code>，如果没有的话，源文件夹就会<strong>作为一个整体</strong>复制到目标文件夹内；否则如果有 <code>/</code>，源文件夹内的<strong>内容</strong>会被复制到目标文件夹内。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc<span class="w"> </span>/tmp/example1
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example1/etc/passwd</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc/<span class="w"> </span>/tmp/example2
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example2/passwd</span>
+</code></pre></div>
+<p>作为 <code>scp</code> 的高效替代，<code>rsync</code> 也支持基于 SSH 的远程复制（远程服务器也需要安装 rsync）。可以使用 <code>-z</code> 开启压缩，以 CPU 为代价减小传输量。<code>rsync</code> 对增量复制的支持允许了「断点续传」的功能，在网络情况欠佳的时候尤其有用。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>/path/to/source<span class="w"> </span>user@remote:/path/to/destination
+</code></pre></div>
+<p>如果远程服务器需要特殊的 <code>ssh</code> 参数（例如端口），并且不想修改 <code>~/.ssh/config</code>，可以使用 <code>-e</code> 参数：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;ssh -p 2222&quot;</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
+</code></pre></div>
+<h3 id="rsync-mirror">镜像同步<a class="headerlink" href="#rsync-mirror" title="Permanent link">&para;</a></h3>
+<p>Rsync 同时也可以作为服务端对外提供 rsync 服务，默认端口为 TCP 873。</p>
 <!--
   Links to man pages
 
