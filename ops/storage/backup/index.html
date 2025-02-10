@@ -768,6 +768,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#intro" class="md-nav__link">
+    <span class="md-ellipsis">
+      简介
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rsync" class="md-nav__link">
     <span class="md-ellipsis">
       Rsync
@@ -1656,6 +1665,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#intro" class="md-nav__link">
+    <span class="md-ellipsis">
+      简介
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rsync" class="md-nav__link">
     <span class="md-ellipsis">
       Rsync
@@ -1687,6 +1705,19 @@
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
 </div>
+<h2 id="intro">简介<a class="headerlink" href="#intro" title="Permanent link">&para;</a></h2>
+<p>备份是保障数据安全的重要手段。在理想情况下，备份应做到 3-2-1 原则：三份文件的副本，其中两份存储在不同的设备上，另一份远程存储。</p>
+<p>一般来讲，管理员需要设置定时任务（使用 crontab 或者 <a href="../../service/#timers">systemd timer</a>），在任务中调用备份数据的命令来实现备份。常见的方法包括：</p>
+<ul>
+<li>使用 <code>tar</code> 归档数据目录。</li>
+<li>使用 <code>rsync</code> 同步数据目录。</li>
+<li>使用数据库的 dump 工具（例如 <code>mysqldump</code>）备份数据库。</li>
+<li>使用 <a href="../filesystem/#btrfs-snapshot">Btrfs</a> 或 ZFS 的快照与 send/receive 功能。</li>
+<li>使用 <code>rclone</code> 同步到云存储（例如 OneDrive、S3 对象存储等）。</li>
+<li>使用诸如 <a href="https://duplicity.gitlab.io/">Duplicity</a>、<a href="https://www.borgbackup.org/">BorgBackup</a> 等备份工具。</li>
+<li>特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 <a href="https://proxmox.com/en/products/proxmox-backup-server/overview">Proxmox Backup Server</a>。</li>
+</ul>
+<p>以下介绍一部分相关的工具。</p>
 <h2 id="rsync">Rsync<a class="headerlink" href="#rsync" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
