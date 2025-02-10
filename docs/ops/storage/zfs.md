@@ -148,9 +148,13 @@ zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一�
 
 ## ZFS 数据集（dataset） {#dataset}
 
-### ZFS 文件系统 {#tuning-zfs}
+在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol[^datasets]。
 
-ZFS（文件系统）层面的参数可以通过 `zfs set` 命令进行调整，语法与 `zpool set` 类似。以下是一些推荐修改的参数：
+ZFS dataset 层面的参数可以通过 `zfs set` 命令进行调整，语法与 `zpool set` 类似。
+
+### ZFS 文件系统 {#zfs-filesystem}
+
+以下是一些推荐/经常修改的参数：
 
 - `xattr=sa`：将文件的扩展属性（如 POSIX ACL 和 SELinux 标签等）存储在 dnode 中（类似其他文件系统的 inode），而不是独立的“文件”中。对于经常使用扩展属性的应用场景（如 Samba），使用 `xattr=sa` 可以减少磁盘 I/O，提高性能。
 
@@ -312,6 +316,10 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 
 因此此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
 如果你仍然认为 L2ARC 有用，我们则建议你在使用 ZFS 一段时间后，根据 `arc_summary` 的输出来决定是否真的需要 L2ARC。
+
+## 快照 {#snapshot}
+
+### 发送与接收 {#send-receive}
 
 ## ZFS 内核模块参数 {#zfs-ko}
 
@@ -522,6 +530,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 <!-- markdownlint-disable MD053 -->
 
   [^uuu1804]: Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`，但更重要的是，我们**不推荐使用已经 EOL 的发行版**。
+  [^datasets]: 实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。
 
   [cks]: https://utcc.utoronto.ca/~cks/space/blog/
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz

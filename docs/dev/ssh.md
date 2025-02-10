@@ -137,6 +137,18 @@ Host example
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
 
+### 使用代理 {#proxy}
+
+SSH 支持自定义代理命令，从而可以通过代理服务器连接目标主机。
+一个常见的用法是通过 SOCKS5 代理连接目标主机，可以借助 `nc` 命令实现[^netcat-openbsd]：
+
+```shell
+Host example
+  ProxyCommand nc -X 5 -x proxy.example.com:1080 %h %p
+```
+
+  [^netcat-openbsd]: 需要使用 OpenBSD 版本的 `nc` 命令，如 `apt install netcat-openbsd`。
+
 ### 跳板 {#jump-host}
 
 SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。
@@ -163,6 +175,10 @@ Host realhost
   ProxyJump jumphost
 ```
 
+!!! note "跳板机需要支持 TCP 端口转发"
+
+    SSH 跳板机和前文所述的“**本地**端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。
+
 ### 高级功能：连接复用 {#connection-reuse}
 
 SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
@@ -176,7 +192,9 @@ Host *
   ControlPersist yes
 ```
 
-其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。**但是**如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
+其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。
+**但是**如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效。
+解决此问题的方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
 
 ## 文件传输
 
@@ -224,6 +242,12 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
     scp file1.txt file2.txt username@remotehost:/path/to/remote/directory
     ```
 
+或者经过本地流量中转，在两个远程主机之间复制文件
+
+```shell
+scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/remote/directory
+```
+
 #### 常用参数
 
 复制目录
@@ -236,7 +260,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 
 使用非标准端口
 
-:   如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 `-P` 选项指定端口：
+:   如果远程主机的 SSH 服务运行在非标准端口（22），则可以使用 `-P` 选项指定端口：
 
     ```shell
     scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
@@ -272,7 +296,23 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 
     !!! tip
 
+        此选项等价于 `ssh` 的 `-C` 选项，即在 SSH 层面开启压缩，并非 SCP 协议层面的压缩。
+
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Compression yes`，这样就不需要每次在命令行中启用压缩了。
+
+!!! tip "现代的 `scp` 命令已经默认使用 SFTP 协议"
+
+    从 OpenSSH 9.0 开始，`scp` 命令已经默认使用 SFTP 协议进行文件传输，而不再使用旧的 SCP 协议。对于一些不支持 SFTP 的远程主机（如使用 dropbear 的嵌入式设备或上古版本的 SSH 服务端等），这可能会导致问题，例如：
+
+    ```text
+    /usr/libexec/sftp-server: No such file or directory
+    ```
+
+    如果你需要使用旧的 SCP 协议，可以使用 `-O` 选项：
+
+    ```shell
+    scp -O /path/to/local/file username@remotehost:/path/to/remote/directory
+    ```
 
 ### SFTP
 
@@ -356,6 +396,8 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 `no-port-forwarding`, `no-X11-forwarding`, `no-agent-forwarding`, `no-pty`, `no-user-rc`
 
 :   禁止对应的功能。这些选项可以用于限制公钥的功能，例如禁止各种转发和使用终端等。
+
+    特别地，禁止 TCP 端口转发之后，该公钥也不能用于将本机作为跳板机登录其他机器（即 `-J` 参数或 `ProxyJump` 配置项）。
 
 `restrict`
 
