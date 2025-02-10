@@ -305,6 +305,8 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
 本节介绍使用 `perf` 等工具进行基础的性能问题分析的方式。`perf` 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 `linux-perf`。
 
+`perf` 的功能非常丰富，以下仅能介绍一小部分功能。
+
 ### 火焰图 {#flamegraph}
 
 火焰图是最常用的用于分析程序性能的图表之一，它可以直观地展示程序中函数的调用关系与耗时。生成的 SVG 文件可以使用浏览器打开并交互。
@@ -354,6 +356,10 @@ FlameGraph/stackcollapse-perf.pl out.perf > out.folded
 FlameGraph/flamegraph.pl out.folded > out.svg
 ```
 
+!!! tip "`perf report`"
+
+    `perf.data` 文件也可以使用 TUI 的 `perf report` 命令查看。`perf report` 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。
+
 注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。
 
 !!! comment "@taoky: 快速生成火焰图"
@@ -363,6 +369,71 @@ FlameGraph/flamegraph.pl out.folded > out.svg
     ```shell
     flamegraph -p 12345
     ```
+
+### 获取硬件计数器统计信息 {#hardware-counter}
+
+`perf stat` 命令可以获取硬件计数器的统计信息，帮助了解程序的性能瓶颈：
+
+```console
+$ perf stat uname
+Linux
+
+ Performance counter stats for 'uname':
+
+              1.34 msec task-clock:u                     #    0.537 CPUs utilized
+                 0      context-switches:u               #    0.000 /sec
+                 0      cpu-migrations:u                 #    0.000 /sec
+                67      page-faults:u                    #   50.119 K/sec
+           228,089      cpu_atom/instructions/u          #    0.75  insn per cycle              (67.70%)
+     <not counted>      cpu_core/instructions/u                                                 (0.00%)
+           305,397      cpu_atom/cycles/u                #    0.228 GHz
+     <not counted>      cpu_core/cycles/u                                                       (0.00%)
+            41,051      cpu_atom/branches/u              #   30.708 M/sec
+     <not counted>      cpu_core/branches/u                                                     (0.00%)
+             3,065      cpu_atom/branch-misses/u         #    7.47% of all branches
+     <not counted>      cpu_core/branch-misses/u                                                (0.00%)
+             TopdownL1 (cpu_atom)                 #     50.3 %  tma_bad_speculation
+                                                  #     16.1 %  tma_retiring
+             TopdownL1 (cpu_atom)                 #      0.0 %  tma_backend_bound
+                                                  #     33.7 %  tma_frontend_bound
+
+       0.002489347 seconds time elapsed
+
+       0.000000000 seconds user
+       0.002576000 seconds sys
+```
+
+根据 CPU 架构的不同，`perf stat` 默认显示的计数器信息也会存在区别。以上命令是在一台运行 Intel 12 代 i5 CPU 的机器上运行的，因此其包含了一些特殊的计数器信息：
+
+- 大小核（core & atom）的计数器信息。
+- `tma`：Topdown Microarchitecture Analysis，Intel 提供的用于分析 CPU 的性能瓶颈的方法。
+    - 有关使用 `perf` 利用 TMA 方法分析程序的步骤，可参考 <https://perfwiki.github.io/main/top-down-analysis/>。
+
+用户也可以指定感兴趣的计数器，例如以下命令会显示 CPU 运行程序的时钟周期、命令数、缓存命中与失效信息：
+
+```shell
+$ perf stat -e cycles,instructions,cache-references,cache-misses stress -c 1 -m 1 -t 5
+stress: info: [1968709] dispatching hogs: 1 cpu, 0 io, 1 vm, 0 hdd
+stress: info: [1968709] successful run completed in 5s
+
+ Performance counter stats for 'stress -c 1 -m 1 -t 5':
+
+     5,988,155,941      cpu_atom/cycles/u                                                       (22.77%)
+     6,878,171,900      cpu_core/cycles/u                                                       (92.90%)
+     6,948,484,803      cpu_atom/instructions/u          #    1.16  insn per cycle              (22.77%)
+     7,087,148,185      cpu_core/instructions/u          #    1.03  insn per cycle              (92.90%)
+         6,294,530      cpu_atom/cache-references/u                                             (22.77%)
+         1,730,791      cpu_core/cache-references/u                                             (92.90%)
+         6,225,141      cpu_atom/cache-misses/u          #   98.90% of all cache refs           (22.77%)
+         1,593,046      cpu_core/cache-misses/u          #   92.04% of all cache refs           (92.90%)
+
+       5.002407973 seconds time elapsed
+
+       5.639733000 seconds user
+       4.324169000 seconds sys
+```
+
+可以查看 [perf-stat(1)][perf-stat.1] 了解如何获取可用的计数器的列表。
 
 ## eBPF
 
@@ -582,6 +653,13 @@ example(1023, 1024)
 
 ## 补充阅读 {#supplement}
 
+### 书籍 {#supplement-books}
+
+- [*Performance Analysis and Tuning on Modern CPU*](https://github.com/dendibakh/perf-book/)：非常详细的关于程序性能优化的书籍，同时其练习实验 [perf-ninja](https://github.com/dendibakh/perf-ninja) 也值得一看。
+- [*Systems Performance: Enterprise and the Cloud*](https://www.brendangregg.com/systems-performance-2nd-edition-book.html)：著名的系统性能分析专家 Brendan Gregg 撰写的关于系统性能分析的书籍，内容涵盖了从硬件到软件的各个方面。
+
+### 站点 {#supplement-sites}
+
 - [Linux debugging, profiling and tracing training Course by bootlin](https://bootlin.com/doc/training/debugging/)：Bootlin 公司提供的 Linux 调试等有关的资料，包括 slides 和练习实验
-- [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：著名的系统性能分析专家 Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
+- [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
 - [Linux Crisis Tools](https://www.brendangregg.com/blog/2024-03-24/linux-crisis-tools.html)：Brendan Gregg 整理的 Linux 应急响应工具集列表，建议在服务器上预先安装

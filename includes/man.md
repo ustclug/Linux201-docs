@@ -9,6 +9,7 @@
 <!-- man 1 -->
 
 [git-bisect.1]: https://git-scm.com/docs/git-bisect
+[perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
 
 <!-- man 4 -->
 
