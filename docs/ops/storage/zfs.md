@@ -298,8 +298,7 @@ arc_summary | less
 
     一个粗略（但不一定准确）的理解是：如果瞬间产生了多个请求要读取同一个数据块，那么其中一个请求会产生一次 ARC miss，而其他请求都会产生 ARC I/O hit。
 
-  [^cks:ZFSUnderstandingARCHits]: Chris's Wiki: [Understanding ZFS ARC hit (and miss) kstat statistics][cks:ZFSUnderstandingARCHits]
-  [cks:ZFSUnderstandingARCHits]: https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.
+  [cks:ZFSUnderstandingARCHits]: <https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it>.
 
 如果你需要一个类似 `iostat` 这样能够持续输出 ARC 统计信息的工具，可以考察一下 `arcstat`（`zfsutils-linux`）。
 
