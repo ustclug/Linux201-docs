@@ -2179,7 +2179,7 @@
 </div>
 </li>
 <li>
-<p>Ubuntu 自 20.04 LTS 起提供预编译好的 <code>zfs.ko</code>（软件包 <code>linux-modules-$(uname -r)</code>），因此无需再安装 <code>zfs-dkms</code><sup id="fnref:uuu1804"><a class="footnote-ref" href="#fn:uuu1804">2</a></sup>。</p>
+<p>Ubuntu 自 20.04 LTS 起提供预编译好的 <code>zfs.ko</code>（软件包 <code>linux-modules-$(uname -r)</code>），因此无需再安装 <code>zfs-dkms</code><sup id="fnref:uuu1804"><a class="footnote-ref" href="#fn:uuu1804">1</a></sup>。</p>
 </li>
 </ul>
 <p>不论是 Debian 还是 Ubuntu，都需要安装 <code>zfsutils-linux</code> 软件包，以便使用 ZFS 的命令行工具。</p>
@@ -2275,7 +2275,7 @@
 <li><code>bootfs=pool0/ROOT/debian</code>：如果你使用 root on ZFS，该参数是常见的 grub 配置及 initramfs 生成脚本所需的参数。</li>
 </ul>
 <h2 id="dataset">ZFS 数据集（dataset）<a class="headerlink" href="#dataset" title="Permanent link">&para;</a></h2>
-<p>在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol<sup id="fnref:datasets"><a class="footnote-ref" href="#fn:datasets">3</a></sup>。</p>
+<p>在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol<sup id="fnref:datasets"><a class="footnote-ref" href="#fn:datasets">2</a></sup>。</p>
 <p>ZFS dataset 层面的参数可以通过 <code>zfs set</code> 命令进行调整，语法与 <code>zpool set</code> 类似。</p>
 <h3 id="zfs-filesystem">ZFS 文件系统<a class="headerlink" href="#zfs-filesystem" title="Permanent link">&para;</a></h3>
 <p>以下是一些推荐/经常修改的参数：</p>
@@ -2382,7 +2382,7 @@ ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参�
 <details class="question">
 <summary>I/O hit 是什么</summary>
 <p>OpenZFS 2.2 新增了一类更加具体的统计数据，即 ARC I/O hit。
-这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据<sup id="fnref:cks:ZFSUnderstandingARCHits"><a class="footnote-ref" href="#fn:cks:ZFSUnderstandingARCHits">1</a></sup>。</p>
+这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据<sup id="fnref:cks-ZFSUnderstandingARCHits"><a class="footnote-ref" href="#fn:cks-ZFSUnderstandingARCHits">3</a></sup>。</p>
 <p>一个粗略（但不一定准确）的理解是：如果瞬间产生了多个请求要读取同一个数据块，那么其中一个请求会产生一次 ARC miss，而其他请求都会产生 ARC I/O hit。</p>
 </details>
 <p>如果你需要一个类似 <code>iostat</code> 这样能够持续输出 ARC 统计信息的工具，可以考察一下 <code>arcstat</code>（<code>zfsutils-linux</code>）。</p>
@@ -2706,14 +2706,14 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <div class="footnote">
 <hr />
 <ol>
-<li id="fn:cks:ZFSUnderstandingARCHits">
-<p>Chris's Wiki: <a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.">Understanding ZFS ARC hit (and miss) kstat statistics</a>&#160;<a class="footnote-backref" href="#fnref:cks:ZFSUnderstandingARCHits" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
 <li id="fn:uuu1804">
-<p>Ubuntu 18.04 LTS 及之前的版本仍然需要安装 <code>zfs-dkms</code>，但更重要的是，我们<strong>不推荐使用已经 EOL 的发行版</strong>。&#160;<a class="footnote-backref" href="#fnref:uuu1804" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+<p>Ubuntu 18.04 LTS 及之前的版本仍然需要安装 <code>zfs-dkms</code>，但更重要的是，我们<strong>不推荐使用已经 EOL 的发行版</strong>。&#160;<a class="footnote-backref" href="#fnref:uuu1804" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
 <li id="fn:datasets">
-<p>实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。&#160;<a class="footnote-backref" href="#fnref:datasets" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。&#160;<a class="footnote-backref" href="#fnref:datasets" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:cks-ZFSUnderstandingARCHits">
+<p>Chris's Wiki: <a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.">Understanding ZFS ARC hit (and miss) kstat statistics</a>&#160;<a class="footnote-backref" href="#fnref:cks-ZFSUnderstandingARCHits" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:acct-128k">
 <p>Mike Gerdts (2019) <a href="https://github.com/illumos/illumos-gate/blob/b73ccab03ec36581b1ae5945ef1fee1d06c79ccf/usr/src/lib/libzfs/common/libzfs_dataset.c#L5118">(Code comment in <code>libzfs_dataset.c</code>)</a>&#160;<a class="footnote-backref" href="#fnref:acct-128k" title="Jump back to footnote 4 in the text">&#8617;</a></p>
