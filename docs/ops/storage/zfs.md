@@ -257,9 +257,10 @@ zfs set refreservation=none tank/vol
 
 ## ARC {#arc}
 
-ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
-
-由于 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。ZFS ARC 允许使用的最大内存量可以通过 `zfs_arc_max` 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：
+ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。
+所有的读取操作都会经过 ARC，不论是已经在 ARC 中被缓存的数据，还是需要从磁盘读出来的数据，都会经由 ARC 返回给上层应用程序。
+结合 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。
+ZFS ARC 允许使用的最大内存量可以通过 `zfs_arc_max` 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：
 
 ```shell
 # Set ARC memory limit to 4 GiB
@@ -282,11 +283,25 @@ echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
     - 较新的 ZFS 版本会限制每次 reclaim 操作的页数，这项限制由 `zfs_arc_shrinker_limit` 参数控制，默认为 10000。如果需要强制释放 ARC，需要将该参数设置为 0，否则[可能不能起到预期的效果](https://github.com/openzfs/zfs/issues/12810)。
     - 这会短暂地增加磁盘的读取压力。
 
+ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。
+
 ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 `/proc/spl/kstat/zfs/arcstats` 查看，并且 ZFS 也提供了 `arc_summary` 命令将该接口的数据以更易读的方式输出。由于 `arc_summary` 输出量较大，建议使用 less 等分页工具查看。例如：
 
 ```shell
 arc_summary | less
 ```
+
+??? question "I/O hit 是什么"
+
+    OpenZFS 2.2 新增了一类更加具体的统计数据，即 ARC I/O hit。
+    这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据[^cks:ZFSUnderstandingARCHits]。
+
+    一个粗略（但不一定准确）的理解是：如果瞬间产生了多个请求要读取同一个数据块，那么其中一个请求会产生一次 ARC miss，而其他请求都会产生 ARC I/O hit。
+
+  [^cks:ZFSUnderstandingARCHits]: Chris's Wiki: [Understanding ZFS ARC hit (and miss) kstat statistics][cks:ZFSUnderstandingARCHits]
+  [cks:ZFSUnderstandingARCHits]: https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.
+
+如果你需要一个类似 `iostat` 这样能够持续输出 ARC 统计信息的工具，可以考察一下 `arcstat`（`zfsutils-linux`）。
 
 !!! lab "追踪每个进程的 ARC 命中率"
 
@@ -311,15 +326,27 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 
 !!! abstract "USTC 镜像站上的 ARC 配置"
 
-    USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
-    这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。
+    USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 99%，而 L2ARC 的命中率仅有约 35%。
+    这意味着 L2ARC 仅仅将综合命中率从 99.2% 提升到 99.5%，对于降低机械硬盘的负载效果并不明显。
 
-因此此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
+因此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
 如果你仍然认为 L2ARC 有用，我们则建议你在使用 ZFS 一段时间后，根据 `arc_summary` 的输出来决定是否真的需要 L2ARC。
+
+作为总结，以下是一个简单的 ZFS 读取流程：
+
+1. （收到应用程序的读取请求）
+2. 检查数据是否已在 ARC 中，如果是，则返回数据，记录为一次 ARC 命中；否则记录为一次 ARC miss。
+3. 检查数据是否在 L2ARC 中，如果是，则载入 ARC，并返回给应用程序，记录为一次 L2ARC 命中；否则记录为一次 L2ARC miss。
+4. 从磁盘读取数据，载入 ARC，同时返回给应用程序。
+
+在第 3 步或第 4 步中，如果 ARC 已满，ZFS 会根据一系列算法将适量的数据块从 ARC 中踢出并放入 L2ARC 中，这是 L2ARC 中数据的唯一来源。
+注意到当读取请求发生 L2ARC hit 的时候，它也会被载入 ARC，因此反复读取的数据（很可能）只会产生一次 L2ARC hit，这也是 L2ARC 命中率通常较低的原因之一。
 
 ## 快照 {#snapshot}
 
 ### 发送与接收 {#send-receive}
+
+### 增量发送与书签 {#incremental-send}
 
 ## ZFS 内核模块参数 {#zfs-ko}
 
