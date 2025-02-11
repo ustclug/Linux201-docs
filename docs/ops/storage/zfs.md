@@ -294,12 +294,9 @@ arc_summary | less
 ??? question "I/O hit 是什么"
 
     OpenZFS 2.2 新增了一类更加具体的统计数据，即 ARC I/O hit。
-    这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据[^cks:ZFSUnderstandingARCHits]。
+    这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据[^cks-ZFSUnderstandingARCHits]。
 
     一个粗略（但不一定准确）的理解是：如果瞬间产生了多个请求要读取同一个数据块，那么其中一个请求会产生一次 ARC miss，而其他请求都会产生 ARC I/O hit。
-
-[^cks:ZFSUnderstandingARCHits]: Chris's Wiki: [Understanding ZFS ARC hit (and miss) kstat statistics][cks:ZFSUnderstandingARCHits]
-[cks:ZFSUnderstandingARCHits]: https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.
 
 如果你需要一个类似 `iostat` 这样能够持续输出 ARC 统计信息的工具，可以考察一下 `arcstat`（`zfsutils-linux`）。
 
@@ -558,6 +555,8 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
   [^uuu1804]: Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`，但更重要的是，我们**不推荐使用已经 EOL 的发行版**。
   [^datasets]: 实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。
+  [^cks-ZFSUnderstandingARCHits]: Chris's Wiki: [Understanding ZFS ARC hit (and miss) kstat statistics][cks-ZFSUnderstandingARCHits]
+  [cks-ZFSUnderstandingARCHits]: https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.
 
   [cks]: https://utcc.utoronto.ca/~cks/space/blog/
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
