@@ -29,8 +29,6 @@
 
 ## 硬件虚拟化
 
-!!! warning "部分内容仅适用于 x86 平台"
-
 ### 概述
 
 在硬件虚拟化技术中，物理主机被分割为一台或多台虚拟机（Virtual Machine）。每台虚拟机都可以看作一台独立的“计算机”，拥有自己的虚拟硬件（CPU、内存、硬盘、网络接口等），运行自己的操作系统和应用程序，通过虚拟化技术共享物理主机的硬件资源。
@@ -41,21 +39,25 @@
 
 - Type-1/Native/Bare-metal Hypervisor
 
-    - Hypervisor 直接运行在硬件上，可以直接访问物理资源
-    - 例：VMware ESXi、Microsoft Hyper-V、Linux KVM
+    - Hypervisor 直接运行在硬件上，可以直接调度硬件资源
+    - 性能损耗低，适合在服务器环境下使用
+    - 例：VMware ESXi、Xen、Microsoft Hyper-V
 
 - Type-2/Hosted Hypervisor
 
-    - Hypervisor 作为操作系统的一个应用程序运行，资源访问受到操作系统的约束
+    - Hypervisor 作为宿主机操作系统上的应用程序运行
+    - 需要通过操作系统实现资源调度，因此性能损耗较高
     - 例：VMware Workstation、Oracle VM VirtualBox
 
-Type-1 Hypervisor 通常效率更高，但配置相对复杂，且灵活性稍差，适合服务器环境安装使用；Type-2 Hypervisor 虽然性能稍逊，但灵活性更强，适合桌面用户或开发者。
+Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转变为一个 Type-1 Hypervisor，同时保留了内核的全部功能。因此，由 KVM 创建和调度的虚拟机会与内核下运行的常规进程共享硬件资源。
 
-完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带用户界面和命令行工具，帮助管理员完成虚拟机配置。例如，Linux 下的硬件虚拟化解决方案 Proxmox VE 提供了 Web UI 作为管理界面，如下图所示：
+完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置。
 
-![Web UI in PVE](../../images/pve-web-ui.jpg)
+例如，Proxmox VE 是一个专为虚拟化场景打造的 Linux 发行版。它不仅提供直观的 Web UI 管理界面，还支持通过 Web Console、SSH 等方式连接到 Shell，以命令行方式进行高级配置。
 
-当然，有时这类图形化界面无法满足管理员精细化管理或高级配置的需求，此时就需要使用 CLI 工具了，如 VMware ESXi 提供的 ESXi Shell。PVE 由于本身是一个 Linux 发行版，自然可以使用 Shell 和 PVE 携带的一些工具进行管理。
+![Web UI in PVE](https://pve.proxmox.com/pve-docs/images/screenshot/gui-qemu-summary.png)
+
+![Web Console in PVE](https://www.vinchin.com/images/proxmox/proxmox-vm-backup-using-shell-command-1.png)
 
 ### 实现
 
@@ -121,7 +123,5 @@ Proxmox Virtual Environment（简称 Proxmox VE、PVE）是一个开源的服务
 Proxmox VE 支持两类虚拟化技术：基于容器的 LXC 和硬件抽象层全虚拟化的 KVM。
 
 ## 参考资料
-
-<!-- FIXME: 这个资料官网没了，看看怎么处理 -->
 
 - [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_7)
