@@ -828,6 +828,24 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rsync-include-exclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      包含与排除
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-backup" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件备份
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1810,6 +1828,24 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#rsync-include-exclude" class="md-nav__link">
+    <span class="md-ellipsis">
+      包含与排除
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-backup" class="md-nav__link">
+    <span class="md-ellipsis">
+      文件备份
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2058,7 +2094,7 @@
 </tr>
 <tr>
 <td style="text-align: center;"><code>--delete-excluded</code></td>
-<td style="text-align: center;">删除被 exclude 的文件</td>
+<td style="text-align: center;">删除被排除（exclude）的文件</td>
 </tr>
 <tr>
 <td style="text-align: center;"><code>--delete-delay</code></td>
@@ -2078,6 +2114,15 @@
 </tr>
 </tbody>
 </table>
+<h3 id="rsync-include-exclude">包含与排除<a class="headerlink" href="#rsync-include-exclude" title="Permanent link">&para;</a></h3>
+<p>Rsync 支持 <code>--include</code> 与 <code>--exclude</code> 参数。简单来讲，rsync 的处理规则如下：</p>
+<ol>
+<li>每个文件/文件夹会按照用户在命令行中提供的顺序匹配，如果命中，则会被处理，后续的规则对该文件不再生效。</li>
+<li>如果没有命中任何规则，那么会被包含。</li>
+<li>命中 <code>--exclude</code> 代表其子文件和文件夹也会被排除，因此如果要包含 <code>a/b/c/d</code>，那么 <code>a/</code>, <code>a/b/</code>, <code>a/b/c/</code> 都需要被包含。</li>
+</ol>
+<h3 id="rsync-backup">文件备份<a class="headerlink" href="#rsync-backup" title="Permanent link">&para;</a></h3>
+<p>Rsync 本身不是完整的备份工具，其没有版本管理功能，因此如果某个文件被误删除/修改，那么 rsync 会将这个变化同步到备份中。不过基于 rsync 高效复制文件的能力，有工具实现了基于 rsync 和文件系统硬链接功能的备份，例如 Linux Mint 的 <a href="https://github.com/linuxmint/timeshift">Timeshift</a> 项目就通过硬链接实现不同时间点备份的去重操作，而 rsync 负责文件的复制。</p>
 <!--
   Links to man pages
 
