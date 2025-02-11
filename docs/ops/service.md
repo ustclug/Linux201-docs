@@ -106,6 +106,21 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 :   指定启动顺序，即相关的 unit 需要在前者启动完成，进入 active 状态后才会尝试启动。这两个字段在 `[Unit]` section 中指定。
     与 Wants/Requires 不同，Before/After 只是指定启动顺序，不影响依赖关系。
 
+#### 模板 {#unit-template}
+
+Systemd 的 unit 支持模板特性：一个 unit 文件可以实例化为多个 unit。模板 unit 的文件名（不含扩展名）结尾是 `@`，例如 `foo@.service`。用户使用时需要提供一个参数，例如 `systemctl enable --now foo@arg.service`。
+
+在 unit 文件内部，可以使用 `%i` 和 `%I` 来引用这个参数（其中 `%I` 是没有经过转义的），例如：
+
+```ini
+[Unit]
+Description=Hello for %I
+
+[Service]
+# ...
+ExecStart=/usr/bin/echo Hello, %i
+```
+
 ### Target
 
 Target 是一组服务（其他 unit）的集合，通过 target 这样一层抽象可以更方便地管理服务的启动顺序，类似 SysVinit 中的 runlevel，可以理解为“系统启动目标”。
