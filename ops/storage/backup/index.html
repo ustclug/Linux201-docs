@@ -26,7 +26,7 @@
     
     
       
-        <title>备份方案 - Linux 201</title>
+        <title>备份与文件传输工具 - Linux 201</title>
       
     
     
@@ -126,7 +126,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              备份方案
+              备份与文件传输工具
             
           </span>
         </div>
@@ -733,7 +733,7 @@
           
   
   <span class="md-ellipsis">
-    备份方案
+    备份与文件传输工具
     
   </span>
   
@@ -745,7 +745,7 @@
         
   
   <span class="md-ellipsis">
-    备份方案
+    备份与文件传输工具
     
   </span>
   
@@ -801,6 +801,30 @@
       镜像同步
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="镜像同步">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rsync-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rsync 服务端配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rsync 客户端参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1760,6 +1784,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="镜像同步">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rsync-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rsync 服务端配置
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rsync-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rsync 客户端参数
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1786,7 +1834,7 @@
   
 
 
-<h1 id="_1">备份方案<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="_1">备份与文件传输工具<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
 </div>
@@ -1797,7 +1845,7 @@
 <li>使用 <code>tar</code> 归档数据目录。</li>
 <li>使用 <code>rsync</code> 同步数据目录。</li>
 <li>使用数据库的 dump 工具（例如 <code>mysqldump</code>）备份数据库。</li>
-<li>使用 <a href="../filesystem/#btrfs-snapshot">Btrfs</a> 或 ZFS 的快照与 send/receive 功能。</li>
+<li>使用 <a href="../filesystem/#btrfs-snapshot">Btrfs</a> 或 <a href="../zfs/#snapshot">ZFS</a> 的快照与 send/receive 功能。</li>
 <li>使用 <code>rclone</code> 同步到云存储（例如 OneDrive、S3 对象存储等）。</li>
 <li>使用诸如 <a href="https://duplicity.gitlab.io/">Duplicity</a>、<a href="https://www.borgbackup.org/">BorgBackup</a> 等备份工具。</li>
 <li>特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 <a href="https://proxmox.com/en/products/proxmox-backup-server/overview">Proxmox Backup Server</a>。</li>
@@ -1806,24 +1854,69 @@
 <p class="admonition-title">单纯的快照与 RAID 都不是备份</p>
 <p>快照是文件系统的特性，如果文件系统损坏，那么快照就都无法正常读取。而 RAID 只能在硬盘故障数量小于对应等级限制时才能保证数据完整性，无法防止在诸如误删除、自然灾害等情况下数据的丢失与损坏。</p>
 </div>
-<p>以下介绍一部分相关的工具。</p>
+<p>以下从上述方法列表引申开来，介绍一部分工具的使用方法与技巧。</p>
 <h2 id="rsync">Rsync<a class="headerlink" href="#rsync" title="Permanent link">&para;</a></h2>
 <p>Rsync 是最常用的文件同步工具之一，支持本地复制和远程复制。相比于 <code>cp</code>（本地）和 <code>scp</code>（SSH 远程），<code>rsync</code> 可以做到增量复制，只复制文件中发生变化的部分，并且能够保留文件完整的元数据信息。Rsync 也是从镜像站点同步完整镜像的事实标准。</p>
 <h3 id="rsync-transfer">文件传输<a class="headerlink" href="#rsync-transfer" title="Permanent link">&para;</a></h3>
 <p>最常用的命令：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>--delete<span class="w"> </span>/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
-<p>其中 <code>-a</code> 代表归档模式，即 <code>-rlptgoD</code> 这几个参数的集合，分别代表：</p>
-<ul>
-<li><code>r</code>: 递归复制目录</li>
-<li><code>l</code>: 保留符号链接</li>
-<li><code>p</code>: 保留文件权限</li>
-<li><code>t</code>: 保留修改时间（mtime）</li>
-<li><code>g</code>: 保留 group 信息</li>
-<li><code>o</code>: 保留 owner 信息</li>
-<li><code>D</code>: 保留设备文件与特殊文件</li>
-</ul>
-<p><code>-v</code> 代表详细输出，<code>-P</code> 代表保留传输一部分的文件且显示进度，<code>--delete</code> 代表删除目标目录中源目录没有的文件。以下提供一些参考示例。</p>
+<p>参数含义如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">参数</th>
+<th style="text-align: center;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><code>-a</code></td>
+<td style="text-align: center;">归档模式，等同于 <code>-rlptgoD</code></td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-r</code></td>
+<td style="text-align: center;">递归复制目录</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-l</code></td>
+<td style="text-align: center;">保留符号链接</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-p</code></td>
+<td style="text-align: center;">保留文件权限</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-t</code></td>
+<td style="text-align: center;">保留修改时间（mtime）</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-g</code></td>
+<td style="text-align: center;">保留 group 信息</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-o</code></td>
+<td style="text-align: center;">保留 owner 信息</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-D</code></td>
+<td style="text-align: center;">保留设备文件与特殊文件</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-v</code></td>
+<td style="text-align: center;">详细输出</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>-P</code></td>
+<td style="text-align: center;">保留传输一部分的文件且显示进度</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--delete</code></td>
+<td style="text-align: center;">删除目标目录中源目录没有的文件</td>
+</tr>
+</tbody>
+</table>
+<p>以下提供一些参考示例。</p>
 <p>将 <code>/A</code> 文件复制到 <code>/tmp/A</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/A
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># 或者</span>
@@ -1843,7 +1936,148 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;ssh -p 2222&quot;</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <h3 id="rsync-mirror">镜像同步<a class="headerlink" href="#rsync-mirror" title="Permanent link">&para;</a></h3>
-<p>Rsync 同时也可以作为服务端对外提供 rsync 服务，默认端口为 TCP 873。</p>
+<p>Rsync 同时也可以作为服务端（daemon 模式）对外提供 rsync 服务，默认端口为 TCP 873。</p>
+<div class="admonition tip">
+<p class="admonition-title">Rsync over TLS</p>
+<p>Rsync 默认为明文协议，不过其支持通过其他反向代理工具（例如 Nginx 的 stream 模块）实现 TLS 加密，默认端口为 874，需要使用 <code>rsync-ssl</code> 命令连接。</p>
+</div>
+<p>以下介绍与镜像同步（mirrors）相关的服务端与客户端配置。其他用途可视情况自行调整。</p>
+<h4 id="rsync-server">Rsync 服务端配置<a class="headerlink" href="#rsync-server" title="Permanent link">&para;</a></h4>
+<p>Debian 默认的 rsync 的 systemd 服务依赖于 <code>/etc/rsyncd.conf</code> 文件，同时 <code>/usr/share/doc/rsync/examples/rsyncd.conf</code> 提供了一个参考范例。</p>
+<p>一份用于镜像站点的 <code>rsyncd.conf</code> 可能如下所示：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="na">motd file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/rsyncd/rsyncd.motd</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="na">pid file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/run/rsyncd.pid</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">log file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/log/rsyncd.log</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="na">max verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="na">transfer logging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="na">ignore nonreadable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># 需要 adduser --system rsyncd</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="na">uid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">rsyncd</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="na">gid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nogroup</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="na">use chroot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="na">dont compress</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">*</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="na">max connections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="na">refuse options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">checksum</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="na">read only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="na">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">240</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="na">reverse lookup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">no</span>
+</code></pre></div>
+<p>其中比较重要的参数有：</p>
+<ul>
+<li>安全性相关：rsync daemon 会以 root 身份运行，在收到请求后会 fork 出子进程实际处理请求。<code>uid</code> 与 <code>gid</code> 用于子进程降权，<code>use chroot</code> 用于限制访问范围，避免非预期的漏洞泄漏系统中的其他文件。由于镜像站点肯定不允许用户修改文件，因此 <code>read only</code> 应当设置为 <code>true</code>。</li>
+<li>性能相关：<code>max connections</code> 用于限制总连接数，<code>timeout</code> 用于限制连接超时时间，防止被未响应的客户端长时间占用资源。<code>dont compress</code> 与 <code>refuse options</code> 用于禁用压缩（如果需要传输的文件大多已经是压缩过的）与检验和（会大量占用服务器 CPU）。<code>reverse lookup</code> 用于关闭反向 DNS 查询，避免 DNS 问题导致的连接延迟。</li>
+</ul>
+<p>之后就是定义暴露的模块（module）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[repo1]</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo1</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">[repo2]</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo2</span>
+</code></pre></div>
+<p>模块是 rsync URL 的第一层，例如 <code>rsync://server/repo1/somedir/</code> 中，<code>repo1</code> 就是模块名。配置完成之后，可以使用 <code>rsync://server/</code> 列出全部模块，<code>rsync rsync://server/repo1</code> 来确认，并且采用类似的命令同步某个模块的全部文件。</p>
+<div class="admonition tip">
+<p class="admonition-title">同时启用多个 rsync 服务</p>
+<p>如果有需要多个 daemon 的需求（例如需要多个 rsync 服务端 bind 到不同的 IP 地址上），可以使用 systemd 的<a href="../../service/#unit-template">模板单元格式</a>手动编写 <code>rsync@.service</code> 文件。</p>
+<p>同时 <code>rsyncd.conf</code> 格式支持导入其他的配置文件，因此不同服务的共通部分可以提取出来。其中 <code>&amp;include</code> 用于导入模块的定义，<code>&amp;merge</code> 用于导入配置，类似如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># common.inc 包含配置</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">&amp;merge /etc/rsyncd/common.inc</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># common.conf 包含模块定义</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="na">&amp;include /etc/rsyncd/common.conf</span>
+</code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">使用 systemd 安全加固 rsync 服务</p>
+<p><a href="../../service/#service">Systemd 服务的安全加固参数</a>可以帮助避免未知的安全问题影响 rsync 服务，特别是在 <a href="https://kb.cert.org/vuls/id/952657">rsync 于 2025 年 1 月暴露了多个 CVE 的情况下</a>（其中两个是服务端的漏洞），这样的加固就显得更加重要。</p>
+<p>一份参考 <code>rsync@.service</code> 如下，其中包含安全加固以及降低 IO 与 CPU 优先级的设置（这同样也是<a href="https://docs.ustclug.org/services/mirrors/rsync/">科大镜像站目前使用的配置</a>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">fast remote file copy program daemon</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">ConditionPathExists</span><span class="o">=</span><span class="s">/etc/rsyncd/rsyncd-%i.conf</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="na">After</span><span class="o">=</span><span class="s">network.target network-online.target</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">exec</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="na">PIDFile</span><span class="o">=</span><span class="s">rsyncd-%i.pid</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/rsync --daemon --no-detach --config=/etc/rsyncd/rsyncd-%i.conf</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="na">Nice</span><span class="o">=</span><span class="s">19</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="na">IOSchedulingClass</span><span class="o">=</span><span class="s">best-effort</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="na">IOSchedulingPriority</span><span class="o">=</span><span class="s">7</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="na">IOAccounting</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="na">ProtectSystem</span><span class="o">=</span><span class="s">strict</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="na">ProtectHome</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="na">ProtectProc</span><span class="o">=</span><span class="s">invisible</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="na">ProtectControlGroups</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="na">ProtectKernelModules</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="na">ProtectKernelTunables</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="na">PrivateDevices</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="na">NoNewPrivileges</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="na">MemoryDenyWriteExecute</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="na">ReadWritePaths</span><span class="o">=</span><span class="s">/var/log/rsyncd</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="k">[Install]</span>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="na">Alias</span><span class="o">=</span><span class="s">rsyncd@.service</span>
+</code></pre></div>
+<p>也可以考虑将 <code>uid</code> 与 <code>gid</code> 修改为在 systemd 服务中配置（而不是让 daemon 自己降权），并且提供 <code>chroot</code> 等必要的 capability。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Rsync 反向代理</p>
+<p><a href="https://github.com/ustclug/rsync-proxy">ustclug/rsync-proxy</a> 项目支持基于模块名的 rsync 反向代理，可以将不同的模块放在不同的服务器上，由 rsync-proxy 代理到不同的后端服务器上。</p>
+</div>
+<h4 id="rsync-client">Rsync 客户端参数<a class="headerlink" href="#rsync-client" title="Permanent link">&para;</a></h4>
+<p>一份参考的完整参数如下（修改自 <a href="https://github.com/ustclug/ustcmirror-images/blob/2915ed8c403090f54f4295d8ceef63a12bbaf471/rsync/sync.sh">ustcmirror-images 的 rsync 同步脚本</a>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>rsync<span class="w"> </span>-pPrltvH<span class="w"> </span>--partial-dir<span class="o">=</span>.rsync-partial<span class="w"> </span>--timeout<span class="w"> </span><span class="m">14400</span><span class="w"> </span>--safe-links<span class="w"> </span>--delete-excluded<span class="w"> </span>--delete-delay<span class="w"> </span>--delay-updates<span class="w"> </span>--sparse<span class="w"> </span>--max-delete<span class="w"> </span><span class="m">4000</span><span class="w"> </span>rsync://server/repo1/<span class="w"> </span>/path/to/destination
+</code></pre></div>
+<p>其中部分参数含义如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">参数</th>
+<th style="text-align: center;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><code>-H</code></td>
+<td style="text-align: center;">保留硬链接</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--partial-dir</code></td>
+<td style="text-align: center;">保证部分传输的文件均在该目录中</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--timeout</code></td>
+<td style="text-align: center;">超时时间</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--safe-links</code></td>
+<td style="text-align: center;">忽略指向对应仓库外部的符号链接，避免有问题的符号链接导致其他文件非预期暴露</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--delete-excluded</code></td>
+<td style="text-align: center;">删除被 exclude 的文件</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--delete-delay</code></td>
+<td style="text-align: center;">在同步完成后再删除文件，避免在同步过程中删除文件导致仓库不可用</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--delay-updates</code></td>
+<td style="text-align: center;">在同步完成后再更新文件，避免在同步过程中更新文件导致仓库不可用</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--sparse</code></td>
+<td style="text-align: center;">保留稀疏文件的稀疏性</td>
+</tr>
+<tr>
+<td style="text-align: center;"><code>--max-delete</code></td>
+<td style="text-align: center;">限制删除文件的数量，避免误操作导致大量文件被删除</td>
+</tr>
+</tbody>
+</table>
 <!--
   Links to man pages
 
