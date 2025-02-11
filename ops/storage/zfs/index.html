@@ -959,6 +959,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#incremental-send" class="md-nav__link">
+    <span class="md-ellipsis">
+      增量发送与书签
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2027,6 +2036,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#incremental-send" class="md-nav__link">
+    <span class="md-ellipsis">
+      增量发送与书签
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2124,7 +2142,7 @@
 </div>
 </li>
 <li>
-<p>Ubuntu 自 20.04 LTS 起提供预编译好的 <code>zfs.ko</code>（软件包 <code>linux-modules-$(uname -r)</code>），因此无需再安装 <code>zfs-dkms</code><sup id="fnref:uuu1804"><a class="footnote-ref" href="#fn:uuu1804">1</a></sup>。</p>
+<p>Ubuntu 自 20.04 LTS 起提供预编译好的 <code>zfs.ko</code>（软件包 <code>linux-modules-$(uname -r)</code>），因此无需再安装 <code>zfs-dkms</code><sup id="fnref:uuu1804"><a class="footnote-ref" href="#fn:uuu1804">2</a></sup>。</p>
 </li>
 </ul>
 <p>不论是 Debian 还是 Ubuntu，都需要安装 <code>zfsutils-linux</code> 软件包，以便使用 ZFS 的命令行工具。</p>
@@ -2220,7 +2238,7 @@
 <li><code>bootfs=pool0/ROOT/debian</code>：如果你使用 root on ZFS，该参数是常见的 grub 配置及 initramfs 生成脚本所需的参数。</li>
 </ul>
 <h2 id="dataset">ZFS 数据集（dataset）<a class="headerlink" href="#dataset" title="Permanent link">&para;</a></h2>
-<p>在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol<sup id="fnref:datasets"><a class="footnote-ref" href="#fn:datasets">2</a></sup>。</p>
+<p>在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol<sup id="fnref:datasets"><a class="footnote-ref" href="#fn:datasets">3</a></sup>。</p>
 <p>ZFS dataset 层面的参数可以通过 <code>zfs set</code> 命令进行调整，语法与 <code>zpool set</code> 类似。</p>
 <h3 id="zfs-filesystem">ZFS 文件系统<a class="headerlink" href="#zfs-filesystem" title="Permanent link">&para;</a></h3>
 <p>以下是一些推荐/经常修改的参数：</p>
@@ -2247,7 +2265,7 @@
 <h4 id="recordsize">关于 <code>recordsize</code><a class="headerlink" href="#recordsize" title="Permanent link">&para;</a></h4>
 <p>文件在 ZFS 中是以“块”（block）为单位存储的，一个文件块占用一个或多个“扇区”（sector，即上文提到的 <code>ashift</code>）的大小。<code>recordsize</code> 参数用于指定文件块的最大大小，以便在读写文件时能够更好地利用磁盘 I/O。</p>
 <p>由于 ZFS 中所有的文件块和元信息都是有校验（checksum）的，因此所有读写都是以文件块为单位的，从而块大小应该与预期的文件访问模式相匹配。例如，对于影音娱乐资源，可以将 <code>recordsize</code> 设置为 1 MiB，以便更好地利用硬盘的顺序读写性能；对于 MySQL 的数据文件，可以将 <code>recordsize</code> 设置为 16 KiB，以匹配 MySQL InnoDB 引擎的默认页（page）大小。ZFS 提供的默认值为 128 KiB，对于日常使用等不固定的场景是一个较为均衡的选择。</p>
-<p>与其他文件系统的不同之处在于，<code>recordsize</code> 指定了文件块的<strong>最大</strong>大小，而不是固定的大小。具体来说<sup id="fnref:cks-1"><a class="footnote-ref" href="#fn:cks-1">4</a></sup>：</p>
+<p>与其他文件系统的不同之处在于，<code>recordsize</code> 指定了文件块的<strong>最大</strong>大小，而不是固定的大小。具体来说<sup id="fnref:cks-1"><a class="footnote-ref" href="#fn:cks-1">5</a></sup>：</p>
 <ul>
 <li>若文件大小不超过 <code>recordsize</code>，则文件块大小为文件大小（向上取整到 ashift 对应大小的整数倍）。<ul>
 <li>例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 <code>ashift=12</code>）。</li>
@@ -2299,8 +2317,10 @@
 <p>如果需要恢复预留空间，可以将 <code>refreservation</code> 设为 <code>auto</code>。
 注意 <code>auto</code> 这个值仅对 zvol 有意义，而 ZFS 文件系统并不支持 <code>auto</code> 值，毕竟 ZFS 文件系统并没有一个确定的大小。</p>
 <h2 id="arc">ARC<a class="headerlink" href="#arc" title="Permanent link">&para;</a></h2>
-<p>ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
-<p>由于 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
+<p>ZFS ARC 的全称是 Adaptive Replacement Cache，是 ZFS 用于缓存磁盘数据的一级缓存。
+所有的读取操作都会经过 ARC，不论是已经在 ARC 中被缓存的数据，还是需要从磁盘读出来的数据，都会经由 ARC 返回给上层应用程序。
+结合 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。
+ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
 </code></pre></div>
@@ -2318,9 +2338,17 @@
 <li>这会短暂地增加磁盘的读取压力。</li>
 </ul>
 </div>
+<p>ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
 <p>ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 <code>/proc/spl/kstat/zfs/arcstats</code> 查看，并且 ZFS 也提供了 <code>arc_summary</code> 命令将该接口的数据以更易读的方式输出。由于 <code>arc_summary</code> 输出量较大，建议使用 less 等分页工具查看。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
 </code></pre></div>
+<details class="question">
+<summary>I/O hit 是什么</summary>
+<p>OpenZFS 2.2 新增了一类更加具体的统计数据，即 ARC I/O hit。
+这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据<sup id="fnref:cks:ZFSUnderstandingARCHits"><a class="footnote-ref" href="#fn:cks:ZFSUnderstandingARCHits">1</a></sup>。</p>
+<p>一个粗略（但不一定准确）的理解是：如果瞬间产生了多个请求要读取同一个数据块，那么其中一个请求会产生一次 ARC miss，而其他请求都会产生 ARC I/O hit。</p>
+</details>
+<p>如果你需要一个类似 <code>iostat</code> 这样能够持续输出 ARC 统计信息的工具，可以考察一下 <code>arcstat</code>（<code>zfsutils-linux</code>）。</p>
 <div class="admonition lab">
 <p class="admonition-title">追踪每个进程的 ARC 命中率</p>
 <p>阅读<a href="../../debug/#ebpf">问题调试的 eBPF 部分</a>，可以注意到，基于 eBPF 的 <code>cachetop</code> 工具可以显示每个进程对 Linux 内核的页缓存（page cache）的命中率情况（如果还没有跑过的话，可以试一试，并阅读其源代码）。</p>
@@ -2337,13 +2365,23 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。</p>
 <div class="admonition abstract">
 <p class="admonition-title">USTC 镜像站上的 ARC 配置</p>
-<p>USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 98%，而 L2ARC 的命中率仅有约 35%。
-这意味着 L2ARC 仅仅将综合命中率从 98% 提升到 98.7%，对于降低机械硬盘的负载效果并不明显。</p>
+<p>USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 99%，而 L2ARC 的命中率仅有约 35%。
+这意味着 L2ARC 仅仅将综合命中率从 99.2% 提升到 99.5%，对于降低机械硬盘的负载效果并不明显。</p>
 </div>
-<p>因此此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
+<p>因此，我们推荐优先添加更多的内存用于 ARC，而不是添加 L2ARC 设备。
 如果你仍然认为 L2ARC 有用，我们则建议你在使用 ZFS 一段时间后，根据 <code>arc_summary</code> 的输出来决定是否真的需要 L2ARC。</p>
+<p>作为总结，以下是一个简单的 ZFS 读取流程：</p>
+<ol>
+<li>（收到应用程序的读取请求）</li>
+<li>检查数据是否已在 ARC 中，如果是，则返回数据，记录为一次 ARC 命中；否则记录为一次 ARC miss。</li>
+<li>检查数据是否在 L2ARC 中，如果是，则载入 ARC，并返回给应用程序，记录为一次 L2ARC 命中；否则记录为一次 L2ARC miss。</li>
+<li>从磁盘读取数据，载入 ARC，同时返回给应用程序。</li>
+</ol>
+<p>在第 3 步或第 4 步中，如果 ARC 已满，ZFS 会根据一系列算法将适量的数据块从 ARC 中踢出并放入 L2ARC 中，这是 L2ARC 中数据的唯一来源。
+注意到当读取请求发生 L2ARC hit 的时候，它也会被载入 ARC，因此反复读取的数据（很可能）只会产生一次 L2ARC hit，这也是 L2ARC 命中率通常较低的原因之一。</p>
 <h2 id="snapshot">快照<a class="headerlink" href="#snapshot" title="Permanent link">&para;</a></h2>
 <h3 id="send-receive">发送与接收<a class="headerlink" href="#send-receive" title="Permanent link">&para;</a></h3>
+<h3 id="incremental-send">增量发送与书签<a class="headerlink" href="#incremental-send" title="Permanent link">&para;</a></h3>
 <h2 id="zfs-ko">ZFS 内核模块参数<a class="headerlink" href="#zfs-ko" title="Permanent link">&para;</a></h2>
 <p>ZFS 的内核模块具有<strong>非常</strong>多的可调节参数，其中大部分参数可以通过读写 <code>/sys/module/zfs/parameters</code> 目录下的文件进行调节。ZFS 的内核模块参数从生效时间上可以分为三类：</p>
 <ul>
@@ -2631,38 +2669,41 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <div class="footnote">
 <hr />
 <ol>
+<li id="fn:cks:ZFSUnderstandingARCHits">
+<p>Chris's Wiki: <a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.">Understanding ZFS ARC hit (and miss) kstat statistics</a>&#160;<a class="footnote-backref" href="#fnref:cks:ZFSUnderstandingARCHits" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
 <li id="fn:uuu1804">
-<p>Ubuntu 18.04 LTS 及之前的版本仍然需要安装 <code>zfs-dkms</code>，但更重要的是，我们<strong>不推荐使用已经 EOL 的发行版</strong>。&#160;<a class="footnote-backref" href="#fnref:uuu1804" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+<p>Ubuntu 18.04 LTS 及之前的版本仍然需要安装 <code>zfs-dkms</code>，但更重要的是，我们<strong>不推荐使用已经 EOL 的发行版</strong>。&#160;<a class="footnote-backref" href="#fnref:uuu1804" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:datasets">
-<p>实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。&#160;<a class="footnote-backref" href="#fnref:datasets" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+<p>实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。&#160;<a class="footnote-backref" href="#fnref:datasets" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:acct-128k">
-<p>Mike Gerdts (2019) <a href="https://github.com/illumos/illumos-gate/blob/b73ccab03ec36581b1ae5945ef1fee1d06c79ccf/usr/src/lib/libzfs/common/libzfs_dataset.c#L5118">(Code comment in <code>libzfs_dataset.c</code>)</a>&#160;<a class="footnote-backref" href="#fnref:acct-128k" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>Mike Gerdts (2019) <a href="https://github.com/illumos/illumos-gate/blob/b73ccab03ec36581b1ae5945ef1fee1d06c79ccf/usr/src/lib/libzfs/common/libzfs_dataset.c#L5118">(Code comment in <code>libzfs_dataset.c</code>)</a>&#160;<a class="footnote-backref" href="#fnref:acct-128k" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:cks-1">
-<p>Chris Siebenmann (2017) <a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSFilePartialAndHoleStorage">ZFS's recordsize, holes in files, and partial blocks</a>&#160;<a class="footnote-backref" href="#fnref:cks-1" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p>Chris Siebenmann (2017) <a href="https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSFilePartialAndHoleStorage">ZFS's recordsize, holes in files, and partial blocks</a>&#160;<a class="footnote-backref" href="#fnref:cks-1" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 <li id="fn:delphix">
-<p>Matthew Ahrens (2014) <a href="https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz">How I Learned to Stop Worrying and Love RAIDZ</a>&#160;<a class="footnote-backref" href="#fnref:delphix" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+<p>Matthew Ahrens (2014) <a href="https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz">How I Learned to Stop Worrying and Love RAIDZ</a>&#160;<a class="footnote-backref" href="#fnref:delphix" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 <li id="fn:delphix-spreadsheet">
-<p><a href="https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/">RAID-Z parity cost</a> (Google Sheets)&#160;<a class="footnote-backref" href="#fnref:delphix-spreadsheet" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<p><a href="https://docs.google.com/a/delphix.com/spreadsheets/d/1tf4qx1aMJp8Lo_R6gpT689wTjHv6CGVElrPqTA0w_ZY/">RAID-Z parity cost</a> (Google Sheets)&#160;<a class="footnote-backref" href="#fnref:delphix-spreadsheet" title="Jump back to footnote 7 in the text">&#8617;</a></p>
 </li>
 <li id="fn:dilger">
-<p>Andreas Dilger (2010) <a href="https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf">ZFS Features &amp; Concepts TOI</a>&#160;<a class="footnote-backref" href="#fnref:dilger" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+<p>Andreas Dilger (2010) <a href="https://wiki.lustre.org/images/4/49/Beijing-2010.2-ZFS_overview_3.1_Dilger.pdf">ZFS Features &amp; Concepts TOI</a>&#160;<a class="footnote-backref" href="#fnref:dilger" title="Jump back to footnote 8 in the text">&#8617;</a></p>
 </li>
 <li id="fn:lfs">
-<p>University of Wisconsin-Madison <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Log-structured File Systems</a>&#160;<a class="footnote-backref" href="#fnref:lfs" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+<p>University of Wisconsin-Madison <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Log-structured File Systems</a>&#160;<a class="footnote-backref" href="#fnref:lfs" title="Jump back to footnote 9 in the text">&#8617;</a></p>
 </li>
 <li id="fn:tuning">
-<p>OpenZFS <a href="https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html">Workload Tuning</a>&#160;<a class="footnote-backref" href="#fnref:tuning" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+<p>OpenZFS <a href="https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Workload%20Tuning.html">Workload Tuning</a>&#160;<a class="footnote-backref" href="#fnref:tuning" title="Jump back to footnote 10 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zfs101">
-<p>Jim Salter (2020) <a href="https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/">ZFS 101 &ndash; Understanding ZFS storage and performance</a>&#160;<a class="footnote-backref" href="#fnref:zfs101" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+<p>Jim Salter (2020) <a href="https://arstechnica.com/information-technology/2020/05/zfs-101-understanding-zfs-storage-and-performance/">ZFS 101 &ndash; Understanding ZFS storage and performance</a>&#160;<a class="footnote-backref" href="#fnref:zfs101" title="Jump back to footnote 11 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zfs-4599">
-<p>openzfs/zfs#4599 (2016) <a href="https://github.com/openzfs/zfs/issues/4599">disk usage wrong when using larger recordsize, raidz and ashift=12</a>&#160;<a class="footnote-backref" href="#fnref:zfs-4599" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+<p>openzfs/zfs#4599 (2016) <a href="https://github.com/openzfs/zfs/issues/4599">disk usage wrong when using larger recordsize, raidz and ashift=12</a>&#160;<a class="footnote-backref" href="#fnref:zfs-4599" title="Jump back to footnote 12 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
