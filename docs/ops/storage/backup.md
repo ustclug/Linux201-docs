@@ -209,8 +209,20 @@ rsync -pPrltvH --partial-dir=.rsync-partial --timeout 14400 --safe-links --delet
 |   `--partial-dir`   |                       保证部分传输的文件均在该目录中                       |
 |     `--timeout`     |                                  超时时间                                  |
 |   `--safe-links`    | 忽略指向对应仓库外部的符号链接，避免有问题的符号链接导致其他文件非预期暴露 |
-| `--delete-excluded` |                           删除被 exclude 的文件                            |
+| `--delete-excluded` |                           删除被排除（exclude）的文件                            |
 |  `--delete-delay`   |       在同步完成后再删除文件，避免在同步过程中删除文件导致仓库不可用       |
 |  `--delay-updates`  |       在同步完成后再更新文件，避免在同步过程中更新文件导致仓库不可用       |
 |     `--sparse`      |                            保留稀疏文件的稀疏性                            |
 |   `--max-delete`    |              限制删除文件的数量，避免误操作导致大量文件被删除              |
+
+### 包含与排除 {#rsync-include-exclude}
+
+Rsync 支持 `--include` 与 `--exclude` 参数。简单来讲，rsync 的处理规则如下：
+
+1. 每个文件/文件夹会按照用户在命令行中提供的顺序匹配，如果命中，则会被处理，后续的规则对该文件不再生效。
+2. 如果没有命中任何规则，那么会被包含。
+3. 命中 `--exclude` 代表其子文件和文件夹也会被排除，因此如果要包含 `a/b/c/d`，那么 `a/`, `a/b/`, `a/b/c/` 都需要被包含。
+
+### 文件备份 {#rsync-backup}
+
+Rsync 本身不是完整的备份工具，其没有版本管理功能，因此如果某个文件被误删除/修改，那么 rsync 会将这个变化同步到备份中。不过基于 rsync 高效复制文件的能力，有工具实现了基于 rsync 和文件系统硬链接功能的备份，例如 Linux Mint 的 [Timeshift](https://github.com/linuxmint/timeshift) 项目就通过硬链接实现不同时间点备份的去重操作，而 rsync 负责文件的复制。
