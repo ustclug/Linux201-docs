@@ -144,9 +144,15 @@ export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
-## Nvidia Container Toolkit
+## 在 Docker 环境使用 CUDA
 
-Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。
+在很多情况下建议使用 docker 环境运行 CUDA 应用。Docker 是一种容器化技术，可以确保 CUDA 应用程序在不同系统上运行时有相同的依赖和配置，降低“环境不同导致运行问题”的风险，让别人更方便地运行你的代码。很多情况下你需要为不同的项目配置不同的环境，Docker 提供了较好的隔离性，减少了对宿主系统的影响，并且可以通过镜像版本管理来提高软件环境的可追溯性和安全性。另外，Nvidia 的 CUDA 镜像通常进行了很多优化。在这些容器里运行 CUDA 应用往往能取得比在宿主机运行更好的性能。
+
+这个教程中假设你已经安装了 Docker。
+
+### 安装 Nvidia Container Toolkit
+
+Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。你必须安装它才能在 Docker 环境使用 CUDA。
 
 - [官方文档](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 - [USTC Mirror](https://mirrors.ustc.edu.cn/help/libnvidia-container.html)
@@ -169,3 +175,26 @@ Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU �
 ```shell
 sudo nvidia-ctk runtime configure --runtime=docker
 ```
+
+### 挑选镜像
+
+通常从 [Dockerhub](https://hub.docker.com/r/nvidia/cuda/tags) 和 [Nvidia NGC](https://catalog.ngc.nvidia.com/containers) 挑选镜像。或者基于这些镜像打包自己的镜像。
+
+比较常用的包括：
+
+- **`nvidia/cuda:12.4.1-devel-ubuntu22.04`**：一个含了 CUDA 套件的基础镜像，适合用于开发环境。
+- **`nvcr.io/nvidia/pytorch:24.12-py3`**：Nvidia 针对 PyTorch 深度学习框架优化的镜像，它预装了优化的 PyTorch 版本，适合用于训练和部署深度学习模型。
+
+### 创建容器
+
+```shell
+CONTAINER_NAME=cuda_container
+IMAGE=nvidia/cuda:12.4.1-devel-ubuntu22.04
+docker run -d --name ${CONTAINER_NAME} --gpus all --ipc=host -it -v $(pwd):/workspace ${IMAGE}
+docker attach ${CONTAINER_NAME}
+```
+
+这段命令创建了一个名为 `cuda_container` 的后台运行（`-d`）容器，并配置其使用主机的所有 GPU 资源（`--gpus all`）。使用 `--ipc=host` 参数来共享 IPC 资源，同时将当前目录挂载到容器内的 `/workspace` 目录。
+`docker attach` 命令用于连接到该容器进行交互。
+
+你也可以使用 `--gpus device=0,1` 来指定只使用索引为 0 和 1 的显卡
