@@ -1,5 +1,9 @@
 # 备份与文件传输工具
 
+!!! note "主要作者"
+
+    [@taoky][taoky]
+
 !!! warning "本文编写中"
 
 ## 简介 {#intro}
