@@ -59,29 +59,47 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 ![Web Console in PVE](https://www.vinchin.com/images/proxmox/proxmox-vm-backup-using-shell-command-1.png)
 
-### 实现
+### x86 虚拟化实现
 
-对于 x86 平台，目前有多种技术来实现硬件虚拟化，包括：
+对于 x86 平台，目前有多种技术路线来实现硬件虚拟化，包括：
 
-- 全虚拟化（Full Virtualization）
+- 完全虚拟化（Full Virtualization）
 - 半虚拟化（Paravirtualization）
 - 硬件辅助虚拟化（Hardware Assisted Virtualization）
 
-全虚拟化技术采用二进制翻译与直接指令执行相结合的方式来实现 CPU 虚拟化，能够保证不经过修改的裸机程序（如操作系统内核）能够直接运行在虚拟机上。
+以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。
 
-半虚拟化有时又被称为操作系统辅助虚拟化（OS Assisted Virtualization），它依赖于操作系统内核的修改来减少虚拟化带来的性能开销。使用半虚拟化技术的典型代表是 Xen，这是一个开源的 Hypervisor，官网：[Xen Project](https://xenproject.org/)。
+!!! info "VMware Tools"
 
-<!-- TODO: 需要一些性能损耗的具体数据，我没有具体测试的数据 -->
+    待补充
 
-到了 2006 年前后，Intel VT-x 和 AMD-V 扩展被加入。它们属于硬件辅助虚拟化技术，在 Ring 0 之下引入一个新的 CPU 执行模式，Hypervisor 特权指令和敏感指令的执行都会使 CPU 进入该模式，免去了二进制翻译和直接指令执行的需求。这两种技术出现之后，常常结合全虚拟化和半虚拟化使用，以减少性能损耗。
+#### CPU 虚拟化
 
-!!! note "I/O 设备直通（Passthrough）"
+由于 x86 架构在最初设计时未能考虑到虚拟化的需求，缺乏虚拟化的硬件支持，因此，在 x86 虚拟化技术发展的早期，一种实现 CPU 完全虚拟化的技术路线是，采用直接指令执行与二进制翻译相结合的方式，通过在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，保证未经过修改的裸机程序（如操作系统内核）能够直接运行在虚拟机上。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。
 
-    在通常情况下，Guest OS 的 I/O 请求会发送给 Hypervisor 模拟出来的虚拟硬件，并交由 Hypervisor 处理与调度。然而，目前许多 Hypervisor 都已经支持 I/O 设备直通，这允许 Guest OS 直接使用物理设备。
-    
-    虚拟化 I/O 设备与直通设备各有优劣之处。一个显然的点是，直通降低了虚拟化带来的开销，但也使得虚拟机的可移植性和灵活性变差。
-    
-    选择将 I/O 设备进行虚拟化和直通是一项取舍，需要管理员根据实际情况进行选择。
+实现 CPU 虚拟化的另一种技术路线是半虚拟化，有时又被称为操作系统辅助虚拟化（OS Assisted Virtualization），通过修改操作系统内核（如 Linux 这样的开源操作系统），或向操作系统中添加驱动（如 Windows 这样的闭源操作系统），使操作系统能与 Hypervisor 通过预先约定好的接口协作运行。这种虚拟化方式性能较为优越，且实现简单，但由于需要对每一类需要虚拟化的操作系统内核都进行单独修改或编写驱动，在灵活性上可能稍逊一筹。
+
+到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。这种做法不仅能简化 Hypervisor 的实现，还大大减少了虚拟化带来的开销。目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类方式。
+
+<!-- TODO: 上述这些应该都是比较古代的做法，不知道是否需要补充更现代的做法 -->
+
+#### 内存虚拟化
+
+!!! warning "本节内容待补充"
+
+#### I/O 虚拟化
+
+!!! warning "本节内容待补充"
+
+<!-- 硬件设备的模拟？ -->
+
+<!-- 设备运行方式（I/O 架构）：虚拟中断、虚拟寄存器访问、虚拟 DMA。 -->
+
+<!-- 纯软件实现的完全虚拟化：效率低，可用于简单的设备模拟，如 QEMU 中的总线。 -->
+
+<!-- 半虚拟化（PV）：重新定义 I/O 架构（Xen、KVM、Virtualbox） -->
+
+<!-- 设备直通（Passthrough）：I/O 操作发往物理设备、捕获中断、DMA（通过 IOMMU，如 Intel VT-d）、SRIOV（将物理设备分割为多个虚拟设备）、virtio 驱动 -->
 
 ## 操作系统层虚拟化
 
@@ -125,3 +143,7 @@ Proxmox VE 支持两类虚拟化技术：基于容器的 LXC 和硬件抽象层�
 ## 参考资料
 
 - [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_7)
+- [阿里云课程 - 虚拟化技术入门](https://edu.aliyun.com/course/313115/)
+- [Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3](https://cdrdv2.intel.com/v1/dl/getContent/671506)
+- Edouard Bugnion, Scott Devine, Mendel Rosenblum, Jeremy Sugerman, and Edward Y. Wang. 2012. Bringing Virtualization to the x86 Architecture with the Original VMware Workstation. ACM Trans. Comput. Syst. 30, 4, Article 12 (November 2012), 51 pages. <https://doi.org/10.1145/2382553.2382554>
+- Paul Barham, Boris Dragovic, Keir Fraser, Steven Hand, Tim Harris, Alex Ho, Rolf Neugebauer, Ian Pratt, and Andrew Warfield. 2003. Xen and the art of virtualization. SIGOPS Oper. Syst. Rev. 37, 5 (December 2003), 164–177. <https://doi.org/10.1145/1165389.945462>
