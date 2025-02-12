@@ -22,11 +22,13 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 - CUDA 工具：比如性能分析器（NVIDIA Nsight 和 Visual Profiler）和调试工具，它们帮助开发者优化和调试 CUDA 应用程序。
 
+## 你需要 CUDA 吗？
+
 ## 配置 CUDA 环境
 
 ### 版本准备
 
-在开始之前，你需要确认显卡是否支持所需的 CUDA 版本。在这里可以查看支持的列表：<https://developer.nvidia.com/CUDA-gpus>。
+在开始之前，你需要确认显卡是否支持 CUDA。在这里可以查看支持的列表：<https://developer.nvidia.com/CUDA-gpus>。
 
 表中的 `Compute Capability` 代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。架构越新的显卡，对应的计算能力数字越高。使用的 CUDA 版本需要能够支持对应的计算能力，可以查看此表：<https://docs.nvidia.com/datacenter/tesla/drivers/index.html#cuda-arch-matrix>。同时，CUDA 也对系统编译器版本有要求，可以查看此表：<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#system-requirements>。
 
@@ -110,7 +112,11 @@ nvidia-driver-550/noble 550.67-0ubuntu3 amd64
 
 Debian 则只包含了 `nvidia-driver` 包，对应发行版发布时最新的驱动版本，同时对于 stable 发行版，还可以从 backports 仓库中获取更新的驱动版本，详情请参考上文提供的 Debian Wiki。
 
-### 查看显卡状态
+!!! tip Nvidia 驱动版本要求
+
+    安装新版本的CUDA需要新版本的Nvidia 驱动支持。详情见[版本关系说明](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
+
+#### 查看显卡状态
 
 ```shell
 nvidia-smi
@@ -130,7 +136,7 @@ nvidia-smi
 
 <!-- 问题：Anaconda 是如何解决 CUDA 依赖的？ -->
 
-### 环境变量设置
+#### 环境变量设置
 
 如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到 `PATH` 环境变量中，以便执行 nvcc 等程序。假设 CUDA 安装在 `/usr/local/cuda` 目录下：
 
@@ -144,13 +150,13 @@ export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
-## 在 Docker 环境使用 CUDA
+### 在 Docker 环境使用 CUDA
 
 在很多情况下建议使用 docker 环境运行 CUDA 应用。Docker 是一种容器化技术，可以确保 CUDA 应用程序在不同系统上运行时有相同的依赖和配置，降低“环境不同导致运行问题”的风险，让别人更方便地运行你的代码。很多情况下你需要为不同的项目配置不同的环境，Docker 提供了较好的隔离性，减少了对宿主系统的影响，并且可以通过镜像版本管理来提高软件环境的可追溯性和安全性。另外，Nvidia 的 CUDA 镜像通常进行了很多优化。在这些容器里运行 CUDA 应用往往能取得比在宿主机运行更好的性能。
 
 这个教程中假设你已经安装了 Docker。
 
-### 安装 Nvidia Container Toolkit
+#### 安装 Nvidia Container Toolkit
 
 Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU 计算的工具。你必须安装它才能在 Docker 环境使用 CUDA。
 
@@ -176,7 +182,7 @@ Nvidia Container Toolkit 是一个用于在 Docker 容器中运行 NVIDIA GPU �
 sudo nvidia-ctk runtime configure --runtime=docker
 ```
 
-### 挑选镜像
+#### 挑选镜像
 
 通常从 [Dockerhub](https://hub.docker.com/r/nvidia/cuda/tags) 和 [Nvidia NGC](https://catalog.ngc.nvidia.com/containers) 挑选镜像。或者基于这些镜像打包自己的镜像。
 
@@ -185,7 +191,7 @@ sudo nvidia-ctk runtime configure --runtime=docker
 - **`nvidia/cuda:12.4.1-devel-ubuntu22.04`**：一个含了 CUDA 套件的基础镜像，适合用于开发环境。
 - **`nvcr.io/nvidia/pytorch:24.12-py3`**：Nvidia 针对 PyTorch 深度学习框架优化的镜像，它预装了优化的 PyTorch 版本，适合用于训练和部署深度学习模型。
 
-### 创建容器
+#### 创建容器
 
 ```shell
 CONTAINER_NAME=cuda_container
