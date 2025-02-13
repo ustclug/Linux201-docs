@@ -53,12 +53,6 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置。
 
-例如，Proxmox VE 是一个专为虚拟化场景打造的 Linux 发行版。它不仅提供直观的 Web UI 管理界面，还支持通过 Web Console、SSH 等方式连接到 Shell，以命令行方式进行高级配置。
-
-![Web UI in PVE](https://pve.proxmox.com/pve-docs/images/screenshot/gui-qemu-summary.png)
-
-![Web Console in PVE](https://www.vinchin.com/images/proxmox/proxmox-vm-backup-using-shell-command-1.png)
-
 ### x86 虚拟化实现
 
 对于 x86 平台，目前有多种技术路线来实现硬件虚拟化，包括：
@@ -123,21 +117,41 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
     
     请读者查阅资料，了解相关技术之间的差异。 -->
 
-## Linux 下的虚拟化方案
+## 常见服务器虚拟化方案
 
-### 底层：QEMU/KVM
-
-关于 QEMU/KVM 的详细介绍，可以阅读本文档的 [QEMU/KVM](./qemu-kvm.md) 部分。
-
-### 高层：Proxmox VE
+### Proxmox VE (PVE)
 
 Proxmox Virtual Environment（简称 Proxmox VE、PVE）是一个开源的服务器虚拟化环境 Linux 发行版。其使用基于 Ubuntu 的定制内核，包含安装程序、网页控制台和命令行工具，并且提供了 REST API 进行控制。
 
 Proxmox VE 支持两类虚拟化技术：基于容器的 LXC 和硬件抽象层全虚拟化的 KVM。
 
+![Web UI in PVE](https://pve.proxmox.com/pve-docs/images/screenshot/gui-qemu-summary.png)
+
+![Web Console in PVE](https://www.vinchin.com/images/proxmox/proxmox-vm-backup-using-shell-command-1.png)
+
+### VMware ESXi
+
+VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级 Type-1 虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。
+
+ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion）、高可用性（HA）等高级功能。
+
+需要注意的是，ESXi 及 vSphere 是闭源的付费软件，并且从 2024 年开始不再提供免费版本。
+
+![Web UI in ESXi](https://blogs.vmware.com/wp-content/uploads/sites/72/2016/04/ESXi-EHC.png)
+
+![ESXi Shell](https://be-virtual.net/wp-content/uploads/2019/10/VMware-ESXi-01-SSH-Login.png)
+
+### Microsoft Hyper-V
+
+!!! warning "本节内容待补充"
+
+### Xen
+
+!!! warning "本节内容待补充"
+
 ## 参考资料
 
-- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_7)
+- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_8)
 - [阿里云课程 - 虚拟化技术入门](https://edu.aliyun.com/course/313115/)
 - [Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3](https://cdrdv2.intel.com/v1/dl/getContent/671506)
 - Edouard Bugnion, Scott Devine, Mendel Rosenblum, Jeremy Sugerman, and Edward Y. Wang. 2012. Bringing Virtualization to the x86 Architecture with the Original VMware Workstation. ACM Trans. Comput. Syst. 30, 4, Article 12 (November 2012), 51 pages. <https://doi.org/10.1145/2382553.2382554>
