@@ -11,6 +11,7 @@ icon: fontawesome/solid/z
 !!! warning "本文编写中"
 
 ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存储管理功能，包括文件系统、卷管理、快照、数据完整性检查和修复等，常被称作“单机最强存储方案”。
+ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS 无需像 ext4、XFS 等传统文件系统那样进行 fsck 检查，且即使发生意外断电等情况，也能保证文件系统内部的完整性和一致性。
 
 虽然 ZFS 没有特殊的系统要求，但是我们推荐在具有较好配置的服务器上使用 ZFS，以获得更好的性能和稳定性。
 
@@ -665,12 +666,14 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 <!-- markdownlint-disable MD053 -->
 
+  [^ostep-lfs]: 如果你想要理解“日志式文件系统”的原理，我们推荐 Operating Systems: Three Easy Pieces 中的 [Log-structured File Systems][ostep-lfs] 一章。
   [^uuu1804]: Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`，但更重要的是，我们**不推荐使用已经 EOL 的发行版**。
   [^datasets]: 实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。
   [^arc-as-used]: 在 FreeBSD 系统中，或者在 Linux 下使用 htop &ge; 3.0 软件，ZFS ARC 占用的内存会正确地显示为 cached。
   [^cks-ZFSUnderstandingARCHits]: Chris's Wiki: [Understanding ZFS ARC hit (and miss) kstat statistics][cks-ZFSUnderstandingARCHits]
   [^zfs-destroy-r]: `zfs destroy` 命令有一个 `-r` 参数，可以递归删除所有快照和子数据集（datasets）。
 
+  [ostep-lfs]: https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf
   [cks]: https://utcc.utoronto.ca/~cks/space/blog/
   [cks-ZFSUnderstandingARCHits]: https://utcc.utoronto.ca/~cks/space/blog/solaris/ZFSUnderstandingARCHits#:~:text=An%20%27iohit%27%20happens%20when%20ZFS%20wants%20a%20disk%20block%20that%20already%20has%20active%20IO%20issued%20to%20read%20it%20into%20the%20ARC%2C%20perhaps%20because%20there%20is%20active%20prefetching%20on%20it.
   [delphix]: https://www.delphix.com/blog/zfs-raidz-stripe-width-or-how-i-learned-stop-worrying-and-love-raidz
