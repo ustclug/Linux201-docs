@@ -83,17 +83,46 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 #### I/O 虚拟化
 
-!!! warning "本节内容待补充"
+在非虚拟化的环境下，操作系统内核通过驱动与 I/O 设备进行交互。从 CPU 的角度看，与设备的交互方式一般分为以下三种：
 
-<!-- 硬件设备的模拟？ -->
+- 中断：当设备发生特定 I/O 事件时，通过中断信号通知 CPU，促使操作系统及时响应处理
+- 寄存器访问：CPU 通过读写设备寄存器来控制设备状态或获取设备数据
+- DMA：设备直接与内存进行数据交换，无需 CPU 介入控制
 
-<!-- 设备运行方式（I/O 架构）：虚拟中断、虚拟寄存器访问、虚拟 DMA。 -->
+而在虚拟化架构中，Guest OS 与物理 I/O 设备之间多出了一个虚拟化层，它们之间的交互必须由虚拟化层妥善处理。为此，I/O 虚拟化需要：
 
-<!-- 纯软件实现的完全虚拟化：效率低，可用于简单的设备模拟，如 QEMU 中的总线。 -->
+- 向 Guest OS 提供设备接口
+- 截获并处理 Guest OS 向设备发起的访问操作
 
-<!-- 半虚拟化（PV）：重新定义 I/O 架构（Xen、KVM、Virtualbox） -->
+以下将讨论几类主流的 I/O 虚拟化的实现方式。
 
-<!-- 设备直通（Passthrough）：I/O 操作发往物理设备、捕获中断、DMA（通过 IOMMU，如 Intel VT-d）、SRIOV（将物理设备分割为多个虚拟设备）、virtio 驱动 -->
+##### 设备仿真
+
+对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为，并向 Guest OS 提供模拟的目标设备的接口。
+
+这种虚拟化实现对于 Guest OS 是无感的，具有较好的兼容性，因为 Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，不需要对 OS 做出任何修改或编写新的驱动；但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。
+
+##### 半虚拟化
+
+在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。
+
+以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。
+
+这种实现避免了设备仿真中硬件模拟复杂、Trap 开销大等问题，通过采用专门优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真；并且，如果在虚拟化实现上定义了规范的标准接口，也具有一定的可移植性。
+
+!!! info "virtio"
+
+    待补充
+
+##### 设备直通
+
+在设备直通技术中，Hypervisor 将物理 I/O 设备直接分配给特定的虚拟机，使得该虚拟机能够直接与硬件进行交互，而无需经过中间的软件仿真或分离驱动层。这种方式可能依赖于硬件支持（例如 Intel VT-d 或 AMD IOMMU）来实现 DMA 重映射和中断隔离等功能。
+
+设备直通的性能是最好的，几乎能够获得原生的 I/O 性能，但独占设备使得其灵活性稍差，在配置上可能会略微复杂，并且可能会存在兼容性问题。
+
+!!! info "SR-IOV"
+
+    待补充
 
 ## 操作系统层虚拟化
 
@@ -151,8 +180,11 @@ ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion�
 
 ## 参考资料
 
-- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_8)
 - [阿里云课程 - 虚拟化技术入门](https://edu.aliyun.com/course/313115/)
+- [CTF Wiki - 虚拟化基础知识](https://ctf-wiki.org/pwn/virtualization/basic-knowledge/basic-knowledge/)
+- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_11)
 - [Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3](https://cdrdv2.intel.com/v1/dl/getContent/671506)
+- [Virtio: An I/O virtualization framework for Linux](https://developer.ibm.com/articles/l-virtio/)
+- [Intel® Virtualization Technology for Directed I/O](https://cdrdv2-public.intel.com/774206/vt-directed-io-spec%20.pdf)
 - Edouard Bugnion, Scott Devine, Mendel Rosenblum, Jeremy Sugerman, and Edward Y. Wang. 2012. Bringing Virtualization to the x86 Architecture with the Original VMware Workstation. ACM Trans. Comput. Syst. 30, 4, Article 12 (November 2012), 51 pages. <https://doi.org/10.1145/2382553.2382554>
 - Paul Barham, Boris Dragovic, Keir Fraser, Steven Hand, Tim Harris, Alex Ho, Rolf Neugebauer, Ian Pratt, and Andrew Warfield. 2003. Xen and the art of virtualization. SIGOPS Oper. Syst. Rev. 37, 5 (December 2003), 164–177. <https://doi.org/10.1145/1165389.945462>
