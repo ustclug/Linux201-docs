@@ -79,7 +79,23 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 #### 内存虚拟化
 
-!!! warning "本节内容待补充"
+对于内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统内核的 Hypervisor 来说，如何高效地调度内存资源，尽可能满足操作系统对内存的需求，就成为了一个技术挑战。
+
+目前，主流操作系统使用页（Page）为单位来管理内存，通过页表将虚拟内存地址转换到物理内存地址，完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。为了让运行在 Hypervisor 上的操作系统能够正常管理内存，Hypervisor 需要实现 MMU 虚拟化。
+
+对于 MMU 虚拟化，纯软件实现方式主要有以下两种：
+
+- Shadow page table：
+
+    - Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表
+    - 兼容性高，但页表的频繁切换导致开销较大
+
+- 半虚拟化方式：
+  
+    - 以 Xen 的实现为例，Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要通过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置）来确保 Guest 的内存访问合法
+    - 效率较高，但实现上需要修改 Guest OS 的内存管理模块，例如 [Xen 的实现](https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management)
+
+当然，对于目前的 x86 平台，自然也存在硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。
 
 #### I/O 虚拟化
 
