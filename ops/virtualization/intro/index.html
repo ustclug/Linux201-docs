@@ -2124,9 +2124,26 @@
 <!-- TODO: 上述这些应该都是比较古代的做法，不知道是否需要补充更现代的做法 -->
 
 <h4 id="_5">内存虚拟化<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
-<div class="admonition warning">
-<p class="admonition-title">本节内容待补充</p>
-</div>
+<p>对于内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统内核的 Hypervisor 来说，如何高效地调度内存资源，尽可能满足操作系统对内存的需求，就成为了一个技术挑战。</p>
+<p>目前，主流操作系统使用页（Page）为单位来管理内存，通过页表将虚拟内存地址转换到物理内存地址，完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。为了让运行在 Hypervisor 上的操作系统能够正常管理内存，Hypervisor 需要实现 MMU 虚拟化。</p>
+<p>对于 MMU 虚拟化，纯软件实现方式主要有以下两种：</p>
+<ul>
+<li>
+<p>Shadow page table：</p>
+<ul>
+<li>Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表</li>
+<li>兼容性高，但页表的频繁切换导致开销较大</li>
+</ul>
+</li>
+<li>
+<p>半虚拟化方式：</p>
+<ul>
+<li>以 Xen 的实现为例，Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要通过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置）来确保 Guest 的内存访问合法</li>
+<li>效率较高，但实现上需要修改 Guest OS 的内存管理模块，例如 <a href="https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management">Xen 的实现</a></li>
+</ul>
+</li>
+</ul>
+<p>当然，对于目前的 x86 平台，自然也存在硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。</p>
 <h4 id="io">I/O 虚拟化<a class="headerlink" href="#io" title="Permanent link">&para;</a></h4>
 <p>在非虚拟化的环境下，操作系统内核通过驱动与 I/O 设备进行交互。从 CPU 的角度看，与设备的交互方式一般分为以下三种：</p>
 <ul>
