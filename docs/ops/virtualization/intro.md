@@ -27,6 +27,16 @@
 
 以下将具体介绍这两类虚拟化技术。
 
+<!-- !!! note "API 兼容层"
+
+    API 兼容层技术实现的是 API 级别的虚拟化，使用这种技术的典型代表是 Linux 平台下的 Wine 和 Windows 平台下的 Windows Subsystem for Linux 1（WSL1）。
+
+    TODO: 为什么 WSL 1 流产了？
+    
+    而 WSL2 中的 Linux 实例本质上是运行在 Hyper-V 虚拟化技术上的轻量级虚拟机，与 WSL1 的架构完全不同。
+    
+    一个课后小练习：为什么有人会坚持使用 WSL 1 而不是 WSL 2？ -->
+
 ## 硬件虚拟化
 
 ### 概述
@@ -40,7 +50,7 @@
 - Type-1/Native/Bare-metal Hypervisor
 
     - Hypervisor 直接运行在硬件上，可以直接调度硬件资源
-    - 性能损耗低，适合在服务器环境下使用
+    - 性能损耗低，但使用的灵活度也较低，适合在服务器环境下使用
     - 例：VMware ESXi、Xen、Microsoft Hyper-V
 
 - Type-2/Hosted Hypervisor
@@ -49,33 +59,91 @@
     - 需要通过操作系统实现资源调度，因此性能损耗较高
     - 例：VMware Workstation、Oracle VM VirtualBox
 
-Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转变为一个 Type-1 Hypervisor，同时保留了内核的全部功能。因此，由 KVM 创建和调度的虚拟机会与内核下运行的常规进程共享硬件资源。
+而 Linux KVM 的情形较为特殊：
 
-完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置。
+- 作为内核模块，KVM 将 Linux 内核转变为一个 Type-1 Hypervisor，同时又保留了内核的全部功能，由 KVM 创建和调度的虚拟机会与内核下运行的常规进程共享硬件资源
+- KVM 不负责硬件模拟，而是在内核态提供 CPU 和内存虚拟化支持，结合硬件辅助虚拟化技术实现加速，因此常与用户态的 QEMU 结合使用，称为 QEMU/KVM
+
+关于 QEMU/KVM 的更多介绍，请参考本文档的 [QEMU/KVM](./qemu-kvm.md) 部分。
+
+完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置，可以参考下文 [常见服务器虚拟化方案](#_10) 的配图。
 
 ### x86 虚拟化实现
 
-对于 x86 平台，目前有多种技术路线来实现硬件虚拟化，包括：
+对于 x86 平台，有多种技术路线来实现硬件虚拟化，包括：
 
 - 完全虚拟化（Full Virtualization）
-- 半虚拟化（Paravirtualization）
-- 硬件辅助虚拟化（Hardware Assisted Virtualization）
+    - 虚拟化实现集中在 Hypervisor 上，操作系统可以不经修改地在 Hypervisor 上运行
+    - 总体来说，兼容性好，但性能可能较为低下
 
-以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。
+- 半虚拟化（Paravirtualization）
+    - 操作系统与 Hypervisor 通过预先约定好的接口协作运行，一般需要通过修改操作系统内核，或向操作系统中添加驱动来实现
+    - 性能上一般强于完全虚拟化，但兼容性上可能略逊一筹
+
+- 硬件辅助虚拟化（Hardware Assisted Virtualization）
+    - 通过集成虚拟化操作相关的硬件，以提高性能，简化虚拟化相关的软件实现，一般与上述两种虚拟化方式结合使用
+    - 目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类技术
 
 !!! info "VMware Tools"
 
     待补充
 
+!!! info "你的 CPU 是否支持硬件虚拟化扩展？"
+
+    现代主流的 x86-64 CPU 都应当支持这类扩展，可以使用 `lscpu` 等工具来检查这一点：
+
+    ```bash
+    ⟩ lscpu
+    Architecture:             x86_64
+    CPU op-mode(s):         32-bit, 64-bit
+    Address sizes:          39 bits physical, 48 bits virtual
+    Byte Order:             Little Endian
+    CPU(s):                   20
+    On-line CPU(s) list:    0-19
+    Vendor ID:                GenuineIntel
+    Model name:             12th Gen Intel(R) Core(TM) i7-12700H
+        CPU family:           6
+        Model:                154
+        Thread(s) per core:   2
+        Core(s) per socket:   14
+        Socket(s):            1
+        Stepping:             3
+        CPU(s) scaling MHz:   20%
+        CPU max MHz:          4700.0000
+        CPU min MHz:          400.0000
+        BogoMIPS:             5376.00
+        Flags:                ... vmx ept ept_ad ...
+
+    Virtualization features:
+    Virtualization:         VT-x
+
+    # 以下输出省略
+    # ...
+    ```
+
+    其中，Flags 中的 `vmx` 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，`ept` 表示 CPU 支持扩展页表（Extended Page Tables）技术，下文也将提及这类技术。
+
+以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。
+
 #### CPU 虚拟化
 
-由于 x86 架构在最初设计时未能考虑到虚拟化的需求，缺乏虚拟化的硬件支持，因此，在 x86 虚拟化技术发展的早期，一种实现 CPU 完全虚拟化的技术路线是，采用直接指令执行与二进制翻译相结合的方式，通过在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，保证未经过修改的裸机程序（如操作系统内核）能够直接运行在虚拟机上。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。
+CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思想是：非敏感指令在 Guest OS 上直接执行，敏感指令陷入到 Hypervisor 进行模拟。然而，这种模型对于硬件架构设计存在要求，而 x86 架构在最初设计时并未考虑到虚拟化的场景，无法满足前提条件，也就无法直接使用这种架构，在 x86 虚拟化发展的早期，只能采取一些变通方法。
 
-实现 CPU 虚拟化的另一种技术路线是半虚拟化，有时又被称为操作系统辅助虚拟化（OS Assisted Virtualization），通过修改操作系统内核（如 Linux 这样的开源操作系统），或向操作系统中添加驱动（如 Windows 这样的闭源操作系统），使操作系统能与 Hypervisor 通过预先约定好的接口协作运行。这种虚拟化方式性能较为优越，且实现简单，但由于需要对每一类需要虚拟化的操作系统内核都进行单独修改或编写驱动，在灵活性上可能稍逊一筹。
+对于完全虚拟化来说，一种实现是采用直接指令执行与二进制翻译相结合的方式，在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，VMware Workstation 在早期就采用这种 CPU 虚拟化的方法。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。
 
-到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。这种做法不仅能简化 Hypervisor 的实现，还大大减少了虚拟化带来的开销。目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类方式。
+至于半虚拟化，以 Xen 最初的实现为例：
 
-<!-- TODO: 上述这些应该都是比较古代的做法，不知道是否需要补充更现代的做法 -->
+- 保护环：Hypervisor 运行在 Ring 0，需要将 Guest OS 移植到 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行
+
+- 异常处理：Guest OS 需要经过修改，注册由 Hypervisor 提供的异常处理向量表
+
+    - 大部分异常处理函数保持不变
+    - Page Fault：由于 Guest OS 运行在 Ring 1，权限不足以完成该完成的任务，就通过 Handler 交给 Hypervisor 处理
+    - System Call：安装一个专门优化过的 Handler，不再由 Hypervisor 处理
+
+- 中断处理：由一个 Event System 取而代之，详见下面的 I/O 虚拟化部分
+
+到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。
 
 #### 内存虚拟化
 
@@ -85,15 +153,15 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 对于 MMU 虚拟化，纯软件实现方式主要有以下两种：
 
-- Shadow page table：
+- 完全虚拟化：Shadow page table（影子页表）
 
     - Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表
-    - 兼容性高，但页表的频繁切换导致开销较大
+    - 性能开销主要发生在页表的维护和切换上
 
-- 半虚拟化方式：
+- 半虚拟化：以 [Xen 最初的实现](https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management) 为例
   
-    - 以 Xen 的实现为例，Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要通过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置）来确保 Guest 的内存访问合法
-    - 效率较高，但实现上需要修改 Guest OS 的内存管理模块，例如 [Xen 的实现](https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management)
+    - Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要经过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置等）来确保 Guest 的内存访问合法
+    - 效率较高，但需要通过修改 Guest OS 的内存管理模块来实现
 
 当然，对于目前的 x86 平台，自然也存在硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。
 
@@ -114,7 +182,7 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 ##### 设备仿真
 
-对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为，并向 Guest OS 提供模拟的目标设备的接口。
+对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为。
 
 这种虚拟化实现对于 Guest OS 是无感的，具有较好的兼容性，因为 Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，不需要对 OS 做出任何修改或编写新的驱动；但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。
 
@@ -122,7 +190,7 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。
 
-以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。
+以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。
 
 这种实现避免了设备仿真中硬件模拟复杂、Trap 开销大等问题，通过采用专门优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真；并且，如果在虚拟化实现上定义了规范的标准接口，也具有一定的可移植性。
 
@@ -154,14 +222,6 @@ Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转�
 
 与硬件虚拟化相比，操作系统级虚拟化的开销较小，也不依赖于硬件支持，但受到实现原理的限制，无法运行不同内核的操作系统。
 
-<!-- !!! note "API 兼容层"
-
-    API 兼容层技术实现的是 API 级别的虚拟化，这种技术的典型代表是 Linux 平台下的 Wine 和 Windows 平台下的 Windows Subsystem for Linux 1（WSL1）。
-    
-    而 WSL2 中的 Linux 实例本质上是运行在 Hyper-V 虚拟化技术上的轻量级虚拟机，与 WSL1 的架构完全不同。
-    
-    请读者查阅资料，了解相关技术之间的差异。 -->
-
 ## 常见服务器虚拟化方案
 
 ### Proxmox VE (PVE)
@@ -176,7 +236,7 @@ Proxmox VE 支持两类虚拟化技术：基于容器的 LXC 和硬件抽象层�
 
 ### VMware ESXi
 
-VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级 Type-1 虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。
+VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级裸机虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。
 
 ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion）、高可用性（HA）等高级功能。
 
@@ -189,6 +249,8 @@ ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion�
 ### Microsoft Hyper-V
 
 !!! warning "本节内容待补充"
+
+!!! info "VMware 与 Hyper-V 的共存问题"
 
 ### Xen
 
