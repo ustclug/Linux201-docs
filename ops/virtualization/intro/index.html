@@ -2080,6 +2080,16 @@
 <li>操作系统级虚拟化（OS-level virtualization）</li>
 </ul>
 <p>以下将具体介绍这两类虚拟化技术。</p>
+<!-- !!! note "API 兼容层"
+
+    API 兼容层技术实现的是 API 级别的虚拟化，使用这种技术的典型代表是 Linux 平台下的 Wine 和 Windows 平台下的 Windows Subsystem for Linux 1（WSL1）。
+
+    TODO: 为什么 WSL 1 流产了？
+
+    而 WSL2 中的 Linux 实例本质上是运行在 Hyper-V 虚拟化技术上的轻量级虚拟机，与 WSL1 的架构完全不同。
+
+    一个课后小练习：为什么有人会坚持使用 WSL 1 而不是 WSL 2？ -->
+
 <h2 id="_3">硬件虚拟化<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
 <h3 id="_4">概述<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
 <p>在硬件虚拟化技术中，物理主机被分割为一台或多台虚拟机（Virtual Machine）。每台虚拟机都可以看作一台独立的“计算机”，拥有自己的虚拟硬件（CPU、内存、硬盘、网络接口等），运行自己的操作系统和应用程序，通过虚拟化技术共享物理主机的硬件资源。</p>
@@ -2090,7 +2100,7 @@
 <p>Type-1/Native/Bare-metal Hypervisor</p>
 <ul>
 <li>Hypervisor 直接运行在硬件上，可以直接调度硬件资源</li>
-<li>性能损耗低，适合在服务器环境下使用</li>
+<li>性能损耗低，但使用的灵活度也较低，适合在服务器环境下使用</li>
 <li>例：VMware ESXi、Xen、Microsoft Hyper-V</li>
 </ul>
 </li>
@@ -2103,43 +2113,113 @@
 </ul>
 </li>
 </ul>
-<p>Linux KVM 的情形较为特殊。作为内核模块，KVM 将 Linux 内核转变为一个 Type-1 Hypervisor，同时保留了内核的全部功能。因此，由 KVM 创建和调度的虚拟机会与内核下运行的常规进程共享硬件资源。</p>
-<p>完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置。</p>
-<h3 id="x86">x86 虚拟化实现<a class="headerlink" href="#x86" title="Permanent link">&para;</a></h3>
-<p>对于 x86 平台，目前有多种技术路线来实现硬件虚拟化，包括：</p>
+<p>而 Linux KVM 的情形较为特殊：</p>
 <ul>
-<li>完全虚拟化（Full Virtualization）</li>
-<li>半虚拟化（Paravirtualization）</li>
-<li>硬件辅助虚拟化（Hardware Assisted Virtualization）</li>
+<li>作为内核模块，KVM 将 Linux 内核转变为一个 Type-1 Hypervisor，同时又保留了内核的全部功能，由 KVM 创建和调度的虚拟机会与内核下运行的常规进程共享硬件资源</li>
+<li>KVM 不负责硬件模拟，而是在内核态提供 CPU 和内存虚拟化支持，结合硬件辅助虚拟化技术实现加速，因此常与用户态的 QEMU 结合使用，称为 QEMU/KVM</li>
 </ul>
-<p>以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。</p>
+<p>关于 QEMU/KVM 的更多介绍，请参考本文档的 <a href="../qemu-kvm/">QEMU/KVM</a> 部分。</p>
+<p>完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置，可以参考下文 <a href="#_10">常见服务器虚拟化方案</a> 的配图。</p>
+<h3 id="x86">x86 虚拟化实现<a class="headerlink" href="#x86" title="Permanent link">&para;</a></h3>
+<p>对于 x86 平台，有多种技术路线来实现硬件虚拟化，包括：</p>
+<ul>
+<li>
+<p>完全虚拟化（Full Virtualization）</p>
+<ul>
+<li>虚拟化实现集中在 Hypervisor 上，操作系统可以不经修改地在 Hypervisor 上运行</li>
+<li>总体来说，兼容性好，但性能可能较为低下</li>
+</ul>
+</li>
+<li>
+<p>半虚拟化（Paravirtualization）</p>
+<ul>
+<li>操作系统与 Hypervisor 通过预先约定好的接口协作运行，一般需要通过修改操作系统内核，或向操作系统中添加驱动来实现</li>
+<li>性能上一般强于完全虚拟化，但兼容性上可能略逊一筹</li>
+</ul>
+</li>
+<li>
+<p>硬件辅助虚拟化（Hardware Assisted Virtualization）</p>
+<ul>
+<li>通过集成虚拟化操作相关的硬件，以提高性能，简化虚拟化相关的软件实现，一般与上述两种虚拟化方式结合使用</li>
+<li>目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类技术</li>
+</ul>
+</li>
+</ul>
 <div class="admonition info">
 <p class="admonition-title">VMware Tools</p>
 <p>待补充</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">你的 CPU 是否支持硬件虚拟化扩展？</p>
+<p>现代主流的 x86-64 CPU 都应当支持这类扩展，可以使用 <code>lscpu</code> 等工具来检查这一点：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>⟩<span class="w"> </span>lscpu
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Architecture:<span class="w">             </span>x86_64
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>CPU<span class="w"> </span>op-mode<span class="o">(</span>s<span class="o">)</span>:<span class="w">         </span><span class="m">32</span>-bit,<span class="w"> </span><span class="m">64</span>-bit
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Address<span class="w"> </span>sizes:<span class="w">          </span><span class="m">39</span><span class="w"> </span>bits<span class="w"> </span>physical,<span class="w"> </span><span class="m">48</span><span class="w"> </span>bits<span class="w"> </span>virtual
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Byte<span class="w"> </span>Order:<span class="w">             </span>Little<span class="w"> </span>Endian
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>CPU<span class="o">(</span>s<span class="o">)</span>:<span class="w">                   </span><span class="m">20</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>On-line<span class="w"> </span>CPU<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>list:<span class="w">    </span><span class="m">0</span>-19
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>Vendor<span class="w"> </span>ID:<span class="w">                </span>GenuineIntel
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>Model<span class="w"> </span>name:<span class="w">             </span>12th<span class="w"> </span>Gen<span class="w"> </span>Intel<span class="o">(</span>R<span class="o">)</span><span class="w"> </span>Core<span class="o">(</span>TM<span class="o">)</span><span class="w"> </span>i7-12700H
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span>CPU<span class="w"> </span>family:<span class="w">           </span><span class="m">6</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span>Model:<span class="w">                </span><span class="m">154</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span>Thread<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>per<span class="w"> </span>core:<span class="w">   </span><span class="m">2</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span>Core<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>per<span class="w"> </span>socket:<span class="w">   </span><span class="m">14</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span>Socket<span class="o">(</span>s<span class="o">)</span>:<span class="w">            </span><span class="m">1</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">    </span>Stepping:<span class="w">             </span><span class="m">3</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span>CPU<span class="o">(</span>s<span class="o">)</span><span class="w"> </span>scaling<span class="w"> </span>MHz:<span class="w">   </span><span class="m">20</span>%
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">    </span>CPU<span class="w"> </span>max<span class="w"> </span>MHz:<span class="w">          </span><span class="m">4700</span>.0000
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span>CPU<span class="w"> </span>min<span class="w"> </span>MHz:<span class="w">          </span><span class="m">400</span>.0000
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span>BogoMIPS:<span class="w">             </span><span class="m">5376</span>.00
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span>Flags:<span class="w">                </span>...<span class="w"> </span>vmx<span class="w"> </span>ept<span class="w"> </span>ept_ad<span class="w"> </span>...
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>Virtualization<span class="w"> </span>features:
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>Virtualization:<span class="w">         </span>VT-x
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1"># 以下输出省略</span>
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1"># ...</span>
+</code></pre></div>
+<p>其中，Flags 中的 <code>vmx</code> 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，<code>ept</code> 表示 CPU 支持扩展页表（Extended Page Tables）技术，下文也将提及这类技术。</p>
+</div>
+<p>以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。</p>
 <h4 id="cpu">CPU 虚拟化<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h4>
-<p>由于 x86 架构在最初设计时未能考虑到虚拟化的需求，缺乏虚拟化的硬件支持，因此，在 x86 虚拟化技术发展的早期，一种实现 CPU 完全虚拟化的技术路线是，采用直接指令执行与二进制翻译相结合的方式，通过在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，保证未经过修改的裸机程序（如操作系统内核）能够直接运行在虚拟机上。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。</p>
-<p>实现 CPU 虚拟化的另一种技术路线是半虚拟化，有时又被称为操作系统辅助虚拟化（OS Assisted Virtualization），通过修改操作系统内核（如 Linux 这样的开源操作系统），或向操作系统中添加驱动（如 Windows 这样的闭源操作系统），使操作系统能与 Hypervisor 通过预先约定好的接口协作运行。这种虚拟化方式性能较为优越，且实现简单，但由于需要对每一类需要虚拟化的操作系统内核都进行单独修改或编写驱动，在灵活性上可能稍逊一筹。</p>
-<p>到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。这种做法不仅能简化 Hypervisor 的实现，还大大减少了虚拟化带来的开销。目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类方式。</p>
-<!-- TODO: 上述这些应该都是比较古代的做法，不知道是否需要补充更现代的做法 -->
-
+<p>CPU 虚拟化的一个经典架构被称为「Trap &amp; Emulate」，其大致思想是：非敏感指令在 Guest OS 上直接执行，敏感指令陷入到 Hypervisor 进行模拟。然而，这种模型对于硬件架构设计存在要求，而 x86 架构在最初设计时并未考虑到虚拟化的场景，无法满足前提条件，也就无法直接使用这种架构，在 x86 虚拟化发展的早期，只能采取一些变通方法。</p>
+<p>对于完全虚拟化来说，一种实现是采用直接指令执行与二进制翻译相结合的方式，在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，VMware Workstation 在早期就采用这种 CPU 虚拟化的方法。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。</p>
+<p>至于半虚拟化，以 Xen 最初的实现为例：</p>
+<ul>
+<li>
+<p>保护环：Hypervisor 运行在 Ring 0，需要将 Guest OS 移植到 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行</p>
+</li>
+<li>
+<p>异常处理：Guest OS 需要经过修改，注册由 Hypervisor 提供的异常处理向量表</p>
+<ul>
+<li>大部分异常处理函数保持不变</li>
+<li>Page Fault：由于 Guest OS 运行在 Ring 1，权限不足以完成该完成的任务，就通过 Handler 交给 Hypervisor 处理</li>
+<li>System Call：安装一个专门优化过的 Handler，不再由 Hypervisor 处理</li>
+</ul>
+</li>
+<li>
+<p>中断处理：由一个 Event System 取而代之，详见下面的 I/O 虚拟化部分</p>
+</li>
+</ul>
+<p>到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。</p>
 <h4 id="_5">内存虚拟化<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
 <p>对于内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统内核的 Hypervisor 来说，如何高效地调度内存资源，尽可能满足操作系统对内存的需求，就成为了一个技术挑战。</p>
 <p>目前，主流操作系统使用页（Page）为单位来管理内存，通过页表将虚拟内存地址转换到物理内存地址，完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。为了让运行在 Hypervisor 上的操作系统能够正常管理内存，Hypervisor 需要实现 MMU 虚拟化。</p>
 <p>对于 MMU 虚拟化，纯软件实现方式主要有以下两种：</p>
 <ul>
 <li>
-<p>Shadow page table：</p>
+<p>完全虚拟化：Shadow page table（影子页表）</p>
 <ul>
 <li>Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表</li>
-<li>兼容性高，但页表的频繁切换导致开销较大</li>
+<li>性能开销主要发生在页表的维护和切换上</li>
 </ul>
 </li>
 <li>
-<p>半虚拟化方式：</p>
+<p>半虚拟化：以 <a href="https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management">Xen 最初的实现</a> 为例</p>
 <ul>
-<li>以 Xen 的实现为例，Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要通过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置）来确保 Guest 的内存访问合法</li>
-<li>效率较高，但实现上需要修改 Guest OS 的内存管理模块，例如 <a href="https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management">Xen 的实现</a></li>
+<li>Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要经过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置等）来确保 Guest 的内存访问合法</li>
+<li>效率较高，但需要通过修改 Guest OS 的内存管理模块来实现</li>
 </ul>
 </li>
 </ul>
@@ -2158,11 +2238,11 @@
 </ul>
 <p>以下将讨论几类主流的 I/O 虚拟化的实现方式。</p>
 <h5 id="_6">设备仿真<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h5>
-<p>对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为，并向 Guest OS 提供模拟的目标设备的接口。</p>
+<p>对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为。</p>
 <p>这种虚拟化实现对于 Guest OS 是无感的，具有较好的兼容性，因为 Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，不需要对 OS 做出任何修改或编写新的驱动；但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。</p>
 <h5 id="_7">半虚拟化<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h5>
 <p>在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。</p>
-<p>以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。</p>
+<p>以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。</p>
 <p>这种实现避免了设备仿真中硬件模拟复杂、Trap 开销大等问题，通过采用专门优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真；并且，如果在虚拟化实现上定义了规范的标准接口，也具有一定的可移植性。</p>
 <div class="admonition info">
 <p class="admonition-title">virtio</p>
@@ -2185,14 +2265,6 @@
 </ul>
 <p>目前流行的、生态较好的虚拟化技术被称为容器（Containers），我们常用的 Docker 就属于一种容器实现。与 FreeBSD jail 相比，容器技术注重软件的可分发性，在 DevOps 领域中得到了广泛使用；当然，只要配置得当，容器同样也能实现较为可靠的安全隔离作用。关于容器技术的详细介绍，请参考本文档的 <a href="../container/">容器</a> 部分。</p>
 <p>与硬件虚拟化相比，操作系统级虚拟化的开销较小，也不依赖于硬件支持，但受到实现原理的限制，无法运行不同内核的操作系统。</p>
-<!-- !!! note "API 兼容层"
-
-    API 兼容层技术实现的是 API 级别的虚拟化，这种技术的典型代表是 Linux 平台下的 Wine 和 Windows 平台下的 Windows Subsystem for Linux 1（WSL1）。
-
-    而 WSL2 中的 Linux 实例本质上是运行在 Hyper-V 虚拟化技术上的轻量级虚拟机，与 WSL1 的架构完全不同。
-
-    请读者查阅资料，了解相关技术之间的差异。 -->
-
 <h2 id="_10">常见服务器虚拟化方案<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="proxmox-ve-pve">Proxmox VE (PVE)<a class="headerlink" href="#proxmox-ve-pve" title="Permanent link">&para;</a></h3>
 <p>Proxmox Virtual Environment（简称 Proxmox VE、PVE）是一个开源的服务器虚拟化环境 Linux 发行版。其使用基于 Ubuntu 的定制内核，包含安装程序、网页控制台和命令行工具，并且提供了 REST API 进行控制。</p>
@@ -2200,7 +2272,7 @@
 <p><img alt="Web UI in PVE" src="https://pve.proxmox.com/pve-docs/images/screenshot/gui-qemu-summary.png" /></p>
 <p><img alt="Web Console in PVE" src="https://www.vinchin.com/images/proxmox/proxmox-vm-backup-using-shell-command-1.png" /></p>
 <h3 id="vmware-esxi">VMware ESXi<a class="headerlink" href="#vmware-esxi" title="Permanent link">&para;</a></h3>
-<p>VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级 Type-1 虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。</p>
+<p>VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级裸机虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。</p>
 <p>ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion）、高可用性（HA）等高级功能。</p>
 <p>需要注意的是，ESXi 及 vSphere 是闭源的付费软件，并且从 2024 年开始不再提供免费版本。</p>
 <p><img alt="Web UI in ESXi" src="https://blogs.vmware.com/wp-content/uploads/sites/72/2016/04/ESXi-EHC.png" /></p>
@@ -2208,6 +2280,9 @@
 <h3 id="microsoft-hyper-v">Microsoft Hyper-V<a class="headerlink" href="#microsoft-hyper-v" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">本节内容待补充</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">VMware 与 Hyper-V 的共存问题</p>
 </div>
 <h3 id="xen">Xen<a class="headerlink" href="#xen" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
@@ -2269,7 +2344,7 @@
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">2025年2月15日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">2025年2月18日</span>
   </span>
 
     
