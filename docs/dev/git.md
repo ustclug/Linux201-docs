@@ -270,6 +270,18 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
     done
     ```
 
+### 部分 clone {#partial-clone}
+
+Git 支持三种部分 clone 的方式：
+
+- blobless，不 clone HEAD 未涉及的 blob：`git clone --filter=blob:none <url>`
+- treeless，不 clone HEAD 未涉及的 blob 和 tree：`git clone --filter=tree:0 <url>`
+- shallow，不 clone HEAD 未涉及的 blob、tree 和 commit（**不推荐**）：`git clone --depth=1 --single-branch <url>`
+
+在网络上常见的部分 clone 方式为 `--depth=1`，但是请注意：**`--depth=1` 在后续更新时，会给服务器和网络带宽带来非常大的负担，因此建议仅在用完即删的场景下使用**。因为 shallow clone 没有存储历史信息，在某些情况下，服务器需要索引全部历史信息，并且这一过程难以优化。一个知名的例子是：[由于 shallow clone 给服务器带来的压力过大，GitHub 勒令要求 Homebrew 不允许 shallow clone](https://github.com/Homebrew/brew/pull/9383)。
+
+有关更多内容，可阅读 [Get up to speed with partial clone and shallow clone](https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/)。
+
 ### Git Submodule {#git-submodule}
 
 Submodule 可以用来添加外部项目，例如向一个 C++ 项目中添加 Eigen：
