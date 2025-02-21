@@ -2146,10 +2146,6 @@
 </li>
 </ul>
 <div class="admonition info">
-<p class="admonition-title">VMware Tools</p>
-<p>待补充</p>
-</div>
-<div class="admonition info">
 <p class="admonition-title">你的 CPU 是否支持硬件虚拟化扩展？</p>
 <p>现代主流的 x86-64 CPU 都应当支持这类扩展，可以使用 <code>lscpu</code> 等工具来检查这一点：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>⟩<span class="w"> </span>lscpu
@@ -2179,7 +2175,7 @@
 <a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="c1"># 以下输出省略</span>
 <a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1"># ...</span>
 </code></pre></div>
-<p>其中，Flags 中的 <code>vmx</code> 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，<code>ept</code> 表示 CPU 支持扩展页表（Extended Page Tables）技术，下文也将提及这类技术。</p>
+<p>其中，Flags 中的 <code>vmx</code> 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，<code>ept</code> 表示 CPU 支持扩展页表（Extended Page Tables）技术，这些硬件辅助虚拟化技术也将在下文提及。</p>
 </div>
 <p>以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。这里提到的实现技术可能已经过时，但它们有助于理解实现虚拟化的基本原理。</p>
 <h4 id="cpu">CPU 虚拟化<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h4>
@@ -2233,10 +2229,6 @@
 <p>以 Xen 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责操作实际物理硬件，前后端驱动之间通过共享内存，使用一个被称为 I/O ring 的数据结构来实现异步数据交换。</p>
 <p>这种实现避免了设备仿真中硬件模拟开销较大等问题，Guest OS 通过采用经过性能优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真。</p>
 <div class="admonition info">
-<p class="admonition-title">IOMMU</p>
-<p>待补充</p>
-</div>
-<div class="admonition info">
 <p class="admonition-title">Virtio</p>
 <p>待补充</p>
 </div>
@@ -2247,6 +2239,10 @@
 <p>设备直通的性能是最好的，几乎能够获得原生的 I/O 性能，但独占设备使得其灵活性稍差，在配置上可能会略微复杂，并且可能会存在兼容性问题。</p>
 <div class="admonition info">
 <p class="admonition-title">SR-IOV</p>
+<p>待补充</p>
+</div>
+<div class="admonition info">
+<p class="admonition-title">IOMMU</p>
 <p>待补充</p>
 </div>
 <h2 id="_9">操作系统层虚拟化<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
