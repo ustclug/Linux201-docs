@@ -2181,38 +2181,26 @@
 </code></pre></div>
 <p>其中，Flags 中的 <code>vmx</code> 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，<code>ept</code> 表示 CPU 支持扩展页表（Extended Page Tables）技术，下文也将提及这类技术。</p>
 </div>
-<p>以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。</p>
+<p>以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。这里提到的实现技术可能已经过时，但它们有助于理解实现虚拟化的基本原理。</p>
 <h4 id="cpu">CPU 虚拟化<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h4>
 <p>CPU 虚拟化的一个经典架构被称为「Trap &amp; Emulate」，其大致思想是：非敏感指令在 Guest OS 上直接执行，敏感指令陷入到 Hypervisor 进行模拟。然而，这种模型对于硬件架构设计存在要求，而 x86 架构在最初设计时并未考虑到虚拟化的场景，无法满足前提条件，也就无法直接使用这种架构，在 x86 虚拟化发展的早期，只能采取一些变通方法。</p>
 <p>对于完全虚拟化来说，一种实现是采用直接指令执行与二进制翻译相结合的方式，在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，VMware Workstation 在早期就采用这种 CPU 虚拟化的方法。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。</p>
-<p>至于半虚拟化，以 Xen 最初的实现为例：</p>
+<p>至于半虚拟化，以 <a href="https://doi.org/10.1145/1165389.945462">Xen 最初的实现</a> 为例，Hypervisor 运行在 Ring 0，Guest OS 被修改以在 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行。因此，当 Guest OS 试图直接执行特权指令时，会因为权限不足而失败；取而代之地，Guest OS 需要通过 Hypercall 接口陷入到 Hypervisor 中，才能执行特权指令。除此之外的一些设计：</p>
 <ul>
-<li>
-<p>保护环：Hypervisor 运行在 Ring 0，需要将 Guest OS 移植到 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行</p>
-</li>
-<li>
-<p>异常处理：Guest OS 需要经过修改，注册由 Hypervisor 提供的异常处理向量表</p>
-<ul>
-<li>大部分异常处理函数保持不变</li>
-<li>Page Fault：由于 Guest OS 运行在 Ring 1，权限不足以完成该完成的任务，就通过 Handler 交给 Hypervisor 处理</li>
-<li>System Call：安装一个专门优化过的 Handler，不再由 Hypervisor 处理</li>
-</ul>
-</li>
-<li>
-<p>中断处理：由一个 Event System 取而代之，详见下面的 I/O 虚拟化部分</p>
-</li>
+<li>异常处理：Guest OS 的异常处理大体与原生 x86 环境一致，只是在某些特权操作上（如 Page Fault 的处理）需要通过 Hypercall 获得 Hypervisor 的协助，以及在 System Call 时通过一个 Fast Handler 来减少开销</li>
+<li>中断处理：采用一个异步事件通知系统，称为 Event Channel，作为对硬件中断的虚拟化</li>
 </ul>
 <p>到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。</p>
 <h4 id="_5">内存虚拟化<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
-<p>对于内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统内核的 Hypervisor 来说，如何高效地调度内存资源，尽可能满足操作系统对内存的需求，就成为了一个技术挑战。</p>
-<p>目前，主流操作系统使用页（Page）为单位来管理内存，通过页表将虚拟内存地址转换到物理内存地址，完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。为了让运行在 Hypervisor 上的操作系统能够正常管理内存，Hypervisor 需要实现 MMU 虚拟化。</p>
-<p>对于 MMU 虚拟化，纯软件实现方式主要有以下两种：</p>
+<p>对于操作系统内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统的 Hypervisor 来说，需要高效地调度内存资源，尽可能满足每个操作系统对内存的需求。</p>
+<p>目前，主流操作系统使用页（Page）为单位来管理内存。在非虚拟化的环境下，操作系统使用页表将虚拟内存地址转换到物理内存地址，用于辅助完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。主流 x86 操作系统的虚拟内存管理功能都相当程度地依赖于 MMU，因此，在虚拟化环境下，Hypervisor 需要实现 MMU 虚拟化。</p>
+<p>目前软件实现的内存虚拟化，主要分为以下两种：</p>
 <ul>
 <li>
 <p>完全虚拟化：Shadow page table（影子页表）</p>
 <ul>
-<li>Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表</li>
-<li>性能开销主要发生在页表的维护和切换上</li>
+<li>Hypervisor 为每个 VM 都维护一张影子页表，将 Guest OS 中的虚拟地址翻译为 Host 的物理地址</li>
+<li>性能开销大</li>
 </ul>
 </li>
 <li>
@@ -2223,7 +2211,7 @@
 </ul>
 </li>
 </ul>
-<p>当然，对于目前的 x86 平台，自然也存在硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。</p>
+<p>而内存虚拟化的硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），通过扩展页表结构，在硬件上直接支持 Guest Virtual Address -&gt; Guest Physical Address -&gt; Host Physical Address 这两层地址转换，如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。</p>
 <h4 id="io">I/O 虚拟化<a class="headerlink" href="#io" title="Permanent link">&para;</a></h4>
 <p>在非虚拟化的环境下，操作系统内核通过驱动与 I/O 设备进行交互。从 CPU 的角度看，与设备的交互方式一般分为以下三种：</p>
 <ul>
@@ -2239,15 +2227,21 @@
 <p>以下将讨论几类主流的 I/O 虚拟化的实现方式。</p>
 <h5 id="_6">设备仿真<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h5>
 <p>对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为。</p>
-<p>这种虚拟化实现对于 Guest OS 是无感的，具有较好的兼容性，因为 Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，不需要对 OS 做出任何修改或编写新的驱动；但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。</p>
+<p>此时，Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。</p>
 <h5 id="_7">半虚拟化<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h5>
 <p>在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。</p>
-<p>以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。</p>
-<p>这种实现避免了设备仿真中硬件模拟复杂、Trap 开销大等问题，通过采用专门优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真；并且，如果在虚拟化实现上定义了规范的标准接口，也具有一定的可移植性。</p>
+<p>以 Xen 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责操作实际物理硬件，前后端驱动之间通过共享内存，使用一个被称为 I/O ring 的数据结构来实现异步数据交换。</p>
+<p>这种实现避免了设备仿真中硬件模拟开销较大等问题，Guest OS 通过采用经过性能优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真。</p>
 <div class="admonition info">
-<p class="admonition-title">virtio</p>
+<p class="admonition-title">IOMMU</p>
 <p>待补充</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">Virtio</p>
+<p>待补充</p>
+</div>
+<!-- TODO: 通过 qemu 使用不同设备后端跑 benchmark 来感受不同实现之间的差异 -->
+
 <h5 id="_8">设备直通<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h5>
 <p>在设备直通技术中，Hypervisor 将物理 I/O 设备直接分配给特定的虚拟机，使得该虚拟机能够直接与硬件进行交互，而无需经过中间的软件仿真或分离驱动层。这种方式可能依赖于硬件支持（例如 Intel VT-d 或 AMD IOMMU）来实现 DMA 重映射和中断隔离等功能。</p>
 <p>设备直通的性能是最好的，几乎能够获得原生的 I/O 性能，但独占设备使得其灵活性稍差，在配置上可能会略微复杂，并且可能会存在兼容性问题。</p>
@@ -2296,6 +2290,7 @@
 <li><a href="https://cdrdv2.intel.com/v1/dl/getContent/671506">Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3</a></li>
 <li><a href="https://developer.ibm.com/articles/l-virtio/">Virtio: An I/O virtualization framework for Linux</a></li>
 <li><a href="https://cdrdv2-public.intel.com/774206/vt-directed-io-spec%20.pdf">Intel® Virtualization Technology for Directed I/O</a></li>
+<li><a href="https://wiki.xenproject.org/wiki/Xen_Project_Software_Overview">Xen Project Software Overview</a></li>
 <li>Edouard Bugnion, Scott Devine, Mendel Rosenblum, Jeremy Sugerman, and Edward Y. Wang. 2012. Bringing Virtualization to the x86 Architecture with the Original VMware Workstation. ACM Trans. Comput. Syst. 30, 4, Article 12 (November 2012), 51 pages. <a href="https://doi.org/10.1145/2382553.2382554">https://doi.org/10.1145/2382553.2382554</a></li>
 <li>Paul Barham, Boris Dragovic, Keir Fraser, Steven Hand, Tim Harris, Alex Ho, Rolf Neugebauer, Ian Pratt, and Andrew Warfield. 2003. Xen and the art of virtualization. SIGOPS Oper. Syst. Rev. 37, 5 (December 2003), 164–177. <a href="https://doi.org/10.1145/1165389.945462">https://doi.org/10.1145/1165389.945462</a></li>
 </ul>
@@ -2344,7 +2339,7 @@
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">2025年2月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date">2025年2月21日</span>
   </span>
 
     
