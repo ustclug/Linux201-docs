@@ -123,7 +123,7 @@
 
     其中，Flags 中的 `vmx` 表示 CPU 支持 Intel 虚拟机扩展（VT-x）技术，`ept` 表示 CPU 支持扩展页表（Extended Page Tables）技术，下文也将提及这类技术。
 
-以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。
+以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。这里提到的实现技术可能已经过时，但它们有助于理解实现虚拟化的基本原理。
 
 #### CPU 虚拟化
 
@@ -131,39 +131,32 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 对于完全虚拟化来说，一种实现是采用直接指令执行与二进制翻译相结合的方式，在运行时动态分析 Guest OS 执行的指令，用二进制翻译模块来替换掉其中难以虚拟化的指令，VMware Workstation 在早期就采用这种 CPU 虚拟化的方法。然而，动态二进制翻译实现起来相对复杂，且可能会带来较大的运行时开销。
 
-至于半虚拟化，以 Xen 最初的实现为例：
+至于半虚拟化，以 [Xen 最初的实现](https://doi.org/10.1145/1165389.945462) 为例，Hypervisor 运行在 Ring 0，Guest OS 被修改以在 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行。因此，当 Guest OS 试图直接执行特权指令时，会因为权限不足而失败；取而代之地，Guest OS 需要通过 Hypercall 接口陷入到 Hypervisor 中，才能执行特权指令。除此之外的一些设计：
 
-- 保护环：Hypervisor 运行在 Ring 0，需要将 Guest OS 移植到 Ring 1 运行，而 Guest OS 上的应用程序仍然在 Ring 3 运行
-
-- 异常处理：Guest OS 需要经过修改，注册由 Hypervisor 提供的异常处理向量表
-
-    - 大部分异常处理函数保持不变
-    - Page Fault：由于 Guest OS 运行在 Ring 1，权限不足以完成该完成的任务，就通过 Handler 交给 Hypervisor 处理
-    - System Call：安装一个专门优化过的 Handler，不再由 Hypervisor 处理
-
-- 中断处理：由一个 Event System 取而代之，详见下面的 I/O 虚拟化部分
+- 异常处理：Guest OS 的异常处理大体与原生 x86 环境一致，只是在某些特权操作上（如 Page Fault 的处理）需要通过 Hypercall 获得 Hypervisor 的协助，以及在 System Call 时通过一个 Fast Handler 来减少开销
+- 中断处理：采用一个异步事件通知系统，称为 Event Channel，作为对硬件中断的虚拟化
 
 到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。
 
 #### 内存虚拟化
 
-对于内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统内核的 Hypervisor 来说，如何高效地调度内存资源，尽可能满足操作系统对内存的需求，就成为了一个技术挑战。
+对于操作系统内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统的 Hypervisor 来说，需要高效地调度内存资源，尽可能满足每个操作系统对内存的需求。
 
-目前，主流操作系统使用页（Page）为单位来管理内存，通过页表将虚拟内存地址转换到物理内存地址，完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。为了让运行在 Hypervisor 上的操作系统能够正常管理内存，Hypervisor 需要实现 MMU 虚拟化。
+目前，主流操作系统使用页（Page）为单位来管理内存。在非虚拟化的环境下，操作系统使用页表将虚拟内存地址转换到物理内存地址，用于辅助完成这一转换的硬件被称为内存管理单元（Memory Management Unit，MMU）。主流 x86 操作系统的虚拟内存管理功能都相当程度地依赖于 MMU，因此，在虚拟化环境下，Hypervisor 需要实现 MMU 虚拟化。
 
-对于 MMU 虚拟化，纯软件实现方式主要有以下两种：
+目前软件实现的内存虚拟化，主要分为以下两种：
 
 - 完全虚拟化：Shadow page table（影子页表）
 
-    - Hypervisor 为每个 Guest OS 中的页表都维护一张影子页表
-    - 性能开销主要发生在页表的维护和切换上
+    - Hypervisor 为每个 VM 都维护一张影子页表，将 Guest OS 中的虚拟地址翻译为 Host 的物理地址
+    - 性能开销大
 
 - 半虚拟化：以 [Xen 最初的实现](https://wiki.xenproject.org/wiki/X86_Paravirtualised_Memory_Management) 为例
   
     - Guest 和 Hypervisor 共享一张页表，但 Guest 的内存访问请求都要经过 Hypervisor 的审计，Hypervisor 通过使用额外的内存管理机制（如内存分段、额外的权限设置等）来确保 Guest 的内存访问合法
     - 效率较高，但需要通过修改 Guest OS 的内存管理模块来实现
 
-当然，对于目前的 x86 平台，自然也存在硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。
+而内存虚拟化的硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），通过扩展页表结构，在硬件上直接支持 Guest Virtual Address -> Guest Physical Address -> Host Physical Address 这两层地址转换，如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。
 
 #### I/O 虚拟化
 
@@ -184,19 +177,25 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为。
 
-这种虚拟化实现对于 Guest OS 是无感的，具有较好的兼容性，因为 Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，不需要对 OS 做出任何修改或编写新的驱动；但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。
+此时，Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。
 
 ##### 半虚拟化
 
 在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。
 
-以 Xen 和 virtio 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责对实际物理硬件进行操作，前后端驱动之间通过预先约定的协议进行通信。
+以 Xen 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责操作实际物理硬件，前后端驱动之间通过共享内存，使用一个被称为 I/O ring 的数据结构来实现异步数据交换。
 
-这种实现避免了设备仿真中硬件模拟复杂、Trap 开销大等问题，通过采用专门优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真；并且，如果在虚拟化实现上定义了规范的标准接口，也具有一定的可移植性。
+这种实现避免了设备仿真中硬件模拟开销较大等问题，Guest OS 通过采用经过性能优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真。
 
-!!! info "virtio"
+!!! info "IOMMU"
 
     待补充
+
+!!! info "Virtio"
+
+    待补充
+
+<!-- TODO: 通过 qemu 使用不同设备后端跑 benchmark 来感受不同实现之间的差异 -->
 
 ##### 设备直通
 
@@ -264,5 +263,6 @@ ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion�
 - [Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3](https://cdrdv2.intel.com/v1/dl/getContent/671506)
 - [Virtio: An I/O virtualization framework for Linux](https://developer.ibm.com/articles/l-virtio/)
 - [Intel® Virtualization Technology for Directed I/O](https://cdrdv2-public.intel.com/774206/vt-directed-io-spec%20.pdf)
+- [Xen Project Software Overview](https://wiki.xenproject.org/wiki/Xen_Project_Software_Overview)
 - Edouard Bugnion, Scott Devine, Mendel Rosenblum, Jeremy Sugerman, and Edward Y. Wang. 2012. Bringing Virtualization to the x86 Architecture with the Original VMware Workstation. ACM Trans. Comput. Syst. 30, 4, Article 12 (November 2012), 51 pages. <https://doi.org/10.1145/2382553.2382554>
 - Paul Barham, Boris Dragovic, Keir Fraser, Steven Hand, Tim Harris, Alex Ho, Rolf Neugebauer, Ian Pratt, and Andrew Warfield. 2003. Xen and the art of virtualization. SIGOPS Oper. Syst. Rev. 37, 5 (December 2003), 164–177. <https://doi.org/10.1145/1165389.945462>
