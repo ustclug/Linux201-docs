@@ -827,7 +827,7 @@ function downloadFile($url,$x){
 392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive
 ```
 
-其中，`18790` 是攻击者隐藏的进程 ID。通过将 `/tmp` 目录 bind mount 到 `/proc/18790`。为了查看该进程，我们需要卸载该挂载点：
+其中，`18790` 是攻击者隐藏的进程 ID，攻击者通过将 `/tmp` 目录 bind mount 到 `/proc/18790` 实现了进程隐藏的操作。为了查看该进程，我们需要卸载该挂载点：
 
 ```shell
 umount /proc/18790
@@ -874,7 +874,7 @@ lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -> /var/tmp/Xorgs*
 <!-- `ss` 命令是用于查看网络连接的工具，`-t` 参数表示只显示 TCP 连接，`-p` 参数显示进程相关信息，`-n` 参数显示 IP 地址和端口号，而不是尝试解析域名。 -->
 
 ```shell
-### ss -tpn
+# ss -tpn
 State  Recv-Q  Send-Q  Local Address:Port   Peer Address:Port  Process
 ESTAB  0       0       xxx.xx.xx.xx:35126   yyy.yy.yy.yy:8010  users:(("Xorgs",pid=18790,fd=101))
 ESTAB  0       0       xxx.xx.xx.xx:56578   yyy.yy.yy.yy:8010  users:(("Xorgs",pid=18790,fd=102))
@@ -945,7 +945,7 @@ systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.
 
 ##### 初步修复措施 {#lab-server-intrusion-mitigation}
 
-在确认攻击者的入侵路径和恶意文件地址后，我们初步采取了如下措辞来恢复服务器的安全性：
+在确认攻击者的入侵路径和恶意文件地址后，我们初步采取了如下措施来恢复服务器的安全性：
 
 1. **删除攻击者公钥**：我们删除了所有服务器上 `/root/.ssh/authorized_keys` 和用户目录下 `.ssh/authorized_keys` 中攻击者的公钥，确保攻击者无法再次通过 SSH 秘钥登录。
 2. **重新生成密钥对**：让 A 同学重新生成 SSH 密钥对，并替换了原来已泄露的密钥，防止攻击者使用窃取的私钥继续访问实验室的服务器。
