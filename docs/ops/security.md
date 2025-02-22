@@ -13,7 +13,7 @@ icon: material/security
 !!! note "阅读注意事项"
 
     请注意，以下概念介绍部分不是严肃的学术性介绍，存在大幅度的简化，并且不会对抽象的概念进行详细解释。
-    
+
     以下的介绍一部分参考了[《计算机安全》课程](https://icourse.club/course/6142/)与 [2024 年 3 月小聚活动的内容](https://lug.ustc.edu.cn/news/2024/03/gathering-attack-and-defense-exercise-talk/)。
 
 ## 「安全」是什么？ {#what-is-security}
@@ -139,7 +139,7 @@ int main() {
 !!! comment "@taoky: 关于大一的「程序设计」教学"
 
     看上面的代码，你可能会觉得有点熟悉——因为你可能在（大一或者更早）初学 C 语言的时候就写过这样的问题代码。直到很久很久之后，才会发觉这样的代码是有安全问题的。
-    
+
     在理想的情况下，学习 C 的时候应当对内存模型与内存安全问题有基本的了解，但是在一个学期对完全没有编程基础的学生进行教学的情况下，这么做不是很现实。结果就是，在批改作业和考试的时候，只能对类似 `gets()` 这样的用法开绿灯。甚至我听闻有人觉得数组越界也没事，只要不写到其他数据结构的内存上就行——这是非常危险的想法。
 
 ##### 0-day/1-day/n-day 漏洞 {#0day-1day-nday}
@@ -160,27 +160,27 @@ int main() {
 !!! example "钓鱼邮件示例"
 
     尽管我们一般收到的很多钓鱼邮件都能够一眼识破，但是也存在精心制作的钓鱼邮件。特别是针对高价值目标，如果精心制作的钓鱼邮件能够为攻击者打开侵入的大门，那么尽可能伪装钓鱼邮件的成本是值得的。这也是 APT（Advanced Persistent Threat，高级持续性威胁）攻击常见的起始步骤。
-    
+
     以下分享一则我们真实收到精心制作的钓鱼邮件，隐去了部分细节：
-    
+
     ```
     FROM: xxxxx <xxxxx@163.com>
     TO: xxxxx@ustc.edu.cn
     SUBJECT: 关于中国科学技术大学统一电子签章平台上线试运行的通知
-    
+
     各单位：
     为落实“智慧科大”数字化发展战略，推进无纸化办公目标，缓解师生线下办事难题，学校规划建设的科大统一电子签名平台已试运行。
-    
+
     平台提供安全可靠的电子签名服务能力，包括统一电子签名平台，欢迎全校各单位及师生使用统一电子签名平台。
-    
+
     电子签名平台使用说明见附件
-    
+
     密码：12345
-    
+
     中国科学技术大学
     63602393
     ```
-    
+
     如果不看 `FROM`，邮件看起来还比较真实，因为邮件中的内容都是公开信息。附件 `21333.rar` 为加密压缩包（逃避邮件系统对附件内容的病毒检查），压缩包内包含了 Windows 快捷方式文件 `21333.pdf.lnk`，图标为 Microsoft Edge 的。而这个快捷方式的目标是 `powershell.exe`，命令行参数包含了从外部网站下载 PDF 与攻击负载，打开 PDF 与运行攻击负载的内容。如果不慎点击就会中招，并且由于真的会打开 PDF，中招之后可能第一时间无法发现。
 
 #### 拒绝服务攻击 {#dos-attacks}
@@ -198,14 +198,14 @@ int main() {
 !!! comment "@tiankaima 关于 XcodeGhost"
 
     上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考：
-    
+
     - [新闻选摘：SSH 软件与后门](#lessons)
     - [VSCode 插件后门](https://blog.checkpoint.com/securing-the-cloud/malicious-vscode-extensions-with-more-than-45k-downloads-steal-pii-and-enable-backdoors/)
     - [xz-utils 后门](https://en.wikipedia.org/wiki/XZ_Utils_backdoor)
     - [polyfill\.io 安全问题（页面备份）](https://web.archive.org/web/20240314202054/https://github.com/polyfillpolyfill/polyfill-service/issues/2834)
-    
+
     预防这类攻击的基本原则是，对包括开源项目在内的所有工具**保持怀疑**，并总是从**可信来源**安装软件：
-    
+
     - 从官方网站下载，或者使用包管理器安装
     - 避免可疑的第三方源（可疑镜像站、可疑 CDN 站点、网盘再分发、汉化版、破解版等）
     - 安全程度未知的软件（<1k 下载的 VSCode 插件）
@@ -247,13 +247,13 @@ int main() {
 !!! example "蜜罐示例：SSH"
 
     公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。以下是一些 SSH 蜜罐的实现：
-    
+
     - <https://github.com/jaksi/sshesame>
     - <https://github.com/iBug/fakessh>
     - <https://github.com/skeeto/endlessh/>
-    
+
     作为参考，以下是在 2022 端口公开一个 sshesame 蜜罐容器的命令：
-    
+
     ```bash
     docker run -it --rm \
         -p 2022:2022 \
@@ -261,7 +261,7 @@ int main() {
         -v $(pwd)/sshesame.yaml:/config.yaml \
         ghcr.io/jaksi/sshesame
     ```
-    
+
     sshesame 会将所有记录的行为打印到 stdout, 可以使用 `docker logs` 查看。
 
 #### 入侵检测 {#intrusion-detection}
@@ -369,21 +369,21 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "新闻选摘：SSH 软件与后门"
 
     [Putty、Winscp等汉化版软件内置后门事件 上万服务器账户泄露](http://yangjunwei.com/742.html)
-    
+
     > 经安全厂商证实，部分汉化版PuTTY、WinSCP、SSH Secure等开源软件存在后门程序，可能导致Linux服务器系统管理员密码及资料泄露。有知情人士透露，截至目前，PuTTY后门服务器受害账户已达到1万多，且仍在持续增加。
     >
     > …………其中PuTTY从没有官方中文版，而WinSCP已经拥有官方中文版。最近有Linux服务器管理员发现，上述工具的非官方“汉化版”疑似内置后门，部分网站和企业服务器已因此遭到黑客攻击，导致系统root密码泄漏以及资料泄漏。
     > 
     > …………PuTTY等软件本身是开源的，汉化版属于“被人动了手脚”，安全性往往难以保障。
-    
+
     [Trojanized versions of PuTTY utility being used to spread backdoor](https://arstechnica.com/information-technology/2022/09/trojanized-versions-of-putty-utility-being-used-to-spread-backdoor/)
-    
+
     > Researchers believe hackers ... have been pushing a Trojanized version of the PuTTY networking utility in an attempt to backdoor the network of organizations they want to spy on.
     >
     > ...at least one customer it serves had an employee who installed the fake network utility by accident...
-    
+
     ---
-    
+
     总结：如果一个运维不从官网（或其他可信的渠道）下载运维类软件，<b><span style="color: red">那么毋庸置疑应当被立刻开除。</span></b>
 
 !!! example "真实案例：为什么不能随意下载破解软件"
@@ -391,29 +391,29 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     小 A 是一名学生，因为研究领域的需要，需要使用某款付费的 CAD 软件。
     TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件。
     搜索后，TA 在 GitHub 上找到了一个仓库，似乎是破解版：
-    
+
     ![GitHub 仓库](../images/security-example-github-malware.png)
-    
+
     安装后似乎一切正常，但是几天之后，TA 发现自己的 GitHub 账号 star 了奇怪的仓库，并且创建了一个诡异的仓库，内容为热门游戏「幻兽帕鲁」的破解版。TA 感觉很诧异，因为自己的 GitHub 账号早已开启了两步验证（2FA）！
-    
+
     检查 [Security Log](https://github.com/settings/security-log) 后发现，在一天前，有一个来自英国的 IP 使用 Windows Chrome「切换」了自己在 Windows 浏览器中的 session 的国家，但是 TA 没有在 Windows 下使用过 Chrome。在出问题的当天下午，另一个来自乌克兰的 IP 使用一个 Python 脚本执行了一系列操作，包括创建了那个奇怪的仓库。**由于攻击者直接偷取了浏览器的 session，因此非敏感操作（例如创建仓库）不会触发两步验证。**
-    
+
     在设置中的 [Sessions](https://github.com/settings/sessions) 页面移除了其他的 session 之后，TA 检查了自己的电脑，开始怀疑这个「破解软件」。将安装包的 zip 上传至 [VirusTotal](https://virustotal.com) (1) 后，发现这个安装包会执行各种可疑行为，例如从网络下载其他可执行程序并运行、将自己加入 Windows Defender 的白名单等。
     {: .annotate }
-    
+
     1. VirusTotal 是一个可以上传文件进行多引擎扫描的网站（包括国际与国内的知名杀毒软件），并且还会通过沙盒运行文件，查看其行为。VirusTotal 是安全研究人员的常用工具之一。
-    
+
     进一步分析发现，这个压缩包仅仅只是个恶意软件下载器：它会从 Pastebin 服务 (1) 获取恶意软件的下载链接，下载后运行。而运行的恶意软件又会从攻击者创建的 Steam 的个人页面与 Telegram 频道获取攻击指令：
     {: .annotate }
-    
+
     2. Pastebin 是一个文本分享服务，用户可以在上面分享文本、代码等。由于其匿名性，也经常被用于分享恶意软件的配置文件、下载链接等。
-    
+
     ![Steam Community](../images/security-example-steam-malware.png)
-    
+
     于是 TA 的机器就这样沦陷了。
-    
+
     ---
-    
+
     总结：**不要随便关杀毒软件、跑破解程序；就算真的不得不要也请务必在虚拟机里面运行。**
 
 #### 及时更新操作系统与软件 {#keep-updating}
@@ -423,9 +423,9 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "新闻选摘：LastPass 与 Plex"
 
     背景：LastPass 是一款免费的在线密码管理器，曾经出现过[多次安全事件](https://en.wikipedia.org/wiki/LastPass#Security_incidents)；Plex 是一款家庭媒体服务器软件。
-    
+
     [Lastpass事件追踪：黑客利用Plex漏洞窃取了核心工程师的主密码](https://www.landiannews.com/archives/97510.html)
-    
+
     > Lastpass 终于又公布了被黑的调查进展，本次更新的调查报告指出：Lastpass 一名核心工程师的家庭办公电脑遭到黑客的入。**这还涉及了另外一款知名软件：流媒体软件 Plex。**
     > 
     > …………
@@ -433,17 +433,17 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     > 最初黑客应该是已经瞄准 Lastpass 的这名核心工程师，该工程师是 Lastpass 四名掌握 DevOps 解密密钥的工程师之一。
     >
     > **黑客通过 Plex 存在的远程代码执行漏洞**，在这名核心工程师的家庭办公电脑上安装了键盘记录器，工程师登录 DevOps 时，输入解密密钥 (相当于主密码) 的时候键盘记录器成功窃取了主密码。
-    
+
     [Plex急忙解释：Lastpass被黑与他们无关 2年前的漏洞都不修复](https://www.landiannews.com/archives/97690.html)
-    
+
     > 搞笑的是 Plex 现在站出来回应表示自己不背锅，因为被黑的 Lastpass 工程师两年多都没有更新自己的 Plex 软件，也就是长期使用带有安全漏洞的版本。
     >
     > Plex 称 2020 年 5 月 7 日该公司披露了一个安全漏洞，该漏洞允许那些有权限访问服务器管理员 Plex 账户的人，通过相机上传功能上传恶意文件到媒体库，然后利用服务器数据目录的位置与上传的库重叠，并让媒体服务器自动执行这个恶意文件。
     >
     > **披露漏洞的当天 Plex 就推出了 Plex Media Server v1.19.3 版修复了该漏洞，然后至少到 2022 年 8 月 Lastpass 工程师都没有升级自己的软件。**
-    
+
     ---
-    
+
     总结：**保证自己安装的操作系统与应用安装了最新的安全更新，并且避免继续使用已经结束支持的软件。**
     [endoflife.date](https://endoflife.date/) 整理了一些软件的支持周期，可以作为参考。
 
@@ -469,7 +469,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "从个人设备入侵服务器的真实案例"
 
     2015 年中旬的真实案例，详见 [LUG 服务器被入侵事件始末](https://01.me/2015/06/lug-servers-hacked/)。
-    
+
     入侵的路径为：U 盘病毒入侵笔记本，植入键盘记录器，收集信息，半个月后使用键盘记录器得到的密码登录大量服务器并插入恶意内核模块，侵入了 LDAP 数据库并修改了某用户的密码以进一步入侵。
 
 ### 编写安全的应用程序 {#write-applications}
@@ -493,15 +493,15 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "Flask `render_template()`"
 
     Flask 是一个 Python 的网站框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：
-    
+
     ```python
     render_template("index.jinja2")
     ```
-    
+
     上线一段时间后，TA 感觉页面的渲染不对劲，再一测试，结果发现 Flask 居然没有帮他转义用户输入的特殊字符！原来在 [Flask 文档中关于模板](https://flask.palletsprojects.com/en/3.0.x/templating/)的部分是这么写的：
-    
+
     > autoescaping is enabled for all templates ending in `.html`, `.htm`, `.xml`, `.xhtml`, as well as `.svg` when using **`render_template()`**.
-    
+
     但是 TA 使用的不是 HTML 的后缀，因此 Flask 没有做自动转义，使得 TA 的网站陷入了被 XSS 的风险中。万幸的是，在发现问题的时候，还没有人真的去 XSS，否则就贻笑大方了。
 
 同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (`-fsanitize=address`) 和 `_FORTIFY_SOURCE`）加固程序。
@@ -509,20 +509,20 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! question "思考题：代码问题分析"
 
     以下的 Python [FastAPI](https://fastapi.tiangolo.com/) 代码修改自互联网上某篇博客的教程。
-    
+
     提示：**在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！**对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码[^prompt]。
-    
+
     ```python
     from fastapi import FastAPI
     from fastapi.responses import FileResponse
     import os
-    
+
     app = FastAPI()
-    
+
     @app.get("/")
     async def index():
         return "Hello, world!"
-    
+
     @app.get("/{whatever:path}")
     async def get_static_files_or_404(whatever: str):
         file_path = os.path.join("dist", whatever)
@@ -530,7 +530,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
             return FileResponse(file_path)
         return FileResponse("dist/404.html")
     ```
-    
+
     1. 请分析该程序存在的安全问题，并复现（提示：你可能会对 [URL encoding](https://en.wikipedia.org/wiki/Percent-encoding) 感兴趣）。
     2. 对于规模较大的程序，人类肉眼检查类似的问题的开销是很大的。请尝试**在本地**使用自动化的代码扫描工具（例如 [CodeQL](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli)）扫描出这个问题。
     3. 如果你不得不需要部署一个有可能存在这一类安全问题的应用，并且无法修改代码（该程序可能是闭源的应用）。可以采取哪些措施防止相关问题被利用，以及被利用之后影响到其他的应用？
@@ -538,30 +538,30 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "使用 ASAN 运行时检查 C 代码的内存安全问题"
 
     对于下面这个例子：
-    
+
     ```c
     #include <stdio.h>
     #include <string.h>
-    
+
     int main() {
         char input[32];
-    
+
         printf("Enter a string: ");
         scanf("%32s", input);
         printf("Echo: %s (%d)\n", input, strlen(input));
         return 0;
     }
     ```
-    
+
     由于 C 语言的字符串以 `\0` 结尾，`scanf` 会多写入 0 到 `input` 以外的地址，并且当代码规模庞大的时候，这样的问题不容易直接被发现。
     不过，如果加入 ASAN 并编译：
-    
+
     ```shell
     gcc test.c -g -fsanitize=address
     ```
-    
+
     之后运行时就会直接报错：
-    
+
     ```console
     $ ./a.out
     Enter a string: a
@@ -575,10 +575,10 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
         #4 0x72bfad834e07 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
         #5 0x72bfad834ecb in __libc_start_main_impl ../csu/libc-start.c:360
         #6 0x56cd690a10e4 in _start (/example/a.out+0x10e4) (BuildId: 1b5d9db6c98221b5cb99988ed43d50ecc2a732c8)
-    
+
     Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame
         #0 0x56cd690a11c8 in main /example/test.c:4
-    
+
     This frame has 1 object(s):
         [32, 64) 'input' (line 5) <== Memory access at offset 64 overflows this variable
     HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
@@ -617,7 +617,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     Right alloca redzone:    cb
     ==2987262==ABORTING
     ```
-    
+
     由于相比于 Valgrind，ASAN 的开销低很多，因此在不需要极致性能的场景下，甚至可以直接将开启 ASAN 编译后的程序上线到生产环境中，以减轻未知的内存安全问题带来的影响。
 
 #### 不要自制密码学协议/算法 {#no-homebrew-crypto}
@@ -631,9 +631,9 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! example "搜狗输入法，与 CBC padding oracle 攻击"
 
     2023 年 8 月，[有安全研究者发现](https://citizenlab.ca/2023/08/vulnerabilities-in-sogou-keyboard-encryption/)国内包括搜狗输入法在内的许多输入法的云输入功能没有实现正确的加密，导致中间人可以轻而易举地知道用户输入的内容。其中，搜狗输入法实现了自制的 "EncryptWall" 加密系统，但是其实现会被 CBC padding oracle 攻击。
-    
+
     AES 是一种常用的对称加密算法，而 CBC（Cipher Block Chaining）模式是链式的，每一个块的密文与前一个块的密文存在依赖关系，但是每个块大小都需要是相同的。由于密文很多时候大小不是块大小的整数倍，因此块多出来的部分需要填充 padding。某些程序会检测 padding 填充内容是否正确，并且返回这些信息，被称为 "padding orcale"。通过 padding oracle 返回的正确性信息，攻击者可以逐步确认 padding 的正确性，进而推测出明文内容。
-    
+
     对于搜狗云输入的例子，如果填充不正确，服务器会返回 HTTP 400，否则会返回 HTTP 200 或者 500，因此就充当了一个 padding oracle，暴露了密码学安全问题。因此，即使是这样的「国民级应用」的开发者，实现密码学协议也会存在问题，如果没有足够的能力确认安全性，使用成熟的 TLS 显然是更好的方案。
 
 ### 服务器安全 {#server-security}
@@ -653,15 +653,15 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! warning "SSH 与中间人攻击"
 
     在首次登录某台机器时，你会看到 SSH 这样的输出：
-    
+
     ```console
     The authenticity of host 'localhost (127.0.0.1)' can't be established.
     ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.
     Are you sure you want to continue connecting (yes/no/[fingerprint])?
     ```
-    
+
     如果之前连接过的服务器发生了变化，或者有中间人在网络攻击，那么会看到下面的内容：
-    
+
     ```console
     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
@@ -677,9 +677,9 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     RSA host key for 127.0.0.1 has changed and you have requested strict checking.
     Host key verification failed.
     ```
-    
+
     不要忽略相关的提示与警告。如果可行，请验证 fingerprint 与远程服务器的 fingerprint 是切实相符的：
-    
+
     ```console
     $ ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub
     3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com
@@ -701,7 +701,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 !!! note "有关「安全」的开闭源之争"
 
     开源软件与闭源软件何者在安全性上更占优势？有关于此存在不同的观点。开源软件由于源代码是公开的，攻击者寻找漏洞、编写 PoC 等会比闭源软件容易，但是开源软件也因此代码更容易被审计，也就更容易让安全研究人员在漏洞在野利用之前就发现漏洞并且及时反馈。并且开源软件的开发者也更容易接纳来自外部的漏洞报告与修复补丁提交。知名度高且重视安全的闭源软件公司/项目也有不少，但是同样也存在研究人员提交漏洞之后相关方拒绝回应，以及漏洞没有及时公布并修复的情况，特别是用户量较小的、社区较小的闭源软件。
-    
+
     当然，前提永远是：运维需要承担这一方面的责任，并且保持相关的软件与系统是受到支持的、安全的版本。否则攻击者随便找到公开的针对老版本漏洞的工具就能够攻破这一条防线。
 
 #### 最小权限原则 {#principle-of-least-privilege}
