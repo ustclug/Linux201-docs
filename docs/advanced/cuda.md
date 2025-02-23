@@ -22,7 +22,17 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 - CUDA 工具：比如性能分析器（NVIDIA Nsight 和 Visual Profiler）和调试工具，它们帮助开发者优化和调试 CUDA 应用程序。
 
-## 你需要 CUDA 吗？
+## 你需要配置 CUDA 吗？
+
+当我们说到「配置 CUDA 环境」的时候，实际上指的是**两件事情**：
+
+1. 安装 NVIDIA 的**内核态**驱动以及部分用户态组件（驱动），使得操作系统能够正确识别显卡并与之通信。
+2. 安装 CUDA 运行时和开发工具（**用户态**），使得我们能够在程序中使用 CUDA API。
+
+如果你只是想要运行 CUDA 程序，有些程序可能自带了 CUDA 运行时。这时只需要确保有 NVIDIA 驱动。如果已经安装过，那么你不需要任何配置。
+
+如果你想要运行依赖操作系统中现有的 CUDA 的程序，或者你想要使用 CUDA 的库开发自己的 CUDA 应用，你需要确保安装 NVIDIA 驱动并根据自己的需求安装 CUDA 组件。
+
 
 ## 配置 CUDA 环境
 
@@ -33,11 +43,6 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 表中的 `Compute Capability` 代表计算能力，同时也表明了 GPU 支持的 CUDA 特性和指令集版本。架构越新的显卡，对应的计算能力数字越高。使用的 CUDA 版本需要能够支持对应的计算能力，可以查看此表：<https://docs.nvidia.com/datacenter/tesla/drivers/index.html#cuda-arch-matrix>。同时，CUDA 也对系统编译器版本有要求，可以查看此表：<https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#system-requirements>。
 
 ### 安装 NVIDIA 驱动
-
-当我们说到「安装 CUDA」的时候，实际上指的是**两件事情**：
-
-1. 安装 NVIDIA 的**内核态**驱动以及部分用户态组件（驱动），使得操作系统能够正确识别显卡并与之通信。
-2. 安装 CUDA 运行时和开发工具（**用户态**），使得我们能够在程序中使用 CUDA API。
 
 ![CUDA components](../images/cuda.png)
 
@@ -50,6 +55,10 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
      [^nouveau-performance]: 根据 2024 年 1 月[该视频](https://www.youtube.com/watch?v=E-1vukqRKf4)的数据，对于视频中的 benchmark，基于 Nouveau + NVK + Zink 的性能评分达到了 NVIDIA 官方驱动的 66% 左右。
 
      [^nouveau-matrix]: <https://nouveau.freedesktop.org/FeatureMatrix.html> 中 "Compute" 一行均为 WIP（Work In Progress）状态，即尚未支持。
+
+!!! tip "确认是否已经安装过 NVIDIA 驱动"
+
+    使用 `cat /proc/driver/nvidia/version` 命令来确认是否安装了NVIDIA驱动。如果已安装则显示版本号。
 
 总的来说，在 Linux 下，NVIDIA 驱动与 CUDA 的安装方式大致分为：
 
