@@ -33,7 +33,6 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 如果你想要运行依赖操作系统中现有的 CUDA 的程序，或者你想要使用 CUDA 的库开发自己的 CUDA 应用，你需要确保安装 NVIDIA 驱动并根据自己的需求安装 CUDA 组件。
 
-
 ## 配置 CUDA 环境
 
 ### 版本准备
