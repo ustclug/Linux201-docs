@@ -27,16 +27,6 @@
 
 以下将具体介绍这两类虚拟化技术。
 
-<!-- !!! note "API 兼容层"
-
-    API 兼容层技术实现的是 API 级别的虚拟化，使用这种技术的典型代表是 Linux 平台下的 Wine 和 Windows 平台下的 Windows Subsystem for Linux 1（WSL1）。
-
-    TODO: 为什么 WSL 1 流产了？
-    
-    而 WSL2 中的 Linux 实例本质上是运行在 Hyper-V 虚拟化技术上的轻量级虚拟机，与 WSL1 的架构完全不同。
-    
-    一个课后小练习：为什么有人会坚持使用 WSL 1 而不是 WSL 2？ -->
-
 ## 硬件虚拟化
 
 ### 概述
@@ -67,6 +57,10 @@
 关于 QEMU/KVM 的更多介绍，请参考本文档的 [QEMU/KVM](./qemu-kvm.md) 部分。
 
 完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置，可以参考下文 [常见服务器虚拟化方案](#_10) 的配图。
+
+<!-- TODO: 加图，注意版权 -->
+
+<!-- FIXME: 正确性和表述有待商榷 -->
 
 ### x86 虚拟化实现
 
@@ -185,7 +179,15 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 !!! info "Virtio"
 
-    待补充
+    Virtio 是一套 I/O 半虚拟化开放标准，其同样采用分离驱动的架构，旨在规范各类 I/O 设备（如网络、存储设备等）的数据传输和事件处理方式，提升虚拟化环境的效率和兼容性。
+    
+    Virtio 的基本架构如下图所示，详细标准可以参考 [spec](https://docs.oasis-open.org/virtio/virtio/v1.3/virtio-v1.3.html)。
+
+    ![Virtio architechture](https://developer.ibm.com/developer/default/articles/l-virtio/images/figure3.gif)
+    
+    如下图中的 virt-manager 界面，网卡可以选择使用 Virtio 设备模型：
+
+    ![virt-manager Virtio device](../../images/virt-manager-virtio-device.png)
 
 <!-- TODO: 通过 qemu 使用不同设备后端跑 benchmark 来感受不同实现之间的差异 -->
 
@@ -195,13 +197,28 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 设备直通的性能是最好的，几乎能够获得原生的 I/O 性能，但独占设备使得其灵活性稍差，在配置上可能会略微复杂，并且可能会存在兼容性问题。
 
-!!! info "SR-IOV"
+<!-- FIXME: AIGC -->
 
-    待补充
+!!! info "Single-Root Input/Output Virtualization (SR-IOV)"
+
+    SR-IOV（单根 I/O 虚拟化）是一种硬件虚拟化技术，它允许单个物理 PCIe 设备划分出多个独立的虚拟设备。具体来说，SR-IOV 将物理设备分为两类：  
+
+    - **物理功能（PF）**：由管理程序使用，负责设备的配置和分配资源。  
+    - **虚拟功能（VF）**：供虚拟机直接使用，几乎拥有与物理设备相同的功能，但资源受限。  
+
+    这种分离使得虚拟机可以直接访问 VF，从而绕过大部分 hypervisor 层的干预，实现接近裸机的 I/O 性能，同时降低了虚拟化开销。SR-IOV 技术在高性能网络、存储等领域应用广泛，特别适用于数据中心和云计算环境。
+
+<!-- FIXME: AIGC -->
 
 !!! info "IOMMU"
 
-    待补充
+    IOMMU（输入/输出内存管理单元）是一种硬件虚拟化技术，旨在为设备的直接内存访问（DMA）提供地址转换和内存保护。它通过将设备请求中的虚拟地址映射到实际物理内存地址，同时对设备访问进行权限检查，从而实现：
+
+    - 内存隔离：防止设备越界访问，确保不同虚拟机或系统组件间的内存安全隔离。
+    - DMA 重映射：允许虚拟机拥有独立的 DMA 地址空间，提高虚拟化环境中的数据传输效率和安全性。
+    - 增强系统稳定性与安全性：有效阻止恶意或错误设备对内存的直接干扰，降低系统风险。
+
+    这种机制特别适用于虚拟化和高性能计算环境，在保护系统内存安全的同时，也确保了设备高效、可靠的数据传输。
 
 ## 操作系统层虚拟化
 
@@ -217,6 +234,8 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 与硬件虚拟化相比，操作系统级虚拟化的开销较小，也不依赖于硬件支持，但受到实现原理的限制，无法运行不同内核的操作系统。
 
+<!-- FIXME: AIGC -->
+
 ## 常见服务器虚拟化方案
 
 ### Proxmox VE (PVE)
@@ -231,7 +250,7 @@ Proxmox VE 支持两类虚拟化技术：基于容器的 LXC 和硬件抽象层�
 
 ### VMware ESXi
 
-VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级裸机虚拟化平台，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于用户进行虚拟机管理和自动化运维。
+VMware ESXi（简称 ESXi）是由 VMware 公司开发的一款企业级 Type-1 Hypervisor，其提供了图形化管理工具（Web UI）、命令行接口（ESXi Shell 及配套工具）以及 API 接口，便于管理员进行虚拟机管理和自动化运维。
 
 ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion）、高可用性（HA）等高级功能。
 
@@ -243,13 +262,21 @@ ESXi 可以通过与 VMware vSphere 套件集成，实现如热迁移（vMotion�
 
 ### Microsoft Hyper-V
 
-!!! warning "本节内容待补充"
+Microsoft Hyper-V（简称 Hyper-V）是微软公司开发的一款企业级虚拟化平台，集成于 Windows Server 中，同时也可用于 Windows 10 Pro/Enterprise 版本。它提供了图形化管理工具 Hyper-V Manager，也可以使用 PowerShell 等命令行接口进行管理。
 
-!!! info "VMware 与 Hyper-V 的共存问题"
+Hyper-V 支持动态内存管理、虚拟机快照、实时迁移（Live Migration）和复制（Replica）等高级功能，同时可以与 System Center Virtual Machine Manager (SCVMM) 集成，进一步提高数据中心的虚拟化管理效率。
+
+![Hyper-V Manager](https://www.pugetsystems.com/pic_disp.php?id=62126)
+
+![Hyper-V PowerShell Module](https://redmondmag.com/articles/2018/11/16/~/media/ECG/redmondmag/Images/2018/11/1116red_hypervpowershellmodule3b.ashx)
 
 ### Xen
 
-!!! warning "本节内容待补充"
+Xen（通常称为 Xen Hypervisor 或 Xen Project）是一款开源免费的 Type-1 Hypervisor，支持半虚拟化（PV）和完全虚拟化（HVM）技术。其最初于 2003 年由剑桥大学计算机实验室开发，目前由 Linux Foundation 开发与维护，得到了 Intel、AMD、Citrix、AWS 等厂商的广泛支持。
+
+Xen 是 x86 半虚拟化技术的先驱，其经典论文《Xen and the art of virtualization》对虚拟化领域产生了深远影响；同时，在 KVM 尚未普及的早期阶段（2015 年以前），Xen 是云服务厂商和大型数据中心的主流选择。
+
+![virt-manager in Xen dom0](https://wiki.xenproject.org/images/5/54/Figure_19-_Virt-Manager_%28OpenSUSE%29.png?20170415113220)
 
 ## 参考资料
 
