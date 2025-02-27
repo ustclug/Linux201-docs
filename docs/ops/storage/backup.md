@@ -227,6 +227,12 @@ Rsync 支持 `--include` 与 `--exclude` 参数。简单来讲，rsync 的处理
 2. 如果没有命中任何规则，那么会被包含。
 3. 命中 `--exclude` 代表其子文件和文件夹也会被排除，因此如果要包含 `a/b/c/d`，那么 `a/`, `a/b/`, `a/b/c/` 都需要被包含。
 
+### SSH 限制 rsync 访问 {#rsync-ssh}
+
+rsync 支持利用 [rrsync 脚本][rrsync.1]限制使用 SSH 连接的用户只能够使用 rsync 读写指定的目录，确保用户不会通过 SSH 执行其他命令，或者访问到指定目录以外的文件。
+
+详情可以参考[本教程关于 SSH 的章节](../../dev/ssh.md#authorized-keys)。
+
 ### 文件备份 {#rsync-backup}
 
 Rsync 本身不是完整的备份工具，其没有版本管理功能，因此如果某个文件被误删除/修改，那么 rsync 会将这个变化同步到备份中。不过基于 rsync 高效复制文件的能力，有工具实现了基于 rsync 和文件系统硬链接功能的备份，例如 Linux Mint 的 [Timeshift](https://github.com/linuxmint/timeshift) 项目就通过硬链接实现不同时间点备份的去重操作，而 rsync 负责文件的复制。
