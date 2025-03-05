@@ -6,7 +6,7 @@ icon: material/security
 
 !!! note "主要作者"
 
-    [@taoky][taoky]、[@tiankaima][tiankaima]、[@Crabtux][Crabtux]
+    [@taoky][taoky]、[@tiankaima][tiankaima]、[@Crabtux][Crabtux]、[@JiaminL][JiaminL]
 
 !!! warning "本文已完成，等待校对"
 
@@ -167,7 +167,7 @@ int main() {
     FROM: xxxxx <xxxxx@163.com>
     TO: xxxxx@ustc.edu.cn
     SUBJECT: 关于中国科学技术大学统一电子签章平台上线试运行的通知
-    
+
     各单位：
     为落实“智慧科大”数字化发展战略，推进无纸化办公目标，缓解师生线下办事难题，学校规划建设的科大统一电子签名平台已试运行。
 
@@ -297,7 +297,7 @@ int main() {
 
 如果攻击者拥有机器的 root 权限，那么这些日志可能会被删除；如果入侵与发现之间距离时间很长，旧的日志也有可能会被 rotate。因此在有必要的情况下，需要定时备份日志，或者利用 `rsyslog` 等工具将日志实时发送到其他服务器上。
 
-此外，如果机器已经被感染，那么执行的命令输出结果可能不可信。例如，攻击者可以修改 `/etc/ld.so.preload` 文件，在所有动态链接的程序执行之前加载自己的恶意代码，或是直接将系统程序替换为有问题的版本；攻击者也可能通过直接注入恶意内核模块的方式干扰所有用户态程序的运行。如果不便使用 LiveCD 等方式加载其他操作系统检查，可以使用静态链接的 busybox 工具初步排查是否存在恶意篡改的问题。一种可以快速判断某个特定文件是否被修改的方式是使用 `stat`（建议在离线环境中）检查文件的 `Change` 时间戳——`Modify` 时间戳（mtime）表示文件内容的最后修改时间，可以被修改，而 `Change` 时间戳（ctime）表示文件元数据（包括 mtime）的最后修改时间，无法被随意修改。
+此外，如果机器已经被感染，那么执行的命令输出结果可能不可信。例如，攻击者可以修改 `/etc/ld.so.preload` 文件，在所有动态链接的程序执行之前加载自己的恶意代码，或是直接将系统程序替换为有问题的版本；攻击者也可能通过直接注入恶意内核模块的方式干扰所有用户态程序的运行。如果不便使用 LiveCD 等方式加载其他操作系统检查，可以使用静态链接的 busybox 工具初步排查是否存在恶意篡改的问题。一种可以快速判断某个特定文件是否被修改的方式是使用 `stat` 或 `ls -lc`（建议在离线环境中）检查文件的 `Change` 时间戳——`Modify` 时间戳（mtime）表示文件内容的最后修改时间，可以被修改，而 `Change` 时间戳（ctime）表示文件元数据（包括 mtime）的最后修改时间，无法被随意修改。
 
 在必要的情况下，也可以使用工具 dump 系统的内存镜像或是磁盘镜像到其他机器上，以便进一步分析。磁盘镜像可以使用 `dd` 工具提取，而内存镜像可以使用 [AVML](https://github.com/microsoft/avml) 或者 [LiME](https://github.com/504ensicsLabs/LiME) 提取后，使用 [Volatility](https://volatilityfoundation.org/the-volatility-framework/) 分析。
 
@@ -748,11 +748,11 @@ $ nuclei -u https://grafana.example.com -tags grafana
 
 可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。
 
-### 安全事件处理示例 {#security-event-example}
+## 安全事件处理示例 {#security-event-example}
 
 以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。
 
-#### 从泄漏密码到 RCE {#password-leak-rce-example}
+### 从泄漏密码到 RCE {#password-leak-rce-example}
 
 2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 `docker top` 检查发现容器里出现了奇怪的进程，如：
 
@@ -797,6 +797,191 @@ function downloadFile($url,$x){
 !!! question "你的看法？"
 
     受到时间、成本与技术的限制，以上的处理不是完美的。如果你是管理员 C，你会做什么？
+
+### 一场实验室服务器的隐秘入侵 {#lab-server-intrusion}
+
+2024 年 10 月，我们实验室的 GPU 服务器发生了一件诡异的事情：所有 GPU 长时间 100% 占用，但却找不到任何运行中的任务。<s>这究竟是人性的泯灭，还是道德的沦丧？</s>
+
+起初，我们以为只是 GPU 异常卡死或是驱动故障，但随着深入调查，真相逐渐浮出水面——这是一次严重的安全入侵事件。这次入侵不仅影响了实验室的计算任务，也暴露了服务器安全管理方面的隐患。本文将复盘整个排查过程、解析攻击手法、分享经验教训，帮助大家提升安全意识，避免遭受类似的攻击。
+
+#### 事件描述 {#lab-server-intrusion-description}
+
+2024 年 10 月 23 日，实验室一位同学在使用 SLURM 提交 GPU 任务至计算节点后，发现任务迟迟没有响应。他打开 Grafana 监控，惊讶地发现所有 GPU 的利用率都卡在 100%，即使取消掉 SLURM 任务，GPU 依然满载运行。察觉到异常后，他立即向我汇报。
+
+我通过 SSH 登录到这台计算节点，运行 `nvidia-smi` 命令查看 GPU 状态，结果令人震惊——**所有 GPU 都满载运行，但没有任何进程占用！** 这简直太诡异了。更令人不安的是，从 10 月 22 日开始，实验室的其他 GPU 计算节点也陆续出现了相同的状况。
+
+我最初并未往安全问题方向考虑，而是怀疑最近系统或驱动出现了故障。然而，dmesg 内核日志中没有 GPU 相关的错误信息；`/var/log/apt/history.log` 也显示最近没有更新过 nvidia 相关的软件包。除了疯狂运转的 GPU，其余一切都看起来非常“正常”。
+
+毫无头绪的情况下，我在技术群里询问了这个问题，一位有丰富安全经验的大佬提醒我：“小心挖矿，进程可能被隐藏了。”这句话让我恍然大悟——**我们的服务器可能已经被入侵了**。
+
+#### 初步排查 {#lab-server-intrusion-preliminary-investigation}
+
+在 @iBug 和 @taoky 两位同学的帮助下，我们终于揭开了攻击者隐藏进程的神秘面纱。攻击者通过将 `/tmp` 目录绑定挂载到挖矿进程的 `/proc/PID` 目录，使得各种系统工具（如 `nvidia-smi`、`ps` 和 `htop`）无法读取到这个目录内原本的内容，从而达到了隐藏进程的效果。
+
+##### 寻找隐藏进程 {#lab-server-intrusion-hidden-processes}
+
+我们以一台受影响的服务器为例，查看 `/proc/$$/mountinfo`，可以发现了如下异常条目：
+
+```console
+# grep -wF proc /proc/$$/mountinfo
+392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive
+```
+
+其中，`18790` 是攻击者隐藏的进程 ID，攻击者通过将 `/tmp` 目录 bind mount 到 `/proc/18790` 实现了进程隐藏的操作。为了查看该进程，我们需要卸载该挂载点：
+
+```shell
+umount /proc/18790
+```
+
+卸载后，隐藏的进程便显现出来。由于 `/proc/<PID>/exe` 是一个指向进程可执行文件的软链接，我们可以通过它查看恶意进程的实际可执行文件路径：
+
+```console
+# ls -l /proc/18790/exe
+lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -> /var/tmp/Xorgs*
+```
+
+通过如上方式，我们在所有服务器上发现了如下三种不同的隐藏恶意进程：
+
+- **隐藏进程 1**：`/var/tmp/Xorgs`
+
+    解除挂载后，使用 `nvidia-smi` 可以看到名为 `Xorgs` 的进程正在运行。该进程显然是一个伪装的挖矿进程，攻击者故意将其命名为 `Xorgs`，试图误导管理员以为它与图形界面相关。
+
+    [查看病毒样本](https://www.virustotal.com/gui/file/3f76ac2c304cfefefc24537443d9f0835e7b0e65fe4e913fc9bfc1b238b650eb)
+
+- **隐藏进程 2**：`/opt/Xorgs`
+
+    与第一个进程类似，这是另一个伪装进程，用于隐藏真正的挖矿行为。
+
+    [查看病毒样本](https://www.virustotal.com/gui/file/50bd36b206901e74106eee2e68453df449e0fe679df9443f6bcd8d901f3f0f9b)
+
+- **隐藏进程 3**：`/usr/bin/ssh`
+
+    令人意外的是，攻击者替换了原有的 `ssh` 文件。通过进一步检查 `/etc/ssh/sshd_config` 配置文件，我们发现以下异常配置：
+
+    - `PasswordAuthentication yes`（启用了密码登录。为了安全起见，我们在所有服务器上都禁用了该选项，但如今却被开起来了）
+    - `UsePAM no`（禁用了 PAM 验证）
+
+    这些配置表明，攻击者可能可以通过特定密码登录服务器，从而在不修改任何账户密码、不影响正常 SSH 登录的情况下，长期保持服务器访问权限。
+
+    [查看病毒样本](https://www.virustotal.com/gui/file/0af424391b0bca27a81aa0e09a888d4a27d9f48edb41bdfce3b41833e52db37e)
+
+##### 寻找矿池地址 {#lab-server-intrusion-mining-pool}
+
+在成功解除隐藏进程的挂载后，我们进一步追踪了挖矿进程的网络通信，以确定攻击者使用的矿池地址。通过以下步骤，我们逐步锁定了矿池的通信目标。
+
+我们使用 `ss -tpn` 命令查看服务器的 TCP 连接情况，重点关注与挖矿进程相关的网络活动。在输出中我们发现了 PID 为 18790 的挖矿进程的两个 TCP 链接：
+
+<!-- `ss` 命令是用于查看网络连接的工具，`-t` 参数表示只显示 TCP 连接，`-p` 参数显示进程相关信息，`-n` 参数显示 IP 地址和端口号，而不是尝试解析域名。 -->
+
+```shell
+# ss -tpn
+State  Recv-Q  Send-Q  Local Address:Port   Peer Address:Port  Process
+ESTAB  0       0       xxx.xx.xx.xx:35126   yyy.yy.yy.yy:8010  users:(("Xorgs",pid=18790,fd=101))
+ESTAB  0       0       xxx.xx.xx.xx:56578   yyy.yy.yy.yy:8010  users:(("Xorgs",pid=18790,fd=102))
+```
+
+其中实验室服务器的 IP 是 `xxx.xx.xx.xx`，而远程主机的是 `yyy.yy.yy.yy`（另一个校内地址）。
+
+我们也可以通过 `/proc` 查看该进程的命令行参数：
+
+```console
+root@lab-server:~# tr \\0 \  < /proc/18790/cmdline
+./Xorgs -a kawpow --proxy yyy.yy.yy.yy:8010 -s 51.89.99.172:6060 -u RBgUjdBAXMSNtDgSHbCAvVdLk5vZNz9nNG.lab-server -w 0
+```
+
+从命令行上可以看出，这个名为 `Xorgs` 的挖矿程序正在使用 `yyy.yy.yy.yy:8010` 作为 SOCKS5 代理连接位于 `51.89.99.172:6060` 矿池。攻击者通过这种方式使机器可以正常访问到矿池，即使机器本身并没有开通出校访问权限。
+
+在确认了 `yyy` 主机被用作连接矿池的代理以后，我们立即联系了网络中心的老师，并提供了相关证据。网络中心的老师表示，这是校内其他学院的服务器，并已经通知了相关人员进行处理。
+
+#### 排查入侵手段 {#lab-server-intrusion-intrusion-method}
+
+实验室内有多台 GPU 服务器，但只有一台作为登录中心节点，大家只能通过它向其他计算节点提交 SLURM 任务，而没有其他计算节点的直接登录权限。但由于如下几个配置的叠加，最终导致了我们整个实验室服务器的沦陷：
+
+1. 为了便于管理，我们配置了中心节点的 root 用户可以直接通过 SSH 连接到其他服务器的 root 账户。
+2. 由于实验需求，中心节点为其他同学提供了 Docker 使用权限。
+
+我们的排查方式大致如下：
+
+##### 中心节点的入侵 {#lab-server-intrusion-center-node}
+
+**异常公钥**：查看 root 用户的 `authorized_keys`，发现其中存在一个不属于实验室管理员的 SSH 公钥。进一步排查发现，该公钥也出现在中心节点上 A 同学的 `authorized_keys` 中。
+
+**时间线索**：`stat` 该文件后，我们发现 A 同学的公钥文件的 [ctime](#forensics) 为 **10 月 17 日 23:54:11**，而 root 用户的公钥文件 ctime 为 **10 月 18 日 00:00:53**。
+
+**登录方式**：我们试图通过 `/var/log/auth.log` 查看攻击者的登录记录，但发现该日志已被删除，且 rsyslog 服务被关闭。幸运的是，`auth.log` 每天 0 点会自动 rotate 成为 `auth.log.1`，其中保留了 10 月 18 日前的日志。检查发现，**10 月 17 日晚 23:53:13**，A 同学的账户从先研院某 IP 登录，且使用了 A 同学自己的公钥。A 同学表示，该公钥对应的私钥同时存放在他的电脑和学校的瀚海超算中。17 日晚 22 点后，他回宿舍休息，电脑则留在高新区实验室中未锁屏。此外，瀚海超算在 17 日之前已被黑客入侵。结合这些信息，如果排除掉攻击者进入实验室来拷走 A 同学私钥这种可能性较小的方式，我们推测攻击者很可能是通过瀚海超算获得的 A 同学的私钥。
+
+**journal 日志**：攻击者每次登录后都会删除 journal 日志，导致我们无法追踪其具体操作。查看 dmesg 可以发现，18 日、22 日、23 日有多次 journal 被删除的记录，例如：
+
+```text
+systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.journal: Journal file has been deleted, rotating.
+```
+
+但由于这些信息与 GPU 满载无关，且不是报错，因此初次排查时被我忽略掉了。
+
+##### 其它计算节点的入侵 {#lab-server-intrusion-compute-nodes}
+
+**公钥修改**：其他计算节点的 `/root/.ssh/authorized_keys` 中均存在攻击者的公钥。我们 `stat` 后发现其中两台服务器的公钥文件分别在 **10 月 18 日 00:05 和 00:10** 被修改，其余服务器则在 **10 月 22 日之后** 被修改。
+
+**登录日志**：通过检查未被删除的 `auth.log` 或 `auth.log.1`，我们发现公钥文件被修改之前的首次登录，均是从中心节点的 root 用户进行的 SSH 连接。这表明攻击者是通过中心节点横向扩散到其他服务器的。而攻击者直到 22 日开始挖矿后，才关闭了 rsyslog 服务，并删除了 `auth.log` 文件。
+
+**journal 日志**：与中心节点类似，攻击者在每次退出登录后都会手动删除 journal 日志，以掩盖其操作痕迹。
+
+##### 入侵还原 {#lab-server-intrusion-intrusion-reconstruction}
+
+根据上面收集到的信息，我们可以还原出攻击者的入侵路径：
+
+1. **窃取私钥**：攻击者从瀚海超算窃取了 A 同学的私钥及 `.ssh/config` 文件。
+2. **登录中心节点**：10 月 17 日晚 23:53，攻击者使用 A 同学的私钥从先研院某 IP 登录中心节点。
+3. **提权至 root**：登录后，攻击者立即通过 Docker 获取 root 权限，并将自己的公钥添加到 root 用户的 `.ssh/authorized_keys` 文件中。
+4. **横向扩散**：通过 SSH 登录其他服务器，修改 root 用户的公钥文件，最终导致实验室所有服务器的 root 权限被攻陷。
+5. **清理痕迹**：`rsyslog` 和 `syslog` 服务，并删除 `auth.log` 文件，`journal` 日志。
+6. **开始挖矿**：10 月 17 日晚入侵后，攻击者潜伏了 5 天，什么也没干，直到 22 日，偷偷开始挖矿。
+
+#### 事故处理 {#lab-server-intrusion-response}
+
+##### 初步修复措施 {#lab-server-intrusion-mitigation}
+
+在确认攻击者的入侵路径和恶意文件地址后，我们初步采取了如下措施来恢复服务器的安全性：
+
+1. **删除攻击者公钥**：我们删除了所有服务器上 `/root/.ssh/authorized_keys` 和用户目录下 `.ssh/authorized_keys` 中攻击者的公钥，确保攻击者无法再次通过 SSH 秘钥登录。
+2. **重新生成密钥对**：让 A 同学重新生成 SSH 密钥对，并替换了原来已泄露的密钥，防止攻击者使用窃取的私钥继续访问实验室的服务器。
+3. **终止恶意进程**：我们杀掉了所有隐藏的挖矿进程，并删除了对应的可执行文件（如 `/var/tmp/Xorgs` 和 `/opt/Xorgs`），确保恶意程序无法继续运行。
+4. **恢复被篡改的文件**：从 apt 源重新下载并安装了 `ssh` 软件包，以确保 `ssh` 二进制文件未被篡改，并恢复 `/etc/ssh/sshd_config` 的配置（`PasswordAuthentication no` 和 `UsePAM yes`）。
+5. **取消节点间 root 的 ssh 互连**：删除了从中心节点向其他计算节点的 root 用户的 SSH 公私钥，防止攻击者再次通过横向扩展入侵其他服务器。
+6. **检查 crontab**：
+    我们检查了所有服务器的 crontab 定时任务，未发现可疑任务，确保攻击者未通过定时任务维持持久化访问。
+7. **检查所有软件是否与 apt 源一致**：
+    使用 `dpkg -V` 检查了所有已安装软件包的完整性，确保所有系统软件包没有被篡改。
+8. **安全培训**：在实验室中进行了服务器安全培训，告诫大家：
+    - 离开电脑时一定要锁屏；
+    - 私钥必须妥善保管，不要在不同机器间共享同一份私钥；
+    - 不要在安全性低的电脑上登录实验室服务器。
+
+##### 未解决问题 {#lab-server-intrusion-unanswered-questions}
+
+尽管我们采取了上述措施，但是仍然有如下问题没有解决：
+
+- **日志服务被禁用**：攻击者为了防止我们发现其登录行为，关闭了 rsyslog 服务，导致所有服务器的 `auth.log` 不再更新。我们尝试重新启动 rsyslog 服务，但并未成功。具体表现为：
+    - `systemctl status rsyslog.service` 显示服务状态为 active，但 `auth.log` 并未更新。
+    - 查看 `/proc/<PID>/fd/`，发现服务的输出并未正确重定向到 `/var/log/auth.log`。
+    - 检查 rsyslog 的二进制文件和配置文件，发现均未被修改，但问题依然存在。
+
+- **journal 日志被删除**：攻击者为了防止我们发现其操作行为，每次退出登录前都会删除 journal 日志。通过查看 dmesg，可以看到大量 journal 被删除的记录。因此，我们无法确定攻击者除了运行挖矿进程、替换 `ssh` 命令以及修改 ssh 配置外，还进行了哪些操作。
+- **潜在的残留后门**：在初步清理后的第二天，dmesg 中又出现了一条新的 journal 被删除的日志。这表明攻击者可能仍留有我们未发现的后门或控制手段。
+
+##### 彻底解决方案 {#lab-server-intrusion-final-solution}
+
+由于无法完全排除攻击者留下的隐患，我们决定采取最彻底的措施——**重装所有服务器的系统**。
+
+1. 我们**备份**了原来的 rootfs，以便后续恢复必要的配置文件和数据。
+2. 然后我们**重装了所有服务器的系统**，确保操作系统是干净的。
+3. 最后，我们从备份的 rootfs 中**恢复必要的配置文件**（文件的 change time 在入侵之前，或经过检查确认没有问题的配置文件）。
+
+至此，此次入侵后的事故处理告一段落。
+
+!!! question "思考"
+
+    如果未来再次出现了有用户的密钥泄漏的情况，那么应该怎么设计来避免上文的安全问题再次发生？
 
 <!-- markdownlint-disable MD053 -->
 
