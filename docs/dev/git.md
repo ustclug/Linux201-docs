@@ -567,6 +567,10 @@ GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建�
 
 GitHub 在 [这里](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) 提供了详细的文档。
 
+!!! tip "本地运行 GitHub Actions"
+
+    测试 CI 很多时候是件头疼的事情：要一遍又一遍 commit、push、观察是否运行正确，几乎是一种无尽的折磨——如果能在本地运行指定的 workflow 就好了！对于 GitHub Actions，可以使用 [act](https://github.com/nektos/act) 工具，其会调用 Docker 运行模拟 Actions 的环境，可以在本地快速测试。
+
 #### Other CI/CD systems {#ci-cd}
 
 以下是一些其他常用的 CI/CD 提供商，它们提供了类似的服务：
