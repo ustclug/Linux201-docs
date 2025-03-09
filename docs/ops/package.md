@@ -208,7 +208,28 @@ htop: /usr/share/pixmaps/htop.png
 
 ### 固定包 {#hold}
 
-有时我们希望固定一个包，使得这个包不会被改变或升级：一个例子是，我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 `apt-mark hold <name>` 来标记这个包为固定的。
+有时我们希望固定一个包，使得这个包不会被安装或升级，例如：
+
+- 我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 `apt-mark hold <name>` 来标记这个包为固定的。
+- 我们不希望 Ubuntu 服务器安装 Snap，此时可以使用 `apt-mark hold snapd` 来固定（阻止）Snap 的安装：
+
+    ```console
+    $ sudo apt-mark hold snapd
+    $ sudo apt install chromium
+    Reading package lists... Done
+    Building dependency tree... Done
+    Reading state information... Done
+    Note, selecting 'chromium-browser' instead of 'chromium'
+    Some packages could not be installed. This may mean that you have
+    requested an impossible situation or if you are using the unstable
+    distribution that some required packages have not yet been created
+    or been moved out of Incoming.
+    The following information may help to resolve the situation:
+
+    The following packages have unmet dependencies:
+    chromium-browser : PreDepends: snapd but it is not going to be installed
+    E: Unable to correct problems, you have held broken packages.
+    ```
 
 `apt-mark unhold` 可以取消固定，而 `apt-mark showhold` 可以查看所有被固定的包。
 
@@ -420,6 +441,10 @@ Pin-Priority: 1000
 ```
 
 详细文档请参考 [apt_preferences(5)][apt_preferences.5]。
+
+!!! lab "使用优先级机制阻止软件包安装"
+
+    当 `Pin-Priority` 为负数时，APT 会拒绝安装这个包。请阅读文档，尝试创建一个配置文件，阻止安装 `snapd`（可在 Ubuntu 容器中实验）。
 
 ## DEB 软件包 {#deb-package}
 
