@@ -44,6 +44,20 @@ sudo systemctl restart caddy
     caddy validate --config /etc/caddy/Caddyfile
     ```
 
+!!! tip "阻止 Caddy 对未配置的域名进行 HTTPS 跳转"
+
+    Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。这在某些情况下不符合备案的技术要求，可能会被运营商投诉要求处理。
+
+    可以在配置中添加以下内容：
+
+    ```caddy
+    http:// {
+        abort
+    }
+    ```
+
+    使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。
+
 ## 常用配置
 
 以下是一些常用的 Caddyfile 配置示例：
