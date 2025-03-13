@@ -2013,6 +2013,21 @@
 </ul>
 </li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">系统几乎/完全无法操作</p>
+<p>不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满，出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。</p>
+<p>根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 <code>/proc/sys/kernel/sysrq</code> 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 <a href="https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key">Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分</a>。需要在 sysctl 配置中设置 <code>kernel.sysrq=1</code> 以持久化相应设置。</p>
+<p>最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：</p>
+<ul>
+<li>(un)R(aw)：修改键盘模式到 ASCII（XLATE），一般用于从 X 桌面环境夺取键盘控制。</li>
+<li>t(E)rm：发送 SIGTERM 信号给所有进程。</li>
+<li>k(I)ll：发送 SIGKILL 信号给所有进程。</li>
+<li>(S)ync：将所有已挂载文件系统的缓冲区数据写入磁盘。</li>
+<li>(U)nmount：重新挂载所有文件系统为只读模式。</li>
+<li>re(B)oot：重启系统。</li>
+</ul>
+<p>如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。其他的操作可以参考以上内核文档链接。</p>
+</div>
 <h2 id="status-and-logs">服务状态与日志<a class="headerlink" href="#status-and-logs" title="Permanent link">&para;</a></h2>
 <p>当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
 <code>systemctl --failed</code> 可以列出当前失败的服务。
@@ -2587,7 +2602,7 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月11日 06:24:45">2025年3月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月13日 08:19:04">2025年3月13日</span>
   </span>
 
     
