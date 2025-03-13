@@ -33,6 +33,23 @@ icon: material/bug
     - `iftop` 可以查看对应接口的网络流量情况。
         - 如果需要按进程查看网络流量情况，可以使用 `nethogs`。
 
+!!! note "系统几乎/完全无法操作"
+
+    不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满，出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。
+
+    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
+
+    最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：
+
+    - (un)R(aw)：修改键盘模式到 ASCII（XLATE），一般用于从 X 桌面环境夺取键盘控制。
+    - t(E)rm：发送 SIGTERM 信号给所有进程。
+    - k(I)ll：发送 SIGKILL 信号给所有进程。
+    - (S)ync：将所有已挂载文件系统的缓冲区数据写入磁盘。
+    - (U)nmount：重新挂载所有文件系统为只读模式。
+    - re(B)oot：重启系统。
+
+    如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。其他的操作可以参考以上内核文档链接。
+
 ## 服务状态与日志 {#status-and-logs}
 
 当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
