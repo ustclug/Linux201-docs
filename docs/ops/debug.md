@@ -95,6 +95,15 @@ journalctl 默认会使用 pager（换句话说，`less`）显示日志，当然
 logrotate 会定期（一般是每天，或者文件足够大的时候，请参考 `/etc/logrotate*` 对应的配置）「轮转」（rotate）日志文件：
 这是一个将旧日志压缩，更旧的日志删除的过程。为了分析被压缩过的历史日志，可以使用对应压缩软件提供的工具，例如 `gz` 格式对应 `zcat`/`zgrep`，`xz` 格式对应 `xzcat`/`xzgrep`，`zst` 格式对应 `zstdcat`/`zstdgrep` 等等。
 
+!!! tip "某段日志/错误信息是从哪个程序的源代码中的哪里输出的？"
+
+    在排查问题时，有时候会需要去搞清楚是什么东西在哪里输出了我们看到的错误信息。此时可以考虑使用代码搜索网站，最常见的选择有：
+
+    - GitHub 代码搜索（需要登录），直接在搜索框输入即可。
+    - [Debian Code Search](https://codesearch.debian.net/)，可以搜索 Debian 系统中所有包的源代码。
+
+    某些大型程序也有专门的搜索网站，例如 [Chromium Code Search](https://source.chromium.org/chromium)。
+
 ## procfs 与 strace {#procfs-and-strace}
 
 `/proc`（procfs）是内核以文件系统形式向用户空间提供的查看、管理进程状态的接口。
