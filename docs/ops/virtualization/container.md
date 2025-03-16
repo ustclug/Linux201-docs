@@ -406,6 +406,8 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
     2023 年的 Hackergame 有一道相关的题目：[Docker for Everyone](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone)。
 
+    尽管 sudo 支持限制用户可以执行的命令，但是由于 Docker CLI 的复杂性，这种限制很难做到完备，极易被绕过。可参考 Hackergame 2024 的题目：[Docker for Everyone Plus](https://github.com/USTC-Hackergame/hackergame2024-writeups/tree/master/official/Docker%20for%20Everyone%20Plus)。
+
     基于相同的理由，如果需要跨机器操作 Docker，也**不**应该用 `-H tcp://` 的方式开启远程访问。
     请阅读 <https://docs.docker.com/engine/security/protect-access/> 了解安全配置远程访问 Docker 的方法。
 
@@ -421,7 +423,13 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
     然后做了一些操作之后就直接退出了。这么做的后果，就是**在 `docker ps -a` 的时候，发现一大堆已经处于退出状态的容器**。
 
-    加上 `--name` 参数命名，可以帮助之后判断容器的用途；加上 `--rm` 参数则会在容器退出后自动删除容器。
+    加上 `--name` 参数命名，可以帮助之后判断容器的用途；加上 `--rm` 参数则会在容器退出后自动删除容器。可以考虑为常用的命令添加 alias，例如：
+
+    ```shell
+    alias tmpctr="sudo docker run -it --rm"
+    ```
+
+    这样执行 `tmpctr ustclug/debian:12` 就可以启动一个临时容器了。
 
 另外创建容器时非常常见的需求：
 
