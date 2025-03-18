@@ -297,6 +297,13 @@ git rm --cached -f src/eigen # if you've already added it to the index
 git submodule add <url_of_eigen> src/eigen
 ```
 
+初始化、更新 submodule 等操作则使用 `git submodule update` 命令：
+
+```bash
+git submodule update --init --recursive # clone 后初始化并拉取 submodule
+git submodule update --remote --recursive # 更新 submodule 到远程最新版本
+```
+
 ### Stash {#git-stash}
 
 有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
