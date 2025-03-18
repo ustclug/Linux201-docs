@@ -422,9 +422,25 @@ gh pr create
 
     之后可以直接使用 `watch_latest_run` 命令即可。
 
-### GPG 签名 {#github-gpg}
+### GPG 与 SSH 密钥签名 {#github-sign}
 
-SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commit 的真实性。
+在默认配置下，SSH Key 只用来验证你是否有权限修改指定的仓库，但有些时候我们需要证明某个 commit 就是由你（而不是其他人）提交的，以验证 commit 的真实性，此时就需要对 commit **签名**。GPG Key 和 SSH Key 都可以用来签名。
+
+在按照以下内容配置完成后，使用以下命令即可为 commit 和 tag 签名：
+
+```shell
+git commit -S ...
+git tag -s ...
+```
+
+如果需要自动为所有 commit 和 tag 签名（不管是使用 GPG 还是 SSH 签名），则：
+
+```shell
+git config --global commit.gpgSign true
+git config --global tag.gpgSign true
+```
+
+#### GPG 签名 {#github-gpg}
 
 GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
 
@@ -447,6 +463,15 @@ gpg --keyserver pgp.mit.edu --send-keys <GPG Key ID>
     过期的 GPG Key 是可以更新的, 参考 [这个 StackOverflow 回答](https://superuser.com/a/1141251).
     在 GitHub 上 rotate 只需要删除旧的 GPG Key, 然后重新添加新的 GPG Key 即可.
     值得注意的是过期的 GPG Key 签名的 commit 依然会显示成 Verified, 因此**不要轻易删除过期的 GPG Key**.
+
+#### SSH 签名 {#github-ssh}
+
+在已经为账户添加了 SSH Key 的基础上，SSH 签名的配置就简单得多：
+
+```shell
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/yourkey.pub
+```
 
 ### Issue {#github-issue}
 
