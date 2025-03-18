@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.8">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.9">
     
     
       
@@ -30,7 +30,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.4af4bdda.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
@@ -1557,11 +1557,35 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#github-sign" class="md-nav__link">
+    <span class="md-ellipsis">
+      GPG 与 SSH 密钥签名
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GPG 与 SSH 密钥签名">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#github-gpg" class="md-nav__link">
     <span class="md-ellipsis">
       GPG 签名
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-ssh" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSH 签名
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2183,11 +2207,35 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#github-sign" class="md-nav__link">
+    <span class="md-ellipsis">
+      GPG 与 SSH 密钥签名
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GPG 与 SSH 密钥签名">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#github-gpg" class="md-nav__link">
     <span class="md-ellipsis">
       GPG 签名
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-ssh" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSH 签名
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2614,8 +2662,17 @@
 </code></pre></div>
 <p>之后可以直接使用 <code>watch_latest_run</code> 命令即可。</p>
 </details>
-<h3 id="github-gpg">GPG 签名<a class="headerlink" href="#github-gpg" title="Permanent link">&para;</a></h3>
-<p>SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commit 的真实性。</p>
+<h3 id="github-sign">GPG 与 SSH 密钥签名<a class="headerlink" href="#github-sign" title="Permanent link">&para;</a></h3>
+<p>在默认配置下，SSH Key 只用来验证你是否有权限修改指定的仓库，但有些时候我们需要证明某个 commit 就是由你（而不是其他人）提交的，以验证 commit 的真实性，此时就需要对 commit <strong>签名</strong>。GPG Key 和 SSH Key 都可以用来签名。</p>
+<p>在按照以下内容配置完成后，使用以下命令即可为 commit 和 tag 签名：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-S<span class="w"> </span>...
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-s<span class="w"> </span>...
+</code></pre></div>
+<p>如果需要自动为所有 commit 和 tag 签名（不管是使用 GPG 还是 SSH 签名），则：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>commit.gpgSign<span class="w"> </span><span class="nb">true</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>tag.gpgSign<span class="w"> </span><span class="nb">true</span>
+</code></pre></div>
+<h4 id="github-gpg">GPG 签名<a class="headerlink" href="#github-gpg" title="Permanent link">&para;</a></h4>
 <p>GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：</p>
 <ul>
 <li><a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key">生成 GPG Key</a></li>
@@ -2624,10 +2681,10 @@
 <li><a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account">在 GitHub 上关联 GPG Key</a></li>
 </ul>
 <p>请注意备份 GPG Key, 并额外向其他 Key Server 发布 GPG Key, 以防止 GPG Key 丢失：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>gpg<span class="w"> </span>--list-secret-keys<span class="w"> </span>--keyid-format<span class="w"> </span>LONG
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>gpg<span class="w"> </span>--armor<span class="w"> </span>--export<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>gpg.key
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>keyserver.ubuntu.com<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>pgp.mit.edu<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>gpg<span class="w"> </span>--list-secret-keys<span class="w"> </span>--keyid-format<span class="w"> </span>LONG
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>gpg<span class="w"> </span>--armor<span class="w"> </span>--export<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>gpg.key
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>keyserver.ubuntu.com<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>pgp.mit.edu<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">过期的 GPG Key</p>
@@ -2635,6 +2692,11 @@
 在 GitHub 上 rotate 只需要删除旧的 GPG Key, 然后重新添加新的 GPG Key 即可.
 值得注意的是过期的 GPG Key 签名的 commit 依然会显示成 Verified, 因此<strong>不要轻易删除过期的 GPG Key</strong>.</p>
 </div>
+<h4 id="github-ssh">SSH 签名<a class="headerlink" href="#github-ssh" title="Permanent link">&para;</a></h4>
+<p>在已经为账户添加了 SSH Key 的基础上，SSH 签名的配置就简单得多：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>gpg.format<span class="w"> </span>ssh
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.signingkey<span class="w"> </span>~/.ssh/yourkey.pub
+</code></pre></div>
 <h3 id="github-issue">Issue<a class="headerlink" href="#github-issue" title="Permanent link">&para;</a></h3>
 <p>下面关于 Markdown 的特性并不限于 Issue，也适用于 Pull Request 等。</p>
 <h4 id="github-link">GitHub 链接<a class="headerlink" href="#github-link" title="Permanent link">&para;</a></h4>
@@ -2646,9 +2708,9 @@
 <ul>
 <li>
 <p>当一个 PR 包含如下关键字，并且按照上述方法连接到一个 Issue 时，合并这个 PR 会关闭对应的 issue：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>close(s,d) #123
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>fix(es, ed) #123
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>resolve(s, d) #123
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>close(s,d) #123
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>fix(es, ed) #123
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>resolve(s, d) #123
 </code></pre></div>
 </li>
 </ul>
@@ -2668,13 +2730,13 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams">Mermaid 关系图</a></p>
 <p>Mermaid 是一种简单且强大的关系图/流程图语法，例如可以通过如下方式创建一个简单的关系图：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>```mermaid
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>graph LR;
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>    A--&gt;B;
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    A--&gt;C;
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>    B--&gt;D;
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    C--&gt;D;
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>```
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>```mermaid
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>graph LR;
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    A--&gt;B;
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    A--&gt;C;
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>    B--&gt;D;
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>    C--&gt;D;
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>```
 </code></pre></div>
 <pre class="mermaid"><code>graph LR;
     A--&gt;B;
@@ -2689,27 +2751,27 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists">进度跟踪</a></p>
 <p>在 Issue 正文中创建一个任务列表，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="k">- [ ]</span> Task 2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="k">- [ ]</span> Task 2
 </code></pre></div>
 <p>此时可以将这个 Issue 转化为一个任务列表，方便追踪任务的进度，同时 <code>#123</code> 会被标记为 <code>Tracked by #xxx</code>。</p>
 </li>
 </ul>
 <h4 id="github-issue-template">Issue 模板<a class="headerlink" href="#github-issue-template" title="Permanent link">&para;</a></h4>
 <p>对于大型项目，使用 Issue template 可以使得 Issue 更加规范化，例如，可以在 <code>.github/ISSUE_TEMPLATE/bug_report.yml</code> 中添加如下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="nt">labels</span><span class="p">:</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="nt">body</span><span class="p">:</span>
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="w">      </span><span class="nt">attributes</span><span class="p">:</span>
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
-<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="w">        </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
-<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="w">      </span><span class="nt">validations</span><span class="p">:</span>
-<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="nt">labels</span><span class="p">:</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="nt">body</span><span class="p">:</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">      </span><span class="nt">attributes</span><span class="p">:</span>
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="w">        </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
+<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="w">      </span><span class="nt">validations</span><span class="p">:</span>
+<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>可以参考 <a href="https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1">ustclug/mirrorrequest/.../01-mirror-request.yml</a>, <a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository">GitHub 文档</a>.</p>
 <h3 id="github-pr">Pull Request<a class="headerlink" href="#github-pr" title="Permanent link">&para;</a></h3>
@@ -2795,7 +2857,7 @@
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月16日 06:03:48">2025年3月16日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月18日 07:38:14">2025年3月18日</span>
   </span>
 
     
