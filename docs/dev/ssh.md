@@ -149,6 +149,12 @@ Host example
 
   [^netcat-openbsd]: 需要使用 OpenBSD 版本的 `nc` 命令，如 `apt install netcat-openbsd`。
 
+!!! question "让服务器的 `git` 使用本机作为代理"
+
+    `git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
+
+    结合[端口转发](#port-forwarding)和[代理](#proxy)部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 `git` 临时利用本机作为代理，那么应该如何操作？
+
 ### 跳板 {#jump-host}
 
 SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。
