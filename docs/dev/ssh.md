@@ -137,6 +137,16 @@ Host example
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
 
+!!! tip "代理与环境变量"
+
+    由于各种各样的原因，目前各种应用程序对代理相关的环境变量（`http_proxy`、`https_proxy`、`all_proxy`、`no_proxy`）的支持程度差异很大：
+
+    - `http_proxy` 和 `https_proxy` 分别用于连接到 HTTP 和 HTTPS 服务器时的代理设置。**注意这和代理本身的协议无关**，一部分原因是 HTTP 是明文协议，一些代理服务器可以修改 HTTP 请求的内容，或者做缓存操作，但是 HTTPS 就不行了。
+    - 环境变量是**大小写敏感**的，因此对应用程序来说，设置 `HTTP_PROXY` 和 `http_proxy` 是不一样的。几乎所有的程序都支持小写的代理环境变量，但是大写的代理环境变量支持情况就不一定了，因此推荐只设置小写的代理环境变量。
+    - 不是所有程序都支持设置 SOCKS5 代理。[curl 支持](https://curl.se/libcurl/c/CURLOPT_PROXY.html) SOCKS5 代理（`socks5://` 和 `socks5h://`），其中带 `h` 的后者代表由代理（而不是本机）解析主机名。
+
+    更多信息可参考：[We need to talk: Can we standardize NO_PROXY?](https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/)。
+
 ### 使用代理 {#proxy}
 
 SSH 支持自定义代理命令，从而可以通过代理服务器连接目标主机。
@@ -151,9 +161,11 @@ Host example
 
 !!! question "让服务器的 `git` 使用本机作为代理"
 
-    `git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
+    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
 
-    结合[端口转发](#port-forwarding)和[代理](#proxy)部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 `git` 临时利用本机作为代理，那么应该如何操作？
+    而在访问 HTTP(S) remote 时，`git` 会使用 libcurl，因此会读取 `http_proxy`、`https_proxy` 和 `all_proxy` 环境变量指定的代理。也可以使用 `http.proxy` 这个 `git config` 选项来指定。
+
+    结合[端口转发](#port-forwarding)和[代理](#proxy)部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 `git` 临时利用本机作为代理连接 SSH 和 HTTP(S) remote，那么应该如何操作？
 
 ### 跳板 {#jump-host}
 
