@@ -2245,6 +2245,16 @@
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span>DynamicForward<span class="w"> </span><span class="m">1081</span>
 </code></pre></div>
 <p><code>-L</code>、<code>-R</code>、<code>-D</code> 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。</p>
+<div class="admonition tip">
+<p class="admonition-title">代理与环境变量</p>
+<p>由于各种各样的原因，目前各种应用程序对代理相关的环境变量（<code>http_proxy</code>、<code>https_proxy</code>、<code>all_proxy</code>、<code>no_proxy</code>）的支持程度差异很大：</p>
+<ul>
+<li><code>http_proxy</code> 和 <code>https_proxy</code> 分别用于连接到 HTTP 和 HTTPS 服务器时的代理设置。<strong>注意这和代理本身的协议无关</strong>，一部分原因是 HTTP 是明文协议，一些代理服务器可以修改 HTTP 请求的内容，或者做缓存操作，但是 HTTPS 就不行了。</li>
+<li>环境变量是<strong>大小写敏感</strong>的，因此对应用程序来说，设置 <code>HTTP_PROXY</code> 和 <code>http_proxy</code> 是不一样的。几乎所有的程序都支持小写的代理环境变量，但是大写的代理环境变量支持情况就不一定了，因此推荐只设置小写的代理环境变量。</li>
+<li>不是所有程序都支持设置 SOCKS5 代理。<a href="https://curl.se/libcurl/c/CURLOPT_PROXY.html">curl 支持</a> SOCKS5 代理（<code>socks5://</code> 和 <code>socks5h://</code>），其中带 <code>h</code> 的后者代表由代理（而不是本机）解析主机名。</li>
+</ul>
+<p>更多信息可参考：<a href="https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/">We need to talk: Can we standardize NO_PROXY?</a>。</p>
+</div>
 <h3 id="proxy">使用代理<a class="headerlink" href="#proxy" title="Permanent link">&para;</a></h3>
 <p>SSH 支持自定义代理命令，从而可以通过代理服务器连接目标主机。
 一个常见的用法是通过 SOCKS5 代理连接目标主机，可以借助 <code>nc</code> 命令实现<sup id="fnref:netcat-openbsd"><a class="footnote-ref" href="#fn:netcat-openbsd">1</a></sup>：</p>
@@ -2253,8 +2263,9 @@
 </code></pre></div>
 <div class="admonition question">
 <p class="admonition-title">让服务器的 <code>git</code> 使用本机作为代理</p>
-<p><code>git</code> 可以读取 <code>GIT_SSH_COMMAND</code> 环境变量指定的 SSH 命令，例如 <code>GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...</code> 就可以让 <code>git</code> 使用指定的路径的密钥。</p>
-<p>结合<a href="#port-forwarding">端口转发</a>和<a href="#proxy">代理</a>部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 <code>git</code> 临时利用本机作为代理，那么应该如何操作？</p>
+<p>在访问 SSH remote 时，<code>git</code> 可以读取 <code>GIT_SSH_COMMAND</code> 环境变量指定的 SSH 命令，例如 <code>GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...</code> 就可以让 <code>git</code> 使用指定的路径的密钥。</p>
+<p>而在访问 HTTP(S) remote 时，<code>git</code> 会使用 libcurl，因此会读取 <code>http_proxy</code>、<code>https_proxy</code> 和 <code>all_proxy</code> 环境变量指定的代理。也可以使用 <code>http.proxy</code> 这个 <code>git config</code> 选项来指定。</p>
+<p>结合<a href="#port-forwarding">端口转发</a>和<a href="#proxy">代理</a>部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 <code>git</code> 临时利用本机作为代理连接 SSH 和 HTTP(S) remote，那么应该如何操作？</p>
 </div>
 <h3 id="jump-host">跳板<a class="headerlink" href="#jump-host" title="Permanent link">&para;</a></h3>
 <p>SSH 支持通过跳板机连接目标主机，即先 SSH 登录 jump-host，再从 jump-host 登录目标主机。一些受限的网络环境常常采用这种方案，例如一个集群内只有跳板机暴露在公网上，而其他主机都在被隔离的内网中，只能通过跳板机访问。</p>
@@ -2547,7 +2558,7 @@
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月30日 19:21:13">2025年3月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月30日 19:50:53">2025年3月30日</span>
   </span>
 
     
