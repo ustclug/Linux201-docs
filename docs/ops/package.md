@@ -261,7 +261,7 @@ lrwxrwxrwx 1 root root 18 Feb  9 15:54 /etc/alternatives/editor -> /usr/bin/vim.
 
 ### 自动更新 {#unattended-upgrade}
 
-一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认：
+一般而言，使用 apt 的系统默认安装了 `unattended-upgrades` 包，如果系统上没有，安装该包即可。一些 Debian 系统镜像在预配置阶段会关闭自动更新，这可以通过以下命令确认（需要安装 `debconf-utils` 包）：
 
 ```sh
 debconf-get-selections | grep unattended-upgrades/enable_auto_updates
