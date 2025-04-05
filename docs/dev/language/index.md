@@ -6,7 +6,7 @@ icon: material/xml
 
 !!! note "主要作者"
 
-    [@tiankaima][tiankaima]
+    [@tiankaima][tiankaima]、[@xiao-h1024][xiao-h1024]
 
 !!! warning "本文编写中"
 
@@ -77,6 +77,7 @@ icon: material/xml
 
 - [FastAPI](https://fastapi.tiangolo.com/): 尝试写一个简单的 API 服务
 - [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/): 了解 Python 在数据科学领域的应用
+- [PyTorch](https://pytorch.org/tutorials/): 了解 PyTorch 的使用
 - [TensorFlow](https://tensorflow.google.cn/tutorials?hl=zh-cn): 了解 TensorFlow 的使用
 - [Python Cookbook](https://python3-cookbook.readthedocs.io/zh_CN/latest/): 深入了解 Python 的一些特性
 
@@ -127,22 +128,40 @@ icon: material/xml
 
 !!! comment "适用范围"
 
-    TBC
+    C/C++ 的适用范围非常广泛，几乎可以适用于计算机的各种领域，通常用于性能要求较高或是资源受限、贴近底层的地方，比如操作系统内核、游戏引擎、高频量化交易、嵌入式开发等
 
 !!! note "特点"
 
-    TBC
+    - 高性能：编译为机器码，没有额外开销
+    - 手动内存管理：与一些自带 GC 的语言不同，C/C++ 要求开发者自行管理内存
+    - 生态分散：C/C++ 并没有官方的包管理器，生态较为分散，现有的包管理器、构建工具并不完善
 
 参考资料：
 
 - [Linux 101/Ch07](https://101.lug.ustc.edu.cn/Ch07/#c)
 - [C++ Reference](https://en.cppreference.com/w/)
+- [CppCon](https://cppcon.org/)
+- [Modern C++ Programming](https://federico-busato.github.io/Modern-CPP-Programming/)
+
+常用工具：
+
+- [CMake](https://cmake.org/): 目前最流行的跨平台 C/C++ 构建系统
+- [Meson](https://mesonbuild.com): 一种开源构建系统，比 CMake 更加用户友好
+- [Xmake](https://xmake.io): 现代化的 C/C++ 构建工具，拥有快速构建、生成工程文件、包管理等强大功能，同时轻量易上手
+- [Vcpkg](https://vcpkg.io): 微软开发的免费开源 C/C++ 包管理器，可以跨平台，能够与 CMake 等构建工具协作
+- [Conan](https://conan.io/): 另一个 C/C++ 的包管理器，比 Vcpkg 更方便定制
+
+!!! comment "@xiao-h1024: 关于 C/C++ 生态的吐槽"
+
+    C/C++ 的生态非常分散且混乱，你可以看到各种各样的构建工具，每个都声称自己解决了先前构建工具的问题，然而现实是各有各的坑点，生态还是那样混乱。想要把第三方库顺利集成到自己的项目中，还要跨平台，解决构建问题的时间都够写好多代码了，这可真是噩梦。所以还得是 Rust（逃
+
 
 ## 开发指南
 
 ### Style Guide {#style-guide}
 
-TBC
+- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
+- [Style Guide for Python Code](https://peps.python.org/pep-0008/)
 
 ### Flame Graph {#flame-graph}
 
@@ -150,7 +169,11 @@ TBC
 
 ### IDE {#ide}
 
-TBC
+- [Visual Studio Code](https://code.visualstudio.com/): 其实 Visual Studio Code 是个代码编辑器，但是在众多插件的帮助下，可以有 IDE 一样的体验。Visual Studio Code 可以用于各种语言的开发，更是拥有非常出色的远程开发功能。
+- [Pycharm](https://www.jetbrains.com/pycharm/): Jetbrains 开发的 Python IDE，提供了开箱即用的 Python 开发体验，支持 Python 的各种框架
+- [Clion](https://www.jetbrains.com/clion/): Jetbrains 开发的 C++ IDE，使用 CMake 管理工程，拥有强大的静态检查功能，以及强大的代码重构功能
+- [QT Creator](https://www.qt.io/zh-cn/product/development-tools): 主要用于开发 Qt 应用的 IDE
+- [Cursor](https://www.cursor.com/): 深度集成了 AI 工具的代码编辑器，基于 Visual Studio Code 开发，兼容大部分 Visual Studio Code 的插件，Tab 键的体验谁用谁知道！
 
 ### 其他工具
 
