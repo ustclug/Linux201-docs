@@ -137,6 +137,10 @@ Host example
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
 
+本地端口转发和远程端口转发的工作模式可以结合由 Ivan Velichko 绘制的图片来理解：
+
+[![SSH local and remote port forwarding](../images/iximiuz-ssh-tunnels-2000-opt.png)](https://iximiuz.com/ssh-tunnels/ssh-tunnels.png)
+
 !!! tip "代理与环境变量"
 
     由于各种各样的原因，目前各种应用程序对代理相关的环境变量（`http_proxy`、`https_proxy`、`all_proxy`、`no_proxy`）的支持程度差异很大：
