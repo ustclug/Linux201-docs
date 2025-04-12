@@ -1092,8 +1092,10 @@ Hello, world!
 完成之后，记得解除挂载：
 
 ```shell
-umount mountpoint/
-# 或者 fusermount -u mountpoint/
+# fusermount 不需要 root 权限
+fusermount -u mountpoint/
+# 或者 umount，旧版本可能需要 root 权限
+# umount mountpoint/
 ```
 
 !!! tip "FUSE 的代价"
@@ -1101,6 +1103,86 @@ umount mountpoint/
     用户态文件系统虽然方便，但是其代价之一是性能。FAST '17 的论文 [To FUSE or Not to FUSE: Performance of User-Space File Systems](https://www.usenix.org/conference/fast17/technical-sessions/presentation/vangoor) 对此做了详细的量化分析。
 
     此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，[存在潜在的安全问题](https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications)，在生产环境使用时需要注意。
+
+!!! tip "解决 FUSE 死锁问题"
+
+    一些实现不佳的 FUSE 文件系统可能会出现死锁，此时文件系统进程和访问该文件系统的进程都会陷入内核中，无法用常用的 SIGKILL 信号终止。
+
+    ??? note "一个死锁的代码例子：FUSE 文件系统实现访问自身的路径"
+
+        ```c
+        #define FUSE_USE_VERSION 31
+
+        #include <assert.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <fuse.h>
+        #include <string.h>
+        #include <dirent.h>
+
+        static char *real_path = NULL;
+
+        static int hello_getattr(const char *path, struct stat *stbuf,
+                                struct fuse_file_info *fi) {
+          int res = 0;
+
+          memset(stbuf, 0, sizeof(struct stat));
+          // DEADLOCK!
+          // Accessing myself in the getattr function
+          DIR *d = opendir(real_path);
+          struct dirent *entry = readdir(d);
+          // OK, impossible to reach here
+          assert(0);
+          return res;
+        }
+
+        static const struct fuse_operations hello_oper = {
+          .getattr = hello_getattr,
+        };
+
+        int main(int argc, char *argv[]) {
+          if (argc < 2) {
+            fprintf(stderr, "Usage: %s <mountpoint>\n", argv[0]);
+            return 1;
+          }
+          real_path = realpath(argv[1], NULL);
+          return fuse_main(argc, argv, &hello_oper, NULL);
+        }
+        ```
+    
+    上述程序在运行后，访问路径会卡死，该进程也无法正常被 wait 回收，挂载点也无法 umount：
+
+    ```shell
+    $ ./deadlock mountpoint/
+    $ ls mountpoint/
+    （卡住）
+    ```
+
+    ```shell
+    $ ps aux | grep deadlock
+    username     150911  0.0  0.0 748452  1584 ?        Ssl  16:09   0:00 ./deadlock mountpoint/
+    username     151414  0.0  0.0   9556  5960 pts/3    S+   16:10   0:00 grep --color=auto deadlock
+    $ kill -9 150911
+    $ ps aux | grep deadlock
+    username     150911  0.0  0.0      0     0 ?        Zsl  16:09   0:00 [deadlock] <defunct>
+    username     151555  0.0  0.0   9556  5804 pts/3    S+   16:12   0:00 grep --color=auto deadlock
+    $ fusermount -u mountpoint/
+    fusermount: failed to unmount /path/to/mountpoint: Device or resource busy
+    ```
+
+    此时需要使用内核 FUSE 暴露的控制接口强制关闭连接，详情参见[内核文档中 FUSE 的介绍](https://docs.kernel.org/filesystems/fuse.html)：
+
+    ```shell
+    $ ls /sys/fs/fuse/connections/
+    1292/  1327/  1381/
+    $ cat /sys/fs/fuse/connections/1381/waiting
+    21
+    $ # waiting 的值非 0，表明现在 1381 连接有进程在等待
+    $ # 正常情况下 waiting 的值应该是 0，如果持续为非 0，那么就可能出现了连接卡死的问题
+    $ echo 1 | sudo tee /sys/fs/fuse/connections/1381/abort
+    1
+    $ fusermount -u mountpoint/
+    ```
 
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
