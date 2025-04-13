@@ -39,7 +39,7 @@ ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS
 
 ??? tip "root on ZFS"
 
-    如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 `zfs-initramfs` 软件包，以便在启动时加载 ZFS 模块。
+    如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 `zfs-initramfs` 软件包，以便在系统启动阶段加载 ZFS 模块。
 
     在这种配置下，我们**强烈建议**为 `/boot` 目录单独创建一个分区并使用 ext4 文件系统，以避免 GRUB 在特定条件下无法识别 ZFS 文件系统的问题。
     另一种办法是使用 systemd-boot，还可以搭配 UKI 启动。
@@ -123,7 +123,7 @@ tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -
 
     在 ZFS 中，绝大多数诸如查询状态等只读的命令都不需要 `sudo`。
 
-在创建好 zpool `tank` 后，ZFS 也自动创建了一个文件系统 `tank` 并挂载在了 `/tank` 目录，可以直接使用。
+在创建好 zpool `tank` 后，ZFS 也自动创建了一个文件系统 `tank` 并挂载在了 `/tank` 目录，可以直接使用，但我们**强烈推荐**按照 [ZFS 数据集](#dataset)一节创建更多的文件系统或 Zvol 再在其中存储资料。
 
 对于新建的 ZFS pool，我们推荐调整一些参数以获得最佳的性能。具体参见下一节。
 
@@ -155,6 +155,20 @@ ZFS dataset 层面的参数可以通过 `zfs set` 命令进行调整，语法与
 
 ### ZFS 文件系统 {#zfs-filesystem}
 
+ZFS 文件系统（filesystem）是 ZFS 的主要存储形式，通过 VFS 接口提供文件存储功能。当你创建 ZFS pool `tank` 时，这个 pool 的根数据集（root dataset）就会自动成为一个文件系统，并挂载在 `/tank` 目录下。
+
+为了便于管理和维护，我们**强烈推荐**建立额外的文件系统来存储数据，而不是直接在 `/tank` 下存储数据。例如：
+
+```shell
+zfs create tank/data
+zfs create tank/backup
+# etc.
+```
+
+这些额外的文件系统会自动继承上级文件系统的属性（如压缩、快照等）。特别地，`mountpoint` 属性的继承方式是在上级文件系统的 `mountpoint` 属性上加上当前文件系统的名称，例如 `/tank/data` 的默认挂载点为 `/tank/data` 等。ZFS 的属性继承功能是我们非常推荐的“便于管理和维护”的特性之一，例如，中科大镜像站就将软件仓库放在 `pool0/repo` 下，该目录的 `mountpoint` 属性为 `/srv/repo`，此时每个具体的软件仓库就可以直接建立独立的文件系统并继承所有重要属性，如 `pool0/repo/ubuntu` 的挂载点就自动继承为 `/srv/repo/ubuntu`。
+
+#### ZFS 文件系统参数 {#zfs-filesystem-props}
+
 以下是一些推荐/经常修改的参数：
 
 - `xattr=sa`：将文件的扩展属性（如 POSIX ACL 和 SELinux 标签等）存储在 dnode 中（类似其他文件系统的 inode），而不是独立的“文件”中。对于经常使用扩展属性的应用场景（如 Samba），使用 `xattr=sa` 可以减少磁盘 I/O，提高性能。
@@ -166,6 +180,9 @@ ZFS dataset 层面的参数可以通过 `zfs set` 命令进行调整，语法与
 - `relatime=on`：启用相对时间戳。默认情况下，Linux 会在**每次**访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 `relatime` 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。
 
     此 ZFS 参数与 Linux 的挂载选项 `relatime` 完全相同。
+
+    如果你的使用场景不需要记录访问时间戳（如镜像站），可以设置 `atime=off` 关闭该功能，进一步减少磁盘 I/O，此时 `relatime` 选项将不起作用。
+    类似地，`atime` 设置与 Linux 的挂载选项 `atime` / `noatime` 完全相同。
 
 - `compression=on` 或 `compression=zstd`：启用 ZFS 的透明压缩功能。对于大多数数据，压缩后的数据量会显著减小，从而减少磁盘 I/O。
 

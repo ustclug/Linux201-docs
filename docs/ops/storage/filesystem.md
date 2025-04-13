@@ -544,7 +544,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 | ReiserFS                                        | :fontawesome-solid-check:{: .orangered } (deprecated)  | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。          |
 | [Btrfs](https://wiki.archlinux.org/title/Btrfs) | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID 5/6 支持不稳定，也有对整体稳定性的争议。 |
 | [Bcachefs](https://wiki.archlinux.org/title/Bcachefs) | :fontawesome-solid-check:{: .limegreen } (Linux 6.7+) | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 基于 [Bcache](https://wiki.archlinux.org/title/Bcache) 的新一代 CoW 文件系统，旨在用更简洁的代码实现 Btrfs 和 ZFS 的功能，采用与 GPL 兼容的许可证。|
-| [ZFS](https://wiki.archlinux.org/title/ZFS)     | :fontawesome-solid-check:{: .limegreen }（需要 kernel module）              | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。                   |
+| [ZFS](https://wiki.archlinux.org/title/ZFS)     | :fontawesome-solid-check:{: .limegreen }（需要 kernel module）              | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen }[^zfs-win] | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。                   |
 | NTFS                                            | :fontawesome-solid-check:{: .limegreen } (Linux 5.15+) | 只读                                     | :fontawesome-solid-check:{: .limegreen } | Windows 上最常见的文件系统。                                                                                          |
 | HFS+                                            | 只读                                                   | :fontawesome-solid-check:{: .limegreen } | 只读，Bootcamp                           | macOS 较早期版本最常见的文件系统。                                                                                    |
 | APFS                                            | :fontawesome-solid-xmark:{: .orangered }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | macOS 较新版本的 CoW 文件系统。                                                                                       |
@@ -1187,6 +1187,7 @@ fusermount -u mountpoint/
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
+[^zfs-win]: [OpenZFS on Windows](https://github.com/openzfsonwindows/openzfs) 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。
 
 ## 引用来源 {#references .no-underline}
 
