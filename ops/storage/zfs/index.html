@@ -886,6 +886,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#zfs-filesystem-props" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZFS 文件系统参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#recordsize" class="md-nav__link">
     <span class="md-ellipsis">
       关于 recordsize
@@ -2043,6 +2052,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#zfs-filesystem-props" class="md-nav__link">
+    <span class="md-ellipsis">
+      ZFS 文件系统参数
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#recordsize" class="md-nav__link">
     <span class="md-ellipsis">
       关于 recordsize
@@ -2268,7 +2286,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <p>不论是 Debian 还是 Ubuntu，都需要安装 <code>zfsutils-linux</code> 软件包，以便使用 ZFS 的命令行工具。</p>
 <details class="tip">
 <summary>root on ZFS</summary>
-<p>如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 <code>zfs-initramfs</code> 软件包，以便在启动时加载 ZFS 模块。</p>
+<p>如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 <code>zfs-initramfs</code> 软件包，以便在系统启动阶段加载 ZFS 模块。</p>
 <p>在这种配置下，我们<strong>强烈建议</strong>为 <code>/boot</code> 目录单独创建一个分区并使用 ext4 文件系统，以避免 GRUB 在特定条件下无法识别 ZFS 文件系统的问题。
 另一种办法是使用 systemd-boot，还可以搭配 UKI 启动。</p>
 </details>
@@ -2337,7 +2355,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <p class="admonition-title">Tip</p>
 <p>在 ZFS 中，绝大多数诸如查询状态等只读的命令都不需要 <code>sudo</code>。</p>
 </div>
-<p>在创建好 zpool <code>tank</code> 后，ZFS 也自动创建了一个文件系统 <code>tank</code> 并挂载在了 <code>/tank</code> 目录，可以直接使用。</p>
+<p>在创建好 zpool <code>tank</code> 后，ZFS 也自动创建了一个文件系统 <code>tank</code> 并挂载在了 <code>/tank</code> 目录，可以直接使用，但我们<strong>强烈推荐</strong>按照 <a href="#dataset">ZFS 数据集</a>一节创建更多的文件系统或 Zvol 再在其中存储资料。</p>
 <p>对于新建的 ZFS pool，我们推荐调整一些参数以获得最佳的性能。具体参见下一节。</p>
 <h3 id="tuning-zpool">参数调节<a class="headerlink" href="#tuning-zpool" title="Permanent link">&para;</a></h3>
 <p>zpool 层面的参数可以通过 <code>zpool set</code> 命令进行调整，以下是一些推荐修改的参数：</p>
@@ -2361,6 +2379,14 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <p>在 ZFS 中，存储数据的、与“卷”类似的单位是数据集（dataset）。ZFS dataset 主要有两种形式：文件系统（filesystem）或 zvol<sup id="fnref:datasets"><a class="footnote-ref" href="#fn:datasets">3</a></sup>。</p>
 <p>ZFS dataset 层面的参数可以通过 <code>zfs set</code> 命令进行调整，语法与 <code>zpool set</code> 类似。</p>
 <h3 id="zfs-filesystem">ZFS 文件系统<a class="headerlink" href="#zfs-filesystem" title="Permanent link">&para;</a></h3>
+<p>ZFS 文件系统（filesystem）是 ZFS 的主要存储形式，通过 VFS 接口提供文件存储功能。当你创建 ZFS pool <code>tank</code> 时，这个 pool 的根数据集（root dataset）就会自动成为一个文件系统，并挂载在 <code>/tank</code> 目录下。</p>
+<p>为了便于管理和维护，我们<strong>强烈推荐</strong>建立额外的文件系统来存储数据，而不是直接在 <code>/tank</code> 下存储数据。例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>zfs<span class="w"> </span>create<span class="w"> </span>tank/data
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>zfs<span class="w"> </span>create<span class="w"> </span>tank/backup
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># etc.</span>
+</code></pre></div>
+<p>这些额外的文件系统会自动继承上级文件系统的属性（如压缩、快照等）。特别地，<code>mountpoint</code> 属性的继承方式是在上级文件系统的 <code>mountpoint</code> 属性上加上当前文件系统的名称，例如 <code>/tank/data</code> 的默认挂载点为 <code>/tank/data</code> 等。ZFS 的属性继承功能是我们非常推荐的“便于管理和维护”的特性之一，例如，中科大镜像站就将软件仓库放在 <code>pool0/repo</code> 下，该目录的 <code>mountpoint</code> 属性为 <code>/srv/repo</code>，此时每个具体的软件仓库就可以直接建立独立的文件系统并继承所有重要属性，如 <code>pool0/repo/ubuntu</code> 的挂载点就自动继承为 <code>/srv/repo/ubuntu</code>。</p>
+<h4 id="zfs-filesystem-props">ZFS 文件系统参数<a class="headerlink" href="#zfs-filesystem-props" title="Permanent link">&para;</a></h4>
 <p>以下是一些推荐/经常修改的参数：</p>
 <ul>
 <li>
@@ -2371,6 +2397,8 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <li>
 <p><code>relatime=on</code>：启用相对时间戳。默认情况下，Linux 会在<strong>每次</strong>访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 <code>relatime</code> 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。</p>
 <p>此 ZFS 参数与 Linux 的挂载选项 <code>relatime</code> 完全相同。</p>
+<p>如果你的使用场景不需要记录访问时间戳（如镜像站），可以设置 <code>atime=off</code> 关闭该功能，进一步减少磁盘 I/O，此时 <code>relatime</code> 选项将不起作用。
+类似地，<code>atime</code> 设置与 Linux 的挂载选项 <code>atime</code> / <code>noatime</code> 完全相同。</p>
 </li>
 <li>
 <p><code>compression=on</code> 或 <code>compression=zstd</code>：启用 ZFS 的透明压缩功能。对于大多数数据，压缩后的数据量会显著减小，从而减少磁盘 I/O。</p>
@@ -2401,7 +2429,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <p>ZFS volume（zvol）是 ZFS 提供的块设备接口，可以用于虚拟机等需要块设备的场景。
 每个 zvol 都是一个独立的块设备，可以像硬盘一样分区、格式化并挂载。</p>
 <p>创建 zvol 的方法与创建 ZFS 文件系统相同，区别在于需要使用 <code>-V</code> 参数并指定大小：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>zfs<span class="w"> </span>create<span class="w"> </span>-V<span class="w"> </span>10G<span class="w"> </span>tank/vol
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>zfs<span class="w"> </span>create<span class="w"> </span>-V<span class="w"> </span>10G<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>此时 ZFS 就会在 <code>/dev/zvol/tank/vol</code> 处将新建的 zvol 暴露出来，可以使用了。</p>
 <h4 id="volblocksize"><code>volblocksize</code><a class="headerlink" href="#volblocksize" title="Permanent link">&para;</a></h4>
@@ -2413,7 +2441,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 我们推荐 <code>volblocksize</code> 不要小于 16K，除非你经过详细的测试证明更小的 <code>voblocksize</code> 能够带来性能提升。</p>
 <h4 id="zvol-size">Zvol 的容量<a class="headerlink" href="#zvol-size" title="Permanent link">&para;</a></h4>
 <p>如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 <code>volsize</code> 属性：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">volsize</span><span class="o">=</span>20G<span class="w"> </span>tank/vol
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">volsize</span><span class="o">=</span>20G<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>此时 zvol 的大小就会立刻变为 20 GiB。</p>
 <div class="admonition danger">
@@ -2425,14 +2453,14 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 因此如果你创建了一个 10 GiB 的 zvol，那么存储池中就会少 10 GiB 的空间。
 注意 ZFS 并没有立刻向存储池写入 10 GiB 的数据，而是在 ZFS 的空间统计中预留了 10 GiB，因此新建的 zvol 会立刻显示 <code>used</code> 为 10 GiB。
 如果你需要查看此 zvol 实际占用的空间，可以查看它的 <code>referenced</code> 属性：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>zfs<span class="w"> </span>get<span class="w"> </span>referenced<span class="w"> </span>tank/vol
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>zfs<span class="w"> </span>get<span class="w"> </span>referenced<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>或者直接列出该 zvol 的所有属性：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>zfs<span class="w"> </span>get<span class="w"> </span>all<span class="w"> </span>tank/vol
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>zfs<span class="w"> </span>get<span class="w"> </span>all<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>此时你就会看到，<code>usedbydataset</code> 仅有 56K（或一个接近的小数字），而 <code>usedbyrefreservation</code> 占据了全部 10 GiB 的 <code>used</code>，这意味着 zvol 实际上并没有分配存储池空间。</p>
 <p>如果（因为各种原因）你不希望 zvol 预留全部空间，可以使用 <code>refreservation=none</code> 参数来关闭预留空间：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">refreservation</span><span class="o">=</span>none<span class="w"> </span>tank/vol
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">refreservation</span><span class="o">=</span>none<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>如果需要恢复预留空间，可以将 <code>refreservation</code> 设为 <code>auto</code>。
 注意 <code>auto</code> 这个值仅对 zvol 有意义，而 ZFS 文件系统并不支持 <code>auto</code> 值，毕竟 ZFS 文件系统并没有一个确定的大小。</p>
@@ -2441,8 +2469,8 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 所有的读取操作都会经过 ARC，不论是已经在 ARC 中被缓存的数据，还是需要从磁盘读出来的数据，都会经由 ARC 返回给上层应用程序。
 结合 ZFS 的多级 metadata 等复杂的设计，ZFS 需要使用一定的内存作为 ARC 才能保证磁盘的正常读写操作，而不像其他文件系统（如 ext4，XFS 等）仅需在内存中维护少量的 metadata 即可正常运转。
 ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参数调节。默认情况下，ZFS 会使用系统内存的一半作为 ARC，但是如果你的服务器是专用于存储和文件服务的，可以考虑将这个值调大一些。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Set ARC memory limit to 4 GiB</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">4294967296</span><span class="w"> </span>&gt;<span class="w"> </span>/sys/module/zfs/parameters/zfs_arc_max
 </code></pre></div>
 <p>或者使用 <code>/etc/modprobe.d/zfs.conf</code>（见上）。</p>
 <p>如果你的系统中有其他大量占用内存的程序，我们推荐你同时设置一个合适的 <code>zfs_arc_min</code> 参数（其默认值为零），以保证 ZFS 能够维持一定的性能。</p>
@@ -2457,7 +2485,7 @@ ZFS ARC 允许使用的最大内存量可以通过 <code>zfs_arc_max</code> 参�
 </div>
 <p>ZFS 的缓存算法非常智能，会将可用的缓存容量分为 MFU（Most Frequently Used）和 MRU（Most Recently Used）两部分，并根据负载情况自动调整两部分的大小。</p>
 <p>ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可以通过 <code>/proc/spl/kstat/zfs/arcstats</code> 查看，并且 ZFS 也提供了 <code>arc_summary</code> 命令将该接口的数据以更易读的方式输出。由于 <code>arc_summary</code> 输出量较大，建议使用 less 等分页工具查看。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>arc_summary<span class="w"> </span><span class="p">|</span><span class="w"> </span>less
 </code></pre></div>
 <details class="question">
 <summary>I/O hit 是什么</summary>
@@ -2530,7 +2558,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <p>对于文件系统，ZFS 在挂载点提供了一个隐藏的 <code>.zfs</code> 目录，你可以通过这个目录查看所有快照的内容。
 所有快照都是只读的，不用担心任何误操作。</p>
 <p>例如，若你在创建快照之后删除了一个文件，你可以通过 <code>.zfs</code> 目录来查看这个文件的内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ls<span class="w"> </span>/tank/.zfs/snapshot/snap1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ls<span class="w"> </span>/tank/.zfs/snapshot/snap1
 </code></pre></div>
 <p>如果你需要恢复这个文件，可以直接将其复制出来。</p>
 <div class="admonition tip">
@@ -2545,21 +2573,21 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 这个数据流可以保存在文件中，也可以通过任何方式传输到其他机器上，如 SSH、和网络传输等。
 对应地 <code>zfs receive</code> 命令则可以读取一个“发送流”并据此恢复快照。</p>
 <p>一些常见或典型用法如下：</p>
-<div class="highlight"><span class="filename">将一个快照从一个存储池复制到另一个存储池中</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
+<div class="highlight"><span class="filename">将一个快照从一个存储池复制到另一个存储池中</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
 </code></pre></div>
-<div class="highlight"><span class="filename">将一个快照保存到文件中</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span>&gt;<span class="w"> </span>/tmp/example.zfs-send
+<div class="highlight"><span class="filename">将一个快照保存到文件中</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span>&gt;<span class="w"> </span>/tmp/example.zfs-send
 </code></pre></div>
-<div class="highlight"><span class="filename">将一个快照通过 SSH 发送至另一台 ZFS 存储服务器上</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>ssh<span class="w"> </span>user@otherserver<span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
+<div class="highlight"><span class="filename">将一个快照通过 SSH 发送至另一台 ZFS 存储服务器上</span><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>ssh<span class="w"> </span>user@otherserver<span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
 </code></pre></div>
-<div class="highlight"><span class="filename">将一个快照通过 TCP 发送至另一台 ZFS 存储服务器上</span><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 发送端</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/otherserver/12345
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># 接收端</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>nc<span class="w"> </span>-l<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
+<div class="highlight"><span class="filename">将一个快照通过 TCP 发送至另一台 ZFS 存储服务器上</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># 发送端</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/otherserver/12345
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="c1"># 接收端</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>nc<span class="w"> </span>-l<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
 </code></pre></div>
 <p>在使用 <code>zfs send</code> 和 <code>zfs receive</code> 时，我们推荐在传输过程中的某个命令行中插入 <code>pv</code> 命令，以便查看传输进度，例如：</p>
-<div class="highlight"><span class="filename">通过 TCP 发送并查看传输进度</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span><span class="w"> </span>pv<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/otherserver/12345
+<div class="highlight"><span class="filename">通过 TCP 发送并查看传输进度</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>pool0/example@snap<span class="w"> </span><span class="p">|</span><span class="w"> </span>pv<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/otherserver/12345
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -2573,9 +2601,9 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 增量快照功能需要两端存在一个共同的快照作为基准，然后才可以发送增量快照。
 与回滚功能类似，如果接收端在基准快照之后有过任何修改，增量发送将会失败。
 也可以使用 <code>zfs receive -F</code> 强制丢弃基准快照之后的所有数据。</p>
-<div class="highlight"><span class="filename">发送增量快照</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>-i<span class="w"> </span>pool0/example@snap1<span class="w"> </span>pool0/example@snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
+<div class="highlight"><span class="filename">发送增量快照</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>-i<span class="w"> </span>pool0/example@snap1<span class="w"> </span>pool0/example@snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
 </code></pre></div>
-<div class="highlight"><span class="filename">发送增量快照和所有中间快照</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>-I<span class="w"> </span>pool0/example@snap1<span class="w"> </span>pool0/example@snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
+<div class="highlight"><span class="filename">发送增量快照和所有中间快照</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>zfs<span class="w"> </span>send<span class="w"> </span>-I<span class="w"> </span>pool0/example@snap1<span class="w"> </span>pool0/example@snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>zfs<span class="w"> </span>receive<span class="w"> </span>pool1/example
 </code></pre></div>
 <h3 id="bookmark">书签<a class="headerlink" href="#bookmark" title="Permanent link">&para;</a></h3>
 <p>如果只使用快照进行备份的话，可能会遇到一个问题：为了使得后续能够进行增量发送，两端必须同时保留一个完整的、共同的快照。
@@ -2590,7 +2618,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <details class="example">
 <summary>使用 modprobe.d 配置 ZFS 模块参数的自动加载</summary>
 <p>在 <code>/etc/modprobe.d/zfs.conf</code> 中添加以下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>options<span class="w"> </span>zfs<span class="w"> </span><span class="nv">zfs_arc_max</span><span class="o">=</span><span class="m">4294967296</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>options<span class="w"> </span>zfs<span class="w"> </span><span class="nv">zfs_arc_max</span><span class="o">=</span><span class="m">4294967296</span>
 </code></pre></div>
 <p>这样在下次加载 ZFS 模块时，<code>zfs_arc_max</code> 参数就会被设置为 4 GiB。</p>
 </details>
@@ -2734,101 +2762,101 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <details class="example">
 <summary>案例：使用 <code>zdb</code> 帮助找出文件系统使用空间异常的原因</summary>
 <p>一台使用 ZFS 的服务器将 <code>/var/log</code> 挂载在了 ZFS 文件系统中：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>NAME        USED  AVAIL  REFER  MOUNTPOINT
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>pool1/log  2.88G   181G  2.88G  /var/log
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>NAME        USED  AVAIL  REFER  MOUNTPOINT
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>pool1/log  2.88G   181G  2.88G  /var/log
 </code></pre></div>
 <p>但是系统管理员发现 <code>/var/log</code> 的使用空间会异常增大，直到大部分空间都被占用：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>NAME       USED  AVAIL     REFER  MOUNTPOINT
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>pool1/log  173G  3.43G      173G  /var/log
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>NAME       USED  AVAIL     REFER  MOUNTPOINT
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>pool1/log  173G  3.43G      173G  /var/log
 </code></pre></div>
 <p>但是实际的 log 大小只有不到 3G：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>du<span class="w"> </span>-sh<span class="w"> </span>.
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">2.9G  .</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>du<span class="w"> </span>-sh<span class="w"> </span>.
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">2.9G  .</span>
 </code></pre></div>
 <p>同时没有快照，通过 <code>lsof</code> 检查也没有进程占用在 <code>/var/log</code> 下已经被删除的文件。
 重启后文件系统的使用空间又恢复到了正常的大小。没有人能够解释原因。</p>
 <p>在时隔半年又一次因此重启后，系统管理员决定使用 <code>zdb</code> 来查看文件系统的内部结构：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>zdb<span class="w"> </span>-dddd<span class="w"> </span>pool1/log<span class="w"> </span>&gt;<span class="w"> </span>zdb-log.txt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>zdb<span class="w"> </span>-dddd<span class="w"> </span>pool1/log<span class="w"> </span>&gt;<span class="w"> </span>zdb-log.txt
 </code></pre></div>
 <p>检查输出，发现一个特别大的文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>  6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>                                           168   bonus  System attributes
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>dnode maxblkid: 8554489
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>uid     0
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>gid     4
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>atime   Thu Aug 17 19:22:48 2023
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>mtime   Sun Feb 18 16:05:29 2024
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>ctime   Sun Feb 18 16:05:29 2024
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>crtime  Thu Aug 17 06:25:01 2023
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>gen 30893491
-<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>mode    100640
-<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>size    1121254014464
-<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>parent  7279
-<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>links   0
-<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>pflags  40800000004
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>  6426    4   128K   128K   170G     512  1.02T  100.00  ZFS plain file
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>dnode maxblkid: 8554489
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>uid     0
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>gid     4
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>atime   Thu Aug 17 19:22:48 2023
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>mtime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>ctime   Sun Feb 18 16:05:29 2024
+<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>crtime  Thu Aug 17 06:25:01 2023
+<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>gen 30893491
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>mode    100640
+<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a>size    1121254014464
+<a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a>parent  7279
+<a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a>links   0
+<a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a>pflags  40800000004
 </code></pre></div>
 <p>"6426" 这个对象也出现在了 ZFS delete queue 中：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>     3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>dnode maxblkid: 0
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>microzap: 6144 bytes, 1 entries
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>    191a = 6426 
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>     3    1   128K     6K      0     512     6K  100.00  ZFS delete queue
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>dnode maxblkid: 0
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>microzap: 6144 bytes, 1 entries
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>    191a = 6426 
 </code></pre></div>
 <p>看起来是这个文件不停增大，但是 ZFS 没有删除。检查 6426 的 parent 7279：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>  7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>                                           168   bonus  System attributes
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>dnode maxblkid: 0
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>uid     0
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>gid     0
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>atime   Mon Jun 24 01:32:06 2019
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a>mtime   Fri Mar  8 06:25:02 2024
-<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a>ctime   Fri Mar  8 06:25:02 2024
-<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a>crtime  Tue Feb 27 21:11:06 2018
-<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a>gen 4369970
-<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a>mode    40755
-<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a>size    33
-<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a>parent  4
-<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a>links   2
-<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a>pflags  40800000144
-<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a>microzap: 2560 bytes, 31 entries
-<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a>
-<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a>    pacct.6.gz = 3908 (type: Regular File)
-<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a>    pacct.17.gz = 1994 (type: Regular File)
-<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a>    pacct.16.gz = 275 (type: Regular File)
-<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a>    pacct.7.gz = 3518 (type: Regular File)
-<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a>    pacct.5.gz = 473 (type: Regular File)
-<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a>    pacct.14.gz = 1554 (type: Regular File)
-<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a>    pacct.15.gz = 651 (type: Regular File)
-<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a>    pacct.4.gz = 109 (type: Regular File)
-<a id="__codelineno-27-28" name="__codelineno-27-28" href="#__codelineno-27-28"></a>    pacct.29.gz = 468 (type: Regular File)
-<a id="__codelineno-27-29" name="__codelineno-27-29" href="#__codelineno-27-29"></a>    pacct.11.gz = 1863 (type: Regular File)
-<a id="__codelineno-27-30" name="__codelineno-27-30" href="#__codelineno-27-30"></a>    pacct.10.gz = 2129 (type: Regular File)
-<a id="__codelineno-27-31" name="__codelineno-27-31" href="#__codelineno-27-31"></a>    pacct.1.gz = 1294 (type: Regular File)
-<a id="__codelineno-27-32" name="__codelineno-27-32" href="#__codelineno-27-32"></a>    pacct.28.gz = 3648 (type: Regular File)
-<a id="__codelineno-27-33" name="__codelineno-27-33" href="#__codelineno-27-33"></a>    pacct.3.gz = 1864 (type: Regular File)
-<a id="__codelineno-27-34" name="__codelineno-27-34" href="#__codelineno-27-34"></a>    pacct.12.gz = 3516 (type: Regular File)
-<a id="__codelineno-27-35" name="__codelineno-27-35" href="#__codelineno-27-35"></a>    pacct.13.gz = 2128 (type: Regular File)
-<a id="__codelineno-27-36" name="__codelineno-27-36" href="#__codelineno-27-36"></a>    pacct.2.gz = 2955 (type: Regular File)
-<a id="__codelineno-27-37" name="__codelineno-27-37" href="#__codelineno-27-37"></a>    pacct.22.gz = 649 (type: Regular File)
-<a id="__codelineno-27-38" name="__codelineno-27-38" href="#__codelineno-27-38"></a>    pacct.23.gz = 3649 (type: Regular File)
-<a id="__codelineno-27-39" name="__codelineno-27-39" href="#__codelineno-27-39"></a>    pacct.8.gz = 3400 (type: Regular File)
-<a id="__codelineno-27-40" name="__codelineno-27-40" href="#__codelineno-27-40"></a>    pacct.19.gz = 535 (type: Regular File)
-<a id="__codelineno-27-41" name="__codelineno-27-41" href="#__codelineno-27-41"></a>    pacct = 796 (type: Regular File)
-<a id="__codelineno-27-42" name="__codelineno-27-42" href="#__codelineno-27-42"></a>    pacct.21.gz = 534 (type: Regular File)
-<a id="__codelineno-27-43" name="__codelineno-27-43" href="#__codelineno-27-43"></a>    pacct.0 = 904 (type: Regular File)
-<a id="__codelineno-27-44" name="__codelineno-27-44" href="#__codelineno-27-44"></a>    pacct.20.gz = 3725 (type: Regular File)
-<a id="__codelineno-27-45" name="__codelineno-27-45" href="#__codelineno-27-45"></a>    pacct.18.gz = 3515 (type: Regular File)
-<a id="__codelineno-27-46" name="__codelineno-27-46" href="#__codelineno-27-46"></a>    pacct.9.gz = 1293 (type: Regular File)
-<a id="__codelineno-27-47" name="__codelineno-27-47" href="#__codelineno-27-47"></a>    pacct.24.gz = 3905 (type: Regular File)
-<a id="__codelineno-27-48" name="__codelineno-27-48" href="#__codelineno-27-48"></a>    pacct.25.gz = 903 (type: Regular File)
-<a id="__codelineno-27-49" name="__codelineno-27-49" href="#__codelineno-27-49"></a>    pacct.27.gz = 1552 (type: Regular File)
-<a id="__codelineno-27-50" name="__codelineno-27-50" href="#__codelineno-27-50"></a>    pacct.26.gz = 1176 (type: Regular File)
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Object  lvl   iblk   dblk  dsize  dnsize  lsize   %full  type
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>  7279    1   128K  2.50K     8K     512  2.50K  100.00  ZFS directory
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>                                           168   bonus  System attributes
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>dnode flags: USED_BYTES USERUSED_ACCOUNTED USEROBJUSED_ACCOUNTED 
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>dnode maxblkid: 0
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>uid     0
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>gid     0
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>atime   Mon Jun 24 01:32:06 2019
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>mtime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>ctime   Fri Mar  8 06:25:02 2024
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>crtime  Tue Feb 27 21:11:06 2018
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>gen 4369970
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>mode    40755
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>size    33
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>parent  4
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>links   2
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>pflags  40800000144
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a>microzap: 2560 bytes, 31 entries
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a>
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a>    pacct.6.gz = 3908 (type: Regular File)
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a>    pacct.17.gz = 1994 (type: Regular File)
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a>    pacct.16.gz = 275 (type: Regular File)
+<a id="__codelineno-28-23" name="__codelineno-28-23" href="#__codelineno-28-23"></a>    pacct.7.gz = 3518 (type: Regular File)
+<a id="__codelineno-28-24" name="__codelineno-28-24" href="#__codelineno-28-24"></a>    pacct.5.gz = 473 (type: Regular File)
+<a id="__codelineno-28-25" name="__codelineno-28-25" href="#__codelineno-28-25"></a>    pacct.14.gz = 1554 (type: Regular File)
+<a id="__codelineno-28-26" name="__codelineno-28-26" href="#__codelineno-28-26"></a>    pacct.15.gz = 651 (type: Regular File)
+<a id="__codelineno-28-27" name="__codelineno-28-27" href="#__codelineno-28-27"></a>    pacct.4.gz = 109 (type: Regular File)
+<a id="__codelineno-28-28" name="__codelineno-28-28" href="#__codelineno-28-28"></a>    pacct.29.gz = 468 (type: Regular File)
+<a id="__codelineno-28-29" name="__codelineno-28-29" href="#__codelineno-28-29"></a>    pacct.11.gz = 1863 (type: Regular File)
+<a id="__codelineno-28-30" name="__codelineno-28-30" href="#__codelineno-28-30"></a>    pacct.10.gz = 2129 (type: Regular File)
+<a id="__codelineno-28-31" name="__codelineno-28-31" href="#__codelineno-28-31"></a>    pacct.1.gz = 1294 (type: Regular File)
+<a id="__codelineno-28-32" name="__codelineno-28-32" href="#__codelineno-28-32"></a>    pacct.28.gz = 3648 (type: Regular File)
+<a id="__codelineno-28-33" name="__codelineno-28-33" href="#__codelineno-28-33"></a>    pacct.3.gz = 1864 (type: Regular File)
+<a id="__codelineno-28-34" name="__codelineno-28-34" href="#__codelineno-28-34"></a>    pacct.12.gz = 3516 (type: Regular File)
+<a id="__codelineno-28-35" name="__codelineno-28-35" href="#__codelineno-28-35"></a>    pacct.13.gz = 2128 (type: Regular File)
+<a id="__codelineno-28-36" name="__codelineno-28-36" href="#__codelineno-28-36"></a>    pacct.2.gz = 2955 (type: Regular File)
+<a id="__codelineno-28-37" name="__codelineno-28-37" href="#__codelineno-28-37"></a>    pacct.22.gz = 649 (type: Regular File)
+<a id="__codelineno-28-38" name="__codelineno-28-38" href="#__codelineno-28-38"></a>    pacct.23.gz = 3649 (type: Regular File)
+<a id="__codelineno-28-39" name="__codelineno-28-39" href="#__codelineno-28-39"></a>    pacct.8.gz = 3400 (type: Regular File)
+<a id="__codelineno-28-40" name="__codelineno-28-40" href="#__codelineno-28-40"></a>    pacct.19.gz = 535 (type: Regular File)
+<a id="__codelineno-28-41" name="__codelineno-28-41" href="#__codelineno-28-41"></a>    pacct = 796 (type: Regular File)
+<a id="__codelineno-28-42" name="__codelineno-28-42" href="#__codelineno-28-42"></a>    pacct.21.gz = 534 (type: Regular File)
+<a id="__codelineno-28-43" name="__codelineno-28-43" href="#__codelineno-28-43"></a>    pacct.0 = 904 (type: Regular File)
+<a id="__codelineno-28-44" name="__codelineno-28-44" href="#__codelineno-28-44"></a>    pacct.20.gz = 3725 (type: Regular File)
+<a id="__codelineno-28-45" name="__codelineno-28-45" href="#__codelineno-28-45"></a>    pacct.18.gz = 3515 (type: Regular File)
+<a id="__codelineno-28-46" name="__codelineno-28-46" href="#__codelineno-28-46"></a>    pacct.9.gz = 1293 (type: Regular File)
+<a id="__codelineno-28-47" name="__codelineno-28-47" href="#__codelineno-28-47"></a>    pacct.24.gz = 3905 (type: Regular File)
+<a id="__codelineno-28-48" name="__codelineno-28-48" href="#__codelineno-28-48"></a>    pacct.25.gz = 903 (type: Regular File)
+<a id="__codelineno-28-49" name="__codelineno-28-49" href="#__codelineno-28-49"></a>    pacct.27.gz = 1552 (type: Regular File)
+<a id="__codelineno-28-50" name="__codelineno-28-50" href="#__codelineno-28-50"></a>    pacct.26.gz = 1176 (type: Regular File)
 </code></pre></div>
 <p>发现该目录为 <code>/var/log/account</code>，调查后发现其中的文件在启用 process accounting 后会由内核写入。
 因此解释了为什么 <code>lsof</code> 没有显示任何进程占用对应文件。在关闭 process accounting 后，delete queue 清空了。</p>
@@ -2936,7 +2964,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月13日 17:59:38">2025年4月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月13日 18:42:10">2025年4月13日</span>
   </span>
 
     
