@@ -132,7 +132,7 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
 - `~c` 已经删除，但是仍然有配置残留的包，可以使用 `apt purge` 彻底删除（`?config-files`）。
 - `~i` 为已经安装的包（`?installed`）。
 - `~U` 可以升级的包（`?upgradable`）。
-- `~o` 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（`?obsolete`）。
+- `~o` 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（`?obsolete`，在 `apt list` 的输出中显示为 `[installed,local]`）。
 
 !!! question "搜索模式练习"
 
@@ -202,11 +202,13 @@ htop: /usr/share/pixmaps/htop.png
 
     `apt-file` 依赖于对完整仓库的索引，并且搜索也是一个略微耗时的过程。如果只需要确认本地已经安装的包，以及已有的 deb 包文件中的文件情况，有更快的方法：
 
-    - `dpkg -S <file>` 可以查找所有已安装包中的文件。
+    - `dpkg-query -S <file>` 可以查找所有已安装包中的文件。
     - `dpkg-deb -c <name_version.deb>` 可以查看 `.deb` 文件中的内容。
     - `dpkg-query -L <name>` 查看给定的安装了的包提供了哪些文件。
 
-### 固定包 {#hold}
+    这几条命令的 `dpkg-*` 部分都可以直接替换为 `dpkg`，例如 `dpkg -S`、`dpkg -c` 等，`dpkg` 命令前端会帮你把请求转发到正确的子命令上。
+
+### 固定包 {#apt-hold}
 
 有时我们希望固定一个包，使得这个包不会被安装或升级，例如：
 
