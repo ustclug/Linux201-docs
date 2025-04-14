@@ -615,7 +615,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#hold" class="md-nav__link">
+  <a href="#apt-hold" class="md-nav__link">
     <span class="md-ellipsis">
       固定包
     </span>
@@ -2076,7 +2076,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#hold" class="md-nav__link">
+  <a href="#apt-hold" class="md-nav__link">
     <span class="md-ellipsis">
       固定包
     </span>
@@ -2421,7 +2421,7 @@
 <li><code>~c</code> 已经删除，但是仍然有配置残留的包，可以使用 <code>apt purge</code> 彻底删除（<code>?config-files</code>）。</li>
 <li><code>~i</code> 为已经安装的包（<code>?installed</code>）。</li>
 <li><code>~U</code> 可以升级的包（<code>?upgradable</code>）。</li>
-<li><code>~o</code> 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（<code>?obsolete</code>）。</li>
+<li><code>~o</code> 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（<code>?obsolete</code>，在 <code>apt list</code> 的输出中显示为 <code>[installed,local]</code>）。</li>
 </ul>
 <div class="admonition question">
 <p class="admonition-title">搜索模式练习</p>
@@ -2483,12 +2483,13 @@
 <p class="admonition-title">使用 dpkg 类命令在<strong>已安装的包</strong>内查找文件</p>
 <p><code>apt-file</code> 依赖于对完整仓库的索引，并且搜索也是一个略微耗时的过程。如果只需要确认本地已经安装的包，以及已有的 deb 包文件中的文件情况，有更快的方法：</p>
 <ul>
-<li><code>dpkg -S &lt;file&gt;</code> 可以查找所有已安装包中的文件。</li>
+<li><code>dpkg-query -S &lt;file&gt;</code> 可以查找所有已安装包中的文件。</li>
 <li><code>dpkg-deb -c &lt;name_version.deb&gt;</code> 可以查看 <code>.deb</code> 文件中的内容。</li>
 <li><code>dpkg-query -L &lt;name&gt;</code> 查看给定的安装了的包提供了哪些文件。</li>
 </ul>
+<p>这几条命令的 <code>dpkg-*</code> 部分都可以直接替换为 <code>dpkg</code>，例如 <code>dpkg -S</code>、<code>dpkg -c</code> 等，<code>dpkg</code> 命令前端会帮你把请求转发到正确的子命令上。</p>
 </div>
-<h3 id="hold">固定包<a class="headerlink" href="#hold" title="Permanent link">&para;</a></h3>
+<h3 id="apt-hold">固定包<a class="headerlink" href="#apt-hold" title="Permanent link">&para;</a></h3>
 <p>有时我们希望固定一个包，使得这个包不会被安装或升级，例如：</p>
 <ul>
 <li>我们自行打包了某个有 bug 的包的修复版本，同时不希望系统自动升级到官方的版本。这时可以使用 <code>apt-mark hold &lt;name&gt;</code> 来标记这个包为固定的。</li>
@@ -3136,7 +3137,7 @@
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月14日 01:21:46">2025年4月14日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月14日 09:21:04">2025年4月14日</span>
   </span>
 
     
@@ -3155,6 +3156,11 @@
     
     <nav>
       
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
@@ -3168,11 +3174,6 @@
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
