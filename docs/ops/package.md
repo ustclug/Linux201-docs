@@ -659,6 +659,8 @@ Index: sudo-1.9.13p3/src/sudo.c
      initprogname2(argc > 0 ? argv[0] : "sudo", allowed_prognames);
 ```
 
+如果是已有的 `.patch` 文件，则可以使用 `quilt import <file>` 命令将其导入到补丁栈中。
+
 #### 更新修改记录 {#changelog}
 
 `debian/changelog` 文件包含了包完整的修改记录，格式类似如下：
