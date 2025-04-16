@@ -114,6 +114,10 @@ d959e182468be92957bd175d189472de91f614c8
 
     `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
 
+!!! question "比较差异"
+
+    如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
+
 #### Remote {#git-remote}
 
 绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
@@ -184,6 +188,12 @@ no changes added to commit (use "git add" and/or "git commit -a")
     push-with-lease = push --force-with-lease
     uncommit = reset --soft HEAD~1
 ```
+
+!!! tip "部分别名介绍"
+
+    `git commit --amend` 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。如果添加了 `--no-edit`，就会跳过消息编辑。
+
+    `git push --force-with-lease` 在 force push 之前先检查 remote 的状态，如果 remote 有本地不存在的新提交，该命令就会阻止此次 force push 操作。
 
 #### 常用配置 {#git-config}
 
