@@ -271,7 +271,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 
 !!! tip "/efi"
 
-    在 systemd 的[文件系统层次结构标准 (FHS)](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 扩展中，
+    在 systemd 的[文件系统层次结构标准 (FHS) 扩展](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 中，
     如果 `/boot` 独立于 EFI 系统分区 (ESP)，则后者挂载点为 `/efi`。
 
     过去 EFI 分区挂载点通常为 `/boot/efi`，现在已不推荐使用[^esp-mountpoint]。
