@@ -271,7 +271,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 
 !!! tip "/efi"
 
-    在 [systemd 定义的文件系统层次结构标准 (FHS)](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 中，
+    在 systemd 的[文件系统层次结构标准 (FHS)](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 扩展中，
     如果 `/boot` 独立于 EFI 系统分区 (ESP)，则后者挂载点为 `/efi`。
 
     过去 EFI 分区挂载点通常为 `/boot/efi`，现在已不推荐使用[^esp-mountpoint]。
@@ -1193,9 +1193,9 @@ fusermount -u mountpoint/
 
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
+[^esp-mountpoint]: [The Boot Loader Specification](https://uapi-group.org/specifications/specs/boot_loader_specification/#mount-points)
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
 [^zfs-win]: [OpenZFS on Windows](https://github.com/openzfsonwindows/openzfs) 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。
-[^esp-mountpoint]: [The Boot Loader Specification](https://uapi-group.org/specifications/specs/boot_loader_specification/#mount-points)
 
 ## 引用来源 {#references .no-underline}
 
