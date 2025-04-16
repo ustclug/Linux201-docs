@@ -1195,7 +1195,6 @@ fusermount -u mountpoint/
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
 [^zfs-win]: [OpenZFS on Windows](https://github.com/openzfsonwindows/openzfs) 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。
-[^esp-mountpoint]: [The Boot Loader Specification](https://uapi-group.org/specifications/specs/boot_loader_specification/#mount-points)
 
 ## 引用来源 {#references .no-underline}
 
