@@ -2474,6 +2474,12 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 </code></pre></div>
 <p>这里 <code>efi</code> 后缀的文件就是 UEFI 会选择的启动引导程序，一般可以在启动时按下 F12 或者其他快捷键选择启动的设备或 EFI 文件。</p>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">/efi</p>
+<p>在 systemd 的<a href="https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html">文件系统层次结构标准 (FHS) 扩展</a> 中，
+如果 <code>/boot</code> 独立于 EFI 系统分区 (ESP)，则后者挂载点为 <code>/efi</code>。</p>
+<p>过去 EFI 分区挂载点通常为 <code>/boot/efi</code>，现在已不推荐使用<sup id="fnref:esp-mountpoint"><a class="footnote-ref" href="#fn:esp-mountpoint">3</a></sup>。</p>
+</div>
 <h3 id="partition-exp">实验操作展示<a class="headerlink" href="#partition-exp" title="Permanent link">&para;</a></h3>
 <p>我们可以使用诸如 <code>fdisk</code>, <code>parted</code> 等工具对分区表进行操作。对于图形界面用户，<code>gparted</code> 是一个不错的选择。</p>
 <p>首先创建一个空文件：</p>
@@ -2749,7 +2755,7 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span></td>
 <td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256z"/></svg></span></td>
 <td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256z"/></svg></span></td>
-<td>适用于大文件、大容量的场合。无法随意缩小<sup id="fnref:xfs_growfs"><a class="footnote-ref" href="#fn:xfs_growfs">3</a></sup>。</td>
+<td>适用于大文件、大容量的场合。无法随意缩小<sup id="fnref:xfs_growfs"><a class="footnote-ref" href="#fn:xfs_growfs">4</a></sup>。</td>
 </tr>
 <tr>
 <td>ReiserFS</td>
@@ -2776,7 +2782,7 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <td><a href="https://wiki.archlinux.org/title/ZFS">ZFS</a></td>
 <td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span>（需要 kernel module）</td>
 <td><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3l105.4 105.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256z"/></svg></span></td>
-<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span><sup id="fnref:zfs-win"><a class="footnote-ref" href="#fn:zfs-win">4</a></sup></td>
+<td><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7l233.4-233.3c12.5-12.5 32.8-12.5 45.3 0z"/></svg></span><sup id="fnref:zfs-win"><a class="footnote-ref" href="#fn:zfs-win">5</a></sup></td>
 <td>起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。</td>
 </tr>
 <tr>
@@ -3376,11 +3382,14 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <li id="fn:sector-size">
 <p>扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。&#160;<a class="footnote-backref" href="#fnref:sector-size" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
+<li id="fn:esp-mountpoint">
+<p><a href="https://uapi-group.org/specifications/specs/boot_loader_specification/#mount-points">The Boot Loader Specification</a>&#160;<a class="footnote-backref" href="#fnref:esp-mountpoint" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
 <li id="fn:xfs_growfs">
-<p><a href="https://linux.die.net/man/8/xfs_growfs">xfs_growfs(8)</a>: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.&#160;<a class="footnote-backref" href="#fnref:xfs_growfs" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p><a href="https://linux.die.net/man/8/xfs_growfs">xfs_growfs(8)</a>: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.&#160;<a class="footnote-backref" href="#fnref:xfs_growfs" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zfs-win">
-<p><a href="https://github.com/openzfsonwindows/openzfs">OpenZFS on Windows</a> 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。&#160;<a class="footnote-backref" href="#fnref:zfs-win" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p><a href="https://github.com/openzfsonwindows/openzfs">OpenZFS on Windows</a> 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。&#160;<a class="footnote-backref" href="#fnref:zfs-win" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3404,7 +3413,7 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月15日 14:03:29">2025年4月15日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月16日 13:56:26">2025年4月16日</span>
   </span>
 
     
@@ -3423,16 +3432,6 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/Integral-Tech" class="md-author" title="@Integral-Tech">
           
           <img src="https://avatars.githubusercontent.com/u/71180087?v=4&size=72" alt="Integral-Tech">
@@ -3441,6 +3440,16 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
       
