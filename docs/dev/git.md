@@ -318,6 +318,33 @@ git submodule update --remote --recursive # 更新 submodule 到远程最新版�
 
 有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
 
+### 交互式 stage {#git-add-patch}
+
+你是否有时一时兴起，写了或者改了很多很多代码，但是又不想把所有修改一股脑塞进一个 commit 里面？虽然 `git add` 可以选择文件，每次只 commit 指定的文件，但很多时候在一个文件里面会有多个修改，怎么把这些修改「拆开来」呢？
+
+此时可以使用 `git add -p` 来选择指定的修改，该命令会将文件中的修改分成多个块（hunk），并询问你是否将该块添加到 staging area 中，如以下所示：
+
+```diff
+diff --git a/docs/dev/git.md b/docs/dev/git.md
+index 80c4501..4085b25 100644
+--- a/docs/dev/git.md
++++ b/docs/dev/git.md
+@@ -114,6 +114,10 @@ d959e182468be92957bd175d189472de91f614c8
+
+     `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
+
++!!! question "比较差异"
++
++    如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
++
+ #### Remote {#git-remote}
+
+ 绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
+(1/4) Stage this hunk [y,n,q,a,d,j,J,g,/,e,p,?]?
+```
+
+如果有多个修改在一个 hunk 中，可以输入 `s` 将该 hunk 拆分成多个 hunk。如果这样都无法拆分，也可以输入 `e` 手动选择需要 stage 的内容。
+
 ### Rebase 与 Merge {#git-rebase-merge}
 
 一般来说，我们希望保持项目有线性的提交历史（即不包含有多个 parent 的 merge commit），这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
@@ -343,6 +370,57 @@ git rebase master
     以下是一个现实的例子：某个代码 git 仓库（存储在 GitHub 上）的 `master` 分支部署在一台服务器上，并且在该服务器上不仅做了一些额外的 commit 用来记录一些服务器相关的配置，还有一些没有被 stage 的文件。现在该代码仓库在 GitHub 上的 `master` 分支有一些新的更新 commit（例如更新了依赖，修复了 bug 等），那么如何将这些 commit 部署在该服务器上呢？
 
     提示：你可能会需要 `git fetch`、`git stash` 与 `git rebase`。
+
+!!! tip "交互式 rebase"
+
+    `git rebase` 另一个重要的功能是修改 commit 历史记录。使用 `git rebase -i HEAD~n` 来修改历史以来的 n 个 commit。在输入命令后，git 会打开编辑器，将 commit 从旧到新排序，显示类似如下的内容：
+
+    ```txt
+    pick b9c96cc Install XDG Desktop Portal
+    pick d20fcf1 Set 2048m mem when running qemu
+    pick 74fd856 Add gnome-software; clean comments
+
+    # Rebase ebb0dcf..74fd856 onto ebb0dcf (3 commands)
+    #
+    # Commands:
+    # p, pick <commit> = use commit
+    # r, reword <commit> = use commit, but edit the commit message
+    # e, edit <commit> = use commit, but stop for amending
+    # s, squash <commit> = use commit, but meld into previous commit
+    # f, fixup [-C | -c] <commit> = like "squash" but keep only the previous
+    #                    commit's log message, unless -C is used, in which case
+    #                    keep only this commit's message; -c is same as -C but
+    #                    opens the editor
+    # x, exec <command> = run command (the rest of the line) using shell
+    # b, break = stop here (continue rebase later with 'git rebase --continue')
+    # d, drop <commit> = remove commit
+    # l, label <label> = label current HEAD with a name
+    # t, reset <label> = reset HEAD to a label
+    # m, merge [-C <commit> | -c <commit>] <label> [# <oneline>]
+    #         create a merge commit using the original merge commit's
+    #         message (or the oneline, if no original merge commit was
+    #         specified); use -c <commit> to reword the commit message
+    # u, update-ref <ref> = track a placeholder for the <ref> to be updated
+    #                       to this position in the new commits. The <ref> is
+    #                       updated at the end of the rebase
+    #
+    # These lines can be re-ordered; they are executed from top to bottom.
+    #
+    # If you remove a line here THAT COMMIT WILL BE LOST.
+    #
+    # However, if you remove everything, the rebase will be aborted.
+    #
+    ```
+
+    比如说，你想合并最近 3 个 commit 到 1 个，那么在编辑器中将上面的内容修改为如下，保存并退出即可：
+
+    ```text
+    pick b9c96cc Install XDG Desktop Portal
+    squash d20fcf1 Set 2048m mem when running qemu
+    squash 74fd856 Add gnome-software; clean comments
+    ```
+
+    交互式 rebase 的其他用法请参考相关文档。
 
 ### Bisect {#git-bisect}
 
