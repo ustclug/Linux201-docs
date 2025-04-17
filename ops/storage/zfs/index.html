@@ -1237,9 +1237,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../database.md" class="md-nav__link">
+      <a href="../../database/" class="md-nav__link">
         
   
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3C7.58 3 4 4.79 4 7s3.58 4 8 4 8-1.79 8-4-3.58-4-8-4M4 9v3c0 2.21 3.58 4 8 4s8-1.79 8-4V9c0 2.21-3.58 4-8 4s-8-1.79-8-4m0 5v3c0 2.21 3.58 4 8 4s8-1.79 8-4v-3c0 2.21-3.58 4-8 4s-8-1.79-8-4"/></svg>
   
   <span class="md-ellipsis">
     数据库
@@ -1425,9 +1427,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../account.md" class="md-nav__link">
+      <a href="../../accounts/" class="md-nav__link">
         
   
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4"/></svg>
   
   <span class="md-ellipsis">
     用户账户系统
@@ -2257,16 +2261,16 @@
 <p class="admonition-title">本文编写中</p>
 </div>
 <p>ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存储管理功能，包括文件系统、卷管理、快照、数据完整性检查和修复等，常被称作“单机最强存储方案”。
-ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class="footnote-ref" href="#fn:ostep-lfs">3</a></sup>设计，这使得 ZFS 无需像 ext4、XFS 等传统文件系统那样进行 fsck 检查，且即使发生意外断电等情况，也能保证文件系统内部的完整性和一致性。</p>
+ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class="footnote-ref" href="#fn:ostep-lfs">1</a></sup>设计，这使得 ZFS 无需像 ext4、XFS 等传统文件系统那样进行 fsck 检查，且即使发生意外断电等情况，也能保证文件系统内部的完整性和一致性。</p>
 <p>虽然 ZFS 没有特殊的系统要求，但是我们推荐在具有较好配置的服务器上使用 ZFS，以获得更好的性能和稳定性。</p>
 <ul>
-<li>固态硬盘，或者多块规格相同的大容量机械硬盘（推荐 4 块或更多），尽量避免用单块机械硬盘。</li>
+<li>固态硬盘，或者多块规格相同的大容量机械硬盘（推荐 4 块或更多）。尽量避免用单块机械硬盘运行 ZFS。</li>
 <li>如果预期需要承载较重的读写负载，推荐使用大容量内存用于缓存（ZFS 官方推荐每 1 TB 存储容量配置 1 GB 内存）。<ul>
 <li>如果打算启用 ZFS 的去重（deduplication）功能，推荐为每 TB 存储容量配备至少 5 GB 内存（但是官方推荐的比例是 30 GB）。</li>
 </ul>
 </li>
 <li>一般来说，我们<strong>不推荐</strong>使用 L2ARC，具体原因较为复杂，请阅读本文的 ARC 章节与 <a href="#l2arc">L2ARC 章节</a>。</li>
-<li>多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。</li>
+<li>现代的多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。</li>
 </ul>
 <p>如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。</p>
 <h2 id="installation">安装<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
@@ -2433,7 +2437,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <li>若文件大小超过 <code>recordsize</code>，则文件会被拆成多个大小为 <code>recordsize</code> 的块，其中最后一个块会以零字节补齐至 <code>recordsize</code>。<ul>
 <li>例如，一个 129 KiB 的文件将会存储为两个 128 KiB 的块，在默认情况下会占用 256 KiB 磁盘空间。</li>
 <li>因此我们在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。<ul>
-<li>即使是归档存储已压缩过的数据，我们仍然推荐设置 <code>compression=zle</code><sup id="fnref:compression-zle"><a class="footnote-ref" href="#fn:compression-zle">1</a></sup>，以便在数据块之间的 padding 上节省空间。</li>
+<li>即使是归档存储已压缩过的数据，我们仍然推荐设置 <code>compression=zle</code><sup id="fnref:compression-zle"><a class="footnote-ref" href="#fn:compression-zle">2</a></sup>，以便在数据块之间的 padding 上节省空间。</li>
 </ul>
 </li>
 </ul>
@@ -2454,7 +2458,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 但我们并不推荐太小的 <code>volblocksize</code>，因为这会增加 ZFS 的元数据负担、碎片率以及 RAIDZ 的额外开销，反而导致性能降低。
 我们推荐 <code>volblocksize</code> 不要小于 16K，除非你经过详细的测试证明更小的 <code>voblocksize</code> 能够带来性能提升。</p>
 <h4 id="zvol-size">Zvol 的容量<a class="headerlink" href="#zvol-size" title="Permanent link">&para;</a></h4>
-<p>如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 <code>volsize</code> 属性<sup id="fnref:zvol-init-val"><a class="footnote-ref" href="#fn:zvol-init-val">2</a></sup>：</p>
+<p>如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 <code>volsize</code> 属性<sup id="fnref:zvol-init-val"><a class="footnote-ref" href="#fn:zvol-init-val">3</a></sup>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>zfs<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">volsize</span><span class="o">=</span>20G<span class="w"> </span>tank/vol
 </code></pre></div>
 <p>此时 zvol 的大小就会立刻变为 20 GiB。</p>
@@ -2900,6 +2904,8 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 
 <!-- man 8 -->
 
+<!-- Note: Debian man pages for useradd(8)/userdel(8) mentions the "low-level" feature and recommends adduser(8)/deluser(8) instead. 
+Do not link to a "generic" man page for these commands -->
 <!--
   Links to author URLs (usually GitHub profiles)
 
@@ -2911,14 +2917,14 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 <div class="footnote">
 <hr />
 <ol>
+<li id="fn:ostep-lfs">
+<p>如果你想要理解“日志式文件系统”的原理，我们推荐 Operating Systems: Three Easy Pieces 中的 <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Log-structured File Systems</a> 一章。&#160;<a class="footnote-backref" href="#fnref:ostep-lfs" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
 <li id="fn:compression-zle">
-<p>ZLE 的含义为 Zero-Length Encoding，即仅“压缩”存储连续的零字节。&#160;<a class="footnote-backref" href="#fnref:compression-zle" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+<p>ZLE 的含义为 Zero-Length Encoding，即仅“压缩”存储连续的零字节。&#160;<a class="footnote-backref" href="#fnref:compression-zle" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:zvol-init-val">
-<p>显然，<code>volsize</code> 的初始值为创建 Zvol 时 <code>-V</code> 参数的值。&#160;<a class="footnote-backref" href="#fnref:zvol-init-val" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
-<li id="fn:ostep-lfs">
-<p>如果你想要理解“日志式文件系统”的原理，我们推荐 Operating Systems: Three Easy Pieces 中的 <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/file-lfs.pdf">Log-structured File Systems</a> 一章。&#160;<a class="footnote-backref" href="#fnref:ostep-lfs" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>显然，<code>volsize</code> 的初始值为创建 Zvol 时 <code>-V</code> 参数的值。&#160;<a class="footnote-backref" href="#fnref:zvol-init-val" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:uuu1804">
 <p>Ubuntu 18.04 LTS 及之前的版本仍然需要安装 <code>zfs-dkms</code>，但更重要的是，我们<strong>不推荐使用已经 EOL 的发行版</strong>。&#160;<a class="footnote-backref" href="#fnref:uuu1804" title="Jump back to footnote 4 in the text">&#8617;</a></p>
@@ -2984,7 +2990,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月17日 07:48:18">2025年4月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月17日 09:12:03">2025年4月17日</span>
   </span>
 
     
