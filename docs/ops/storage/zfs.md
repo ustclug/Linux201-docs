@@ -131,7 +131,7 @@ tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -
 
 zpool 层面的参数可以通过 `zpool set` 命令进行调整，以下是一些推荐修改的参数：
 
-- `ashift`：详见上面的介绍。注意 `ashift` 参数在创建 pool 后**无法更改**，因此请在创建 pool 时指定。例如：
+- `ashift`：详见上面的介绍。注意 `ashift` 参数在创建 pool 后**无法更改**，因此请在创建 pool 时指定（或者采用 ZFS 自动检测到的合适值，见上）。例如：
 
     ```shell
     zpool create -o ashift=12 tank /dev/loop0 /dev/loop1 /dev/loop2
@@ -167,7 +167,22 @@ zfs create tank/backup
 
 这些额外的文件系统会自动继承上级文件系统的属性（如压缩、快照等）。特别地，`mountpoint` 属性的继承方式是在上级文件系统的 `mountpoint` 属性上加上当前文件系统的名称，例如 `/tank/data` 的默认挂载点为 `/tank/data` 等。ZFS 的属性继承功能是我们非常推荐的“便于管理和维护”的特性之一，例如，中科大镜像站就将软件仓库放在 `pool0/repo` 下，该目录的 `mountpoint` 属性为 `/srv/repo`，此时每个具体的软件仓库就可以直接建立独立的文件系统并继承所有重要属性，如 `pool0/repo/ubuntu` 的挂载点就自动继承为 `/srv/repo/ubuntu`。
 
+!!! tip "ZFS 文件系统的独立性"
+
+    ZFS 文件系统的层次结构仅用于管理和维护（继承参数和属性，创建、回滚和发送快照，以及 destroy 等），不同的文件系统内存储的数据是完全独立的。因此即使是具有父子关系的两个 ZFS 文件系统，其内容也不能直接合并，必须将子文件系统的内容复制到父文件系统中，再 `zfs destroy` 子文件系统。
+
 #### ZFS 文件系统参数 {#zfs-filesystem-props}
+
+ZFS 文件系统的参数可以通过 `zfs set` 命令进行调整，或者在创建文件系统时通过 `-o` 指定，例如：
+
+```shell
+zfs create -o xattr=sa -o compression=zstd tank/dat
+# OR
+zfs create tank/data
+zfs set xattr=sa compression=zstd tank/data
+```
+
+注意 ZFS 文件系统的大部分参数不会影响已有的数据，只对新写入的数据生效，这一点对于 `compression` 尤其重要。
 
 以下是一些推荐/经常修改的参数：
 
@@ -179,7 +194,7 @@ zfs create tank/backup
 
 - `relatime=on`：启用相对时间戳。默认情况下，Linux 会在**每次**访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 `relatime` 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。
 
-    此 ZFS 参数与 Linux 的挂载选项 `relatime` 完全相同。
+    此 ZFS 参数与 Linux 的挂载选项 `relatime` 完全相同，且在挂载文件系统后使用 `zfs set relatime=` 会立刻反映在挂载点上。
 
     如果你的使用场景不需要记录访问时间戳（如镜像站），可以设置 `atime=off` 关闭该功能，进一步减少磁盘 I/O，此时 `relatime` 选项将不起作用。
     类似地，`atime` 设置与 Linux 的挂载选项 `atime` / `noatime` 完全相同。
@@ -206,7 +221,10 @@ zfs create tank/backup
     - 例如，一个 37 KiB 的文件将会存储为一个 40 KiB 的块（假设 `ashift=12`）。
 - 若文件大小超过 `recordsize`，则文件会被拆成多个大小为 `recordsize` 的块，其中最后一个块会以零字节补齐至 `recordsize`。
     - 例如，一个 129 KiB 的文件将会存储为两个 128 KiB 的块，在默认情况下会占用 256 KiB 磁盘空间。
-    - 因此在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。
+    - 因此我们在大多数情况下推荐开启压缩，可以减少这种 padding 带来的浪费。
+        - 即使是归档存储已压缩过的数据，我们仍然推荐设置 `compression=zle`[^compression-zle]，以便在数据块之间的 padding 上节省空间。
+
+  [^compression-zle]: ZLE 的含义为 Zero-Length Encoding，即仅“压缩”存储连续的零字节。
 
 ### Zvol {#zvol}
 
@@ -233,7 +251,9 @@ zfs create -V 10G tank/vol
 
 #### Zvol 的容量 {#zvol-size}
 
-如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 `volsize` 属性：
+如果你需要调节 zvol 的大小，可以直接设置该 zvol 的 `volsize` 属性[^zvol-init-val]：
+
+  [^zvol-init-val]: 显然，`volsize` 的初始值为创建 Zvol 时 `-V` 参数的值。
 
 ```shell
 zfs set volsize=20G tank/vol
