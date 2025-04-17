@@ -42,8 +42,14 @@
 
 <!-- man 8 -->
 
+<!-- Note: Debian man pages for useradd(8)/userdel(8) mentions the "low-level" feature and recommends adduser(8)/deluser(8) instead. 
+Do not link to a "generic" man page for these commands -->
+[adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
+[deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
 [sshd.8]: https://linux.die.net/man/8/sshd
+[useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
+[userdel.8]: https://manpages.debian.org/stable/passwd/userdel.8.en.html
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs
 [zfs-receive.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-receive.8.html
 [zfs-send.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-send.8.html

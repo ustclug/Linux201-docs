@@ -13,13 +13,15 @@ icon: fontawesome/solid/z
 ZFS（Zettabyte File System）虽然名叫“FS”，但是集成了一系列存储管理功能，包括文件系统、卷管理、快照、数据完整性检查和修复等，常被称作“单机最强存储方案”。
 ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS 无需像 ext4、XFS 等传统文件系统那样进行 fsck 检查，且即使发生意外断电等情况，也能保证文件系统内部的完整性和一致性。
 
+  [^ostep-lfs]: 如果你想要理解“日志式文件系统”的原理，我们推荐 Operating Systems: Three Easy Pieces 中的 [Log-structured File Systems][ostep-lfs] 一章。
+
 虽然 ZFS 没有特殊的系统要求，但是我们推荐在具有较好配置的服务器上使用 ZFS，以获得更好的性能和稳定性。
 
-- 固态硬盘，或者多块规格相同的大容量机械硬盘（推荐 4 块或更多），尽量避免用单块机械硬盘。
+- 固态硬盘，或者多块规格相同的大容量机械硬盘（推荐 4 块或更多）。尽量避免用单块机械硬盘运行 ZFS。
 - 如果预期需要承载较重的读写负载，推荐使用大容量内存用于缓存（ZFS 官方推荐每 1 TB 存储容量配置 1 GB 内存）。
     - 如果打算启用 ZFS 的去重（deduplication）功能，推荐为每 TB 存储容量配备至少 5 GB 内存（但是官方推荐的比例是 30 GB）。
 - 一般来说，我们**不推荐**使用 L2ARC，具体原因较为复杂，请阅读本文的 ARC 章节与 [L2ARC 章节](#l2arc)。
-- 多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。
+- 现代的多核心 CPU，以便处理 ZFS 的数据完整性检查和透明压缩等任务。
 
 如果只是为了将 ZFS 的高级功能用于个人存储，如 NAS 等，那么你大可忽略以上所有推荐，在 Intel J3455 和 4 GB 内存的小主机上就可以轻松运行 ZFS，例如 QNAP 的个人 NAS 设备就已经默认采用 ZFS 了。
 
@@ -703,7 +705,6 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 <!-- markdownlint-disable MD053 -->
 
-  [^ostep-lfs]: 如果你想要理解“日志式文件系统”的原理，我们推荐 Operating Systems: Three Easy Pieces 中的 [Log-structured File Systems][ostep-lfs] 一章。
   [^uuu1804]: Ubuntu 18.04 LTS 及之前的版本仍然需要安装 `zfs-dkms`，但更重要的是，我们**不推荐使用已经 EOL 的发行版**。
   [^datasets]: 实际上 dataset 具有四种形式：filesystem，volume，snapshot 和 bookmark，但是后两者仅与快照功能相关。
   [^arc-as-used]: 在 FreeBSD 系统中，或者在 Linux 下使用 htop &ge; 3.0 软件，ZFS ARC 占用的内存会正确地显示为 cached。
