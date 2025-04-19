@@ -31,7 +31,7 @@ Host example
   Port 22
 ```
 
-注意 SSH config 没有提供密码配置，因为这是不安全的，请使用密钥登录。
+注意 SSH config 没有提供密码配置，因为将密码存储在明文文件中是不安全的做法，请使用密钥登录。
 
 ### 公钥认证 {#public-key-authentication}
 
