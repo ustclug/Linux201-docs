@@ -241,6 +241,8 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
         OnUnitActiveSec=1d
         ```
 
+    - 如果不使用 `OnCalendar=` 的话，一般常用的模式是：使用 `OnActiveSec=`（timer 被激活后）、`OnBootSec=` 或 `OnStartupSec=`（systemd 启动后）来**首次触发**，然后使用 `OnUnitActiveSec=` 来保证**后续定时触发**。因为 `OnActiveSec=`、`OnBootSec=` 和 `OnStartupSec=` 只会触发一次服务启动，为了实现定时启动，那么就需要额外设置以服务启动后为基准的定时器，即 `OnUnitActiveSec=`。而如果没有前者的话，那么就必须要手动启动对应的服务之后，timer 才会有效。因此这一类 timer 会同时包含两个定时规则。
+
 - 更加精确的时间控制，通过 `AccuracySec=` 可以支持秒级甚至更细的时间精度。
     一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。
 - `RandomizedDelaySec=` 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
