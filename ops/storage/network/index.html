@@ -790,6 +790,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="客户端配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nfs-client-mount" class="md-nav__link">
+    <span class="md-ellipsis">
+      挂载与掉线处理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nfs-client-other" class="md-nav__link">
+    <span class="md-ellipsis">
+      其他问题
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -820,6 +844,30 @@
   <a href="#iscsi-client" class="md-nav__link">
     <span class="md-ellipsis">
       客户端配置
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#samba" class="md-nav__link">
+    <span class="md-ellipsis">
+      Samba
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Samba">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#samba-auto-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务自动发现
     </span>
   </a>
   
@@ -1827,6 +1875,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="客户端配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nfs-client-mount" class="md-nav__link">
+    <span class="md-ellipsis">
+      挂载与掉线处理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nfs-client-other" class="md-nav__link">
+    <span class="md-ellipsis">
+      其他问题
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -1867,6 +1939,30 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#samba" class="md-nav__link">
+    <span class="md-ellipsis">
+      Samba
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Samba">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#samba-auto-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务自动发现
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1892,9 +1988,10 @@
 <p><a href="https://github.com/taoky">@taoky</a></p>
 </div>
 <div class="admonition warning">
-<p class="admonition-title">本文已完成，等待校对</p>
+<p class="admonition-title">本文编写中</p>
 </div>
-<p>本文介绍在服务器上常见的网络存储方案，包括 NFS 与 iSCSI。</p>
+<p>本文介绍在服务器上常见的网络存储方案（NFS 与 iSCSI），以及家用场景下常用的 SMB（Samba）方案。</p>
+<p>本文不涉及分布式存储系统。</p>
 <!-- TODO: well, 我们没有使用过 ceph；如果有人有经验想写的话，可能需要放在高级内容里面 -->
 <!-- TODO: 以及 samba -->
 
@@ -2075,6 +2172,7 @@ inode 编号后是 generation number，用于检测文件是否被修改。</p>
 </code></pre></div>
 </details>
 <h3 id="nfs-client">客户端配置<a class="headerlink" href="#nfs-client" title="Permanent link">&para;</a></h3>
+<h4 id="nfs-client-mount">挂载与掉线处理<a class="headerlink" href="#nfs-client-mount" title="Permanent link">&para;</a></h4>
 <p>挂载 NFS（表面上）是一件很简单的事情：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>localhost:/srv/abcde<span class="w"> </span>/mnt/nfs
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="gp">$ </span>mount<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>nfs
@@ -2146,6 +2244,18 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 此时的问题挂载点事实上还是没有被卸载，只是之后新的访问不会再涉及 NFS 了。
 在用这种方式「解决」问题之后，建议尽快重启服务器。</p>
 <p>此外，<code>intr</code> 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。</p>
+<h4 id="nfs-client-other">其他问题<a class="headerlink" href="#nfs-client-other" title="Permanent link">&para;</a></h4>
+<p>NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些差异。</p>
+<div class="admonition note">
+<p class="admonition-title">NFS 与 capability 问题</p>
+<p>在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。</p>
+<ul>
+<li>当尝试在 NFS 挂载的路径上进行操作时，客户端进程的 capability 不会被传递到 NFS 服务器端进行权限检查。这意味着一些在本地文件系统上因进程具备特定 capability 而成功的操作，在 NFS 环境下可能会失败，因为 <a href="https://access.redhat.com/solutions/2117321">NFS 并不支持 Linux Capabilities</a>。</li>
+<li>在 Linux 文件系统中，移动一个目录（例如将目录 A 移动到目录 B 下）不仅需要对源目录 A 和目标目录 B 都具备写权限，被移动的目录本身也<a href="https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999">需要有写权限</a>。这一点与移动文件时被移动文件无需写权限的情况不同。</li>
+<li>然而，如果执行移动操作的进程拥有 <code>cap_dac_override</code> 这个 capability，则可以<a href="https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485">绕过对被移动目录写权限的检查</a>。</li>
+<li>在实际问题场景中，尽管执行操作的进程具备 <code>cap_dac_override</code> capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。</li>
+</ul>
+</div>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
 <p>iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。</p>
 <h3 id="iscsi-server">服务端配置<a class="headerlink" href="#iscsi-server" title="Permanent link">&para;</a></h3>
@@ -2346,6 +2456,18 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="go">iscsiadm: Could not log into all portals</span>
 </code></pre></div>
 </div>
+<h2 id="samba">Samba<a class="headerlink" href="#samba" title="Permanent link">&para;</a></h2>
+<p>Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现以下的功能：</p>
+<ul>
+<li>服务自动发现（让局域网中的其他机器可以自动找到 Samba 服务器）</li>
+<li>匿名访问与用户名、密码访问</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">家用场景下的其他协议</p>
+<p>除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。如有需要可以自行搜索相关的配置方法。</p>
+</div>
+<h3 id="samba-auto-discovery">服务自动发现<a class="headerlink" href="#samba-auto-discovery" title="Permanent link">&para;</a></h3>
+<p>服务自动发现协议处在一个比较混乱的状态，有各种不同的协议。最早的服务自动发现协议为 NetBIOS 以及其配套服务，如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。</p>
 <!--
   Links to man pages
 
@@ -2393,7 +2515,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月19日 11:54:54">2025年4月19日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月20日 09:59:05">2025年4月20日</span>
   </span>
 
     
@@ -2411,6 +2533,11 @@ Do not link to a "generic" man page for these commands -->
 
     
     <nav>
+      
+        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
+          
+          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
+        </a>
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
