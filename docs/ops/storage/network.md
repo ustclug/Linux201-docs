@@ -353,7 +353,7 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
     在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。
 
     * 当尝试在 NFS 挂载的路径上进行操作时，客户端进程的 capability 不会被传递到 NFS 服务器端进行权限检查。这意味着一些在本地文件系统上因进程具备特定 capability 而成功的操作，在 NFS 环境下可能会失败，因为 [NFS 并不支持 Linux Capabilities](https://access.redhat.com/solutions/2117321)。
-    * 在 Linux 文件系统中，移动一个目录（例如将目录 A 移动到目录 B 下）不仅需要对源目录 A 和目标目录 B 都具备写权限，被移动的目录本身也[需要有写权限](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999)。这一点与移动文件时被移动文件无需写权限的情况不同。
+    * 在 Linux 文件系统中，移动一个目录（例如将目录 A 从目录 B 下移动到目录 C 下，即目录结构从 B/A 变为了 C/A）不仅需要对源目录 B 和目标目录 C 都具备写权限，被移动的目录 A 本身也[需要有写权限](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999)。这一点与移动文件时被移动文件无需写权限的情况不同。
     * 然而，如果执行移动操作的进程拥有 `cap_dac_override` 这个 capability，则可以[绕过对被移动目录写权限的检查](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485)。
     * 在实际问题场景中，尽管执行操作的进程具备 `cap_dac_override` capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。
 
