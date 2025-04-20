@@ -4,9 +4,11 @@
 
     [@taoky][taoky]
 
-!!! warning "本文已完成，等待校对"
+!!! warning "本文编写中"
 
-本文介绍在服务器上常见的网络存储方案，包括 NFS 与 iSCSI。
+本文介绍在服务器上常见的网络存储方案（NFS 与 iSCSI），以及家用场景下常用的 SMB（Samba）方案。
+
+本文不涉及分布式存储系统。
 <!-- TODO: well, 我们没有使用过 ceph；如果有人有经验想写的话，可能需要放在高级内容里面 -->
 <!-- TODO: 以及 samba -->
 
@@ -596,3 +598,18 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
     iscsiadm: default: 1 session requested, but 1 already present.
     iscsiadm: Could not log into all portals
     ```
+
+## Samba
+
+Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现以下的功能：
+
+- 服务自动发现（让局域网中的其他机器可以自动找到 Samba 服务器）
+- 匿名访问与用户名、密码访问
+
+!!! note "家用场景下的其他协议"
+
+    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。如有需要可以自行搜索相关的配置方法。
+
+### 服务自动发现 {#samba-auto-discovery}
+
+服务自动发现协议处在一个比较混乱的状态，有各种不同的协议。最早的服务自动发现协议为 NetBIOS 以及其配套服务，如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。
