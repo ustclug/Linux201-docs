@@ -2251,7 +2251,7 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <p>在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。</p>
 <ul>
 <li>当尝试在 NFS 挂载的路径上进行操作时，客户端进程的 capability 不会被传递到 NFS 服务器端进行权限检查。这意味着一些在本地文件系统上因进程具备特定 capability 而成功的操作，在 NFS 环境下可能会失败，因为 <a href="https://access.redhat.com/solutions/2117321">NFS 并不支持 Linux Capabilities</a>。</li>
-<li>在 Linux 文件系统中，移动一个目录（例如将目录 A 移动到目录 B 下）不仅需要对源目录 A 和目标目录 B 都具备写权限，被移动的目录本身也<a href="https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999">需要有写权限</a>。这一点与移动文件时被移动文件无需写权限的情况不同。</li>
+<li>在 Linux 文件系统中，移动一个目录（例如将目录 A 从目录 B 下移动到目录 C 下，即目录结构从 B/A 变为了 C/A）不仅需要对源目录 B 和目标目录 C 都具备写权限，被移动的目录 A 本身也<a href="https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999">需要有写权限</a>。这一点与移动文件时被移动文件无需写权限的情况不同。</li>
 <li>然而，如果执行移动操作的进程拥有 <code>cap_dac_override</code> 这个 capability，则可以<a href="https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485">绕过对被移动目录写权限的检查</a>。</li>
 <li>在实际问题场景中，尽管执行操作的进程具备 <code>cap_dac_override</code> capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。</li>
 </ul>
@@ -2515,7 +2515,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月20日 09:59:05">2025年4月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月20日 10:46:17">2025年4月20日</span>
   </span>
 
     
