@@ -81,3 +81,11 @@ info: Adding user `test' to group `users' ...
 ### PAM
 
 ## LDAP
+
+LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol），是一种用于访问和维护分布式目录信息服务的开放标准协议。
+
+在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。
+服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。
+
+常用的 LDAP 服务器有 OpenLDAP 和 [389 Directory Server](https://www.port389.org/) 等。
+在 Debian 中，OpenLDAP 的软件名为 `slapd`，可以通过 `apt install slapd` 安装。

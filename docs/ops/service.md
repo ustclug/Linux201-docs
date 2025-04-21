@@ -51,11 +51,20 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
 很多通过 `systemctl` 命令改变的配置都会被保存到 `/etc/systemd/system` 目录下，例如：
 
-- `systemctl enable [some-unit]` 本质上是在 `/etc/systemd/system` 目录下创建软链接。
-- `systemctl disable [some-unit]` 则是删除上面创建的软链接。
+- `systemctl enable [some-unit]` 可以“启用”一个 unit，即激活该 unit 在 `[Install]` 部分声明的自动启动条件，如 `WantedBy=` 和 `RequiredBy=` 等。该命令的本质是在 `/etc/systemd/system` 目录下创建软链接。
+
+    !!! tip
+
+        `systemctl enable --now [some-unit]` 可以在 enable 一个 unit 的同时立即启动它。
+
+- `systemctl disable [some-unit]` 类似地，该命令的本质是删除了上面创建的软链接。
+
+    !!! tip
+
+        - 同理，`systemctl disable --now [some-unit]` 可以在 disable 一个 unit 的同时立即停止它。
 - `systemctl edit [some-unit]` 会提供一个临时文件，并在编辑完之后将其保存到 `/etc/systemd/system/[some-unit].d/override.conf` 文件中，实现对 unit 的修改。
 
-相比于手工修改文件，使用 `systemctl` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
+相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
 
 Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 `[Service]` section，并通常会包含一个 `[Install]` section。以 cron 服务的配置文件为例：
 
@@ -210,10 +219,11 @@ oneshot
 :   一次性服务，即启动后运行一次 `ExecStart=` 命令，然后退出。
     这个 Type 有两种使用场景：
 
-    1. 一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 `ip` 命令）；
-    2. 和 timer 配合使用，即定时任务。
+    1. 一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 `ip` 命令）。
 
-    如果你有 Type=oneshot 的服务，那么你很可能也想配置 `RemainAfterExit=yes`，这样配置的命令执行完成后会一直保持 active 状态。
+        在这个场景下，你很可能也想同时设置 `RemainAfterExit=yes`，这样配置的命令执行完成后会一直保持 active 状态。
+
+    2. 和 timer 配合使用，即定时任务。
 
 notify 和 dbus
 
@@ -222,9 +232,11 @@ notify 和 dbus
 
     ??? tip "sd_notify"
 
-        [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 对应用传递一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以向对应 socket 发送 `READY=1` 来通知 systemd 服务已经成功启动。
+        [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 给应用提供一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以发送 `READY=1` 来通知 systemd 服务已经成功启动。
 
-        通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 xz 后门事件之所以能够影响 sshd 逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 `sd_notify()`，而 libsystemd 又依赖于（被植入后门的）liblzma。
+        通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 [xz 后门事件][xz-backdoor]之所以能够影响 sshd 的逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 `sd_notify()`，而 libsystemd 又依赖于（被植入后门的）liblzma。
+
+  [xz-backdoor]: https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8 "维基百科：XZ 实用程序后门"
 
 ### 定时任务 {#timers}
 
@@ -233,6 +245,7 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
 相比于更常见的定时任务方案 CRON，systemd timers 具有以下优点：
 
 - 更丰富的时间表达式，除了等价于 crontab 的 `OnCalendar=` 时间之外，也可以使用 `OnUnitActiveSec=`（服务启动后）、`OnBootSec=`（系统启动后）等指定其他时间计算方式。
+
     - 例如，`systemd-tmpfiles-clean.timer` 就是在系统启动后 15 分钟触发一次 `systemd-tmpfiles-clean.service`，然后每天触发一次，用于清理临时文件。
 
         ```ini title="/lib/systemd/system/systemd-tmpfiles-clean.timer"
@@ -244,7 +257,7 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
     - 如果不使用 `OnCalendar=` 的话，一般常用的模式是：使用 `OnActiveSec=`（timer 被激活后）、`OnBootSec=` 或 `OnStartupSec=`（systemd 启动后）来**首次触发**，然后使用 `OnUnitActiveSec=` 来保证**后续定时触发**。因为 `OnActiveSec=`、`OnBootSec=` 和 `OnStartupSec=` 只会触发一次服务启动，为了实现定时启动，那么就需要额外设置以服务启动后为基准的定时器，即 `OnUnitActiveSec=`。而如果没有前者的话，那么就必须要手动启动对应的服务之后，timer 才会有效。因此这一类 timer 会同时包含两个定时规则。
 
 - 更加精确的时间控制，通过 `AccuracySec=` 可以支持秒级甚至更细的时间精度。
-    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。
+    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。这一点考虑与 cron 是相同的。
 - `RandomizedDelaySec=` 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
     这在使用同一份系统镜像部署大量虚拟机或类似场景下非常有用，可以避免大量计划任务同时触发，导致系统负载过高。
 - `Persistent=` 可以确保如果因关机、重启等原因错过了设定时间，定时任务会在下次系统启动后会立即执行。
@@ -256,7 +269,7 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
 
 Timers 的主要缺点是：
 
-- 配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，数十行的配置文件不得不说复杂。
+- 配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，动辄数十行的配置文件实在不够方便。
 - 没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 `journalctl` 查看；也可以为 service 指定 `StandardOutput=` 和 `StandardError=` 手动重定向输出。
 
 另外，第三方开发的 [systemd-cron][systemd-cron] 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。
