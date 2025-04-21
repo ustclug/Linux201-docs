@@ -2073,9 +2073,25 @@ U --&gt; F(scope)</code></pre>
 <p>实际会搜索的目录比这多得多（又到了看 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html">man</a> 的时候了），但是一般只需要关心上面这三个。</p>
 <p>很多通过 <code>systemctl</code> 命令改变的配置都会被保存到 <code>/etc/systemd/system</code> 目录下，例如：</p>
 <ul>
-<li><code>systemctl enable [some-unit]</code> 本质上是在 <code>/etc/systemd/system</code> 目录下创建软链接。</li>
-<li><code>systemctl disable [some-unit]</code> 则是删除上面创建的软链接。</li>
+<li>
+<p><code>systemctl enable [some-unit]</code> 可以“启用”一个 unit，即激活该 unit 在 <code>[Install]</code> 部分声明的自动启动条件，如 <code>WantedBy=</code> 和 <code>RequiredBy=</code> 等。该命令的本质是在 <code>/etc/systemd/system</code> 目录下创建软链接。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><code>systemctl enable --now [some-unit]</code> 可以在 enable 一个 unit 的同时立即启动它。</p>
+</div>
+</li>
+<li>
+<p><code>systemctl disable [some-unit]</code> 类似地，该命令的本质是删除了上面创建的软链接。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li>同理，<code>systemctl disable --now [some-unit]</code> 可以在 disable 一个 unit 的同时立即停止它。</li>
+</ul>
+</div>
+<ul>
 <li><code>systemctl edit [some-unit]</code> 会提供一个临时文件，并在编辑完之后将其保存到 <code>/etc/systemd/system/[some-unit].d/override.conf</code> 文件中，实现对 unit 的修改。</li>
+</ul>
+</li>
 </ul>
 <p>相比于手工修改文件，使用 <code>systemctl</code> 更加安全，它会检查配置文件的语法，而且不需要再额外运行 <code>systemctl daemon-reload</code>。</p>
 <p>Unit 的配置文件是一个 INI 格式的文件，通常包括一个 <code>[Unit]</code> section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 <code>[Service]</code> section，并通常会包含一个 <code>[Install]</code> section。以 cron 服务的配置文件为例：</p>
@@ -2263,10 +2279,14 @@ U --&gt; F(scope)</code></pre>
 <p>一次性服务，即启动后运行一次 <code>ExecStart=</code> 命令，然后退出。
 这个 Type 有两种使用场景：</p>
 <ol>
-<li>一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 <code>ip</code> 命令）；</li>
-<li>和 timer 配合使用，即定时任务。</li>
+<li>
+<p>一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 <code>ip</code> 命令）。</p>
+<p>在这个场景下，你很可能也想同时设置 <code>RemainAfterExit=yes</code>，这样配置的命令执行完成后会一直保持 active 状态。</p>
+</li>
+<li>
+<p>和 timer 配合使用，即定时任务。</p>
+</li>
 </ol>
-<p>如果你有 Type=oneshot 的服务，那么你很可能也想配置 <code>RemainAfterExit=yes</code>，这样配置的命令执行完成后会一直保持 active 状态。</p>
 </dd>
 <dt>notify 和 dbus</dt>
 <dd>
@@ -2274,8 +2294,8 @@ U --&gt; F(scope)</code></pre>
 与前面的类型不同的是，这类服务需要程序主动支持 <code>sd_notify</code> 或者 D-Bus 接口。</p>
 <details class="tip">
 <summary>sd_notify</summary>
-<p><a href="https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html">sd_notify(3)</a> 是一个非常简单的协议。Systemd 对于标注自己支持 <code>notify</code> 的服务，会通过环境变量 <code>NOTIFY_SOCKET</code> 对应用传递一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以向对应 socket 发送 <code>READY=1</code> 来通知 systemd 服务已经成功启动。</p>
-<p>通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 xz 后门事件之所以能够影响 sshd 逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 <code>sd_notify()</code>，而 libsystemd 又依赖于（被植入后门的）liblzma。</p>
+<p><a href="https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html">sd_notify(3)</a> 是一个非常简单的协议。Systemd 对于标注自己支持 <code>notify</code> 的服务，会通过环境变量 <code>NOTIFY_SOCKET</code> 给应用提供一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以发送 <code>READY=1</code> 来通知 systemd 服务已经成功启动。</p>
+<p>通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 <a href="https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8" title="维基百科：XZ 实用程序后门">xz 后门事件</a>之所以能够影响 sshd 的逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 <code>sd_notify()</code>，而 libsystemd 又依赖于（被植入后门的）liblzma。</p>
 </details>
 </dd>
 </dl>
@@ -2300,7 +2320,7 @@ U --&gt; F(scope)</code></pre>
 </li>
 <li>
 <p>更加精确的时间控制，通过 <code>AccuracySec=</code> 可以支持秒级甚至更细的时间精度。
-    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。</p>
+    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。这一点考虑与 cron 是相同的。</p>
 </li>
 <li><code>RandomizedDelaySec=</code> 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
     这在使用同一份系统镜像部署大量虚拟机或类似场景下非常有用，可以避免大量计划任务同时触发，导致系统负载过高。</li>
@@ -2315,7 +2335,7 @@ U --&gt; F(scope)</code></pre>
 </ul>
 <p>Timers 的主要缺点是：</p>
 <ul>
-<li>配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，数十行的配置文件不得不说复杂。</li>
+<li>配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，动辄数十行的配置文件实在不够方便。</li>
 <li>没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 <code>journalctl</code> 查看；也可以为 service 指定 <code>StandardOutput=</code> 和 <code>StandardError=</code> 手动重定向输出。</li>
 </ul>
 <p>另外，第三方开发的 <a href="https://github.com/systemd-cron/systemd-cron">systemd-cron</a> 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。</p>
@@ -2527,7 +2547,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月20日 17:01:08">2025年4月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月21日 08:48:27">2025年4月21日</span>
   </span>
 
     
@@ -2546,14 +2566,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
       
