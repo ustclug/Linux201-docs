@@ -18,7 +18,6 @@ icon: material/apple-safari
 
     在使用 `systemd` 的 Linux 系统中，通常默认启用了一个轻量级时间同步服务 —— `systemd-timesyncd`。该服务在系统联网时，会通过 NTP 协议定期向公共时间服务器请求当前时间，并自动对齐本地时钟。
 
-
     如需自定义同步的时间服务器，可在 `/etc/systemd/timesyncd.conf.d/` 目录下新建一个配置文件（例如 `custom.conf`），内容如下。对于位于校园内网、无法访问外网的服务器，推荐配置为校内 NTP 源：
 
     ```ini
@@ -60,6 +59,3 @@ timedatectl set-timezone Asia/Shanghai --adjust-system-clock
 ```bash
 timedatectl status
 ```
-
-
-
