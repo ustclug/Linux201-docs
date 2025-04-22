@@ -19,9 +19,9 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
 
 **chrony**
 
-:   Debian 发行版的默认 NTP 客户端为功能丰富的 chrony，它支持多种时间源和网络协议，能够在不稳定的网络环境中保持较高的同步精度，甚至使用与计算机相连的 GPS 设备作为时钟信号源。chrony 还具有自动检测网络延迟和时钟漂移的能力，适合在虚拟机、笔记本电脑等经常变更网络环境的设备上使用。
+:   chrony 是一个功能丰富 NTP 软件，它支持多种时间源和网络协议，能够在不稳定的网络环境中保持较高的同步精度，甚至使用与计算机相连的 GPS 设备作为时钟信号源。chrony 还具有自动检测网络延迟和时钟漂移的能力，适合在虚拟机、笔记本电脑等经常变更网络环境的设备上使用。
 
-    一般情况下，Debian/Ubuntu 系统上已经预装了 chrony。如果你的系统中尚未安装它，也可以使用 `apt install chrony` 手动安装。
+    chrony 曾经是 Debian 发行版的默认 NTP 客户端。对于新安装的 Debian 或 Ubuntu 系统，你也可以使用 `apt install chrony` 手动安装它。
 
     使用以下命令可以查看当前同步状态，包括系统时钟偏移量和误差修正速率等信息：
 
@@ -39,6 +39,8 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
 **systemd-timesyncd**
 
 :   systemd 项目也提供了一个轻量级的时间同步客户端，即 systemd-timesyncd。该服务可以在系统联网后通过 NTP 协议定期向网络上的时间服务器请求当前时间，并自动校准系统时钟。如果你只需要“能同步时间”，尤其是当校园网或企业内网中存在 NTP 服务器的时候，systemd-timesyncd 是一个更加简单省心的选项。
+
+    Debian 自 12（Bookworm）版本起选择 systemd-timesyncd 作为默认的 NTP 客户端，因此通常情况下你不再需要手动安装它（即 `apt install systemd-timesyncd`）。
 
     你可以在 `/etc/systemd/timesyncd.conf` 文件中查看发行版提供的默认时间服务器配置。如果你想要自己指定同步的时间服务器，可在 `/etc/systemd/timesyncd.conf.d/` 目录下新建一个配置文件（例如 `custom.conf`）。我们推荐尽可能使用位于校园网或企业内网的时间源，以减少网络延迟并提升同步稳定性。例如，科大校园网提供了一个 Stratum 2 的时间服务器 `time.ustc.edu.cn`，你可以在 `/etc/systemd/timesyncd.conf.d/custom.conf` 中添加以下内容让 systemd-timesyncd 使用它：
 
