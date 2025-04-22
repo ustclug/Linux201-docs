@@ -50,9 +50,9 @@ Linux 中支持 NTP 的工具有多种，其中较为常见的有 `systemd-times
     ```bash
     chronyc tracking
     ```
-    
+
     查看各时间源的状态（Stratum 一列展示了各时间源的层级）：
-    
+
     ```bash
     chronyc sources
     chronyc sources -v  # 显示详细界面说明
@@ -69,4 +69,3 @@ timedatectl set-timezone Asia/Shanghai --adjust-system-clock
 ```bash
 timedatectl status
 ```
-
