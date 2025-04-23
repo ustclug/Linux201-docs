@@ -1105,6 +1105,57 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="连通性问题">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ping" class="md-nav__link">
+    <span class="md-ellipsis">
+      ping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#curl" class="md-nav__link">
+    <span class="md-ellipsis">
+      curl
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nc" class="md-nav__link">
+    <span class="md-ellipsis">
+      nc
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mtr" class="md-nav__link">
+    <span class="md-ellipsis">
+      mtr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dig-dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      dig 与 DNS
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -1997,6 +2048,57 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="连通性问题">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ping" class="md-nav__link">
+    <span class="md-ellipsis">
+      ping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#curl" class="md-nav__link">
+    <span class="md-ellipsis">
+      curl
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nc" class="md-nav__link">
+    <span class="md-ellipsis">
+      nc
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mtr" class="md-nav__link">
+    <span class="md-ellipsis">
+      mtr
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dig-dns" class="md-nav__link">
+    <span class="md-ellipsis">
+      dig 与 DNS
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2441,6 +2543,126 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <h2 id="network-debug">网络问题调试简介<a class="headerlink" href="#network-debug" title="Permanent link">&para;</a></h2>
 <p>本节介绍简单的网络问题的调试方法与一些常用的网络问题调试工具。</p>
 <h3 id="connectivity-issues">连通性问题<a class="headerlink" href="#connectivity-issues" title="Permanent link">&para;</a></h3>
+<h4 id="ping">ping<a class="headerlink" href="#ping" title="Permanent link">&para;</a></h4>
+<p>判断是否连接正常最简单的方式是使用 <code>ping</code> 命令。在 Linux 下，<code>ping</code> 会不停向目标地址发送 ICMP Echo Request 包，如果目标地址网络畅通，并且防火墙配置允许响应 Echo Request 的话，就可以收到 Echo Reply 包。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>ping<span class="w"> </span>www.example.com
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">PING www.example.com (2600:1417:4400:24::17d2:7a6) 56 data bytes</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="go">64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=1 ttl=50 time=60.2 ms</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=2 ttl=50 time=60.4 ms</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="go">^C</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">--- www.example.com ping statistics ---</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="go">2 packets transmitted, 2 received, 0% packet loss, time 1001ms</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">rtt min/avg/max/mdev = 60.158/60.300/60.443/0.142 ms</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="gp">$ </span><span class="c1"># 某些情况下需要自行通过 -4 或者 -6 指定使用 IPv4 或者 IPv6</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="gp">$ </span>ping<span class="w"> </span>-4<span class="w"> </span>www.example.com
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="go">PING www.example.com (104.116.243.80) 56(84) bytes of data.</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="go">64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=1 ttl=44 time=81.7 ms</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="go">64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=2 ttl=44 time=81.9 ms</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="go">^C</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="go">--- www.example.com ping statistics ---</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="go">2 packets transmitted, 2 received, 0% packet loss, time 1001ms</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="go">rtt min/avg/max/mdev = 81.736/81.799/81.863/0.063 ms</span>
+</code></pre></div>
+<p><code>ping</code> 的局限性在于，即使 <code>ping</code> 成功，也不代表目标主机的服务正常运行、传输 TCP 或 UDP 包正常；即使 <code>ping</code> 失败，也不代表目标主机的服务不可用。</p>
+<h4 id="curl">curl<a class="headerlink" href="#curl" title="Permanent link">&para;</a></h4>
+<p>具体的服务一般也有对应的测试工具，例如对 HTTP(S) 类服务可以使用 <code>curl</code> 测试。添加 <code>-v</code> 参数可以查看详细的请求与响应信息，而添加 <code>-I</code> 参数可以发送 HEAD 请求，避免终端输出过多的内容。与 <code>ping</code> 类似，<code>-4</code> 与 <code>-6</code> 参数可以指定使用 IPv4 或者 IPv6。</p>
+<details class="example">
+<summary><code>curl -I -v</code> 样例输出</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-I<span class="w"> </span>-v<span class="w"> </span>https://www.example.com
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">* Host www.example.com:443 was resolved.</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">* IPv6: 2600:1417:4400:24::17d2:7b3, 2600:1417:4400:24::17d2:7a6</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">* IPv4: 104.116.243.80, 104.116.243.152</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">*   Trying [2600:1417:4400:24::17d2:7b3]:443...</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">* Connected to www.example.com (2600:1417:4400:24::17d2:7b3) port 443</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">* ALPN: curl offers h2,http/1.1</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">* TLSv1.3 (OUT), TLS handshake, Client hello (1):</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">*  CAfile: /etc/ssl/certs/ca-certificates.crt</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">*  CApath: /etc/ssl/certs</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Server hello (2):</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Certificate (11):</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">* TLSv1.3 (IN), TLS handshake, CERT verify (15):</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Finished (20):</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="go">* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="go">* TLSv1.3 (OUT), TLS handshake, Finished (20):</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="go">* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="go">* ALPN: server accepted h2</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="go">* Server certificate:</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="go">*  subject: C=US; ST=California; L=Los Angeles; O=Internet Corporation for Assigned Names and Numbers; CN=*.example.com</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="go">*  start date: Jan 15 00:00:00 2025 GMT</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="go">*  expire date: Jan 15 23:59:59 2026 GMT</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="go">*  subjectAltName: host &quot;www.example.com&quot; matched cert&#39;s &quot;*.example.com&quot;</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="go">*  issuer: C=US; O=DigiCert Inc; CN=DigiCert Global G3 TLS ECC SHA384 2020 CA1</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="go">*  SSL certificate verify ok.</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="go">*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="go">*   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384</span>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="go">*   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384</span>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="go">* using HTTP/2</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="go">* [HTTP/2] [1] OPENED stream for https://www.example.com/</span>
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="go">* [HTTP/2] [1] [:method: HEAD]</span>
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="go">* [HTTP/2] [1] [:scheme: https]</span>
+<a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="go">* [HTTP/2] [1] [:authority: www.example.com]</span>
+<a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="go">* [HTTP/2] [1] [:path: /]</span>
+<a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="go">* [HTTP/2] [1] [user-agent: curl/8.5.0]</span>
+<a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a><span class="go">* [HTTP/2] [1] [accept: */*]</span>
+<a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a><span class="go">&gt; HEAD / HTTP/2</span>
+<a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a><span class="go">&gt; Host: www.example.com</span>
+<a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a><span class="go">&gt; User-Agent: curl/8.5.0</span>
+<a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a><span class="go">&gt; Accept: */*</span>
+<a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a><span class="go">&gt;</span>
+<a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):</span>
+<a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a><span class="go">* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):</span>
+<a id="__codelineno-8-45" name="__codelineno-8-45" href="#__codelineno-8-45"></a><span class="go">* old SSL session ID is stale, removing</span>
+<a id="__codelineno-8-46" name="__codelineno-8-46" href="#__codelineno-8-46"></a><span class="go">&lt; HTTP/2 200</span>
+<a id="__codelineno-8-47" name="__codelineno-8-47" href="#__codelineno-8-47"></a><span class="go">HTTP/2 200</span>
+<a id="__codelineno-8-48" name="__codelineno-8-48" href="#__codelineno-8-48"></a><span class="go">&lt; accept-ranges: bytes</span>
+<a id="__codelineno-8-49" name="__codelineno-8-49" href="#__codelineno-8-49"></a><span class="go">accept-ranges: bytes</span>
+<a id="__codelineno-8-50" name="__codelineno-8-50" href="#__codelineno-8-50"></a><span class="go">&lt; content-type: text/html</span>
+<a id="__codelineno-8-51" name="__codelineno-8-51" href="#__codelineno-8-51"></a><span class="go">content-type: text/html</span>
+<a id="__codelineno-8-52" name="__codelineno-8-52" href="#__codelineno-8-52"></a><span class="go">&lt; etag: &quot;84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134&quot;</span>
+<a id="__codelineno-8-53" name="__codelineno-8-53" href="#__codelineno-8-53"></a><span class="go">etag: &quot;84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134&quot;</span>
+<a id="__codelineno-8-54" name="__codelineno-8-54" href="#__codelineno-8-54"></a><span class="go">&lt; last-modified: Mon, 13 Jan 2025 20:11:20 GMT</span>
+<a id="__codelineno-8-55" name="__codelineno-8-55" href="#__codelineno-8-55"></a><span class="go">last-modified: Mon, 13 Jan 2025 20:11:20 GMT</span>
+<a id="__codelineno-8-56" name="__codelineno-8-56" href="#__codelineno-8-56"></a><span class="go">&lt; content-length: 1256</span>
+<a id="__codelineno-8-57" name="__codelineno-8-57" href="#__codelineno-8-57"></a><span class="go">content-length: 1256</span>
+<a id="__codelineno-8-58" name="__codelineno-8-58" href="#__codelineno-8-58"></a><span class="go">&lt; cache-control: max-age=681</span>
+<a id="__codelineno-8-59" name="__codelineno-8-59" href="#__codelineno-8-59"></a><span class="go">cache-control: max-age=681</span>
+<a id="__codelineno-8-60" name="__codelineno-8-60" href="#__codelineno-8-60"></a><span class="go">&lt; date: Wed, 23 Apr 2025 17:06:41 GMT</span>
+<a id="__codelineno-8-61" name="__codelineno-8-61" href="#__codelineno-8-61"></a><span class="go">date: Wed, 23 Apr 2025 17:06:41 GMT</span>
+<a id="__codelineno-8-62" name="__codelineno-8-62" href="#__codelineno-8-62"></a><span class="go">&lt; alt-svc: h3=&quot;:443&quot;; ma=93600,h3-29=&quot;:443&quot;; ma=93600,quic=&quot;:443&quot;; ma=93600; v=&quot;43&quot;</span>
+<a id="__codelineno-8-63" name="__codelineno-8-63" href="#__codelineno-8-63"></a><span class="go">alt-svc: h3=&quot;:443&quot;; ma=93600,h3-29=&quot;:443&quot;; ma=93600,quic=&quot;:443&quot;; ma=93600; v=&quot;43&quot;</span>
+<a id="__codelineno-8-64" name="__codelineno-8-64" href="#__codelineno-8-64"></a>
+<a id="__codelineno-8-65" name="__codelineno-8-65" href="#__codelineno-8-65"></a><span class="go">&lt;</span>
+<a id="__codelineno-8-66" name="__codelineno-8-66" href="#__codelineno-8-66"></a><span class="go">* Connection #0 to host www.example.com left intact</span>
+</code></pre></div>
+</details>
+<h4 id="nc">nc<a class="headerlink" href="#nc" title="Permanent link">&para;</a></h4>
+<p>对于简单的纯文本协议，可以使用 <code>nc</code>（netcat）命令进行测试，以连接 <code>www.example.com</code> 的 80 端口为例，输入 HTTP 请求行和头，按两下回车（代表 HTTP 请求结束），即可收到响应：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>nc<span class="w"> </span>www.example.com<span class="w"> </span><span class="m">80</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">GET / HTTP/1.0</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">Host: www.example.com</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">（响应内容）</span>
+</code></pre></div>
+<p>即使是非纯文本协议，<code>nc</code> 也可用于探测端口是否开放，以 22（SSH）端口为例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>nc<span class="w"> </span>&lt;地址&gt;<span class="w"> </span><span class="m">22</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5</span>
+</code></pre></div>
+<h4 id="mtr">mtr<a class="headerlink" href="#mtr" title="Permanent link">&para;</a></h4>
+<p>对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。<code>mtr</code> 命令可以看作是 <code>ping</code> 和 <code>traceroute</code> 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。</p>
+<div class="admonition tip">
+<p class="admonition-title">mtr-tiny</p>
+<p>Debian 下的 <code>mtr</code> 包会包含图形界面程序，在服务器上建议安装 <code>mtr-tiny</code> 包。</p>
+</div>
+<p>直接使用 <code>mtr &lt;地址&gt;</code> 即可进入交互式界面查看每一跳的情况。如果需要分享给其他人，可以考虑使用 <code>--report</code>（<code>-r</code>）参数进入非交互式的报告模式，使用 <code>-c</code> 设置轮数，类似如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mtr<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span><span class="w"> </span>-r<span class="w"> </span>www.example.com
+</code></pre></div>
+<h4 id="dig-dns">dig 与 DNS<a class="headerlink" href="#dig-dns" title="Permanent link">&para;</a></h4>
+<p>如果在进行网络操作时看到类似下面的错误：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-I<span class="w"> </span>www.example.com
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">curl: (6) Could not resolve host: www.example.com</span>
+</code></pre></div>
+<p>那么就需要排查 DNS 的问题。<code>dig</code> 工具</p>
 <h3 id="performance-check">性能检查<a class="headerlink" href="#performance-check" title="Permanent link">&para;</a></h3>
 <h3 id="network-packet-capture">网络抓包<a class="headerlink" href="#network-packet-capture" title="Permanent link">&para;</a></h3>
 <h2 id="performance-analysis">性能问题分析<a class="headerlink" href="#performance-analysis" title="Permanent link">&para;</a></h2>
@@ -2453,11 +2675,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。</p>
 <p>SVG 火焰图由 <a href="https://github.com/brendangregg/FlameGraph">Brendan Gregg 的 FlameGraph</a> 项目生成，其支持包括 <code>perf</code> 在内的多种性能分析工具的输出。以下以 <code>perf</code> 为例介绍。</p>
 <p>首先 clone FlameGraph 仓库，然后使用 <code>perf record</code> 命令对程序采样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/brendangregg/FlameGraph
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># 从头执行程序</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>perf<span class="w"> </span>record<span class="w"> </span>-F<span class="w"> </span><span class="m">499</span><span class="w"> </span>--call-graph<span class="w"> </span>dwarf,64000<span class="w"> </span>-g<span class="w"> </span>--<span class="w"> </span>stress<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>-t<span class="w"> </span><span class="m">10</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># 附加到正在运行的程序</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>perf<span class="w"> </span>record<span class="w"> </span>-F<span class="w"> </span><span class="m">499</span><span class="w"> </span>--call-graph<span class="w"> </span>dwarf,64000<span class="w"> </span>-g<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/brendangregg/FlameGraph
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># 从头执行程序</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>perf<span class="w"> </span>record<span class="w"> </span>-F<span class="w"> </span><span class="m">499</span><span class="w"> </span>--call-graph<span class="w"> </span>dwarf,64000<span class="w"> </span>-g<span class="w"> </span>--<span class="w"> </span>stress<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>-t<span class="w"> </span><span class="m">10</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># 附加到正在运行的程序</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>perf<span class="w"> </span>record<span class="w"> </span>-F<span class="w"> </span><span class="m">499</span><span class="w"> </span>--call-graph<span class="w"> </span>dwarf,64000<span class="w"> </span>-g<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span>
 </code></pre></div>
 <p>其中 <code>-F</code> 指定了采样频率为 499 Hz，<code>-g</code> 代表采样函数调用栈，<code>--call-graph</code> 参数指定了调用栈的采样方式。</p>
 <div class="admonition note">
@@ -2480,9 +2702,9 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </ul>
 </div>
 <p>采样完成后的数据存储在 <code>perf.data</code> 文件中（可以使用 <code>-o</code> 参数修改）。接下来使用 <code>perf script</code> 输出 trace，并在预处理数据后，使用 FlameGraph 生成火焰图：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>perf<span class="w"> </span>script<span class="w"> </span>&gt;<span class="w"> </span>out.perf
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>FlameGraph/stackcollapse-perf.pl<span class="w"> </span>out.perf<span class="w"> </span>&gt;<span class="w"> </span>out.folded
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>FlameGraph/flamegraph.pl<span class="w"> </span>out.folded<span class="w"> </span>&gt;<span class="w"> </span>out.svg
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>perf<span class="w"> </span>script<span class="w"> </span>&gt;<span class="w"> </span>out.perf
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>FlameGraph/stackcollapse-perf.pl<span class="w"> </span>out.perf<span class="w"> </span>&gt;<span class="w"> </span>out.folded
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>FlameGraph/flamegraph.pl<span class="w"> </span>out.folded<span class="w"> </span>&gt;<span class="w"> </span>out.svg
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title"><code>perf report</code></p>
@@ -2492,37 +2714,37 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <div class="admonition comment">
 <p class="admonition-title">@taoky: 快速生成火焰图</p>
 <p>我还是觉得每次都要写这么多命令有点麻烦，所以我自己一般直接用 <a href="https://github.com/flamegraph-rs/flamegraph">flamegraph-rs/flamegraph</a>，于是直接这样就可以生成了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>flamegraph<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>flamegraph<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span>
 </code></pre></div>
 </div>
 <h3 id="hardware-counter">获取硬件计数器统计信息<a class="headerlink" href="#hardware-counter" title="Permanent link">&para;</a></h3>
 <p><code>perf stat</code> 命令可以获取硬件计数器的统计信息，帮助了解程序的性能瓶颈：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>perf<span class="w"> </span>stat<span class="w"> </span>uname
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">Linux</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go"> Performance counter stats for &#39;uname&#39;:</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">              1.34 msec task-clock:u                     #    0.537 CPUs utilized</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">                 0      context-switches:u               #    0.000 /sec</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">                 0      cpu-migrations:u                 #    0.000 /sec</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="go">                67      page-faults:u                    #   50.119 K/sec</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">           228,089      cpu_atom/instructions/u          #    0.75  insn per cycle              (67.70%)</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="go">     &lt;not counted&gt;      cpu_core/instructions/u                                                 (0.00%)</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="go">           305,397      cpu_atom/cycles/u                #    0.228 GHz</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="go">     &lt;not counted&gt;      cpu_core/cycles/u                                                       (0.00%)</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="go">            41,051      cpu_atom/branches/u              #   30.708 M/sec</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="go">     &lt;not counted&gt;      cpu_core/branches/u                                                     (0.00%)</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="go">             3,065      cpu_atom/branch-misses/u         #    7.47% of all branches</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="go">     &lt;not counted&gt;      cpu_core/branch-misses/u                                                (0.00%)</span>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="go">             TopdownL1 (cpu_atom)                 #     50.3 %  tma_bad_speculation</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="gp">                                                  #     </span><span class="m">16</span>.1<span class="w"> </span>%<span class="w">  </span>tma_retiring
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="go">             TopdownL1 (cpu_atom)                 #      0.0 %  tma_backend_bound</span>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="gp">                                                  #     </span><span class="m">33</span>.7<span class="w"> </span>%<span class="w">  </span>tma_frontend_bound
-<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="go">       0.002489347 seconds time elapsed</span>
-<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>
-<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="go">       0.000000000 seconds user</span>
-<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="go">       0.002576000 seconds sys</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>perf<span class="w"> </span>stat<span class="w"> </span>uname
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">Linux</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go"> Performance counter stats for &#39;uname&#39;:</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">              1.34 msec task-clock:u                     #    0.537 CPUs utilized</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">                 0      context-switches:u               #    0.000 /sec</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">                 0      cpu-migrations:u                 #    0.000 /sec</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">                67      page-faults:u                    #   50.119 K/sec</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">           228,089      cpu_atom/instructions/u          #    0.75  insn per cycle              (67.70%)</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">     &lt;not counted&gt;      cpu_core/instructions/u                                                 (0.00%)</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">           305,397      cpu_atom/cycles/u                #    0.228 GHz</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">     &lt;not counted&gt;      cpu_core/cycles/u                                                       (0.00%)</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="go">            41,051      cpu_atom/branches/u              #   30.708 M/sec</span>
+<a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="go">     &lt;not counted&gt;      cpu_core/branches/u                                                     (0.00%)</span>
+<a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="go">             3,065      cpu_atom/branch-misses/u         #    7.47% of all branches</span>
+<a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="go">     &lt;not counted&gt;      cpu_core/branch-misses/u                                                (0.00%)</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="go">             TopdownL1 (cpu_atom)                 #     50.3 %  tma_bad_speculation</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="gp">                                                  #     </span><span class="m">16</span>.1<span class="w"> </span>%<span class="w">  </span>tma_retiring
+<a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="go">             TopdownL1 (cpu_atom)                 #      0.0 %  tma_backend_bound</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="gp">                                                  #     </span><span class="m">33</span>.7<span class="w"> </span>%<span class="w">  </span>tma_frontend_bound
+<a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>
+<a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a><span class="go">       0.002489347 seconds time elapsed</span>
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>
+<a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="go">       0.000000000 seconds user</span>
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a><span class="go">       0.002576000 seconds sys</span>
 </code></pre></div>
 <p>根据 CPU 架构的不同，<code>perf stat</code> 默认显示的计数器信息也会存在区别。以上命令是在一台运行 Intel 12 代 i5 CPU 的机器上运行的，因此其包含了一些特殊的计数器信息：</p>
 <ul>
@@ -2533,25 +2755,25 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </li>
 </ul>
 <p>用户也可以指定感兴趣的计数器，例如以下命令会显示 CPU 运行程序的时钟周期、命令数、缓存命中与失效信息：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>$<span class="w"> </span>perf<span class="w"> </span>stat<span class="w"> </span>-e<span class="w"> </span>cycles,instructions,cache-references,cache-misses<span class="w"> </span>stress<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>-t<span class="w"> </span><span class="m">5</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>stress:<span class="w"> </span>info:<span class="w"> </span><span class="o">[</span><span class="m">1968709</span><span class="o">]</span><span class="w"> </span>dispatching<span class="w"> </span>hogs:<span class="w"> </span><span class="m">1</span><span class="w"> </span>cpu,<span class="w"> </span><span class="m">0</span><span class="w"> </span>io,<span class="w"> </span><span class="m">1</span><span class="w"> </span>vm,<span class="w"> </span><span class="m">0</span><span class="w"> </span>hdd
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>stress:<span class="w"> </span>info:<span class="w"> </span><span class="o">[</span><span class="m">1968709</span><span class="o">]</span><span class="w"> </span>successful<span class="w"> </span>run<span class="w"> </span>completed<span class="w"> </span><span class="k">in</span><span class="w"> </span>5s
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w"> </span>Performance<span class="w"> </span>counter<span class="w"> </span>stats<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="s1">&#39;stress -c 1 -m 1 -t 5&#39;</span>:
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">     </span><span class="m">5</span>,988,155,941<span class="w">      </span>cpu_atom/cycles/u<span class="w">                                                       </span><span class="o">(</span><span class="m">22</span>.77%<span class="o">)</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">     </span><span class="m">6</span>,878,171,900<span class="w">      </span>cpu_core/cycles/u<span class="w">                                                       </span><span class="o">(</span><span class="m">92</span>.90%<span class="o">)</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">     </span><span class="m">6</span>,948,484,803<span class="w">      </span>cpu_atom/instructions/u<span class="w">          </span><span class="c1">#    1.16  insn per cycle              (22.77%)</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">     </span><span class="m">7</span>,087,148,185<span class="w">      </span>cpu_core/instructions/u<span class="w">          </span><span class="c1">#    1.03  insn per cycle              (92.90%)</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">         </span><span class="m">6</span>,294,530<span class="w">      </span>cpu_atom/cache-references/u<span class="w">                                             </span><span class="o">(</span><span class="m">22</span>.77%<span class="o">)</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">         </span><span class="m">1</span>,730,791<span class="w">      </span>cpu_core/cache-references/u<span class="w">                                             </span><span class="o">(</span><span class="m">92</span>.90%<span class="o">)</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">         </span><span class="m">6</span>,225,141<span class="w">      </span>cpu_atom/cache-misses/u<span class="w">          </span><span class="c1">#   98.90% of all cache refs           (22.77%)</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">         </span><span class="m">1</span>,593,046<span class="w">      </span>cpu_core/cache-misses/u<span class="w">          </span><span class="c1">#   92.04% of all cache refs           (92.90%)</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">       </span><span class="m">5</span>.002407973<span class="w"> </span>seconds<span class="w"> </span><span class="nb">time</span><span class="w"> </span>elapsed
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">       </span><span class="m">5</span>.639733000<span class="w"> </span>seconds<span class="w"> </span>user
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="w">       </span><span class="m">4</span>.324169000<span class="w"> </span>seconds<span class="w"> </span>sys
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>$<span class="w"> </span>perf<span class="w"> </span>stat<span class="w"> </span>-e<span class="w"> </span>cycles,instructions,cache-references,cache-misses<span class="w"> </span>stress<span class="w"> </span>-c<span class="w"> </span><span class="m">1</span><span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>-t<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>stress:<span class="w"> </span>info:<span class="w"> </span><span class="o">[</span><span class="m">1968709</span><span class="o">]</span><span class="w"> </span>dispatching<span class="w"> </span>hogs:<span class="w"> </span><span class="m">1</span><span class="w"> </span>cpu,<span class="w"> </span><span class="m">0</span><span class="w"> </span>io,<span class="w"> </span><span class="m">1</span><span class="w"> </span>vm,<span class="w"> </span><span class="m">0</span><span class="w"> </span>hdd
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>stress:<span class="w"> </span>info:<span class="w"> </span><span class="o">[</span><span class="m">1968709</span><span class="o">]</span><span class="w"> </span>successful<span class="w"> </span>run<span class="w"> </span>completed<span class="w"> </span><span class="k">in</span><span class="w"> </span>5s
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w"> </span>Performance<span class="w"> </span>counter<span class="w"> </span>stats<span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="s1">&#39;stress -c 1 -m 1 -t 5&#39;</span>:
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">     </span><span class="m">5</span>,988,155,941<span class="w">      </span>cpu_atom/cycles/u<span class="w">                                                       </span><span class="o">(</span><span class="m">22</span>.77%<span class="o">)</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">     </span><span class="m">6</span>,878,171,900<span class="w">      </span>cpu_core/cycles/u<span class="w">                                                       </span><span class="o">(</span><span class="m">92</span>.90%<span class="o">)</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">     </span><span class="m">6</span>,948,484,803<span class="w">      </span>cpu_atom/instructions/u<span class="w">          </span><span class="c1">#    1.16  insn per cycle              (22.77%)</span>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">     </span><span class="m">7</span>,087,148,185<span class="w">      </span>cpu_core/instructions/u<span class="w">          </span><span class="c1">#    1.03  insn per cycle              (92.90%)</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">         </span><span class="m">6</span>,294,530<span class="w">      </span>cpu_atom/cache-references/u<span class="w">                                             </span><span class="o">(</span><span class="m">22</span>.77%<span class="o">)</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">         </span><span class="m">1</span>,730,791<span class="w">      </span>cpu_core/cache-references/u<span class="w">                                             </span><span class="o">(</span><span class="m">92</span>.90%<span class="o">)</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">         </span><span class="m">6</span>,225,141<span class="w">      </span>cpu_atom/cache-misses/u<span class="w">          </span><span class="c1">#   98.90% of all cache refs           (22.77%)</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">         </span><span class="m">1</span>,593,046<span class="w">      </span>cpu_core/cache-misses/u<span class="w">          </span><span class="c1">#   92.04% of all cache refs           (92.90%)</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">       </span><span class="m">5</span>.002407973<span class="w"> </span>seconds<span class="w"> </span><span class="nb">time</span><span class="w"> </span>elapsed
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="w">       </span><span class="m">5</span>.639733000<span class="w"> </span>seconds<span class="w"> </span>user
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="w">       </span><span class="m">4</span>.324169000<span class="w"> </span>seconds<span class="w"> </span>sys
 </code></pre></div>
 <p>可以查看 <a href="https://man7.org/linux/man-pages/man1/perf-stat.1.html">perf-stat(1)</a> 了解如何获取可用的计数器的列表。</p>
 <h2 id="ebpf">eBPF<a class="headerlink" href="#ebpf" title="Permanent link">&para;</a></h2>
@@ -2575,61 +2797,61 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <li>kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数</li>
 </ul>
 <p>使用 <code>bpftrace -l</code> 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-l
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_addressable_virt_device</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device_slot</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">tracepoint:xhci-hcd:xhci_stop_device</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_dequeue</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_enqueue</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_giveback</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-l
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_addressable_virt_device</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">tracepoint:xhci-hcd:xhci_setup_device_slot</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">tracepoint:xhci-hcd:xhci_stop_device</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_dequeue</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_enqueue</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">tracepoint:xhci-hcd:xhci_urb_giveback</span>
 </code></pre></div>
 <p>一个简单的例子是获取系统之后执行的所有程序（<a href="https://github.com/bpftrace/bpftrace/blob/master/tools/execsnoop.bt">execsnoop</a>）。
 以下是一个简化的版本，输出执行了 <code>execve()</code> 的程序，以及其参数（文件路径）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;tracepoint:syscalls:sys_enter_execve { printf(&quot;%s %s\n&quot;, comm, str(args-&gt;filename)); }&#39;</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">Attaching 1 probe...</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">code /home/username/.nix-profile/bin/docker</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">code /usr/lib/rustup/bin/docker</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">code /home/username/.local/bin/docker</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">code /home/username/.cargo/bin/docker</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">^C</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;tracepoint:syscalls:sys_enter_execve { printf(&quot;%s %s\n&quot;, comm, str(args-&gt;filename)); }&#39;</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">Attaching 1 probe...</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="go">code /home/username/.nix-profile/bin/docker</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="go">code /usr/lib/rustup/bin/docker</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="go">code /home/username/.local/bin/docker</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="go">code /home/username/.cargo/bin/docker</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="go">^C</span>
 </code></pre></div>
 <p>这里我们可以直接使用 <code>args-&gt;filename</code> 获取到 <code>execve()</code> 的参数，因为 bpftrace 能够获取到相关的类型信息：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>tracepoint:syscalls:sys_enter_execve
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">tracepoint:syscalls:sys_enter_execve</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">    int __syscall_nr</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">    const char * filename</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">    const char *const * argv</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">    const char *const * envp</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>tracepoint:syscalls:sys_enter_execve
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">tracepoint:syscalls:sys_enter_execve</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">    int __syscall_nr</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">    const char * filename</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">    const char *const * argv</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">    const char *const * envp</span>
 </code></pre></div>
 <p>有的时候，你需要追踪的函数不在 tracepoint 中，此时就需要使用 kprobe/kretprobe（或者 kfunc/kretfunc），
 例如下面这个追踪 <a href="https://elixir.bootlin.com/linux/v6.8.1/source/mm/memcontrol.c#L2728"><code>try_charge_memcg</code></a> 的第三个参数 <code>nr_pages</code> 的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg { printf(&quot;%d\n&quot;, arg2); }&#39;</span><span class="w">  </span><span class="c1"># 第一个参数是 arg0</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">1</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">1</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">1</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">2</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">...</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">^C</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">$ </span><span class="c1"># 通常情况下，我们不希望追踪整个系统对某个内核函数的调用，只需要追踪某个进程的调用，因此可以这么写：</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">$ </span><span class="c1"># 假设 PID 为 1234567</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg /pid == 1234567/ { printf(&quot;%d\n&quot;, arg2); }&#39;</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">1</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">1</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg { printf(&quot;%d\n&quot;, arg2); }&#39;</span><span class="w">  </span><span class="c1"># 第一个参数是 arg0</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">1</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">1</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">1</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">2</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">...</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="go">^C</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="gp">$ </span><span class="c1"># 通常情况下，我们不希望追踪整个系统对某个内核函数的调用，只需要追踪某个进程的调用，因此可以这么写：</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="gp">$ </span><span class="c1"># 假设 PID 为 1234567</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kprobe:try_charge_memcg /pid == 1234567/ { printf(&quot;%d\n&quot;, arg2); }&#39;</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="go">1</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="go">1</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="go">...</span>
 </code></pre></div>
 <p>使用 kprobe 和 kretprobe 时，一个常见的 pattern 是：kprobe 记录某种状态（例如时间或者调用参数），然后在 kretprobe 中输出。
 相关的例子可以参考 bpftrace 的示例与文档。</p>
 <p>在支持 kfunc 的环境下，可以使用 kfunc 让逻辑更加清晰：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>kfunc:try_charge_memcg
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">kfunc:vmlinux:try_charge_memcg</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">    struct mem_cgroup * memcg</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">    gfp_t gfp_mask</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">    unsigned int nr_pages</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">    int retval</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kfunc:try_charge_memcg { printf(&quot;%d\n&quot;, args-&gt;nr_pages); }&#39;</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-lv<span class="w"> </span>kfunc:try_charge_memcg
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">kfunc:vmlinux:try_charge_memcg</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="go">    struct mem_cgroup * memcg</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">    gfp_t gfp_mask</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">    unsigned int nr_pages</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="go">    int retval</span>
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;kfunc:try_charge_memcg { printf(&quot;%d\n&quot;, args-&gt;nr_pages); }&#39;</span>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="go">...</span>
 </code></pre></div>
 <p>除了 bpftrace 这类通用型的调试工具之外，还有很多用来调试特定的问题的调试工具，比如：</p>
 <ul>
@@ -2638,36 +2860,36 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <h3 id="user-space-ebpf">用户态<a class="headerlink" href="#user-space-ebpf" title="Permanent link">&para;</a></h3>
 <p>eBPF 技术也可以用于用户态调试，在 bpftrace 中对应的是 uprobe 和 uretprobe。</p>
 <p>以下面的 C++ 程序为例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="p">}</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1024</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="p">}</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1024</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="p">}</span>
 </code></pre></div>
 <p>编译并查看符号：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>g++<span class="w"> </span>example.cpp<span class="w"> </span>-O0<span class="w"> </span>-o<span class="w"> </span>example
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="gp">$ </span>nm<span class="w"> </span>example
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">0000000000004040 B __bss_start</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">                 w __cxa_finalize@GLIBC_2.2.5</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">0000000000004028 D __data_start</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">0000000000004028 W data_start</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">0000000000004030 D __dso_handle</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">0000000000003db0 d _DYNAMIC</span>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">0000000000004038 D _edata</span>
-<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="go">0000000000004158 B _end</span>
-<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>g++<span class="w"> </span>example.cpp<span class="w"> </span>-O0<span class="w"> </span>-o<span class="w"> </span>example
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="gp">$ </span>nm<span class="w"> </span>example
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">0000000000004040 B __bss_start</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">                 w __cxa_finalize@GLIBC_2.2.5</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="go">0000000000004028 D __data_start</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">0000000000004028 W data_start</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">0000000000004030 D __dso_handle</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go">0000000000003db0 d _DYNAMIC</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">0000000000004038 D _edata</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="go">0000000000004158 B _end</span>
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="go">...</span>
 </code></pre></div>
 <p>我们可以找到 <code>example()</code> 函数对应的符号：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>nm<span class="w"> </span>example<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>example
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">0000000000001220 T _Z7exampleii</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>nm<span class="w"> </span>example<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>example
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">0000000000001220 T _Z7exampleii</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">符号的名称修饰（Name mangling）</p>
@@ -2682,13 +2904,13 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 对于动态链接库（<code>.so</code> 文件），可以使用 <code>nm -D</code> 来查看其暴露给应用的动态符号。</p>
 </div>
 <p>使用 uprobe 追踪 <code>example()</code> 函数的调用：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;uprobe:/path/to/example:_Z7exampleii { printf(&quot;example(%d, %d)\n&quot;, arg0, arg1); }&#39;</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">Attaching 1 probe...</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">（在另一个终端执行 ./example 之后）</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">example(0, 1)</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">example(1, 2)</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">...</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">example(1023, 1024)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>bpftrace<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;uprobe:/path/to/example:_Z7exampleii { printf(&quot;example(%d, %d)\n&quot;, arg0, arg1); }&#39;</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">Attaching 1 probe...</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">（在另一个终端执行 ./example 之后）</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">example(0, 1)</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="go">example(1, 2)</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="go">...</span>
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="go">example(1023, 1024)</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">编译器优化</p>
@@ -2700,25 +2922,25 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 <div class="admonition lab">
 <p class="admonition-title">使用 uprobe 追踪容器中的程序</p>
 <p>在容器中编译并运行下面的程序：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;random&gt;</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;unistd.h&gt;</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="p">}</span>
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">random_device</span><span class="w"> </span><span class="n">rd</span><span class="p">;</span>
-<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">mt19937</span><span class="w"> </span><span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
-<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">uniform_int_distribution</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="p">);</span>
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">),</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">);</span>
-<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="w">        </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;random&gt;</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;unistd.h&gt;</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="kt">int</span><span class="w"> </span><span class="nf">example</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="p">}</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">random_device</span><span class="w"> </span><span class="n">rd</span><span class="p">;</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">mt19937</span><span class="w"> </span><span class="n">gen</span><span class="p">(</span><span class="n">rd</span><span class="p">());</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">uniform_int_distribution</span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="p">);</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">),</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">distr</span><span class="p">(</span><span class="n">gen</span><span class="p">);</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">example</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">        </span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="p">}</span>
 </code></pre></div>
 <p>尝试追踪对应程序的 <code>example()</code> 函数调用。</p>
 <p>提示：procfs 中的 <code>/proc/&lt;pid&gt;/root</code> 目录可能会有所帮助。</p>
@@ -2787,7 +3009,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月23日 15:42:53">2025年4月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月23日 17:39:59">2025年4月23日</span>
   </span>
 
     
