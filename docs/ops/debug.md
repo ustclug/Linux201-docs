@@ -8,10 +8,12 @@ icon: material/bug
 
     [@taoky][taoky]
 
-!!! warning "本文已完成，等待校对"
+!!! warning "本文编写中"
 
 本部分介绍调试问题时的一般思路和方法。
 请注意本部分无法面面俱到，因此只能够提供一些在运维上常用的方法，具体问题需要具体分析。
+
+本文的部分内容可能会与其他部分的内容存在一定重复。
 
 ## 快速检查单 {#quick-checklist}
 
@@ -326,6 +328,16 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
 如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
+
+## 网络问题调试简介 {#network-debug}
+
+本节介绍简单的网络问题的调试方法与一些常用的网络问题调试工具。
+
+### 连通性问题 {#connectivity-issues}
+
+### 性能检查 {#performance-check}
+
+### 网络抓包 {#network-packet-capture}
 
 ## 性能问题分析 {#performance-analysis}
 
