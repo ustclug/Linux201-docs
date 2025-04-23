@@ -6,6 +6,8 @@ icon: material/web-clock
 
 在现代计算环境中，准确的系统时间对服务器的稳定运行至关重要。无论是分布式日志的对齐、安全证书的验证，还是任务调度与数据记录，所有这些功能的正常运行都依赖于系统时钟的准确性。因此，所有计算机都需要某种“时间同步”机制，以防止系统时间因硬件时钟漂移而逐渐偏离。
 
+## NTP 协议简介
+
 标准的时间同步协议是 **NTP（Network Time Protocol）**，它允许计算机通过网络与时间服务器通信，定期校准本地时钟。NTP 使用一种分层结构组织时间源，每层称为一个 **Stratum**。Stratum 值越小，表示距离原始时间参考源越近，理论上同步的精度也越高。这种设计还能有效防止时间源之间形成循环依赖。
 
 * **Stratum 0**：非网络设备，而是高精度的物理时间源（如 GPS 接收器、原子时钟等）。
@@ -15,7 +17,9 @@ icon: material/web-clock
 
 在实际应用中，普通服务器或终端设备从 Stratum 2 或 Stratum 3 的时间服务器同步时间，已能满足绝大多数需求。若条件允许，选择网络路径更短、延迟更低的时间源，会获得更好的同步效果。
 
-Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https://chrony-project.org/) 和 [systemd-timesyncd](https://wiki.archlinux.org/title/Systemd-timesyncd)。
+## Linux 中的时间同步工具
+
+Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https://chrony-project.org/) 、 [systemd-timesyncd](https://wiki.archlinux.org/title/Systemd-timesyncd) 和 [ntpdate](https://www.ntp.org/documentation/4.2.8-series/ntpdate/)。
 
 **chrony**
 
@@ -54,6 +58,32 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
     ```shell
     timedatectl show-timesync
     ```
+
+**ntpdate**
+
+:   ntpdate 是一个一次性的时间同步工具。它适用于临时性地校准系统时钟，通常用于在系统启动时或在没有持续运行的 NTP 服务的情况下进行时间同步。
+
+    你可以在 Debian/Ubuntu 系统中使用以下命令安装 ntpdate：
+
+    ```shell
+    apt install ntpdate
+    ```
+
+    可以使用以下命令查询某个特定的时间服务器的 Stametum 层级、与本地时钟的偏差以及网络延迟等信息：
+
+    ```shell
+    ntpdate -q time.ustc.edu.cn
+    ```
+
+    如果需要手动同步时间，可以使用以下命令：
+
+    ```shell
+    ntpdate -u time.ustc.edu.cn  
+    ```
+
+    需要注意的是，ntpdate 并不是一个持续运行的服务，只会在每次执行时进行一次时间同步，因此如果你需要持续的时间同步功能，还需要结合其他工具（如 cron）来定期执行 ntpdate 命令。
+
+## 设置时区
 
 完成时间同步后，为确保本地时间显示正确，还需要设置系统时区，例如设置为中国标准时间（东八区）：
 
