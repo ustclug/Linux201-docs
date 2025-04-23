@@ -1089,6 +1089,48 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#network-debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      网络问题调试简介
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="网络问题调试简介">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connectivity-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      连通性问题
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      性能检查
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-packet-capture" class="md-nav__link">
+    <span class="md-ellipsis">
+      网络抓包
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#performance-analysis" class="md-nav__link">
     <span class="md-ellipsis">
       性能问题分析
@@ -1939,6 +1981,48 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#network-debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      网络问题调试简介
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="网络问题调试简介">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#connectivity-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      连通性问题
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performance-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      性能检查
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#network-packet-capture" class="md-nav__link">
+    <span class="md-ellipsis">
+      网络抓包
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#performance-analysis" class="md-nav__link">
     <span class="md-ellipsis">
       性能问题分析
@@ -2062,10 +2146,11 @@
 <p><a href="https://github.com/taoky">@taoky</a></p>
 </div>
 <div class="admonition warning">
-<p class="admonition-title">本文已完成，等待校对</p>
+<p class="admonition-title">本文编写中</p>
 </div>
 <p>本部分介绍调试问题时的一般思路和方法。
 请注意本部分无法面面俱到，因此只能够提供一些在运维上常用的方法，具体问题需要具体分析。</p>
+<p>本文的部分内容可能会与其他部分的内容存在一定重复。</p>
 <h2 id="quick-checklist">快速检查单<a class="headerlink" href="#quick-checklist" title="Permanent link">&para;</a></h2>
 <p>以下提供在系统遇到异常情况时，可以快速检查的一些项目：</p>
 <ul>
@@ -2353,6 +2438,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 <code>valgrind</code> 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。</p>
 <p>如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 <a href="https://github.com/peadar/pstack"><code>pstack</code></a> 工具。</p>
+<h2 id="network-debug">网络问题调试简介<a class="headerlink" href="#network-debug" title="Permanent link">&para;</a></h2>
+<p>本节介绍简单的网络问题的调试方法与一些常用的网络问题调试工具。</p>
+<h3 id="connectivity-issues">连通性问题<a class="headerlink" href="#connectivity-issues" title="Permanent link">&para;</a></h3>
+<h3 id="performance-check">性能检查<a class="headerlink" href="#performance-check" title="Permanent link">&para;</a></h3>
+<h3 id="network-packet-capture">网络抓包<a class="headerlink" href="#network-packet-capture" title="Permanent link">&para;</a></h3>
 <h2 id="performance-analysis">性能问题分析<a class="headerlink" href="#performance-analysis" title="Permanent link">&para;</a></h2>
 <p>本节介绍使用 <code>perf</code> 等工具进行基础的性能问题分析的方式。<code>perf</code> 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 <code>linux-perf</code>。</p>
 <p><code>perf</code> 的功能非常丰富，以下仅能介绍一小部分功能。</p>
@@ -2697,7 +2787,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月23日 05:06:22">2025年4月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月23日 15:42:53">2025年4月23日</span>
   </span>
 
     
