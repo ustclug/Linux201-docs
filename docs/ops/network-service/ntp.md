@@ -69,7 +69,7 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
     apt install ntpdate
     ```
 
-    可以使用以下命令查询某个特定的时间服务器的 Stametum 层级、与本地时钟的偏差以及网络延迟等信息：
+    可以使用以下命令查询某个特定的时间服务器的 Stratum 层级、与本地时钟的偏差以及网络延迟等信息：
 
     ```shell
     ntpdate -q time.ustc.edu.cn
