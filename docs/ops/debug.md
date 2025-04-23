@@ -335,6 +335,151 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
 ### 连通性问题 {#connectivity-issues}
 
+#### ping
+
+判断是否连接正常最简单的方式是使用 `ping` 命令。在 Linux 下，`ping` 会不停向目标地址发送 ICMP Echo Request 包，如果目标地址网络畅通，并且防火墙配置允许响应 Echo Request 的话，就可以收到 Echo Reply 包。
+
+```console
+$ ping www.example.com
+PING www.example.com (2600:1417:4400:24::17d2:7a6) 56 data bytes
+64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=1 ttl=50 time=60.2 ms
+64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=2 ttl=50 time=60.4 ms
+^C
+--- www.example.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 60.158/60.300/60.443/0.142 ms
+$ # 某些情况下需要自行通过 -4 或者 -6 指定使用 IPv4 或者 IPv6
+$ ping -4 www.example.com
+PING www.example.com (104.116.243.80) 56(84) bytes of data.
+64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=1 ttl=44 time=81.7 ms
+64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=2 ttl=44 time=81.9 ms
+^C
+--- www.example.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 81.736/81.799/81.863/0.063 ms
+```
+
+`ping` 的局限性在于，即使 `ping` 成功，也不代表目标主机的服务正常运行、传输 TCP 或 UDP 包正常；即使 `ping` 失败，也不代表目标主机的服务不可用。
+
+#### curl
+
+具体的服务一般也有对应的测试工具，例如对 HTTP(S) 类服务可以使用 `curl` 测试。添加 `-v` 参数可以查看详细的请求与响应信息，而添加 `-I` 参数可以发送 HEAD 请求，避免终端输出过多的内容。与 `ping` 类似，`-4` 与 `-6` 参数可以指定使用 IPv4 或者 IPv6。
+
+??? example "`curl -I -v` 样例输出"
+
+    ```console
+    $ curl -I -v https://www.example.com
+    * Host www.example.com:443 was resolved.
+    * IPv6: 2600:1417:4400:24::17d2:7b3, 2600:1417:4400:24::17d2:7a6
+    * IPv4: 104.116.243.80, 104.116.243.152
+    *   Trying [2600:1417:4400:24::17d2:7b3]:443...
+    * Connected to www.example.com (2600:1417:4400:24::17d2:7b3) port 443
+    * ALPN: curl offers h2,http/1.1
+    * TLSv1.3 (OUT), TLS handshake, Client hello (1):
+    *  CAfile: /etc/ssl/certs/ca-certificates.crt
+    *  CApath: /etc/ssl/certs
+    * TLSv1.3 (IN), TLS handshake, Server hello (2):
+    * TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+    * TLSv1.3 (IN), TLS handshake, Certificate (11):
+    * TLSv1.3 (IN), TLS handshake, CERT verify (15):
+    * TLSv1.3 (IN), TLS handshake, Finished (20):
+    * TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+    * TLSv1.3 (OUT), TLS handshake, Finished (20):
+    * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+    * ALPN: server accepted h2
+    * Server certificate:
+    *  subject: C=US; ST=California; L=Los Angeles; O=Internet Corporation for Assigned Names and Numbers; CN=*.example.com
+    *  start date: Jan 15 00:00:00 2025 GMT
+    *  expire date: Jan 15 23:59:59 2026 GMT
+    *  subjectAltName: host "www.example.com" matched cert's "*.example.com"
+    *  issuer: C=US; O=DigiCert Inc; CN=DigiCert Global G3 TLS ECC SHA384 2020 CA1
+    *  SSL certificate verify ok.
+    *   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+    *   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+    *   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+    * using HTTP/2
+    * [HTTP/2] [1] OPENED stream for https://www.example.com/
+    * [HTTP/2] [1] [:method: HEAD]
+    * [HTTP/2] [1] [:scheme: https]
+    * [HTTP/2] [1] [:authority: www.example.com]
+    * [HTTP/2] [1] [:path: /]
+    * [HTTP/2] [1] [user-agent: curl/8.5.0]
+    * [HTTP/2] [1] [accept: */*]
+    > HEAD / HTTP/2
+    > Host: www.example.com
+    > User-Agent: curl/8.5.0
+    > Accept: */*
+    >
+    * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+    * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+    * old SSL session ID is stale, removing
+    < HTTP/2 200
+    HTTP/2 200
+    < accept-ranges: bytes
+    accept-ranges: bytes
+    < content-type: text/html
+    content-type: text/html
+    < etag: "84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"
+    etag: "84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"
+    < last-modified: Mon, 13 Jan 2025 20:11:20 GMT
+    last-modified: Mon, 13 Jan 2025 20:11:20 GMT
+    < content-length: 1256
+    content-length: 1256
+    < cache-control: max-age=681
+    cache-control: max-age=681
+    < date: Wed, 23 Apr 2025 17:06:41 GMT
+    date: Wed, 23 Apr 2025 17:06:41 GMT
+    < alt-svc: h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"
+    alt-svc: h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"
+
+    <
+    * Connection #0 to host www.example.com left intact
+    ```
+
+#### nc
+
+对于简单的纯文本协议，可以使用 `nc`（netcat）命令进行测试，以连接 `www.example.com` 的 80 端口为例，输入 HTTP 请求行和头，按两下回车（代表 HTTP 请求结束），即可收到响应：
+
+```console
+$ nc www.example.com 80
+GET / HTTP/1.0
+Host: www.example.com
+
+（响应内容）
+```
+
+即使是非纯文本协议，`nc` 也可用于探测端口是否开放，以 22（SSH）端口为例：
+
+```console
+$ nc <地址> 22
+SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
+```
+
+#### mtr
+
+对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。`mtr` 命令可以看作是 `ping` 和 `traceroute` 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。
+
+!!! tip "mtr-tiny"
+
+    Debian 下的 `mtr` 包会包含图形界面程序，在服务器上建议安装 `mtr-tiny` 包。
+
+直接使用 `mtr <地址>` 即可进入交互式界面查看每一跳的情况。如果需要分享给其他人，可以考虑使用 `--report`（`-r`）参数进入非交互式的报告模式，使用 `-c` 设置轮数，类似如下：
+
+```shell
+mtr -c 10 -r www.example.com
+```
+
+#### dig 与 DNS
+
+如果在进行网络操作时看到类似下面的错误：
+
+```console
+$ curl -I www.example.com
+curl: (6) Could not resolve host: www.example.com
+```
+
+那么就需要排查 DNS 的问题。`dig` 工具
+
 ### 性能检查 {#performance-check}
 
 ### 网络抓包 {#network-packet-capture}
