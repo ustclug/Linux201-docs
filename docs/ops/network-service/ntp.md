@@ -4,9 +4,13 @@ icon: material/web-clock
 
 # 网络时间同步
 
+!!! note "主要作者"
+
+    [@JiaminL][JiaminL]、[@iBug][iBug]
+
 在现代计算环境中，准确的系统时间对服务器的稳定运行至关重要。无论是分布式日志的对齐、安全证书的验证，还是任务调度与数据记录，所有这些功能的正常运行都依赖于系统时钟的准确性。因此，所有计算机都需要某种“时间同步”机制，以防止系统时间因硬件时钟漂移而逐渐偏离。
 
-## NTP 协议简介
+## NTP 协议简介 {#ntp}
 
 标准的时间同步协议是 **NTP（Network Time Protocol）**，它允许计算机通过网络与时间服务器通信，定期校准本地时钟。NTP 使用一种分层结构组织时间源，每层称为一个 **Stratum**。Stratum 值越小，表示距离原始时间参考源越近，理论上同步的精度也越高。这种设计还能有效防止时间源之间形成循环依赖。
 
@@ -17,15 +21,15 @@ icon: material/web-clock
 
 在实际应用中，普通服务器或终端设备从 Stratum 2 或 Stratum 3 的时间服务器同步时间，已能满足绝大多数需求。若条件允许，选择网络路径更短、延迟更低的时间源，会获得更好的同步效果。
 
-## Linux 中的时间同步工具
+## Linux 中的时间同步工具 {#ntp-tools}
 
 Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https://chrony-project.org/) 、 [systemd-timesyncd](https://wiki.archlinux.org/title/Systemd-timesyncd) 和 [ntpdate](https://www.ntp.org/documentation/4.2.8-series/ntpdate/)。
 
-**chrony**
+**chrony** <!-- markdownlint-disable MD036 -->
 
 :   chrony 是一个功能丰富 NTP 软件，它支持多种时间源和网络协议，能够在不稳定的网络环境中保持较高的同步精度，甚至使用与计算机相连的 GPS 设备作为时钟信号源。chrony 还具有自动检测网络延迟和时钟漂移的能力，适合在虚拟机、笔记本电脑等经常变更网络环境的设备上使用。
 
-    chrony 曾经是 Debian 发行版的默认 NTP 客户端。对于新安装的 Debian 或 Ubuntu 系统，你也可以使用 `apt install chrony` 手动安装它。
+    chrony 曾经是 Debian 发行版的默认 NTP 客户端。对于安装的 Debian 或 Ubuntu 系统，你也可以使用 `apt install chrony` 手动安装它。
 
     使用以下命令可以查看当前同步状态，包括系统时钟偏移量和误差修正速率等信息：
 
@@ -40,7 +44,7 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
     chronyc sources -v  # 显示详细界面说明
     ```
 
-**systemd-timesyncd**
+**systemd-timesyncd** <!-- markdownlint-disable MD036 -->
 
 :   systemd 项目也提供了一个轻量级的时间同步客户端，即 systemd-timesyncd。该服务可以在系统联网后通过 NTP 协议定期向网络上的时间服务器请求当前时间，并自动校准系统时钟。如果你只需要“能同步时间”，尤其是当校园网或企业内网中存在 NTP 服务器的时候，systemd-timesyncd 是一个更加简单省心的选项。
 
@@ -59,7 +63,7 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
     timedatectl show-timesync
     ```
 
-**ntpdate**
+**ntpdate** <!-- markdownlint-disable MD036 -->
 
 :   ntpdate 是一个一次性的时间同步工具。它适用于临时性地校准系统时钟，通常用于在系统启动时或在没有持续运行的 NTP 服务的情况下进行时间同步。
 
@@ -81,9 +85,9 @@ Linux 中支持 NTP 的软件有多种，其中较为常见的有 [chrony](https
     ntpdate -u time.ustc.edu.cn  
     ```
 
-    需要注意的是，ntpdate 并不是一个持续运行的服务，只会在每次执行时进行一次时间同步，因此如果你需要持续的时间同步功能，还需要结合其他工具（如 cron）来定期执行 ntpdate 命令。
+    需要注意的是，ntpdate 并不是一个持续运行的服务，只会在每次执行时进行一次时间同步，因此如果你需要持续的时间同步功能，还需要结合其他工具（如 cron）来定期执行 ntpdate 命令。相比之下，我们推荐直接使用 systemd-timesyncd 或 chrony 来实现持续的时间同步。
 
-## 设置时区
+## 设置时区 {#timezone}
 
 完成时间同步后，为确保本地时间显示正确，还需要设置系统时区，例如设置为中国标准时间（东八区）：
 
