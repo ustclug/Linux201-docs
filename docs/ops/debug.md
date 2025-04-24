@@ -469,7 +469,7 @@ SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
 mtr -c 10 -r www.example.com
 ```
 
-#### dig 与 DNS
+#### dig 与 DNS {#dig}
 
 如果在进行网络操作时看到类似下面的错误：
 
@@ -478,7 +478,24 @@ $ curl -I www.example.com
 curl: (6) Could not resolve host: www.example.com
 ```
 
-那么就需要排查 DNS 的问题。`dig` 工具
+那么就需要排查 DNS 的问题。`dig` 工具可以测试向指定 DNS 服务器的解析情况，一些常见的例子包含：
+
+- `dig www.example.com`：使用系统默认的 DNS 服务器解析 A 记录
+- `dig www.example.com @8.8.8.8`：使用 Google 的 DNS 服务器解析 A 记录
+- `dig www.example.com AAAA`：解析 AAAA（IPv6）记录
+- `dig www.example.com +short`：直接输出解析结果，不显示其他内容
+
+这里系统默认的 DNS 服务器指 `/etc/resolv.conf` 中的配置的 `nameserver`，在一部分系统上，`nameserver` 会是 127.0.0.53，代表其启用了 `systemd-resolved` 作为本地的 DNS 服务器，此时需要使用 `resolvectl` 命令查看实际的 DNS 配置。
+
+!!! tip "C 运行时库与 DNS 解析"
+
+    许多程序会直接使用系统 C 运行时库的 [`getaddrinfo()`][getaddrinfo.3] 等函数获取 DNS 解析的结果。但是 `dig` 不会。这可能导致 `dig` 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。
+
+    可以使用 `getent hosts www.example.com` 命令来测试 C 运行时库的 DNS 解析情况。
+
+#### ip
+
+`ip` 命令可以查看本机的网络接口等状态。
 
 ### 性能检查 {#performance-check}
 

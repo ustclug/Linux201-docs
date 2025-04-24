@@ -12,6 +12,10 @@
 [perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
 [rrsync.1]: https://man7.org/linux/man-pages/man1/rrsync.1.html
 
+<!-- man 3 -->
+
+[getaddrinfo.3]: https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+
 <!-- man 4 -->
 
 [md.4]: https://man7.org/linux/man-pages/man4/md.4.html
