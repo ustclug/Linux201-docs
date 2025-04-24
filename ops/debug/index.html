@@ -1145,9 +1145,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dig-dns" class="md-nav__link">
+  <a href="#dig" class="md-nav__link">
     <span class="md-ellipsis">
       dig 与 DNS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      ip
     </span>
   </a>
   
@@ -2088,9 +2097,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#dig-dns" class="md-nav__link">
+  <a href="#dig" class="md-nav__link">
     <span class="md-ellipsis">
       dig 与 DNS
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      ip
     </span>
   </a>
   
@@ -2657,12 +2675,26 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>直接使用 <code>mtr &lt;地址&gt;</code> 即可进入交互式界面查看每一跳的情况。如果需要分享给其他人，可以考虑使用 <code>--report</code>（<code>-r</code>）参数进入非交互式的报告模式，使用 <code>-c</code> 设置轮数，类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>mtr<span class="w"> </span>-c<span class="w"> </span><span class="m">10</span><span class="w"> </span>-r<span class="w"> </span>www.example.com
 </code></pre></div>
-<h4 id="dig-dns">dig 与 DNS<a class="headerlink" href="#dig-dns" title="Permanent link">&para;</a></h4>
+<h4 id="dig">dig 与 DNS<a class="headerlink" href="#dig" title="Permanent link">&para;</a></h4>
 <p>如果在进行网络操作时看到类似下面的错误：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-I<span class="w"> </span>www.example.com
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">curl: (6) Could not resolve host: www.example.com</span>
 </code></pre></div>
-<p>那么就需要排查 DNS 的问题。<code>dig</code> 工具</p>
+<p>那么就需要排查 DNS 的问题。<code>dig</code> 工具可以测试向指定 DNS 服务器的解析情况，一些常见的例子包含：</p>
+<ul>
+<li><code>dig www.example.com</code>：使用系统默认的 DNS 服务器解析 A 记录</li>
+<li><code>dig www.example.com @8.8.8.8</code>：使用 Google 的 DNS 服务器解析 A 记录</li>
+<li><code>dig www.example.com AAAA</code>：解析 AAAA（IPv6）记录</li>
+<li><code>dig www.example.com +short</code>：直接输出解析结果，不显示其他内容</li>
+</ul>
+<p>这里系统默认的 DNS 服务器指 <code>/etc/resolv.conf</code> 中的配置的 <code>nameserver</code>，在一部分系统上，<code>nameserver</code> 会是 127.0.0.53，代表其启用了 <code>systemd-resolved</code> 作为本地的 DNS 服务器，此时需要使用 <code>resolvectl</code> 命令查看实际的 DNS 配置。</p>
+<div class="admonition tip">
+<p class="admonition-title">C 运行时库与 DNS 解析</p>
+<p>许多程序会直接使用系统 C 运行时库的 <a href="https://man7.org/linux/man-pages/man3/getaddrinfo.3.html"><code>getaddrinfo()</code></a> 等函数获取 DNS 解析的结果。但是 <code>dig</code> 不会。这可能导致 <code>dig</code> 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。</p>
+<p>可以使用 <code>getent hosts www.example.com</code> 命令来测试 C 运行时库的 DNS 解析情况。</p>
+</div>
+<h4 id="ip">ip<a class="headerlink" href="#ip" title="Permanent link">&para;</a></h4>
+<p><code>ip</code> 命令可以查看本机的网络接口等状态。</p>
 <h3 id="performance-check">性能检查<a class="headerlink" href="#performance-check" title="Permanent link">&para;</a></h3>
 <h3 id="network-packet-capture">网络抓包<a class="headerlink" href="#network-packet-capture" title="Permanent link">&para;</a></h3>
 <h2 id="performance-analysis">性能问题分析<a class="headerlink" href="#performance-analysis" title="Permanent link">&para;</a></h2>
@@ -2972,6 +3004,8 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 
 <!-- man 1 -->
 
+<!-- man 3 -->
+
 <!-- man 4 -->
 
 <!-- man 5 -->
@@ -3009,7 +3043,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月23日 17:39:59">2025年4月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月24日 18:14:12">2025年4月24日</span>
   </span>
 
     
