@@ -218,7 +218,7 @@ Host *
 **但是**如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效。
 解决此问题的方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
 
-## 文件传输
+## 文件传输 {#file-transfer}
 
 SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
 
@@ -240,7 +240,7 @@ scp [选项] [源文件] [目标文件]
 
 其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 `用户名@主机名:文件路径`。
 
-#### 文件复制
+#### 文件复制 {#scp-files}
 
 从本地复制到远程服务器
 
@@ -270,7 +270,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/remote/directory
 ```
 
-#### 常用参数
+#### 常用参数 {#scp-parameters}
 
 复制目录
 
@@ -340,7 +340,7 @@ scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/re
 
 SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。
 
-#### 启动 SFTP 会话
+#### 启动 SFTP 会话 {#start-sftp}
 
 要连接到远程服务器，可以使用以下命令：
 
@@ -354,7 +354,7 @@ sftp username@remotehost
 sftp -P 2233 username@remotehost
 ```
 
-#### 文件和目录操作
+#### 文件和目录操作 {#sftp-operations}
 
 - `ls`：列出远程目录的内容。
 - `get remote-file [local-file]`：下载文件。
@@ -368,7 +368,7 @@ sftp -P 2233 username@remotehost
 - `cd directory-name`：改变远程工作目录。
 - `lcd directory-name`：改变本地工作目录。
 
-#### 退出 SFTP 会话
+#### 退出 SFTP 会话 {#exit-sftp}
 
 输入 `exit` 或 `bye` 来终止 SFTP 会话。
 
@@ -388,7 +388,7 @@ sftp -P 2233 username@remotehost
 
 服务端的配置与客户端有一些不同点：
 
-- sshd 服务端程序只有很少量的命令行参数，各种配置都在配置文件中完成。特别注意，如果配置文件不存在或者包含错误，sshd 会拒绝启动。
+- sshd 服务端程序只有很少量的命令行参数，各种配置都在配置文件中完成。特别注意，sshd 的配置文件不是可选的：如果配置文件不存在或者包含错误，sshd 会拒绝启动。
 - sshd 仅有一个配置文件 `/etc/ssh/sshd_config`，它的配置项可以在 [sshd_config(5)][sshd_config.5] 中找到。
 
 sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 `ssh.service` 中指定的 `ExecStartPre=` 命令和第一条 `ExecReload=` 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。
@@ -405,7 +405,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 `expiry-time="197001010800Z"`
 
-:   限制此公钥的有效时间，格式为 `YYYYMMDDhhmm`（服务器的本地时间），或者在其后添加一个大写字母 Z 表示 UTC 时间。适合用于添加临时用途的公钥，确保不会在事后忘记删除。
+:   限制此公钥的有效时间，格式为 `YYYYMMDDhhmm`（服务器的本地时间），或者在其后添加一个大写字母 Z 表示 UTC 时间。适合用于添加临时用途的公钥，确保即使事后忘记删除了，它也不会超期生效。
 
 `command="/path/to/command"`
 
@@ -431,7 +431,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 完整的选项列表可以在 [sshd(8)][sshd.8] 的 `AUTHORIZED_KEYS FILE FORMAT` 部分找到。
 
-??? example "案例：用于备份 LUG FTP 的公钥配置"
+??? example "例：用于备份 LUG FTP 的公钥配置"
 
     ```shell
     restrict,from="192.0.2.2",command="/usr/bin/rrsync -ro /mnt/lugftp" ssh-rsa ...

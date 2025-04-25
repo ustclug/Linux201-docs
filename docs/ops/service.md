@@ -2,7 +2,7 @@
 icon: material/room-service
 ---
 
-# 服务与日志管理
+# 服务与日志管理 {#top}
 
 !!! note "主要作者"
 
@@ -57,14 +57,15 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
         `systemctl enable --now [some-unit]` 可以在 enable 一个 unit 的同时立即启动它。
 
-- `systemctl disable [some-unit]` 类似地，该命令的本质是删除了上面创建的软链接。
+- `systemctl disable [some-unit]` 可以“禁用”一个 unit，即取消它的自动启动条件。类似地，该命令的本质是删除了上面创建的软链接。
 
     !!! tip
 
         - 同理，`systemctl disable --now [some-unit]` 可以在 disable 一个 unit 的同时立即停止它。
+
 - `systemctl edit [some-unit]` 会提供一个临时文件，并在编辑完之后将其保存到 `/etc/systemd/system/[some-unit].d/override.conf` 文件中，实现对 unit 的修改。
 
-相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
+    相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
 
 Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 `[Service]` section，并通常会包含一个 `[Install]` section。以 cron 服务的配置文件为例：
 
