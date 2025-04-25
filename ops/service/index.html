@@ -90,7 +90,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#top" class="md-skip">
           跳转至
         </a>
       
@@ -2068,7 +2068,7 @@
   
 
 
-<h1 id="_1">服务与日志管理<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<h1 id="top">服务与日志管理<a class="headerlink" href="#top" title="Permanent link">&para;</a></h1>
 <div class="admonition note">
 <p class="admonition-title">主要作者</p>
 <p><a href="https://github.com/iBug">@iBug</a></p>
@@ -2113,19 +2113,19 @@ U --&gt; F(scope)</code></pre>
 </div>
 </li>
 <li>
-<p><code>systemctl disable [some-unit]</code> 类似地，该命令的本质是删除了上面创建的软链接。</p>
+<p><code>systemctl disable [some-unit]</code> 可以“禁用”一个 unit，即取消它的自动启动条件。类似地，该命令的本质是删除了上面创建的软链接。</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <ul>
 <li>同理，<code>systemctl disable --now [some-unit]</code> 可以在 disable 一个 unit 的同时立即停止它。</li>
 </ul>
 </div>
-<ul>
-<li><code>systemctl edit [some-unit]</code> 会提供一个临时文件，并在编辑完之后将其保存到 <code>/etc/systemd/system/[some-unit].d/override.conf</code> 文件中，实现对 unit 的修改。</li>
-</ul>
+</li>
+<li>
+<p><code>systemctl edit [some-unit]</code> 会提供一个临时文件，并在编辑完之后将其保存到 <code>/etc/systemd/system/[some-unit].d/override.conf</code> 文件中，实现对 unit 的修改。</p>
+<p>相比于手工修改文件，使用 <code>systemctl edit</code> 更加安全，它会检查配置文件的语法，而且不需要再额外运行 <code>systemctl daemon-reload</code>。</p>
 </li>
 </ul>
-<p>相比于手工修改文件，使用 <code>systemctl edit</code> 更加安全，它会检查配置文件的语法，而且不需要再额外运行 <code>systemctl daemon-reload</code>。</p>
 <p>Unit 的配置文件是一个 INI 格式的文件，通常包括一个 <code>[Unit]</code> section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 <code>[Service]</code> section，并通常会包含一个 <code>[Install]</code> section。以 cron 服务的配置文件为例：</p>
 <div id="cron.service" class="highlight"><span class="filename">/lib/systemd/system/cron.service</span><pre><span></span><code><a id="__codelineno-cron.service-1" name="__codelineno-cron.service-1" href="#__codelineno-cron.service-1"></a><span class="k">[Unit]</span>
 <a id="__codelineno-cron.service-2" name="__codelineno-cron.service-2" href="#__codelineno-cron.service-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Regular background program processing daemon</span>
@@ -2581,7 +2581,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月24日 18:14:12">2025年4月24日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月25日 15:34:41">2025年4月25日</span>
   </span>
 
     
