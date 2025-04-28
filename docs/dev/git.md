@@ -665,7 +665,34 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 - 当 PR 中包含多次 commit，但实际上应当合并为一个时（例如经过 Review 后），推荐使用 Squash 合并 PR
 - 多次 commit 来提交新 feature 时，推荐使用 Merge 合并 PR
 
-维护者有时会需要将 PR checkout 到本地以测试。可以使用 GitHub CLI 的 `gh pr checkout` 命令快速完成，也可以采用手工方式：使用 `git fetch origin pull/PR_NUMBER/head:BRANCH_NAME` 的形式将编号为 `PR_NUMBER` 的 PR 对应的 head 同步到本地的 `BRANCH_NAME` 分支，之后 `git checkout` 即可。维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
+维护者有时会需要将 PR checkout 到本地以测试：
+
+- 可以使用 GitHub CLI 的 `gh pr checkout` 命令快速完成
+
+- 也可以采用手工方式：
+
+    - 使用 `git fetch origin pull/1234/head:pr-1234` 的形式将编号为 1234 的 PR 对应的 HEAD 同步到本地的 `pr-1234` 分支
+    - 之后 `git checkout pr-1234` 即可
+
+维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
+
+!!! note "GitLab"
+
+    GitLab 的 Merge Request 整体上与 GitHub 的 Pull Request 类似，不过 checkout 到本地的操作有所不同。可以使用 GitLab 提供的命令行工具 [glab](https://docs.gitlab.com/editor_extensions/gitlab_cli/)，也可以使用 `git fetch origin merge-requests/1234/head:mr-1234` 的方式将编号为 1234 的 MR 对应的 HEAD 同步到本地的 `mr-1234` 分支。
+
+    以上内容也适用于自托管的 GitLab 实例。
+
+!!! tip "便于同步 PR/MR 的参考 alias"
+
+    ```ini title="~/.gitconfig"
+    [alias]
+        pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
+        mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+    ```
+
+    使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。
+
+    以上修改自 [Check out locally by adding a Git alias](https://docs.gitlab.com/user/project/merge_requests/merge_request_troubleshooting/#check-out-locally-by-adding-a-git-alias)。
 
 ### GitHub Actions {#github-actions}
 
