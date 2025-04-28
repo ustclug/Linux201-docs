@@ -1625,6 +1625,58 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSH 证书
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SSH 证书">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ssh-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建 SSH CA
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#server-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端证书
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      客户端证书
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#misc" class="md-nav__link">
+    <span class="md-ellipsis">
+      杂项
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="杂项">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#include" class="md-nav__link">
     <span class="md-ellipsis">
       拆分配置文件
@@ -1632,13 +1684,18 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#traps" class="md-nav__link">
     <span class="md-ellipsis">
       一些坑点
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2134,6 +2191,58 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      SSH 证书
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SSH 证书">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ssh-ca" class="md-nav__link">
+    <span class="md-ellipsis">
+      创建 SSH CA
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#server-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端证书
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#client-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      客户端证书
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#misc" class="md-nav__link">
+    <span class="md-ellipsis">
+      杂项
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="杂项">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#include" class="md-nav__link">
     <span class="md-ellipsis">
       拆分配置文件
@@ -2141,13 +2250,18 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#traps" class="md-nav__link">
     <span class="md-ellipsis">
       一些坑点
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2501,39 +2615,83 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>restrict,from<span class="o">=</span><span class="s2">&quot;192.0.2.2&quot;</span>,command<span class="o">=</span><span class="s2">&quot;/usr/bin/rrsync -ro /mnt/lugftp&quot;</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
 </code></pre></div>
 </details>
-<h2 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h2>
+<h2 id="certificates">SSH 证书<a class="headerlink" href="#certificates" title="Permanent link">&para;</a></h2>
+<p>OpenSSH 支持使用证书作为客户端和服务端的身份验证方式，即在正确配置了证书的情况下，客户端无需预先记录服务器的公钥（即加入 <code>known_hosts</code> 文件）即可信任 SSH 服务端，而服务端也无需预先记录客户端的公钥（即写入对应用户的 <code>authorized_keys</code> 文件）即可确认登录者的身份。使用证书进行 SSH 身份验证有以下好处：</p>
+<ul>
+<li>
+<p>对于服务器和客户端（或用户）数量较多的场景，通过签署证书的方式可以大大降低配置复杂度，且容易管理登录授权的分配情况。</p>
+<ul>
+<li>
+<p>如果客户端被允许自行修改 <code>authorized_keys</code> 文件，则其仍然能够添加其他公钥用于登录已授权的服务端，绕过采用证书认证的管理目的。请根据实际情况决定是否需要禁止客户端自行修改 <code>authorized_keys</code> 文件。</p>
+<p>提示：SSH 服务端具有 <code>AuthorizedKeysFile</code> 设置项，其默认值为 <code>.ssh/authorized_keys</code>。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>默认情况下，SSH 服务端会在日志中记录登录时所用的证书的“主体”与编号，即签发证书时 <code>-I</code> 与 <code>-z</code> 参数的值，这使得管理员能够更方便地追踪客户端密钥对的使用情况。</p>
+</li>
+<li>相比于 <code>authorized_keys</code> 文件，签发证书时能够更方便地指定一些与公钥相关的参数，如有效期（<code>-V</code> 参数）等。</li>
+<li>相比于使用私钥登录的场景，签发证书的过程可以离线进行，提升 CA 私钥的安全性。</li>
+</ul>
+<p>使用证书认证方案时的注意事项：</p>
+<ul>
+<li>SSH 证书没有 X.509 证书的链式结构，即 SSH 证书没有“中间 CA”的概念，CA 的身份由<strong>公钥</strong>唯一确定，因此所有的 CA 都是根 CA。一旦 CA 的私钥发生泄露，需要立刻在所有机器上删除对应的 CA 公钥配置。这对 SSH CA 的密钥管理提出了更高的要求。</li>
+<li>
+<p>SSH 证书没有自动更新 CRL 的机制，证书的撤销依赖于管理员自行维护“公钥吊销列表”（Key Revocation List，KRL）文件，因此如果已获得签发证书的对应私钥发生泄露，也需要维护 KRL 直到对应证书过期。</p>
+<p>特别地，如果发生泄露的证书未设置有效期，则其是无限期有效的，对应的已泄露的私钥也需要无限期地记录在所有信任此证书的服务器的 KRL 中，这可能会带来一定的管理负担。因此我们推荐为所有的客户端证书指定有效期，<strong>从不</strong>签发无限期有效的客户端证书。</p>
+</li>
+</ul>
+<p>总的来说，对于中小规模的社团和实验室服务器管理场景，（对管理员）使用 SSH 证书认证是个较为方便易用的方式。</p>
+<p>与 X.509 证书类似，客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA。</p>
+<h3 id="ssh-ca">创建 SSH CA<a class="headerlink" href="#ssh-ca" title="Permanent link">&para;</a></h3>
+<p>前文提到，SSH CA 的身份由<strong>公钥</strong>唯一确定，因此一对普通的 SSH 密钥对就是一个 SSH CA 所需的全部内容，不像 X.509 需要再进一步为根 CA 产生一个自签名证书。此处引用创建 SSH 密钥对的命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>my_ca<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>ed25519<span class="o">]</span><span class="w"> </span><span class="o">[</span>-C<span class="w"> </span><span class="s1">&#39;My CA&#39;</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>-N<span class="w"> </span><span class="s1">&#39;my-ca-p@ssw0rd&#39;</span><span class="o">]</span>
+</code></pre></div>
+<p>注意到尽管 <code>-t</code>、<code>-C</code> 和 <code>-N</code> 参数都是可选的<sup id="fnref:filename-is-optional"><a class="footnote-ref" href="#fn:filename-is-optional">2</a></sup>，为了便于辨认 CA 和提高安全性，我们强烈建议采用先进的密码学算法（Ed25519）、指定可读的备注文字和为私钥设置密码。</p>
+<p>生成密钥对后，请保管好 <code>my_ca</code> 私钥文件，然后即可将 <code>my_ca.pub</code> 公钥文件复制或公开传播了。</p>
+<h3 id="server-certificates">服务端证书<a class="headerlink" href="#server-certificates" title="Permanent link">&para;</a></h3>
+<p>首先，客户端需要信任 CA 签发的证书，方法是在 <code>known_hosts</code> 文件中加入 CA 的公钥，并在公钥前添加选项 <code>@cert-authority *</code>，例如；</p>
+<div class="highlight"><span class="filename">~/.ssh/known_hosts</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>@cert-authority * ssh-ed25519 AAAAC3N... My CA
+</code></pre></div>
+<p>对于实验室等公用机器的场景，也可以将 CA 条目配置在 <code>/etc/ssh/ssh_known_hosts</code> 文件中，其会对所有用户生效，而无需再为每个用户单独配置。</p>
+<h3 id="client-certificates">客户端证书<a class="headerlink" href="#client-certificates" title="Permanent link">&para;</a></h3>
+<p>首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 <code>authorized_keys</code> 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 <code>/etc/ssh/ssh_user_ca</code>：</p>
+<div class="highlight"><span class="filename">/etc/ssh/ssh_user_ca</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>ssh-ed25519 AAAAC3N... My org CA
+</code></pre></div>
+<h2 id="misc">杂项<a class="headerlink" href="#misc" title="Permanent link">&para;</a></h2>
+<h3 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h3>
 <p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中，出现在这两个块中的 <code>Include</code> 会被视作条件包含。因此一个（不太常见的）坑是：</p>
 <details class="failure">
 <summary>错误写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
 <details class="success">
 <summary>正确写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>Match<span class="w"> </span>all
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>Match<span class="w"> </span>all
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>更加推荐的写法是将 <code>Include</code> 放在配置文件开头：</p>
 <div class="admonition success">
 <p class="admonition-title">推荐写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>Host<span class="w"> </span>example
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">  </span>User<span class="w"> </span>user
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>Host<span class="w"> </span>example
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="w">  </span>User<span class="w"> </span>user
 </code></pre></div>
 </div>
-<h2 id="traps">一些坑点<a class="headerlink" href="#traps" title="Permanent link">&para;</a></h2>
+<h3 id="traps">一些坑点<a class="headerlink" href="#traps" title="Permanent link">&para;</a></h3>
 <p>在 OpenSSH 内部，同一个“代号”可能指代多种（有关联但）不同的细节。例如 <code>ssh-rsa</code> 至少有以下三种不同的含义：</p>
 <ul>
 <li>RSA 密钥对或 RSA 公钥算法（<code>id_rsa</code> 和 <code>id_rsa.pub</code> 文件）</li>
@@ -2583,6 +2741,9 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:netcat-openbsd">
 <p>需要使用 OpenBSD 版本的 <code>nc</code> 命令，如 <code>apt install netcat-openbsd</code>。&#160;<a class="footnote-backref" href="#fnref:netcat-openbsd" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
+<li id="fn:filename-is-optional">
+<p>事实上 <code>-f</code> 参数也是可选的，但为了避免 <code>ssh-keygen</code> 将其放置在 <code>~/.ssh</code> 目录下，从而更容易与个人用于登录服务器的私钥混淆，此处显式指定了输出文件名。&#160;<a class="footnote-backref" href="#fnref:filename-is-optional" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
 </ol>
 </div>
 
@@ -2605,7 +2766,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月25日 15:34:41">2025年4月25日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月28日 13:13:11">2025年4月28日</span>
   </span>
 
     
