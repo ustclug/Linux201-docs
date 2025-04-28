@@ -259,7 +259,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 !!! tip
 
     你可以一次性传输多个文件或目录，将它们作为源路径的参数。例如：
-    
+
     ```shell
     scp file1.txt file2.txt username@remotehost:/path/to/remote/directory
     ```
@@ -437,7 +437,65 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
     restrict,from="192.0.2.2",command="/usr/bin/rrsync -ro /mnt/lugftp" ssh-rsa ...
     ```
 
-## 拆分配置文件 {#include}
+## SSH 证书 {#certificates}
+
+OpenSSH 支持使用证书作为客户端和服务端的身份验证方式，即在正确配置了证书的情况下，客户端无需预先记录服务器的公钥（即加入 `known_hosts` 文件）即可信任 SSH 服务端，而服务端也无需预先记录客户端的公钥（即写入对应用户的 `authorized_keys` 文件）即可确认登录者的身份。使用证书进行 SSH 身份验证有以下好处：
+
+- 对于服务器和客户端（或用户）数量较多的场景，通过签署证书的方式可以大大降低配置复杂度，且容易管理登录授权的分配情况。
+    - 如果客户端被允许自行修改 `authorized_keys` 文件，则其仍然能够添加其他公钥用于登录已授权的服务端，绕过采用证书认证的管理目的。请根据实际情况决定是否需要禁止客户端自行修改 `authorized_keys` 文件。
+
+        提示：SSH 服务端具有 `AuthorizedKeysFile` 设置项，其默认值为 `.ssh/authorized_keys`。
+
+- 默认情况下，SSH 服务端会在日志中记录登录时所用的证书的“主体”与编号，即签发证书时 `-I` 与 `-z` 参数的值，这使得管理员能够更方便地追踪客户端密钥对的使用情况。
+- 相比于 `authorized_keys` 文件，签发证书时能够更方便地指定一些与公钥相关的参数，如有效期（`-V` 参数）等。
+- 相比于使用私钥登录的场景，签发证书的过程可以离线进行，提升 CA 私钥的安全性。
+
+使用证书认证方案时的注意事项：
+
+- SSH 证书没有 X.509 证书的链式结构，即 SSH 证书没有“中间 CA”的概念，CA 的身份由**公钥**唯一确定，因此所有的 CA 都是根 CA。一旦 CA 的私钥发生泄露，需要立刻在所有机器上删除对应的 CA 公钥配置。这对 SSH CA 的密钥管理提出了更高的要求。
+- SSH 证书没有自动更新 CRL 的机制，证书的撤销依赖于管理员自行维护“公钥吊销列表”（Key Revocation List，KRL）文件，因此如果已获得签发证书的对应私钥发生泄露，也需要维护 KRL 直到对应证书过期。
+
+    特别地，如果发生泄露的证书未设置有效期，则其是无限期有效的，对应的已泄露的私钥也需要无限期地记录在所有信任此证书的服务器的 KRL 中，这可能会带来一定的管理负担。因此我们推荐为所有的客户端证书指定有效期，**从不**签发无限期有效的客户端证书。
+
+总的来说，对于中小规模的社团和实验室服务器管理场景，（对管理员）使用 SSH 证书认证是个较为方便易用的方式。
+
+与 X.509 证书类似，客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA。
+
+### 创建 SSH CA {#ssh-ca}
+
+前文提到，SSH CA 的身份由**公钥**唯一确定，因此一对普通的 SSH 密钥对就是一个 SSH CA 所需的全部内容，不像 X.509 需要再进一步为根 CA 产生一个自签名证书。此处引用创建 SSH 密钥对的命令：
+
+```shell
+ssh-keygen -f my_ca [-t ed25519] [-C 'My CA'] [-N 'my-ca-p@ssw0rd']
+```
+
+注意到尽管 `-t`、`-C` 和 `-N` 参数都是可选的[^filename-is-optional]，为了便于辨认 CA 和提高安全性，我们强烈建议采用先进的密码学算法（Ed25519）、指定可读的备注文字和为私钥设置密码。
+
+  [^filename-is-optional]: 事实上 `-f` 参数也是可选的，但为了避免 `ssh-keygen` 将其放置在 `~/.ssh` 目录下，从而更容易与个人用于登录服务器的私钥混淆，此处显式指定了输出文件名。
+
+生成密钥对后，请保管好 `my_ca` 私钥文件，然后即可将 `my_ca.pub` 公钥文件复制或公开传播了。
+
+### 服务端证书 {#server-certificates}
+
+首先，客户端需要信任 CA 签发的证书，方法是在 `known_hosts` 文件中加入 CA 的公钥，并在公钥前添加选项 `@cert-authority *`，例如；
+
+```text title="~/.ssh/known_hosts"
+@cert-authority * ssh-ed25519 AAAAC3N... My CA
+```
+
+对于实验室等公用机器的场景，也可以将 CA 条目配置在 `/etc/ssh/ssh_known_hosts` 文件中，其会对所有用户生效，而无需再为每个用户单独配置。
+
+### 客户端证书 {#client-certificates}
+
+首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 `authorized_keys` 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 `/etc/ssh/ssh_user_ca`：
+
+```text title="/etc/ssh/ssh_user_ca"
+ssh-ed25519 AAAAC3N... My org CA
+```
+
+## 杂项 {#misc}
+
+### 拆分配置文件 {#include}
 
 从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 `Include` 选项，可以在主配置文件中 include 其他文件。与 C 的 `#include` 或 Nginx 的 `include` 不同，SSH config 里的 `Include` **不**等价于文本插入替换，并且 `Include` 可以出现在 `Host` 和 `Match` 块中，出现在这两个块中的 `Include` 会被视作条件包含。因此一个（不太常见的）坑是：
 
@@ -476,7 +534,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
       User user
     ```
 
-## 一些坑点 {#traps}
+### 一些坑点 {#traps}
 
 在 OpenSSH 内部，同一个“代号”可能指代多种（有关联但）不同的细节。例如 `ssh-rsa` 至少有以下三种不同的含义：
 
