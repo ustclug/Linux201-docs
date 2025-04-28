@@ -495,7 +495,35 @@ curl: (6) Could not resolve host: www.example.com
 
 #### ip
 
-`ip` 命令可以查看本机的网络接口等状态。
+`ip` 命令可以查看本机的网络接口等状态。`ip a`（`ip address`）可以查看所有接口的信息，包括 IP 地址、是否上线等：
+
+```console
+$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute
+       valid_lft forever preferred_lft forever
+2: eth0@if637: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether be:ed:ab:c0:e6:cf brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.31.155.84/16 brd 172.31.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 2001:da8:d800:4bfc:bced:abff:fec0:e6cf/64 scope global dynamic mngtmpaddr noprefixroute
+       valid_lft 86400sec preferred_lft 14400sec
+    inet6 fe80::bced:abff:fec0:e6cf/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+一般有线网络都以 `eth` 或者 `enp` 开头，无线网络以 `wlp` 开头。如果 `state` 是 `DOWN`，那么你可能需要检查一下物理网络情况，例如网线是否有插好等。
+
+如果你有多个网络接口，可以使用 `ip r`（`ip route`）命令管理路由表。使用 `ip r get <ip>` 可以确认发送到某个 IP 地址的网络包会经过哪个网络接口：
+
+```console
+$ ip r get 8.8.8.8
+8.8.8.8 via 172.31.0.1 dev eth0 src 172.31.155.84 uid 1000
+    cache
+```
 
 ### 性能检查 {#performance-check}
 
