@@ -469,6 +469,8 @@ SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
 mtr -c 10 -r www.example.com
 ```
 
+`mtr` 默认使用 ICMP Echo 包执行 trace 操作，可以使用 `--tcp` 和 `--udp` 参数切换为 TCP 或 UDP 包，此时使用 `--port` 参数可以指定访问的 TCP/UDP 端口号。
+
 #### dig 与 DNS {#dig}
 
 如果在进行网络操作时看到类似下面的错误：
