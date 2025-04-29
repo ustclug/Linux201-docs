@@ -422,6 +422,27 @@ git rebase master
 
     交互式 rebase 的其他用法请参考相关文档。
 
+!!! tip "解决冲突"
+
+    在合并其他人的分支时，如果你和其他人的分支用不同的方式修改了相同的部分，那么就会出现冲突。当出现 git 无法处理的冲突时，合并会停在出现冲突的 commit 上，并且提示你解决冲突。出现冲突的文件类似如下：
+
+    ```text
+    <<<<<<< HEAD
+    This is your own changes.
+    ========
+    This is the changes from the other branch.
+    >>>>>>> other-branch
+    ```
+
+    可以看到，这里同时给出了双方的修改，解决冲突需要：
+    
+    - 手动修改文件到预期的内容（记得把 `<<<<<<<`、`=======` 和 `>>>>>>>` 删除掉！）
+    - 然后 `git add` 该文件
+    - 最后根据是 merge 还是 rebase 操作，使用 `git merge --continue` 或 `git rebase --continue` 继续合并（可以使用 `git status` 查看当前的状态）
+    - 如果不想解决了，可以使用 `git merge --abort` 或 `git rebase --abort` 取消合并操作
+
+    可以使用 pre-commit 的 [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#check-merge-conflict) 来避免不小心把未解决的冲突 commit 到仓库里。
+
 ### Bisect {#git-bisect}
 
 在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 `git bisect` 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：
