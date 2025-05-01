@@ -1673,6 +1673,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#github-deploy-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy Keys
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#github-issue" class="md-nav__link">
     <span class="md-ellipsis">
       Issue
@@ -2342,6 +2351,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#github-deploy-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      Deploy Keys
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#github-issue" class="md-nav__link">
     <span class="md-ellipsis">
       Issue
@@ -2896,6 +2914,34 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>gpg.format<span class="w"> </span>ssh
 <a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.signingkey<span class="w"> </span>~/.ssh/yourkey.pub
 </code></pre></div>
+<h3 id="github-deploy-keys">Deploy Keys<a class="headerlink" href="#github-deploy-keys" title="Permanent link">&para;</a></h3>
+<p>GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库的 SSH key，在需要将仓库 clone 到其它机器，但又不希望该机器有用户的全部权限时很有用。但是，GitHub 不允许同一个 SSH key 用在多个仓库上，对于需要在同一机器上 clone 多仓库的场景带来了不便。</p>
+<p>官方文档 <a href="https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server">Managing deploy keys</a> 提供了一种方案。以下提供另一种不需要修改 <code>~/.ssh/config</code> 为每个仓库设置别名的方案。</p>
+<ol>
+<li>
+<p>进入仓库的 <code>.git</code> 目录，在该目录下创建密钥对。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="nb">cd</span><span class="w"> </span>.git
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="c1"># RSA key pair</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_rsa<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="c1"># or ED25519 key pair</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_ed25519<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+</code></pre></div>
+</li>
+<li>
+<p>修改 <code>.git/config</code> 内容，在 <code>[core]</code> 这个 section 下添加：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">[core]</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">    </span><span class="c1"># ...</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">    </span><span class="c1"># RSA key pair</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_rsa</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">    </span><span class="c1"># or ED25519 key pair</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_ed25519</span>
+</code></pre></div>
+</li>
+<li>
+<p>将公钥（<strong>以 <code>.pub</code> 结尾，别将私钥发给其他任何人！</strong>）添加到仓库设置的 deploy keys 中。</p>
+</li>
+</ol>
+<p>之后就可以像普通的仓库一样，正常进行 <code>git</code> 操作了。</p>
 <h3 id="github-issue">Issue<a class="headerlink" href="#github-issue" title="Permanent link">&para;</a></h3>
 <p>下面关于 Markdown 的特性并不限于 Issue，也适用于 Pull Request 等。</p>
 <h4 id="github-link">GitHub 链接<a class="headerlink" href="#github-link" title="Permanent link">&para;</a></h4>
@@ -2907,9 +2953,9 @@
 <ul>
 <li>
 <p>当一个 PR 包含如下关键字，并且按照上述方法连接到一个 Issue 时，合并这个 PR 会关闭对应的 issue：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>close(s,d) #123
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>fix(es, ed) #123
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>resolve(s, d) #123
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>close(s,d) #123
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>fix(es, ed) #123
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>resolve(s, d) #123
 </code></pre></div>
 </li>
 </ul>
@@ -2929,13 +2975,13 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams">Mermaid 关系图</a></p>
 <p>Mermaid 是一种简单且强大的关系图/流程图语法，例如可以通过如下方式创建一个简单的关系图：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>```mermaid
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>graph LR;
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>    A--&gt;B;
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>    A--&gt;C;
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>    B--&gt;D;
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>    C--&gt;D;
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>```
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>```mermaid
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>graph LR;
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>    A--&gt;B;
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>    A--&gt;C;
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>    B--&gt;D;
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>    C--&gt;D;
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>```
 </code></pre></div>
 <pre class="mermaid"><code>graph LR;
     A--&gt;B;
@@ -2950,27 +2996,27 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists">进度跟踪</a></p>
 <p>在 Issue 正文中创建一个任务列表，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="k">- [ ]</span> Task 2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="k">- [ ]</span> Task 2
 </code></pre></div>
 <p>此时可以将这个 Issue 转化为一个任务列表，方便追踪任务的进度，同时 <code>#123</code> 会被标记为 <code>Tracked by #xxx</code>。</p>
 </li>
 </ul>
 <h4 id="github-issue-template">Issue 模板<a class="headerlink" href="#github-issue-template" title="Permanent link">&para;</a></h4>
 <p>对于大型项目，使用 Issue template 可以使得 Issue 更加规范化，例如，可以在 <code>.github/ISSUE_TEMPLATE/bug_report.yml</code> 中添加如下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="nt">labels</span><span class="p">:</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="nt">body</span><span class="p">:</span>
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">      </span><span class="nt">attributes</span><span class="p">:</span>
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="w">        </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="w">      </span><span class="nt">validations</span><span class="p">:</span>
-<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="nt">labels</span><span class="p">:</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="nt">body</span><span class="p">:</span>
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="w">      </span><span class="nt">attributes</span><span class="p">:</span>
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
+<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a><span class="w">        </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
+<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a><span class="w">      </span><span class="nt">validations</span><span class="p">:</span>
+<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a><span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>可以参考 <a href="https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1">ustclug/mirrorrequest/.../01-mirror-request.yml</a>, <a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository">GitHub 文档</a>.</p>
 <h3 id="github-pr">Pull Request<a class="headerlink" href="#github-pr" title="Permanent link">&para;</a></h3>
@@ -3002,9 +3048,9 @@
 </div>
 <div class="admonition tip">
 <p class="admonition-title">便于同步 PR/MR 的参考 alias</p>
-<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">[alias]</span>
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2&#39; -</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2&#39; -</span>
+<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="k">[alias]</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2&#39; -</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2&#39; -</span>
 </code></pre></div>
 <p>使用例子：<code>git pr origin 1234</code>（GitHub）、<code>git mr origin 1234</code>（GitLab）。</p>
 <p>以上修改自 <a href="https://docs.gitlab.com/user/project/merge_requests/merge_request_troubleshooting/#check-out-locally-by-adding-a-git-alias">Check out locally by adding a Git alias</a>。</p>
@@ -3087,7 +3133,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年4月29日 17:40:48">2025年4月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月1日 08:42:56">2025年5月1日</span>
   </span>
 
     
