@@ -589,6 +589,37 @@ git config --global gpg.format ssh
 git config --global user.signingkey ~/.ssh/yourkey.pub
 ```
 
+### Deploy Keys {#github-deploy-keys}
+
+GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库的 SSH key，在需要将仓库 clone 到其它机器，但又不希望该机器有用户的全部权限时很有用。但是，GitHub 不允许同一个 SSH key 用在多个仓库上，对于需要在同一机器上 clone 多仓库的场景带来了不便。
+
+官方文档 [Managing deploy keys](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server) 提供了一种方案。以下提供另一种不需要修改 `~/.ssh/config` 为每个仓库设置别名的方案。
+
+1. 进入仓库的 `.git` 目录，在该目录下创建密钥对。
+
+    ```shell
+    cd .git
+    # RSA key pair
+    ssh-keygen -f ./id_rsa -t rsa -b 4096 -N ""
+    # or ED25519 key pair
+    ssh-keygen -f ./id_ed25519 -t ed25519 -N ""
+    ```
+
+2. 修改 `.git/config` 内容，在 `[core]` 这个 section 下添加：
+
+    ```ini
+    [core]
+    	# ...
+    	# RSA key pair
+    	sshCommand = ssh -i .git/id_rsa
+    	# or ED25519 key pair
+    	sshCommand = ssh -i .git/id_ed25519
+    ```
+
+3. 将公钥（**以 `.pub` 结尾，别将私钥发给其他任何人！**）添加到仓库设置的 deploy keys 中。
+
+之后就可以像普通的仓库一样，正常进行 `git` 操作了。
+
 ### Issue {#github-issue}
 
 下面关于 Markdown 的特性并不限于 Issue，也适用于 Pull Request 等。
