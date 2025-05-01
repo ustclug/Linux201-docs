@@ -529,6 +529,49 @@ $ ip r get 8.8.8.8
 
 ### 性能检查 {#performance-check}
 
+iperf 工具可以用来测试两台主机之间的网络性能。目前 iperf 有两个版本：iperf2 和 iperf3，**两者互不兼容**。关于两者功能的比较，可以参考：
+
+- [Throughput Tool Comparision](https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/throughput-tool-comparision/)
+- [Iperf 2 & Iperf 3 Comparison Table](https://iperf2.sourceforge.io/IperfCompare.html)
+
+尽管存在功能差异，两者最基础的功能是相似的，都需要先在一台主机上运行 iperf server，再在另一台主机上运行 iperf client 进行测试。默认情况下，iperf 测试的是从 client 上传到 server 的速度，使用 `-R` 参数可以测试从 server 下载到 client 的速度。以 iperf3 为例：
+
+- server 端：
+
+    ```console
+    $ iperf3 -s
+    -----------------------------------------------------------
+    Server listening on 5201 (test #1)
+    -----------------------------------------------------------
+    ```
+
+- client 端：
+
+    ```console
+    $ iperf3 -c 192.168.122.1
+    Connecting to host 192.168.122.1, port 5201
+    [  5] local 192.168.122.247 port 42522 connected to 192.168.122.1 port 5201
+    [ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+    [  5]   0.00-1.00   sec  5.60 GBytes  48.1 Gbits/sec    0   2.12 MBytes       
+    [  5]   1.00-2.00   sec  5.95 GBytes  51.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   2.00-3.00   sec  4.96 GBytes  42.6 Gbits/sec    0   2.72 MBytes       
+    [  5]   3.00-4.00   sec  5.37 GBytes  46.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   4.00-5.00   sec  5.74 GBytes  49.3 Gbits/sec    0   2.72 MBytes       
+    [  5]   5.00-6.00   sec  5.55 GBytes  47.7 Gbits/sec    0   2.72 MBytes       
+    [  5]   6.00-7.00   sec  5.72 GBytes  49.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   7.00-8.00   sec  5.65 GBytes  48.6 Gbits/sec    0   2.72 MBytes       
+    [  5]   8.00-9.00   sec  5.72 GBytes  49.1 Gbits/sec    0   2.87 MBytes       
+    [  5]   9.00-10.00  sec  5.25 GBytes  45.1 Gbits/sec    0   3.02 MBytes       
+    - - - - - - - - - - - - - - - - - - - - - - - - -
+    [ ID] Interval           Transfer     Bitrate         Retr
+    [  5]   0.00-10.00  sec  55.5 GBytes  47.7 Gbits/sec    0             sender
+    [  5]   0.00-10.00  sec  55.5 GBytes  47.7 Gbits/sec                  receiver
+
+    iperf Done.
+    ```
+
+    同时 server 端也会显示类似的输出。
+
 ### 网络抓包 {#network-packet-capture}
 
 ## 性能问题分析 {#performance-analysis}
