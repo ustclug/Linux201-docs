@@ -2316,6 +2316,25 @@
 <li>re(B)oot：重启系统。</li>
 </ul>
 <p>如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。其他的操作可以参考以上内核文档链接。</p>
+<div class="admonition lab">
+<p class="admonition-title">测试 kdump</p>
+<p>Debian 的 <code>kdump-tools</code> 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 <code>kdump-tools</code>，并使用 SysRq 触发内核崩溃，验证配置的有效性。</p>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">系统无法启动</p>
+<p>系统启动失败可能会有各种各样的原因，因此以下只能够提供对一部分情况有帮助的信息。</p>
+<p>如果你无法看到 GRUB 界面，或者确定已经无法从硬盘引导到可以收拾残局的状态，那么建议使用 LiveCD/USB 启动系统（和安装系统的方式类似）进行救援操作。这里建议使用 Arch Linux 的安装镜像（又称为 archiso），因为：</p>
+<ul>
+<li>内核较新，对较新的硬件支持较好</li>
+<li>占用空间小</li>
+<li><code>arch-chroot</code> 工具可以方便地 chroot 到安装的系统中，以便执行操作<ul>
+<li>如果不使用 <code>arch-chroot</code>，在 chroot 进入系统前就需要手动挂载 <code>/proc</code>、<code>/sys</code>、<code>/dev</code> 等文件系统、配置 <code>/etc/resolv.conf</code> 等等，比较麻烦。</li>
+</ul>
+</li>
+</ul>
+<p>如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 <code>e</code> 键，编辑对应的启动项，删除 <code>linux</code> 这一行的 <code>quiet</code> 和 <code>splash</code> 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。</p>
+<p>诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。</p>
 </div>
 <h2 id="status-and-logs">服务状态与日志<a class="headerlink" href="#status-and-logs" title="Permanent link">&para;</a></h2>
 <p>当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
@@ -3107,7 +3126,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月1日 17:10:48">2025年5月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月1日 17:54:15">2025年5月1日</span>
   </span>
 
     
