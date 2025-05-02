@@ -44,6 +44,7 @@
 [apt-patterns.7]: https://manpages.debian.org/unstable/apt/apt-patterns.7.en.html
 [cgroups.7]: https://man7.org/linux/man-pages/man7/cgroups.7.html
 [namespaces.7]: https://man7.org/linux/man-pages/man7/namespaces.7.html
+[pcap-filter.7]: https://www.tcpdump.org/manpages/pcap-filter.7.html
 [zfsprops.7]: https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html
 
 <!-- man 8 -->

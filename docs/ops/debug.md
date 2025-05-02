@@ -593,6 +593,54 @@ iperf 工具可以用来测试两台主机之间的网络性能。目前 iperf �
 
 ### 网络抓包 {#network-packet-capture}
 
+`tcpdump` 工具可以用于在服务器上抓包，基础的命令如下：
+
+```shell
+# 在 eth0 上抓取所有包，输出到终端
+tcpdump -ni eth0
+# 输出到 result.pcap 文件，以便进一步分析
+tcpdump -ni eth0 -w result.pcap
+# 抓取所有从 8.8.8.8 发送或接收的包
+tcpdump -ni eth0 host 8.8.8.8
+```
+
+`-n` 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 `host 8.8.8.8` 部分为 pcap 表达式，详情可阅读 [pcap-filter.7](pcap-filter.7)。
+
+!!! question "编写 pcap 表达式"
+
+    尝试编写满足以下要求的表达式，并用 `tcpdump` 测试：
+
+    - 系统发送和接收的所有 DNS（TCP & UDP 53）协议包
+        - 如果只需要 UDP 的包呢？
+    - 系统发送到 www.example.com（或其他网站的）的 HTTP 包
+    - 系统发送到 80 或 443 接口的所有的包
+
+得到的 pcap 文件可以使用 Wireshark（GUI）或 tshark（TUI）打开分析。Wireshark 过滤表达式的语法与 pcap filter 有所不同。非常常见的包括：
+
+- `ip.addr == 8.8.8.8`：过滤 IP 为 8.8.8.8 的所有包
+- `http`：过滤 HTTP 协议
+- `tcp.port = 1234`：过滤 TCP 端口为 1234 的所有包
+
+!!! question "编写 Wireshark 表达式"
+
+    请在 Wireshark 中编写满足和上一个问题相同的过滤表达式，并测试。
+
+!!! tip "TLS 抓包"
+
+    TLS（如 HTTPS 等）是加密的，这意味着抓包只能够看到连接双方之间发送了一些 TLS 数据包（如果是 HTTPS，可能还能看到证书和明文的目标域名，即 SNI），但是无法看到具体的请求与响应内容。但是有些时候，我们需要抓包了解内容，分析问题。
+
+    最常用的方法是在启动建立 TLS 连接的程序时添加 `SSLKEYLOGFILE` 环境变量：
+
+    ```shell
+    SSLKEYLOGFILE=test.log curl --http1.1 https://www.example.com
+    ```
+
+    之后在 wireshark 的 TLS 协议设置中设置 (Pre)-Master-Secret log filename 即可，如下图：
+
+    ![Wireshark setting pre-master-secret log filename](../images/wireshark-tls.png)
+
+    [bcc](#eBPF) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
+
 ## 性能问题分析 {#performance-analysis}
 
 本节介绍使用 `perf` 等工具进行基础的性能问题分析的方式。`perf` 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 `linux-perf`。
