@@ -361,9 +361,9 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
 
-### 服务端配置 {#iscsi-server}
+### 服务端配置（targetcli/LIO 方案） {#iscsi-server-targetcli}
 
-Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。
+Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。对应服务是 `targetclid.service`。
 
 ```console
 $ sudo targetcli
@@ -441,8 +441,7 @@ o- iscsi .......................................................... [Targets: 1]
         o- 0.0.0.0:3260 ................................................... [OK]
 ```
 
-之后在 `luns` 下绑定 backstore 到 target 上。
-LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。
+之后在 `luns` 下绑定 backstore 到 target 上。LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。逻辑单元（Logical Unit）是 SCSI 协议中对具体的存储设备的抽象。
 
 ```console
 /> iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1
@@ -473,6 +472,51 @@ Created Node ACL for iqn.1993-08.org.debian:01:a6a4d4f7356f
 Created mapped LUN 0.
 ```
 
+### 服务端配置（tgtd 方案） {#iscsi-server-tgtd}
+
+tgtd 方案为用户态的 iSCSI target，安装 `tgt` 包后即可开始配置。对应服务是 `tgt.service`。相比于 targetcli，tgtd 的使用简单一些。
+
+与 targetcli 类似，tgtd 的 target 和实际的存储也是分离的，首先让我们创建一个 target。这里的 tid 是 target id。
+
+```shell
+sudo tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2025-05.org.example.201:test-target
+```
+
+然后为这个 target 创建一个 logical unit——这里是设置实际的「后备存储」的地方。`--backing-store` 可以是一个块设备或者一个文件。
+
+```shell
+sudo tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 --backing-store /dev/loop0
+```
+
+!!! warning "tgtd 报告错误？"
+
+    后备存储需要保证 tgtd 能够访问到，否则会报告没有什么信息量的 `tgtadm: invalid request` 错误。
+
+之后就可以配置允许对指定的客户端服务。这个过程被称为 `bind`。
+
+```shell
+sudo tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+```
+
+`op` 修改为 `unbind` 则是删除对指定客户端的权限。如果需要查看当前的状态，在 `target` 模式下 `show` 即可：
+
+```shell
+sudo tgtadm --lld iscsi --mode target --op show
+```
+
+但是需要注意的是，使用 `tgtadm` 配置的 iSCSI target 没有任何配置持久化。如果需要在重启后自动加载，那么需要修改配置文件，`tgt.service` 启动时，`tgt-admin` 会读取配置文件，还原配置。首先导出当前的配置：
+
+```console
+$ sudo tgt-admin --dump
+default-driver iscsi
+
+<target iqn.2025-05.org.example.201:test-target>
+	backing-store /tmp/test.img
+</target>
+```
+
+把输出放到 `/etc/tgt/conf.d/example.conf` 中即可。可以重启服务验证是否生效。
+
 ### 客户端配置 {#iscsi-client}
 
 使用 `iscsiadm` 可以配置 iSCSI initiator（需要安装 `open-iscsi`）。
@@ -499,7 +543,7 @@ iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization
 iscsiadm: Could not log into all portals
 ```
 
-我们需要让服务端授权客户端的 iqn，对应文件在 `/etc/iscsi/initiatorname.iscsi`。
+我们需要让服务端授权客户端的 iqn。`/etc/iscsi/initiatorname.iscsi` 包含了客户端自己的 iqn 信息（注意每个客户端的 iqn 都不一样，不要抄例子里的 iqn！）。
 
 ```console
 $ sudo cat /etc/iscsi/initiatorname.iscsi
@@ -510,8 +554,6 @@ $ sudo cat /etc/iscsi/initiatorname.iscsi
 ## for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.
 InitiatorName=iqn.1993-08.org.debian:01:a6a4d4f7356f
 ```
-
-（注意不要抄这里的 iqn！）
 
 在服务端授权后就可以登录了：
 
