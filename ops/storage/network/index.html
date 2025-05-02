@@ -832,9 +832,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#iscsi-server" class="md-nav__link">
+  <a href="#iscsi-server-targetcli" class="md-nav__link">
     <span class="md-ellipsis">
-      服务端配置
+      服务端配置（targetcli/LIO 方案）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iscsi-server-tgtd" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端配置（tgtd 方案）
     </span>
   </a>
   
@@ -1949,9 +1958,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#iscsi-server" class="md-nav__link">
+  <a href="#iscsi-server-targetcli" class="md-nav__link">
     <span class="md-ellipsis">
-      服务端配置
+      服务端配置（targetcli/LIO 方案）
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iscsi-server-tgtd" class="md-nav__link">
+    <span class="md-ellipsis">
+      服务端配置（tgtd 方案）
     </span>
   </a>
   
@@ -2290,8 +2308,8 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 </div>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
 <p>iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。</p>
-<h3 id="iscsi-server">服务端配置<a class="headerlink" href="#iscsi-server" title="Permanent link">&para;</a></h3>
-<p>Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 <code>targetcli-fb</code> 包后使用 <code>targetcli</code> 命令行工具进行配置。</p>
+<h3 id="iscsi-server-targetcli">服务端配置（targetcli/LIO 方案）<a class="headerlink" href="#iscsi-server-targetcli" title="Permanent link">&para;</a></h3>
+<p>Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 <code>targetcli-fb</code> 包后使用 <code>targetcli</code> 命令行工具进行配置。对应服务是 <code>targetclid.service</code>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>targetcli
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">targetcli shell version 2.1.53</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="go">Copyright 2011-2013 by Datera, Inc and others.</span>
@@ -2357,8 +2375,7 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="go">      o- portals .................................................. [Portals: 1]</span>
 <a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="go">        o- 0.0.0.0:3260 ................................................... [OK]</span>
 </code></pre></div>
-<p>之后在 <code>luns</code> 下绑定 backstore 到 target 上。
-LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。</p>
+<p>之后在 <code>luns</code> 下绑定 backstore 到 target 上。LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。逻辑单元（Logical Unit）是 SCSI 协议中对具体的存储设备的抽象。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="go">/&gt; iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1</span>
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">Created LUN 0.</span>
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">/&gt; ls iscsi/</span>
@@ -2382,74 +2399,100 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">Created Node ACL for iqn.1993-08.org.debian:01:a6a4d4f7356f</span>
 <a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">Created mapped LUN 0.</span>
 </code></pre></div>
+<h3 id="iscsi-server-tgtd">服务端配置（tgtd 方案）<a class="headerlink" href="#iscsi-server-tgtd" title="Permanent link">&para;</a></h3>
+<p>tgtd 方案为用户态的 iSCSI target，安装 <code>tgt</code> 包后即可开始配置。对应服务是 <code>tgt.service</code>。相比于 targetcli，tgtd 的使用简单一些。</p>
+<p>与 targetcli 类似，tgtd 的 target 和实际的存储也是分离的，首先让我们创建一个 target。这里的 tid 是 target id。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>sudo<span class="w"> </span>tgtadm<span class="w"> </span>--lld<span class="w"> </span>iscsi<span class="w"> </span>--op<span class="w"> </span>new<span class="w"> </span>--mode<span class="w"> </span>target<span class="w"> </span>--tid<span class="w"> </span><span class="m">1</span><span class="w"> </span>-T<span class="w"> </span>iqn.2025-05.org.example.201:test-target
+</code></pre></div>
+<p>然后为这个 target 创建一个 logical unit——这里是设置实际的「后备存储」的地方。<code>--backing-store</code> 可以是一个块设备或者一个文件。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>sudo<span class="w"> </span>tgtadm<span class="w"> </span>--lld<span class="w"> </span>iscsi<span class="w"> </span>--mode<span class="w"> </span>logicalunit<span class="w"> </span>--op<span class="w"> </span>new<span class="w"> </span>--tid<span class="w"> </span><span class="m">1</span><span class="w"> </span>--lun<span class="w"> </span><span class="m">1</span><span class="w"> </span>--backing-store<span class="w"> </span>/dev/loop0
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">tgtd 报告错误？</p>
+<p>后备存储需要保证 tgtd 能够访问到，否则会报告没有什么信息量的 <code>tgtadm: invalid request</code> 错误。</p>
+</div>
+<p>之后就可以配置允许对指定的客户端服务。这个过程被称为 <code>bind</code>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>sudo<span class="w"> </span>tgtadm<span class="w"> </span>--lld<span class="w"> </span>iscsi<span class="w"> </span>--mode<span class="w"> </span>target<span class="w"> </span>--op<span class="w"> </span><span class="nb">bind</span><span class="w"> </span>--tid<span class="w"> </span><span class="m">1</span><span class="w"> </span>--initiator-address<span class="w"> </span>ALL
+</code></pre></div>
+<p><code>op</code> 修改为 <code>unbind</code> 则是删除对指定客户端的权限。如果需要查看当前的状态，在 <code>target</code> 模式下 <code>show</code> 即可：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>sudo<span class="w"> </span>tgtadm<span class="w"> </span>--lld<span class="w"> </span>iscsi<span class="w"> </span>--mode<span class="w"> </span>target<span class="w"> </span>--op<span class="w"> </span>show
+</code></pre></div>
+<p>但是需要注意的是，使用 <code>tgtadm</code> 配置的 iSCSI target 没有任何配置持久化。如果需要在重启后自动加载，那么需要修改配置文件，<code>tgt.service</code> 启动时，<code>tgt-admin</code> 会读取配置文件，还原配置。首先导出当前的配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>tgt-admin<span class="w"> </span>--dump
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">default-driver iscsi</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">&lt;target iqn.2025-05.org.example.201:test-target&gt;</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">    backing-store /tmp/test.img</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="go">&lt;/target&gt;</span>
+</code></pre></div>
+<p>把输出放到 <code>/etc/tgt/conf.d/example.conf</code> 中即可。可以重启服务验证是否生效。</p>
 <h3 id="iscsi-client">客户端配置<a class="headerlink" href="#iscsi-client" title="Permanent link">&para;</a></h3>
 <p>使用 <code>iscsiadm</code> 可以配置 iSCSI initiator（需要安装 <code>open-iscsi</code>）。
 操作的第一步是「发现」iSCSI target：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>discovery<span class="w"> </span>-t<span class="w"> </span>sendtargets<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w">  </span><span class="c1"># 列出发现的 target</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>discovery<span class="w"> </span>-t<span class="w"> </span>sendtargets<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w">  </span><span class="c1"># 列出发现的 target</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">iSCSI node</p>
 <p>Node 在 iSCSI 中是代表 target 和 initiator 的单位。Initiator node 就是发起连接的一端（客户端），target node 就是提供存储资源的一端（服务端）。可以认为在 <code>iscsiadm</code> 的操作中，<code>node</code> 就代表 target。</p>
 </div>
 <p>第二步是「登录」。但是直接登录会吃到闭门羹：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1:3260<span class="w"> </span>--login
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">iscsiadm: Could not login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260].</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure)</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="go">iscsiadm: Could not log into all portals</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1:3260<span class="w"> </span>--login
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="go">Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="go">iscsiadm: Could not login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260].</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="go">iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization failure)</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="go">iscsiadm: Could not log into all portals</span>
 </code></pre></div>
-<p>我们需要让服务端授权客户端的 iqn，对应文件在 <code>/etc/iscsi/initiatorname.iscsi</code>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/iscsi/initiatorname.iscsi
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp">#</span><span class="c1"># DO NOT EDIT OR REMOVE THIS FILE!</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="gp">#</span><span class="c1"># If you remove this file, the iSCSI daemon will not start.</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="gp">#</span><span class="c1"># If you change the InitiatorName, existing access control lists</span>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="gp">#</span><span class="c1"># may reject this initiator.  The InitiatorName must be unique</span>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="gp">#</span><span class="c1"># for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.</span>
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">InitiatorName=iqn.1993-08.org.debian:01:a6a4d4f7356f</span>
+<p>我们需要让服务端授权客户端的 iqn。<code>/etc/iscsi/initiatorname.iscsi</code> 包含了客户端自己的 iqn 信息（注意每个客户端的 iqn 都不一样，不要抄例子里的 iqn！）。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/iscsi/initiatorname.iscsi
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="gp">#</span><span class="c1"># DO NOT EDIT OR REMOVE THIS FILE!</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="gp">#</span><span class="c1"># If you remove this file, the iSCSI daemon will not start.</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="gp">#</span><span class="c1"># If you change the InitiatorName, existing access control lists</span>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="gp">#</span><span class="c1"># may reject this initiator.  The InitiatorName must be unique</span>
+<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="gp">#</span><span class="c1"># for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.</span>
+<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="go">InitiatorName=iqn.1993-08.org.debian:01:a6a4d4f7356f</span>
 </code></pre></div>
-<p>（注意不要抄这里的 iqn！）</p>
 <p>在服务端授权后就可以登录了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1:3260<span class="w"> </span>--login
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">Login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--portal<span class="w"> </span><span class="m">127</span>.0.0.1:3260<span class="w"> </span>--login
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">Logging in to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="go">Login to [iface: default, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful.</span>
 </code></pre></div>
 <p>新设备可以通过多种方式确认：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span><span class="c1"># session 代表了 initiator 和 target 的一个连接</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="gp">$ </span><span class="c1"># 下面的命令列出了所有 session 的信息，并且用 -P 3 使得输出更详细</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>session<span class="w"> </span>-P<span class="w"> </span><span class="m">3</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">iSCSI Transport Class version 2.0-870</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="go">version 2.1.8</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="go">Target: iqn.2024-03.org.example.201:test-target (non-flash)</span>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="go">（略）</span>
-<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="go">            Attached scsi disk sda      State: running</span>
-<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="gp">$ </span><span class="c1"># 可以看到对应设备为 sda，也可以用 lsblk 确认</span>
-<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="gp">$ </span>lsblk
-<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="go">NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS</span>
-<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="go">sda      8:0    0     1G  0 disk </span>
-<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="go">sr0     11:0    1 932.3M  0 rom  </span>
-<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="go">vda    254:0    0    50G  0 disk </span>
-<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="go">└─vda1 254:1    0    50G  0 part /</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">$ </span><span class="c1"># session 代表了 initiator 和 target 的一个连接</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="gp">$ </span><span class="c1"># 下面的命令列出了所有 session 的信息，并且用 -P 3 使得输出更详细</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>session<span class="w"> </span>-P<span class="w"> </span><span class="m">3</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="go">iSCSI Transport Class version 2.0-870</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="go">version 2.1.8</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="go">Target: iqn.2024-03.org.example.201:test-target (non-flash)</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="go">（略）</span>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="go">            Attached scsi disk sda      State: running</span>
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="gp">$ </span><span class="c1"># 可以看到对应设备为 sda，也可以用 lsblk 确认</span>
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="gp">$ </span>lsblk
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a><span class="go">NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS</span>
+<a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a><span class="go">sda      8:0    0     1G  0 disk </span>
+<a id="__codelineno-37-13" name="__codelineno-37-13" href="#__codelineno-37-13"></a><span class="go">sr0     11:0    1 932.3M  0 rom  </span>
+<a id="__codelineno-37-14" name="__codelineno-37-14" href="#__codelineno-37-14"></a><span class="go">vda    254:0    0    50G  0 disk </span>
+<a id="__codelineno-37-15" name="__codelineno-37-15" href="#__codelineno-37-15"></a><span class="go">└─vda1 254:1    0    50G  0 part /</span>
 </code></pre></div>
 <p>如果为了维护目的需要 logout：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--logout<span class="w"> </span>all
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="go">Logging out of session [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="go">Logout of [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--targetname<span class="w"> </span>iqn.2024-03.org.example.201:test-target<span class="w"> </span>--logout<span class="w"> </span>all
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="go">Logging out of session [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="go">Logout of [sid: 2, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260] successful</span>
 </code></pre></div>
 <p>有时候，服务端会添加新的 LUN，此时没有必要断开连接再重连（会导致服务中断）。
 客户端可以使用 <code>iscsiadm</code> 的 <code>--rescan</code> 选项来重新扫描设备：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>session<span class="w"> </span>--rescan
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="go">Rescanning session [sid: 4, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="gp">$ </span>lsblk
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="go">NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS</span>
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="go">sda      8:0    0     1G  0 disk </span>
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="go">sdb      8:16   0     1G  0 disk </span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="go">sr0     11:0    1 932.3M  0 rom  </span>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="go">vda    254:0    0    50G  0 disk </span>
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="go">└─vda1 254:1    0    50G  0 part </span>
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="gp">$ </span><span class="c1"># 多出了新添加的 sdb</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>session<span class="w"> </span>--rescan
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="go">Rescanning session [sid: 4, target: iqn.2024-03.org.example.201:test-target, portal: 127.0.0.1,3260]</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="gp">$ </span>lsblk
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="go">NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS</span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="go">sda      8:0    0     1G  0 disk </span>
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="go">sdb      8:16   0     1G  0 disk </span>
+<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="go">sr0     11:0    1 932.3M  0 rom  </span>
+<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="go">vda    254:0    0    50G  0 disk </span>
+<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="go">└─vda1 254:1    0    50G  0 part </span>
+<a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="gp">$ </span><span class="c1"># 多出了新添加的 sdb</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">iSCSI session</p>
@@ -2457,16 +2500,16 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 </div>
 <p>另一点需要注意的是开机时的配置，虽然 <code>iscsid.service</code> 会在开机时自动启用，但是登录操作默认不是自动的。
 这一点可以从配置文件中确认：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/iscsi/iscsid.conf<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>node.startup
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="gp"># </span>node.startup<span class="w"> </span><span class="o">=</span><span class="w"> </span>automatic
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="go">node.startup = manual</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/iscsi/nodes/iqn.2024-03.org.example.201<span class="se">\:</span>test-target/127.0.0.1<span class="se">\,</span><span class="m">3260</span><span class="se">\,</span><span class="m">1</span>/default<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>startup
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="go">node.startup = manual</span>
-<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="go">node.conn[0].startup = manual</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/iscsi/iscsid.conf<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>node.startup
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="gp"># </span>node.startup<span class="w"> </span><span class="o">=</span><span class="w"> </span>automatic
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="go">node.startup = manual</span>
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>cat<span class="w"> </span>/etc/iscsi/nodes/iqn.2024-03.org.example.201<span class="se">\:</span>test-target/127.0.0.1<span class="se">\,</span><span class="m">3260</span><span class="se">\,</span><span class="m">1</span>/default<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>startup
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="go">node.startup = manual</span>
+<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="go">node.conn[0].startup = manual</span>
 </code></pre></div>
 <p>可以使用命令修改相关配置（也可以直接修改配置文件）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.startup -v automatic</span>
-<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.startup -v automatic</span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic</span>
 </code></pre></div>
 <p><code>open-iscsi.service</code> 在开机时会自动登录所有配置好的 target。</p>
 <div class="admonition warning">
@@ -2476,16 +2519,16 @@ LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的�
 <div class="admonition warning">
 <p class="admonition-title">重启 <code>open-iscsi.service</code> 会 logout 当前挂载的所有 iSCSI 块设备</p>
 <p>可以看一下这个服务在开启与关闭时的行为：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/sbin/iscsiadm -m node --loginall=automatic</span>
-<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/lib/open-iscsi/activate-storage.sh</span>
-<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/umountiscsi.sh</span>
-<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/bin/sync</span>
-<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/logout-all.sh</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/sbin/iscsiadm -m node --loginall=automatic</span>
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/lib/open-iscsi/activate-storage.sh</span>
+<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/umountiscsi.sh</span>
+<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/bin/sync</span>
+<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="na">ExecStop</span><span class="o">=</span><span class="s">/lib/open-iscsi/logout-all.sh</span>
 </code></pre></div>
 <p>可以发现 <code>ExecStop</code> 中包含了 logout all 的操作，logout 后会导致当前所有使用对应 iSCSI 块设备的程序无法正常工作。如果修改了登录配置（例如添加了新 node 并设置为了自动登录），并且不希望现有的程序发生错误，那么可以尝试只运行该服务 <code>ExecStart</code> 的部分。对于已经创建了 session 的 node，<code>iscsiadm</code> 不会尝试重复连接：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--loginall<span class="o">=</span>automatic
-<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="go">iscsiadm: default: 1 session requested, but 1 already present.</span>
-<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="go">iscsiadm: Could not log into all portals</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w"> </span>--loginall<span class="o">=</span>automatic
+<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="go">iscsiadm: default: 1 session requested, but 1 already present.</span>
+<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="go">iscsiadm: Could not log into all portals</span>
 </code></pre></div>
 </div>
 <h2 id="samba">Samba<a class="headerlink" href="#samba" title="Permanent link">&para;</a></h2>
@@ -2549,7 +2592,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月2日 06:48:43">2025年5月2日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月2日 08:43:18">2025年5月2日</span>
   </span>
 
     
@@ -2568,14 +2611,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
-          
-          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
+          
+          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
         </a>
       
         <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
