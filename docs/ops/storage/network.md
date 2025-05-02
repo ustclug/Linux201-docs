@@ -656,6 +656,10 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
     iscsiadm: Could not log into all portals
     ```
 
+!!! tip "优化建议：巨型帧"
+
+    巨型帧（jumbo frame）是指 MTU 大于 1500 的以太网帧，一般为 9000。如果链路设备均支持巨型帧，那么可以考虑在 iSCSI 部署时启用巨型帧，减小以太网的额外开销，提升性能。
+
 ## Samba
 
 Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现以下的功能：
