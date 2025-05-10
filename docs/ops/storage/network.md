@@ -357,6 +357,14 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
     * 然而，如果执行移动操作的进程拥有 `cap_dac_override` 这个 capability，则可以[绕过对被移动目录写权限的检查](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485)。
     * 在实际问题场景中，尽管执行操作的进程具备 `cap_dac_override` capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。
 
+!!! note "NFS 与用户命名空间 (User Namespace) 的兼容性问题"
+
+    在容器化环境中使用 NFS 时，会遇到其与用户命名空间相关的兼容性问题：
+
+    * **Rootless Podman 与用户命名空间**：Rootless Podman 利用 Linux 的用户命名空间功能，将容器内部的用户 ID（例如，容器内的 root 用户，其 UID 为 0）映射到宿主机上的一个非特权用户 ID 范围。这样，容器内的 root 用户在宿主机上并不具备真正的 root 权限。更多详情请参阅 [Understanding rootless Podman's user namespace modes](https://www.redhat.com/en/blog/rootless-podman-user-namespace-modes)。
+    * **NFS 与用户命名空间的不兼容性**：NFS 协议在设计之初并未充分考虑用户命名空间。其工作机制高度依赖于服务器与客户端之间对 UID 和 GID 的一致性认知。当引入用户命名空间后，容器内的 UID/GID 与宿主机以及 NFS 服务器所期望的 UID/GID 可能不再一致。
+    * **导致的问题**：当运行在用户命名空间内的容器尝试在 NFS 挂载的目录中执行文件所有权变更操作（例如 `chown`命令），并试图将文件所有者设置为一个仅在该容器的用户命名空间内有效的 UID 时，NFS 服务器通常无法识别或正确处理这个来自特定命名空间的 UID。这是因为 NFS 服务器期望的是其自身（或全局）认知范围内的 UID。此类操作因此常常失败。一个典型的场景是，尝试将 Rootless Podman 的存储位置设置在 NFS 挂载的目录上时会遇到困难，如 [Rootless Podman and NFS](https://www.redhat.com/en/blog/rootless-podman-nfs) 中所述。
+
 ## iSCSI
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
