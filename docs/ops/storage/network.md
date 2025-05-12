@@ -2,7 +2,7 @@
 
 !!! note "主要作者"
 
-    [@taoky][taoky]
+    [@taoky][taoky]、[@zeyugao][zeyugao]
 
 !!! warning "本文编写中"
 
@@ -677,7 +677,7 @@ Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下�
 
 !!! note "家用场景下的其他协议"
 
-    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。如有需要可以自行搜索相关的配置方法。
+    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。如有需要可以自行搜索相关的配置方法。
 
 ### 服务自动发现 {#samba-auto-discovery}
 
