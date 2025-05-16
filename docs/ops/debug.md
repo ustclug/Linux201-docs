@@ -621,7 +621,7 @@ tcpdump -ni eth0 -w result.pcap
 tcpdump -ni eth0 host 8.8.8.8
 ```
 
-`-n` 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 `host 8.8.8.8` 部分为 pcap 表达式，详情可阅读 [pcap-filter.7](pcap-filter.7)。
+`-n` 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 `host 8.8.8.8` 部分为 pcap 表达式，详情可阅读 [pcap-filter(7)][pcap-filter.7]。
 
 !!! question "编写 pcap 表达式"
 
