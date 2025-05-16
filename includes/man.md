@@ -42,6 +42,7 @@
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
+[user@.service.5]: https://www.freedesktop.org/software/systemd/man/latest/user@.service.html
 
 <!-- man 7 -->
 

@@ -460,3 +460,11 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用
     在某些非常特殊的环境下，可能需要配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
 
 有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
+
+!!! lab "限制用户的资源使用"
+
+    用户 session 启动时，systemd 会创建 `user-<uid>.slice`。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。
+
+    （最常见的情况是，有人在编译软件时，跑了不限制并发的 `make -j`）
+
+    请尝试限制让**每个**用户 CPU 最多只使用 30%，内存最多只使用 8G（可阅读 [user@.service(5)][user@.service.5]）。
