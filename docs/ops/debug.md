@@ -72,6 +72,10 @@ icon: material/bug
         earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
 
         ![earlyoom in Vlab](../images/vlab-earlyoom.png)
+    
+    !!! question "tmpfs?"
+
+        思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
 
 !!! note "系统无法启动"
 
