@@ -641,6 +641,10 @@ tcpdump -ni eth0 host 8.8.8.8
 
     [bcc](#eBPF) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
 
+!!! note "HTTP/HTTPS 抓包工具"
+
+    如 Burp Suite、Fiddler 等工具专门设计为 HTTP/HTTPS 抓包工具，以方便开发者调试。它们的工作原理是在本机运行一个代理服务器，在设置浏览器或应用使用这个代理服务器后，这些工具就可以获取 HTTP 请求与响应内容。如果安装它们提供的根证书，还可以解密 HTTPS 的内容。
+
 ## 性能问题分析 {#performance-analysis}
 
 本节介绍使用 `perf` 等工具进行基础的性能问题分析的方式。`perf` 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 `linux-perf`。
