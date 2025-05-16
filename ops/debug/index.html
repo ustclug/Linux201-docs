@@ -2304,7 +2304,7 @@
 </ul>
 <div class="admonition note">
 <p class="admonition-title">系统几乎/完全无法操作</p>
-<p>不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满，出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。</p>
+<p>不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满（OOM），出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。</p>
 <p>根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 <code>/proc/sys/kernel/sysrq</code> 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 <a href="https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key">Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分</a>。需要在 sysctl 配置中设置 <code>kernel.sysrq=1</code> 以持久化相应设置。</p>
 <p>最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：</p>
 <ul>
@@ -2320,6 +2320,23 @@
 <p class="admonition-title">测试 kdump</p>
 <p>Debian 的 <code>kdump-tools</code> 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 <code>kdump-tools</code>，并使用 SysRq 触发内核崩溃，验证配置的有效性。</p>
 </div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">用户态 OOM Killer</p>
+<p>Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。</p>
+<p>用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：</p>
+<ul>
+<li>
+<p>systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者 swap 占用比例超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。</p>
+<p>由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 <code>default-command</code> 为 <code>systemd-run --user --scope bash</code>），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。</p>
+<p>可以使用 <code>oomctl</code> 命令获取当前 oomd 状态。</p>
+</li>
+<li>
+<p><a href="https://github.com/rfjakob/earlyoom">earlyoom</a>。earlyoom 使用 <a href="https://man7.org/linux/man-pages/man2/mlock.2.html">mlock(2)</a> 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。</p>
+<p>earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：</p>
+<p><img alt="earlyoom in Vlab" src="../../images/vlab-earlyoom.png" /></p>
+</li>
+</ul>
 </div>
 <div class="admonition note">
 <p class="admonition-title">系统无法启动</p>
@@ -2821,6 +2838,10 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p><img alt="Wireshark setting pre-master-secret log filename" src="../../images/wireshark-tls.png" /></p>
 <p><a href="#eBPF">bcc</a> 提供的 <code>sslsniff</code> 工具、<a href="https://github.com/gojue/ecapture">eCapture</a> 工具则通过 eBPF 的方式实现了查看加密内容的功能。</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">HTTP/HTTPS 抓包工具</p>
+<p>如 Burp Suite、Fiddler 等工具专门设计为 HTTP/HTTPS 抓包工具，以方便开发者调试。它们的工作原理是在本机运行一个代理服务器，在设置浏览器或应用使用这个代理服务器后，这些工具就可以获取 HTTP 请求与响应内容。如果安装它们提供的根证书，还可以解密 HTTPS 的内容。</p>
+</div>
 <h2 id="performance-analysis">性能问题分析<a class="headerlink" href="#performance-analysis" title="Permanent link">&para;</a></h2>
 <p>本节介绍使用 <code>perf</code> 等工具进行基础的性能问题分析的方式。<code>perf</code> 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 <code>linux-perf</code>。</p>
 <p><code>perf</code> 的功能非常丰富，以下仅能介绍一小部分功能。</p>
@@ -3128,6 +3149,8 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 
 <!-- man 1 -->
 
+<!-- man 2 -->
+
 <!-- man 3 -->
 
 <!-- man 4 -->
@@ -3167,7 +3190,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月13日 18:09:04">2025年5月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月16日 05:05:36">2025年5月16日</span>
   </span>
 
     
