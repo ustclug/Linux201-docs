@@ -59,6 +59,7 @@ Do not link to a "generic" man page for these commands -->
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
 [sshd.8]: https://linux.die.net/man/8/sshd
+[systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
 [userdel.8]: https://manpages.debian.org/stable/passwd/userdel.8.en.html
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs

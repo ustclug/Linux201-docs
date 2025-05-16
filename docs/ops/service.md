@@ -432,3 +432,31 @@ prerotate / postrotate
 修改了 logrotate 的配置文件之后，可以使用 `logrotate -d /etc/logrotate.conf` 来测试配置文件的正确性，而不会真正执行任何操作。
 
 同时由于 logrotate 不存在守护进程，而是通过 systemd timer 来定期执行的，因此修改配置文件之后不需要重启任何服务。
+
+## 登录管理器 {#logind}
+
+systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 [systemd-logind(8)][systemd-logind.8]。本部分主要关注在日常运维中可能会用到的一部分特性。
+
+在登录系统时，PAM 的 `pam_systemd.so` 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。
+
+`loginctl list-sessions` 可以显示当前的所有用户 session：
+
+```console
+$ loginctl list-sessions
+SESSION  UID USER  SEAT  TTY
+      2 1000 user  seat0
+
+1 sessions listed.
+```
+
+`loginctl` 支持锁定（`lock-session`）、解锁（`unlock-session`）、注销（`terminate-session`）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 `loginctl` 的功能来实现。
+
+systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 `systemctl`、`journalctl` 操作时添加 `--user` 参数即可查看当前用户的服务和日志等。
+
+!!! note "DBus"
+
+    `systemctl`、`journalctl` 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 `/run/user/<用户 PID>/bus`）。
+
+    在某些非常特殊的环境下，可能需要配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
+
+有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
