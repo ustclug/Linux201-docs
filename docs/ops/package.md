@@ -448,6 +448,140 @@ Pin-Priority: 1000
 
     当 `Pin-Priority` 为负数时，APT 会拒绝安装这个包。请阅读文档，尝试创建一个配置文件，阻止安装 `snapd`（可在 Ubuntu 容器中实验）。
 
+### Bug 查询 {#listbugs}
+
+Debian 软件包的 bug 汇总于 [Debian 缺陷跟踪系统（BTS）](https://www.debian.org/Bugs/)。可以使用 `reportbug` 工具报告 bug，详情见 [如何使用 reportbug 在 Debian 中报告问题](https://www.debian.org/Bugs/Reporting)。
+
+这里要介绍的是 `apt-listbugs` 工具，它可以在安装或升级软件包之前在 BTS 上查询并提示严重的 bug 信息。直接安装即可。之后在软件包下载完成，开始安装之前，`apt-listbugs` 注册的 hook 就会查询，如果存在等级为 critical、grave 或者 serious 的 bug，就会提示用户：
+
+```console
+$ sudo apt install gnome-shell
+（省略）
+Fetched 545 MB in 18s (31.1 MB/s)
+Retrieving bug reports... Done
+Parsing Found/Fixed information... Done
+critical bugs of libgdbm6 (-> 1.23-3) <Outstanding>
+ b1 - #1051003 - libgdbm6: trap divide error in libgdbm.so.6.0.0
+serious bugs of gnome-shell (-> 43.9-0+deb12u2) <Outstanding>
+ b2 - #931281 - gnome-shell: Session cannot be unlocked when audio dialog for plugged in speaker is active
+grave bugs of perl (-> 5.36.0-7+deb12u2) <Forwarded>
+ b3 - #1098226 - perl: thread creation while a directory handle is open does a fchdir, affecting other threads (race condition)
+grave bugs of libunwind8 (-> 1.6.2-3) <Forwarded>
+ b4 - #994510 - libunwind8 abuses setcontext() causing SIGSEGV on i386 with glibc >= 2.32
+grave bugs of libmpfr6 (-> 4.2.0-1) <Resolved in some Version>
+ b5 - #1057355 - libmpfr6: major formatted output function bugs with %c and the value 0 (Fixed: 4.2.2-1)
+serious bugs of fontconfig-config (-> 2.14.1-4) <Resolved in some Version>
+ b6 - #962420 - /usr/local/share/fonts owned by group staff even if /etc/staff-group-for-usr-local not present (Fixed: fontconfig/2.15.0-2.1)
+serious bugs of sane-utils (-> 1.2.1-2) <Resolved in some Version>
+ b7 - #1095956 - sane-utils: postinst depends on libsane1.postinst without a PreDepends (Fixed: sane-backends/1.3.1-3)
+serious bugs of initramfs-tools-core (-> 0.142+deb12u1) <Resolved in some Version>
+ b8 - #1082647 - copy_exec: [regression] ignores trailing slash, installs file as directory name (Fixed: initramfs-tools/0.142+deb12u2 initramfs-tools/0.146)
+serious bugs of mesa-vulkan-drivers (-> 22.3.6-1+deb12u1) <Resolved in some Version>
+ b9 - #980148 - mesa-vulkan-drivers: file content conflict in Multi-Arch:same package (Fixed: mesa/25.0.5-1)
+Summary:
+ libgdbm6(1 bug), perl(1 bug), fontconfig-config(1 bug), sane-utils(1 bug), libunwind8(1 bug), gnome-shell(1 bug), libmpfr6(1 bug), initramfs-tools-core(1 bug), mesa-vulkan-drivers(1 bug)
+Are you sure you want to install/upgrade the above packages? [Y/n/?/...]
+```
+
+当然这不代表你一定会遇到这些 bug，在确认之后可以继续或者终止安装。`apt-listbugs` 也可以手动查询指定的包信息：
+
+```console
+$ # 查询 critical、grave、serious 级别的 bug
+$ apt-listbugs list gnome-shell
+Retrieving bug reports... Done
+Parsing Found/Fixed information... Done
+serious bugs of gnome-shell (-> ) <Outstanding>
+ b1 - #931281 - gnome-shell: Session cannot be unlocked when audio dialog for plugged in speaker is active
+Summary:
+ gnome-shell(1 bug)
+$ # 查询所有 bug
+$ apt-listbugs list -s all linux
+Retrieving bug reports... Done
+Parsing Found/Fixed information... Done
+normal bugs of linux (-> ) <Outstanding>
+ b1 - #1092931 - Most recent kernel is causing issues with touchpad function.
+ b2 - #1101733 - debian/templates/image.*.in: allow maint scripts in /usr/share/kernel/*.d
+ b3 - #946791 - Please enable CONFIG_IOSCHED_BFQ=y
+wishlist bugs of linux (-> ) <Outstanding>
+ b4 - #1024186 - linux: consider deprecating unprivileged_userns_clone
+important bugs of linux (-> ) <Forwarded>
+ b5 - #945055 - huge CPU temperature increase from 5.2 to 5.5 ... and when using intel_pstate
+normal bugs of linux (-> ) <Forwarded>
+ b6 - #836211 - dpkg: Cannot upgrade some packages on overlayfs: Invalid cross-device link
+important bugs of linux (-> ) <Resolved in some Version>
+ b7 - #1091858 - zstd: -9 SIGILLs on mips64el (under QEMU -M malta => invalid baselining?) (Fixed: linux/6.1.129-1 linux/6.12.15-1 linux/6.13.3-1~exp1)
+normal bugs of linux (-> ) <Resolved in some Version>
+ b8 - #1010581 - amd-pstate (Fixed: 6.1~rc7-1~exp1)
+ b9 - #1094244 - FTCBFS amd64 -> arm64: cc: error: unrecognized command-line option ‘-mbranch-protection=standard’ (Fixed: linux/6.13.2-1~exp1)
+wishlist bugs of linux (-> ) <Resolved in some Version>
+ b10 - #1024550 - linux: please add configurations for loongarch64 (Fixed: 6.7.7-1)
+Summary:
+ linux(10 bugs)
+```
+
+### 安全检查 {#security-check}
+
+尽管 Debian 稳定版本有着多年的支持，但是其中的一小部分软件包可能无法有效地进行安全更新，或者由于设计原因无法处理可能存在安全风险的内容。`debian-security-support` 包可以帮助用户检查系统中是否存在无法再提供安全维护的包。在安装时该包就会显示相关信息，也可以使用 `check-support-status` 命令手动检查：
+
+```console
+$ check-support-status
+Ended security support for one or more packages
+
+Unfortunately, it has been necessary to end security support for some 
+packages before the end of the regular security maintenance life cycle.
+
+The following packages found on this system are affected by this:
+
+* Source:intel-mediasdk, ended on 2024-11-21 at version 22.5.4-1
+  Details: abandoned upstream, upstream does not publish enough information to fix issues.
+  Affected binary package:
+  - libmfx1:amd64 (installed version: 22.5.4-1)
+
+Limited security support for one or more packages
+
+Unfortunately, it has been necessary to limit security support for some 
+packages.
+
+The following packages found on this system are affected by this:
+
+* Source:binutils
+  Details: Only suitable for trusted content; see https://lists.debian.org/msgid-search/87lfqsomtg.fsf@mid.deneb.enyo.de
+  Affected binary packages:
+  - binutils (installed version: 2.40-2)
+  - binutils-common:amd64 (installed version: 2.40-2)
+  - binutils-x86-64-linux-gnu (installed version: 2.40-2)
+  - libbinutils:amd64 (installed version: 2.40-2)
+  - libctf-nobfd0:amd64 (installed version: 2.40-2)
+  - libctf0:amd64 (installed version: 2.40-2)
+  - libgprofng0:amd64 (installed version: 2.40-2)
+（以下省略）
+```
+
+此外，`needrestart` 包可以检查系统中哪些服务，以及内核本身是否需要重启来更新。安装该包后，在系统更新时它的 hook 就会自动检查需要重启的情况，并提示用户，在交互式的情况下，用户可以选择重启哪些服务。也可以直接执行 `needrestart` 命令来检查。
+
+```console
+$ # 检查用户自己的进程
+$ /sbin/needrestart
+Scanning processes...
+Your outdated processes:
+evolution-alarm[3599], evolution-sourc[3678], goa-daemon[3436]
+$ # 检查整个系统
+$ sudo /sbin/needrestart
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+User sessions running outdated binaries:
+ user @ session #2: cinnamon-sessio[3100]
+ user @ user manager service: systemd[3071]
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+```
+
 ## DEB 软件包 {#deb-package}
 
 本节介绍 DEB 软件包包含的内容，以及如何在已有的基础上进行简单的修改与打包操作。
