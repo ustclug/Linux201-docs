@@ -10,7 +10,7 @@ icon: material/ssh
 
 !!! warning "本文编写中"
 
-尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，因此本教程只介绍 OpenSSH 的使用。
+尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，也是绝大多数 Linux 发行版采用的默认 SSH 方案，因此本教程主要介绍 OpenSSH 的使用。
 
 ## 客户端配置 {#ssh-config}
 
