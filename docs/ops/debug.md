@@ -66,7 +66,38 @@ icon: material/bug
 
         由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
-        可以使用 `oomctl` 命令获取当前 oomd 状态。
+        oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
+
+        ??? example "Debian 12 中的 systemd-oomd 配置"
+
+            Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。
+
+            ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
+            [Slice]
+            ManagedOOMSwap=kill
+            ```
+
+            ```ini title="/usr/lib/systemd/system/user@.service.d/10-oomd-user-service-defaults.conf"
+            [Service]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=50%
+            ```
+        
+        ??? example "Fedora 42 中的 systemd-oomd 配置"
+
+            Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
+
+            ```ini title="/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf"
+            [Slice]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=80%
+            ```
+
+            ```ini title="/usr/lib/systemd/user/slice.d/10-oomd-per-slice-defaults.conf"
+            [Slice]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=80%
+            ```
     - [earlyoom](https://github.com/rfjakob/earlyoom)。earlyoom 使用 [mlock(2)][mlock.2] 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。
 
         earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
