@@ -313,6 +313,8 @@ parted test.img
 
     需要注意的是，这一项功能在 Windows 下被称为「虚拟内存」，但是从操作系统的角度来说，这种用语是不正确的。「虚拟内存」实际上指代这样一种机制：程序看到的虚拟内存地址和实际的物理地址是不一样的，由操作系统和硬件的映射机制进行关联。程序看到的连续的地址可能在物理上不是连续的，甚至有可能不在物理内存，而是在外部存储（swap）中。这样的话，程序在使用内存时就不需要考虑可能访问到其他程序内存的问题，同时这也允许操作系统更加灵活地管理内存（因为不再需要严格保证内存的连续性要求）。
 
+    传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 [In defense of swap: common misconceptions](https://chrisdown.name/2018/01/02/in-defence-of-swap.html)（中文版：[替 swap 辩护：常见的误解](https://farseerfc.me/zhs/in-defence-of-swap.html)）。有关如何设置用户态 OOM Killer 的内容，可参考[问题调试中的「用户态 OOM Killer」部分](../debug.md#quick-checklist)。
+
 ??? info "fdisk 操作示例"
 
     fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 `g` 命令。
