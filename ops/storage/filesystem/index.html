@@ -2530,6 +2530,7 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <p class="admonition-title">什么是 swap？</p>
 <p>Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存不足时，系统会将一部分内存「交换」到 swap 分区中，以腾出物理内存的空间。在系统休眠（hibernate）的时候，物理内存中的所有数据也都会写入到 swap 中。Swap 也可以实现为文件的形式。</p>
 <p>需要注意的是，这一项功能在 Windows 下被称为「虚拟内存」，但是从操作系统的角度来说，这种用语是不正确的。「虚拟内存」实际上指代这样一种机制：程序看到的虚拟内存地址和实际的物理地址是不一样的，由操作系统和硬件的映射机制进行关联。程序看到的连续的地址可能在物理上不是连续的，甚至有可能不在物理内存，而是在外部存储（swap）中。这样的话，程序在使用内存时就不需要考虑可能访问到其他程序内存的问题，同时这也允许操作系统更加灵活地管理内存（因为不再需要严格保证内存的连续性要求）。</p>
+<p>传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 <a href="https://chrisdown.name/2018/01/02/in-defence-of-swap.html">In defense of swap: common misconceptions</a>（中文版：<a href="https://farseerfc.me/zhs/in-defence-of-swap.html">替 swap 辩护：常见的误解</a>）。有关如何设置用户态 OOM Killer 的内容，可参考<a href="../../debug/#quick-checklist">问题调试中的「用户态 OOM Killer」部分</a>。</p>
 </div>
 <details class="info">
 <summary>fdisk 操作示例</summary>
@@ -3445,7 +3446,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月27日 19:34:22 UTC">2025年5月27日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年5月30日 17:23:53 UTC">2025年5月30日</span>
   </span>
 
     
