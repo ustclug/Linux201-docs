@@ -1249,7 +1249,7 @@ services:
 
     根据 [tini Issue #8](https://github.com/krallin/tini/issues/8#issuecomment-146135930) 的讨论，如果 `bash` 为 PID 1，那么处理僵尸进程的事情确实不需要操心，但是 `bash` 默认不会帮忙传递信号——这意味着如果执行 `docker stop`，那么 `bash` 自己吞掉信号之后什么都不会发生——这个命令会卡住比较长的时间，直到超时之后被强制杀死，无法做到优雅地退出（gracefully exit）。
 
-    特别地，实际的服务程序也需要恰当处理信号。一个反例是默认的 Python 收到 `SIGTERM`（`docker stop` 发送的信号）时，什么都不会做：
+    特别地，实际的服务程序也需要恰当处理信号，特别是在作为 PID 1 的时候（因为 PID 1 进程不像其他进程，没有默认的信号 handler）。例如，Python 不会特殊处理信号，因此作为容器启动进程（PID 1）收到 `SIGTERM`（`docker stop` 发送的信号）时，什么都不会做：
 
     ```console
     $ sudo docker run -it --rm --name=python-signal python bash
@@ -1260,7 +1260,7 @@ services:
     （卡住直到超时，SIGKILL）
     ```
 
-    如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。对于 Python 而言，可以这么解决：
+    如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。如果不希望启动容器额外设置 `--init`，或者需要在退出时做额外清理等操作的话，对于 Python 而言，可以这么解决：
 
     ```python
     import signal
