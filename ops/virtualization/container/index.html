@@ -3367,7 +3367,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li>传递信号。PID 1 需要将 <code>SIGTERM</code>、<code>SIGINT</code> 等信号转发给实际的服务程序。</li>
 </ol>
 <p>根据 <a href="https://github.com/krallin/tini/issues/8#issuecomment-146135930">tini Issue #8</a> 的讨论，如果 <code>bash</code> 为 PID 1，那么处理僵尸进程的事情确实不需要操心，但是 <code>bash</code> 默认不会帮忙传递信号——这意味着如果执行 <code>docker stop</code>，那么 <code>bash</code> 自己吞掉信号之后什么都不会发生——这个命令会卡住比较长的时间，直到超时之后被强制杀死，无法做到优雅地退出（gracefully exit）。</p>
-<p>特别地，实际的服务程序也需要恰当处理信号。一个反例是默认的 Python 收到 <code>SIGTERM</code>（<code>docker stop</code> 发送的信号）时，什么都不会做：</p>
+<p>特别地，实际的服务程序也需要恰当处理信号，特别是在作为 PID 1 的时候（因为 PID 1 进程不像其他进程，没有默认的信号 handler）。例如，Python 不会特殊处理信号，因此作为容器启动进程（PID 1）收到 <code>SIGTERM</code>（<code>docker stop</code> 发送的信号）时，什么都不会做：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="o">=</span>python-signal<span class="w"> </span>python<span class="w"> </span>bash
 <a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="gp">root@ecdc8fe55f36:/# </span><span class="nb">exec</span><span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import time; time.sleep(10000000)&quot;</span><span class="w">  </span><span class="c1"># 使用 `exec` 确保 PID 1 从 bash 变成 python</span>
 <a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a>
@@ -3375,7 +3375,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-66-5" name="__codelineno-66-5" href="#__codelineno-66-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>stop<span class="w"> </span>python-signal
 <a id="__codelineno-66-6" name="__codelineno-66-6" href="#__codelineno-66-6"></a><span class="go">（卡住直到超时，SIGKILL）</span>
 </code></pre></div>
-<p>如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。对于 Python 而言，可以这么解决：</p>
+<p>如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。如果不希望启动容器额外设置 <code>--init</code>，或者需要在退出时做额外清理等操作的话，对于 Python 而言，可以这么解决：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
 <a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a>
@@ -3765,7 +3765,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月2日 10:21:31 UTC">2025年6月2日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月2日 21:42:29 UTC">2025年6月2日</span>
   </span>
 
     
