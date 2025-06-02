@@ -2313,19 +2313,21 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <li><strong>Rootless Podman 与用户命名空间</strong>：Rootless Podman 利用 Linux 的用户命名空间功能，将容器内部的用户 ID（例如，容器内的 root 用户，其 UID 为 0）映射到宿主机上的一个非特权用户 ID 范围。这样，容器内的 root 用户在宿主机上并不具备真正的 root 权限。更多详情请参阅 <a href="https://www.redhat.com/en/blog/rootless-podman-user-namespace-modes">Understanding rootless Podman's user namespace modes</a>。</li>
 <li><strong>NFS 与用户命名空间的不兼容性</strong>：NFS 协议在设计之初并未充分考虑用户命名空间。其工作机制高度依赖于服务器与客户端之间对 UID 和 GID 的一致性认知。当引入用户命名空间后，容器内的 UID/GID 与宿主机以及 NFS 服务器所期望的 UID/GID 可能不再一致。</li>
 <li><strong>导致的问题</strong>：当运行在用户命名空间内的容器尝试在 NFS 挂载的目录中执行文件所有权变更操作（例如 <code>chown</code>命令），并试图将文件所有者设置为一个仅在该容器的用户命名空间内有效的 UID 时，NFS 服务器通常无法识别或正确处理这个来自特定命名空间的 UID。这是因为 NFS 服务器期望的是其自身（或全局）认知范围内的 UID。此类操作因此常常失败。一个典型的场景是，尝试将 Rootless Podman 的存储位置设置在 NFS 挂载的目录上时会遇到困难，如 <a href="https://www.redhat.com/en/blog/rootless-podman-nfs">Rootless Podman and NFS</a> 中所述。</li>
-<li><strong>Workaround</strong>: 使用用户态的 NFS 服务器（如 <code>nfs-ganesha</code>）可以在一定程度上缓解这个问题，因为它可以更灵活地被修改。虽然 <code>nfs-ganesha</code> 本身并不支持用户命名空间，但是可以应用 <a href="https://gist.github.com/zeyugao/754edc3572fcd56e3140242e2352eafb">这个 Patch</a> 来使其支持用户命名空间。具体的实现方式可能不够安全，因此需要谨慎使用。这个 patch 基于的假设是 NFS 服务端的 <code>/etc/subuid</code> 和 <code>/etc/subgid</code> 与 NFS 客户端上的 <code>/etc/subuid</code> 和 <code>/etc/subgid</code> 是一致的。至少是想要处理的用户对应的 subuid/subgid 是一致的。所以并不需要 NFS 客户端做出改动。在服务端修改为 nfs-ganesha 的实现的时候，之前使用 Kernel NFS Server 提供的挂载目录需要重新挂载。因为 Kernel NFS 的 knfsd_fh 与 ganesha 的 <code>nfs_fh4</code> 不兼容。</li>
-</ul>
-<p><code>nfs-ganesha</code> 期望 <code>fh_version</code> 为 <code>GANESHA_FH_VERSION</code></p>
+<li>
+<p><strong>Workaround</strong>: 使用用户态的 NFS 服务器（如 <code>nfs-ganesha</code>）可以在一定程度上缓解这个问题，因为它可以更灵活地被修改。虽然 <code>nfs-ganesha</code> 本身并不支持用户命名空间，但是可以应用 <a href="https://gist.github.com/zeyugao/754edc3572fcd56e3140242e2352eafb">这个 Patch</a> 来使其支持用户命名空间。具体的实现方式可能不够安全，因此需要谨慎使用。这个 patch 基于的假设是 NFS 服务端的 <code>/etc/subuid</code> 和 <code>/etc/subgid</code> 与 NFS 客户端上的 <code>/etc/subuid</code> 和 <code>/etc/subgid</code> 是一致的。至少是想要处理的用户对应的 subuid/subgid 是一致的。所以并不需要 NFS 客户端做出改动。在服务端修改为 nfs-ganesha 的实现的时候，之前使用 Kernel NFS Server 提供的挂载目录需要重新挂载。因为 Kernel NFS 的 knfsd_fh 与 ganesha 的 <code>nfs_fh4</code> 不兼容。</p>
+<p><code>nfs-ganesha</code> 期望 <code>fh_version</code> 为 <code>GANESHA_FH_VERSION</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pfile_handle</span><span class="o">-&gt;</span><span class="n">fhversion</span><span class="w"> </span><span class="o">!=</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">               </span><span class="n">GANESHA_FH_VERSION</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">            </span><span class="n">GANESHA_FH_VERSION</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">            </span><span class="n">LogInfo</span><span class="p">(</span><span class="n">COMPONENT_FILEHANDLE</span><span class="p">,</span>
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">                </span><span class="s">&quot;INVALID HANDLE: not a Ganesha handle, fhversion=%d&quot;</span><span class="p">,</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">                </span><span class="n">pfile_handle</span><span class="o">-&gt;</span><span class="n">fhversion</span><span class="p">);</span>
 </code></pre></div>
-<p>其定义是</p>
+<p>其定义是：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="cp">#define GANESHA_FH_VERSION 0x43</span>
 </code></pre></div>
-<p>而 Kernel NFS Server 的 <code>knfsd_fh</code> 结构体中 <code>fh_version</code> 的值为 1。导致了不兼容。</p>
+<p>而 Kernel NFS Server 的 <code>knfsd_fh</code> 结构体中 <code>fh_version</code> 的值为 1，导致了不兼容。</p>
+</li>
+</ul>
 </div>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
 <p>iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。</p>
@@ -2619,7 +2621,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月2日 08:55:26 UTC">2025年6月2日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月2日 10:21:31 UTC">2025年6月2日</span>
   </span>
 
     
@@ -2638,14 +2640,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
-          
-          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
+          
+          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
         </a>
       
         <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
