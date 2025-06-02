@@ -364,6 +364,44 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
     * **Rootless Podman 与用户命名空间**：Rootless Podman 利用 Linux 的用户命名空间功能，将容器内部的用户 ID（例如，容器内的 root 用户，其 UID 为 0）映射到宿主机上的一个非特权用户 ID 范围。这样，容器内的 root 用户在宿主机上并不具备真正的 root 权限。更多详情请参阅 [Understanding rootless Podman's user namespace modes](https://www.redhat.com/en/blog/rootless-podman-user-namespace-modes)。
     * **NFS 与用户命名空间的不兼容性**：NFS 协议在设计之初并未充分考虑用户命名空间。其工作机制高度依赖于服务器与客户端之间对 UID 和 GID 的一致性认知。当引入用户命名空间后，容器内的 UID/GID 与宿主机以及 NFS 服务器所期望的 UID/GID 可能不再一致。
     * **导致的问题**：当运行在用户命名空间内的容器尝试在 NFS 挂载的目录中执行文件所有权变更操作（例如 `chown`命令），并试图将文件所有者设置为一个仅在该容器的用户命名空间内有效的 UID 时，NFS 服务器通常无法识别或正确处理这个来自特定命名空间的 UID。这是因为 NFS 服务器期望的是其自身（或全局）认知范围内的 UID。此类操作因此常常失败。一个典型的场景是，尝试将 Rootless Podman 的存储位置设置在 NFS 挂载的目录上时会遇到困难，如 [Rootless Podman and NFS](https://www.redhat.com/en/blog/rootless-podman-nfs) 中所述。
+    * **Workaround**: 使用用户态的 NFS 服务器（如 `nfs-ganesha`）可以在一定程度上缓解这个问题，因为它可以更灵活地被修改。虽然 `nfs-ganesha` 本身并不支持用户命名空间，但是可以应用 [这个 Patch](https://gist.github.com/zeyugao/754edc3572fcd56e3140242e2352eafb) 来使其支持用户命名空间。具体的实现方式可能不够安全，因此需要谨慎使用。这个 patch 基于的假设是 NFS 服务端的 `/etc/subuid` 和 `/etc/subgid` 与 NFS 客户端上的 `/etc/subuid` 和 `/etc/subgid` 是一致的。至少是想要处理的用户对应的 subuid/subgid 是一致的。所以并不需要 NFS 客户端做出改动。在服务端修改为 nfs-ganesha 的实现的时候，之前使用 Kernel NFS Server 提供的挂载目录需要重新挂载。因为 Kernel NFS 的 knfsd_fh 与 ganesha 的 `nfs_fh4` 不兼容。
+
+    Kernel 的 NFS Server 的文件句柄（file handle）结构体为 [`knfsd_fh`](https://elixir.bootlin.com/linux/v6.8/source/fs/nfsd/nfsfh.h#L47)，如下所示：
+
+    ```c
+    struct knfsd_fh {
+        unsigned int    fh_size;    /*
+                                    * Points to the current size while
+                                    * building a new file handle.
+                                    */
+        union {
+            char        fh_raw[NFS4_FHSIZE];
+            struct {
+                u8      fh_version;     /* == 1 */
+                u8      fh_auth_type;   /* deprecated */
+                u8      fh_fsid_type;
+                u8      fh_fileid_type;
+                u32     fh_fsid[]; /* flexible-array member */
+            };
+        };
+    };
+    ```
+
+    而 `nfs-ganesha` 期望 `fh_version` 为 `GANESHA_FH_VERSION`
+    
+    ```c
+    } else if (pfile_handle->fhversion !=
+				   GANESHA_FH_VERSION) {
+				LogInfo(COMPONENT_FILEHANDLE,
+					"INVALID HANDLE: not a Ganesha handle, fhversion=%d",
+					pfile_handle->fhversion);
+    ```
+    
+    其定义是
+
+    ```c
+    #define GANESHA_FH_VERSION 0x43
+    ```
 
 ## iSCSI
 
