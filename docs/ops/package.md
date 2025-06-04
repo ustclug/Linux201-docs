@@ -275,7 +275,7 @@ debconf-get-selections | grep unattended-upgrades/enable_auto_updates
 unattended-upgrades	unattended-upgrades/enable_auto_updates	boolean	false
 ```
 
-则代表自动更新被关闭，反之则启用。可以执行 `dpkg-reconfigure unattended-upgrades` 修改配置。当自动更新启用时，`/etc/apt/apt.conf.d/20auto-upgrades` 文件应当存在。
+则代表自动更新被关闭，反之则启用。可以执行 `dpkg-reconfigure unattended-upgrades` 修改配置。当自动更新启用时，`/etc/apt/apt.conf.d/20auto-upgrades` 文件应当存在。`unattended-upgrades` 需要由定时任务触发，因此需要确认与 APT 更新相关的 timer（`apt-daily.timer` 和 `apt-daily-upgrade.timer`）处于启用状态。
 
 可以使用以下命令：
 
