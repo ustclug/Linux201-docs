@@ -2330,6 +2330,7 @@
 <p>systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者 swap 占用比例超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。</p>
 <p>由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 <code>default-command</code> 为 <code>systemd-run --user --scope bash</code>），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。</p>
 <p>oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 <code>oomctl</code> 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。</p>
+<p>除了在 unit 文件中配置 <code>ManagedOOMSwap</code> 和 <code>ManagedOOMMemoryPressure</code> 外，建议通过编辑 <code>/etc/systemd/oomd.conf</code> 文件来调整 oomd 的全局行为。其中 <code>SwapUsedLimit</code> 参数（默认为 90%）虽然名称中包含 "Swap"，但它同时适用于物理内存和 Swap 空间。oomd 触发的条件是：内存压力（PSI）超过 <code>OOMMemoryPressureLimit</code> <strong>或</strong> (物理内存使用率 &gt; <code>SwapUsedLimit</code> <strong>且</strong> Swap 空间使用率 &gt; <code>SwapUsedLimit</code>)。在物理内存较大的服务器上，默认的 90% <code>SwapUsedLimit</code> 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。</p>
 <details class="example">
 <summary>Debian 12 中的 systemd-oomd 配置</summary>
 <p>Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。</p>
@@ -3217,7 +3218,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月4日 05:31:44 UTC">2025年6月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年6月7日 06:46:34 UTC">2025年6月7日</span>
   </span>
 
     
@@ -3236,6 +3237,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
+          
+          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
+        </a>
+      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
@@ -3251,16 +3257,11 @@ Do not link to a "generic" man page for these commands -->
           <img src="https://avatars.githubusercontent.com/in/15368?v=4&size=72" alt="github-actions[bot]">
         </a>
       
-        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
-          
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
       
       
         
           <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/ops/debug.md" class="md-author md-author--more">
-            +1
+            +2
           </a>
         
       
