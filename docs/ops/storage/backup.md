@@ -223,9 +223,17 @@ rsync -pPrltvH --partial-dir=.rsync-partial --timeout 14400 --safe-links --delet
 
 Rsync 支持 `--include` 与 `--exclude` 参数。简单来讲，rsync 的处理规则如下：
 
-1. 每个文件/文件夹会按照用户在命令行中提供的顺序匹配，如果命中，则会被处理，后续的规则对该文件不再生效。
+1. 每个文件/文件夹会按照用户在命令行中提供的顺序匹配，如果命中，则会被处理，后续的规则对该文件不再生效。具体匹配的规则可参考 [rsync.1][rsync.1] 手册的 "PATTERN MATCHING RULES" 部分。
 2. 如果没有命中任何规则，那么会被包含。
 3. 命中 `--exclude` 代表其子文件和文件夹也会被排除，因此如果要包含 `a/b/c/d`，那么 `a/`, `a/b/`, `a/b/c/` 都需要被包含。
+
+!!! question "匹配练习"
+
+    请尝试分别写出符合以下条件的 rsync 参数，假设需要从 src 同步到 dst：
+
+    1. 排除 src 下的 `manjaro` 目录（不要排除其他名称包含 `manjaro` 的文件或目录）。
+    2. 排除所有名称为 `s390x` 的目录。
+    3. 排除 src 下的 `cloud` 目录，但是需要保留 `cloud` 目录下的所有 `repodata.json` 文件。
 
 ### SSH 限制 rsync 访问 {#rsync-ssh}
 
