@@ -39,8 +39,11 @@
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
 [systemd.exec.5#Environment]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Environment
 [systemd.exec.5#Sandboxing]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing
+[systemd.kill.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html
+[systemd.resource-control.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
+[systemd.timer.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 [user@.service.5]: https://www.freedesktop.org/software/systemd/man/latest/user@.service.html
 

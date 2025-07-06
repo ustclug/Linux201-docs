@@ -86,6 +86,14 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
+!!! tip "查询手册"
+
+    Unit 配置中不同的字段分布在 systemd 不同的手册页中。其中 `[Unit]` 和 `[Install]` 部分的字段可以在 [`systemd.unit(5)`][systemd.unit.5] 中找到。
+    
+    对于服务，`[Service]` 中的字段大部分在 [`systemd.service(5)`][systemd.service.5] 中，但其中与运行环境有关的会在 [`systemd.exec(5)`][systemd.exec.5] 中，与程序资源限制相关的会在 [`systemd.resource-control(5)`][systemd.resource-control.5] 中，与退出/杀死服务相关的会在 [`systemd.kill(5)`][systemd.kill.5] 中。
+
+    对于定时器，`[Timer]` 部分的字段可以在 [`systemd.timer(5)`][systemd.timer.5] 中找到。
+
 #### 顺序与依赖 {#unit-dependency}
 
 相比于 SysVinit（完全顺序启动）和 upstart（基于 event 触发的方式有限的并行），systemd 的每个 unit 都明确指定了依赖关系，分析依赖关系后 systemd 就可以最大化并行启动服务，这样可以大大缩短启动时间。
@@ -103,7 +111,7 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 `Wants=` 和 `Requires=`
 
 :   指定 unit 之间的依赖关系，例如网络服务通常会依赖 `network.target`，即当网络开始配置时才会运行。
-    两者都在 `[Unit]` section 中指定，区别在于 `Requires=` 是强依赖，即如果被依赖的 unit 没有启动或启动失败，那么当前 unit 也会被标记为失败；
+    两者都在 `[Unit]` section 中指定，区别在于 `Requires=` 是强依赖，即如果被依赖的 unit 没有启动或启动失败，那么当前 unit 也会被标记为失败，同时如果被依赖的 unit 停止，则当前 unit 也会停止；
     而 `Wants=` 是弱依赖，即尝试启动被依赖的 unit，但如果失败了也不会影响当前 unit 的启动。
 
 `WantedBy=` 和 `RequiredBy=`
@@ -115,6 +123,8 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 
 :   指定启动顺序，即相关的 unit 需要在前者启动完成，进入 active 状态后才会尝试启动。这两个字段在 `[Unit]` section 中指定。
     与 Wants/Requires 不同，Before/After 只是指定启动顺序，不影响依赖关系。
+
+需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 `Requires=` 或 `Wants=`，没有写 `Before=` 或 `After=`，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序。
 
 #### 模板 {#unit-template}
 
