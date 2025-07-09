@@ -3310,6 +3310,10 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </code></pre></div>
 <p>假设当前目录名为 <code>helloworld</code>，运行 <code>docker compose up</code> 之后，可以看到 compose 会创建一个名为 <code>helloworld-hello-world-1</code> 的容器，并且为容器创建 <code>helloworld-hello-world-1</code> 的 bridge 网络——由于 <code>hello-world</code> 的唯一功能是输出一段文字，所以容器会立即退出。</p>
 <p>在测试完成后，使用 <code>docker compose down</code> 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。</p>
+<div class="admonition tip">
+<p class="admonition-title">查看当前所有 compose 环境</p>
+<p>可以使用 <code>docker compose ls</code> 查看当前所有打开的 compose 环境。</p>
+</div>
 <h4 id="compose-hackergame-nc">案例 1：Hackergame 的 nc 类题目 Docker 容器环境<a class="headerlink" href="#compose-hackergame-nc" title="Permanent link">&para;</a></h4>
 <p><a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker">Hackergame nc 类题目的 Docker 容器资源限制、动态 flag、网页终端</a> 提供了两个服务。其中 <code>dynamic_flag</code> 由 xinetd 暴露一个 TCP 端口，在客户端（nc）连接时，xinetd 会执行 <code>front.py</code> 脚本处理请求。脚本会要求用户输入 token，检查 token 有效性与连接频率，然后根据预先设置的规则生成 flag，创建并启动容器，由对应的题目容器与用户交互。题目容器内不需要做诸如验证 token、限制资源、处理网络连接等工作，只需要与用户使用标准输入输出交互即可。而 <code>web_netcat</code> 服务则是一个网页终端，用户可以通过浏览器连接到这个服务，然后在网页上输入命令与 <code>dynamic_flag</code> 交互。</p>
 <p><a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/dynamic_flag/docker-compose.yml"><code>dynamic_flag</code> 的 <code>docker-compose.yml</code></a> 文件类似如下：</p>
@@ -3765,7 +3769,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年7月6日 09:28:45 UTC">2025年7月6日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年7月9日 06:23:04 UTC">2025年7月9日</span>
   </span>
 
     
