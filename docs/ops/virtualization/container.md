@@ -1181,6 +1181,10 @@ services:
 
 在测试完成后，使用 `docker compose down` 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。
 
+!!! tip "查看当前所有 compose 环境"
+
+    可以使用 `docker compose ls` 查看当前所有打开的 compose 环境。
+
 #### 案例 1：Hackergame 的 nc 类题目 Docker 容器环境 {#compose-hackergame-nc}
 
 [Hackergame nc 类题目的 Docker 容器资源限制、动态 flag、网页终端](https://github.com/USTC-Hackergame/hackergame-challenge-docker) 提供了两个服务。其中 `dynamic_flag` 由 xinetd 暴露一个 TCP 端口，在客户端（nc）连接时，xinetd 会执行 `front.py` 脚本处理请求。脚本会要求用户输入 token，检查 token 有效性与连接频率，然后根据预先设置的规则生成 flag，创建并启动容器，由对应的题目容器与用户交互。题目容器内不需要做诸如验证 token、限制资源、处理网络连接等工作，只需要与用户使用标准输入输出交互即可。而 `web_netcat` 服务则是一个网页终端，用户可以通过浏览器连接到这个服务，然后在网页上输入命令与 `dynamic_flag` 交互。
