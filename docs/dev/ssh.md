@@ -57,71 +57,73 @@ Host example
 
 SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SSH 支持三种端口转发：
 
-本地端口转发（**L**ocal port forwarding）
+#### 本地端口转发（**L**ocal port forwarding） {#local-port-forwarding}
 
-:   在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
+在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
 
-    ```shell
-    ssh -L 8080:localhost:80 example
-    ```
+```shell
+ssh -L 8080:localhost:80 example
+```
 
-    也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
+也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
 
-    ```shell
-    ssh -L 8080:internalserver:80 example
-    ```
+```shell
+ssh -L 8080:internalserver:80 example
+```
 
-    本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
+本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
 
-    ```shell
-    ssh -L 0.0.0.0:8080:localhost:80 example
-    ```
+```shell
+ssh -L 0.0.0.0:8080:localhost:80 example
+```
 
-    虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
+虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
-远程端口转发（**R**emote port forwarding）
+#### 远程端口转发（**R**emote port forwarding） {#remote-port-forwarding}
 
-:   在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
+在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
 
-    ```shell
-    ssh -R 8080:localhost:80 example
-    ```
+```shell
+ssh -R 8080:localhost:80 example
+```
 
-    上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
+上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
 
-    同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
+同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
 
-    ```shell
-    ssh -R 8080:myinternalserver:80 example
-    ```
+```shell
+ssh -R 8080:myinternalserver:80 example
+```
 
-    注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
+注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
-    在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
+在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
 
-    ```shell
-    ssh -R 1080 example
-    # 指定远程主机上的监听地址
-    ssh -R 127.0.0.1:1080 example
-    ```
+```shell
+ssh -R 1080 example
+# 指定远程主机上的监听地址
+ssh -R 127.0.0.1:1080 example
+```
 
-动态端口转发（**D**ynamic port forwarding）
+#### 动态端口转发（**D**ynamic port forwarding） {#dynamic-port-forwarding}
 
-:   在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
+在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
 
-    ```shell
-    ssh -D 1080 example
-    ```
+```shell
+ssh -D 1080 example
+```
 
-    由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。
+由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。
 
-    与 LocalForward 类似，DynamicForward 也可以指定监听地址：
+与 LocalForward 类似，DynamicForward 也可以指定监听地址：
 
-    ```shell
-    ssh -D 0.0.0.0:1080 example
-    ```
+```shell
+ssh -D 0.0.0.0:1080 example
+```
 
-    同样地，`GatewayPorts` 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，`GatewayPorts` 选项不再起作用。
+同样地，`GatewayPorts` 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，`GatewayPorts` 选项不再起作用。
+
+#### 在配置文件中进行端口转发 {#port-forwarding-in-config}
 
 以上三种端口转发都可以在配置文件中指定，例如：
 
