@@ -397,6 +397,42 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 - `l`：显示当前函数的源码
 - `print xxx`：打印变量的值，参数支持表达式（需要对 C 的指针与类型系统有一定的了解）
 
+!!! note "Debian/Ubuntu 的调试符号不包含源代码文件"
+
+    在安装调试符号后，如果你尝试在 gdb 中使用 `l` 命令查看源码，可能会发现无法显示。以下以 coreutils 的 `yes` 程序为例：
+
+    ```console
+    (gdb) b main
+    Breakpoint 1 at 0x2330: file src/yes.c, line 62.
+    (gdb) r
+    Starting program: /usr/bin/yes 
+    [Thread debugging using libthread_db enabled]
+    Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+    Breakpoint 1, main (argc=1, argv=0x7fffffffe018) at src/yes.c:62
+    62	src/yes.c: No such file or directory.
+    (gdb) l
+    57	in src/yes.c
+    ```
+
+    此时需要使用 `apt source` 下载对应的源代码（相关信息可参考[包管理系统](./package.md#apt-source)相关部分）。`apt source` 会自动应用 Debian 相关补丁。然后在 gdb 中使用 `dir` 命令添加源代码目录：
+
+    ```console
+    (gdb) dir /path/to/coreutils-9.1/
+    Source directories searched: /path/to/coreutils-9.1:$cdir:$cwd
+    (gdb) l
+    57	
+    58	int
+    59	main (int argc, char **argv)
+    60	{
+    61	  initialize_main (&argc, &argv);
+    62	  set_program_name (argv[0]);
+    63	  setlocale (LC_ALL, "");
+    64	  bindtextdomain (PACKAGE, LOCALEDIR);
+    65	  textdomain (PACKAGE);
+    66
+    ```
+
 需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
