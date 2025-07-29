@@ -295,7 +295,7 @@ Hello, World from GPU thread 4!
     }
     ```
 
-    一个例子是输出 "Kernel launch failed: the provided PTX was compiled with an unsupported toolchain." 错误，表示系统 NVIDIA 驱动版本不支持 CUDA 程序编译时的 CUDA 版本，一般是因为驱动版本过低。
+    一个例子是输出 "the provided PTX was compiled with an unsupported toolchain." 错误，表示系统 NVIDIA 驱动版本不支持 CUDA 程序编译时的 CUDA 版本，一般是因为驱动版本过低。
 
 #### 限制使用的 GPU {#limit-gpu}
 
