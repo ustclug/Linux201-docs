@@ -6,7 +6,7 @@ icon: simple/nvidia
 
 !!! note "主要作者"
 
-    [@sscscc][sscscc]、[@taoky][taoky]
+    [@sscscc][sscscc]、[@taoky][taoky]、[@relic-yuexi][relic-yuexi]、[@Jerry-Kwan][Jerry-Kwan]
 
 !!! warning "本文已完成，等待校对"
 

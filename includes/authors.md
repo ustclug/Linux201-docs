@@ -21,3 +21,5 @@
 [JiaminL]: https://github.com/JiaminL
 [xiao-h1024]: https://github.com/xiaoh1024
 [zeyugao]: https://github.com/zeyugao
+[relic-yuexi]: https://github.com/relic-yuexi
+[Jerry-Kwan]: https://github.com/Jerry-Kwan
