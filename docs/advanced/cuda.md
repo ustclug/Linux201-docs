@@ -124,7 +124,7 @@ Debian 则只包含了 `nvidia-driver` 包，对应发行版发布时最新的�
 
 ##### `nvidia-smi`
 
-`nvidia-smi` 由 NVIDIA 驱动提供，可以查看系统中 NVIDIA GPU 的信息，包括驱动版本与支持的 CUDA 版本、GPU的温度、功耗、内存使用、利用率、是否出现错误等，以及正在使用 GPU 的进程信息。
+`nvidia-smi` 由 NVIDIA 驱动提供，可以查看系统中 NVIDIA GPU 的信息，包括驱动版本与支持的 CUDA 版本、GPU 的温度、功耗、内存使用、利用率、是否出现错误等，以及正在使用 GPU 的进程信息。
 
 ```shell
 $ nvidia-smi
