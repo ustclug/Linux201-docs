@@ -72,10 +72,14 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 2. 使用 [NVIDIA 提供的软件源](https://developer.nvidia.com/CUDA-downloads)，并用包管理系统进行安装。
 
 3. 使用官方 runfile 一键安装（不推荐使用此方法安装驱动）
-
-     - 使用官方 runfile 一键安装的方式较为方便，但是在安装过程中会覆盖系统中的某些文件，**可能会破坏系统**。另外 runfile 安装管理麻烦，不能像包管理器在安装软件时会自动处理依赖关系，需要用户手动处理依赖问题。
+    <!-- markdownlint-disable MD033 -->
+     - 使用官方 runfile 一键安装的方式较为繁琐，并且其在安装过程中会覆盖由系统包管理器管理的某些文件，**可能会破坏系统**。特别是在系统升级内核或 Xorg 版本时，使用 runfile 安装的驱动非常容易导致无法启动或是无法进入图形界面的问题。<b><span style="color: red">除非你完全清楚相关问题与解决方法，否则不要使用 runfile（.run 文件）安装驱动。</span></b>
 
 对于后两种方式，可以在官网下载页面 <https://developer.nvidia.com/CUDA-downloads> 选择合适的操作系统，网页将给出对应操作系统的安装指令。其中 "Install Type" 中 local 代表安装包包含了完整的 CUDA 运行时和相关驱动，包管理器在需要时从本地获取；而 network 单纯只包含了源配置，由包管理器在需要时联网获取。"runfile (local)" 则是上面所说的第三种不推荐的安装方式。另外，旧的 CUDA 版本需要在 [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive) 中查找。
+
+!!! note "不是安装 NVIDIA 驱动吗？为什么在 CUDA 下载页面？"
+
+    这里的「CUDA 下载」实际上下载的是 NVIDIA 驱动 + CUDA 开发环境。即使不想要 CUDA，其软件仓库也包含了 NVIDIA 驱动的安装包。同时，CUDA 开发环境也可以通过其他的方式（例如从 PyPI 或 Conda）获取。
 
 在安装时，可能会需要选择 NVIDIA 驱动的版本。如果没有特殊需求，选择最新的版本即可，因为旧的驱动可能不支持新版本的 CUDA 与显卡。详情见[版本关系说明](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
 
