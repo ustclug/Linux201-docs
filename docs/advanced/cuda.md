@@ -81,7 +81,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
     这里的「CUDA 下载」实际上下载的是 NVIDIA 驱动 + CUDA 开发环境。即使不想要 CUDA，其软件仓库也包含了 NVIDIA 驱动的安装包。同时，CUDA 开发环境也可以通过其他的方式（例如从 PyPI 或 Conda）获取。
 
-在安装时，可能会需要选择 NVIDIA 驱动的版本。如果没有特殊需求，选择最新的版本即可，因为旧的驱动可能不支持新版本的 CUDA 与显卡。详情见[版本关系说明](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)
+在安装时，可能会需要选择 NVIDIA 驱动的版本。如果没有特殊需求，选择最新的版本即可，因为旧的驱动可能不支持新版本的 CUDA 与显卡。详情见[版本关系说明](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)。
 
 !!! tip "Linux 头文件，与 DKMS"
 
