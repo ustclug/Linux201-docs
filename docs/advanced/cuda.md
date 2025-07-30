@@ -6,7 +6,7 @@ icon: simple/nvidia
 
 !!! note "主要作者"
 
-    [@sscscc][sscscc]、[@taoky][taoky]、[@relic-yuexi][relic-yuexi]、[@Jerry-Kwan][Jerry-Kwan]
+    [@taoky][taoky]、[@sscscc][sscscc]、[@relic-yuexi][relic-yuexi]、[@Jerry-Kwan][Jerry-Kwan]
 
 !!! warning "本文已完成，等待校对"
 
@@ -224,13 +224,66 @@ $ gpustat --json
 
 ### 安装与使用 CUDA {#install-cuda}
 
-可以从包管理器安装 CUDA。如果使用第一种方式，那么在 Ubuntu 与 Debian 中则对应 `nvidia-cuda-dev nvidia-cuda-toolkit nvidia-visual-profiler` 这几个包，不过发行版一般不会提供多个版本的 CUDA。当前使用的 NVIDIA 源中也可能没有需要的版本（可以检查名字以 `cuda` 开头的包），此时一种解决方式是安装旧版本 CUDA 对应的软件源包后，使用软件包管理器安装；或者使用 runfile，并在运行时添加选项只安装 toolkit。
+可以从包管理器安装 CUDA。如果使用第一种方式，那么在 Ubuntu 与 Debian 中则对应 `nvidia-cuda-dev nvidia-cuda-toolkit nvidia-visual-profiler` 这几个包，不过发行版一般不会提供多个版本的 CUDA。当前使用的 NVIDIA 源中也可能没有需要的版本（可以检查名字以 `cuda` 开头的包）。此时可以使用以下方式安装旧版本的 CUDA。
 
-<!-- 问题：Anaconda 是如何解决 CUDA 依赖的？ -->
+#### 使用 runfile 安装 {#cuda-runfile}
+
+尽管不建议使用 runfile 安装 NVIDIA 驱动，但是安装 CUDA 时使用 runfile 安装是一个可行的方式，因为 CUDA 运行时与开发工具不会对系统正常运行产生影响，甚至在没有 NVIDIA GPU 的机器上都能够安装、编译 CUDA 程序。从网站下载后，使用以下命令安装即可：
+
+```shell
+# 将 cuda_12.9.1_575.57.08_linux.run 替换为你下载的 CUDA runfile 文件
+sh cuda_12.9.1_575.57.08_linux.run --silent --toolkit --toolkitpath=/path/to/cuda/
+```
+
+#### 使用 Conda 安装 {#cuda-conda}
+
+Anaconda 是一个流行的 Python 环境管理工具，它能够管理 Python 包以外的依赖（例如本文介绍的 CUDA，以及诸如 ffmpeg 等软件），方便用户配置环境，在科研人员中非常流行。在需要特定版本 CUDA 的 Python 项目中，使用 Conda 安装 CUDA 是一种非常方便的方式。
+
+首先如果没有创建虚拟环境，可以使用以下命令创建一个新的 Conda 虚拟环境并激活，以避免将 `base` 环境弄坏：
+
+```shell
+conda create -n example_env
+conda activate example_env
+```
+
+然后从 NVIDIA 提供的 Conda 频道（channel）中搜索需要的 CUDA 版本，并安装：
+
+```console
+(example_env) $ conda search -c nvidia cuda
+Loading channels: done
+# Name                       Version           Build  Channel
+cuda                          11.3.0      h3b286be_0  nvidia
+cuda                          11.4.0               0  nvidia
+cuda                          11.4.0      hf865f46_0  nvidia
+（以下省略）
+(example_env) $ conda install -c nvidia cuda=11.3.0
+Collecting package metadata (current_repodata.json): done
+（以下省略）
+```
+
+!!! tip "Conda 频道"
+
+    Anaconda 默认仅包含 Anaconda 公司的软件包源（`pkg/main` 和 `pkg/r`，**商用用途需要付费**），但是允许第三方开发者设立自己的「频道」（即仓库）。使用 `-c` 参数可以指定使用的频道。
+
+    不建议从 Anaconda 的 `pkg/main` 频道安装 CUDA，因为它包含的 CUDA 版本通常不是你想要的。除了 NVIDIA 官方的 `nvidia` 频道外，由社区维护的 Conda Forge（`-c conda-forge`）频道也包含了 CUDA 包。
+
+!!! tip "`cuda` 和 `cuda-toolkit`"
+
+    如果不需要 CUDA 开发工具（例如 nvcc），可以只安装 `cuda-toolkit` 包。
+
+#### 使用 pip 安装 {#cuda-pip}
+
+NVIDIA 也提供了使用 `pip` 从其 Python 包仓库安装 CUDA 的方式。例如安装 CUDA 12 的运行时组件：
+
+```console
+pip install nvidia-cuda-runtime-cu12 --extra-index-url https://pypi.ngc.nvidia.com
+```
+
+其他信息可参考 [CUDA 安装手册的说明](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#pip-wheels)。
 
 #### 环境变量设置 {#cuda-env}
 
-如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到 `PATH` 环境变量中，以便执行 nvcc 等程序。如果你使用的是发行版打包的 CUDA，那么一般不需要任何设置；如果使用的是 NVIDIA 打包的 CUDA，那么一般会安装在 `/usr/local/cuda` 目录下：
+如果你想要方便地在 Shell 中使用 CUDA 指令，需要将可执行文件目录加到 `PATH` 环境变量中，以便执行 nvcc 等程序。如果你使用的是发行版打包的 CUDA，那么一般不需要任何设置；如果使用的是 NVIDIA 打包的 CUDA，那么一般会安装在 `/usr/local/cuda` 目录下。以下以 `/usr/local/cuda` 为例：
 
 ```shell
 export PATH=/usr/local/cuda/bin${PATH:+:${PATH}}
