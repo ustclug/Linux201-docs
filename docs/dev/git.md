@@ -67,6 +67,23 @@ ops/storage: Take reciprocal for URE
 
     默认情况下，作者和提交者都会采用 `git config` 中的配置。使用 `git commit --author="Name <email>"` 可以手动指定作者，设置环境变量 `GIT_COMMITTER_NAME` 和 `GIT_COMMITTER_EMAIL` 可以手动指定提交者。
 
+!!! tip "其他角色"
+
+    除了作者与提交者以外，完成工作的可能还有其他角色，例如合作者、审阅者等。Git 本身并没有提供这些角色的概念，但是可以通过 commit message 来记录这些信息。对合作者角色，最常见、收到广泛支持的方式是使用 `Co-Authored-By` 标记信息，例如下面这个示例 commit message：
+
+    ```text
+    modules: Add a new module
+
+    This module provides a new feature that allows users to do something useful.
+
+    Co-Authored-By: Alice <alice@example.com>
+    Co-Authored-By: Bob <bob@example.com>
+    ```
+
+    在显示这个 commit 时，常见的 Git 平台（GitHub、GitLab 等）会自动识别 `Co-Authored-By` 并显示出来。
+
+    诸如 Linux 内核等大型项目可能会使用类似的方式标记更多的信息，例如 `Reported-by`、`Tested-by`、`Reviewed-by` 等。
+
 而 tree 对象的内容如下：
 
 ```shell
@@ -117,6 +134,18 @@ d959e182468be92957bd175d189472de91f614c8
 !!! question "比较差异"
 
     如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
+
+!!! tip "refspec"
+
+    你可能会在 `.git/config` 或者其他人写的 `git fetch` 等命令中看到以 `:` 分割的类似下面的东西：
+
+    ```text
+    +refs/heads/*:refs/remotes/origin/*
+    ```
+
+    这被称为 "refspec"，基本格式为 `<source>:<destination>`，表示从 `<source>` 获取对象并存储到 `<destination>`。如果 `<source>` 以 `+` 开头，则表示强制覆盖。上面的例子表示将远程仓库中 `refs/heads` 下的所有分支获取到本地的 `refs/remotes/origin` 下，即 `git fetch` 的默认行为。
+
+    更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
 
 #### Remote {#git-remote}
 
