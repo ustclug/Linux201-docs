@@ -2910,6 +2910,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p><a href="../../images/flamegraph-example.svg"><img alt="Flamegraph example" src="../../images/flamegraph-example.png" /></a></p>
 <p class="caption">火焰图示例。点击图片可以查看完整的 SVG 文件。</p>
 <p>火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。</p>
+<div class="admonition note">
+<p class="admonition-title">为什么要分析「热点」？</p>
+<p>阿姆达尔定律（Amdahl's Law）指出，如果某个部分的执行时间占总体的比重大，那么优化这个部分（热点）就能显著提升整体性能；相反，如果某部分所占的时间比例很小，即使优化得再多，对整体性能提升也十分有限。</p>
+<p>例如，如果某个程序的 90% 时间都花在了函数 A 上，那么对函数 A 的优化，即使只提升 10% 的性能，也能让整体性能提升 9.9%；但如果函数 B 只占用了 1% 的时间，即使让函数 B 提升了 99% 的性能，整体性能也只能提升不到 1%。</p>
+</div>
 <p>SVG 火焰图由 <a href="https://github.com/brendangregg/FlameGraph">Brendan Gregg 的 FlameGraph</a> 项目生成，其支持包括 <code>perf</code> 在内的多种性能分析工具的输出。以下以 <code>perf</code> 为例介绍。</p>
 <p>首先 clone FlameGraph 仓库，然后使用 <code>perf record</code> 命令对程序采样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/brendangregg/FlameGraph
@@ -3250,7 +3255,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 13:51:24 UTC">2025年8月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 13:57:34 UTC">2025年8月9日</span>
   </span>
 
     
