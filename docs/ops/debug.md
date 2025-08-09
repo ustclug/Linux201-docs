@@ -51,7 +51,9 @@ icon: material/bug
     - (U)nmount：重新挂载所有文件系统为只读模式。
     - re(B)oot：重启系统。
 
-    如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。其他的操作可以参考以上内核文档链接。
+    如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。
+
+    另外，向 `/proc/sysrq-trigger` 写入字符也可以触发对应的操作。其他内容可以参考以上内核文档链接。
 
     !!! lab "测试 kdump"
 
@@ -432,6 +434,51 @@ Copyright (C) 2023 Free Software Foundation, Inc.
     65	  textdomain (PACKAGE);
     66
     ```
+
+!!! tip "了解内核 backtrace 对应源代码文件与行号"
+
+    在调试与内核有关的问题时，经常需要判断内核输出的 backtrace 信息里每个函数的具体位置。例如以下是由 SysRq 的 `l` 命令触发的向 dmesg 输出所有活跃核心当前栈的信息：
+
+    ```dmesg
+    [  243.860496] sysrq: Show backtrace of all active CPUs
+    [  243.860505] NMI backtrace for cpu 0
+    [  243.860507] CPU: 0 UID: 0 PID: 3660 Comm: tee Tainted: P           OE      6.12.38+deb13-amd64 #1  Debian 6.12.38-1
+    [  243.860510] Tainted: [P]=PROPRIETARY_MODULE, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+    [  243.860511] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS Arch Linux 1.17.0-1-1 04/01/2014
+    [  243.860514] Call Trace:
+    [  243.860525]  <TASK>
+    [  243.860530]  dump_stack_lvl+0x5d/0x80
+    [  243.860546]  nmi_cpu_backtrace.cold+0x19/0x68
+    [  243.860548]  ? __pfx_nmi_raise_cpu_backtrace+0x10/0x10
+    [  243.860560]  nmi_trigger_cpumask_backtrace+0xed/0x100
+    [  243.860569]  __handle_sysrq.cold+0x9c/0xe6
+    [  243.860577]  write_sysrq_trigger+0x59/0xb0
+    [  243.860590]  proc_reg_write+0x57/0xa0
+    [  243.860601]  vfs_write+0xf5/0x450
+    [  243.860612]  ksys_write+0x6d/0xf0
+    [  243.860614]  do_syscall_64+0x82/0x190
+    [  243.860616]  ? __count_memcg_events+0x53/0xf0
+    [  243.860619]  ? count_memcg_events.constprop.0+0x1a/0x30
+    [  243.860625]  ? handle_mm_fault+0x1bb/0x2c0
+    [  243.860628]  ? do_user_addr_fault+0x36c/0x620
+    [  243.860630]  ? exc_page_fault+0x7e/0x180
+    [  243.860633]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+    ```
+
+    尽管函数名的搜索相对简单，但是怎么定位栈上的某个函数具体运行在哪一行呢？此时可以使用 Linux 内核调试符号（完整的 `vmlinux`）与 `addr2line` 工具定位。在 Debian 上需要配置调试符号源后安装当前运行内核对应的 dbg 包。注意内核调试符号很大，需要留出足够空间：
+
+    ```shell
+    sudo apt install linux-image-$(uname -r)-dbg
+    ```
+
+    之后使用 `addr2line` 即可：
+
+    ```console
+    $ addr2line -e /usr/lib/debug/boot/vmlinux-$(uname -r) nmi_trigger_cpumask_backtrace+0xed/0x100
+    debian/build/build_amd64_none_amd64/lib/nmi_backtrace.c:62
+    ```
+
+    可以结合 `apt source` 获取到的有 Debian 补丁的内核源代码查看。
 
 需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
