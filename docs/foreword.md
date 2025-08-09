@@ -66,9 +66,16 @@ USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system
     - 改进措施：具体如何改进防止问题再次发生？改进步骤每一步的负责人是谁？改进的时间表是什么？
     - 总结：有哪些地方做得好（正面经验）？有哪些地方做得不足（教训）？
 
+!!! example "著名事故的 Post-Mortem"
+
+    - [GitLab 数据库删除事故（2017）](https://about.gitlab.com/blog/gitlab-dot-com-database-incident/)
+    - [GitHub 服务降级事故（2018）](https://github.blog/news-insights/company-news/oct21-post-incident-analysis/)
+    - [Cloudflare 服务中断事故（2019）](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/)
+    - [Slack 服务中断事故（2020）](https://slack.engineering/a-terrible-horrible-no-good-very-bad-day-at-slack/)
+
 !!! question "真实案例"
 
-    这是一件真实发生的、在某群聊中流传出来的例子：实验室的 A 将服务器的用户私钥提供给了 B（用户有 root 权限），B 为了运行游戏尝试将 Linux 远程重装为 Windows，在咨询 GPT 后进行操作（[聊天记录](./assets/他现在运行的是linux我想在上面安装windows.txt)，[GitHub Gist](https://gist.github.com/Xuanwo/a8a85439cc6c391df7ddc0b1684a1c4e/)），结果导致数据丢失，所幸服务器上没有重要数据。
+    这是一件真实发生的、在某群聊中流传出来的例子：实验室的 A 将服务器的用户私钥提供给了 B（用户有 root 权限），B 为了运行游戏尝试将 Linux 远程重装为 Windows，在咨询 GPT 后进行操作（[聊天记录的 GitHub Gist 存档](https://gist.github.com/Xuanwo/a8a85439cc6c391df7ddc0b1684a1c4e/)），结果导致数据丢失，所幸服务器上没有重要数据。
 
     尝试回答以下问题：
 
