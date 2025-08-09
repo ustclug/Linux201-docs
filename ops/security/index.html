@@ -1650,6 +1650,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#check-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      检查依赖的安全更新
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2759,6 +2768,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#check-dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      检查依赖的安全更新
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3487,10 +3505,28 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>AES 是一种常用的对称加密算法，而 CBC（Cipher Block Chaining）模式是链式的，每一个块的密文与前一个块的密文存在依赖关系，但是每个块大小都需要是相同的。由于密文很多时候大小不是块大小的整数倍，因此块多出来的部分需要填充 padding。某些程序会检测 padding 填充内容是否正确，并且返回这些信息，被称为 "padding orcale"。通过 padding oracle 返回的正确性信息，攻击者可以逐步确认 padding 的正确性，进而推测出明文内容。</p>
 <p>对于搜狗云输入的例子，如果填充不正确，服务器会返回 HTTP 400，否则会返回 HTTP 200 或者 500，因此就充当了一个 padding oracle，暴露了密码学安全问题。因此，即使是这样的「国民级应用」的开发者，实现密码学协议也会存在问题，如果没有足够的能力确认安全性，使用成熟的 TLS 显然是更好的方案。</p>
 </div>
+<h4 id="check-dependency">检查依赖的安全更新<a class="headerlink" href="#check-dependency" title="Permanent link">&para;</a></h4>
+<p>有些时候，有问题的依赖库会给程序带来安全问题，因此保障依赖库的安全性也非常重要。最常见的 GitHub 的 Dependabot 就可以自动检查 GitHub 上你的仓库的依赖库是否有安全更新。例如 <a href="https://github.com/google/osv-scanner">Google 的 osv-scanner</a> 可以本地扫描依赖项，确定是否存在已知的漏洞。</p>
+<div class="admonition example">
+<p class="admonition-title">使用 osv-scanner 检查 Rust 项目依赖</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">Scanning dir .</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">Starting filesystem walk for root: /</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">Scanned /path/to/Cargo.lock file and found 252 packages</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">End status: 7 dirs visited, 14 inodes visited, 1 Extract calls, 8.604171ms elapsed, 8.604293ms wall time</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">╭───────────────────────────────────┬──────┬───────────┬─────────┬─────────┬────────────╮</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">│ OSV URL                           │ CVSS │ ECOSYSTEM │ PACKAGE │ VERSION │ SOURCE     │</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">├───────────────────────────────────┼──────┼───────────┼─────────┼─────────┼────────────┤</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="go">│ https://osv.dev/RUSTSEC-2024-0384 │      │ crates.io │ instant │ 0.1.13  │ Cargo.lock │</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="go">╰───────────────────────────────────┴──────┴───────────┴─────────┴─────────┴────────────╯</span>
+</code></pre></div>
+<p>OSV URL 中提供了对应依赖的具体信息，帮助判断问题的严重性。</p>
+</div>
+<p>需要注意的是，不是所有报告的漏洞都会对你的程序造成影响，需要自行判断。</p>
 <h3 id="server-security">服务器安全<a class="headerlink" href="#server-security" title="Permanent link">&para;</a></h3>
 <h4 id="public-service-and-login">对外服务与登录方式<a class="headerlink" href="#public-service-and-login" title="Permanent link">&para;</a></h4>
 <p>在做服务器加固之前，需要知道服务器对外提供的服务端口等信息，可以在服务器上使用 <code>netstat</code> 或 <code>ss</code> 命令获取，也可以（模拟攻击者）在外部使用 <a href="../../advanced/nmap/"><code>nmap</code> 扫描</a>，来了解攻击者可能的攻击路径。如果对应的服务不需要对外暴露，则需要考虑关闭该服务对外监听的端口。</p>
 <p>对于图形登录方式，Windows 服务器常见的登录方式为 RDP，而 Linux 的 RDP 和 VNC 都是常见的登录方式。由于协议设计复杂性，不建议将 RDP 或 VNC 的端口直接暴露在公网（历史上 RDP 也暴露过大量的漏洞），并且需要确保连接被加密，以防止可能的中间人窃取密码。</p>
+<p>同时，为了避免持续的扫描行为带来的影响，可以部署诸如 <a href="https://github.com/fail2ban/fail2ban">fail2ban</a> 的工具来自动封禁暴力破解的 IP 地址。fail2ban 会监控日志文件，并且在发现 IP 地址在一定时间内多次尝试后会将对应的 IP 应用指定的规则（例如通过 iptables 丢弃包）来实现自动封禁。</p>
 <div class="admonition tip">
 <p class="admonition-title">使用 SSH 转发端口</p>
 <p>相比于 RDP 和 VNC，SSH 是一种相对安全的远程登录方式。可以参考 <a href="../../dev/ssh/#port-forwarding">SSH 使用技巧中端口转发部分</a>的内容，实现通过 SSH 访问内网的 RDP/VNC 以及其他内部机器的 SSH 服务。</p>
@@ -3499,30 +3535,30 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition warning">
 <p class="admonition-title">SSH 与中间人攻击</p>
 <p>在首次登录某台机器时，你会看到 SSH 这样的输出：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
 </code></pre></div>
 <p>如果之前连接过的服务器发生了变化，或者有中间人在网络攻击，那么会看到下面的内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">Please contact your system administrator.</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
-<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="go">Host key verification failed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">Please contact your system administrator.</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">Host key verification failed.</span>
 </code></pre></div>
 <p>不要忽略相关的提示与警告。如果可行，请验证 fingerprint 与远程服务器的 fingerprint 是切实相符的：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
 </code></pre></div>
 </div>
 <h4 id="security-bullet">关注安全通告<a class="headerlink" href="#security-bullet" title="Permanent link">&para;</a></h4>
@@ -3556,50 +3592,50 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。</p>
 </div>
 <p>以下是多年前使用 nuclei 扫描一个长时间未升级的 Grafana 实例的结果：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">                     __     _</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="go">  projectdiscovery.io</span>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
-<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
-<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
-<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
-<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
-<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
-<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
-<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">                     __     _</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">  projectdiscovery.io</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
+<a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
+<a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
+<a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
+<a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
+<a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
+<a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
 </code></pre></div>
 <p>可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。</p>
 <h2 id="security-event-example">安全事件处理示例<a class="headerlink" href="#security-event-example" title="Permanent link">&para;</a></h2>
 <p>以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。</p>
 <h3 id="password-leak-rce-example">从泄漏密码到 RCE<a class="headerlink" href="#password-leak-rce-example" title="Permanent link">&para;</a></h3>
 <p>2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 <code>docker top</code> 检查发现容器里出现了奇怪的进程，如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
 </code></pre></div>
 <p>检查容器文件系统，发现 <code>/tmp</code> 下面多了很多文件，一些 log 文件似乎是内网扫描器的输出。因此管理员 C 立刻关闭了容器，并且导出了容器文件系统以及数据库（在另一个容器中）以进一步检查。</p>
 <p>由于配置问题，容器外的 Nginx 日志记录的 IP 均为 CDN 的 IP，没有记录到真实 IP 地址。不过，观察访问的 URL，发现存在可疑的访问主题编辑器的 <code>POST</code> 请求，根据相关的 User agent 记录，发现攻击者似乎在尝试登录网站后台。</p>
 <p>检查 WordPress 本地文件的修改日期，发现某个主题文件的修改日期不正常，开头插入了以下的 PHP：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="cp">&lt;?php</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
-<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="cp">&lt;?php</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="p">}</span>
 </code></pre></div>
 <p>可以推测，攻击者在修改了主题之后，就可以利用主题的 PHP 文件执行任意命令了。</p>
 <p>管理员 C 之前配置了 WordPress 本体与插件的自动升级，因此大概率是某个管理员用户的密码泄漏导致的。由于该网站重要性不高，因此可以花一些时间仔细检查后再考虑重新上线。几日后，攻击者向另一名管理员发送邮件致歉，并且提供了入侵手段：从某个俄罗斯 botnet 中获取了泄漏的用户名与密码（攻击者认为是安装了有问题的破解程序导致的），之后登录入侵后尝试做了内网扫描，并且该密码同样也可以登录此人在该组织的 GitLab 账号。在第一时间封禁了该 GitLab 账号后，检查 Nginx 日志获取了所有攻击者访问的仓库，万幸的是，这些仓库中不包含敏感信息。</p>
@@ -3627,15 +3663,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>在 @iBug 和 @taoky 两位同学的帮助下，我们终于揭开了攻击者隐藏进程的神秘面纱。攻击者通过将 <code>/tmp</code> 目录绑定挂载到挖矿进程的 <code>/proc/PID</code> 目录，使得各种系统工具（如 <code>nvidia-smi</code>、<code>ps</code> 和 <code>htop</code>）无法读取到这个目录内原本的内容，从而达到了隐藏进程的效果。</p>
 <h5 id="lab-server-intrusion-hidden-processes">寻找隐藏进程<a class="headerlink" href="#lab-server-intrusion-hidden-processes" title="Permanent link">&para;</a></h5>
 <p>我们以一台受影响的服务器为例，查看 <code>/proc/$$/mountinfo</code>，可以发现了如下异常条目：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp"># </span>grep<span class="w"> </span>-wF<span class="w"> </span>proc<span class="w"> </span>/proc/<span class="nv">$$</span>/mountinfo
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp"># </span>grep<span class="w"> </span>-wF<span class="w"> </span>proc<span class="w"> </span>/proc/<span class="nv">$$</span>/mountinfo
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive</span>
 </code></pre></div>
 <p>其中，<code>18790</code> 是攻击者隐藏的进程 ID，攻击者通过将 <code>/tmp</code> 目录 bind mount 到 <code>/proc/18790</code> 实现了进程隐藏的操作。为了查看该进程，我们需要卸载该挂载点：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>umount<span class="w"> </span>/proc/18790
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>umount<span class="w"> </span>/proc/18790
 </code></pre></div>
 <p>卸载后，隐藏的进程便显现出来。由于 <code>/proc/&lt;PID&gt;/exe</code> 是一个指向进程可执行文件的软链接，我们可以通过它查看恶意进程的实际可执行文件路径：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp"># </span>ls<span class="w"> </span>-l<span class="w"> </span>/proc/18790/exe
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -&gt; /var/tmp/Xorgs*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp"># </span>ls<span class="w"> </span>-l<span class="w"> </span>/proc/18790/exe
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -&gt; /var/tmp/Xorgs*</span>
 </code></pre></div>
 <p>通过如上方式，我们在所有服务器上发现了如下三种不同的隐藏恶意进程：</p>
 <ul>
@@ -3665,15 +3701,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>我们使用 <code>ss -tpn</code> 命令查看服务器的 TCP 连接情况，重点关注与挖矿进程相关的网络活动。在输出中我们发现了 PID 为 18790 的挖矿进程的两个 TCP 链接：</p>
 <!-- `ss` 命令是用于查看网络连接的工具，`-t` 参数表示只显示 TCP 连接，`-p` 参数显示进程相关信息，`-n` 参数显示 IP 地址和端口号，而不是尝试解析域名。 -->
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># ss -tpn</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>State<span class="w">  </span>Recv-Q<span class="w">  </span>Send-Q<span class="w">  </span>Local<span class="w"> </span>Address:Port<span class="w">   </span>Peer<span class="w"> </span>Address:Port<span class="w">  </span>Process
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:35126<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">101</span><span class="o">))</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:56578<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">102</span><span class="o">))</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># ss -tpn</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>State<span class="w">  </span>Recv-Q<span class="w">  </span>Send-Q<span class="w">  </span>Local<span class="w"> </span>Address:Port<span class="w">   </span>Peer<span class="w"> </span>Address:Port<span class="w">  </span>Process
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:35126<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">101</span><span class="o">))</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:56578<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">102</span><span class="o">))</span>
 </code></pre></div>
 <p>其中实验室服务器的 IP 是 <code>xxx.xx.xx.xx</code>，而远程主机的是 <code>yyy.yy.yy.yy</code>（另一个校内地址）。</p>
 <p>我们也可以通过 <code>/proc</code> 查看该进程的命令行参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">root@lab-server:~# </span>tr<span class="w"> </span><span class="se">\\</span><span class="m">0</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span>&lt;<span class="w"> </span>/proc/18790/cmdline
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">./Xorgs -a kawpow --proxy yyy.yy.yy.yy:8010 -s 51.89.99.172:6060 -u RBgUjdBAXMSNtDgSHbCAvVdLk5vZNz9nNG.lab-server -w 0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">root@lab-server:~# </span>tr<span class="w"> </span><span class="se">\\</span><span class="m">0</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span>&lt;<span class="w"> </span>/proc/18790/cmdline
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">./Xorgs -a kawpow --proxy yyy.yy.yy.yy:8010 -s 51.89.99.172:6060 -u RBgUjdBAXMSNtDgSHbCAvVdLk5vZNz9nNG.lab-server -w 0</span>
 </code></pre></div>
 <p>从命令行上可以看出，这个名为 <code>Xorgs</code> 的挖矿程序正在使用 <code>yyy.yy.yy.yy:8010</code> 作为 SOCKS5 代理连接位于 <code>51.89.99.172:6060</code> 矿池。攻击者通过这种方式使机器可以正常访问到矿池，即使机器本身并没有开通出校访问权限。</p>
 <p>在确认了 <code>yyy</code> 主机被用作连接矿池的代理以后，我们立即联系了网络中心的老师，并提供了相关证据。网络中心的老师表示，这是校内其他学院的服务器，并已经通知了相关人员进行处理。</p>
@@ -3689,7 +3725,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p><strong>时间线索</strong>：<code>stat</code> 该文件后，我们发现 A 同学的公钥文件的 <a href="#forensics">ctime</a> 为 <strong>10 月 17 日 23:54:11</strong>，而 root 用户的公钥文件 ctime 为 <strong>10 月 18 日 00:00:53</strong>。</p>
 <p><strong>登录方式</strong>：我们试图通过 <code>/var/log/auth.log</code> 查看攻击者的登录记录，但发现该日志已被删除，且 rsyslog 服务被关闭。幸运的是，<code>auth.log</code> 每天 0 点会自动 rotate 成为 <code>auth.log.1</code>，其中保留了 10 月 18 日前的日志。检查发现，<strong>10 月 17 日晚 23:53:13</strong>，A 同学的账户从先研院某 IP 登录，且使用了 A 同学自己的公钥。A 同学表示，该公钥对应的私钥同时存放在他的电脑和学校的瀚海超算中。17 日晚 22 点后，他回宿舍休息，电脑则留在高新区实验室中未锁屏。此外，瀚海超算在 17 日之前已被黑客入侵。结合这些信息，如果排除掉攻击者进入实验室来拷走 A 同学私钥这种可能性较小的方式，我们推测攻击者很可能是通过瀚海超算获得的 A 同学的私钥。</p>
 <p><strong>journal 日志</strong>：攻击者每次登录后都会删除 journal 日志，导致我们无法追踪其具体操作。查看 dmesg 可以发现，18 日、22 日、23 日有多次 journal 被删除的记录，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.journal: Journal file has been deleted, rotating.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.journal: Journal file has been deleted, rotating.
 </code></pre></div>
 <p>但由于这些信息与 GPU 满载无关，且不是报错，因此初次排查时被我忽略掉了。</p>
 <h5 id="lab-server-intrusion-compute-nodes">其它计算节点的入侵<a class="headerlink" href="#lab-server-intrusion-compute-nodes" title="Permanent link">&para;</a></h5>
@@ -3816,7 +3852,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 13:57:34 UTC">2025年8月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 17:37:53 UTC">2025年8月9日</span>
   </span>
 
     
@@ -3835,6 +3871,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
         <a href="https://github.com/JiaminL" class="md-author" title="@JiaminL">
           
           <img src="https://avatars.githubusercontent.com/u/43880486?v=4&size=72" alt="JiaminL">
@@ -3843,11 +3884,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
