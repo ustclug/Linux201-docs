@@ -755,6 +755,10 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
     - 使用 `git fetch origin pull/1234/head:pr-1234` 的形式将编号为 1234 的 PR 对应的 HEAD 同步到本地的 `pr-1234` 分支
     - 之后 `git checkout pr-1234` 即可
 
+!!! warning "只读分支"
+
+    需要注意的是，远程的 `pull/<id>/head` 是只读的分支，如果需要写入其他人的 PR 分支，需要自行 `git remote add` 添加对方的仓库，并将其 PR 对应的分支添加到本地。
+
 维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
 
 !!! note "GitLab"
@@ -767,13 +771,29 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
     ```ini title="~/.gitconfig"
     [alias]
-        pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
-        mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+        pr = !sh -c 'git fetch -u $1 +pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2 && git reset --hard HEAD' -
+        mr = !sh -c 'git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2 && git reset --hard HEAD' -
     ```
 
-    使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。
+    使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。重复执行可从 PR/MR 中获取最新的修改。
+
+    !!! question "`git pull`?"
+
+        为什么这样得到的分支无法执行 `git pull`？如何修复这个问题？
 
     以上修改自 [Check out locally by adding a Git alias](https://docs.gitlab.com/user/project/merge_requests/merge_request_troubleshooting/#check-out-locally-by-adding-a-git-alias)。
+
+    !!! question "参数说明"
+
+        原始的 alias 如下：
+
+        ```ini title="~/.gitconfig"
+        [alias]
+            pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
+            mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+        ```
+
+        相比原始的 alias，这里的有什么变化？添加这些变化的目的是什么？是否有更好的解决方案？
 
 ### GitHub Actions {#github-actions}
 
