@@ -731,6 +731,8 @@ dpkg-source: info: applying sudo-ldap-docs
         if url.endswith("/"):
     ```
 
+    其中的 `@@ -4,7 +4,7 @@` 表示对应的补丁块涉及到旧文件第 4 行开始的 7 行与新文件第 4 行开始的 7 行修改，而 `@@` 后面的内容（例如 `import httpx`）则是用来帮助人类定位修改位置的上下文的，对应 `diff` 的 `--show-c-function` 或者 `--show-function-line=RE` 参数，实际自动应用补丁的时候不需要这里的信息。
+
     生成的补丁可以使用 `patch` 命令应用在未打补丁的文件上：
 
     ```shell
