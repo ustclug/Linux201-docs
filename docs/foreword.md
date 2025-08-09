@@ -34,7 +34,13 @@ DevOps
 
 ## 可靠性指标
 
-当我们讨论「可靠性」时，经常可以听到像「3 个 9」「4 个 9」这样的描述，这代表了服务正常运行的时间比例。如果服务的可靠性有 **3 个 9（99.9%），那么每年则最多允许不可用 8 小时 41 分钟 38 秒**。如果再加一个 9（99.99%），那么每年的不可用时间段就**最多只允许 52 分钟 9.8 秒**。在签订法律合同时，这项指标也被称为 **SLA（Service Level Agreement）**，代表了服务提供商和客户之间的可用性约定。
+当我们讨论「可靠性」时，经常可以听到像「3 个 9」「4 个 9」这样的描述，这代表了服务正常运行的时间比例。如果服务的可靠性有 **3 个 9（99.9%），那么每年则最多允许不可用 8 小时 41 分钟 38 秒**。如果再加一个 9（99.99%），那么每年的不可用时间段就**最多只允许 52 分钟 9.8 秒**。在签订法律合同时，这项指标也被称为 **SLA（Service Level Agreement）**，代表了服务提供商和客户之间的可用性约定，如果服务没能达到 SLA 的要求，服务提供商需要提供补偿。
+
+!!! note "`s/SLA/availability/g`"
+
+    不少时候，SLA 这个词会被误用来描述某个服务的「可用性」，这通常是不正确的（除非你与服务提供商签订了正式协议）。特别是对公益性质的网络服务而言，因为这类服务无法承担违约赔偿责任，因此只能够尽力而为保障可用性，而不能使用 SLA 这种有合同约束效力的词汇。
+    
+    更好的说法是「某个服务的可用性（uptime 或 availability）在某年达到 / 预期能达到 99.9%」。
 
 那么如何定义「可用」呢？这就与 SLI（Service Level Indicator）有关了。SLI 是用来衡量服务情况的具体值，例如，HTTP 的响应时间就是一种典型的 SLI。
 
@@ -52,6 +58,20 @@ DevOps
 - 与用户以及其他管理成员保持沟通与合作
 
 因此，这是一份**能力、道德素养与责任心缺一不可**的任务。同时，在将系统的重要权限授予其他用户时，也请确保对应的用户了解相关的注意事项，并能够为自己的行为负责。特别需要注意的是，目前大语言模型无法代替没有任何经验的用户进行系统管理（这一点也可以从下面的例子看到），并且由于忽略警告、盲目听从建议等原因，可能会导致更严重的后果。
+
+!!! example "sudo 的首次提示语"
+
+    当作为普通用户第一次使用 `sudo` 命令时，你会看到下面这段话：
+
+    ```text
+    We trust you have received the usual lecture from the local System
+    Administrator. It usually boils down to these three things:
+        #1) Respect the privacy of others.
+        #2) Think before you type.
+        #3) With great power comes great responsibility.
+    ```
+
+    这三点（隐私、谨慎、责任）概括了上面提到的必要原则。
 
 USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system-administrators-code-ethics)（系统管理员伦理守则）对这些必要的原则有着更深入的描述。
 
