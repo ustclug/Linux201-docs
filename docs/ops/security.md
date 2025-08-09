@@ -636,6 +636,28 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
     对于搜狗云输入的例子，如果填充不正确，服务器会返回 HTTP 400，否则会返回 HTTP 200 或者 500，因此就充当了一个 padding oracle，暴露了密码学安全问题。因此，即使是这样的「国民级应用」的开发者，实现密码学协议也会存在问题，如果没有足够的能力确认安全性，使用成熟的 TLS 显然是更好的方案。
 
+#### 检查依赖的安全更新 {#check-dependency}
+
+有些时候，有问题的依赖库会给程序带来安全问题，因此保障依赖库的安全性也非常重要。最常见的 GitHub 的 Dependabot 就可以自动检查 GitHub 上你的仓库的依赖库是否有安全更新。例如 [Google 的 osv-scanner](https://github.com/google/osv-scanner) 可以本地扫描依赖项，确定是否存在已知的漏洞。
+
+!!! example "使用 osv-scanner 检查 Rust 项目依赖"
+
+    ```console
+    Scanning dir .
+    Starting filesystem walk for root: /
+    Scanned /path/to/Cargo.lock file and found 252 packages
+    End status: 7 dirs visited, 14 inodes visited, 1 Extract calls, 8.604171ms elapsed, 8.604293ms wall time
+    ╭───────────────────────────────────┬──────┬───────────┬─────────┬─────────┬────────────╮
+    │ OSV URL                           │ CVSS │ ECOSYSTEM │ PACKAGE │ VERSION │ SOURCE     │
+    ├───────────────────────────────────┼──────┼───────────┼─────────┼─────────┼────────────┤
+    │ https://osv.dev/RUSTSEC-2024-0384 │      │ crates.io │ instant │ 0.1.13  │ Cargo.lock │
+    ╰───────────────────────────────────┴──────┴───────────┴─────────┴─────────┴────────────╯
+    ```
+
+    OSV URL 中提供了对应依赖的具体信息，帮助判断问题的严重性。
+
+需要注意的是，不是所有报告的漏洞都会对你的程序造成影响，需要自行判断。
+
 ### 服务器安全 {#server-security}
 
 #### 对外服务与登录方式 {#public-service-and-login}
@@ -643,6 +665,8 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 在做服务器加固之前，需要知道服务器对外提供的服务端口等信息，可以在服务器上使用 `netstat` 或 `ss` 命令获取，也可以（模拟攻击者）在外部使用 [`nmap` 扫描](../advanced/nmap.md)，来了解攻击者可能的攻击路径。如果对应的服务不需要对外暴露，则需要考虑关闭该服务对外监听的端口。
 
 对于图形登录方式，Windows 服务器常见的登录方式为 RDP，而 Linux 的 RDP 和 VNC 都是常见的登录方式。由于协议设计复杂性，不建议将 RDP 或 VNC 的端口直接暴露在公网（历史上 RDP 也暴露过大量的漏洞），并且需要确保连接被加密，以防止可能的中间人窃取密码。
+
+同时，为了避免持续的扫描行为带来的影响，可以部署诸如 [fail2ban](https://github.com/fail2ban/fail2ban) 的工具来自动封禁暴力破解的 IP 地址。fail2ban 会监控日志文件，并且在发现 IP 地址在一定时间内多次尝试后会将对应的 IP 应用指定的规则（例如通过 iptables 丢弃包）来实现自动封禁。
 
 !!! tip "使用 SSH 转发端口"
 
