@@ -1868,7 +1868,12 @@
 <p>需要注意，Linux 201 <strong>不是</strong>专门的 SRE/DevOps 入门教程。</p>
 </div>
 <h2 id="_2">可靠性指标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>当我们讨论「可靠性」时，经常可以听到像「3 个 9」「4 个 9」这样的描述，这代表了服务正常运行的时间比例。如果服务的可靠性有 <strong>3 个 9（99.9%），那么每年则最多允许不可用 8 小时 41 分钟 38 秒</strong>。如果再加一个 9（99.99%），那么每年的不可用时间段就<strong>最多只允许 52 分钟 9.8 秒</strong>。在签订法律合同时，这项指标也被称为 <strong>SLA（Service Level Agreement）</strong>，代表了服务提供商和客户之间的可用性约定。</p>
+<p>当我们讨论「可靠性」时，经常可以听到像「3 个 9」「4 个 9」这样的描述，这代表了服务正常运行的时间比例。如果服务的可靠性有 <strong>3 个 9（99.9%），那么每年则最多允许不可用 8 小时 41 分钟 38 秒</strong>。如果再加一个 9（99.99%），那么每年的不可用时间段就<strong>最多只允许 52 分钟 9.8 秒</strong>。在签订法律合同时，这项指标也被称为 <strong>SLA（Service Level Agreement）</strong>，代表了服务提供商和客户之间的可用性约定，如果服务没能达到 SLA 的要求，服务提供商需要提供补偿。</p>
+<div class="admonition note">
+<p class="admonition-title"><code>s/SLA/availability/g</code></p>
+<p>不少时候，SLA 这个词会被误用来描述某个服务的「可用性」，这通常是不正确的（除非你与服务提供商签订了正式协议）。特别是对公益性质的网络服务而言，因为这类服务无法承担违约赔偿责任，因此只能够尽力而为保障可用性，而不能使用 SLA 这种有合同约束效力的词汇。</p>
+<p>更好的说法是「某个服务的可用性（uptime 或 availability）在某年达到 / 预期能达到 99.9%」。</p>
+</div>
 <p>那么如何定义「可用」呢？这就与 SLI（Service Level Indicator）有关了。SLI 是用来衡量服务情况的具体值，例如，HTTP 的响应时间就是一种典型的 SLI。</p>
 <p>高于「3 个 9」的可靠性目标要达到不是一件容易的事情。即使堆很多人来三班倒工作，要达到「4 个 9」的水准也仍然是一件困难的事情。因此在企业中，运维/SRE 工作会需要使用更加复杂（Linux 201 也不太会涉及）的方式来提高可靠性，例如尽可能实现自动化运维，减少因为需要人力介入导致不可用时间增长的问题；使用分布式的架构，尽可能排除单点故障（Single Point of Failure，SPOF）问题；设置热备服务等等。</p>
 <h2 id="_3">所以我需要做什么？<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
@@ -1881,6 +1886,17 @@
 <li>与用户以及其他管理成员保持沟通与合作</li>
 </ul>
 <p>因此，这是一份<strong>能力、道德素养与责任心缺一不可</strong>的任务。同时，在将系统的重要权限授予其他用户时，也请确保对应的用户了解相关的注意事项，并能够为自己的行为负责。特别需要注意的是，目前大语言模型无法代替没有任何经验的用户进行系统管理（这一点也可以从下面的例子看到），并且由于忽略警告、盲目听从建议等原因，可能会导致更严重的后果。</p>
+<div class="admonition example">
+<p class="admonition-title">sudo 的首次提示语</p>
+<p>当作为普通用户第一次使用 <code>sudo</code> 命令时，你会看到下面这段话：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>We trust you have received the usual lecture from the local System
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Administrator. It usually boils down to these three things:
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    #1) Respect the privacy of others.
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    #2) Think before you type.
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    #3) With great power comes great responsibility.
+</code></pre></div>
+<p>这三点（隐私、谨慎、责任）概括了上面提到的必要原则。</p>
+</div>
 <p>USENIX 的 <a href="https://www.usenix.org/system-administrators-code-ethics">System Administrators' Code of Ethics</a>（系统管理员伦理守则）对这些必要的原则有着更深入的描述。</p>
 <p>此外，在维护的过程中，出现问题是不可避免的。但是在出现问题之后，应当<strong>避免责备某个具体的人</strong>。正如绝大部分的飞机事故都是各个方面的问题共同导致，几乎不会出现某一个人需要承担全部责任的结果一样，一个合格的系统管理员，需要能够系统地分析故障原因（这也被称为 Post-Mortem，即「事后分析」），并且针对分析得到的问题，或编写工具，或改进流程，这样才能够有效地防止同样的问题再次发生。</p>
 <div class="admonition note">
@@ -1963,7 +1979,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 18:51:13 UTC">2025年8月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月9日 19:11:10 UTC">2025年8月9日</span>
   </span>
 
     
