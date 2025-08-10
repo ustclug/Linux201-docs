@@ -717,4 +717,18 @@ Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下�
 
     SMB 服务就是这里要介绍的 Samba 服务——不过，从 Windows 2000 开始，SMB 已经可以直接在 TCP 445 端口上运行，而不再依赖 NetBIOS。
 
-    目前除非需要兼容老设备，否则**不建议启用 NetBIOS**。Windows 10 之后的版本也已经不再默认启用 NetBIOS。
+    此外，「臭名昭著」的 Windows Messenger service 也是基于 NetBIOS 的。这个服务允许你用 `net send` 命令向网络上其他计算机发送消息，比如说：
+
+    ```cmd
+    net send somehost "你的电脑被黑了！"
+    ```
+
+    然后 somehost 上面就会弹出这么一个对话框。可能相比于正经用途来说，Messenger 服务被拿来整人和干坏事的频率更高一些，因此在 Windows XP SP2 后默认被禁用，且之后被彻底移除了。
+
+    目前除非需要兼容老设备，否则**不建议使用 NetBIOS**。Windows 10 之后的版本也已经不再默认启用 NetBIOS。
+
+目前最常见的服务自动发现协议是 mDNS + DNS-SD：其中 mDNS 负责局域网内的主机名解析，而 DNS-SD 则在 mDNS 基础上负责服务发现，但是 Windows 对此的支持不佳。Windows 会使用 WS‑Discovery（Web Services Dynamic Discovery）来发现局域网中的服务（主机名解析则使用 LLMNR）。
+
+#### mDNS + DNS-SD {#samba-mdns-dns-sd}
+
+#### WS-Discovery {#samba-ws-discovery}
