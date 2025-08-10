@@ -26,6 +26,15 @@ icon: octicons/checklist-16
 - 除非确有需要，不使用除软件包管理系统之外的方法安装软件到 `/home` 外的位置；对使用非软件包管理系统之外的方法安装到 `/home` 外位置的软件，系统管理员应建立台账
 - 对于实验室场合，在系统目录内设置恰当版本的编译和开发环境，并对有额外需求的用户的提供在家目录设置单独工具链的适当指引
   > TODO: explain
+- 必要但容易忽略的维护系统稳定、帮助调试的工具
+    - `earlyoom` 或 `systemd-oomd`：用户态监测内存使用，在内存不足时自动杀死占用内存过多的进程
+    - `systemd-coredump`：收集崩溃进程的 coredump 文件
+    - `systemd-timesyncd`：自动时钟同步
+    - `bcc-tools`：一系列基于 BPF 的调试工具
+    - `bpftrace`：快速编写跟踪内核或用户态程序的 BPF 的脚本
+    - `rasdaemon`：收集系统硬件（CPU、内存等）的错误信息
+    - 性能监测工具，包括 `htop`、`iotop`、`iftop`、`bmon` 等
+    - `ncdu`：快速检查谁吃了大量磁盘空间
 
 ## 远程管理
 
