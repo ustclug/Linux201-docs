@@ -61,7 +61,7 @@ NTP=time.ustc.edu.cn
 
 ```shell
 timedatectl show-timesync
-    ```
+```
 
 ### ntpdate
 
