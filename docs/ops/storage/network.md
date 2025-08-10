@@ -29,6 +29,7 @@ NFS 在 Linux 上的服务端和客户端实现均有内核态与用户态的选
 
 服务端需要安装 `nfs-kernel-server` 包。除此之外，NFSv3 支持还需要安装 `rpcbind` 包（对应 NFSv3 协议的 111 端口），该包在目前的 Debian 中以 `rpcbind.socket` 的形式对外提供服务。
 
+<!-- TODO: nfs-ganesha (userspace) -->
 <!-- TODO: a link to systemd socket -->
 
 NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
@@ -696,8 +697,24 @@ Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下�
 
 !!! note "家用场景下的其他协议"
 
-    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。如有需要可以自行搜索相关的配置方法。
+    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。诸如 [Nextcloud](https://nextcloud.com/)、[copyparty](https://github.com/9001/copyparty) 等工具提供了成熟的方案，如有需要可以自行搜索相关的配置方法。
 
 ### 服务自动发现 {#samba-auto-discovery}
 
 服务自动发现协议处在一个比较混乱的状态，有各种不同的协议。最早的服务自动发现协议为 NetBIOS 以及其配套服务，如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。
+
+!!! note "NetBIOS"
+
+    NetBIOS（以下均指代 NetBIOS over TCP/IP）需要三种端口：
+
+    - 命名与解析（TCP 137 和 UDP 137）：NetBIOS 会广播主机名，并确定是否存在冲突。其他计算机可以使用主机名连接。由于等待冲突检测会花掉比较长的时间，因此之后添加了 WINS（Windows Internet Name Service）来集中管理主机名，Windows 在查找到 WINS 服务器后会优先使用 WINS。
+    - UDP 138：用于无 session 的消息传递。
+    - TCP 139：用于有 session 的消息传递。
+
+    NetBIOS 上面可以运行应用，例如 Browser 服务与 SMB 服务。
+
+    Browser 服务维护了局域网中的网络资源列表（就是以前「网上邻居」里面你可以看到的内容），局域网的 Windows 机器会根据 Windows 版本号、类型（是桌面还是服务器系统）等信息来「选举」出一个 master browser，由 master browser 维护这个列表。
+
+    SMB 服务就是这里要介绍的 Samba 服务——不过，从 Windows 2000 开始，SMB 已经可以直接在 TCP 445 端口上运行，而不再依赖 NetBIOS。
+
+    目前除非需要兼容老设备，否则**不建议启用 NetBIOS**。Windows 10 之后的版本也已经不再默认启用 NetBIOS。
