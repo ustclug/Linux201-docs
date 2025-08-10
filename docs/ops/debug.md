@@ -28,6 +28,7 @@ icon: material/bug
 - 系统日志
     - `journalctl -f`
     - `dmesg -w`
+    - 检查硬件是否发生错误：`ras-mc-ctl --summary`，需要提前安装 `rasdaemon` 包。
 - 资源使用情况
     - `df -h` 可以查看磁盘空间使用情况。
     - `iotop` 可以按进程查看磁盘 I/O 情况。
