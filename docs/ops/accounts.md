@@ -4,6 +4,12 @@ icon: material/account-supervisor
 
 # 用户账户系统 {#accounts}
 
+!!! note "主要作者"
+
+    [@iBug][iBug]
+
+!!! warning "本文编写中"
+
 ## Unix 用户 {#unix-users}
 
 Linux 采用 Unix 用户系统，即通过一个数字 ID 来标识用户，称为 UID。
