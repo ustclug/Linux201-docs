@@ -1109,7 +1109,7 @@ services:
 
 Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 [Compose Specification](https://docs.docker.com/compose/compose-file/) 四种版本，容易造成混乱。
 
-Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果你是从 Debian 的官方源安装的 `docker-compose` 包，那么就是 v1 版本的 compose：
+Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果输出类似如下，那么就是 v1 版本的 compose：
 
 ```console
 $ docker-compose --version
@@ -1128,7 +1128,7 @@ Docker Compose version v2.24.5
 
 从 v1 迁移到 v2 的细节问题参见 [Migrate to Compose V2](https://docs.docker.com/compose/migrate/)（主要是容器名称与环境变量处理上存在差异）。
 
-特别地，Ubuntu 在官方源中打包了 `docker-compose-v2` 这个包。
+特别地，Ubuntu 在官方源中打包了 `docker-compose-v2` 这个包，Debian 13 官方源开始提供的 `docker-compose` 也是 v2 版本的。
 
 对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。
 
