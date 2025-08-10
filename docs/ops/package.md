@@ -928,6 +928,40 @@ case "$1" in
 esac
 ```
 
+#### 基于 debhelper 的打包简介 {#debhelper}
+
+在很多时候，我们需要更加复杂的打包流程，例如在打包时编译程序等。相关的操作由 `debian/rules` 文件控制。这是一个 Makefile 文件。由于正规的打包流程非常复杂，手写 `rules` 文件是非常麻烦的，因此 Debian 提供了 debhelper (`dh`) 工具来简化打包流程。要调用 `dh`，只需要在 `rules` 文件中添加以下内容：
+
+```makefile
+#!/usr/bin/make -f
+#export DH_VERBOSE=1
+
+%:
+	dh $@
+```
+
+!!! tip "`%:`"
+
+    这是一个 Makefile 的通配符规则，表示所有的目标都使用 `dh` 命令来处理。例如，执行 `debian/rules build` 时，Makefile 会将 `build` 作为目标传递给 `dh`，因此等价于执行 `dh build`。
+
+可以使用 `--no-act` 参数来查看 `dh` 会执行哪些操作：
+
+```shell
+$ dh clean --no-act
+   dh_testdir
+   debian/rules override_dh_auto_clean
+   dh_autoreconf_clean
+   dh_clean
+```
+
+如果需要覆盖某个 `dh` 的操作，可以在 `debian/rules` 中添加对应的规则，例如：
+
+```makefile
+override_dh_auto_clean:
+	echo "Custom clean step"
+	dh_auto_clean
+```
+
 #### 使用 `checkinstall` 快速打包 {#checkinstall}
 
 !!! warning "checkinstall 工具仅适用于临时打包"
