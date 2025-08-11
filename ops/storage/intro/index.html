@@ -2473,12 +2473,12 @@
 <p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。
 而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
 对于企业级硬盘，这些性能指标可能会更高。</p>
-<p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。有时也能看到 AFR（Annualized Failure Rate）这个指标，指代运行一年后的损坏率。假设硬盘全年通电，那么 AFR 可以估计为 1-e^(-8766/MTBF)。</p>
+<p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。有时也能看到 AFR（Annualized Failure Rate）这个指标，指代运行一年后的损坏率。假设硬盘全年通电，那么 AFR 可以估计为 -e^(-8766/MTBF)。</p>
 <p>而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；读取操作对 SSD 的损耗可以忽略不计。</p>
-<p>另一项与可靠性有关的重要参数是 Non-recoverable Read Error Rate（不可恢复读错误率），它表示了硬盘在读取数据时出现错误的<strong>概率</strong>。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即<strong>平均</strong>每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到不可恢复错误（也被称为 URE）并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。</p>
+<p>另一项与可靠性有关的重要参数是 Non-recoverable Read Error Rate（不可恢复读错误率，NRE），它表示了硬盘在读取数据时出现错误的<strong>概率</strong>。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即<strong>平均</strong>每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到不可恢复错误（也被称为 URE）并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。</p>
 <p>对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。此外，云服务商 Backblaze 会定期发布他们的硬盘使用报告，包含硬盘在真实数据中心工况下的 AFR 等信息，可前往 <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data</a> 下载，以作参考。</p>
 <div class="admonition tip">
-<p class="admonition-title">Zoned storage，与叠瓦（SMR）盘</p>
+<p class="admonition-title">Zoned storage 与叠瓦（SMR）盘</p>
 <p><a href="https://zonedstorage.io/">Zoned storage</a> 是一种新型的硬盘存储技术，它将硬盘分为多个区域，每个区域的写入方式不同，
 通过暴露更多的信息给 OS 使得针对性的优化得以进行，以提升硬盘的容量和性能。
 我们常说的「叠瓦盘」就是一种 zoned storage。叠瓦盘通过重叠磁道的方式（类似于屋顶上瓦片排列一般）来增加存储密度。
@@ -2518,7 +2518,7 @@
 <p>M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。</p>
 <ul>
 <li>常见的 M.2 接口有 B-key 和 M-key 两种，主流的 NVMe SSD 通常使用 M-key 接口，而 SATA SSD 通常使用 B-key 或 B+M（两个缺口）。一个 M.2 接口是否支持 NVMe 或 SATA 协议取决于主板或控制器，因此具体情况需要参考产品的说明书。<ul>
-<li>作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVme 的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。</li>
+<li>作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVMe（即单 SATA 协议）的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。</li>
 </ul>
 </li>
 <li>除了接口的形状，M.2 接口的长宽也有一系列选项，例如 2230、2242、2280、22110 等，即宽度为 22 mm，长度分别为 30、42、80、110 mm 等。个人电脑一般采用 2280 的尺寸，而服务器（和一些高端台式机主板）上可能会使用 22110 的尺寸。这些尺寸不影响接口的电气特性，只是为了适应不同的空间和散热需求。</li>
@@ -2527,7 +2527,7 @@
 <li>
 <p>U.2 接口形状与 SAS 类似，但是<strong>不兼容 SAS</strong>（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。</p>
 </li>
-<li>AIC 就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
+<li>AIC（Add-In Card）就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
 </ul>
 <details class="example">
 <summary>图片：M.2 SSD</summary>
@@ -2985,7 +2985,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月11日 17:37:23 UTC">2025年8月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月11日 18:06:39 UTC">2025年8月11日</span>
   </span>
 
     
@@ -3004,14 +3004,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/TheRainstorm" class="md-author" title="@TheRainstorm">
