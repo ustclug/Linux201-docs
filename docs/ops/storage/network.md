@@ -690,45 +690,8 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
 
 ## Samba
 
-Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现以下的功能：
-
-- 服务自动发现（让局域网中的其他机器可以自动找到 Samba 服务器）
-- 匿名访问与用户名、密码访问
+Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现匿名访问与用户名、密码访问。有关服务发现（让局域网内其他计算机自动找到 Samba 共享的目录）相关内容，请参考 [Zeroconf 的「服务发现」部分](../network-service/zeroconf.md#service-discovery)。
 
 !!! note "家用场景下的其他协议"
 
     除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。诸如 [Nextcloud](https://nextcloud.com/)、[copyparty](https://github.com/9001/copyparty) 等工具提供了成熟的方案，如有需要可以自行搜索相关的配置方法。
-
-### 服务自动发现 {#samba-auto-discovery}
-
-服务自动发现协议处在一个比较混乱的状态，有各种不同的协议。最早的服务自动发现协议为 NetBIOS 以及其配套服务，如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。
-
-!!! note "NetBIOS"
-
-    NetBIOS（以下均指代 NetBIOS over TCP/IP）需要三种端口：
-
-    - 命名与解析（TCP 137 和 UDP 137）：NetBIOS 会广播主机名，并确定是否存在冲突。其他计算机可以使用主机名连接。由于等待冲突检测会花掉比较长的时间，因此之后添加了 WINS（Windows Internet Name Service）来集中管理主机名，Windows 在查找到 WINS 服务器后会优先使用 WINS。
-    - UDP 138：用于无 session 的消息传递。
-    - TCP 139：用于有 session 的消息传递。
-
-    NetBIOS 上面可以运行应用，例如 Browser 服务与 SMB 服务。
-
-    Browser 服务维护了局域网中的网络资源列表（就是以前「网上邻居」里面你可以看到的内容），局域网的 Windows 机器会根据 Windows 版本号、类型（是桌面还是服务器系统）等信息来「选举」出一个 master browser，由 master browser 维护这个列表。
-
-    SMB 服务就是这里要介绍的 Samba 服务——不过，从 Windows 2000 开始，SMB 已经可以直接在 TCP 445 端口上运行，而不再依赖 NetBIOS。
-
-    此外，「臭名昭著」的 Windows Messenger service 也是基于 NetBIOS 的。这个服务允许你用 `net send` 命令向网络上其他计算机发送消息，比如说：
-
-    ```cmd
-    net send somehost "你的电脑被黑了！"
-    ```
-
-    然后 somehost 上面就会弹出这么一个对话框。可能相比于正经用途来说，Messenger 服务被拿来整人和干坏事的频率更高一些，因此在 Windows XP SP2 后默认被禁用，且之后被彻底移除了。
-
-    目前除非需要兼容老设备，否则**不建议使用 NetBIOS**。Windows 10 之后的版本也已经不再默认启用 NetBIOS。
-
-目前最常见的服务自动发现协议是 mDNS + DNS-SD：其中 mDNS 负责局域网内的主机名解析，而 DNS-SD 则在 mDNS 基础上负责服务发现，但是 Windows 对此的支持不佳。Windows 会使用 WS‑Discovery（Web Services Dynamic Discovery）来发现局域网中的服务（主机名解析则使用 LLMNR）。
-
-#### mDNS + DNS-SD {#samba-mdns-dns-sd}
-
-#### WS-Discovery {#samba-ws-discovery}
