@@ -1,3 +1,7 @@
+---
+icon: material/tunnel-outline
+---
+
 # 隧道组网
 
 !!! note "主要作者"
@@ -91,7 +95,7 @@ wg genkey | tee privatekey | wg pubkey > publickey
 
 这将在当前目录下生成两个文件：`privatekey` 和 `publickey`。
 
-### 创建配置文件
+### 基于 `wg-quick` 工具设置 WireGuard 接口
 
 这里以一个简单的场景为例，两台机器 A 和 B 进行组网。其中 A 有公网 IP，对应域名 `example.com`。
 
@@ -132,15 +136,45 @@ PersistentKeepalive = 25
 
 配置文件需要写在 `/etc/wireguard/<配置名>.conf` 中。例如：`/etc/wireguard/wg0.conf`。
 
-### 启动 WireGuard 接口
+#### 启停 WireGuard 接口
 
 使用 `wg-quick` 工具启动 WireGuard 接口：
 
 ```shell
 sudo wg-quick up wg0
+sudo wg-quick down wg0
 ```
 
 其中 `wg0` 是配置文件的名称，不包括 `.conf` 后缀。
+
+也可以基于 systemd 对 `wg-quick` 工具生成的接口进行管理：
+
+```shell
+sudo systemctl start wg-quick@wg0
+sudo systemctl stop wg-quick@wg0
+```
+
+### 基于 interface 设置 WireGuard 接口
+
+场景同上，B 的配置如下：
+
+```shell
+auto wg0
+iface wg0 inet static
+    address 10.0.0.4
+    netmask 255.255.255.255
+    pointopoint 10.0.0.1
+    pre-up ip link add dev $IFACE type wireguard
+    post-down ip link del dev $IFACE
+    up wg set $IFACE private-key <B 的私钥> peer <A 的公钥> endpoint example.com:51820 allowed-ips 0.0.0.0/0,::/0
+```
+
+使用传统的 `ifupdown` 工具即可启停 WireGuard 接口：
+
+```shell
+sudo ifup wg0
+sudo ifdown wg0
+```
 
 ### 检查接口状态
 
@@ -148,14 +182,6 @@ sudo wg-quick up wg0
 
 ```shell
 sudo wg
-```
-
-### 停止 WireGuard 接口
-
-当不再需要时，可以使用以下命令停止接口：
-
-```shell
-sudo wg-quick down wg0
 ```
 
 ## Headscale

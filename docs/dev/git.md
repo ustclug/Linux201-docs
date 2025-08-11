@@ -6,11 +6,190 @@ icon: simple/git
 
 !!! note "主要作者"
 
-    [@tiankaima][tiankaima]
+    [@tiankaima][tiankaima]、[@taoky][taoky]
 
 !!! warning "本文已完成，等待校对"
 
+本部分面向已经了解 git 最基本的操作的用户。如果你从未使用过 git，请参考网络上的其他教程，例如 USTC Vlab 项目的 [Git 简明教程](https://vlab.ustc.edu.cn/docs/tutorial/git/)。
+
 ## Git 使用技巧
+
+### 基本概念 {#basic-concepts}
+
+#### Object {#git-object}
+
+对象（Object）是 git 存储数据的基本单元，存储在 `.git/objects` 目录下，以内容的 SHA-1 值区分。可以使用以下命令获取当前 git 仓库所有的 object 信息：
+
+```shell
+$ git cat-file --batch-check --batch-all-objects
+000b2be4f2369ae78f788a92ee3fc00bb3cd64c7 tree 38
+000b50049d29b61c300e4ec2e5cdcce52685861e blob 49457
+000c536877dfda433b574fb37c6dc50048461505 blob 58088
+001fe807cffb8bdb3d9fcd8d98282e596345aee9 tree 183
+002e8efc4f94115882caec99b7b36e6a8f42e616 blob 331
+00344f3b943fa09dde4694487e818f19d84d63f1 blob 67539
+00392bcd6cec7e034d9996e5e17e506b8b7a7644 blob 243
+0040fffeb2037807b75c5b3e69572e6e0e93c309 blob 43519
+0046ec26cf4e99119ec2759d0580b894c1a7f344 tree 258
+004d2057d06042847ca109edd9ca12be7cc255cb tree 409
+（以下省略）
+```
+
+!!! tip "git 的文档"
+
+    可以使用诸如 `man git-xxx` 的方式查看 `git xxx` 命令的文档，例如上面的 `git cat-file` 对应的是 `man git-cat-file`。
+
+其中，`blob` 对象代表单个文件的内容，`tree` 对象代表目录结构，`commit` 对象代表提交，`tag` 对象代表标签。可以使用 `git cat-file -p <SHA-1>` 查看对象的内容。例如对于本仓库 hash 为 `74b5f6330f76d1e464deeff4d29935bba8d48c55` 的提交：
+
+!!! tip "Commit ID 就是 Commit Object 的 SHA-1 值"
+
+```shell
+$ git cat-file -p 74b5f6330f76d1e464deeff4d29935bba8d48c55
+tree 367ba031c357a771f2444048db71d109ec7e76d3
+parent 87d45ab1963b039931f426a1402403996bba0300
+author taoky <me@taoky.moe> 1736422437 +0800
+committer taoky <me@taoky.moe> 1736422437 +0800
+
+ops/storage: Take reciprocal for URE
+```
+
+可以看到，这个提交中除了 commit 内容以外，还包含了：
+
+- 这个提交对应的目录信息（`tree`）
+- 这个提交的父提交（`parent`）——这也是一个 commit 对象。
+    - 第一个提交没有父提交。
+    - Merge commit 有多个父提交，代表来自不同分支的合并。
+- 提交的作者（`author`）与提交者（`committer`）
+
+!!! tip "作者与提交者"
+
+    没错，commit 的作者和提交者可以是两个不同的人。一般来讲，作者是编写原始代码的人，提交者是实际执行 commit 操作的人。
+
+    默认情况下，作者和提交者都会采用 `git config` 中的配置。使用 `git commit --author="Name <email>"` 可以手动指定作者，设置环境变量 `GIT_COMMITTER_NAME` 和 `GIT_COMMITTER_EMAIL` 可以手动指定提交者。
+
+!!! tip "其他角色"
+
+    除了作者与提交者以外，完成工作的可能还有其他角色，例如合作者、审阅者等。Git 本身并没有提供这些角色的概念，但是可以通过 commit message 来记录这些信息。对合作者角色，最常见、收到广泛支持的方式是使用 `Co-Authored-By` 标记信息，例如下面这个示例 commit message：
+
+    ```text
+    modules: Add a new module
+
+    This module provides a new feature that allows users to do something useful.
+
+    Co-Authored-By: Alice <alice@example.com>
+    Co-Authored-By: Bob <bob@example.com>
+    ```
+
+    在显示这个 commit 时，常见的 Git 平台（GitHub、GitLab 等）会自动识别 `Co-Authored-By` 并显示出来。
+
+    诸如 Linux 内核等大型项目可能会使用类似的方式标记更多的信息，例如 `Reported-by`、`Tested-by`、`Reviewed-by` 等。
+
+而 tree 对象的内容如下：
+
+```shell
+$ git cat-file -p 367ba031c357a771f2444048db71d109ec7e76d3
+040000 tree 9ffaaee6a500ec6fe9a8becced39bfcadca6320a	.github
+100644 blob 9331f5dd8db34e1cdc48fe663d662be8c976074c	.gitignore
+100644 blob 6ddd90df33d0b98e704b71f33910ae91152bb005	.markdownlint.jsonc
+100644 blob 7cdbe0b482f604a06a0988dad8877ae8d9257f7d	LICENSE
+100644 blob ab9868d501db1eba893afcff8cb428d9a0cdf534	Makefile
+100644 blob edc9f746d77a497fb08ba2dfac6bdf194b230c12	README.md
+040000 tree e4de763b60a9a9a2ddd5cbf56591e3d187da7d0a	docs
+040000 tree 4afa16d4c6461b534a002b432bdc5218e8826229	includes
+100644 blob 982322412bf8c459de35408c255358ca64705e36	mkdocs.yml
+100644 blob 81ed11cbdb707e57b178605d5aff73fdfa8b0dc4	requirements.txt
+040000 tree a0a863b399b5255c497d35837c2371e3b7f0ed36	scripts
+```
+
+可以看到，tree 对象就是其对应目录的文件列表。
+
+#### Ref {#git-ref}
+
+引用（Ref）是一个指向对象（commit）的指针，存储在 `.git/refs` 目录下。一般有以下几种引用：
+
+- 本地分支（`refs/heads`）
+- 远程分支（`refs/remotes`）
+- Tag（`refs/tags`）
+
+可以直接通过 `cat` 的方式查看引用对应的对象 SHA-1 值，例如查看本地 `master` 分支对应的 commit：
+
+```shell
+$ cat .git/refs/heads/master
+d959e182468be92957bd175d189472de91f614c8
+```
+
+除此之外，有一些特殊的（间接的）引用，对应的文件位于 `.git/` 下：
+
+- `HEAD`：指向当前所在（你正在操作的）分支的引用。
+- `ORIG_HEAD`：指向上一次操作前的 HEAD。
+- `FETCH_HEAD`：指向上一次 `git fetch` 操作的结果。
+- `MERGE_HEAD`：指向正在合并的分支。
+
+其中最重要的是 `HEAD`。例如，`git checkout some-branch` 就会将 `HEAD` 指向 `refs/heads/some-branch`；而 `git reset --hard HEAD~1` 就会将 `HEAD` 指向 `HEAD~1`（同时更新工作目录下面的文件）。
+
+!!! tip "HEAD~n"
+
+    `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
+
+!!! question "比较差异"
+
+    如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
+
+!!! tip "refspec"
+
+    你可能会在 `.git/config` 或者其他人写的 `git fetch` 等命令中看到以 `:` 分割的类似下面的东西：
+
+    ```text
+    +refs/heads/*:refs/remotes/origin/*
+    ```
+
+    这被称为 "refspec"，基本格式为 `<source>:<destination>`，表示从 `<source>` 获取对象并存储到 `<destination>`。如果 `<source>` 以 `+` 开头，则表示强制覆盖。上面的例子表示将远程仓库中 `refs/heads` 下的所有分支获取到本地的 `refs/remotes/origin` 下，即 `git fetch` 的默认行为。
+
+    更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
+
+#### Remote {#git-remote}
+
+绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
+
+默认情况下，remote 的名字是 `origin`，可以通过 `git remote` 查看当前的 remote 信息：
+
+```shell
+$ git remote
+origin
+```
+
+比较常用的相关命令：
+
+- `git remote add <name> <url>`：添加一个新的 remote
+- `git remote get-url <name>`：获取 remote 的 URL
+- `git remote set-url <name> <url>`：设置 remote 的 URL
+
+可以使用 `git fetch <remote>` 从远程仓库拉取最新的 commit——注意这个命令**只会更新远程分支相关对象以及 ref**。之后可以使用 `git merge` 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，`git pull origin master` 等价于 `git fetch origin master && git merge origin/master`。
+
+!!! question "让本地分支与远程一致"
+
+    有的时候，我们的本地分支做了一些操作，与远程不一致，此时需要让本地分支与远程一致，那么怎么做呢？
+
+    提示：如果希望让远程和本地一致，那么可以 `git push -f`，但是 `git pull -f` 是**不正确的**。你可能需要 `git fetch` 与 `git reset`。
+
+#### Staging Area {#git-staging}
+
+在运行 `git status` 的时候，会看到类似如下的输出：
+
+```shell
+$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   docs/dev/git.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+
+这里的 "Changes not staged for commit" 指的是工作目录下的修改还没有被添加到 staging area（暂存区，也叫 index）中。常用的诸如 `git add`、`git rm --cached` 等命令就是用来在 staging area 中添加、删除文件的。
 
 ### 本地配置 {#git-config-file}
 
@@ -39,6 +218,12 @@ icon: simple/git
     uncommit = reset --soft HEAD~1
 ```
 
+!!! tip "部分别名介绍"
+
+    `git commit --amend` 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。如果添加了 `--no-edit`，就会跳过消息编辑。
+
+    `git push --force-with-lease` 在 force push 之前先检查 remote 的状态，如果 remote 有本地不存在的新提交，该命令就会阻止此次 force push 操作。
+
 #### 常用配置 {#git-config}
 
 ```ini
@@ -64,7 +249,7 @@ icon: simple/git
 我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
 
 ```bash
-curl -sS  https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
+curl -sS https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
 ```
 
 ### gitignore {#git-gitignore}
@@ -124,6 +309,18 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
     done
     ```
 
+### 部分 clone {#partial-clone}
+
+Git 支持三种部分 clone 的方式：
+
+- blobless，不 clone HEAD 未涉及的 blob：`git clone --filter=blob:none <url>`
+- treeless，不 clone HEAD 未涉及的 blob 和 tree：`git clone --filter=tree:0 <url>`
+- shallow，不 clone HEAD 未涉及的 blob、tree 和 commit（**不推荐**）：`git clone --depth=1 --single-branch <url>`
+
+在网络上常见的部分 clone 方式为 `--depth=1`，但是请注意：**`--depth=1` 在后续更新时，会给服务器和网络带宽带来非常大的负担，因此建议仅在用完即删的场景下使用**。因为 shallow clone 没有存储历史信息，在某些情况下，服务器需要索引全部历史信息，并且这一过程难以优化。一个知名的例子是：[由于 shallow clone 给服务器带来的压力过大，GitHub 勒令要求 Homebrew 不允许 shallow clone](https://github.com/Homebrew/brew/pull/9383)。
+
+有关更多内容，可阅读 [Get up to speed with partial clone and shallow clone](https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/)。
+
 ### Git Submodule {#git-submodule}
 
 Submodule 可以用来添加外部项目，例如向一个 C++ 项目中添加 Eigen：
@@ -139,9 +336,47 @@ git rm --cached -f src/eigen # if you've already added it to the index
 git submodule add <url_of_eigen> src/eigen
 ```
 
+初始化、更新 submodule 等操作则使用 `git submodule update` 命令：
+
+```bash
+git submodule update --init --recursive # clone 后初始化并拉取 submodule
+git submodule update --remote --recursive # 更新 submodule 到远程最新版本
+```
+
+### Stash {#git-stash}
+
+有的时候，我们在工作目录中进行了一些修改，还没有 commit（例如还没有完全完成），但是需要切换到其他分支进行一些操作。这时可以使用 `git stash` 将当前的修改放在 stash 中，操作完成后，可以使用 `git stash pop` 将修改恢复到工作目录中。
+
+### 交互式 stage {#git-add-patch}
+
+你是否有时一时兴起，写了或者改了很多很多代码，但是又不想把所有修改一股脑塞进一个 commit 里面？虽然 `git add` 可以选择文件，每次只 commit 指定的文件，但很多时候在一个文件里面会有多个修改，怎么把这些修改「拆开来」呢？
+
+此时可以使用 `git add -p` 来选择指定的修改，该命令会将文件中的修改分成多个块（hunk），并询问你是否将该块添加到 staging area 中，如以下所示：
+
+```diff
+diff --git a/docs/dev/git.md b/docs/dev/git.md
+index 80c4501..4085b25 100644
+--- a/docs/dev/git.md
++++ b/docs/dev/git.md
+@@ -114,6 +114,10 @@ d959e182468be92957bd175d189472de91f614c8
+
+     `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
+
++!!! question "比较差异"
++
++    如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
++
+ #### Remote {#git-remote}
+
+ 绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
+(1/4) Stage this hunk [y,n,q,a,d,j,J,g,/,e,p,?]?
+```
+
+如果有多个修改在一个 hunk 中，可以输入 `s` 将该 hunk 拆分成多个 hunk。如果这样都无法拆分，也可以输入 `e` 手动选择需要 stage 的内容。
+
 ### Rebase 与 Merge {#git-rebase-merge}
 
-一般来说，我们希望保持项目有线性的提交历史，这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
+一般来说，我们希望保持项目有线性的提交历史（即不包含有多个 parent 的 merge commit），这样可以更容易地追溯问题，因此推荐使用 `rebase` 来合并分支。
 
 ```bash
 git checkout -b feature
@@ -158,6 +393,84 @@ git rebase master
 [pull]
     rebase = true
 ```
+
+!!! question "更新一个有修改的本地仓库"
+
+    以下是一个现实的例子：某个代码 git 仓库（存储在 GitHub 上）的 `master` 分支部署在一台服务器上，并且在该服务器上不仅做了一些额外的 commit 用来记录一些服务器相关的配置，还有一些没有被 stage 的文件。现在该代码仓库在 GitHub 上的 `master` 分支有一些新的更新 commit（例如更新了依赖，修复了 bug 等），那么如何将这些 commit 部署在该服务器上呢？
+
+    提示：你可能会需要 `git fetch`、`git stash` 与 `git rebase`。
+
+!!! tip "交互式 rebase"
+
+    `git rebase` 另一个重要的功能是修改 commit 历史记录。使用 `git rebase -i HEAD~n` 来修改历史以来的 n 个 commit。在输入命令后，git 会打开编辑器，将 commit 从旧到新排序，显示类似如下的内容：
+
+    ```txt
+    pick b9c96cc Install XDG Desktop Portal
+    pick d20fcf1 Set 2048m mem when running qemu
+    pick 74fd856 Add gnome-software; clean comments
+
+    # Rebase ebb0dcf..74fd856 onto ebb0dcf (3 commands)
+    #
+    # Commands:
+    # p, pick <commit> = use commit
+    # r, reword <commit> = use commit, but edit the commit message
+    # e, edit <commit> = use commit, but stop for amending
+    # s, squash <commit> = use commit, but meld into previous commit
+    # f, fixup [-C | -c] <commit> = like "squash" but keep only the previous
+    #                    commit's log message, unless -C is used, in which case
+    #                    keep only this commit's message; -c is same as -C but
+    #                    opens the editor
+    # x, exec <command> = run command (the rest of the line) using shell
+    # b, break = stop here (continue rebase later with 'git rebase --continue')
+    # d, drop <commit> = remove commit
+    # l, label <label> = label current HEAD with a name
+    # t, reset <label> = reset HEAD to a label
+    # m, merge [-C <commit> | -c <commit>] <label> [# <oneline>]
+    #         create a merge commit using the original merge commit's
+    #         message (or the oneline, if no original merge commit was
+    #         specified); use -c <commit> to reword the commit message
+    # u, update-ref <ref> = track a placeholder for the <ref> to be updated
+    #                       to this position in the new commits. The <ref> is
+    #                       updated at the end of the rebase
+    #
+    # These lines can be re-ordered; they are executed from top to bottom.
+    #
+    # If you remove a line here THAT COMMIT WILL BE LOST.
+    #
+    # However, if you remove everything, the rebase will be aborted.
+    #
+    ```
+
+    比如说，你想合并最近 3 个 commit 到 1 个，那么在编辑器中将上面的内容修改为如下，保存并退出即可：
+
+    ```text
+    pick b9c96cc Install XDG Desktop Portal
+    squash d20fcf1 Set 2048m mem when running qemu
+    squash 74fd856 Add gnome-software; clean comments
+    ```
+
+    交互式 rebase 的其他用法请参考相关文档。
+
+!!! tip "解决冲突"
+
+    在合并其他人的分支时，如果你和其他人的分支用不同的方式修改了相同的部分，那么就会出现冲突。当出现 git 无法处理的冲突时，合并会停在出现冲突的 commit 上，并且提示你解决冲突。出现冲突的文件类似如下：
+
+    ```text
+    <<<<<<< HEAD
+    This is your own changes.
+    ========
+    This is the changes from the other branch.
+    >>>>>>> other-branch
+    ```
+
+    可以看到，这里同时给出了双方的修改，解决冲突需要：
+    
+    - 手动修改文件到预期的内容（记得把 `<<<<<<<`、`=======` 和 `>>>>>>>` 删除掉！）
+    - 然后 `git add` 该文件
+    - 最后根据是 merge 还是 rebase 操作，使用 `git merge --continue` 或 `git rebase --continue` 继续合并（可以使用 `git status` 查看当前的状态）
+    - 如果不想解决了，可以使用 `git merge --abort` 或 `git rebase --abort` 取消合并操作
+
+    可以使用 pre-commit 的 [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#check-merge-conflict) 来避免不小心把未解决的冲突 commit 到仓库里。
 
 ### Bisect {#git-bisect}
 
@@ -199,7 +512,7 @@ git bisect bad <new-commit>
     - `body` 是 commit 的详细描述，通常会引用 issue、解释修改的原因等
     - `footer` 通常用于引用 issue、关闭 issue 等，例如 `Closes #123`，也可以用于指定 breaking change 等
 
-    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉`type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
+    值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉 `type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
 
 !!! note "Commit Message 模板"
 
@@ -254,9 +567,25 @@ gh pr create
 
     之后可以直接使用 `watch_latest_run` 命令即可。
 
-### GPG 签名 {#github-gpg}
+### GPG 与 SSH 密钥签名 {#github-sign}
 
-SSH Key 只用来验证 push 环节的身份，而 GPG Key 则用来验证 Commit 的真实性。
+在默认配置下，SSH Key 只用来验证你是否有权限修改指定的仓库，但有些时候我们需要证明某个 commit 就是由你（而不是其他人）提交的，以验证 commit 的真实性，此时就需要对 commit **签名**。GPG Key 和 SSH Key 都可以用来签名。
+
+在按照以下内容配置完成后，使用以下命令即可为 commit 和 tag 签名：
+
+```shell
+git commit -S ...
+git tag -s ...
+```
+
+如果需要自动为所有 commit 和 tag 签名（不管是使用 GPG 还是 SSH 签名），则：
+
+```shell
+git config --global commit.gpgSign true
+git config --global tag.gpgSign true
+```
+
+#### GPG 签名 {#github-gpg}
 
 GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：
 
@@ -279,6 +608,46 @@ gpg --keyserver pgp.mit.edu --send-keys <GPG Key ID>
     过期的 GPG Key 是可以更新的, 参考 [这个 StackOverflow 回答](https://superuser.com/a/1141251).
     在 GitHub 上 rotate 只需要删除旧的 GPG Key, 然后重新添加新的 GPG Key 即可.
     值得注意的是过期的 GPG Key 签名的 commit 依然会显示成 Verified, 因此**不要轻易删除过期的 GPG Key**.
+
+#### SSH 签名 {#github-ssh}
+
+在已经为账户添加了 SSH Key 的基础上，SSH 签名的配置就简单得多：
+
+```shell
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/yourkey.pub
+```
+
+### Deploy Keys {#github-deploy-keys}
+
+GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库的 SSH key，在需要将仓库 clone 到其它机器，但又不希望该机器有用户的全部权限时很有用。但是，GitHub 不允许同一个 SSH key 用在多个仓库上，对于需要在同一机器上 clone 多仓库的场景带来了不便。
+
+官方文档 [Managing deploy keys](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/managing-deploy-keys#using-multiple-repositories-on-one-server) 提供了一种方案。以下提供另一种不需要修改 `~/.ssh/config` 为每个仓库设置别名的方案。
+
+1. 进入仓库的 `.git` 目录，在该目录下创建密钥对。
+
+    ```shell
+    cd .git
+    # RSA key pair
+    ssh-keygen -f ./id_rsa -t rsa -b 4096 -N ""
+    # or ED25519 key pair
+    ssh-keygen -f ./id_ed25519 -t ed25519 -N ""
+    ```
+
+2. 修改 `.git/config` 内容，在 `[core]` 这个 section 下添加：
+
+    ```ini
+    [core]
+    	# ...
+    	# RSA key pair
+    	sshCommand = ssh -i .git/id_rsa
+    	# or ED25519 key pair
+    	sshCommand = ssh -i .git/id_ed25519
+    ```
+
+3. 将公钥（**以 `.pub` 结尾，别将私钥发给其他任何人！**）添加到仓库设置的 deploy keys 中。
+
+之后就可以像普通的仓库一样，正常进行 `git` 操作了。
 
 ### Issue {#github-issue}
 
@@ -377,7 +746,54 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 - 当 PR 中包含多次 commit，但实际上应当合并为一个时（例如经过 Review 后），推荐使用 Squash 合并 PR
 - 多次 commit 来提交新 feature 时，推荐使用 Merge 合并 PR
 
-维护者有时会需要将 PR checkout 到本地以测试。可以使用 GitHub CLI 的 `gh pr checkout` 命令快速完成，也可以采用手工方式：使用 `git fetch origin pull/PR_NUMBER/head:BRANCH_NAME` 的形式将编号为 `PR_NUMBER` 的 PR 对应的 head 同步到本地的 `BRANCH_NAME` 分支，之后 `git checkout` 即可。维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
+维护者有时会需要将 PR checkout 到本地以测试：
+
+- 可以使用 GitHub CLI 的 `gh pr checkout` 命令快速完成
+
+- 也可以采用手工方式：
+
+    - 使用 `git fetch origin pull/1234/head:pr-1234` 的形式将编号为 1234 的 PR 对应的 HEAD 同步到本地的 `pr-1234` 分支
+    - 之后 `git checkout pr-1234` 即可
+
+!!! warning "只读分支"
+
+    需要注意的是，远程的 `pull/<id>/head` 是只读的分支，如果需要写入其他人的 PR 分支，需要自行 `git remote add` 添加对方的仓库，并将其 PR 对应的分支添加到本地。
+
+维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
+
+!!! note "GitLab"
+
+    GitLab 的 Merge Request 整体上与 GitHub 的 Pull Request 类似，不过 checkout 到本地的操作有所不同。可以使用 GitLab 提供的命令行工具 [glab](https://docs.gitlab.com/editor_extensions/gitlab_cli/)，也可以使用 `git fetch origin merge-requests/1234/head:mr-1234` 的方式将编号为 1234 的 MR 对应的 HEAD 同步到本地的 `mr-1234` 分支。
+
+    以上内容也适用于自托管的 GitLab 实例。
+
+!!! tip "便于同步 PR/MR 的参考 alias"
+
+    ```ini title="~/.gitconfig"
+    [alias]
+        pr = !sh -c 'git fetch -u $1 +pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2 && git reset --hard HEAD' -
+        mr = !sh -c 'git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2 && git reset --hard HEAD' -
+    ```
+
+    使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。重复执行可从 PR/MR 中获取最新的修改。
+
+    !!! question "`git pull`?"
+
+        为什么这样得到的分支无法执行 `git pull`？如何修复这个问题？
+
+    以上修改自 [Check out locally by adding a Git alias](https://docs.gitlab.com/user/project/merge_requests/merge_request_troubleshooting/#check-out-locally-by-adding-a-git-alias)。
+
+    !!! question "参数说明"
+
+        原始的 alias 如下：
+
+        ```ini title="~/.gitconfig"
+        [alias]
+            pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
+            mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+        ```
+
+        相比原始的 alias，这里的有什么变化？添加这些变化的目的是什么？是否有更好的解决方案？
 
 ### GitHub Actions {#github-actions}
 
@@ -398,6 +814,10 @@ GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建�
 如果涉及到 Secret Key，还应当注意安全问题（限制触发条件、产物等）。
 
 GitHub 在 [这里](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) 提供了详细的文档。
+
+!!! tip "本地运行 GitHub Actions"
+
+    测试 CI 很多时候是件头疼的事情：要一遍又一遍 commit、push、观察是否运行正确，几乎是一种无尽的折磨——如果能在本地运行指定的 workflow 就好了！对于 GitHub Actions，可以使用 [act](https://github.com/nektos/act) 工具，其会调用 Docker 运行模拟 Actions 的环境，可以在本地快速测试。
 
 #### Other CI/CD systems {#ci-cd}
 

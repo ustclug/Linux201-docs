@@ -2,7 +2,7 @@ site_name: Linux 201
 site_description: Linux 201 进阶教程
 site_author: LUG @ USTC
 site_url: https://201.ustclug.org/
-repo_name: ustclug/Linux201-docs
+repo_name: &repository ustclug/Linux201-docs
 repo_url: https://github.com/ustclug/Linux201-docs
 copyright: Brought to you by <a href="https://lug.ustc.edu.cn/">LUG@USTC</a>. Available under the <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0 license</a>.
 
@@ -30,7 +30,9 @@ theme:
   features:
     - content.code.annotate
     - content.code.copy
+    - content.footnote.tooltips
     - navigation.indexes
+    - navigation.path
     - navigation.sections
     - navigation.top
 
@@ -72,8 +74,21 @@ extra:
 extra_css:
   - css/extra.css
 
+plugins:
+  - search
+  - group:
+      enabled: !ENV CI
+      plugins:
+        - git-revision-date-localized
+        - git-committers:
+            repository: *repository
+  - group:
+      enabled: !ENV INSIDERS
+      plugins:
+        - typeset
+
 nav:
-  - 欢迎: index.md
+  - 首页: index.md
   - 前言: foreword.md
   - 章节编写指导: spec/writing.md
   - 贡献者: spec/contributors.md
@@ -90,36 +105,52 @@ nav:
       - LVM: ops/storage/lvm.md
       - RAID: ops/storage/raid.md
       - 网络存储系统: ops/storage/network.md
-      - 备份方案: ops/storage/backup.md
+      - 备份与文件传输工具: ops/storage/backup.md
       - ZFS: ops/storage/zfs.md
-    - 网络系统: ops/network.md
+    - 网络系统:
+      - ops/network/index.md
+      - 基础知识简介: ops/network/intro.md
     - 网络服务实践:
       - ops/network-service/index.md
+      - 网络时间同步: ops/network-service/ntp.md
       - 隧道组网: ops/network-service/intranet.md
       - Nginx 网页服务器: ops/network-service/nginx.md
-    - 数据库: ops/database.md
+    - 数据库:
+      - ops/database/index.md
+      - 关系型数据库: ops/database/rdbms.md
+      - 键值数据库: ops/database/kv.md
     - 问题调试: ops/debug.md
     - 虚拟化技术:
       - ops/virtualization/index.md
       - 基础知识简介: ops/virtualization/intro.md
       - 容器: ops/virtualization/container.md
       - QEMU/KVM: ops/virtualization/qemu-kvm.md
-    - 用户账户系统: ops/account.md
-    - 指标监控与告警: ops/monitor.md
+    - 用户账户系统: ops/accounts.md
+    - 指标监控与告警:
+      - ops/monitor/index.md
+      - 本机指标收集: ops/monitor/local.md
+      - Telegraf + InfluxDB: ops/monitor/telegraf.md
+      - Prometheus: ops/monitor/prometheus.md
+      - Grafana: ops/monitor/grafana.md
     - 安全: ops/security.md
   - 开发速查手册:
     - dev/index.md
     - 编程语言概览:
       - dev/language/index.md
+      - 前端简介: dev/language/frontend.md
+      - Python: dev/language/python.md
+      - C/C++ 与构建工具: dev/language/cxx.md
+      - Shell 脚本: dev/language/shell.md
+      - Golang: dev/language/golang.md
     - 版本管理与合作: dev/git.md
     - SSH 使用技巧: dev/ssh.md
   - 高级内容:
     - advanced/index.md
     - CUDA 环境简介: advanced/cuda.md
     - Linux 桌面与窗口系统: advanced/desktop.md
-    - ACL: advanced/acl.md
+    - DAC 与 MAC: advanced/dac-mac.md
     - Caddy: advanced/caddy.md
     - Nmap: advanced/nmap.md
-    - 守护进程: advanced/daemon.md
-    - 超算: advanced/supercomputer.md
-    - 网管交换机简介: advanced/switch.md
+    # - 守护进程: advanced/daemon.md
+    # - 超算: advanced/supercomputer.md
+    # - 网管交换机简介: advanced/switch.md

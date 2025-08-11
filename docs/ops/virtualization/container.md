@@ -106,6 +106,16 @@ root           1  0.0  0.0  10876  4468 pts/16   S    21:46   0:00 bash
 root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux
 ```
 
+!!! note "subuid 和 subgid"
+
+    `/etc/subuid` 和 `/etc/subgid` 文件定义了用户命名空间允许的 UID 和 GID 的映射关系。一个 `subuid` 文件的例子如下：
+
+    ```text title="/etc/subuid"
+    user:100000:65536
+    ```
+
+    这代表用户名为 user 的用户在创建新的用户命名空间的时候，可以将从 UID 100000 开始的 65536 个 UID 映射到新的用户命名空间中。一种常见的映射关系是，新命名空间的 root 用户（UID 0）映射到宿主机的当前用户，而 root 以外的用户则依次使用映射，例如用户命名空间中的 UID 1 就映射到宿主机的 UID 100000，以此类推。
+
 !!! note "命名空间的魔法"
 
     在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。
@@ -406,6 +416,8 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
     2023 年的 Hackergame 有一道相关的题目：[Docker for Everyone](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Docker%20for%20Everyone)。
 
+    尽管 sudo 支持限制用户可以执行的命令，但是由于 Docker CLI 的复杂性，这种限制很难做到完备，极易被绕过。可参考 Hackergame 2024 的题目：[Docker for Everyone Plus](https://github.com/USTC-Hackergame/hackergame2024-writeups/tree/master/official/Docker%20for%20Everyone%20Plus)。
+
     基于相同的理由，如果需要跨机器操作 Docker，也**不**应该用 `-H tcp://` 的方式开启远程访问。
     请阅读 <https://docs.docker.com/engine/security/protect-access/> 了解安全配置远程访问 Docker 的方法。
 
@@ -421,7 +433,13 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
     然后做了一些操作之后就直接退出了。这么做的后果，就是**在 `docker ps -a` 的时候，发现一大堆已经处于退出状态的容器**。
 
-    加上 `--name` 参数命名，可以帮助之后判断容器的用途；加上 `--rm` 参数则会在容器退出后自动删除容器。
+    加上 `--name` 参数命名，可以帮助之后判断容器的用途；加上 `--rm` 参数则会在容器退出后自动删除容器。可以考虑为常用的命令添加 alias，例如：
+
+    ```shell
+    alias tmpctr="sudo docker run -it --rm"
+    ```
+
+    这样执行 `tmpctr ustclug/debian:12` 就可以启动一个临时容器了。
 
 另外创建容器时非常常见的需求：
 
@@ -874,8 +892,12 @@ Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
 -A FORWARD -j ufw-track-forward
 ```
 
-于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。
-如果不希望自行管理 `DOCKER-USER` 链，建议将端口映射设置为只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节。）；或者配置让容器直接使用 host 网络。
+于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。可以考虑以下几种解决方案：
+
+- 自行维护 `DOCKER-USER` 链。可参考官方文档中 [Restrict external connections to containers](https://docs.docker.com/engine/network/packet-filtering-firewalls/#restrict-external-connections-to-containers) 的部分。
+- 使用 Docker 的 `--network host` 选项，不做网络隔离，直接使用主机的网络。
+- 设置端口映射只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节）。
+- 不让 Docker 维护 iptables。这会导致一些与容器网络有关的问题，例如容器网络之间的隔离失效、容器内部无法正常访问外部网络等等。
 
 #### IPv6
 
@@ -1087,7 +1109,7 @@ services:
 
 Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 [Compose Specification](https://docs.docker.com/compose/compose-file/) 四种版本，容易造成混乱。
 
-Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果你是从 Debian 的官方源安装的 `docker-compose` 包，那么就是 v1 版本的 compose：
+Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果输出类似如下，那么就是 v1 版本的 compose：
 
 ```console
 $ docker-compose --version
@@ -1106,7 +1128,7 @@ Docker Compose version v2.24.5
 
 从 v1 迁移到 v2 的细节问题参见 [Migrate to Compose V2](https://docs.docker.com/compose/migrate/)（主要是容器名称与环境变量处理上存在差异）。
 
-特别地，Ubuntu 在官方源中打包了 `docker-compose-v2` 这个包。
+特别地，Ubuntu 在官方源中打包了 `docker-compose-v2` 这个包，Debian 13 官方源开始提供的 `docker-compose` 也是 v2 版本的。
 
 对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。
 
@@ -1158,6 +1180,10 @@ services:
 假设当前目录名为 `helloworld`，运行 `docker compose up` 之后，可以看到 compose 会创建一个名为 `helloworld-hello-world-1` 的容器，并且为容器创建 `helloworld-hello-world-1` 的 bridge 网络——由于 `hello-world` 的唯一功能是输出一段文字，所以容器会立即退出。
 
 在测试完成后，使用 `docker compose down` 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。
+
+!!! tip "查看当前所有 compose 环境"
+
+    可以使用 `docker compose ls` 查看当前所有打开的 compose 环境。
 
 #### 案例 1：Hackergame 的 nc 类题目 Docker 容器环境 {#compose-hackergame-nc}
 
@@ -1227,7 +1253,7 @@ services:
 
     根据 [tini Issue #8](https://github.com/krallin/tini/issues/8#issuecomment-146135930) 的讨论，如果 `bash` 为 PID 1，那么处理僵尸进程的事情确实不需要操心，但是 `bash` 默认不会帮忙传递信号——这意味着如果执行 `docker stop`，那么 `bash` 自己吞掉信号之后什么都不会发生——这个命令会卡住比较长的时间，直到超时之后被强制杀死，无法做到优雅地退出（gracefully exit）。
 
-    特别地，实际的服务程序也需要恰当处理信号。一个反例是默认的 Python 收到 `SIGTERM`（`docker stop` 发送的信号）时，什么都不会做：
+    特别地，实际的服务程序也需要恰当处理信号，特别是在作为 PID 1 的时候（因为 PID 1 进程不像其他进程，没有默认的信号 handler）。例如，Python 不会特殊处理信号，因此作为容器启动进程（PID 1）收到 `SIGTERM`（`docker stop` 发送的信号）时，什么都不会做：
 
     ```console
     $ sudo docker run -it --rm --name=python-signal python bash
@@ -1238,7 +1264,7 @@ services:
     （卡住直到超时，SIGKILL）
     ```
 
-    如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。对于 Python 而言，可以这么解决：
+    如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。如果不希望启动容器额外设置 `--init`，或者需要在退出时做额外清理等操作的话，对于 Python 而言，可以这么解决：
 
     ```python
     import signal

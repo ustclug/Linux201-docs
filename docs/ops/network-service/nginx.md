@@ -1,4 +1,8 @@
-# Nginx 网页服务器
+---
+icon: simple/nginx
+---
+
+1# Nginx 网页服务器
 
 !!! note "主要作者"
 

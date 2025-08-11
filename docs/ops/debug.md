@@ -13,6 +13,122 @@ icon: material/bug
 本部分介绍调试问题时的一般思路和方法。
 请注意本部分无法面面俱到，因此只能够提供一些在运维上常用的方法，具体问题需要具体分析。
 
+本文的部分内容可能会与其他部分的内容存在一定重复。
+
+## 快速检查单 {#quick-checklist}
+
+以下提供在系统遇到异常情况时，可以快速检查的一些项目：
+
+- 系统负载
+    - `uptime` 可以查看系统在过去 1 分钟、5 分钟、15 分钟的平均负载——这里的「负载」指的是正在等待 CPU 的进程数量（包括陷入不可中断睡眠的进程，大多数情况下处于这种状态的进程都在等待磁盘 I/O）。
+    - [PSI（Pressure Stall Information）信息](https://docs.kernel.org/accounting/psi.html)可以确认系统的具体的压力情况。在 `/proc/pressure` 目录下可以看到 CPU、I/O、IRQ 以及内存的压力情况。只要有一个或多个进程需要缺少某种资源而等待，那么对应的时间就会被计入 `some` 行中；如果所有的进程都因为缺少某种资源而等待，那么对应的时间就会被计入 `full` 行中。`some` 和 `full` 中的 `avg10`、`avg60`、`avg300` 分别表示过去 10 秒、60 秒、300 秒的等待时间百分比（0 到 100）。
+        - PSI 可以精确到 [cgroup](./virtualization/container.md#cgroups)——每个 cgroup 下的 `*.pressure` 就是对应的压力信息。
+    - `htop` 可以快速查看系统的 CPU、内存（包括 swap）以及进程情况。在进程数量很多的时候，`top` 的性能会更好一些（虽然易用性不如 `htop`）。
+    - `iostat 1` 可以每隔 1 秒输出一次磁盘 I/O 情况。
+- 系统日志
+    - `journalctl -f`
+    - `dmesg -w`
+    - 检查硬件是否发生错误：`ras-mc-ctl --summary`，需要提前安装 `rasdaemon` 包。
+- 资源使用情况
+    - `df -h` 可以查看磁盘空间使用情况。
+    - `iotop` 可以按进程查看磁盘 I/O 情况。
+        - iotop 有两个不同的版本，在各个发行版中一般分为 `iotop` 和 `iotop-c`。前者已经停止维护，因此**推荐安装 `iotop-c`**。
+    - `iftop` 可以查看对应接口到每个远端 IP 的网络流量情况。
+        - 如果需要按进程查看网络流量情况，可以使用 `nethogs`。
+        - 如果只需要接口的总数据，可以使用 `bmon`。
+
+!!! note "系统几乎/完全无法操作"
+
+    不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满（OOM），出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。
+
+    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
+
+    最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：
+
+    - (un)R(aw)：修改键盘模式到 ASCII（XLATE），一般用于从 X 桌面环境夺取键盘控制。
+    - t(E)rm：发送 SIGTERM 信号给所有进程。
+    - k(I)ll：发送 SIGKILL 信号给所有进程。
+    - (S)ync：将所有已挂载文件系统的缓冲区数据写入磁盘。
+    - (U)nmount：重新挂载所有文件系统为只读模式。
+    - re(B)oot：重启系统。
+
+    如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。
+
+    另外，向 `/proc/sysrq-trigger` 写入字符也可以触发对应的操作。其他内容可以参考以上内核文档链接。
+
+    !!! lab "测试 kdump"
+
+        Debian 的 `kdump-tools` 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 `kdump-tools`，并使用 SysRq 触发内核崩溃，验证配置的有效性。
+
+!!! tip "用户态 OOM Killer"
+
+    Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。
+
+    用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：
+
+    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者 swap 占用比例超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
+
+        由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
+
+        oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
+
+        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它同时适用于物理内存和 Swap 空间。oomd 触发的条件是：内存压力（PSI）超过 `OOMMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。
+
+        ??? example "Debian 12 中的 systemd-oomd 配置"
+
+            Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。
+
+            ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
+            [Slice]
+            ManagedOOMSwap=kill
+            ```
+
+            ```ini title="/usr/lib/systemd/system/user@.service.d/10-oomd-user-service-defaults.conf"
+            [Service]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=50%
+            ```
+        
+        ??? example "Fedora 42 中的 systemd-oomd 配置"
+
+            Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
+
+            ```ini title="/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf"
+            [Slice]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=80%
+            ```
+
+            ```ini title="/usr/lib/systemd/user/slice.d/10-oomd-per-slice-defaults.conf"
+            [Slice]
+            ManagedOOMMemoryPressure=kill
+            ManagedOOMMemoryPressureLimit=80%
+            ```
+    - [earlyoom](https://github.com/rfjakob/earlyoom)。earlyoom 使用 [mlock(2)][mlock.2] 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。
+
+        earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
+
+        ![earlyoom in Vlab](../images/vlab-earlyoom.png)
+    
+    !!! question "tmpfs?"
+
+        思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
+
+!!! note "系统无法启动"
+
+    系统启动失败可能会有各种各样的原因，因此以下只能够提供对一部分情况有帮助的信息。
+
+    如果你无法看到 GRUB 界面，或者确定已经无法从硬盘引导到可以收拾残局的状态，那么建议使用 LiveCD/USB 启动系统（和安装系统的方式类似）进行救援操作。这里建议使用 Arch Linux 的安装镜像（又称为 archiso），因为：
+
+    - 内核较新，对较新的硬件支持较好
+    - 占用空间小
+    - `arch-chroot` 工具可以方便地 chroot 到安装的系统中，以便执行操作
+        - 如果不使用 `arch-chroot`，在 chroot 进入系统前就需要手动挂载 `/proc`、`/sys`、`/dev` 等文件系统、配置 `/etc/resolv.conf` 等等，比较麻烦。
+    
+    如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
+
+    诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。
+
 ## 服务状态与日志 {#status-and-logs}
 
 当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
@@ -57,6 +173,15 @@ journalctl 默认会使用 pager（换句话说，`less`）显示日志，当然
 
 logrotate 会定期（一般是每天，或者文件足够大的时候，请参考 `/etc/logrotate*` 对应的配置）「轮转」（rotate）日志文件：
 这是一个将旧日志压缩，更旧的日志删除的过程。为了分析被压缩过的历史日志，可以使用对应压缩软件提供的工具，例如 `gz` 格式对应 `zcat`/`zgrep`，`xz` 格式对应 `xzcat`/`xzgrep`，`zst` 格式对应 `zstdcat`/`zstdgrep` 等等。
+
+!!! tip "某段日志/错误信息是从哪个程序的源代码中的哪里输出的？"
+
+    在排查问题时，有时候会需要去搞清楚是什么东西在哪里输出了我们看到的错误信息。此时可以考虑使用代码搜索网站，最常见的选择有：
+
+    - GitHub 代码搜索（需要登录），直接在搜索框输入即可。
+    - [Debian Code Search](https://codesearch.debian.net/)，可以搜索 Debian 系统中所有包的源代码。
+
+    某些大型程序也有专门的搜索网站，例如 [Chromium Code Search](https://source.chromium.org/chromium)。
 
 ## procfs 与 strace {#procfs-and-strace}
 
@@ -275,11 +400,529 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 - `l`：显示当前函数的源码
 - `print xxx`：打印变量的值，参数支持表达式（需要对 C 的指针与类型系统有一定的了解）
 
+!!! note "Debian/Ubuntu 的调试符号不包含源代码文件"
+
+    在安装调试符号后，如果你尝试在 gdb 中使用 `l` 命令查看源码，可能会发现无法显示。以下以 coreutils 的 `yes` 程序为例：
+
+    ```console
+    (gdb) b main
+    Breakpoint 1 at 0x2330: file src/yes.c, line 62.
+    (gdb) r
+    Starting program: /usr/bin/yes 
+    [Thread debugging using libthread_db enabled]
+    Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+    Breakpoint 1, main (argc=1, argv=0x7fffffffe018) at src/yes.c:62
+    62	src/yes.c: No such file or directory.
+    (gdb) l
+    57	in src/yes.c
+    ```
+
+    此时需要使用 `apt source` 下载对应的源代码（相关信息可参考[包管理系统](./package.md#apt-source)相关部分）。`apt source` 会自动应用 Debian 相关补丁。然后在 gdb 中使用 `dir` 命令添加源代码目录：
+
+    ```console
+    (gdb) dir /path/to/coreutils-9.1/
+    Source directories searched: /path/to/coreutils-9.1:$cdir:$cwd
+    (gdb) l
+    57	
+    58	int
+    59	main (int argc, char **argv)
+    60	{
+    61	  initialize_main (&argc, &argv);
+    62	  set_program_name (argv[0]);
+    63	  setlocale (LC_ALL, "");
+    64	  bindtextdomain (PACKAGE, LOCALEDIR);
+    65	  textdomain (PACKAGE);
+    66
+    ```
+
+!!! tip "了解内核 backtrace 对应源代码文件与行号"
+
+    在调试与内核有关的问题时，经常需要判断内核输出的 backtrace 信息里每个函数的具体位置。例如以下是由 SysRq 的 `l` 命令触发的向 dmesg 输出所有活跃核心当前栈的信息：
+
+    ```dmesg
+    [  243.860496] sysrq: Show backtrace of all active CPUs
+    [  243.860505] NMI backtrace for cpu 0
+    [  243.860507] CPU: 0 UID: 0 PID: 3660 Comm: tee Tainted: P           OE      6.12.38+deb13-amd64 #1  Debian 6.12.38-1
+    [  243.860510] Tainted: [P]=PROPRIETARY_MODULE, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+    [  243.860511] Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS Arch Linux 1.17.0-1-1 04/01/2014
+    [  243.860514] Call Trace:
+    [  243.860525]  <TASK>
+    [  243.860530]  dump_stack_lvl+0x5d/0x80
+    [  243.860546]  nmi_cpu_backtrace.cold+0x19/0x68
+    [  243.860548]  ? __pfx_nmi_raise_cpu_backtrace+0x10/0x10
+    [  243.860560]  nmi_trigger_cpumask_backtrace+0xed/0x100
+    [  243.860569]  __handle_sysrq.cold+0x9c/0xe6
+    [  243.860577]  write_sysrq_trigger+0x59/0xb0
+    [  243.860590]  proc_reg_write+0x57/0xa0
+    [  243.860601]  vfs_write+0xf5/0x450
+    [  243.860612]  ksys_write+0x6d/0xf0
+    [  243.860614]  do_syscall_64+0x82/0x190
+    [  243.860616]  ? __count_memcg_events+0x53/0xf0
+    [  243.860619]  ? count_memcg_events.constprop.0+0x1a/0x30
+    [  243.860625]  ? handle_mm_fault+0x1bb/0x2c0
+    [  243.860628]  ? do_user_addr_fault+0x36c/0x620
+    [  243.860630]  ? exc_page_fault+0x7e/0x180
+    [  243.860633]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+    ```
+
+    尽管函数名的搜索相对简单，但是怎么定位栈上的某个函数具体运行在哪一行呢？此时可以使用 Linux 内核调试符号（完整的 `vmlinux`）与 `addr2line` 工具定位。在 Debian 上需要配置调试符号源后安装当前运行内核对应的 dbg 包。注意内核调试符号很大，需要留出足够空间：
+
+    ```shell
+    sudo apt install linux-image-$(uname -r)-dbg
+    ```
+
+    之后使用 `addr2line` 即可：
+
+    ```console
+    $ addr2line -e /usr/lib/debug/boot/vmlinux-$(uname -r) nmi_trigger_cpumask_backtrace+0xed/0x100
+    debian/build/build_amd64_none_amd64/lib/nmi_backtrace.c:62
+    ```
+
+    可以结合 `apt source` 获取到的有 Debian 补丁的内核源代码查看。
+
 需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
 如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
+
+## 网络问题调试简介 {#network-debug}
+
+本节介绍简单的网络问题的调试方法与一些常用的网络问题调试工具。
+
+### 连通性问题 {#connectivity-issues}
+
+#### ping
+
+判断是否连接正常最简单的方式是使用 `ping` 命令。在 Linux 下，`ping` 会不停向目标地址发送 ICMP Echo Request 包，如果目标地址网络畅通，并且防火墙配置允许响应 Echo Request 的话，就可以收到 Echo Reply 包。
+
+```console
+$ ping www.example.com
+PING www.example.com (2600:1417:4400:24::17d2:7a6) 56 data bytes
+64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=1 ttl=50 time=60.2 ms
+64 bytes from g2600-1417-4400-0024-0000-0000-17d2-07a6.deploy.static.akamaitechnologies.com (2600:1417:4400:24::17d2:7a6): icmp_seq=2 ttl=50 time=60.4 ms
+^C
+--- www.example.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 60.158/60.300/60.443/0.142 ms
+$ # 某些情况下需要自行通过 -4 或者 -6 指定使用 IPv4 或者 IPv6
+$ ping -4 www.example.com
+PING www.example.com (104.116.243.80) 56(84) bytes of data.
+64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=1 ttl=44 time=81.7 ms
+64 bytes from a104-116-243-80.deploy.static.akamaitechnologies.com (104.116.243.80): icmp_seq=2 ttl=44 time=81.9 ms
+^C
+--- www.example.com ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 81.736/81.799/81.863/0.063 ms
+```
+
+`ping` 的局限性在于，即使 `ping` 成功，也不代表目标主机的服务正常运行、传输 TCP 或 UDP 包正常；即使 `ping` 失败，也不代表目标主机的服务不可用。
+
+#### curl
+
+具体的服务一般也有对应的测试工具，例如对 HTTP(S) 类服务可以使用 `curl` 测试。添加 `-v` 参数可以查看详细的请求与响应信息，而添加 `-I` 参数可以发送 HEAD 请求，避免终端输出过多的内容。与 `ping` 类似，`-4` 与 `-6` 参数可以指定使用 IPv4 或者 IPv6。
+
+??? example "`curl -I -v` 样例输出"
+
+    ```console
+    $ curl -I -v https://www.example.com
+    * Host www.example.com:443 was resolved.
+    * IPv6: 2600:1417:4400:24::17d2:7b3, 2600:1417:4400:24::17d2:7a6
+    * IPv4: 104.116.243.80, 104.116.243.152
+    *   Trying [2600:1417:4400:24::17d2:7b3]:443...
+    * Connected to www.example.com (2600:1417:4400:24::17d2:7b3) port 443
+    * ALPN: curl offers h2,http/1.1
+    * TLSv1.3 (OUT), TLS handshake, Client hello (1):
+    *  CAfile: /etc/ssl/certs/ca-certificates.crt
+    *  CApath: /etc/ssl/certs
+    * TLSv1.3 (IN), TLS handshake, Server hello (2):
+    * TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+    * TLSv1.3 (IN), TLS handshake, Certificate (11):
+    * TLSv1.3 (IN), TLS handshake, CERT verify (15):
+    * TLSv1.3 (IN), TLS handshake, Finished (20):
+    * TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+    * TLSv1.3 (OUT), TLS handshake, Finished (20):
+    * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519 / id-ecPublicKey
+    * ALPN: server accepted h2
+    * Server certificate:
+    *  subject: C=US; ST=California; L=Los Angeles; O=Internet Corporation for Assigned Names and Numbers; CN=*.example.com
+    *  start date: Jan 15 00:00:00 2025 GMT
+    *  expire date: Jan 15 23:59:59 2026 GMT
+    *  subjectAltName: host "www.example.com" matched cert's "*.example.com"
+    *  issuer: C=US; O=DigiCert Inc; CN=DigiCert Global G3 TLS ECC SHA384 2020 CA1
+    *  SSL certificate verify ok.
+    *   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+    *   Certificate level 1: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+    *   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+    * using HTTP/2
+    * [HTTP/2] [1] OPENED stream for https://www.example.com/
+    * [HTTP/2] [1] [:method: HEAD]
+    * [HTTP/2] [1] [:scheme: https]
+    * [HTTP/2] [1] [:authority: www.example.com]
+    * [HTTP/2] [1] [:path: /]
+    * [HTTP/2] [1] [user-agent: curl/8.5.0]
+    * [HTTP/2] [1] [accept: */*]
+    > HEAD / HTTP/2
+    > Host: www.example.com
+    > User-Agent: curl/8.5.0
+    > Accept: */*
+    >
+    * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+    * TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+    * old SSL session ID is stale, removing
+    < HTTP/2 200
+    HTTP/2 200
+    < accept-ranges: bytes
+    accept-ranges: bytes
+    < content-type: text/html
+    content-type: text/html
+    < etag: "84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"
+    etag: "84238dfc8092e5d9c0dac8ef93371a07:1736799080.121134"
+    < last-modified: Mon, 13 Jan 2025 20:11:20 GMT
+    last-modified: Mon, 13 Jan 2025 20:11:20 GMT
+    < content-length: 1256
+    content-length: 1256
+    < cache-control: max-age=681
+    cache-control: max-age=681
+    < date: Wed, 23 Apr 2025 17:06:41 GMT
+    date: Wed, 23 Apr 2025 17:06:41 GMT
+    < alt-svc: h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"
+    alt-svc: h3=":443"; ma=93600,h3-29=":443"; ma=93600,quic=":443"; ma=93600; v="43"
+
+    <
+    * Connection #0 to host www.example.com left intact
+    ```
+
+#### nc
+
+对于简单的纯文本协议，可以使用 `nc`（netcat）命令进行测试，以连接 `www.example.com` 的 80 端口为例，输入 HTTP 请求行和头，按两下回车（代表 HTTP 请求结束），即可收到响应：
+
+```console
+$ nc www.example.com 80
+GET / HTTP/1.0
+Host: www.example.com
+
+（响应内容）
+```
+
+即使是非纯文本协议，`nc` 也可用于探测端口是否开放，以 22（SSH）端口为例：
+
+```console
+$ nc <地址> 22
+SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
+```
+
+#### mtr
+
+对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。`mtr` 命令可以看作是 `ping` 和 `traceroute` 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。
+
+!!! tip "mtr-tiny"
+
+    Debian 下的 `mtr` 包会包含图形界面程序，在服务器上建议安装 `mtr-tiny` 包。
+
+直接使用 `mtr <地址>` 即可进入交互式界面查看每一跳的情况。如果需要分享给其他人，可以考虑使用 `--report`（`-r`）参数进入非交互式的报告模式，使用 `-c` 设置轮数，类似如下：
+
+```shell
+mtr -c 10 -r www.example.com
+```
+
+`mtr` 默认使用 ICMP Echo 包执行 trace 操作，可以使用 `--tcp` 和 `--udp` 参数切换为 TCP 或 UDP 包，此时使用 `--port` 参数可以指定访问的 TCP/UDP 端口号。
+
+#### dig 与 DNS {#dig}
+
+如果在进行网络操作时看到类似下面的错误：
+
+```console
+$ curl -I www.example.com
+curl: (6) Could not resolve host: www.example.com
+```
+
+那么就需要排查 DNS 的问题。`dig` 工具可以测试向指定 DNS 服务器的解析情况，一些常见的例子包含：
+
+- `dig www.example.com`：使用系统默认的 DNS 服务器解析 A 记录
+- `dig www.example.com @8.8.8.8`：使用 Google 的 DNS 服务器解析 A 记录
+- `dig www.example.com AAAA`：解析 AAAA（IPv6）记录
+- `dig www.example.com +short`：直接输出解析结果，不显示其他内容
+
+这里系统默认的 DNS 服务器指 `/etc/resolv.conf` 中的配置的 `nameserver`，在一部分系统上，`nameserver` 会是 127.0.0.53，代表其启用了 `systemd-resolved` 作为本地的 DNS 服务器，此时需要使用 `resolvectl` 命令查看实际的 DNS 配置。
+
+!!! tip "C 运行时库与 DNS 解析"
+
+    许多程序会直接使用系统 C 运行时库的 [`getaddrinfo()`][getaddrinfo.3] 等函数获取 DNS 解析的结果。但是 `dig` 不会。这可能导致 `dig` 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。
+
+    可以使用 `getent hosts www.example.com` 命令来测试 C 运行时库的 DNS 解析情况。
+
+#### ip
+
+`ip` 命令可以查看本机的网络接口等状态。`ip a`（`ip address`）可以查看所有接口的信息，包括 IP 地址、是否上线等：
+
+```console
+$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute
+       valid_lft forever preferred_lft forever
+2: eth0@if637: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether be:ed:ab:c0:e6:cf brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.31.155.84/16 brd 172.31.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 2001:da8:d800:4bfc:bced:abff:fec0:e6cf/64 scope global dynamic mngtmpaddr noprefixroute
+       valid_lft 86400sec preferred_lft 14400sec
+    inet6 fe80::bced:abff:fec0:e6cf/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+一般有线网络都以 `eth` 或者 `enp` 开头，无线网络以 `wlp` 开头。如果 `state` 是 `DOWN`，那么你可能需要检查一下物理网络情况，例如网线是否有插好等。
+
+如果你有多个网络接口，可以使用 `ip r`（`ip route`）命令管理路由表。使用 `ip r g <ip>`（`ip route get`）可以确认发送到某个 IP 地址的网络包会经过哪个网络接口：
+
+```console
+$ ip r g 8.8.8.8
+8.8.8.8 via 172.31.0.1 dev eth0 src 172.31.155.84 uid 1000
+    cache
+```
+
+### 性能检查 {#performance-check}
+
+iperf 工具可以用来测试两台主机之间的网络性能。目前 iperf 有两个版本：iperf2 和 iperf3，**两者互不兼容**。关于两者功能的比较，可以参考：
+
+- [Throughput Tool Comparision](https://fasterdata.es.net/performance-testing/network-troubleshooting-tools/throughput-tool-comparision/)
+- [Iperf 2 & Iperf 3 Comparison Table](https://iperf2.sourceforge.io/IperfCompare.html)
+
+尽管存在功能差异，两者最基础的功能是相似的，都需要先在一台主机上运行 iperf server，再在另一台主机上运行 iperf client 进行测试。默认情况下，iperf 测试的是从 client 上传到 server 的速度，使用 `-R` 参数可以测试从 server 下载到 client 的速度。以 iperf3 为例：
+
+- server 端：
+
+    ```console
+    $ iperf3 -s
+    -----------------------------------------------------------
+    Server listening on 5201 (test #1)
+    -----------------------------------------------------------
+    ```
+
+- client 端：
+
+    ```console
+    $ iperf3 -c 192.168.122.1
+    Connecting to host 192.168.122.1, port 5201
+    [  5] local 192.168.122.247 port 42522 connected to 192.168.122.1 port 5201
+    [ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+    [  5]   0.00-1.00   sec  5.60 GBytes  48.1 Gbits/sec    0   2.12 MBytes       
+    [  5]   1.00-2.00   sec  5.95 GBytes  51.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   2.00-3.00   sec  4.96 GBytes  42.6 Gbits/sec    0   2.72 MBytes       
+    [  5]   3.00-4.00   sec  5.37 GBytes  46.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   4.00-5.00   sec  5.74 GBytes  49.3 Gbits/sec    0   2.72 MBytes       
+    [  5]   5.00-6.00   sec  5.55 GBytes  47.7 Gbits/sec    0   2.72 MBytes       
+    [  5]   6.00-7.00   sec  5.72 GBytes  49.1 Gbits/sec    0   2.72 MBytes       
+    [  5]   7.00-8.00   sec  5.65 GBytes  48.6 Gbits/sec    0   2.72 MBytes       
+    [  5]   8.00-9.00   sec  5.72 GBytes  49.1 Gbits/sec    0   2.87 MBytes       
+    [  5]   9.00-10.00  sec  5.25 GBytes  45.1 Gbits/sec    0   3.02 MBytes       
+    - - - - - - - - - - - - - - - - - - - - - - - - -
+    [ ID] Interval           Transfer     Bitrate         Retr
+    [  5]   0.00-10.00  sec  55.5 GBytes  47.7 Gbits/sec    0             sender
+    [  5]   0.00-10.00  sec  55.5 GBytes  47.7 Gbits/sec                  receiver
+
+    iperf Done.
+    ```
+
+    同时 server 端也会显示类似的输出。
+
+### 网络抓包 {#network-packet-capture}
+
+`tcpdump` 工具可以用于在服务器上抓包，基础的命令如下：
+
+```shell
+# 在 eth0 上抓取所有包，输出到终端
+tcpdump -ni eth0
+# 输出到 result.pcap 文件，以便进一步分析
+tcpdump -ni eth0 -w result.pcap
+# 抓取所有从 8.8.8.8 发送或接收的包
+tcpdump -ni eth0 host 8.8.8.8
+```
+
+`-n` 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 `host 8.8.8.8` 部分为 pcap 表达式，详情可阅读 [pcap-filter(7)][pcap-filter.7]。
+
+!!! question "编写 pcap 表达式"
+
+    尝试编写满足以下要求的表达式，并用 `tcpdump` 测试：
+
+    - 系统发送和接收的所有 DNS（TCP & UDP 53）协议包
+        - 如果只需要 UDP 的包呢？
+    - 系统发送到 www.example.com（或其他网站的）的 HTTP 包
+    - 系统发送到 80 或 443 接口的所有的包
+
+得到的 pcap 文件可以使用 Wireshark（GUI）或 tshark（TUI）打开分析。Wireshark 过滤表达式的语法与 pcap filter 有所不同。非常常见的包括：
+
+- `ip.addr == 8.8.8.8`：过滤 IP 为 8.8.8.8 的所有包
+- `http`：过滤 HTTP 协议
+- `tcp.port = 1234`：过滤 TCP 端口为 1234 的所有包
+
+!!! question "编写 Wireshark 表达式"
+
+    请在 Wireshark 中编写满足和上一个问题相同的过滤表达式，并测试。
+
+!!! tip "TLS 抓包"
+
+    TLS（如 HTTPS 等）是加密的，这意味着抓包只能够看到连接双方之间发送了一些 TLS 数据包（如果是 HTTPS，可能还能看到证书和明文的目标域名，即 SNI），但是无法看到具体的请求与响应内容。但是有些时候，我们需要抓包了解内容，分析问题。
+
+    最常用的方法是在启动建立 TLS 连接的程序时添加 `SSLKEYLOGFILE` 环境变量：
+
+    ```shell
+    SSLKEYLOGFILE=test.log curl --http1.1 https://www.example.com
+    ```
+
+    之后在 wireshark 的 TLS 协议设置中设置 (Pre)-Master-Secret log filename 即可，如下图：
+
+    ![Wireshark setting pre-master-secret log filename](../images/wireshark-tls.png)
+
+    [bcc](#eBPF) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
+
+!!! note "HTTP/HTTPS 抓包工具"
+
+    如 Burp Suite、Fiddler 等工具专门设计为 HTTP/HTTPS 抓包工具，以方便开发者调试。它们的工作原理是在本机运行一个代理服务器，在设置浏览器或应用使用这个代理服务器后，这些工具就可以获取 HTTP 请求与响应内容。如果安装它们提供的根证书，还可以解密 HTTPS 的内容。
+
+## 性能问题分析 {#performance-analysis}
+
+本节介绍使用 `perf` 等工具进行基础的性能问题分析的方式。`perf` 工具的源代码随 Linux 内核分发，其也依赖于 Linux 内核头文件。在 Debian 上的包名为 `linux-perf`。
+
+`perf` 的功能非常丰富，以下仅能介绍一小部分功能。
+
+### 火焰图 {#flamegraph}
+
+火焰图是最常用的用于分析程序性能的图表之一，它可以直观地展示程序中函数的调用关系与耗时。生成的 SVG 文件可以使用浏览器打开并交互。
+
+[![Flamegraph example](../images/flamegraph-example.png)](../images/flamegraph-example.svg)
+
+火焰图示例。点击图片可以查看完整的 SVG 文件。
+{: .caption }
+
+火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。
+
+!!! note "为什么要分析「热点」？"
+
+    阿姆达尔定律（Amdahl's Law）指出，如果某个部分的执行时间占总体的比重大，那么优化这个部分（热点）就能显著提升整体性能；相反，如果某部分所占的时间比例很小，即使优化得再多，对整体性能提升也十分有限。
+
+    例如，如果某个程序的 90% 时间都花在了函数 A 上，那么对函数 A 的优化，即使只提升 10% 的性能，也能让整体性能提升 9.9%；但如果函数 B 只占用了 1% 的时间，即使让函数 B 提升了 99% 的性能，整体性能也只能提升不到 1%。
+
+SVG 火焰图由 [Brendan Gregg 的 FlameGraph](https://github.com/brendangregg/FlameGraph) 项目生成，其支持包括 `perf` 在内的多种性能分析工具的输出。以下以 `perf` 为例介绍。
+
+首先 clone FlameGraph 仓库，然后使用 `perf record` 命令对程序采样：
+
+```shell
+git clone https://github.com/brendangregg/FlameGraph
+# 从头执行程序
+perf record -F 499 --call-graph dwarf,64000 -g -- stress -c 1 -t 10
+# 附加到正在运行的程序
+perf record -F 499 --call-graph dwarf,64000 -g -p 12345
+```
+
+其中 `-F` 指定了采样频率为 499 Hz，`-g` 代表采样函数调用栈，`--call-graph` 参数指定了调用栈的采样方式。
+
+!!! note "为什么采样频率不使用整百的数字？"
+
+    以上内容中采样频率设置为了 499 Hz。如果阅读别的教程，可以发现不少也会设置为 99 Hz。避开 500 或者 100 的原因是，某些事件可能会恰好间隔 10ms（100 Hz）或者 2ms（500 Hz）发生，如果采样频率与这些事件的周期刚好匹配，就会导致结果出现偏差。设置为恰好整百减一可以最大程度避免这种情况。
+
+!!! tip "采样方式"
+
+    `perf` 支持三种采样方式：
+
+    - `fp`（默认情况）：根据 frame pointer 寄存器中的信息采样。在函数调用时，frame pointer 会指向当前函数的栈帧（即函数在栈上使用的内存空间，内容包括局部变量、返回地址等）。在 x86_64 架构中，frame pointer 是 RBP 寄存器。
+
+        不少编译器会选择优化掉 frame pointer 寄存器，因为其不是程序执行必需的。在 32 位的 x86 架构上，这种优化是非常有必要的，因为 x86 架构的通用寄存器数量非常少，多出一个寄存器可以有效提高程序性能。但是 x86_64 架构的通用寄存器数量提升了不少，因此一般认为这类优化对性能提升不显著，并且会给问题调试与性能调优带来困难。诸如 [Ubuntu](https://ubuntu.com/blog/ubuntu-performance-engineering-with-frame-pointers-by-default)、[Fedora](https://fedoraproject.org/wiki/Changes/fno-omit-frame-pointer)、[Arch Linux](https://gitlab.archlinux.org/archlinux/rfcs/-/merge_requests/26) 等均已经默认开启 frame pointer。
+
+        在编译时，可以添加 `-fno-omit-frame-pointer` 选项来禁用这种优化。
+    - `lbr`：使用 Last Branch Record 寄存器来采样，需要 CPU 架构支持。LBR 寄存器会记录最近的分支跳转信息，有权限的程序可以配置让 LBR 寄存器仅记录 `call` 和 `ret` 指令，从而实现函数调用栈的采样。虽然不需要程序调整编译参数，但是硬件寄存器的数量是有限的，因此这种方式无法处理过深的函数调用。
+    - `dwarf`：使用 DWARF 调试信息来采样。这种方式需要程序编译时开启 DWARF 调试信息（`gcc -g`），开销相对较高。上文中 `--call-graph dwarf,64000` 的 `64000` 代表每次采样时记录最多 64000 字节的 stack dump。
+
+采样完成后的数据存储在 `perf.data` 文件中（可以使用 `-o` 参数修改）。接下来使用 `perf script` 输出 trace，并在预处理数据后，使用 FlameGraph 生成火焰图：
+
+```shell
+perf script > out.perf
+FlameGraph/stackcollapse-perf.pl out.perf > out.folded
+FlameGraph/flamegraph.pl out.folded > out.svg
+```
+
+!!! tip "`perf report`"
+
+    `perf.data` 文件也可以使用 TUI 的 `perf report` 命令查看。`perf report` 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。
+
+注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。
+
+!!! comment "@taoky: 快速生成火焰图"
+
+    我还是觉得每次都要写这么多命令有点麻烦，所以我自己一般直接用 [flamegraph-rs/flamegraph](https://github.com/flamegraph-rs/flamegraph)，于是直接这样就可以生成了：
+
+    ```shell
+    flamegraph -p 12345
+    ```
+
+### 获取硬件计数器统计信息 {#hardware-counter}
+
+`perf stat` 命令可以获取硬件计数器的统计信息，帮助了解程序的性能瓶颈：
+
+```console
+$ perf stat uname
+Linux
+
+ Performance counter stats for 'uname':
+
+              1.34 msec task-clock:u                     #    0.537 CPUs utilized
+                 0      context-switches:u               #    0.000 /sec
+                 0      cpu-migrations:u                 #    0.000 /sec
+                67      page-faults:u                    #   50.119 K/sec
+           228,089      cpu_atom/instructions/u          #    0.75  insn per cycle              (67.70%)
+     <not counted>      cpu_core/instructions/u                                                 (0.00%)
+           305,397      cpu_atom/cycles/u                #    0.228 GHz
+     <not counted>      cpu_core/cycles/u                                                       (0.00%)
+            41,051      cpu_atom/branches/u              #   30.708 M/sec
+     <not counted>      cpu_core/branches/u                                                     (0.00%)
+             3,065      cpu_atom/branch-misses/u         #    7.47% of all branches
+     <not counted>      cpu_core/branch-misses/u                                                (0.00%)
+             TopdownL1 (cpu_atom)                 #     50.3 %  tma_bad_speculation
+                                                  #     16.1 %  tma_retiring
+             TopdownL1 (cpu_atom)                 #      0.0 %  tma_backend_bound
+                                                  #     33.7 %  tma_frontend_bound
+
+       0.002489347 seconds time elapsed
+
+       0.000000000 seconds user
+       0.002576000 seconds sys
+```
+
+根据 CPU 架构的不同，`perf stat` 默认显示的计数器信息也会存在区别。以上命令是在一台运行 Intel 12 代 i5 CPU 的机器上运行的，因此其包含了一些特殊的计数器信息：
+
+- 大小核（core & atom）的计数器信息。
+- `tma`：Topdown Microarchitecture Analysis，Intel 提供的用于分析 CPU 的性能瓶颈的方法。
+    - 有关使用 `perf` 利用 TMA 方法分析程序的步骤，可参考 <https://perfwiki.github.io/main/top-down-analysis/>。
+
+用户也可以指定感兴趣的计数器，例如以下命令会显示 CPU 运行程序的时钟周期、命令数、缓存命中与失效信息：
+
+```shell
+$ perf stat -e cycles,instructions,cache-references,cache-misses stress -c 1 -m 1 -t 5
+stress: info: [1968709] dispatching hogs: 1 cpu, 0 io, 1 vm, 0 hdd
+stress: info: [1968709] successful run completed in 5s
+
+ Performance counter stats for 'stress -c 1 -m 1 -t 5':
+
+     5,988,155,941      cpu_atom/cycles/u                                                       (22.77%)
+     6,878,171,900      cpu_core/cycles/u                                                       (92.90%)
+     6,948,484,803      cpu_atom/instructions/u          #    1.16  insn per cycle              (22.77%)
+     7,087,148,185      cpu_core/instructions/u          #    1.03  insn per cycle              (92.90%)
+         6,294,530      cpu_atom/cache-references/u                                             (22.77%)
+         1,730,791      cpu_core/cache-references/u                                             (92.90%)
+         6,225,141      cpu_atom/cache-misses/u          #   98.90% of all cache refs           (22.77%)
+         1,593,046      cpu_core/cache-misses/u          #   92.04% of all cache refs           (92.90%)
+
+       5.002407973 seconds time elapsed
+
+       5.639733000 seconds user
+       4.324169000 seconds sys
+```
+
+可以查看 [perf-stat(1)][perf-stat.1] 了解如何获取可用的计数器的列表。
 
 ## eBPF
 
@@ -499,6 +1142,13 @@ example(1023, 1024)
 
 ## 补充阅读 {#supplement}
 
+### 书籍 {#supplement-books}
+
+- [*Performance Analysis and Tuning on Modern CPU*](https://github.com/dendibakh/perf-book/)：非常详细的关于程序性能优化的书籍，同时其练习实验 [perf-ninja](https://github.com/dendibakh/perf-ninja) 也值得一看。
+- [*Systems Performance: Enterprise and the Cloud*](https://www.brendangregg.com/systems-performance-2nd-edition-book.html)：著名的系统性能分析专家 Brendan Gregg 撰写的关于系统性能分析的书籍，内容涵盖了从硬件到软件的各个方面。
+
+### 站点 {#supplement-sites}
+
 - [Linux debugging, profiling and tracing training Course by bootlin](https://bootlin.com/doc/training/debugging/)：Bootlin 公司提供的 Linux 调试等有关的资料，包括 slides 和练习实验
-- [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：著名的系统性能分析专家 Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
+- [Linux Extended BPF (eBPF) Tracing Tools](https://www.brendangregg.com/ebpf.html)：Brendan Gregg 整理的 eBPF 相关的工具资料；Brendan Gregg 的博客也有很多关于系统性能分析的信息，此外本文的几张工具合集图也出自他手
 - [Linux Crisis Tools](https://www.brendangregg.com/blog/2024-03-24/linux-crisis-tools.html)：Brendan Gregg 整理的 Linux 应急响应工具集列表，建议在服务器上预先安装

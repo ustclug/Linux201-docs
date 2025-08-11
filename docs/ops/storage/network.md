@@ -2,11 +2,13 @@
 
 !!! note "主要作者"
 
-    [@taoky][taoky]
+    [@taoky][taoky]、[@zeyugao][zeyugao]
 
-!!! warning "本文已完成，等待校对"
+!!! warning "本文编写中"
 
-本文介绍在服务器上常见的网络存储方案，包括 NFS 与 iSCSI。
+本文介绍在服务器上常见的网络存储方案（NFS 与 iSCSI），以及家用场景下常用的 SMB（Samba）方案。
+
+本文不涉及分布式存储系统。
 <!-- TODO: well, 我们没有使用过 ceph；如果有人有经验想写的话，可能需要放在高级内容里面 -->
 <!-- TODO: 以及 samba -->
 
@@ -27,6 +29,7 @@ NFS 在 Linux 上的服务端和客户端实现均有内核态与用户态的选
 
 服务端需要安装 `nfs-kernel-server` 包。除此之外，NFSv3 支持还需要安装 `rpcbind` 包（对应 NFSv3 协议的 111 端口），该包在目前的 Debian 中以 `rpcbind.socket` 的形式对外提供服务。
 
+<!-- TODO: nfs-ganesha (userspace) -->
 <!-- TODO: a link to systemd socket -->
 
 NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
@@ -238,6 +241,8 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
 ### 客户端配置 {#nfs-client}
 
+#### 挂载与掉线处理 {#nfs-client-mount}
+
 挂载 NFS（表面上）是一件很简单的事情：
 
 ```console
@@ -340,13 +345,53 @@ $
 
 此外，`intr` 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。
 
+#### 其他问题 {#nfs-client-other}
+
+NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些差异。
+
+!!! note "NFS 与 capability 问题"
+
+    在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。
+
+    * 当尝试在 NFS 挂载的路径上进行操作时，客户端进程的 capability 不会被传递到 NFS 服务器端进行权限检查。这意味着一些在本地文件系统上因进程具备特定 capability 而成功的操作，在 NFS 环境下可能会失败，因为 [NFS 并不支持 Linux Capabilities](https://access.redhat.com/solutions/2117321)。
+    * 在 Linux 文件系统中，移动一个目录（例如将目录 A 从目录 B 下移动到目录 C 下，即目录结构从 B/A 变为了 C/A）不仅需要对源目录 B 和目标目录 C 都具备写权限，被移动的目录 A 本身也[需要有写权限](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L4994-L4999)。这一点与移动文件时被移动文件无需写权限的情况不同。
+    * 然而，如果执行移动操作的进程拥有 `cap_dac_override` 这个 capability，则可以[绕过对被移动目录写权限的检查](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485)。
+    * 在实际问题场景中，尽管执行操作的进程具备 `cap_dac_override` capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。
+
+!!! note "NFS 与用户命名空间 (User Namespace) 的兼容性问题"
+
+    在容器化环境中使用 NFS 时，会遇到其与用户命名空间相关的兼容性问题：
+
+    * **Rootless Podman 与用户命名空间**：Rootless Podman 利用 Linux 的用户命名空间功能，将容器内部的用户 ID（例如，容器内的 root 用户，其 UID 为 0）映射到宿主机上的一个非特权用户 ID 范围。这样，容器内的 root 用户在宿主机上并不具备真正的 root 权限。更多详情请参阅 [Understanding rootless Podman's user namespace modes](https://www.redhat.com/en/blog/rootless-podman-user-namespace-modes)。
+    * **NFS 与用户命名空间的不兼容性**：NFS 协议在设计之初并未充分考虑用户命名空间。其工作机制高度依赖于服务器与客户端之间对 UID 和 GID 的一致性认知。当引入用户命名空间后，容器内的 UID/GID 与宿主机以及 NFS 服务器所期望的 UID/GID 可能不再一致。
+    * **导致的问题**：当运行在用户命名空间内的容器尝试在 NFS 挂载的目录中执行文件所有权变更操作（例如 `chown`命令），并试图将文件所有者设置为一个仅在该容器的用户命名空间内有效的 UID 时，NFS 服务器通常无法识别或正确处理这个来自特定命名空间的 UID。这是因为 NFS 服务器期望的是其自身（或全局）认知范围内的 UID。此类操作因此常常失败。一个典型的场景是，尝试将 Rootless Podman 的存储位置设置在 NFS 挂载的目录上时会遇到困难，如 [Rootless Podman and NFS](https://www.redhat.com/en/blog/rootless-podman-nfs) 中所述。
+    * **Workaround**: 使用用户态的 NFS 服务器（如 `nfs-ganesha`）可以在一定程度上缓解这个问题，因为它可以更灵活地被修改。虽然 `nfs-ganesha` 本身并不支持用户命名空间，但是可以应用 [这个 Patch](https://gist.github.com/zeyugao/754edc3572fcd56e3140242e2352eafb) 来使其支持用户命名空间。具体的实现方式可能不够安全，因此需要谨慎使用。这个 patch 基于的假设是 NFS 服务端的 `/etc/subuid` 和 `/etc/subgid` 与 NFS 客户端上的 `/etc/subuid` 和 `/etc/subgid` 是一致的。至少是想要处理的用户对应的 subuid/subgid 是一致的。所以并不需要 NFS 客户端做出改动。在服务端修改为 nfs-ganesha 的实现的时候，之前使用 Kernel NFS Server 提供的挂载目录需要重新挂载。因为 Kernel NFS 的 knfsd_fh 与 ganesha 的 `nfs_fh4` 不兼容。
+
+        `nfs-ganesha` 期望 `fh_version` 为 `GANESHA_FH_VERSION`：
+        
+        ```c
+        } else if (pfile_handle->fhversion !=
+                    GANESHA_FH_VERSION) {
+                    LogInfo(COMPONENT_FILEHANDLE,
+                        "INVALID HANDLE: not a Ganesha handle, fhversion=%d",
+                        pfile_handle->fhversion);
+        ```
+        
+        其定义是：
+
+        ```c
+        #define GANESHA_FH_VERSION 0x43
+        ```
+
+        而 Kernel NFS Server 的 `knfsd_fh` 结构体中 `fh_version` 的值为 1，导致了不兼容。
+
 ## iSCSI
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
 
-### 服务端配置 {#iscsi-server}
+### 服务端配置（targetcli/LIO 方案） {#iscsi-server-targetcli}
 
-Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。
+Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。对应服务是 `targetclid.service`。
 
 ```console
 $ sudo targetcli
@@ -424,8 +469,7 @@ o- iscsi .......................................................... [Targets: 1]
         o- 0.0.0.0:3260 ................................................... [OK]
 ```
 
-之后在 `luns` 下绑定 backstore 到 target 上。
-LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。
+之后在 `luns` 下绑定 backstore 到 target 上。LUN（Logical Unit Number）是 SCSI 协议中标记（逻辑）存储设备的编号。逻辑单元（Logical Unit）是 SCSI 协议中对具体的存储设备的抽象。
 
 ```console
 /> iscsi/iqn.2024-03.org.example.201:test-target/tpg1/luns create /backstores/fileio/test1
@@ -456,6 +500,51 @@ Created Node ACL for iqn.1993-08.org.debian:01:a6a4d4f7356f
 Created mapped LUN 0.
 ```
 
+### 服务端配置（tgtd 方案） {#iscsi-server-tgtd}
+
+tgtd 方案为用户态的 iSCSI target，安装 `tgt` 包后即可开始配置。对应服务是 `tgt.service`。相比于 targetcli，tgtd 的使用简单一些。
+
+与 targetcli 类似，tgtd 的 target 和实际的存储也是分离的，首先让我们创建一个 target。这里的 tid 是 target id。
+
+```shell
+sudo tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2025-05.org.example.201:test-target
+```
+
+然后为这个 target 创建一个 logical unit——这里是设置实际的「后备存储」的地方。`--backing-store` 可以是一个块设备或者一个文件。
+
+```shell
+sudo tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 --backing-store /dev/loop0
+```
+
+!!! warning "tgtd 报告错误？"
+
+    后备存储需要保证 tgtd 能够访问到，否则会报告没有什么信息量的 `tgtadm: invalid request` 错误。
+
+之后就可以配置允许对指定的客户端服务。这个过程被称为 `bind`。
+
+```shell
+sudo tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+```
+
+`op` 修改为 `unbind` 则是删除对指定客户端的权限。如果需要查看当前的状态，在 `target` 模式下 `show` 即可：
+
+```shell
+sudo tgtadm --lld iscsi --mode target --op show
+```
+
+但是需要注意的是，使用 `tgtadm` 配置的 iSCSI target 没有任何配置持久化。如果需要在重启后自动加载，那么需要修改配置文件，`tgt.service` 启动时，`tgt-admin` 会读取配置文件，还原配置。首先导出当前的配置：
+
+```console
+$ sudo tgt-admin --dump
+default-driver iscsi
+
+<target iqn.2025-05.org.example.201:test-target>
+	backing-store /tmp/test.img
+</target>
+```
+
+把输出放到 `/etc/tgt/conf.d/example.conf` 中即可。可以重启服务验证是否生效。
+
 ### 客户端配置 {#iscsi-client}
 
 使用 `iscsiadm` 可以配置 iSCSI initiator（需要安装 `open-iscsi`）。
@@ -482,7 +571,7 @@ iscsiadm: initiator reported error (24 - iSCSI login failed due to authorization
 iscsiadm: Could not log into all portals
 ```
 
-我们需要让服务端授权客户端的 iqn，对应文件在 `/etc/iscsi/initiatorname.iscsi`。
+我们需要让服务端授权客户端的 iqn。`/etc/iscsi/initiatorname.iscsi` 包含了客户端自己的 iqn 信息（注意每个客户端的 iqn 都不一样，不要抄例子里的 iqn！）。
 
 ```console
 $ sudo cat /etc/iscsi/initiatorname.iscsi
@@ -493,8 +582,6 @@ $ sudo cat /etc/iscsi/initiatorname.iscsi
 ## for each iSCSI initiator.  Do NOT duplicate iSCSI InitiatorNames.
 InitiatorName=iqn.1993-08.org.debian:01:a6a4d4f7356f
 ```
-
-（注意不要抄这里的 iqn！）
 
 在服务端授权后就可以登录了：
 
@@ -596,3 +683,52 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
     iscsiadm: default: 1 session requested, but 1 already present.
     iscsiadm: Could not log into all portals
     ```
+
+!!! tip "优化建议：巨型帧"
+
+    巨型帧（jumbo frame）是指 MTU 大于 1500 的以太网帧，一般为 9000。如果链路设备均支持巨型帧，那么可以考虑在 iSCSI 部署时启用巨型帧，减小以太网的额外开销，提升性能。
+
+## Samba
+
+Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现以下的功能：
+
+- 服务自动发现（让局域网中的其他机器可以自动找到 Samba 服务器）
+- 匿名访问与用户名、密码访问
+
+!!! note "家用场景下的其他协议"
+
+    除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。诸如 [Nextcloud](https://nextcloud.com/)、[copyparty](https://github.com/9001/copyparty) 等工具提供了成熟的方案，如有需要可以自行搜索相关的配置方法。
+
+### 服务自动发现 {#samba-auto-discovery}
+
+服务自动发现协议处在一个比较混乱的状态，有各种不同的协议。最早的服务自动发现协议为 NetBIOS 以及其配套服务，如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。
+
+!!! note "NetBIOS"
+
+    NetBIOS（以下均指代 NetBIOS over TCP/IP）需要三种端口：
+
+    - 命名与解析（TCP 137 和 UDP 137）：NetBIOS 会广播主机名，并确定是否存在冲突。其他计算机可以使用主机名连接。由于等待冲突检测会花掉比较长的时间，因此之后添加了 WINS（Windows Internet Name Service）来集中管理主机名，Windows 在查找到 WINS 服务器后会优先使用 WINS。
+    - UDP 138：用于无 session 的消息传递。
+    - TCP 139：用于有 session 的消息传递。
+
+    NetBIOS 上面可以运行应用，例如 Browser 服务与 SMB 服务。
+
+    Browser 服务维护了局域网中的网络资源列表（就是以前「网上邻居」里面你可以看到的内容），局域网的 Windows 机器会根据 Windows 版本号、类型（是桌面还是服务器系统）等信息来「选举」出一个 master browser，由 master browser 维护这个列表。
+
+    SMB 服务就是这里要介绍的 Samba 服务——不过，从 Windows 2000 开始，SMB 已经可以直接在 TCP 445 端口上运行，而不再依赖 NetBIOS。
+
+    此外，「臭名昭著」的 Windows Messenger service 也是基于 NetBIOS 的。这个服务允许你用 `net send` 命令向网络上其他计算机发送消息，比如说：
+
+    ```cmd
+    net send somehost "你的电脑被黑了！"
+    ```
+
+    然后 somehost 上面就会弹出这么一个对话框。可能相比于正经用途来说，Messenger 服务被拿来整人和干坏事的频率更高一些，因此在 Windows XP SP2 后默认被禁用，且之后被彻底移除了。
+
+    目前除非需要兼容老设备，否则**不建议使用 NetBIOS**。Windows 10 之后的版本也已经不再默认启用 NetBIOS。
+
+目前最常见的服务自动发现协议是 mDNS + DNS-SD：其中 mDNS 负责局域网内的主机名解析，而 DNS-SD 则在 mDNS 基础上负责服务发现，但是 Windows 对此的支持不佳。Windows 会使用 WS‑Discovery（Web Services Dynamic Discovery）来发现局域网中的服务（主机名解析则使用 LLMNR）。
+
+#### mDNS + DNS-SD {#samba-mdns-dns-sd}
+
+#### WS-Discovery {#samba-ws-discovery}

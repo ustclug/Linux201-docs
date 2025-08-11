@@ -269,6 +269,13 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 
     这里 `efi` 后缀的文件就是 UEFI 会选择的启动引导程序，一般可以在启动时按下 F12 或者其他快捷键选择启动的设备或 EFI 文件。
 
+!!! tip "/efi"
+
+    在 systemd 的[文件系统层次结构标准 (FHS) 扩展](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 中，
+    如果 `/boot` 独立于 EFI 系统分区 (ESP)，则后者挂载点为 `/efi`。
+
+    过去 EFI 分区挂载点通常为 `/boot/efi`，现在已不推荐使用[^esp-mountpoint]。
+
 ### 实验操作展示 {#partition-exp}
 
 我们可以使用诸如 `fdisk`, `parted` 等工具对分区表进行操作。对于图形界面用户，`gparted` 是一个不错的选择。
@@ -305,6 +312,8 @@ parted test.img
     Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存不足时，系统会将一部分内存「交换」到 swap 分区中，以腾出物理内存的空间。在系统休眠（hibernate）的时候，物理内存中的所有数据也都会写入到 swap 中。Swap 也可以实现为文件的形式。
 
     需要注意的是，这一项功能在 Windows 下被称为「虚拟内存」，但是从操作系统的角度来说，这种用语是不正确的。「虚拟内存」实际上指代这样一种机制：程序看到的虚拟内存地址和实际的物理地址是不一样的，由操作系统和硬件的映射机制进行关联。程序看到的连续的地址可能在物理上不是连续的，甚至有可能不在物理内存，而是在外部存储（swap）中。这样的话，程序在使用内存时就不需要考虑可能访问到其他程序内存的问题，同时这也允许操作系统更加灵活地管理内存（因为不再需要严格保证内存的连续性要求）。
+
+    传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 [In defense of swap: common misconceptions](https://chrisdown.name/2018/01/02/in-defence-of-swap.html)（中文版：[替 swap 辩护：常见的误解](https://farseerfc.me/zhs/in-defence-of-swap.html)）。有关如何设置用户态 OOM Killer 的内容，可参考[问题调试中的「用户态 OOM Killer」部分](../debug.md#quick-checklist)。
 
 ??? info "fdisk 操作示例"
 
@@ -533,7 +542,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
 ## 文件系统 {#filesystem}
 
-下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。
+下表给出了常见的文件系统。在某些操作系统上，一部分文件系统可以通过安装第三方软件的方式实现支持，但是可能存在额外的性能或可靠性问题。其中「CoW 文件系统」指代一类使用写时复制（Copy-on-Write）机制设计的文件系统，这类文件系统在写入数据时不会覆盖内容，而是在新的位置写入数据，然后更新元数据指向新的位置，这类文件系统绝大部分都支持诸如快照等功能。
 
 | 文件系统                                        | Linux                                                  | macOS                                    | Windows                                  | 特点与备注                                                                                                            |
 | ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -544,7 +553,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 | ReiserFS                                        | :fontawesome-solid-check:{: .orangered } (deprecated)  | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 适用于存储大量小文件的场合。由于内核主线已经考虑移除支持，如有存储大量小文件需求，可能需要使用其他方案替代。          |
 | [Btrfs](https://wiki.archlinux.org/title/Btrfs) | :fontawesome-solid-check:{: .limegreen }               | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 内置于 Linux 内核的新一代的 CoW 文件系统，支持快照、透明压缩等高级功能。RAID 5/6 支持不稳定，也有对整体稳定性的争议。 |
 | [Bcachefs](https://wiki.archlinux.org/title/Bcachefs) | :fontawesome-solid-check:{: .limegreen } (Linux 6.7+) | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 基于 [Bcache](https://wiki.archlinux.org/title/Bcache) 的新一代 CoW 文件系统，旨在用更简洁的代码实现 Btrfs 和 ZFS 的功能，采用与 GPL 兼容的许可证。|
-| [ZFS](https://wiki.archlinux.org/title/ZFS)     | :fontawesome-solid-check:{: .limegreen }（需要 kernel module）              | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-xmark:{: .orangered } | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。                   |
+| [ZFS](https://wiki.archlinux.org/title/ZFS)     | :fontawesome-solid-check:{: .limegreen }（需要 kernel module）              | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen }[^zfs-win] | 起源于 Solaris 的 CoW 文件系统，适用于存储大量文件、需要高级功能的场合。需要额外的内存和 CPU 资源。                   |
 | NTFS                                            | :fontawesome-solid-check:{: .limegreen } (Linux 5.15+) | 只读                                     | :fontawesome-solid-check:{: .limegreen } | Windows 上最常见的文件系统。                                                                                          |
 | HFS+                                            | 只读                                                   | :fontawesome-solid-check:{: .limegreen } | 只读，Bootcamp                           | macOS 较早期版本最常见的文件系统。                                                                                    |
 | APFS                                            | :fontawesome-solid-xmark:{: .orangered }               | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | macOS 较新版本的 CoW 文件系统。                                                                                       |
@@ -686,6 +695,10 @@ Filesystem     Size   Used  Avail Use% Pathname
 ```
 
 `xfs_quota` 的 `df` 也会输出其他文件系统的空间使用情况，忽略即可。
+
+!!! info "引用复制"
+
+    尽管不是 CoW 文件系统，XFS 也支持引用复制（reflink）功能。使用方法详见 [Btrfs 的引用复制一节](#btrfs-reflink)。
 
 ### Btrfs
 
@@ -905,6 +918,14 @@ prealloc   100%      643M         643M         1.0G
 
 可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。
 
+#### 引用复制 {#btrfs-reflink}
+
+Btrfs 支持引用复制（reflink）功能，在复制文件时可以共享数据块。与硬链接不同的是，修改（写入）复制后的文件不会影响被复制文件的内容，文件系统会自动复制对应的数据块并修改。目前，`cp` 工具支持此功能：
+
+```shell
+cp -a --reflink=always /path/to/source /path/to/destination
+```
+
 <!-- TODO: btrfs 去重功能介绍？ -->
 
 #### 常见问题 {#btrfs-faq}
@@ -1080,8 +1101,10 @@ Hello, world!
 完成之后，记得解除挂载：
 
 ```shell
-umount mountpoint/
-# 或者 fusermount -u mountpoint/
+# fusermount 不需要 root 权限
+fusermount -u mountpoint/
+# 或者 umount，旧版本可能需要 root 权限
+# umount mountpoint/
 ```
 
 !!! tip "FUSE 的代价"
@@ -1090,9 +1113,91 @@ umount mountpoint/
 
     此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，[存在潜在的安全问题](https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications)，在生产环境使用时需要注意。
 
+!!! tip "解决 FUSE 死锁问题"
+
+    一些实现不佳的 FUSE 文件系统可能会出现死锁，此时文件系统进程和访问该文件系统的进程都会陷入内核中，无法用常用的 SIGKILL 信号终止。
+
+    ??? note "一个死锁的代码例子：FUSE 文件系统实现访问自身的路径"
+
+        ```c
+        #define FUSE_USE_VERSION 31
+
+        #include <assert.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <fuse.h>
+        #include <string.h>
+        #include <dirent.h>
+
+        static char *real_path = NULL;
+
+        static int hello_getattr(const char *path, struct stat *stbuf,
+                                struct fuse_file_info *fi) {
+          int res = 0;
+
+          memset(stbuf, 0, sizeof(struct stat));
+          // DEADLOCK!
+          // Accessing myself in the getattr function
+          DIR *d = opendir(real_path);
+          struct dirent *entry = readdir(d);
+          // OK, impossible to reach here
+          assert(0);
+          return res;
+        }
+
+        static const struct fuse_operations hello_oper = {
+          .getattr = hello_getattr,
+        };
+
+        int main(int argc, char *argv[]) {
+          if (argc < 2) {
+            fprintf(stderr, "Usage: %s <mountpoint>\n", argv[0]);
+            return 1;
+          }
+          real_path = realpath(argv[1], NULL);
+          return fuse_main(argc, argv, &hello_oper, NULL);
+        }
+        ```
+    
+    上述程序在运行后，访问路径会卡死，该进程也无法正常被 wait 回收，挂载点也无法 umount：
+
+    ```shell
+    $ ./deadlock mountpoint/
+    $ ls mountpoint/
+    （卡住）
+    ```
+
+    ```shell
+    $ ps aux | grep deadlock
+    username     150911  0.0  0.0 748452  1584 ?        Ssl  16:09   0:00 ./deadlock mountpoint/
+    username     151414  0.0  0.0   9556  5960 pts/3    S+   16:10   0:00 grep --color=auto deadlock
+    $ kill -9 150911
+    $ ps aux | grep deadlock
+    username     150911  0.0  0.0      0     0 ?        Zsl  16:09   0:00 [deadlock] <defunct>
+    username     151555  0.0  0.0   9556  5804 pts/3    S+   16:12   0:00 grep --color=auto deadlock
+    $ fusermount -u mountpoint/
+    fusermount: failed to unmount /path/to/mountpoint: Device or resource busy
+    ```
+
+    此时需要使用内核 FUSE 暴露的控制接口强制关闭连接，详情参见[内核文档中 FUSE 的介绍](https://docs.kernel.org/filesystems/fuse.html)：
+
+    ```shell
+    $ ls /sys/fs/fuse/connections/
+    1292/  1327/  1381/
+    $ cat /sys/fs/fuse/connections/1381/waiting
+    21
+    $ # waiting 的值非 0，表明现在 1381 连接有进程在等待
+    $ # 正常情况下 waiting 的值应该是 0，如果持续为非 0，那么就可能出现了连接卡死的问题
+    $ echo 1 | sudo tee /sys/fs/fuse/connections/1381/abort
+    1
+    $ fusermount -u mountpoint/
+    ```
+
 [^sector]: 当然了，「扇区」的概念在现代磁盘，特别是固态硬盘上已经不再准确，但是这里仍然使用这个习惯性的术语。
 [^sector-size]: 扇区的大小（特别是现代磁盘在实际物理上）不一定是 512 字节，但在实际创建分区时，一般都是以 512 字节为单位。
+[^esp-mountpoint]: [The Boot Loader Specification](https://uapi-group.org/specifications/specs/boot_loader_specification/#mount-points)
 [^xfs_growfs]: [xfs_growfs(8)][xfs_growfs.8]: A filesystem with only 1 AG cannot be shrunk further, and a filesystem cannot be shrunk to the point where it would only have 1 AG.
+[^zfs-win]: [OpenZFS on Windows](https://github.com/openzfsonwindows/openzfs) 项目已经有些年头了，但其仍然为 Beta 状态，虽然一般不会发生导致数据丢失的问题，但仍然存在系统崩溃问题，因此不推荐在生产环境使用。
 
 ## 引用来源 {#references .no-underline}
 

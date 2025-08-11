@@ -10,7 +10,7 @@ icon: material/ssh
 
 !!! warning "本文编写中"
 
-尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，因此本教程只介绍 OpenSSH 的使用。
+尽管 SSH 是一种开放协议，它的主流实现 OpenSSH 具有最丰富的功能，也是绝大多数 Linux 发行版采用的默认 SSH 方案，因此本教程主要介绍 OpenSSH 的使用。
 
 ## 客户端配置 {#ssh-config}
 
@@ -31,7 +31,7 @@ Host example
   Port 22
 ```
 
-注意 SSH config 没有提供密码配置，因为这是不安全的，请使用密钥登录。
+注意 SSH config 没有提供密码配置，因为将密码存储在明文文件中是不安全的做法，请使用密钥登录。
 
 ### 公钥认证 {#public-key-authentication}
 
@@ -57,71 +57,73 @@ Host example
 
 SSH 配置 TCP 端口转发的格式为 `[bind_address:]port:host:hostport`，SSH 支持三种端口转发：
 
-本地端口转发（**L**ocal port forwarding）
+#### 本地端口转发（**L**ocal port forwarding） {#local-port-forwarding}
 
-:   在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
+在本地上监听一个端口，将收到的数据转发到远程主机的指定端口。即**将远程主机上某个服务的端口转发到本地**，使本地的其他程序可以通过 SSH 访问到远程的服务。例如将远程主机的 80 端口转发到本地的 8080：
 
-    ```shell
-    ssh -L 8080:localhost:80 example
-    ```
+```shell
+ssh -L 8080:localhost:80 example
+```
 
-    也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
+也可以将远程主机所在网络的机器通过这种方法转发，假设需要访问的远程主机网络内部的机器名叫 `internalserver`：
 
-    ```shell
-    ssh -L 8080:internalserver:80 example
-    ```
+```shell
+ssh -L 8080:internalserver:80 example
+```
 
-    本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
+本地端口转发默认监听在 localhost。如果要监听其他地址，可以指定需要监听的地址，例如：
 
-    ```shell
-    ssh -L 0.0.0.0:8080:localhost:80 example
-    ```
+```shell
+ssh -L 0.0.0.0:8080:localhost:80 example
+```
 
-    虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
+虽然 SSH 客户端也有一个 `GatewayPorts` 选项，但它只影响没有指定监听地址的语法模式（即三段式 `localport:remotehost:remoteport`）。指定四段式语法后，`GatewayPorts` 选项不再起作用。
 
-远程端口转发（**R**emote port forwarding）
+#### 远程端口转发（**R**emote port forwarding） {#remote-port-forwarding}
 
-:   在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
+在远程主机上监听一个端口，将收到的数据转发到本地的指定端口。即**将本地某个服务的端口转发到远程主机上**，使远程的其他程序可以通过 SSH 访问到本地的服务。例如将本地主机的 80 端口转发到远程主机的 8080 端口：
 
-    ```shell
-    ssh -R 8080:localhost:80 example
-    ```
+```shell
+ssh -R 8080:localhost:80 example
+```
 
-    上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
+上面命令表示在远程主机 example 上监听 8080 端口，将收到的数据转发到本地的 80 端口。
 
-    同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
+同样的，也可以将本地网络中的机器做转发，假设对应机器名为 `myinternalserver`：
 
-    ```shell
-    ssh -R 8080:myinternalserver:80 example
-    ```
+```shell
+ssh -R 8080:myinternalserver:80 example
+```
 
-    注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
+注意远程端口转发默认只能监听 localhost。如果要监听其他地址，需要在远程主机的 `sshd_config` 中设置 `GatewayPorts yes`。与另外两种端口转发不同，客户端无法覆盖服务端的 `GatewayPorts` 设定。
 
-    在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
+在 OpenSSH 7.6 版本之后的客户端，`-R` 也可以用来让远程主机利用本地作为 SOCKS5 代理（相当于下面的 `-D` 参数反过来），对应手册中的 `-R [bind_address:]port` 部分：
 
-    ```shell
-    ssh -R 1080 example
-    # 指定远程主机上的监听地址
-    ssh -R 127.0.0.1:1080 example
-    ```
+```shell
+ssh -R 1080 example
+# 指定远程主机上的监听地址
+ssh -R 127.0.0.1:1080 example
+```
 
-动态端口转发（**D**ynamic port forwarding）
+#### 动态端口转发（**D**ynamic port forwarding） {#dynamic-port-forwarding}
 
-:   在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
+在本地监听一个端口用作 SOCKS5 代理，将收到的数据转发到远程主机，相当于**利用了远程主机作为代理**。例如：
 
-    ```shell
-    ssh -D 1080 example
-    ```
+```shell
+ssh -D 1080 example
+```
 
-    由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。
+由于 SOCKS 代理是一个通用的代理协议，因此可以用于任何 TCP 连接，不仅仅是 HTTP。
 
-    与 LocalForward 类似，DynamicForward 也可以指定监听地址：
+与 LocalForward 类似，DynamicForward 也可以指定监听地址：
 
-    ```shell
-    ssh -D 0.0.0.0:1080 example
-    ```
+```shell
+ssh -D 0.0.0.0:1080 example
+```
 
-    同样地，`GatewayPorts` 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，`GatewayPorts` 选项不再起作用。
+同样地，`GatewayPorts` 只影响没有指定监听地址的语法模式（即只给出了一个端口）。指定监听地址后，`GatewayPorts` 选项不再起作用。
+
+#### 在配置文件中进行端口转发 {#port-forwarding-in-config}
 
 以上三种端口转发都可以在配置文件中指定，例如：
 
@@ -136,6 +138,40 @@ Host example
 ```
 
 `-L`、`-R`、`-D` 和配置文件中对应的选项都可以多次出现，指定多条转发规则，它们互相独立、不会覆盖，因此如果重复指定了同一个端口，就会出现冲突。
+
+本地端口转发和远程端口转发的工作模式可以结合由 Ivan Velichko 绘制的图片来理解：
+
+[![SSH local and remote port forwarding](../images/iximiuz-ssh-tunnels-2000-opt.png)](https://iximiuz.com/ssh-tunnels/ssh-tunnels.png)
+
+!!! tip "代理与环境变量"
+
+    由于各种各样的原因，目前各种应用程序对代理相关的环境变量（`http_proxy`、`https_proxy`、`all_proxy`、`no_proxy`）的支持程度差异很大：
+
+    - `http_proxy` 和 `https_proxy` 分别用于连接到 HTTP 和 HTTPS 服务器时的代理设置。**注意这和代理本身的协议无关**，一部分原因是 HTTP 是明文协议，一些代理服务器可以修改 HTTP 请求的内容，或者做缓存操作，但是 HTTPS 就不行了。
+    - 环境变量是**大小写敏感**的，因此对应用程序来说，设置 `HTTP_PROXY` 和 `http_proxy` 是不一样的。几乎所有的程序都支持小写的代理环境变量，但是大写的代理环境变量支持情况就不一定了，因此推荐只设置小写的代理环境变量。
+    - 不是所有程序都支持设置 SOCKS5 代理。[curl 支持](https://curl.se/libcurl/c/CURLOPT_PROXY.html) SOCKS5 代理（`socks5://` 和 `socks5h://`），其中带 `h` 的后者代表由代理（而不是本机）解析主机名。
+
+    更多信息可参考：[We need to talk: Can we standardize NO_PROXY?](https://about.gitlab.com/blog/2021/01/27/we-need-to-talk-no-proxy/)。
+
+### 使用代理 {#proxy}
+
+SSH 支持自定义代理命令，从而可以通过代理服务器连接目标主机。
+一个常见的用法是通过 SOCKS5 代理连接目标主机，可以借助 `nc` 命令实现[^netcat-openbsd]：
+
+```shell
+Host example
+  ProxyCommand nc -X 5 -x proxy.example.com:1080 %h %p
+```
+
+  [^netcat-openbsd]: 需要使用 OpenBSD 版本的 `nc` 命令，如 `apt install netcat-openbsd`。
+
+!!! question "让服务器的 `git` 使用本机作为代理"
+
+    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
+
+    而在访问 HTTP(S) remote 时，`git` 会使用 libcurl，因此会读取 `http_proxy`、`https_proxy` 和 `all_proxy` 环境变量指定的代理。也可以使用 `http.proxy` 这个 `git config` 选项来指定。
+
+    结合[端口转发](#port-forwarding)和[代理](#proxy)部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 `git` 临时利用本机作为代理连接 SSH 和 HTTP(S) remote，那么应该如何操作？
 
 ### 跳板 {#jump-host}
 
@@ -163,9 +199,13 @@ Host realhost
   ProxyJump jumphost
 ```
 
+!!! note "跳板机需要支持 TCP 端口转发"
+
+    SSH 跳板机和前文所述的“**本地**端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。
+
 ### 高级功能：连接复用 {#connection-reuse}
 
-SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接，其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
+SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接（称为 master 进程），其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
 
 启用连接复用需要在配置文件中同时指定 `ControlMaster`、`ControlPath` 和 `ControlPersist` 三个选项（它们的默认值都是禁用或者很不友好的值）：
 
@@ -176,9 +216,35 @@ Host *
   ControlPersist yes
 ```
 
-其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。**但是**如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效，解决方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
+其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。
 
-## 文件传输
+!!! bug "连接复用的标识符"
+
+    如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效。
+    解决此问题的方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
+
+!!! bug "连接复用时的端口转发"
+
+    当启用连接复用时，所有的端口转发等 SSH 连接特性都将由 master 进程管理，此时新的 `ssh <host> -L <forwarding>` 会将一个新的端口转发请求发送给 master 进程，并在当前 ssh 命令结束后持续转发。
+
+    例如：
+
+    ```shell
+    ssh host # do something
+    ssh host -L <forwarding_1>
+    ssh host -R <forwarding_2>
+    ```
+
+    在以上所有 ssh 命令都退出后，`forwarding_1` 和 `forwarding_2` 将仍然在后台持续进行端口转发。
+
+    若要停止这些端口转发，可以使用 [`~C` 命令](#escape-sequences)或 `-O` 指令（见下）使后台的 master 进程停止进行端口转发。
+
+启用连接复用后，可以通过 `ssh <host> -O <command>` 的方式向后台监听新连接的 master 进程发送一些控制指令，例如：
+
+- `ssh host -O exit` 可以使 master 进程退出，后续的 `ssh host` 命令将重新建立连接。
+- `ssh host -O cancel` 可以在保持的后台连接中取消所有的端口转发。
+
+## 文件传输 {#file-transfer}
 
 SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
 
@@ -200,7 +266,7 @@ scp [选项] [源文件] [目标文件]
 
 其中，源文件或目标文件的格式可以是本地路径，或者远程路径，如 `用户名@主机名:文件路径`。
 
-#### 文件复制
+#### 文件复制 {#scp-files}
 
 从本地复制到远程服务器
 
@@ -219,12 +285,18 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 !!! tip
 
     你可以一次性传输多个文件或目录，将它们作为源路径的参数。例如：
-    
+
     ```shell
     scp file1.txt file2.txt username@remotehost:/path/to/remote/directory
     ```
 
-#### 常用参数
+或者经过本地流量中转，在两个远程主机之间复制文件
+
+```shell
+scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/remote/directory
+```
+
+#### 常用参数 {#scp-parameters}
 
 复制目录
 
@@ -236,7 +308,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 
 使用非标准端口
 
-:   如果远程主机的 SSH 服务不是运行在标准端口（22），则可以使用 `-P` 选项指定端口：
+:   如果远程主机的 SSH 服务运行在非标准端口（22），则可以使用 `-P` 选项指定端口：
 
     ```shell
     scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
@@ -272,13 +344,29 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 
     !!! tip
 
+        此选项等价于 `ssh` 的 `-C` 选项，即在 SSH 层面开启压缩，并非 SCP 协议层面的压缩。
+
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Compression yes`，这样就不需要每次在命令行中启用压缩了。
+
+!!! tip "现代的 `scp` 命令已经默认使用 SFTP 协议"
+
+    从 OpenSSH 9.0 开始，`scp` 命令已经默认使用 SFTP 协议进行文件传输，而不再使用旧的 SCP 协议。对于一些不支持 SFTP 的远程主机（如使用 dropbear 的嵌入式设备或上古版本的 SSH 服务端等），这可能会导致问题，例如：
+
+    ```text
+    /usr/libexec/sftp-server: No such file or directory
+    ```
+
+    如果你需要使用旧的 SCP 协议，可以使用 `-O` 选项：
+
+    ```shell
+    scp -O /path/to/local/file username@remotehost:/path/to/remote/directory
+    ```
 
 ### SFTP
 
 SFTP 是一种安全的文件传输协议，它在 SSH 的基础上提供了一个扩展的功能集合，用于文件访问、文件传输和文件管理。与 SCP 相比，SFTP 提供了更丰富的操作文件和目录的功能，例如列出目录内容、删除文件、创建和删除目录等。由于 SFTP 在传输过程中使用 SSH 提供的加密通道，因此它能够保证数据的安全性和隐私性。
 
-#### 启动 SFTP 会话
+#### 启动 SFTP 会话 {#start-sftp}
 
 要连接到远程服务器，可以使用以下命令：
 
@@ -292,7 +380,7 @@ sftp username@remotehost
 sftp -P 2233 username@remotehost
 ```
 
-#### 文件和目录操作
+#### 文件和目录操作 {#sftp-operations}
 
 - `ls`：列出远程目录的内容。
 - `get remote-file [local-file]`：下载文件。
@@ -306,7 +394,7 @@ sftp -P 2233 username@remotehost
 - `cd directory-name`：改变远程工作目录。
 - `lcd directory-name`：改变本地工作目录。
 
-#### 退出 SFTP 会话
+#### 退出 SFTP 会话 {#exit-sftp}
 
 输入 `exit` 或 `bye` 来终止 SFTP 会话。
 
@@ -326,7 +414,7 @@ sftp -P 2233 username@remotehost
 
 服务端的配置与客户端有一些不同点：
 
-- sshd 服务端程序只有很少量的命令行参数，各种配置都在配置文件中完成。特别注意，如果配置文件不存在或者包含错误，sshd 会拒绝启动。
+- sshd 服务端程序只有很少量的命令行参数，各种配置都在配置文件中完成。特别注意，sshd 的配置文件不是可选的：如果配置文件不存在或者包含错误，sshd 会拒绝启动。
 - sshd 仅有一个配置文件 `/etc/ssh/sshd_config`，它的配置项可以在 [sshd_config(5)][sshd_config.5] 中找到。
 
 sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 `ssh.service` 中指定的 `ExecStartPre=` 命令和第一条 `ExecReload=` 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。
@@ -343,7 +431,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 `expiry-time="197001010800Z"`
 
-:   限制此公钥的有效时间，格式为 `YYYYMMDDhhmm`（服务器的本地时间），或者在其后添加一个大写字母 Z 表示 UTC 时间。适合用于添加临时用途的公钥，确保不会在事后忘记删除。
+:   限制此公钥的有效时间，格式为 `YYYYMMDDhhmm`（服务器的本地时间），或者在其后添加一个大写字母 Z 表示 UTC 时间。适合用于添加临时用途的公钥，确保即使事后忘记删除了，它也不会超期生效。
 
 `command="/path/to/command"`
 
@@ -357,6 +445,8 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 :   禁止对应的功能。这些选项可以用于限制公钥的功能，例如禁止各种转发和使用终端等。
 
+    特别地，禁止 TCP 端口转发之后，该公钥也不能用于将本机作为跳板机登录其他机器（即 `-J` 参数或 `ProxyJump` 配置项）。
+
 `restrict`
 
 :   禁止所有可选功能，相当于同时使用上一条列出的（和没列出的，详情见 man page）所有选项。
@@ -367,13 +457,71 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 完整的选项列表可以在 [sshd(8)][sshd.8] 的 `AUTHORIZED_KEYS FILE FORMAT` 部分找到。
 
-??? example "案例：用于备份 LUG FTP 的公钥配置"
+??? example "例：用于备份 LUG FTP 的公钥配置"
 
     ```shell
     restrict,from="192.0.2.2",command="/usr/bin/rrsync -ro /mnt/lugftp" ssh-rsa ...
     ```
 
-## 拆分配置文件 {#include}
+## SSH 证书 {#certificates}
+
+OpenSSH 支持使用证书作为客户端和服务端的身份验证方式，即在正确配置了证书的情况下，客户端无需预先记录服务器的公钥（即加入 `known_hosts` 文件）即可信任 SSH 服务端，而服务端也无需预先记录客户端的公钥（即写入对应用户的 `authorized_keys` 文件）即可确认登录者的身份。使用证书进行 SSH 身份验证有以下好处：
+
+- 对于服务器和客户端（或用户）数量较多的场景，通过签署证书的方式可以大大降低配置复杂度，且容易管理登录授权的分配情况。
+    - 如果客户端被允许自行修改 `authorized_keys` 文件，则其仍然能够添加其他公钥用于登录已授权的服务端，绕过采用证书认证的管理目的。请根据实际情况决定是否需要禁止客户端自行修改 `authorized_keys` 文件。
+
+        提示：SSH 服务端具有 `AuthorizedKeysFile` 设置项，其默认值为 `.ssh/authorized_keys`。
+
+- 默认情况下，SSH 服务端会在日志中记录登录时所用的证书的“主体”与编号，即签发证书时 `-I` 与 `-z` 参数的值，这使得管理员能够更方便地追踪客户端密钥对的使用情况。
+- 相比于 `authorized_keys` 文件，签发证书时能够更方便地指定一些与公钥相关的参数，如有效期（`-V` 参数）等。
+- 相比于使用私钥登录的场景，签发证书的过程可以离线进行，提升 CA 私钥的安全性。
+
+使用证书认证方案时的注意事项：
+
+- SSH 证书没有 X.509 证书的链式结构，即 SSH 证书没有“中间 CA”的概念，CA 的身份由**公钥**唯一确定，因此所有的 CA 都是根 CA。一旦 CA 的私钥发生泄露，需要立刻在所有机器上删除对应的 CA 公钥配置。这对 SSH CA 的密钥管理提出了更高的要求。
+- SSH 证书没有自动更新 CRL 的机制，证书的撤销依赖于管理员自行维护“公钥吊销列表”（Key Revocation List，KRL）文件，因此如果已获得签发证书的对应私钥发生泄露，也需要维护 KRL 直到对应证书过期。
+
+    特别地，如果发生泄露的证书未设置有效期，则其是无限期有效的，对应的已泄露的私钥也需要无限期地记录在所有信任此证书的服务器的 KRL 中，这可能会带来一定的管理负担。因此我们推荐为所有的客户端证书指定有效期，**从不**签发无限期有效的客户端证书。
+
+总的来说，对于中小规模的社团和实验室服务器管理场景，（对管理员）使用 SSH 证书认证是个较为方便易用的方式。
+
+与 X.509 证书类似，客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA。
+
+### 创建 SSH CA {#ssh-ca}
+
+前文提到，SSH CA 的身份由**公钥**唯一确定，因此一对普通的 SSH 密钥对就是一个 SSH CA 所需的全部内容，不像 X.509 需要再进一步为根 CA 产生一个自签名证书。此处引用创建 SSH 密钥对的命令：
+
+```shell
+ssh-keygen -f my_ca [-t ed25519] [-C 'My CA'] [-N 'my-ca-p@ssw0rd']
+```
+
+注意到尽管 `-t`、`-C` 和 `-N` 参数都是可选的[^filename-is-optional]，为了便于辨认 CA 和提高安全性，我们强烈建议采用先进的密码学算法（Ed25519）、指定可读的备注文字和为私钥设置密码。
+
+  [^filename-is-optional]: 事实上 `-f` 参数也是可选的，但为了避免 `ssh-keygen` 将其放置在 `~/.ssh` 目录下，从而更容易与个人用于登录服务器的私钥混淆，此处显式指定了输出文件名。
+
+生成密钥对后，请保管好 `my_ca` 私钥文件，然后即可将 `my_ca.pub` 公钥文件复制或公开传播了。
+
+### 服务端证书 {#server-certificates}
+
+首先，客户端需要信任 CA 签发的证书，方法是在 `known_hosts` 文件中加入 CA 的公钥，并在公钥前添加选项 `@cert-authority *`，例如；
+
+```text title="~/.ssh/known_hosts"
+@cert-authority * ssh-ed25519 AAAAC3N... My CA
+```
+
+对于实验室等公用机器的场景，也可以将 CA 条目配置在 `/etc/ssh/ssh_known_hosts` 文件中，其会对所有用户生效，而无需再为每个用户单独配置。
+
+### 客户端证书 {#client-certificates}
+
+首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 `authorized_keys` 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 `/etc/ssh/ssh_user_ca`：
+
+```text title="/etc/ssh/ssh_user_ca"
+ssh-ed25519 AAAAC3N... My org CA
+```
+
+## 杂项 {#misc}
+
+### 拆分配置文件 {#include}
 
 从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 `Include` 选项，可以在主配置文件中 include 其他文件。与 C 的 `#include` 或 Nginx 的 `include` 不同，SSH config 里的 `Include` **不**等价于文本插入替换，并且 `Include` 可以出现在 `Host` 和 `Match` 块中，出现在这两个块中的 `Include` 会被视作条件包含。因此一个（不太常见的）坑是：
 
@@ -412,7 +560,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
       User user
     ```
 
-## 一些坑点 {#traps}
+### 一些坑点 {#traps}
 
 在 OpenSSH 内部，同一个“代号”可能指代多种（有关联但）不同的细节。例如 `ssh-rsa` 至少有以下三种不同的含义：
 
@@ -430,3 +578,29 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
   与前一个采用 SHA-1 作为哈希算法的算法套件类似，OpenSSH 8.8 起也不再默认启用，且替代算法也分别叫做 `rsa-sha2-256` 和 `rsa-sha2-512`。好消息是，你不需要重新签发任何证书，只要确保客户端和服务端的 OpenSSH 版本都不低于 7.2 就可以了。
 
   如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以通过配置选项 `HostkeyAlgorithms` 和 `PubkeyAcceptedAlgorithms` 启用。这两个选项分别控制服务端和客户端的公钥签名算法套件，并且在两端都可以指定。
+
+### SSH 转义序列 {#escape-sequences}
+
+SSH 连接由本地的 ssh 客户端发起，建立连接后，你在终端输入的内容默认都会发送到远端服务器。但有时候，我们需要让本地 ssh 客户端立即响应一些特殊操作，比如断开连接、挂起会话、配置端口转发等，这时就可以用“转义序列”来实现。
+
+转义序列的用法是：在新的一行先按回车，然后输入 `~`，后面的内容就会被本地 ssh 客户端识别为命令，而不会发给远端服务器。以下展示的转义序列均以 `~` 开头表示。
+
+常用的 SSH 转义序列如下：
+
+- `~.`：立刻断开当前 SSH 连接。在命令行输入回车后，直接输入 `~.`，无需等待远端响应，适用于远端卡死或网络异常时强制断开。
+- `~^Z`：挂起 SSH 客户端（发送 SIGTSTP），回到本地 shell，可以用 `fg` 恢复 SSH 会话。回车后输入 `~`，再按下 `Ctrl+Z`。
+- `~C`：打开 SSH 客户端的命令行，可以用 `-L` `-R` `-D` 参数配置端口转发。`-KL` `-KR` `-KD` 参数关闭端口转发。
+
+    !!! warning
+
+        OpenSSH 9.2 新增了 `EnableEscapeCommandline` 设置项，且默认为 no。如果需要使用 `~C` 命令行，需要先启用该设置项。OpenSSH &le; 9.1 的版本默认允许 `~C`。
+
+- `~#`：列出当前所有转发的连接（如端口转发、X11 转发等），便于排查端口转发问题。
+- `~?`：显示所有可用的转义序列及其说明，遇到不确定的情况可以先用这个命令查看帮助。
+
+如果开启了[连接复用](#connection-reuse)功能，那么一部分转义序列无法使用，例如 `~^Z` 和 `~C` 等。
+
+!!! note "注意事项"
+
+    - 转义序列必须在按下回车后立即输入（即当前行前面不能有其他字符），否则会被当作普通输入传给远端。
+    - 在多层 SSH 跳板（多次 ssh 嵌套）时，每多一层，需要输入的 `~` 会翻倍。例如，`~~.` 指令会断开第二层的 SSH 连接，而 `~~~~.` 指令会断开第三层的 SSH 连接。

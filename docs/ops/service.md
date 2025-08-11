@@ -2,7 +2,7 @@
 icon: material/room-service
 ---
 
-# 服务与日志管理
+# 服务与日志管理 {#top}
 
 !!! note "主要作者"
 
@@ -23,7 +23,7 @@ PID 1 在 Linux 中有一些特殊的地位：
 - 不受 `SIGKILL` 或 `SIGSTOP` 信号影响，不能被杀死或暂停。类似地，即使收到了其他未注册的信号，默认行为也是忽略，而不是结束进程或挂起。
 - 当其他进程退出时，这些进程的子进程会由 PID 1 接管，因此 PID 1 需要负责回收（`wait(2)`）这些僵尸进程。
 
-## Systemd 与服务
+## Systemd 与服务 {#systemd-and-service}
 
 Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（systemd-journald）、网络管理（systemd-networkd）、本地 DNS 缓存（systemd-resolved）、时间同步（systemd-timesyncd）等，本文主要关心服务管理和日志管理。
 
@@ -51,11 +51,21 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
 很多通过 `systemctl` 命令改变的配置都会被保存到 `/etc/systemd/system` 目录下，例如：
 
-- `systemctl enable [some-unit]` 本质上是在 `/etc/systemd/system` 目录下创建软链接。
-- `systemctl disable [some-unit]` 则是删除上面创建的软链接。
+- `systemctl enable [some-unit]` 可以“启用”一个 unit，即激活该 unit 在 `[Install]` 部分声明的自动启动条件，如 `WantedBy=` 和 `RequiredBy=` 等。该命令的本质是在 `/etc/systemd/system` 目录下创建软链接。
+
+    !!! tip
+
+        `systemctl enable --now [some-unit]` 可以在 enable 一个 unit 的同时立即启动它。
+
+- `systemctl disable [some-unit]` 可以“禁用”一个 unit，即取消它的自动启动条件。类似地，该命令的本质是删除了上面创建的软链接。
+
+    !!! tip
+
+        - 同理，`systemctl disable --now [some-unit]` 可以在 disable 一个 unit 的同时立即停止它。
+
 - `systemctl edit [some-unit]` 会提供一个临时文件，并在编辑完之后将其保存到 `/etc/systemd/system/[some-unit].d/override.conf` 文件中，实现对 unit 的修改。
 
-相比于手工修改文件，使用 `systemctl` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
+    相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
 
 Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 `[Service]` section，并通常会包含一个 `[Install]` section。以 cron 服务的配置文件为例：
 
@@ -76,6 +86,14 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
+!!! tip "查询手册"
+
+    Unit 配置中不同的字段分布在 systemd 不同的手册页中。其中 `[Unit]` 和 `[Install]` 部分的字段可以在 [`systemd.unit(5)`][systemd.unit.5] 中找到。
+    
+    对于服务，`[Service]` 中的字段大部分在 [`systemd.service(5)`][systemd.service.5] 中，但其中与运行环境有关的会在 [`systemd.exec(5)`][systemd.exec.5] 中，与程序资源限制相关的会在 [`systemd.resource-control(5)`][systemd.resource-control.5] 中，与退出/杀死服务相关的会在 [`systemd.kill(5)`][systemd.kill.5] 中。
+
+    对于定时器，`[Timer]` 部分的字段可以在 [`systemd.timer(5)`][systemd.timer.5] 中找到。
+
 #### 顺序与依赖 {#unit-dependency}
 
 相比于 SysVinit（完全顺序启动）和 upstart（基于 event 触发的方式有限的并行），systemd 的每个 unit 都明确指定了依赖关系，分析依赖关系后 systemd 就可以最大化并行启动服务，这样可以大大缩短启动时间。
@@ -93,7 +111,7 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 `Wants=` 和 `Requires=`
 
 :   指定 unit 之间的依赖关系，例如网络服务通常会依赖 `network.target`，即当网络开始配置时才会运行。
-    两者都在 `[Unit]` section 中指定，区别在于 `Requires=` 是强依赖，即如果被依赖的 unit 没有启动或启动失败，那么当前 unit 也会被标记为失败；
+    两者都在 `[Unit]` section 中指定，区别在于 `Requires=` 是强依赖，即如果被依赖的 unit 没有启动或启动失败，那么当前 unit 也会被标记为失败，同时如果被依赖的 unit 停止，则当前 unit 也会停止；
     而 `Wants=` 是弱依赖，即尝试启动被依赖的 unit，但如果失败了也不会影响当前 unit 的启动。
 
 `WantedBy=` 和 `RequiredBy=`
@@ -105,6 +123,23 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 
 :   指定启动顺序，即相关的 unit 需要在前者启动完成，进入 active 状态后才会尝试启动。这两个字段在 `[Unit]` section 中指定。
     与 Wants/Requires 不同，Before/After 只是指定启动顺序，不影响依赖关系。
+
+需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 `Requires=` 或 `Wants=`，没有写 `Before=` 或 `After=`，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序。
+
+#### 模板 {#unit-template}
+
+Systemd 的 unit 支持模板特性：一个 unit 文件可以实例化为多个 unit。模板 unit 的文件名（不含扩展名）结尾是 `@`，例如 `foo@.service`。用户使用时需要提供一个参数，例如 `systemctl enable --now foo@arg.service`。
+
+在 unit 文件内部，可以使用 `%i` 和 `%I` 来引用这个参数（其中 `%I` 是没有经过转义的），例如：
+
+```ini
+[Unit]
+Description=Hello for %I
+
+[Service]
+# ...
+ExecStart=/usr/bin/echo Hello, %i
+```
 
 ### Target
 
@@ -195,10 +230,11 @@ oneshot
 :   一次性服务，即启动后运行一次 `ExecStart=` 命令，然后退出。
     这个 Type 有两种使用场景：
 
-    1. 一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 `ip` 命令）；
-    2. 和 timer 配合使用，即定时任务。
+    1. 一次性的初始化或者清理工作、或者改变系统状态的命令等（如一些 `ip` 命令）。
 
-    如果你有 Type=oneshot 的服务，那么你很可能也想配置 `RemainAfterExit=yes`，这样配置的命令执行完成后会一直保持 active 状态。
+        在这个场景下，你很可能也想同时设置 `RemainAfterExit=yes`，这样配置的命令执行完成后会一直保持 active 状态。
+
+    2. 和 timer 配合使用，即定时任务。
 
 notify 和 dbus
 
@@ -207,9 +243,11 @@ notify 和 dbus
 
     ??? tip "sd_notify"
 
-        [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 对应用传递一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以向对应 socket 发送 `READY=1` 来通知 systemd 服务已经成功启动。
+        [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 给应用提供一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以发送 `READY=1` 来通知 systemd 服务已经成功启动。
 
-        通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 xz 后门事件之所以能够影响 sshd 逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 `sd_notify()`，而 libsystemd 又依赖于（被植入后门的）liblzma。
+        通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 [xz 后门事件][xz-backdoor]之所以能够影响 sshd 的逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 `sd_notify()`，而 libsystemd 又依赖于（被植入后门的）liblzma。
+
+  [xz-backdoor]: https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8 "维基百科：XZ 实用程序后门"
 
 ### 定时任务 {#timers}
 
@@ -218,6 +256,7 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
 相比于更常见的定时任务方案 CRON，systemd timers 具有以下优点：
 
 - 更丰富的时间表达式，除了等价于 crontab 的 `OnCalendar=` 时间之外，也可以使用 `OnUnitActiveSec=`（服务启动后）、`OnBootSec=`（系统启动后）等指定其他时间计算方式。
+
     - 例如，`systemd-tmpfiles-clean.timer` 就是在系统启动后 15 分钟触发一次 `systemd-tmpfiles-clean.service`，然后每天触发一次，用于清理临时文件。
 
         ```ini title="/lib/systemd/system/systemd-tmpfiles-clean.timer"
@@ -226,8 +265,10 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
         OnUnitActiveSec=1d
         ```
 
+    - 如果不使用 `OnCalendar=` 的话，一般常用的模式是：使用 `OnActiveSec=`（timer 被激活后）、`OnBootSec=` 或 `OnStartupSec=`（systemd 启动后）来**首次触发**，然后使用 `OnUnitActiveSec=` 来保证**后续定时触发**。因为 `OnActiveSec=`、`OnBootSec=` 和 `OnStartupSec=` 只会触发一次服务启动，为了实现定时启动，那么就需要额外设置以服务启动后为基准的定时器，即 `OnUnitActiveSec=`。而如果没有前者的话，那么就必须要手动启动对应的服务之后，timer 才会有效。因此这一类 timer 会同时包含两个定时规则。
+
 - 更加精确的时间控制，通过 `AccuracySec=` 可以支持秒级甚至更细的时间精度。
-    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。
+    一般不推荐小于 1 分钟的时间精度，否则系统计时器需要频繁唤醒，可能会影响系统性能。这一点考虑与 cron 是相同的。
 - `RandomizedDelaySec=` 可以配置每次触发时随机延迟的时间，避免大量服务在同一时间点启动。
     这在使用同一份系统镜像部署大量虚拟机或类似场景下非常有用，可以避免大量计划任务同时触发，导致系统负载过高。
 - `Persistent=` 可以确保如果因关机、重启等原因错过了设定时间，定时任务会在下次系统启动后会立即执行。
@@ -239,7 +280,7 @@ Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer
 
 Timers 的主要缺点是：
 
-- 配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，数十行的配置文件不得不说复杂。
+- 配置文件繁琐，一个定时任务至少需要创建两个文件，一个是 timer unit，一个是对应的 service unit。相比于在 crontab 中添加一行配置，动辄数十行的配置文件实在不够方便。
 - 没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 `journalctl` 查看；也可以为 service 指定 `StandardOutput=` 和 `StandardError=` 手动重定向输出。
 
 另外，第三方开发的 [systemd-cron][systemd-cron] 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。
@@ -401,3 +442,39 @@ prerotate / postrotate
 修改了 logrotate 的配置文件之后，可以使用 `logrotate -d /etc/logrotate.conf` 来测试配置文件的正确性，而不会真正执行任何操作。
 
 同时由于 logrotate 不存在守护进程，而是通过 systemd timer 来定期执行的，因此修改配置文件之后不需要重启任何服务。
+
+## 登录管理器 {#logind}
+
+systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 [systemd-logind(8)][systemd-logind.8]。本部分主要关注在日常运维中可能会用到的一部分特性。
+
+在登录系统时，PAM 的 `pam_systemd.so` 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。
+
+`loginctl list-sessions` 可以显示当前的所有用户 session：
+
+```console
+$ loginctl list-sessions
+SESSION  UID USER  SEAT  TTY
+      2 1000 user  seat0
+
+1 sessions listed.
+```
+
+`loginctl` 支持锁定（`lock-session`）、解锁（`unlock-session`）、注销（`terminate-session`）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 `loginctl` 的功能来实现。
+
+systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 `systemctl`、`journalctl` 操作时添加 `--user` 参数即可查看当前用户的服务和日志等。
+
+!!! note "DBus"
+
+    `systemctl`、`journalctl` 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 `/run/user/<用户 PID>/bus`）。
+
+    在某些非常特殊的环境下，可能需要配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
+
+有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
+
+!!! lab "限制用户的资源使用"
+
+    用户 session 启动时，systemd 会创建 `user-<uid>.slice`。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。
+
+    （最常见的情况是，有人在编译软件时，跑了不限制并发的 `make -j`）
+
+    请尝试限制让**每个**用户 CPU 最多只使用 30%，内存最多只使用 8G（可阅读 [user@.service(5)][user@.service.5]）。

@@ -1,0 +1,49 @@
+name: autofix.ci  # needed to securely identify the workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "*"
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip3 install \
+            -r requirements.txt \
+            -r requirements-ci.txt
+
+      - name: "Linting: autocorrect"
+        continue-on-error: true
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/huacnlee/autocorrect/main/install | sh
+          autocorrect --fix
+
+      - name: "Linting: markdownlint-cli2 Part 1"
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        continue-on-error: true
+        with:
+          fix: true
+          globs: |
+            docs/**/*.md
+            README.md
+
+      - name: "Linting: markdownlint-cli2 Part 2"
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        continue-on-error: true
+        with:
+          fix: true
+          globs: |
+            docs/**/*.md
+            README.md
+      - uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef

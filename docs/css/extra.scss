@@ -3,6 +3,7 @@
 // sassc -t compact extra.scss extra.css
 
 @import "admonitions.scss";
+@import "counter.scss";
 
 $color-codes: red, darkred, orangered, green, limegreen;
 @each $color in $color-codes {
@@ -116,4 +117,22 @@ $color-codes: red, darkred, orangered, green, limegreen;
   @media screen and (min-width: 76.25em) {
     padding-left: 2rem;
   }
+}
+
+@keyframes welcome {
+  0%, 40%, 80%, 100% {
+    transform: scale(1);
+  }
+  20%, 60% {
+    transform: scale(1.15);
+  }
+}
+
+.welcome > .admonition-title::before {
+  animation: welcome 1000ms infinite;
+}
+
+
+.md-path__item:not(:first-child) {
+  align-items: center;
 }

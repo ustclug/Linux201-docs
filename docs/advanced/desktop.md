@@ -70,7 +70,7 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
     Xephyr :123 -ac -screen 800x600
     ```
 
-    其他应用可以直接用 `DISPLAY=:123` 环境变量连接到这个 server。
+    其他应用可以直接用 `DISPLAY=:123` 环境变量连接到这个 server。在 Wayland 环境下，也可以使用 `xwayland-run`，以 Xwayland 的 "rootful" 模式运行一个新的 X server。
 
 可以运行 `xlsclients` 获取连接到当前 X 服务器的客户端列表：
 
