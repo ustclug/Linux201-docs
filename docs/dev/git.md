@@ -712,6 +712,9 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
     - [ ] Task 2
     ```
 
+    - [x] Task 1 #123
+    - [ ] Task 2
+
     此时可以将这个 Issue 转化为一个任务列表，方便追踪任务的进度，同时 `#123` 会被标记为 `Tracked by #xxx`。
 
 #### Issue 模板 {#github-issue-template}
@@ -722,16 +725,16 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 name: Bug Report
 about: Create a report to help us improve
 labels:
-    - bug
+  - bug
 body:
-    - type: textarea
-      id: bug-description
-      attributes:
-        label: Describe the bug
-        description: A clear and concise description of what the bug is.
-        placeholder: I'm always frustrated when...
-      validations:
-        required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
 ```
 
 可以参考 [ustclug/mirrorrequest/.../01-mirror-request.yml](https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1), [GitHub 文档](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository).
