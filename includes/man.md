@@ -17,6 +17,7 @@
 <!-- man 2 -->
 
 [mlock.2]: https://man7.org/linux/man-pages/man2/mlock.2.html
+[pivot_root.2]: https://man7.org/linux/man-pages/man2/pivot_root.2.html
 
 <!-- man 3 -->
 
@@ -64,6 +65,7 @@ Do not link to a "generic" man page for these commands -->
 [adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
+[mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
 [sshd.8]: https://linux.die.net/man/8/sshd
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html

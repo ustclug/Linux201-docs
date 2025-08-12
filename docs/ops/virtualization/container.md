@@ -16,7 +16,7 @@
 
 Linux 内核的命名空间功能是容器技术的重要基础。命名空间可以控制进程所能看到的系统资源，包括其他进程、网络、文件系统、用户等。可以阅读 [namespaces(7)][namespaces.7] 了解相关的信息。
 
-可以在 procfs 看到某个进程所处的命名空间：
+可以在 procfs 看到某个进程所处的命名空间；使用 `lsns` 可以列出所有当前命名空间可以「看到」的命名空间：
 
 ```console
 $ ls -lh /proc/self/ns/
@@ -31,6 +31,12 @@ lrwxrwxrwx 1 username username 0 Mar 24 21:04 time -> 'time:[4026531834]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 time_for_children -> 'time:[4026531834]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 user -> 'user:[4026531837]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 uts -> 'uts:[4026531838]'
+$ lsns
+        NS TYPE   NPROCS     PID USER     COMMAND
+4026531834 time      294    2440 username /usr/bin/dbus-broker-launch --scope user
+4026531835 cgroup    293    2440 username /usr/bin/dbus-broker-launch --scope user
+4026531836 pid       248    2440 username /usr/bin/dbus-broker-launch --scope user
+（以下省略）
 ```
 
 使用 `nsenter` 命令可以进入某个命名空间：
@@ -64,9 +70,7 @@ ls: cannot access '/proc/417/': No such file or directory
 # # 如果使用 htop，仍然可以看到完整的进程列表
 ```
 
-这是因为这里挂载的 procfs 是对应整个系统的，因此即使进入了新的 PID 命名空间，
-在 mount 命名空间不变的情况下，`/proc` 目录下的内容仍然是宿主机的。
-因此需要同时进入 mount 命名空间：
+这是因为这里挂载的 procfs 是对应整个系统的，因此即使进入了新的 PID 命名空间，在 mount 命名空间不变的情况下，`/proc` 目录下的内容仍然是宿主机的。因此需要同时进入容器内对应进程的 mount 命名空间：
 
 ```console
 $ sudo nsenter --target 117426 --pid --mount bash
@@ -79,7 +83,7 @@ root         437  0.0  0.0   7060  2944 ?        R+   13:32   0:00 ps aux
 
 因此一般来讲，我们会希望同时进入进程所属所有的命名空间，以避免可能的不一致性问题。可以通过 `-a` 参数实现。
 
-另一个与命名空间有关的实用命令是 `unshare`，取自同名的系统调用，可以创建新的命名空间。对于上面展示 PID 命名空间的例子，可以使用 `unshare` 命令创建一个新的 PID 命名空间（与 mount 命名空间），并且挂载新的 `/proc`：
+另一个与命名空间有关的实用命令是 `unshare`，取自同名的系统调用，可以创建新的命名空间。对于上面展示 PID 命名空间的例子，可以使用 `unshare` 命令创建一个新的 PID 命名空间与 mount 命名空间，并且在新的 mount 命名空间里面挂载新的 `/proc`：
 
 ```console
 $ sudo unshare --pid --fork --mount-proc bash
@@ -88,6 +92,26 @@ USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.0  10876  4568 pts/17   S    21:42   0:00 bash
 root           2  0.0  0.0  14020  4464 pts/17   R+   21:42   0:00 ps aux
 ```
+
+!!! tip "bind mount"
+
+    对容器、沙盒等应用来说，在建立 mount 命名空间后一般都需要切换根目录到新位置（[pivot_root(2)][pivot_root.2]）。但是很多时候，我们需要将主机的某个目录或者文件挂载进来，这就需要用到 bind mount 了。bind mount 可以以挂载点的形式将某个文件或者目录「挂载」到其他地方。使用 [mount(8)][mount.8] 命令可以实现 bind mount：
+
+    ```sh
+    # 将 /dir1 挂载到 /dir2
+    sudo mount --bind /dir1 /dir2
+    # 将 /dir1，包括 /dir1 下面的其他子挂载点递归挂载到 /dir2
+    sudo mount --rbind /dir1 /dir2
+    ```
+
+    另一个关键的参数是挂载传播（mount propagation），它决定了某个挂载点内部子挂载点的变化是否会传播到它自己的其他「分身」（bind mount 或者其他的 mount namespace）上面。有四种不同的传播模式：
+
+    - shared：传播变化，这一般是主机环境的默认值
+    - private：不传播变化
+    - slave：只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）
+    - unbindable：不传播变化，也不允许被 bind mount
+
+    在这四项参数前面加上 `r` 就代表递归设置行为。一般来讲，容器都会选择 `rprivate` 传播模式，防止容器与主机之间互相影响。在特定需求情况下（例如[这个 issue](https://github.com/ustclug/Yuki/issues/134)），可以视情况选择 `rslave` 或者 `rshared` 传播模式。[Docker 支持相关的设置](https://docs.docker.com/engine/storage/bind-mounts/#configure-bind-propagation)。
 
 另外，有一种**用户命名空间**，允许非 root 用户创建新的用户命名空间（这也是 rootless 容器的基础），让我们简单试一试：
 
