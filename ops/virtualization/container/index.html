@@ -2830,7 +2830,8 @@
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">ustclug Docker image</p>
-<p>本页的容器示例使用了 <a href="https://github.com/ustclug/mirrorimage/">ustclug/mirrorimage</a> 生成的容器镜像，默认配置了科大镜像站，帮助减少 <code>apt</code> 等操作之前还要跑 <code>sed</code> 的麻烦。</p>
+<p>本页的容器示例使用了 <a href="https://github.com/ustclug/mirrorimage/">ustclug/mirrorimage</a> 生成的容器镜像，默认配置了科大镜像站，帮助减少 <code>apt</code> 等操作之前还要跑 <code>sed</code> 的麻烦，支持包括 Ubuntu、Debian、Alpine 等多个发行版。</p>
+<p>如果无法顺利访问 Docker Hub，也可以使用 <code>ghcr.io/ustclug/ubuntu:22.04</code>。</p>
 </div>
 <p>那么 PID 命名空间也是同理吗？</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>nsenter<span class="w"> </span>--target<span class="w"> </span><span class="m">117426</span><span class="w"> </span>--pid<span class="w"> </span>bash
@@ -2868,10 +2869,10 @@
 </code></pre></div>
 <p>另一个关键的参数是挂载传播（mount propagation），它决定了某个挂载点内部子挂载点的变化是否会传播到它自己的其他「分身」（bind mount 或者其他的 mount namespace）上面。有四种不同的传播模式：</p>
 <ul>
-<li>shared：传播变化，这一般是主机环境的默认值</li>
-<li>private：不传播变化</li>
-<li>slave：只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）</li>
-<li>unbindable：不传播变化，也不允许被 bind mount</li>
+<li>shared：传播、接受变化，这一般是主机环境的默认值</li>
+<li>private：不传播、不接受变化</li>
+<li>slave：不传播变化，只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）</li>
+<li>unbindable：不传播、不接受变化，也不允许被 bind mount</li>
 </ul>
 <p>在这四项参数前面加上 <code>r</code> 就代表递归设置行为。一般来讲，容器都会选择 <code>rprivate</code> 传播模式，防止容器与主机之间互相影响。在特定需求情况下（例如<a href="https://github.com/ustclug/Yuki/issues/134">这个 issue</a>），可以视情况选择 <code>rslave</code> 或者 <code>rshared</code> 传播模式。<a href="https://docs.docker.com/engine/storage/bind-mounts/#configure-bind-propagation">Docker 支持相关的设置</a>。</p>
 </div>
@@ -4176,7 +4177,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月12日 19:53:17 UTC">2025年8月12日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月13日 15:27:45 UTC">2025年8月13日</span>
   </span>
 
     
