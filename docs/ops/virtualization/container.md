@@ -55,7 +55,9 @@ $ sudo nsenter --target 117426 --uts bash # 进入 UTS 命名空间
 
 !!! note "ustclug Docker image"
 
-    本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦。
+    本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦，支持包括 Ubuntu、Debian、Alpine 等多个发行版。
+
+    如果无法顺利访问 Docker Hub，也可以使用 `ghcr.io/ustclug/ubuntu:22.04`。
 
 那么 PID 命名空间也是同理吗？
 
@@ -106,10 +108,10 @@ root           2  0.0  0.0  14020  4464 pts/17   R+   21:42   0:00 ps aux
 
     另一个关键的参数是挂载传播（mount propagation），它决定了某个挂载点内部子挂载点的变化是否会传播到它自己的其他「分身」（bind mount 或者其他的 mount namespace）上面。有四种不同的传播模式：
 
-    - shared：传播变化，这一般是主机环境的默认值
-    - private：不传播变化
-    - slave：只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）
-    - unbindable：不传播变化，也不允许被 bind mount
+    - shared：传播、接受变化，这一般是主机环境的默认值
+    - private：不传播、不接受变化
+    - slave：不传播变化，只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）
+    - unbindable：不传播、不接受变化，也不允许被 bind mount
 
     在这四项参数前面加上 `r` 就代表递归设置行为。一般来讲，容器都会选择 `rprivate` 传播模式，防止容器与主机之间互相影响。在特定需求情况下（例如[这个 issue](https://github.com/ustclug/Yuki/issues/134)），可以视情况选择 `rslave` 或者 `rshared` 传播模式。[Docker 支持相关的设置](https://docs.docker.com/engine/storage/bind-mounts/#configure-bind-propagation)。
 
