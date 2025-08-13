@@ -95,6 +95,18 @@ The following packages will be REMOVED:
 
     某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 `99` 作为前缀，确保这个配置文件在其他配置文件之后被读取。
 
+!!! tip "为什么某个包会被安装"
+
+    由于推荐关系的存在，有时候在安装某个包时，会带上一些看起来无关的包。可以使用[下文介绍的 aptitude](#apt-frontend) 的 `why` 命令查看，例如确认为什么 `apt install lightdm` 会安装 `plymouth`：
+
+    ```console
+    $ aptitude why lightdm plymouth
+    p   lightdm             Depends    lightdm-gtk-greeter | lightdm-greeter
+    p   lightdm-gtk-greeter Recommends desktop-base
+    p   desktop-base        Recommends plymouth-label
+    p   plymouth-label      Depends    plymouth (= 24.004.60-5)
+    ```
+
 ### 搜索包 {#search}
 
 Debian 与 Ubuntu 均提供了网页端搜索软件包的服务：[Debian 软件包](https://packages.debian.org/)、[Ubuntu Packages Search](https://packages.ubuntu.com/)。不过，使用 apt 工具搜索来快得多。
