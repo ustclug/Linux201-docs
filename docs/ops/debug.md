@@ -1140,6 +1140,14 @@ example(1023, 1024)
 - [The bpftrace One-Liner Tutorial](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md)（[中文版](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md)）
 - [bpftrace(8) Manual Page](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
 
+!!! lab "eBPF 程序编写实验"
+
+    尝试使用 bpftrace 或 bcc 完成以下任务：
+
+    - 对整个系统的程序做监测，当程序退出时，输出程序的运行时间（Wall time）。
+        - 挑战：能否尽可能输出程序被执行时的命令行参数？
+    - 对某个程序做监测，当该程序执行某种系统调用时（例如读取文件），输出程序的调用栈。
+
 ## 补充阅读 {#supplement}
 
 ### 书籍 {#supplement-books}
