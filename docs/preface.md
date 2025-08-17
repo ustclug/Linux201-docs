@@ -2,7 +2,7 @@
 icon: material/information-outline
 ---
 
-# 前言
+# 序言
 
 !!! note "主要作者"
 
