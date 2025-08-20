@@ -131,6 +131,8 @@ icon: material/bug
 
 ## 服务状态与日志 {#status-and-logs}
 
+### 日志简介 {#logs-intro}
+
 当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
 `systemctl --failed` 可以列出当前失败的服务。
 如果显示大量服务失败，那么说明可能遇到了比较严重的问题，例如磁盘已满等。
@@ -185,14 +187,36 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 
 ### Kernel panic 与 pstore {#kernel-panic-and-pstore}
 
-当内核遇到不可恢复的致命错误时，就会发生「内核恐慌」，即 kernel panic。
+当内核遇到不可恢复的致命错误时，就会发生「内核恐慌」，即 kernel panic，表示内核崩溃，无法继续操作。
 默认情况下，kernel panic 的时候会打印出报错信息，然后需要人工重启。
 然而，对于实验室炼丹炉或者不易远程操作的服务器等一些场景来说，管理员可能更希望服务能够尽快恢复，此时可以通过设置 `kernel.panic` 这一项 sysctl 参数实现在 panic 自动重启，但这也使得管理员无法及时地在终端上看到重启前最后的 panic 信息。
 
 **pstore**（Persistent Storage）是一个内核特性，用于在系统崩溃时保存报错信息，以供后续分析。
-pstore 有多种存储后端，包括一小段专门划分的内存区域（通常大小为 10 KiB）、ACPI ERST 表以及 UEFI 变量存储区域等。
+pstore 有多种存储后端，包括一小段专门划分的内存区域（被称为 [ramoops](https://docs.kernel.org/admin-guide/ramoops.html)，通常大小为 10 KiB）、ACPI ERST 表以及 UEFI 变量存储区域等。
 这些不同的存储后端通常能够提供合计 64 KiB 的存储空间，足够保存数百行 dmesg。
-默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
+默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。可以查看 `/sys/module/pstore/parameters/backend` 的内容，确认当前 pstore 的存储后端。
+
+!!! tip "ACPI ERST"
+
+    可以使用以下命令验证硬件是否支持 ACPI ERST：
+
+    ```shell
+    ls /sys/firmware/acpi/tables/ | grep ERST
+    ```
+
+!!! note "UEFI 变量存储可能不会被默认启用"
+
+    UEFI 变量存储区域的空间是有限的，并且非常不幸的是，UEFI 固件的编写者不少都没有恰当处理**变量存储区域被写满**的情况。这意味着，一旦这种情况发生，那么**系统就可能变砖，无法正常启动**。因此内核提供了 `CONFIG_EFI_VARS_PSTORE_DEFAULT_DISABLE` 选项，如果它被启用，那么内核就不会默认使用 UEFI 变量存储区域作为 pstore 的存储后端。
+
+    视内核与发行版配置，可以使用 `zcat /proc/config.gz | grep PSTORE` 或 `cat /boot/config-$(uname -r) | grep PSTORE` 来检查当前内核是否启用了 pstore 以及相关配置情况。
+
+!!! note "ramoops 能够保留数据吗？"
+
+    pstore 的 ramoops 后端无法突破物理规律——如果机器断电重启了，那么（易失性）内存里的数据就自然没了。在不断电重启的情况下，内存是否会被清空取决于硬件实现。
+
+!!! tip "kdump"
+
+    如果无法使用 pstore，kdump 机制也可以作为替代方案。kdump 需要在启动时占用一块内存空间存储备用内核等信息。在 kernel panic 时，kernel 会 kexec 到备用内核上，备用内核此时就可以获取到内核的 coredump、dmesg 等信息。Debian 可以使用上文提到的 `kdump-tools` 包来配置 kdump。
 
 然而，pstore 的容量是有限的，因此 **systemd-pstore** 服务会在启动时自动将 pstore 的内容归档至 `/var/lib/systemd/pstore`，以便腾出空间，同时保留记录供管理员查阅。
 也就是说，如果你在重启后发现 `/sys/fs/pstore` 是空的，那么你应该去查看 `/var/lib/systemd/pstore`。
@@ -792,7 +816,7 @@ tcpdump -ni eth0 host 8.8.8.8
 
     ![Wireshark setting pre-master-secret log filename](../images/wireshark-tls.png)
 
-    [bcc](#eBPF) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
+    [bcc](#ebpf) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
 
 !!! note "HTTP/HTTPS 抓包工具"
 
