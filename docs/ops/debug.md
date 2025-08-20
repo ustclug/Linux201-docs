@@ -41,7 +41,7 @@ icon: material/bug
 
     不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满（OOM），出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。
 
-    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
+    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的「Linux Magic System Request Key Hacks」部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
 
     最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：
 
@@ -88,7 +88,7 @@ icon: material/bug
             ManagedOOMMemoryPressure=kill
             ManagedOOMMemoryPressureLimit=50%
             ```
-        
+
         ??? example "Fedora 42 中的 systemd-oomd 配置"
 
             Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
@@ -109,7 +109,7 @@ icon: material/bug
         earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
 
         ![earlyoom in Vlab](../images/vlab-earlyoom.png)
-    
+
     !!! question "tmpfs?"
 
         思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
@@ -124,7 +124,7 @@ icon: material/bug
     - 占用空间小
     - `arch-chroot` 工具可以方便地 chroot 到安装的系统中，以便执行操作
         - 如果不使用 `arch-chroot`，在 chroot 进入系统前就需要手动挂载 `/proc`、`/sys`、`/dev` 等文件系统、配置 `/etc/resolv.conf` 等等，比较麻烦。
-    
+
     如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
 
     诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。
@@ -182,6 +182,20 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
     - [Debian Code Search](https://codesearch.debian.net/)，可以搜索 Debian 系统中所有包的源代码。
 
     某些大型程序也有专门的搜索网站，例如 [Chromium Code Search](https://source.chromium.org/chromium)。
+
+### Kernel panic 与 pstore {#kernel-panic-and-pstore}
+
+当内核遇到不可恢复的致命错误时，就会发生「内核恐慌」，即 kernel panic。
+默认情况下，kernel panic 的时候会打印出报错信息，然后需要人工重启。
+然而，对于实验室炼丹炉或者不易远程操作的服务器等一些场景来说，管理员可能更希望服务能够尽快恢复，此时可以通过设置 `kernel.panic` 这一项 sysctl 参数实现在 panic 自动重启，但这也使得管理员无法及时地在终端上看到重启前最后的 panic 信息。
+
+**pstore**（Persistent Storage）是一个内核特性，用于在系统崩溃时保存报错信息，以供后续分析。
+pstore 有多种存储后端，包括一小段专门划分的内存区域（通常大小为 10 KiB）、ACPI ERST 表以及 UEFI 变量存储区域等。
+这些不同的存储后端通常能够提供合计 64 KiB 的存储空间，足够保存数百行 dmesg。
+默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
+
+然而，pstore 的容量是有限的，因此 **systemd-pstore** 服务会在启动时自动将 pstore 的内容归档至 `/var/lib/systemd/pstore`，以便腾出空间，同时保留记录供管理员查阅。
+也就是说，如果你在重启后发现 `/sys/fs/pstore` 是空的，那么你应该去查看 `/var/lib/systemd/pstore`。
 
 ## procfs 与 strace {#procfs-and-strace}
 
