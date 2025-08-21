@@ -189,12 +189,13 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
 
 当内核遇到不可恢复的致命错误时，就会发生「内核恐慌」，即 kernel panic，表示内核崩溃，无法继续操作。
 默认情况下，kernel panic 的时候会打印出报错信息，然后需要人工重启。
-然而，对于实验室炼丹炉或者不易远程操作的服务器等一些场景来说，管理员可能更希望服务能够尽快恢复，此时可以通过设置 `kernel.panic` 这一项 sysctl 参数实现在 panic 自动重启，但这也使得管理员无法及时地在终端上看到重启前最后的 panic 信息。
+然而，对于实验室炼丹炉或者不易远程操作的服务器等一些场景来说，管理员可能更希望服务能够尽快恢复，此时可以通过设置 `kernel.panic` 这一项 sysctl 参数实现在 panic 时的自动重启，但这也使得管理员无法及时地在终端上看到重启前最后的 panic 信息。
 
 **pstore**（Persistent Storage）是一个内核特性，用于在系统崩溃时保存报错信息，以供后续分析。
-pstore 有多种存储后端，包括一小段专门划分的内存区域（被称为 [ramoops](https://docs.kernel.org/admin-guide/ramoops.html)，通常大小为 10 KiB）、ACPI ERST 表以及 UEFI 变量存储区域等。
-这些不同的存储后端通常能够提供合计 64 KiB 的存储空间，足够保存数百行 dmesg。
-默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。可以查看 `/sys/module/pstore/parameters/backend` 的内容，确认当前 pstore 的存储后端。
+pstore 支持多种存储后端，包括一小段专门划分的内存区域（称为 [ramoops](https://docs.kernel.org/admin-guide/ramoops.html)）、ACPI ERST 表以及 UEFI 变量存储区域等。
+存储后端通常能够提供至少 64 KiB 的存储空间，足够保存数百行 dmesg（默认保留最后 10 KiB）及其他状态信息。
+默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
+pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/module/pstore/parameters/backend` 的内容确认当前 pstore 选用的存储后端。
 
 !!! tip "ACPI ERST"
 
