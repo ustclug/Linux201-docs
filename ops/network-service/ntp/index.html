@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.17">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
     
     
       
@@ -2312,7 +2312,7 @@
 <h2 id="ntp-tools">Linux 中的时间同步工具<a class="headerlink" href="#ntp-tools" title="Permanent link">&para;</a></h2>
 <p>Linux 中支持 NTP 的软件有多种，其中较为常见的有 <a href="https://chrony-project.org/">chrony</a> 、 <a href="https://wiki.archlinux.org/title/Systemd-timesyncd">systemd-timesyncd</a> 和 <a href="https://www.ntp.org/documentation/4.2.8-series/ntpdate/">ntpdate</a>。</p>
 <h3 id="chrony">chrony<a class="headerlink" href="#chrony" title="Permanent link">&para;</a></h3>
-<p>chrony 是一个功能丰富 NTP 软件，它支持多种时间源和网络协议，能够在不稳定的网络环境中保持较高的同步精度，甚至使用与计算机相连的 GPS 设备作为时钟信号源。chrony 还具有自动检测网络延迟和时钟漂移的能力，适合在虚拟机、笔记本电脑等经常变更网络环境的设备上使用。</p>
+<p>chrony 是一个功能丰富的 NTP 软件，它支持多种时间源和网络协议，能够在不稳定的网络环境中保持较高的同步精度，甚至使用与计算机相连的 GPS 设备作为时钟信号源。chrony 还具有自动检测网络延迟和时钟漂移的能力，适合在虚拟机、笔记本电脑等经常变更网络环境的设备，以及需要避免时钟跳跃的数据库、日志等服务器中使用。</p>
 <p>chrony 曾经是 Debian 发行版的默认 NTP 客户端。对于 Debian 和 Ubuntu 发行版，你也可以使用 <code>apt install chrony</code> 手动安装它。</p>
 <p>使用以下命令可以查看当前同步状态，包括系统时钟偏移量和误差修正速率等信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>chronyc<span class="w"> </span>tracking
@@ -2321,34 +2321,41 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>chronyc<span class="w"> </span>sources
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>chronyc<span class="w"> </span>sources<span class="w"> </span>-v<span class="w">  </span><span class="c1"># 显示详细界面说明</span>
 </code></pre></div>
+<p>chrony 也提供了 NTP 服务端的功能。在如今公用 NTP 服务器池资源紧张、服务质量有所下降的情况下，在局域网内部署 NTP 服务器可以避免局域网内的设备偶尔产生时间不同步，并减少对公用 NTP 服务器的压力。</p>
+<p>启用服务端功能，只需要编辑 <code>/etc/chrony.conf</code> 允许子网访问：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>allow 192.168/16
+</code></pre></div>
+<p>可以在 DHCP 中下发 NTP 服务器配置，这样客户端不再需要额外的配置。这里以常见的 DHCP 服务端软件 dnsmasq 为例，编辑 <code>/etc/dnsmasq.conf</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dhcp-option=option:ntp-server,192.168.0.1
+</code></pre></div>
 <h3 id="systemd-timesyncd">systemd-timesyncd<a class="headerlink" href="#systemd-timesyncd" title="Permanent link">&para;</a></h3>
-<p>systemd 项目也提供了一个轻量级的时间同步客户端，即 systemd-timesyncd。该服务可以在系统联网后通过 NTP 协议定期向网络上的时间服务器请求当前时间，并自动校准系统时钟。如果你只需要“能同步时间”，尤其是当校园网或企业内网中存在 NTP 服务器的时候，systemd-timesyncd 是一个更加简单省心的选项。</p>
+<p>systemd 项目也提供了一个轻量级的时间同步客户端，即 systemd-timesyncd。该服务可以在系统联网后通过简化的 SNTP 协议定期向网络上的时间服务器请求当前时间，并自动校准系统时钟。如果你只需要“能同步时间”，尤其是当校园网或企业内网中存在 NTP 服务器的时候，systemd-timesyncd 是一个更加简单省心的选项。</p>
 <p>Debian 自 12（Bookworm）版本起选择 systemd-timesyncd 作为默认的 NTP 客户端，因此通常情况下你不再需要手动安装它（即 <code>apt install systemd-timesyncd</code>）。</p>
 <p>你可以在 <code>/etc/systemd/timesyncd.conf</code> 文件中查看发行版提供的默认时间服务器配置。如果你想要自己指定同步的时间服务器，可在 <code>/etc/systemd/timesyncd.conf.d/</code> 目录下新建一个配置文件（例如 <code>custom.conf</code>）。我们推荐尽可能使用位于校园网或企业内网的时间源，以减少网络延迟并提升同步稳定性。例如，科大校园网提供了一个 Stratum 2 的时间服务器 <code>time.ustc.edu.cn</code>，你可以在 <code>/etc/systemd/timesyncd.conf.d/custom.conf</code> 中添加以下内容让 systemd-timesyncd 使用它：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[Time]</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">NTP</span><span class="o">=</span><span class="s">time.ustc.edu.cn</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[Time]</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="na">NTP</span><span class="o">=</span><span class="s">time.ustc.edu.cn</span>
 </code></pre></div>
 <p>可以使用以下命令查看 <code>systemd-timesyncd</code> 的同步状态：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>timedatectl<span class="w"> </span>show-timesync
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>timedatectl<span class="w"> </span>show-timesync
 </code></pre></div>
 <h3 id="ntpdate">ntpdate<a class="headerlink" href="#ntpdate" title="Permanent link">&para;</a></h3>
 <p>ntpdate 是一个一次性的时间同步工具。它适用于临时性地校准系统时钟，通常用于在系统启动时或在没有持续运行的 NTP 服务的情况下进行时间同步。</p>
 <p>你可以在 Debian/Ubuntu 系统中使用以下命令安装 ntpdate：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>apt<span class="w"> </span>install<span class="w"> </span>ntpdate
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>apt<span class="w"> </span>install<span class="w"> </span>ntpdate
 </code></pre></div>
 <p>可以使用以下命令查询某个特定的时间服务器的 Stratum 层级、与本地时钟的偏差以及网络延迟等信息：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ntpdate<span class="w"> </span>-q<span class="w"> </span>time.ustc.edu.cn
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ntpdate<span class="w"> </span>-q<span class="w"> </span>time.ustc.edu.cn
 </code></pre></div>
 <p>如果需要手动同步时间，可以使用以下命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ntpdate<span class="w"> </span>-u<span class="w"> </span>time.ustc.edu.cn<span class="w">  </span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ntpdate<span class="w"> </span>-u<span class="w"> </span>time.ustc.edu.cn<span class="w">  </span>
 </code></pre></div>
 <p>需要注意的是，ntpdate 并不是一个持续运行的服务，只会在每次执行时进行一次时间同步，因此如果你需要持续的时间同步功能，还需要结合其他工具（如 cron）来定期执行 ntpdate 命令。相比之下，我们推荐直接使用 systemd-timesyncd 或 chrony 来实现持续的时间同步。</p>
 <h2 id="timezone">设置时区<a class="headerlink" href="#timezone" title="Permanent link">&para;</a></h2>
 <p>完成时间同步后，为确保本地时间显示正确，还需要设置系统时区，例如设置为中国标准时间（东八区）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>timedatectl<span class="w"> </span>set-timezone<span class="w"> </span>Asia/Shanghai<span class="w"> </span>--adjust-system-clock
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>timedatectl<span class="w"> </span>set-timezone<span class="w"> </span>Asia/Shanghai<span class="w"> </span>--adjust-system-clock
 </code></pre></div>
 <p>设置完时间同步服务和时区后，可使用以下命令检查系统时间、时区、以及 NTP 服务是否已启用：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>timedatectl<span class="w"> </span>status
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>timedatectl<span class="w"> </span>status
 </code></pre></div>
 <!--
   Links to man pages
@@ -2401,45 +2408,12 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月21日 15:08:39 UTC">2025年8月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月24日 03:43:08 UTC">2025年8月24日</span>
   </span>
 
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/JiaminL" class="md-author" title="@JiaminL">
-          
-          <img src="https://avatars.githubusercontent.com/u/43880486?v=4&size=72" alt="JiaminL">
-        </a>
-      
-        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
-          
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
@@ -2483,7 +2457,8 @@ Do not link to a "generic" man page for these commands -->
   
 </div>
       
-        <div class="md-social">
+        
+<div class="md-social">
   
     
     
