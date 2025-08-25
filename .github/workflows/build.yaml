@@ -9,7 +9,7 @@ on:
       - "*"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -65,10 +65,12 @@ jobs:
           : > site/.nojekyll
           echo -n '201.ustclug.org' > site/CNAME
       - name: Upload artifact
+        if: github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
       - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
         id: deployment
         uses: actions/deploy-pages@v4
 
