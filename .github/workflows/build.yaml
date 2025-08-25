@@ -59,7 +59,15 @@ jobs:
           mkdocs -v build
           : > site/.nojekyll
           echo -n '201.ustclug.org' > site/CNAME
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
       - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Push site to gh-pages branch
         if: github.ref == 'refs/heads/master'
         run: |
           CINFO="$(git log -1 --pretty="%an: [%h] %s")"
