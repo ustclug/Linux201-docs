@@ -48,13 +48,13 @@ chrony 也提供了 NTP 服务端的功能。在如今公用 NTP 服务器池资
 
 启用服务端功能，只需要编辑 `/etc/chrony.conf` 允许子网访问：
 
-```
+```shell
 allow 192.168/16
 ```
 
 可以在 DHCP 中下发 NTP 服务器配置，这样客户端不再需要额外的配置。这里以常见的 DHCP 服务端软件 dnsmasq 为例，编辑 `/etc/dnsmasq.conf`：
 
-```
+```ini
 dhcp-option=option:ntp-server,192.168.0.1
 ```
 
