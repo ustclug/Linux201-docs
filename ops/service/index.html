@@ -2958,7 +2958,13 @@ U --&gt; F(scope)</code></pre>
 <div class="admonition note">
 <p class="admonition-title">DBus</p>
 <p><code>systemctl</code>、<code>journalctl</code> 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 <code>/run/user/&lt;用户 PID&gt;/bus</code>）。</p>
-<p>在某些非常特殊的环境下，可能需要配置 <code>XDG_RUNTIME_DIR=/run/user/&lt;用户 PID&gt;</code> 与 <code>DBUS_SESSION_BUS_ADDRESS=/run/user/&lt;用户 PID&gt;/bus</code> 环境变量，以便 <code>systemctl</code> 等命令能够正常工作。</p>
+<p>在命令行下需要切换用户的场合中，如果需要使用用户级别的 systemd，推荐的做法是使用以下命令：</p>
+<ul>
+<li><code>machinectl shell username@</code></li>
+<li><code>run0</code>（需要很新的发行版，如 Debian 13）</li>
+</ul>
+<p>相关设计原因可阅读 <a href="https://github.com/systemd/systemd/issues/7451#issuecomment-346787237">https://github.com/systemd/systemd/issues/7451#issuecomment-346787237</a>。注意，以上方法对非 root 使用 polkit 鉴权，与 sudo 配置无关。</p>
+<p>如果需要使用 <code>sudo</code> 或 <code>su</code> 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 <code>XDG_RUNTIME_DIR=/run/user/&lt;用户 PID&gt;</code> 与 <code>DBUS_SESSION_BUS_ADDRESS=/run/user/&lt;用户 PID&gt;/bus</code> 环境变量，以便 <code>systemctl</code> 等命令能够正常工作。</p>
 </div>
 <p>有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 <code>loginctl enable-linger &lt;user&gt;</code> 命令即可启用。</p>
 <div class="admonition lab">
@@ -3018,7 +3024,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年7月6日 09:12:34 UTC">2025年7月6日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月25日 18:15:30 UTC">2025年8月25日</span>
   </span>
 
     
