@@ -147,6 +147,10 @@ d959e182468be92957bd175d189472de91f614c8
 
     更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
 
+!!! tip "`git reflog`"
+
+    Reflogs（Reference logs）记录了 git 操作中 ref 的更新历史，在需要从误操作恢复，或确认之前操作给 ref 带来的变化时非常有用。例子参考 [Hackergame 2023 的 "Git? Git!" 一题](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Git%20Git!)。
+
 #### Remote {#git-remote}
 
 绝大部分时候我们都有本地与远程仓库交互的需求，因此这里也介绍与 remote 相关的内容。
