@@ -389,6 +389,26 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
 
+!!! tip "SCSI 的概念"
+
+    在阅读下述内容之前，理清一些 SCSI 协议（不限于 iSCSI）的概念会有所帮助：
+
+    Initiator
+
+    :   发起 I/O 请求的、需要读取或者写入数据的一方（主机/客户端）
+
+    Target
+
+    :   响应 I/O 请求的、提供实际存储设备的一方（磁盘/阵列/存储服务器）
+
+    Logical Unit (LU)
+
+    :   Target 内部的逻辑单元（分区/卷）
+
+    Logical Unit Number (LUN)
+
+    :   标记 Logical Unit 的编号
+
 ### 服务端配置（targetcli/LIO 方案） {#iscsi-server-targetcli}
 
 Linux 内核提供的 iSCSI Target 实现是 LIO（LinuxIO），可以在安装 `targetcli-fb` 包后使用 `targetcli` 命令行工具进行配置。对应服务是 `targetclid.service`。
@@ -416,7 +436,7 @@ o- iscsi .......................................................... [Targets: 0]
 /iscsi>
 ```
 
-可以看到，target 与其相关的 backstore 都以类似于文件系统的树状结构展示，并且可以使用 `cd` 和 `ls` 进行导航。
+可以看到，target 与其相关的 backstore（实际存储数据的地方）都以类似于文件系统的树状结构展示，并且可以使用 `cd` 和 `ls` 进行导航。
 为了创建 iSCSI target，首先需要为其创建一个 backstore。最简单的方式是使用 `fileio` 将文件作为 backstore：
 
 ```console
