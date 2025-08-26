@@ -2587,19 +2587,90 @@
 </code></pre></div>
 <p>有关 SMART 指标解释与监控的内容将会在 <a href="../raid/#smart">RAID</a> 中介绍。</p>
 <h3 id="trim">Trim (Discard/Unmap)<a class="headerlink" href="#trim" title="Permanent link">&para;</a></h3>
-<p>SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。
-SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，
-SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（<code>virtio-scsi</code>）、部分企业级的 SAN 等。</p>
-<details class="note">
-<summary>关注存储的可用空间比例</summary>
+<p>SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（<code>virtio-scsi</code>）、部分企业级的 SAN 等。</p>
+<div class="admonition note">
+<p class="admonition-title">关注存储的可用空间比例</p>
 <p>不建议将存储的可用空间全部或接近全部耗尽，这是因为：</p>
 <ul>
 <li>机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；</li>
 <li>固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。</li>
 </ul>
+</div>
+<p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。</p>
+<details class="tip">
+<summary>为 USB 设备开启 Trim</summary>
+<p>由于老旧的 USB 设备对获取设备功能的请求的支持存在问题，因此 Linux 内核默认不会尝试请求相关数据，进而无法探测 USB 连接的存储设备是否支持 trim 功能。可以使用 <code>lsblk --discard</code> 或查看 <code>/sys/block/sdX/queue/discard_max_bytes</code> 确认（以下 <code>sda</code> 为 USB 磁盘设备）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>lsblk<span class="w"> </span>--discard
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">sda                0      512B        0         0</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">├─sda1             0      512B        0         0</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">├─sda2             0      512B        0         0</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">├─sda3             0      512B        0         0</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">└─sda4             0      512B        0         0</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">nvme0n1            0      512B       2T         0</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">├─nvme0n1p1        0      512B       2T         0</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">├─nvme0n1p2        0      512B       2T         0</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">└─nvme0n1p3        0      512B       2T         0</span>
+</code></pre></div>
+<p>不过，Linux 允许用户手动覆盖这一行为。由于 USB 设备一般都以 USB Attached SCSI (UAS) 或 USB Mass Storage (UMS) 的形式连接，因此其由内核的 SCSI 子系统管理，可以发送 SCSI 命令来确认设备是否支持 trim 功能。</p>
+<p>安装 <code>sg3-utils</code> 包后，使用 <code>sg_vpd</code> 查询 unmap 支持情况：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>sg_vpd<span class="w"> </span>--all<span class="w"> </span>/dev/sda
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">Supported VPD pages VPD page:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">  Supported VPD pages [sv]</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">  Unit serial number [sn]</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">  Device identification [di]</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">  Block limits (SBC) [bl]</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">  Block device characteristics (SBC) [bdc]</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">  Logical block provisioning (SBC) [lbpv]</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">（省略）</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="go">Block limits VPD page (SBC):</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="go">  Write same non-zero (WSNZ): 0</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="go">  Maximum compare and write length: 0 blocks [Command not implemented]</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="go">  Optimal transfer length granularity: 1 blocks</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">  Maximum transfer length: 65535 blocks</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">  Optimal transfer length: 65535 blocks</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="go">  Maximum prefetch transfer length: 65535 blocks</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="go">  Maximum unmap LBA count: 134217728</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="go">  Maximum unmap block descriptor count: 1</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="go">  Optimal unmap granularity: 0 blocks [not reported]</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="go">  Unmap granularity alignment valid: false</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="go">  Unmap granularity alignment: 0 [invalid]</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="go">  Maximum write same length: 0 blocks [not reported]</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="go">  Maximum atomic transfer length: 0 blocks [not reported]</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="go">  Atomic alignment: 0 [unaligned atomic writes permitted]</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="go">  Atomic transfer length granularity: 0 [no granularity requirement</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="go">  Maximum atomic transfer length with atomic boundary: 0 blocks [not reported]</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="go">  Maximum atomic boundary size: 0 blocks [can only write atomic 1 block]</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="go">（省略）</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="go">Logical block provisioning VPD page (SBC):</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="go">  Unmap command supported (LBPU): 1</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="go">  Write same (16) with unmap bit supported (LBPWS): 0</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="go">  Write same (10) with unmap bit supported (LBPWS10): 0</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="go">  Logical block provisioning read zeros (LBPRZ): 0</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="go">  Anchored LBAs supported (ANC_SUP): 0</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="go">  Threshold exponent: 0 [threshold sets not supported]</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="go">  Descriptor present (DP): 0</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="go">  Minimum percentage: 0 [not reported]</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="go">  Provisioning type: 0 (not known or fully provisioned)</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="go">  Threshold percentage: 0 [percentages not supported]</span>
+</code></pre></div>
+<p>LBPU、LBPWS 和 LBPWS10 分别为 unmap 的不同实现方式，详情参考 <a href="https://linux.die.net/man/8/sg_unmap">sg_unmap(8)</a> 和 <a href="https://linux.die.net/man/8/sg_write_same">sg_write_same(8)</a>。</p>
+<p>对 SCSI 设备，sysfs 中的 "provisioning_mode" 控制 trim 功能，用户可以写入<a href="https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L446-L453">支持的选项</a>。LBPU、LBPWS 和 LBPWS10 分别对应 <code>unmap</code>、<code>writesame_16</code> 和 <code>writesame_10</code>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># 在你的设备上，路径会有所不同</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">echo</span><span class="w"> </span>unmap<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode
+</code></pre></div>
+<p>此外，在设置 <code>provisioning_mode</code> 之后，<code>discard_max_bytes</code> 不会根据设备的实际能力更新（因为内核没有记录相应的数值），而是设置为<a href="https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L863-L864">默认的 4G</a>。在一些场景下可能过大（设备不支持）。根据上面的输出得到的 "Maximum unmap LBA count"，乘以 LBA 的大小（通常为 512 字节，需要使用 <code>sg_readcap /dev/sdX</code> 确认）后，即可得到设备实际支持的 <code>discard_max_bytes</code>。只要小于 <code>/sys/block/sdX/queue/discard_max_hw_bytes</code> 的数值，即可写入 <code>discard_max_bytes</code>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 例子：限制到每次最多 discard 1GiB</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">echo</span><span class="w"> </span><span class="m">1073741824</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/sys/block/sda/queue/discard_max_bytes
+</code></pre></div>
+<p>其他介绍可参考：</p>
+<ul>
+<li><a href="https://www.jeffgeerling.com/blog/2020/enabling-trim-on-external-ssd-on-raspberry-pi">Enabling TRIM on an external SSD on a Raspberry Pi</a></li>
+<li><a href="https://wiki.gentoo.org/wiki/Discard_over_USB">Gentoo Wiki:  Discard over USB</a></li>
+<li><a href="https://superuser.com/a/1741030">Superuser: No TRIM/DISCARD with a SATA SSD connected through an UASP-enabled USB adapter?</a></li>
+<li><a href="https://git.kernel.org/pub/scm/linux/kernel/git/mkp/linux.git/commit/?h=5.18/discovery&amp;id=916740efdd2208564decee40a6049674f2063811">scsi: sd: Enable modern protocol features on more devices</a></li>
+</ul>
 </details>
-<p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，
-一般推荐后者）。</p>
 <h2 id="raid">RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h2>
 <p>RAID（Redundant Array of Inexpensive Disks）是一种将多个磁盘组合在一起实现数据冗余和性能提升的技术。不同的磁盘组合方式称为“RAID 级别（RAID Level）”，常见的有 RAID 0、RAID 1、RAID 5、RAID 6、RAID 10 等。</p>
 <dl>
@@ -2739,15 +2810,15 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <div class="admonition info">
 <p class="admonition-title">使用 dd 测速的不足</p>
 <p>以下是使用 dd 命令测试一块希捷 4TB 机械硬盘的例子：</p>
-<div class="highlight"><span class="filename">写入测试</span><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/zero<span class="w"> </span><span class="nv">of</span><span class="o">=</span>test.img<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">oflag</span><span class="o">=</span>direct
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">1000+0 records in</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">1000+0 records out</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s</span>
+<div class="highlight"><span class="filename">写入测试</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/zero<span class="w"> </span><span class="nv">of</span><span class="o">=</span>test.img<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">oflag</span><span class="o">=</span>direct
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">1000+0 records in</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="go">1000+0 records out</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 11.3336 s, 92.5 MB/s</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">读取测试</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/sda1<span class="w"> </span><span class="nv">of</span><span class="o">=</span>/dev/null<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">iflag</span><span class="o">=</span>direct
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">1000+0 records in</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">1000+0 records out</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s</span>
+<div class="highlight"><span class="filename">读取测试</span><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/sda1<span class="w"> </span><span class="nv">of</span><span class="o">=</span>/dev/null<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">iflag</span><span class="o">=</span>direct
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">1000+0 records in</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">1000+0 records out</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">1048576000 bytes (1.0 GB, 1000 MiB) copied, 6.68942 s, 157 MB/s</span>
 </code></pre></div>
 <p>虽然可以使用 dd 命令简易地测速，但是 dd 命令有一些缺点：</p>
 <ul>
@@ -2793,70 +2864,70 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <summary>使用 fio 测试块设备（<code>/dev/mapper/vg201--test-lvdata</code>）随机读延迟的例子</summary>
 <p>本部分编写时参考了 <a href="https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm">Oracle 的文档</a>。</p>
 <p>一个只读情况下测试 10s <code>/dev/mapper/vg201--test-lvdata</code> 的 4K 随机读的例子如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">fio-3.36</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="go">Starting 1 process</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="go">    clat percentiles (usec):</span>
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="go">    | 99.99th=[  465]</span>
-<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
-<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
-<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
-<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
-<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
-<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
-<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
-<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>
-<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="go">Run status group 0 (all jobs):</span>
-<a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">1</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>readlatency-test-job<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span>--runtime<span class="o">=</span><span class="m">10</span><span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span><span class="w"> </span>--readonly
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">readlatency-test-job: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="go">fio-3.36</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">Starting 1 process</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="go">fio: file /dev/mapper/vg201--test-lvdata exceeds 32-bit tausworthe random generator.</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="go">fio: Switching to tausworthe64. Use the random_generator= option to get rid of this warning.</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="go">Jobs: 1 (f=1): [r(1)][30.0%][r=233MiB/s][r=59.6k IOPS][eta 00m:07s]</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="go">Jobs: 1 (f=1): [r(1)][50.0%][r=218MiB/s][r=55.9k IOPS][eta 00m:05s] </span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="go">Jobs: 1 (f=1): [r(1)][70.0%][r=226MiB/s][r=57.8k IOPS][eta 00m:03s] </span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="go">Jobs: 1 (f=1): [r(1)][90.0%][r=219MiB/s][r=56.1k IOPS][eta 00m:01s] </span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="go">Jobs: 1 (f=1): [r(1)][100.0%][r=220MiB/s][r=56.2k IOPS][eta 00m:00s]</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="go">readlatency-test-job: (groupid=0, jobs=1): err= 0: pid=1334208: Sat Feb 17 23:46:54 2024</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="go">read: IOPS=56.0k, BW=219MiB/s (229MB/s)(2186MiB/10001msec)</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="go">    slat (nsec): min=1143, max=870047, avg=2109.53, stdev=1843.07</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="go">    clat (nsec): min=211, max=26562k, avg=14946.90, stdev=60736.24</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="go">    lat (usec): min=10, max=26564, avg=17.06, stdev=60.82</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="go">    clat percentiles (usec):</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="go">    |  1.00th=[   10],  5.00th=[   12], 10.00th=[   12], 20.00th=[   13],</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="go">    | 30.00th=[   13], 40.00th=[   13], 50.00th=[   13], 60.00th=[   13],</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="go">    | 70.00th=[   14], 80.00th=[   15], 90.00th=[   22], 95.00th=[   23],</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="go">    | 99.00th=[   52], 99.50th=[   76], 99.90th=[  174], 99.95th=[  243],</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="go">    | 99.99th=[  465]</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="go">bw (  KiB/s): min=185288, max=249304, per=100.00%, avg=223874.11, stdev=13053.14, samples=19</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="go">iops        : min=46322, max=62326, avg=55968.53, stdev=3263.28, samples=19</span>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="go">lat (nsec)   : 250=0.01%, 500=0.01%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="go">lat (usec)   : 2=0.01%, 4=0.01%, 10=1.43%, 20=87.06%, 50=10.48%</span>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="go">lat (usec)   : 100=0.75%, 250=0.24%, 500=0.03%, 750=0.01%, 1000=0.01%</span>
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="go">lat (msec)   : 2=0.01%, 4=0.01%, 10=0.01%, 20=0.01%, 50=0.01%</span>
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="go">cpu          : usr=7.91%, sys=18.76%, ctx=560581, majf=0, minf=23</span>
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a><span class="go">IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="go">    submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a><span class="go">    complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, &gt;=64=0.0%</span>
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a><span class="go">    issued rwts: total=559688,0,0,0 short=0,0,0,0 dropped=0,0,0,0</span>
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="go">    latency   : target=0, window=0, percentile=100.00%, depth=1</span>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="go">Run status group 0 (all jobs):</span>
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a><span class="go">READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec</span>
 </code></pre></div>
 </details>
 <details class="example">
 <summary>向 <code>./test</code> 随机读写，模拟 I/O 压力</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
 </code></pre></div>
 </details>
 <details class="example">
 <summary>模拟 Crystal DiskMark 测试磁盘性能</summary>
 <p>本部分来自 <a href="https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test">Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+</a>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--loops<span class="o">=</span><span class="m">5</span><span class="w"> </span>--size<span class="o">=</span>500m<span class="w"> </span>--filename<span class="o">=</span>fiotest.tmp<span class="w"> </span>--stonewall<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span>--name<span class="o">=</span>SeqRead<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span><span class="nb">read</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span>--name<span class="o">=</span>SeqWrite<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span>write<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span>--name<span class="o">=</span>512Kread<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span>--name<span class="o">=</span>512Kwrite<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32read<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32write<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span>--name<span class="o">=</span>4Kread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span>--name<span class="o">=</span>4Kwrite<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randwrite
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--loops<span class="o">=</span><span class="m">5</span><span class="w"> </span>--size<span class="o">=</span>500m<span class="w"> </span>--filename<span class="o">=</span>fiotest.tmp<span class="w"> </span>--stonewall<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>--name<span class="o">=</span>SeqRead<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span><span class="nb">read</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>--name<span class="o">=</span>SeqWrite<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span>write<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>--name<span class="o">=</span>512Kread<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span>--name<span class="o">=</span>512Kwrite<span class="w"> </span>--bs<span class="o">=</span>512k<span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32read<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">    </span>--name<span class="o">=</span>4KQD32write<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">32</span><span class="w"> </span>--rw<span class="o">=</span>randwrite<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span>--name<span class="o">=</span>4Kread<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randread<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span>--name<span class="o">=</span>4Kwrite<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--rw<span class="o">=</span>randwrite
 </code></pre></div>
 </details>
 <p>由于性能测试的参数通常会很长，fio 还支持将参数放置在配置文件中，便于修改和重复使用。</p>
@@ -2864,59 +2935,59 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 <p>Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。</p>
 <details class="example">
 <summary>模拟 Crystal DiskMark 测试磁盘性能 job 文件</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[global]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">ioengine</span><span class="o">=</span><span class="s">libaio</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="na">direct</span><span class="o">=</span><span class="s">1</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="na">size</span><span class="o">=</span><span class="s">4g</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">runtime</span><span class="o">=</span><span class="s">60</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="na">loops</span><span class="o">=</span><span class="s">3</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">[Read SEQ1M Q8T1]</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">[Read SEQ1M Q1T1]</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
-<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>
-<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="k">[Read RND4K Q32T1]</span>
-<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
-<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
-<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
-<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
-<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="k">[Read RND4K Q1T1]</span>
-<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
-<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
-<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
-<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a>
-<a id="__codelineno-6-30" name="__codelineno-6-30" href="#__codelineno-6-30"></a><span class="k">[Write SEQ1M Q8T1]</span>
-<a id="__codelineno-6-31" name="__codelineno-6-31" href="#__codelineno-6-31"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
-<a id="__codelineno-6-32" name="__codelineno-6-32" href="#__codelineno-6-32"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
-<a id="__codelineno-6-33" name="__codelineno-6-33" href="#__codelineno-6-33"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
-<a id="__codelineno-6-34" name="__codelineno-6-34" href="#__codelineno-6-34"></a>
-<a id="__codelineno-6-35" name="__codelineno-6-35" href="#__codelineno-6-35"></a><span class="k">[Write SEQ1M Q1T1]</span>
-<a id="__codelineno-6-36" name="__codelineno-6-36" href="#__codelineno-6-36"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-37" name="__codelineno-6-37" href="#__codelineno-6-37"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
-<a id="__codelineno-6-38" name="__codelineno-6-38" href="#__codelineno-6-38"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
-<a id="__codelineno-6-39" name="__codelineno-6-39" href="#__codelineno-6-39"></a>
-<a id="__codelineno-6-40" name="__codelineno-6-40" href="#__codelineno-6-40"></a><span class="k">[Write RND4K Q32T1]</span>
-<a id="__codelineno-6-41" name="__codelineno-6-41" href="#__codelineno-6-41"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-42" name="__codelineno-6-42" href="#__codelineno-6-42"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
-<a id="__codelineno-6-43" name="__codelineno-6-43" href="#__codelineno-6-43"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
-<a id="__codelineno-6-44" name="__codelineno-6-44" href="#__codelineno-6-44"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
-<a id="__codelineno-6-45" name="__codelineno-6-45" href="#__codelineno-6-45"></a>
-<a id="__codelineno-6-46" name="__codelineno-6-46" href="#__codelineno-6-46"></a><span class="k">[Write RND4K Q1T1]</span>
-<a id="__codelineno-6-47" name="__codelineno-6-47" href="#__codelineno-6-47"></a><span class="na">stonewall</span>
-<a id="__codelineno-6-48" name="__codelineno-6-48" href="#__codelineno-6-48"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
-<a id="__codelineno-6-49" name="__codelineno-6-49" href="#__codelineno-6-49"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
-<a id="__codelineno-6-50" name="__codelineno-6-50" href="#__codelineno-6-50"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[global]</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">ioengine</span><span class="o">=</span><span class="s">libaio</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="na">direct</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">size</span><span class="o">=</span><span class="s">4g</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="na">runtime</span><span class="o">=</span><span class="s">60</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="na">loops</span><span class="o">=</span><span class="s">3</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="k">[Read SEQ1M Q8T1]</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="k">[Read SEQ1M Q1T1]</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="na">rw</span><span class="o">=</span><span class="s">read</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="k">[Read RND4K Q32T1]</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="k">[Read RND4K Q1T1]</span>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="na">rw</span><span class="o">=</span><span class="s">randread</span>
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="k">[Write SEQ1M Q8T1]</span>
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">8</span>
+<a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
+<a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>
+<a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a><span class="k">[Write SEQ1M Q1T1]</span>
+<a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a><span class="na">bs</span><span class="o">=</span><span class="s">1m</span>
+<a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a><span class="na">rw</span><span class="o">=</span><span class="s">write</span>
+<a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a>
+<a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a><span class="k">[Write RND4K Q32T1]</span>
+<a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">32</span>
+<a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
+<a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a>
+<a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a><span class="k">[Write RND4K Q1T1]</span>
+<a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a><span class="na">stonewall</span>
+<a id="__codelineno-10-48" name="__codelineno-10-48" href="#__codelineno-10-48"></a><span class="na">bs</span><span class="o">=</span><span class="s">4k</span>
+<a id="__codelineno-10-49" name="__codelineno-10-49" href="#__codelineno-10-49"></a><span class="na">iodepth</span><span class="o">=</span><span class="s">1</span>
+<a id="__codelineno-10-50" name="__codelineno-10-50" href="#__codelineno-10-50"></a><span class="na">rw</span><span class="o">=</span><span class="s">randwrite</span>
 </code></pre></div>
 <p>保存为<code>fio_CrystalDiskMark.ini</code>，然后运行</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>fio<span class="w"> </span>--filename<span class="o">=</span>./test.bin<span class="w"> </span>fio_CrystalDiskMark.ini
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>fio<span class="w"> </span>--filename<span class="o">=</span>./test.bin<span class="w"> </span>fio_CrystalDiskMark.ini
 </code></pre></div>
 </details>
 <p>fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提交延迟 (slat)、完成延迟 (clat)、以及 iodepth 分布等。输出内容具体含义可以参考 man 手册 OUTPUT 节。</p>
@@ -2933,10 +3004,10 @@ SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim �
 在启动时，系统会根据 <code>/etc/fstab</code> 中的配置自动挂载文件系统。
 如果配置不当，那么开机时就可能会出现挂载失败，从而进入紧急模式的情况。</p>
 <p>下面给出一个在 QEMU 虚拟机中的 Linux 系统的 <code>/etc/fstab</code> 的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a># &lt;file system&gt; &lt;mount point&gt;   &lt;type&gt;  &lt;options&gt;       &lt;dump&gt;  &lt;pass&gt;
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount-ro 0       1
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>sharing /mnt/sharing    virtiofs    defaults,nofail 0   0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># &lt;file system&gt; &lt;mount point&gt;   &lt;type&gt;  &lt;options&gt;       &lt;dump&gt;  &lt;pass&gt;
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount-ro 0       1
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>sharing /mnt/sharing    virtiofs    defaults,nofail 0   0
 </code></pre></div>
 <p>可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考<a href="../filesystem/">分区与文件系统</a>中对 <code>/dev/disk</code> 的介绍。<code>/dev/sda1</code> 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
 对特殊的文件系统，这里的内容由对应的实现决定，例如 <code>tmpfs</code> 的话，这里可能就是 <code>none</code> 或者 <code>tmpfs</code>；
@@ -3012,7 +3083,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月11日 18:51:36 UTC">2025年8月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月26日 19:50:42 UTC">2025年8月26日</span>
   </span>
 
     
