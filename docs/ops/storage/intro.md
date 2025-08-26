@@ -137,19 +137,103 @@ $ sudo smartctl -a /dev/nvme0
 
 ### Trim (Discard/Unmap) {#trim}
 
-SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。
-SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，
-SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（`virtio-scsi`）、部分企业级的 SAN 等。
+SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（`virtio-scsi`）、部分企业级的 SAN 等。
 
-??? note "关注存储的可用空间比例"
+!!! note "关注存储的可用空间比例"
 
     不建议将存储的可用空间全部或接近全部耗尽，这是因为：
 
     - 机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；
     - 固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。
 
-一般来说，确保 `fstrim.timer` 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，
-一般推荐后者）。
+一般来说，确保 `fstrim.timer` 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。
+
+??? tip "为 USB 设备开启 Trim"
+
+    由于老旧的 USB 设备对获取设备功能的请求的支持存在问题，因此 Linux 内核默认不会尝试请求相关数据，进而无法探测 USB 连接的存储设备是否支持 trim 功能。可以使用 `lsblk --discard` 或查看 `/sys/block/sdX/queue/discard_max_bytes` 确认（以下 `sda` 为 USB 磁盘设备）：
+
+    ```console
+    $ lsblk --discard
+    NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO
+    sda                0      512B        0         0
+    ├─sda1             0      512B        0         0
+    ├─sda2             0      512B        0         0
+    ├─sda3             0      512B        0         0
+    └─sda4             0      512B        0         0
+    nvme0n1            0      512B       2T         0
+    ├─nvme0n1p1        0      512B       2T         0
+    ├─nvme0n1p2        0      512B       2T         0
+    └─nvme0n1p3        0      512B       2T         0
+    ```
+    
+    不过，Linux 允许用户手动覆盖这一行为。由于 USB 设备一般都以 USB Attached SCSI (UAS) 或 USB Mass Storage (UMS) 的形式连接，因此其由内核的 SCSI 子系统管理，可以发送 SCSI 命令来确认设备是否支持 trim 功能。
+
+    安装 `sg3-utils` 包后，使用 `sg_vpd` 查询 unmap 支持情况：
+
+    ```console
+    $ sudo sg_vpd --all /dev/sda
+    Supported VPD pages VPD page:
+      Supported VPD pages [sv]
+      Unit serial number [sn]
+      Device identification [di]
+      Block limits (SBC) [bl]
+      Block device characteristics (SBC) [bdc]
+      Logical block provisioning (SBC) [lbpv]
+    （省略）
+    Block limits VPD page (SBC):
+      Write same non-zero (WSNZ): 0
+      Maximum compare and write length: 0 blocks [Command not implemented]
+      Optimal transfer length granularity: 1 blocks
+      Maximum transfer length: 65535 blocks
+      Optimal transfer length: 65535 blocks
+      Maximum prefetch transfer length: 65535 blocks
+      Maximum unmap LBA count: 134217728
+      Maximum unmap block descriptor count: 1
+      Optimal unmap granularity: 0 blocks [not reported]
+      Unmap granularity alignment valid: false
+      Unmap granularity alignment: 0 [invalid]
+      Maximum write same length: 0 blocks [not reported]
+      Maximum atomic transfer length: 0 blocks [not reported]
+      Atomic alignment: 0 [unaligned atomic writes permitted]
+      Atomic transfer length granularity: 0 [no granularity requirement
+      Maximum atomic transfer length with atomic boundary: 0 blocks [not reported]
+      Maximum atomic boundary size: 0 blocks [can only write atomic 1 block]
+    （省略）
+    Logical block provisioning VPD page (SBC):
+      Unmap command supported (LBPU): 1
+      Write same (16) with unmap bit supported (LBPWS): 0
+      Write same (10) with unmap bit supported (LBPWS10): 0
+      Logical block provisioning read zeros (LBPRZ): 0
+      Anchored LBAs supported (ANC_SUP): 0
+      Threshold exponent: 0 [threshold sets not supported]
+      Descriptor present (DP): 0
+      Minimum percentage: 0 [not reported]
+      Provisioning type: 0 (not known or fully provisioned)
+      Threshold percentage: 0 [percentages not supported]
+    ```
+
+    LBPU、LBPWS 和 LBPWS10 分别为 unmap 的不同实现方式，详情参考 [sg_unmap(8)][sg_unmap.8] 和 [sg_write_same(8)][sg_write_same.8]。
+
+    对 SCSI 设备，sysfs 中的 "provisioning_mode" 控制 trim 功能，用户可以写入[支持的选项](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L446-L453)。LBPU、LBPWS 和 LBPWS10 分别对应 `unmap`、`writesame_16` 和 `writesame_10`。
+
+    ```sh
+    # 在你的设备上，路径会有所不同
+    echo unmap | sudo tee /sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode
+    ```
+
+    此外，在设置 `provisioning_mode` 之后，`discard_max_bytes` 不会根据设备的实际能力更新（因为内核没有记录相应的数值），而是设置为[默认的 4G](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L863-L864)。在一些场景下可能过大（设备不支持）。根据上面的输出得到的 "Maximum unmap LBA count"，乘以 LBA 的大小（通常为 512 字节，需要使用 `sg_readcap /dev/sdX` 确认）后，即可得到设备实际支持的 `discard_max_bytes`。只要小于 `/sys/block/sdX/queue/discard_max_hw_bytes` 的数值，即可写入 `discard_max_bytes`。
+
+    ```sh
+    # 例子：限制到每次最多 discard 1GiB
+    echo 1073741824 | sudo tee /sys/block/sda/queue/discard_max_bytes
+    ```
+
+    其他介绍可参考：
+
+    - [Enabling TRIM on an external SSD on a Raspberry Pi](https://www.jeffgeerling.com/blog/2020/enabling-trim-on-external-ssd-on-raspberry-pi)
+    - [Gentoo Wiki:  Discard over USB](https://wiki.gentoo.org/wiki/Discard_over_USB)
+    - [Superuser: No TRIM/DISCARD with a SATA SSD connected through an UASP-enabled USB adapter?](https://superuser.com/a/1741030)
+    - [scsi: sd: Enable modern protocol features on more devices](https://git.kernel.org/pub/scm/linux/kernel/git/mkp/linux.git/commit/?h=5.18/discovery&id=916740efdd2208564decee40a6049674f2063811)
 
 ## RAID
 
