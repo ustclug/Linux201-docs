@@ -221,7 +221,7 @@ SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只�
     echo unmap | sudo tee /sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode
     ```
 
-    此外，在设置 `provisioning_mode` 之后，`discard_max_bytes` 不会根据设备的实际能力更新（因为内核没有记录相应的数值），而是设置为[默认的 4G](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L863-L864)。在一些场景下可能过大（设备不支持）。根据上面的输出得到的 "Maximum unmap LBA count"，乘以 LBA 的大小（通常为 512 字节，需要使用 `sg_readcap /dev/sdX` 确认）后，即可得到设备实际支持的 `discard_max_bytes`。只要小于 `/sys/block/sdX/queue/discard_max_hw_bytes` 的数值，即可写入 `discard_max_bytes`。
+    此外，在设置 `provisioning_mode` 之后，`discard_max_bytes` 不会根据设备的实际能力更新（因为内核没有记录相应的数值），而是设置为[默认的 4G](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L863-L864)。在一些场景下可能过大（设备不支持）。根据上面的输出得到的 "Maximum unmap LBA count"，乘以 LBA 的大小（通常为 512 字节，需要使用 `sg_readcap /dev/sdX` 确认）后，即可得到设备实际支持的 `discard_max_bytes`。只要小于等于 `/sys/block/sdX/queue/discard_max_hw_bytes` 的数值，即可写入 `discard_max_bytes`。
 
     ```sh
     # 例子：限制到每次最多 discard 1GiB
@@ -231,7 +231,7 @@ SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只�
     其他介绍可参考：
 
     - [Enabling TRIM on an external SSD on a Raspberry Pi](https://www.jeffgeerling.com/blog/2020/enabling-trim-on-external-ssd-on-raspberry-pi)
-    - [Gentoo Wiki:  Discard over USB](https://wiki.gentoo.org/wiki/Discard_over_USB)
+    - [Gentoo Wiki: Discard over USB](https://wiki.gentoo.org/wiki/Discard_over_USB)
     - [Superuser: No TRIM/DISCARD with a SATA SSD connected through an UASP-enabled USB adapter?](https://superuser.com/a/1741030)
     - [scsi: sd: Enable modern protocol features on more devices](https://git.kernel.org/pub/scm/linux/kernel/git/mkp/linux.git/commit/?h=5.18/discovery&id=916740efdd2208564decee40a6049674f2063811)
 
