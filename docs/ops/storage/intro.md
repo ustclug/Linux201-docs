@@ -228,12 +228,15 @@ SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只�
     echo 1073741824 | sudo tee /sys/block/sda/queue/discard_max_bytes
     ```
 
+    最后，上面的设置不是持久化的。如果需要持久化，则需要配置相关的 udev 规则。
+
     其他介绍可参考：
 
     - [Enabling TRIM on an external SSD on a Raspberry Pi](https://www.jeffgeerling.com/blog/2020/enabling-trim-on-external-ssd-on-raspberry-pi)
     - [Gentoo Wiki: Discard over USB](https://wiki.gentoo.org/wiki/Discard_over_USB)
     - [Superuser: No TRIM/DISCARD with a SATA SSD connected through an UASP-enabled USB adapter?](https://superuser.com/a/1741030)
     - [scsi: sd: Enable modern protocol features on more devices](https://git.kernel.org/pub/scm/linux/kernel/git/mkp/linux.git/commit/?h=5.18/discovery&id=916740efdd2208564decee40a6049674f2063811)
+    - [Vlab 项目调试 iSCSI unmap 问题的记录](https://vlab.ibugone.com/records/2024-10-02/)
 
 ## RAID
 
