@@ -66,13 +66,15 @@ icon: material/bug
 
     用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：
 
-    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者 swap 占用比例超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
+    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
 
         由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
         oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它同时适用于物理内存和 Swap 空间。oomd 触发的条件是：内存压力（PSI）超过 `OOMMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。
+        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `OOMMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
+        
+        在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。
 
         ??? example "Debian 12 中的 systemd-oomd 配置"
 
