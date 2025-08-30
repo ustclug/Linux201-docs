@@ -672,12 +672,27 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="定时任务">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#create-timer" class="md-nav__link">
     <span class="md-ellipsis">
       创建一个定时任务
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transient-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      临时服务
     </span>
   </a>
   
@@ -2422,12 +2437,27 @@
     </span>
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="定时任务">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#create-timer" class="md-nav__link">
     <span class="md-ellipsis">
       创建一个定时任务
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transient-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      临时服务
     </span>
   </a>
   
@@ -2809,7 +2839,7 @@ U --&gt; F(scope)</code></pre>
 <li>没有 cron 的邮件通知功能。但是 service 的输出可以记录到日志中，可以通过 <code>journalctl</code> 查看；也可以为 service 指定 <code>StandardOutput=</code> 和 <code>StandardError=</code> 手动重定向输出。</li>
 </ul>
 <p>另外，第三方开发的 <a href="https://github.com/systemd-cron/systemd-cron">systemd-cron</a> 项目提供了一个 cron 的替代方案，它使用 systemd 的 generator 接口将 crontab 翻译成 systemd timer 和 service，然后由 systemd 负责这些 timer 和 service 的触发和运行。</p>
-<h3 id="create-timer">创建一个定时任务<a class="headerlink" href="#create-timer" title="Permanent link">&para;</a></h3>
+<h4 id="create-timer">创建一个定时任务<a class="headerlink" href="#create-timer" title="Permanent link">&para;</a></h4>
 <p>如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。</p>
 <p>首先创建一个 service，需要注意的是 <code>Type=oneshot</code>，并且<strong>不能</strong>使用 <code>RemainAfterExit=yes</code>（一般将其忽略即可，它的默认值是 no）。</p>
 <div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[Unit]</span>
@@ -2836,6 +2866,20 @@ U --&gt; F(scope)</code></pre>
 </code></pre></div>
 <p>此时 <code>certbot.timer</code> 会自动触发同名的 service，也就是 <code>certbot.service</code>。</p>
 <p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
+<h3 id="transient-service">临时服务<a class="headerlink" href="#transient-service" title="Permanent link">&para;</a></h3>
+<p>systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 <code>.service</code> 文件，这对于一些临时任务或一次性操作非常有用。</p>
+<p><code>systemd-run</code> 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
+</code></pre></div>
+<p>此后，你就可以通过 <code>systemctl status my-sleep</code> 查看临时服务的状态，或者使用诸如 <code>systemctl stop</code> / <code>systemctl restart</code> 等命令管理其状态了。同时，你也可以使用 <code>journalctl</code> 命令查看进程的输出（<a href="#log">见下</a>）。</p>
+<p>默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 <code>systemctl status my-sleep</code> 将会显示 service not found。此时你仍然可以使用 <code>journalctl</code> 命令查看日志，回收服务并不会清除其运行日志。<code>systemd-run</code> 有两个参数可以改变此默认行为：</p>
+<ul>
+<li><code>-r</code> 可以使 systemd 在进程正常退出后仍然保留服务；</li>
+<li><code>-G</code> 可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。</li>
+</ul>
+<p>同时，<code>systemd-run</code> 还有更多的参数可以用于指定服务进程的运行环境，例如工作目录和输入输出文件描述符等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html"><code>systemd-run(1)</code></a>。</p>
+<p>基于这些讨论，本文认为 <code>systemd-run</code> 是 <code>nohup</code> 命令的全面替代品，也鼓励读者尽量使用 <code>systemd-run</code> 来运行各种一次性的后台命令，而不是使用 <code>nohup</code> 和 <code>&amp;</code>。</p>
+<p>作为一个常见的使用场景，普通用户需要使用 <code>systemd-run --user</code> 以运行临时的用户服务，而非系统服务。</p>
 <h2 id="log">日志管理<a class="headerlink" href="#log" title="Permanent link">&para;</a></h2>
 <h3 id="systemd-journald">Systemd-journald<a class="headerlink" href="#systemd-journald" title="Permanent link">&para;</a></h3>
 <p>Journald 是 systemd 套件中负责管理日志的部分。与传统的 <code>/var/log/*.log</code> 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（<code>less</code>、<code>vim</code> 等）查看，需要通过 <code>journalctl</code> 管理。</p>
@@ -2898,24 +2942,24 @@ U --&gt; F(scope)</code></pre>
 <p class="admonition-title">避免覆盖由包管理器管理的文件</p>
 <p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
 <p>例如，要限制磁盘占用（<code>/var/log/journal</code>）为 1G，可以创建如下文件，然后重启 <code>systemd-journald</code> 服务：</p>
-<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[Journal]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
+<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">[Journal]</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
 </code></pre></div>
 </div>
 <p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
 <p>按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责日志的“滚动”（rotate），即重命名、压缩、删除等操作。</p>
 <p>logrotate 的全局配置文件位于 <code>/etc/logrotate.conf</code>，而每个服务的配置文件则位于 <code>/etc/logrotate.d/</code> 目录下。以 Telegraf 为例，其配置文件如下：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>/var/log/telegraf/telegraf.log
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="o">{</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span>daily
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span>missingok
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span>dateext
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span>copytruncate
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span>notifempty
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span>compress
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="o">}</span>
+<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>/var/log/telegraf/telegraf.log
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="o">{</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span>daily
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span>missingok
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span>dateext
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span>copytruncate
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span>notifempty
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span>compress
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="o">}</span>
 </code></pre></div>
 <p>配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：</p>
 <dl>
@@ -2948,10 +2992,10 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>压缩旧的日志文件，以及压缩参数（默认使用 <code>gzip</code> / <code>gunzip</code> / <code>.gz</code> / <code>-9</code>）。其中 <code>compress</code> 是开关，默认行为是 <code>nocompress</code>。</p>
 <p>例如，如果使用 Zstd 压缩，可以使用以下配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>compressext<span class="w"> </span>.zst
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>compressext<span class="w"> </span>.zst
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
 </code></pre></div>
 </dd>
 <dt>delaycompress</dt>
@@ -2962,9 +3006,9 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>在 rotate 之前/之后执行的命令，命令块需要以 <code>endscript</code> 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 <code>if</code> 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。</p>
 <p>例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>postrotate
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>endscript
+<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>postrotate
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>endscript
 </code></pre></div>
 </dd>
 </dl>
@@ -2974,11 +3018,11 @@ U --&gt; F(scope)</code></pre>
 <p>systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html">systemd-logind(8)</a>。本部分主要关注在日常运维中可能会用到的一部分特性。</p>
 <p>在登录系统时，PAM 的 <code>pam_systemd.so</code> 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。</p>
 <p><code>loginctl list-sessions</code> 可以显示当前的所有用户 session：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">      2 1000 user  seat0</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">1 sessions listed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">      2 1000 user  seat0</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">1 sessions listed.</span>
 </code></pre></div>
 <p><code>loginctl</code> 支持锁定（<code>lock-session</code>）、解锁（<code>unlock-session</code>）、注销（<code>terminate-session</code>）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 <code>loginctl</code> 的功能来实现。</p>
 <p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
@@ -3051,7 +3095,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月25日 18:15:30 UTC">2025年8月25日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月30日 17:48:22 UTC">2025年8月30日</span>
   </span>
 
     
@@ -3070,14 +3114,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
       
