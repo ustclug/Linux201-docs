@@ -2258,7 +2258,7 @@
 <div class="admonition note">
 <p class="admonition-title"><code>s/SLA/availability/g</code></p>
 <p>不少时候，SLA 这个词会被误用来描述某个服务的「可用性」，这通常是不正确的（除非你与服务提供商签订了正式协议）。特别是对公益性质的网络服务而言，因为这类服务无法承担违约赔偿责任，因此只能够尽力而为保障可用性，而不能使用 SLA 这种有合同约束效力的词汇。</p>
-<p>更好的说法是「某个服务的可用性（uptime 或 availability）在某年达到 / 预期能达到 99.9%」。</p>
+<p>更好的说法是「某个服务的可用性（uptime 或 availability）在某年达到了 / 预期能达到 99.9%」。</p>
 </div>
 <p>那么如何定义「可用」呢？这就与 SLI（Service Level Indicator）有关了。SLI 是用来衡量服务情况的具体值，例如，HTTP 的响应时间就是一种典型的 SLI。</p>
 <p>高于「3 个 9」的可靠性目标要达到不是一件容易的事情。即使堆很多人来三班倒工作，要达到「4 个 9」的水准也仍然是一件困难的事情。因此在企业中，运维/SRE 工作会需要使用更加复杂（Linux 201 也不太会涉及）的方式来提高可靠性，例如尽可能实现自动化运维，减少因为需要人力介入导致不可用时间增长的问题；使用分布式的架构，尽可能排除单点故障（Single Point of Failure，SPOF）问题；设置热备服务等等。</p>
@@ -2284,10 +2284,10 @@
 <p>这三点（隐私、谨慎、责任）概括了上面提到的必要原则。</p>
 </div>
 <p>USENIX 的 <a href="https://www.usenix.org/system-administrators-code-ethics">System Administrators' Code of Ethics</a>（系统管理员伦理守则）对这些必要的原则有着更深入的描述。</p>
-<p>此外，在维护的过程中，出现问题是不可避免的。但是在出现问题之后，应当<strong>避免责备某个具体的人</strong>。正如绝大部分的飞机事故都是各个方面的问题共同导致，几乎不会出现某一个人需要承担全部责任的结果一样，一个合格的系统管理员，需要能够系统地分析故障原因（这也被称为 Post-Mortem，即「事后分析」），并且针对分析得到的问题，或编写工具，或改进流程，这样才能够有效地防止同样的问题再次发生。</p>
+<p>此外，在维护的过程中，出现问题是不可避免的。但是在出现问题之后，应当<strong>避免责备某个具体的人</strong>。正如绝大部分的飞机事故都是各个方面的问题共同导致，几乎不会出现某一个人需要承担全部责任的结果一样，一个合格的系统管理员，需要能够系统地分析故障原因（这也被称为 Post-Mortem，即「事故复盘」或「事后分析」），并且针对分析得到的问题，或编写工具，或改进流程，这样才能够有效地防止同样的问题再次发生。</p>
 <div class="admonition note">
-<p class="admonition-title">Post-Mortem</p>
-<p>一份简单的 Post-Mortem 包括以下内容：</p>
+<p class="admonition-title">事故复盘</p>
+<p>一份简单的事故复盘包括以下内容：</p>
 <ul>
 <li>事件描述与发展时间线：在什么时候发生了什么？影响到了谁？导致了什么结果？当时是怎么处理的？</li>
 <li>原因分析：发生对应问题有什么技术上与非技术上的原因？</li>
@@ -2296,7 +2296,7 @@
 </ul>
 </div>
 <div class="admonition example">
-<p class="admonition-title">著名事故的 Post-Mortem</p>
+<p class="admonition-title">著名事故的复盘</p>
 <ul>
 <li><a href="https://about.gitlab.com/blog/gitlab-dot-com-database-incident/">GitLab 数据库删除事故（2017）</a></li>
 <li><a href="https://github.blog/news-insights/company-news/oct21-post-incident-analysis/">GitHub 服务降级事故（2018）</a></li>
@@ -2309,7 +2309,7 @@
 <p>这是一件真实发生的、在某群聊中流传出来的例子：实验室的 A 将服务器的用户私钥提供给了 B（用户有 root 权限），B 为了运行游戏尝试将 Linux 远程重装为 Windows，在咨询 GPT 后进行操作（<a href="https://gist.github.com/Xuanwo/a8a85439cc6c391df7ddc0b1684a1c4e/">聊天记录的 GitHub Gist 存档</a>），结果导致数据丢失，所幸服务器上没有重要数据。</p>
 <p>尝试回答以下问题：</p>
 <ol>
-<li>该事件的 Post-Mortem 大概会是什么样子？</li>
+<li>该事件的事故复盘大概会是什么样子？</li>
 <li>如果你是 A，你会如何处理这件事情？如何确保类似的事情不会再次发生？</li>
 <li>如果你是 B，从这件事情上你得到了哪些教训？</li>
 </ol>
@@ -2365,7 +2365,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月17日 11:03:01 UTC">2025年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月30日 16:06:49 UTC">2025年8月30日</span>
   </span>
 
     
