@@ -287,7 +287,7 @@ Timers 的主要缺点是：
 
   [systemd-cron]: https://github.com/systemd-cron/systemd-cron
 
-### 创建一个定时任务 {#create-timer}
+#### 创建一个定时任务 {#create-timer}
 
 如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。
 
@@ -323,6 +323,29 @@ WantedBy=timers.target
 此时 `certbot.timer` 会自动触发同名的 service，也就是 `certbot.service`。
 
 在编辑完两个文件之后，需要运行 `systemctl daemon-reload` 使 systemd 重新加载配置文件，然后可以使用 `systemctl start certbot.timer` 启动定时器，或者使用 `systemctl enable certbot.timer` 让其开机启动。
+
+### 临时服务 {#transient-service}
+
+systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 `.service` 文件，这对于一些临时任务或一次性操作非常有用。
+
+`systemd-run` 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：
+
+```shell
+systemd-run --unit=my-sleep sleep 600
+```
+
+此后，你就可以通过 `systemctl status my-sleep` 查看临时服务的状态，或者使用诸如 `systemctl stop` / `systemctl restart` 等命令管理其状态了。同时，你也可以使用 `journalctl` 命令查看进程的输出（[见下](#log)）。
+
+默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 `systemctl status my-sleep` 将会显示 service not found。此时你仍然可以使用 `journalctl` 命令查看日志，回收服务并不会清除其运行日志。`systemd-run` 有两个参数可以改变此默认行为：
+
+- `-r` 可以使 systemd 在进程正常退出后仍然保留服务；
+- `-G` 可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。
+
+同时，`systemd-run` 还有更多的参数可以用于指定服务进程的运行环境，例如工作目录和输入输出文件描述符等，具体可参考 [`systemd-run(1)`][systemd-run.1]。
+
+基于这些讨论，本文认为 `systemd-run` 是 `nohup` 命令的全面替代品，也鼓励读者尽量使用 `systemd-run` 来运行各种一次性的后台命令，而不是使用 `nohup` 和 `&`。
+
+作为一个常见的使用场景，普通用户需要使用 `systemd-run --user` 以运行临时的用户服务，而非系统服务。
 
 ## 日志管理 {#log}
 
