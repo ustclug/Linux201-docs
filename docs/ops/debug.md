@@ -72,7 +72,7 @@ icon: material/bug
 
         oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `OOMMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
+        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
         
         在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。
 
