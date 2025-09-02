@@ -99,6 +99,10 @@ jobs:
             "https://${{ github.actor }}:${{ github.token }}@github.com/${{ github.repository }}.git" test
           mv test/.git site/.git && rmdir test/
           pushd site/ &>/dev/null
+          if [ -f artifact.tar ]; then
+            tar xf artifact.tar
+            rm artifact.tar
+          fi
           git add -A
           git -c user.name=GitHub -c user.email=noreply@github.com commit \
             -m "Auto deploy from GitHub Actions build ${GITHUB_RUN_NUMBER}" \
