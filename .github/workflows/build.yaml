@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      commit-info: ${{ steps.commit-info.outputs.COMMIT_INFO }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,29 +66,47 @@ jobs:
         with:
           path: site
 
+      - name: Generate commit info
+        id: commit-info
+        run: |
+          git log -1 --pretty="COMMIT_INFO=%an: [%h] %s" >> "$GITHUB_OUTPUT"
+
   deploy:
     needs: build
     if: github.ref == 'refs/heads/master'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: github-pages
+          path: site/
+
       - name: Push site to gh-pages branch
         run: |
-          CINFO="$(git log -1 --pretty="%an: [%h] %s")"
           git clone --depth=1 --branch=gh-pages --single-branch --no-checkout \
-            "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" test
+            "https://${{ github.actor }}:${{ github.token }}@github.com/${{ github.repository }}.git" test
           mv test/.git site/.git && rmdir test/
           pushd site/ &>/dev/null
+          if [ -f artifact.tar ]; then
+            tar xf artifact.tar
+            rm artifact.tar
+          fi
           git add -A
           git -c user.name=GitHub -c user.email=noreply@github.com commit \
             -m "Auto deploy from GitHub Actions build ${GITHUB_RUN_NUMBER}" \
-            -m "$CINFO" \
+            -m "${{ needs.build.outputs.commit-info }}" \
             --allow-empty
           git push
           popd &>/dev/null
