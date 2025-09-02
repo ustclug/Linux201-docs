@@ -57,7 +57,7 @@ int square(int x)
 }
 ```
 
-对应的，需要在头文件 `square.h` 中加入这个函数的原型 (prototype)
+对应的，需要在头文件 `square.h` 中加入这个函数的原型 (prototype)：
 
 ```c
 int square(int x);
