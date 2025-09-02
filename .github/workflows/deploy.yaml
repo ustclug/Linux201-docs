@@ -1,0 +1,93 @@
+name: build
+
+on:
+  push:
+    branches:
+      - "master"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip3 install \
+            -r requirements.txt \
+            -r requirements-ci.txt
+
+      - name: "Linting: autocorrect"
+        continue-on-error: true
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/huacnlee/autocorrect/main/install | sh
+          autocorrect --fix
+
+      - name: "Linting: markdownlint-cli2 Part 1"
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        continue-on-error: true
+        with:
+          fix: true
+          globs: |
+            docs/**/*.md
+            README.md
+
+      - name: "Linting: markdownlint-cli2 Part 2"
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        continue-on-error: true
+        with:
+          fix: true
+          globs: |
+            docs/**/*.md
+            README.md
+      - name: Stop and report errors
+        run: |
+          git add -A
+          if ! git diff-index --quiet --cached HEAD --; then
+            echo "Stop."
+            exit 1
+          fi
+
+      - name: Build docs
+        run: |
+          mkdocs -v build
+          : > site/.nojekyll
+          echo -n '201.ustclug.org' > site/CNAME
+      - name: Upload artifact
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/master'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Push site to gh-pages branch
+        if: github.ref == 'refs/heads/master'
+        run: |
+          CINFO="$(git log -1 --pretty="%an: [%h] %s")"
+          git clone --depth=1 --branch=gh-pages --single-branch --no-checkout \
+            "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" test
+          mv test/.git site/.git && rmdir test/
+          pushd site/ &>/dev/null
+          git add -A
+          git -c user.name=GitHub -c user.email=noreply@github.com commit \
+            -m "Auto deploy from GitHub Actions build ${GITHUB_RUN_NUMBER}" \
+            -m "$CINFO" \
+            --allow-empty
+          git push
+          popd &>/dev/null
