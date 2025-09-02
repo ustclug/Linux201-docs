@@ -48,7 +48,7 @@ dynamiclib["**动态链接库** (运行时加载)"] --> executable
 
 ## 源代码
 
-对于 C 程序而言，链接库的源代码就是普通函数、变量之类，并无太多特殊要求。例如，创建并进入目录 `lib`，在 `square.c` 源文件中写一个函数 `square`
+对于 C 程序而言，链接库的源代码就是普通函数、变量之类，并无太多特殊要求。例如，创建并进入目录 `lib`，在 `square.c` 源文件中写一个函数 `square`：
 
 ```c
 int square(int x)
@@ -91,10 +91,10 @@ ar rcs libsquare.a square.o
 
 ### 使用
 
-另一个 C 程序 `main.c` 中使用了 `square` 函数，那么首先需要包含 `square.h` 头文件，这样才能知道这个函数的原形，然后就可以正常调用了。
+另一个 C 程序 `main.c` 中使用了 `square` 函数，那么首先需要包含 `square.h` 头文件，这样才能知道这个函数的原型，然后就可以正常调用了。
 
 ```c
-#include <main.c>
+#include <stdio.h>
 #include "lib/square.h"
 
 int main(void)
@@ -113,6 +113,6 @@ int main(void)
 gcc main.c -L./lib -lsquare -o main
 ```
 
-这里，`-L./lib` 表示要求链接器在 `./lib` 中寻找链接库，`-lsquare` 表示需要链接 `libsquare.a` 这个头文件。
+这里，`-L./lib` 表示要求链接器在 `./lib` 中寻找链接库，`-lsquare` 表示需要链接 `libsquare.a` 这个静态链接库文件。
 
 编译好之后，就可以正常使用了。由于静态链接库中的代码会被直接合并到链接产生的可执行文件 `main` 中，因此运行时不需要文件 `libsquare.a`。
