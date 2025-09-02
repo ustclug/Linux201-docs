@@ -80,6 +80,12 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: github-pages
+          path: site/
+
       - name: Push site to gh-pages branch
         run: |
           CINFO="$(git log -1 --pretty="%an: [%h] %s")"
