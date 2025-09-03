@@ -1,0 +1,90 @@
+[tool.poetry]
+name = "docs-project"
+version = "0.1.0"
+description = "Documentation project with testing infrastructure"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "scripts"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+mkdocs = ">=1.6.1"
+mkdocs-material = ">=9.6.2"
+jieba = "~0.42"
+click = "<8.2.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-cov = "^5.0.0"
+pytest-mock = "^3.12.0"
+
+[tool.poetry.scripts]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=scripts",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+testpaths = [
+    "tests",
+]
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
+markers = [
+    "unit: marks tests as unit tests (fast, isolated)",
+    "integration: marks tests as integration tests (slower, may require external resources)",
+    "slow: marks tests as slow running tests",
+]
+
+[tool.coverage.run]
+source = ["scripts"]
+branch = true
+parallel = true
+
+[tool.coverage.paths]
+source = [
+    "scripts/",
+    "*/site-packages/scripts/",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+    "pragma: no cover",
+]
+fail_under = 80
+precision = 2
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
