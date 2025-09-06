@@ -282,6 +282,57 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
     使用 libseccomp 编写程序，设置系统调用白名单限制。
     尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。
 
+### Capabilities
+
+传统上，类 Unix 系统都根据用户来判断权限：root 用户什么都可以做，非 root 用户只能做有限的事情。但是这种模型在如今已经难以满足复杂的需求：例如 `ping` 等工具其实只需要原始套接字（raw socket）的权限，不需要完整的 root 权限——直接添加 SUID 权限会留下很大的攻击面；而容器环境中，我们一般也不希望 root 能做所有的事情。即使有 seccomp 限制系统调用，在一部分场景下也不够，例如 `ioctl` 这个调用是通用的——它既可以操作终端，也可以直接操作硬件设备。要在系统调用层面细化限制不是件容易事。
+
+Linux 内核的能力（[capabilities(7)][capabilities.7]）则把 root 的权限拆分成了许多个独立的能力。例如 `ping` 需要的 `CAP_NET_RAW` 能力，绕过 Unix 传统权限控制的 `CAP_DAC_OVERRIDE` 能力等。如果没有某个能力，进程即使是 root 用户，也无法执行对应的操作；反之即使不是 root，只要有对应的能力，也可以执行对应的操作。
+
+Capabilities 可以赋予给进程和可执行文件。例如在一部分较旧的系统上，`ping` 命令的可执行文件就被赋予了 `CAP_NET_RAW` 能力（`getcap` 等 capabilities 相关的工具在 `libcap2-bin` 包中）：
+
+```console
+$ getcap /usr/bin/ping
+/usr/bin/ping cap_net_raw=ep
+```
+
+??? note "Permitted、Effective 和 Inheritable 集合"
+
+    上面输出中的 `ep` 代表这个程序的 `CAP_NET_RAW` 能力被设置到了 Permitted 和 Effective 集合中。
+    
+    对进程（线程）来说，它可以申请使用在 Permitted 集合中的能力，在 Effective 集合中的能力则是当前生效的能力。除此之外，还有一个 Inheritable 集合，代表可以被子进程继承的能力。而对文件来说，相关的集合定义有一些细微的差别，详情可以参考手册。
+
+??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？"
+
+    Linux 内核支持设置 [`net.ipv4.ping_group_range`][icmp.7]（这个选项也[控制 IPv6 下对应行为](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67)），指定哪些用户组可以对外发送 ICMP Echo，相比 capabilities 更加细化：
+
+    ```console
+    $ sysctl net.ipv4.ping_group_range
+    net.ipv4.ping_group_range = 0	2147483647
+    ```
+
+当前环境的 capabilities 则可以通过 `capsh` 查看（其中 Bounding 和 Ambient 集合的详细细节可参考手册）：
+
+```console
+$ capsh --print
+Current: cap_wake_alarm=i
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+（以下省略）
+# capsh --print # 是正常的 root 用户的话……
+Current: =ep cap_wake_alarm+i
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+（以下省略）
+```
+
+!!! lab "试一下限制 capabilities"
+
+    使用 `capsh` 限制 capabilities，尝试运行一些需要特定 capabilities 的命令，例如安装/卸载内核模块。
+
+容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其[默认列表](https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19)。
+
+除了以上提到的安全技术外，例如 Docker 等容器还会使用如 AppArmor、SELinux 等 MAC（Mandatory Access Control）机制进一步限制容器权限。这一部分会在[高级内容的「DAC 与 MAC」部分](../../advanced/dac-mac.md)进一步介绍。
+
 ### Overlay 文件系统 {#overlayfs}
 
 [Overlay 文件系统](https://docs.kernel.org/filesystems/overlayfs.html)（OverlayFS）不是容器所必需的——比如说，一些容器运行时支持像 chroot 一样，直接从一个 rootfs 目录启动容器（例如 systemd-nspawn）。
@@ -1636,6 +1687,14 @@ Detected architecture x86-64.
 Welcome to Debian GNU/Linux 12 (bookworm)!
 （以下省略）
 ```
+
+### 基于虚拟机的容器技术 {#vm-based-container}
+
+在我们的印象中，容器总是比虚拟机（hypervisor）更轻量级，但是对安全要求严苛的场合下，容器所依赖的 TCB（Trusted Computing Base）仍然太大了：你需要相信整个 kernel 与容器实现相关的部分都没有漏洞，而 KVM 等虚拟化技术的 TCB 就小很多，出现漏洞问题的可能性更小。
+
+那么是否有办法结合两者的优势呢？SOSP 17 的论文 [My VM is Lighter (and Safer) than your Container](https://dl.acm.org/doi/10.1145/3132747.3132763) 实验证明了，如果整个虚拟化 stack 足够精简，那么虚拟机的开销也可以非常低，实现既轻量又安全的目标。
+
+[Kata Containers](https://katacontainers.io/) 就是这样一个以虚拟机作为容器的方案。它实现了对 OCI 的兼容，因此容器实现也可以使用 Kata 作为运行时，例如 [Docker 就提供了对包括 Kata 在内的第三方运行时的支持](https://docs.docker.com/engine/daemon/alternative-runtimes/)。由 Amazon 开发的 [Firecracker](https://firecracker-microvm.github.io/) 也是轻量级虚拟机的方案，并且也提供了[与 containerd 的集成](https://github.com/firecracker-microvm/firecracker-containerd)。
 
 ### 基于容器技术的沙盒 {#container-sandbox}
 
