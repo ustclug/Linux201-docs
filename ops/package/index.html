@@ -22,7 +22,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -3504,7 +3504,7 @@
 <a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a>Hello,<span class="w"> </span>world!
 <a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a>Linux
 </code></pre></div>
-<p><strong>试完记得装回正常的版本哦！</strong></p>
+<p><strong>试完记得装回正常的版本哦</strong>！如果需要保持自己修改后的版本，可参考前文描述的<a href="#apt-hold">固定包的方法</a>或<a href="#priority">APT 优先级机制</a>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>$<span class="w"> </span>apt-cache<span class="w"> </span>policy<span class="w"> </span>sudo
 <a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a>sudo:
 <a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">  </span>Installed:<span class="w"> </span><span class="m">1</span>.9.13p3-1+deb12u1.1
@@ -3571,17 +3571,34 @@
 <p class="admonition-title"><code>%:</code></p>
 <p>这是一个 Makefile 的通配符规则，表示所有的目标都使用 <code>dh</code> 命令来处理。例如，执行 <code>debian/rules build</code> 时，Makefile 会将 <code>build</code> 作为目标传递给 <code>dh</code>，因此等价于执行 <code>dh build</code>。</p>
 </div>
-<p>可以使用 <code>--no-act</code> 参数来查看 <code>dh</code> 会执行哪些操作：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>$<span class="w"> </span>dh<span class="w"> </span>clean<span class="w"> </span>--no-act
-<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="w">   </span>dh_testdir
-<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="w">   </span>debian/rules<span class="w"> </span>override_dh_auto_clean
-<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="w">   </span>dh_autoreconf_clean
-<a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a><span class="w">   </span>dh_clean
+<p>可以使用 <code>DH_NO_ACT=1</code> 环境变量来查看 <code>dh</code> 会执行哪些操作：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a>$<span class="w"> </span><span class="nv">DH_NO_ACT</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>debian/rules<span class="w"> </span>clean
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>dh<span class="w"> </span>clean
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="w">   </span>dh_testdir
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="w">   </span>debian/rules<span class="w"> </span>override_dh_auto_clean
+<a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a><span class="w">   </span>dh_autoreconf_clean
+<a id="__codelineno-49-6" name="__codelineno-49-6" href="#__codelineno-49-6"></a><span class="w">   </span>dh_clean
+<a id="__codelineno-49-7" name="__codelineno-49-7" href="#__codelineno-49-7"></a>$<span class="w"> </span><span class="c1"># 或者使用 dh --no-act 命令</span>
+<a id="__codelineno-49-8" name="__codelineno-49-8" href="#__codelineno-49-8"></a>$<span class="w"> </span><span class="c1"># 此时需要阅读 `debian/rules` 确认 dh 是怎么被调用的</span>
 </code></pre></div>
-<p>如果需要覆盖某个 <code>dh</code> 的操作，可以在 <code>debian/rules</code> 中添加对应的规则，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a><span class="nf">override_dh_auto_clean</span><span class="o">:</span>
-<a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Custom clean step&quot;</span>
-<a id="__codelineno-50-3" name="__codelineno-50-3" href="#__codelineno-50-3"></a><span class="w">    </span>dh_auto_clean
+<p><code>dh</code> 的各项操作细节都有其对应的 <code>man</code> 文档可以参考。如果需要覆盖某个 <code>dh</code> 的操作，可以在 <code>debian/rules</code> 中添加对应的规则，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a><span class="c"># 在某个操作之前做一些事情</span>
+<a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a><span class="nf">execute_before_dh_auto_clean</span><span class="o">:</span>
+<a id="__codelineno-50-3" name="__codelineno-50-3" href="#__codelineno-50-3"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Something before dh_auto_clean&quot;</span>
+<a id="__codelineno-50-4" name="__codelineno-50-4" href="#__codelineno-50-4"></a>
+<a id="__codelineno-50-5" name="__codelineno-50-5" href="#__codelineno-50-5"></a><span class="c"># 在某个操作之后做一些事情</span>
+<a id="__codelineno-50-6" name="__codelineno-50-6" href="#__codelineno-50-6"></a><span class="nf">execute_after_dh_auto_clean</span><span class="o">:</span>
+<a id="__codelineno-50-7" name="__codelineno-50-7" href="#__codelineno-50-7"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Something after dh_auto_clean&quot;</span>
+<a id="__codelineno-50-8" name="__codelineno-50-8" href="#__codelineno-50-8"></a>
+<a id="__codelineno-50-9" name="__codelineno-50-9" href="#__codelineno-50-9"></a><span class="c"># 覆盖某个操作</span>
+<a id="__codelineno-50-10" name="__codelineno-50-10" href="#__codelineno-50-10"></a><span class="nf">override_dh_auto_clean</span><span class="o">:</span>
+<a id="__codelineno-50-11" name="__codelineno-50-11" href="#__codelineno-50-11"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Custom clean step&quot;</span>
+</code></pre></div>
+<p>在使用 <code>dpkg-buildpackage</code> 构建完成后，可以使用 <code>lintian</code> 来检查包是否符合 Debian 的规范。在打包的目录执行即可：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>lintian<span class="w"> </span>-i<span class="w"> </span>-I
+</code></pre></div>
+<p>添加的 <code>-i</code> 和 <code>-I</code> 选项可以显示更多的信息。如果你对打包质量的要求更高，可以开启 lintian 的 pedantic 模式，并且启用实验性质的一些检查：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>lintian<span class="w"> </span>--pedantic<span class="w"> </span>-E<span class="w"> </span>-i<span class="w"> </span>-I
 </code></pre></div>
 <h4 id="checkinstall">使用 <code>checkinstall</code> 快速打包<a class="headerlink" href="#checkinstall" title="Permanent link">&para;</a></h4>
 <div class="admonition warning">
@@ -3590,114 +3607,114 @@
 <p>Debian 打包是一项复杂的工作。针对不同的编程语言与构建系统，Debian 提供了一些工具（例如 <code>dh-make-golang</code> 可以打包 Go 语言项目）辅助打包，建议在操作前先行搜索。<code>debmake</code> 工具也可以帮助生成一些 Debian 打包的模板文件。</p>
 </div>
 <p>以下以编译 rsync 为例子介绍。首先正常配置并编译：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-51-1" name="__codelineno-51-1" href="#__codelineno-51-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RsyncProject/rsync.git
-<a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a>./configure
-<a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/RsyncProject/rsync.git
+<a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a>./configure
+<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a>make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
 </code></pre></div>
 <p>然后执行 <code>checkinstall</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>sudo<span class="w"> </span>checkinstall
+<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>sudo<span class="w"> </span>checkinstall
 </code></pre></div>
 <p><code>checkinstall</code> 会询问一些问题，例如软件包的名称、版本、描述等等。版本默认为空，但是必须填写，否则后续步骤会报错。配置并安装完成后：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>**********************************************************************
-<a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a>
-<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="w"> </span>Done.<span class="w"> </span>The<span class="w"> </span>new<span class="w"> </span>package<span class="w"> </span>has<span class="w"> </span>been<span class="w"> </span>installed<span class="w"> </span>and<span class="w"> </span>saved<span class="w"> </span>to
-<a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a>
-<a id="__codelineno-53-5" name="__codelineno-53-5" href="#__codelineno-53-5"></a><span class="w"> </span>/path/to/rsync/rsync_3.4.1-7_amd64.deb
-<a id="__codelineno-53-6" name="__codelineno-53-6" href="#__codelineno-53-6"></a>
-<a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a><span class="w"> </span>You<span class="w"> </span>can<span class="w"> </span>remove<span class="w"> </span>it<span class="w"> </span>from<span class="w"> </span>your<span class="w"> </span>system<span class="w"> </span>anytime<span class="w"> </span>using:<span class="w"> </span>
-<a id="__codelineno-53-8" name="__codelineno-53-8" href="#__codelineno-53-8"></a>
-<a id="__codelineno-53-9" name="__codelineno-53-9" href="#__codelineno-53-9"></a><span class="w">      </span>dpkg<span class="w"> </span>-r<span class="w"> </span>rsync
-<a id="__codelineno-53-10" name="__codelineno-53-10" href="#__codelineno-53-10"></a>
-<a id="__codelineno-53-11" name="__codelineno-53-11" href="#__codelineno-53-11"></a>**********************************************************************
+<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>**********************************************************************
+<a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>
+<a id="__codelineno-55-3" name="__codelineno-55-3" href="#__codelineno-55-3"></a><span class="w"> </span>Done.<span class="w"> </span>The<span class="w"> </span>new<span class="w"> </span>package<span class="w"> </span>has<span class="w"> </span>been<span class="w"> </span>installed<span class="w"> </span>and<span class="w"> </span>saved<span class="w"> </span>to
+<a id="__codelineno-55-4" name="__codelineno-55-4" href="#__codelineno-55-4"></a>
+<a id="__codelineno-55-5" name="__codelineno-55-5" href="#__codelineno-55-5"></a><span class="w"> </span>/path/to/rsync/rsync_3.4.1-7_amd64.deb
+<a id="__codelineno-55-6" name="__codelineno-55-6" href="#__codelineno-55-6"></a>
+<a id="__codelineno-55-7" name="__codelineno-55-7" href="#__codelineno-55-7"></a><span class="w"> </span>You<span class="w"> </span>can<span class="w"> </span>remove<span class="w"> </span>it<span class="w"> </span>from<span class="w"> </span>your<span class="w"> </span>system<span class="w"> </span>anytime<span class="w"> </span>using:<span class="w"> </span>
+<a id="__codelineno-55-8" name="__codelineno-55-8" href="#__codelineno-55-8"></a>
+<a id="__codelineno-55-9" name="__codelineno-55-9" href="#__codelineno-55-9"></a><span class="w">      </span>dpkg<span class="w"> </span>-r<span class="w"> </span>rsync
+<a id="__codelineno-55-10" name="__codelineno-55-10" href="#__codelineno-55-10"></a>
+<a id="__codelineno-55-11" name="__codelineno-55-11" href="#__codelineno-55-11"></a>**********************************************************************
 </code></pre></div>
 <p>可以看到 <code>rsync</code> 安装在了 <code>/usr/local/bin/</code> 下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="gp">$ </span>which<span class="w"> </span>rsync
-<a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="go">/usr/local/bin/rsync</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a><span class="gp">$ </span>which<span class="w"> </span>rsync
+<a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="go">/usr/local/bin/rsync</span>
 </code></pre></div>
 <p>在卸载前，建议手工检查生成的 deb 包，避免其他文件被删除。</p>
 <h2 id="repo">软件源目录结构<a class="headerlink" href="#repo" title="Permanent link">&para;</a></h2>
 <p>Debian 的软件源存储了多个软件包，以 APT 可以理解的格式提供给用户。</p>
 <h3 id="simple-structure">简单结构与生成示例<a class="headerlink" href="#simple-structure" title="Permanent link">&para;</a></h3>
 <p>最简单的软件源目录结构如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>.
-<a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>├── firefox-vlab_1vlab3_all.deb
-<a id="__codelineno-55-3" name="__codelineno-55-3" href="#__codelineno-55-3"></a>├── Packages
-<a id="__codelineno-55-4" name="__codelineno-55-4" href="#__codelineno-55-4"></a>├── Release
-<a id="__codelineno-55-5" name="__codelineno-55-5" href="#__codelineno-55-5"></a>├── vlab-cli_1.0-1_all.deb
-<a id="__codelineno-55-6" name="__codelineno-55-6" href="#__codelineno-55-6"></a>├── vlab-earlyoom_1.1-5_all.deb
-<a id="__codelineno-55-7" name="__codelineno-55-7" href="#__codelineno-55-7"></a>├── vlab-earlyoom-static_1.1-5_amd64.deb
-<a id="__codelineno-55-8" name="__codelineno-55-8" href="#__codelineno-55-8"></a>└── vlab-vnc_1.0-3_all.deb
+<div class="highlight"><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>.
+<a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a>├── firefox-vlab_1vlab3_all.deb
+<a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a>├── Packages
+<a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a>├── Release
+<a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a>├── vlab-cli_1.0-1_all.deb
+<a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a>├── vlab-earlyoom_1.1-5_all.deb
+<a id="__codelineno-57-7" name="__codelineno-57-7" href="#__codelineno-57-7"></a>├── vlab-earlyoom-static_1.1-5_amd64.deb
+<a id="__codelineno-57-8" name="__codelineno-57-8" href="#__codelineno-57-8"></a>└── vlab-vnc_1.0-3_all.deb
 </code></pre></div>
 <p>除了 <code>deb</code> 文件以外，两个关键的文件是 <code>Packages</code> 与 <code>Release</code>。<code>Packages</code> 文件类似于将所有包的 <code>control</code> 文件连接起来，像这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>Package: firefox-vlab
-<a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a>Version: 2:1vlab3
-<a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a>Architecture: all
-<a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a>Origin: Ubuntu
-<a id="__codelineno-56-5" name="__codelineno-56-5" href="#__codelineno-56-5"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
-<a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a>Pre-Depends: debconf
-<a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a>Depends: debconf (&gt;= 0.5) | debconf-2.0
-<a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a>Breaks: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
-<a id="__codelineno-56-9" name="__codelineno-56-9" href="#__codelineno-56-9"></a>Replaces: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
-<a id="__codelineno-56-10" name="__codelineno-56-10" href="#__codelineno-56-10"></a>Provides: gnome-www-browser, iceweasel, www-browser, x-www-browser
-<a id="__codelineno-56-11" name="__codelineno-56-11" href="#__codelineno-56-11"></a>Filename: ./firefox-vlab_1vlab3_all.deb
-<a id="__codelineno-56-12" name="__codelineno-56-12" href="#__codelineno-56-12"></a>Size: 7376
-<a id="__codelineno-56-13" name="__codelineno-56-13" href="#__codelineno-56-13"></a>MD5sum: 943c78a714ec598de5ccb1a1d704fa4d
-<a id="__codelineno-56-14" name="__codelineno-56-14" href="#__codelineno-56-14"></a>SHA1: 7818966860329bc18ff224b8ff549006a3ef8146
-<a id="__codelineno-56-15" name="__codelineno-56-15" href="#__codelineno-56-15"></a>SHA256: a9e1d012abe7dc4e341674770d6297b7acea0e3dfb541f189e02f1c8ffe9715a
-<a id="__codelineno-56-16" name="__codelineno-56-16" href="#__codelineno-56-16"></a>Section: web
-<a id="__codelineno-56-17" name="__codelineno-56-17" href="#__codelineno-56-17"></a>Priority: optional
-<a id="__codelineno-56-18" name="__codelineno-56-18" href="#__codelineno-56-18"></a>Description: System files for Firefox on Vlab Software
-<a id="__codelineno-56-19" name="__codelineno-56-19" href="#__codelineno-56-19"></a>
-<a id="__codelineno-56-20" name="__codelineno-56-20" href="#__codelineno-56-20"></a>Package: vlab-cli
-<a id="__codelineno-56-21" name="__codelineno-56-21" href="#__codelineno-56-21"></a>Version: 1.0-1
-<a id="__codelineno-56-22" name="__codelineno-56-22" href="#__codelineno-56-22"></a>Architecture: all
-<a id="__codelineno-56-23" name="__codelineno-56-23" href="#__codelineno-56-23"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
-<a id="__codelineno-56-24" name="__codelineno-56-24" href="#__codelineno-56-24"></a>Depends: bash (&gt;= 4.2)
-<a id="__codelineno-56-25" name="__codelineno-56-25" href="#__codelineno-56-25"></a>Recommends: vlab-vnc
-<a id="__codelineno-56-26" name="__codelineno-56-26" href="#__codelineno-56-26"></a>Filename: ./vlab-cli_1.0-1_all.deb
-<a id="__codelineno-56-27" name="__codelineno-56-27" href="#__codelineno-56-27"></a>Size: 1440
-<a id="__codelineno-56-28" name="__codelineno-56-28" href="#__codelineno-56-28"></a>MD5sum: 8411c78ab73dc18c914c7409e3c22357
-<a id="__codelineno-56-29" name="__codelineno-56-29" href="#__codelineno-56-29"></a>SHA1: c3a5da87a8e5ebc3729a3afda5779413c6bc8b3a
-<a id="__codelineno-56-30" name="__codelineno-56-30" href="#__codelineno-56-30"></a>SHA256: 58a804b96e7b8bdd450436ca07c75d7a2e05cd121a680dd17474514736d7c99e
-<a id="__codelineno-56-31" name="__codelineno-56-31" href="#__codelineno-56-31"></a>Section: base
-<a id="__codelineno-56-32" name="__codelineno-56-32" href="#__codelineno-56-32"></a>Priority: optional
-<a id="__codelineno-56-33" name="__codelineno-56-33" href="#__codelineno-56-33"></a>Description: CLI for legacy Vlab VM settings
+<div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a>Package: firefox-vlab
+<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a>Version: 2:1vlab3
+<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a>Architecture: all
+<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a>Origin: Ubuntu
+<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
+<a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a>Pre-Depends: debconf
+<a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a>Depends: debconf (&gt;= 0.5) | debconf-2.0
+<a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a>Breaks: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+<a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a>Replaces: firefox, firefox-dbg, firefox-dev, firefox-geckodriver, firefox-mozsymbols
+<a id="__codelineno-58-10" name="__codelineno-58-10" href="#__codelineno-58-10"></a>Provides: gnome-www-browser, iceweasel, www-browser, x-www-browser
+<a id="__codelineno-58-11" name="__codelineno-58-11" href="#__codelineno-58-11"></a>Filename: ./firefox-vlab_1vlab3_all.deb
+<a id="__codelineno-58-12" name="__codelineno-58-12" href="#__codelineno-58-12"></a>Size: 7376
+<a id="__codelineno-58-13" name="__codelineno-58-13" href="#__codelineno-58-13"></a>MD5sum: 943c78a714ec598de5ccb1a1d704fa4d
+<a id="__codelineno-58-14" name="__codelineno-58-14" href="#__codelineno-58-14"></a>SHA1: 7818966860329bc18ff224b8ff549006a3ef8146
+<a id="__codelineno-58-15" name="__codelineno-58-15" href="#__codelineno-58-15"></a>SHA256: a9e1d012abe7dc4e341674770d6297b7acea0e3dfb541f189e02f1c8ffe9715a
+<a id="__codelineno-58-16" name="__codelineno-58-16" href="#__codelineno-58-16"></a>Section: web
+<a id="__codelineno-58-17" name="__codelineno-58-17" href="#__codelineno-58-17"></a>Priority: optional
+<a id="__codelineno-58-18" name="__codelineno-58-18" href="#__codelineno-58-18"></a>Description: System files for Firefox on Vlab Software
+<a id="__codelineno-58-19" name="__codelineno-58-19" href="#__codelineno-58-19"></a>
+<a id="__codelineno-58-20" name="__codelineno-58-20" href="#__codelineno-58-20"></a>Package: vlab-cli
+<a id="__codelineno-58-21" name="__codelineno-58-21" href="#__codelineno-58-21"></a>Version: 1.0-1
+<a id="__codelineno-58-22" name="__codelineno-58-22" href="#__codelineno-58-22"></a>Architecture: all
+<a id="__codelineno-58-23" name="__codelineno-58-23" href="#__codelineno-58-23"></a>Maintainer: USTC Vlab &lt;vlab@ustc.edu.cn&gt;
+<a id="__codelineno-58-24" name="__codelineno-58-24" href="#__codelineno-58-24"></a>Depends: bash (&gt;= 4.2)
+<a id="__codelineno-58-25" name="__codelineno-58-25" href="#__codelineno-58-25"></a>Recommends: vlab-vnc
+<a id="__codelineno-58-26" name="__codelineno-58-26" href="#__codelineno-58-26"></a>Filename: ./vlab-cli_1.0-1_all.deb
+<a id="__codelineno-58-27" name="__codelineno-58-27" href="#__codelineno-58-27"></a>Size: 1440
+<a id="__codelineno-58-28" name="__codelineno-58-28" href="#__codelineno-58-28"></a>MD5sum: 8411c78ab73dc18c914c7409e3c22357
+<a id="__codelineno-58-29" name="__codelineno-58-29" href="#__codelineno-58-29"></a>SHA1: c3a5da87a8e5ebc3729a3afda5779413c6bc8b3a
+<a id="__codelineno-58-30" name="__codelineno-58-30" href="#__codelineno-58-30"></a>SHA256: 58a804b96e7b8bdd450436ca07c75d7a2e05cd121a680dd17474514736d7c99e
+<a id="__codelineno-58-31" name="__codelineno-58-31" href="#__codelineno-58-31"></a>Section: base
+<a id="__codelineno-58-32" name="__codelineno-58-32" href="#__codelineno-58-32"></a>Priority: optional
+<a id="__codelineno-58-33" name="__codelineno-58-33" href="#__codelineno-58-33"></a>Description: CLI for legacy Vlab VM settings
 </code></pre></div>
 <p>不过其包含一些新的字段，例如 <code>Filename</code>（仓库中的路径）、<code>Size</code>、<code>MD5sum</code>、<code>SHA1</code> 与 <code>SHA256</code>。该文件使用 <code>dpkg-scanpackages</code> 生成：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>dpkg-scanpackages<span class="w"> </span>.<span class="w"> </span>&gt;<span class="w"> </span>Packages
+<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a>dpkg-scanpackages<span class="w"> </span>.<span class="w"> </span>&gt;<span class="w"> </span>Packages
 </code></pre></div>
 <p>而 <code>Release</code> 文件则包含了软件源的元数据，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a>Date: Fri, 07 Feb 2025 16:21:05 +0000
-<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a>Label: Vlab
-<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a>Origin: vlab.ustc.edu.cn
-<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a>MD5Sum:
-<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a> ddf53358082c24a5c89516c46eb00b0d             2770 Packages
-<a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a> 1e0a4d927bce3b4c809157264c731de9               75 Release
-<a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a>SHA1:
-<a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a> 0be434c15790a9875f4217709996d1140abc330b             2770 Packages
-<a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a> 43414ec15d46888bf6752f8d4e65afb0a8c67b26               75 Release
-<a id="__codelineno-58-10" name="__codelineno-58-10" href="#__codelineno-58-10"></a>SHA256:
-<a id="__codelineno-58-11" name="__codelineno-58-11" href="#__codelineno-58-11"></a> e65405d61f505b6c62c61adc4330820ce9a8d850b839ce9de3c8114da9313b1c             2770 Packages
-<a id="__codelineno-58-12" name="__codelineno-58-12" href="#__codelineno-58-12"></a> f78327f58a7cf57703d206399bd693766c66c98a3296e3a84aef33c54f6c8b1f               75 Release
-<a id="__codelineno-58-13" name="__codelineno-58-13" href="#__codelineno-58-13"></a>SHA512:
-<a id="__codelineno-58-14" name="__codelineno-58-14" href="#__codelineno-58-14"></a> 88ba61c27d624c01a61eff8722669a8e51d7055db4f4bdd49aa8ff965f44ab6388b6cd4aa502d22ef1a793e8fbf8510ed92946c6a9b53b313bddc0e2069421b3             2770 Packages
-<a id="__codelineno-58-15" name="__codelineno-58-15" href="#__codelineno-58-15"></a> 30ef3ac9a9cabc3d40b63b2eaec615a77ef7eb33bb5a3c7c76cc95eab86cf74355a87811d985519b2d144952433b8c20e039aaca7eee26b6d459a86d78eaf9ee               75 Release
+<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a>Date: Fri, 07 Feb 2025 16:21:05 +0000
+<a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a>Label: Vlab
+<a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a>Origin: vlab.ustc.edu.cn
+<a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a>MD5Sum:
+<a id="__codelineno-60-5" name="__codelineno-60-5" href="#__codelineno-60-5"></a> ddf53358082c24a5c89516c46eb00b0d             2770 Packages
+<a id="__codelineno-60-6" name="__codelineno-60-6" href="#__codelineno-60-6"></a> 1e0a4d927bce3b4c809157264c731de9               75 Release
+<a id="__codelineno-60-7" name="__codelineno-60-7" href="#__codelineno-60-7"></a>SHA1:
+<a id="__codelineno-60-8" name="__codelineno-60-8" href="#__codelineno-60-8"></a> 0be434c15790a9875f4217709996d1140abc330b             2770 Packages
+<a id="__codelineno-60-9" name="__codelineno-60-9" href="#__codelineno-60-9"></a> 43414ec15d46888bf6752f8d4e65afb0a8c67b26               75 Release
+<a id="__codelineno-60-10" name="__codelineno-60-10" href="#__codelineno-60-10"></a>SHA256:
+<a id="__codelineno-60-11" name="__codelineno-60-11" href="#__codelineno-60-11"></a> e65405d61f505b6c62c61adc4330820ce9a8d850b839ce9de3c8114da9313b1c             2770 Packages
+<a id="__codelineno-60-12" name="__codelineno-60-12" href="#__codelineno-60-12"></a> f78327f58a7cf57703d206399bd693766c66c98a3296e3a84aef33c54f6c8b1f               75 Release
+<a id="__codelineno-60-13" name="__codelineno-60-13" href="#__codelineno-60-13"></a>SHA512:
+<a id="__codelineno-60-14" name="__codelineno-60-14" href="#__codelineno-60-14"></a> 88ba61c27d624c01a61eff8722669a8e51d7055db4f4bdd49aa8ff965f44ab6388b6cd4aa502d22ef1a793e8fbf8510ed92946c6a9b53b313bddc0e2069421b3             2770 Packages
+<a id="__codelineno-60-15" name="__codelineno-60-15" href="#__codelineno-60-15"></a> 30ef3ac9a9cabc3d40b63b2eaec615a77ef7eb33bb5a3c7c76cc95eab86cf74355a87811d985519b2d144952433b8c20e039aaca7eee26b6d459a86d78eaf9ee               75 Release
 </code></pre></div>
 <p>其中包含了生成时间、相关文件的哈希（<code>Release</code> 的哈希对应的是 <code>MD5Sum</code> 之前的部分），以及软件源相关的配置。该文件使用 <code>apt-ftparchive</code> 生成：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>..
-<a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a><span class="gp">$ </span>cat<span class="w"> </span>main.conf
-<a id="__codelineno-59-3" name="__codelineno-59-3" href="#__codelineno-59-3"></a><span class="go">APT::FTPArchive::Release::Origin &quot;vlab.ustc.edu.cn&quot;;</span>
-<a id="__codelineno-59-4" name="__codelineno-59-4" href="#__codelineno-59-4"></a><span class="go">APT::FTPArchive::Release::Label &quot;Vlab&quot;;</span>
-<a id="__codelineno-59-5" name="__codelineno-59-5" href="#__codelineno-59-5"></a><span class="gp">$ </span>apt-ftparchive<span class="w"> </span>-c<span class="w"> </span>main.conf<span class="w"> </span>release<span class="w"> </span>builddir<span class="w"> </span>&gt;<span class="w"> </span>builddir/Release
+<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>..
+<a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a><span class="gp">$ </span>cat<span class="w"> </span>main.conf
+<a id="__codelineno-61-3" name="__codelineno-61-3" href="#__codelineno-61-3"></a><span class="go">APT::FTPArchive::Release::Origin &quot;vlab.ustc.edu.cn&quot;;</span>
+<a id="__codelineno-61-4" name="__codelineno-61-4" href="#__codelineno-61-4"></a><span class="go">APT::FTPArchive::Release::Label &quot;Vlab&quot;;</span>
+<a id="__codelineno-61-5" name="__codelineno-61-5" href="#__codelineno-61-5"></a><span class="gp">$ </span>apt-ftparchive<span class="w"> </span>-c<span class="w"> </span>main.conf<span class="w"> </span>release<span class="w"> </span>builddir<span class="w"> </span>&gt;<span class="w"> </span>builddir/Release
 </code></pre></div>
 <p>实际使用时的配置为：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="k">deb</span><span class="w"> </span><span class="sx">[trusted=yes]</span><span class="w"> </span><span class="kp">https://deb.example.com/repo/</span><span class="w"> </span><span class="kp">./</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="k">deb</span><span class="w"> </span><span class="sx">[trusted=yes]</span><span class="w"> </span><span class="kp">https://deb.example.com/repo/</span><span class="w"> </span><span class="kp">./</span>
 </code></pre></div>
 <p>或 DEB822 格式：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb</span>
-<a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://deb.example.com/repo/</span>
-<a id="__codelineno-61-3" name="__codelineno-61-3" href="#__codelineno-61-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span>
-<a id="__codelineno-61-4" name="__codelineno-61-4" href="#__codelineno-61-4"></a><span class="nt">Trusted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yes</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb</span>
+<a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://deb.example.com/repo/</span>
+<a id="__codelineno-63-3" name="__codelineno-63-3" href="#__codelineno-63-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span>
+<a id="__codelineno-63-4" name="__codelineno-63-4" href="#__codelineno-63-4"></a><span class="nt">Trusted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yes</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title"><code>Signed-By</code> 与 GPG 签名</p>
@@ -3720,8 +3737,8 @@
 <p>曾经有人问过这个问题：镜像站提供安全更新源的话，怎么保证镜像站本身不会通过拖延更新等方式阻止用户获取安全更新？</p>
 <p>首先，Debian <strong>不鼓励</strong>修改默认的安全更新源，甚至其安装器在默认模式下，即使设置了镜像站，安全更新仍然会从官方获取（这也是 Debian 安装器在某些网络环境下很慢的一大原因），需要使用专家模式才能修改。</p>
 <p>然后，安全更新源的 <code>Release</code> 文件有一个重要的字段：<code>Valid-Until</code>，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a>Date: Sat, 08 Feb 2025 21:33:46 UTC
-<a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a>Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
+<div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a>Date: Sat, 08 Feb 2025 21:33:46 UTC
+<a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a>Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
 </code></pre></div>
 <p><code>Valid-Until</code> 距离 <code>Release</code> 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，<strong>在生产环境下，谨慎使用任何镜像站提供安全更新源</strong>。</p>
 </div>
@@ -3803,7 +3820,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月13日 15:47:07 UTC">2025年8月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年9月7日 19:32:25 UTC">2025年9月7日</span>
   </span>
 
     
