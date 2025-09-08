@@ -1743,4 +1743,8 @@ Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置�
 
 不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
 
+!!! example "Rootless 容器与安全的 Docker-in-Docker 设计"
+
+    在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 [LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」](https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/)一文了解。
+
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
