@@ -3110,6 +3110,11 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 <p>使用 <code>capsh</code> 限制 capabilities，尝试运行一些需要特定 capabilities 的命令，例如安装/卸载内核模块。</p>
 </div>
 <p>容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其<a href="https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19">默认列表</a>。</p>
+<div class="admonition note">
+<p class="admonition-title">违背 Capabilities 设计初衷的 <code>CAP_SYS_ADMIN</code></p>
+<p>理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 <code>mount</code>，都依赖于 <code>CAP_SYS_ADMIN</code> 这一能力。这就导致了 <code>CAP_SYS_ADMIN</code> 成为事实上的 "the new root"。</p>
+<p>可阅读 <a href="https://lwn.net/Articles/486306/">lwn.net 的相关文章</a> 了解更多。</p>
+</div>
 <p>除了以上提到的安全技术外，例如 Docker 等容器还会使用如 AppArmor、SELinux 等 MAC（Mandatory Access Control）机制进一步限制容器权限。这一部分会在<a href="../../../advanced/dac-mac/">高级内容的「DAC 与 MAC」部分</a>进一步介绍。</p>
 <h3 id="overlayfs">Overlay 文件系统<a class="headerlink" href="#overlayfs" title="Permanent link">&para;</a></h3>
 <p><a href="https://docs.kernel.org/filesystems/overlayfs.html">Overlay 文件系统</a>（OverlayFS）不是容器所必需的——比如说，一些容器运行时支持像 chroot 一样，直接从一个 rootfs 目录启动容器（例如 systemd-nspawn）。
@@ -4285,7 +4290,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年9月8日 16:17:22 UTC">2025年9月8日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年9月9日 13:56:49 UTC">2025年9月9日</span>
   </span>
 
     
