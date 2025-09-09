@@ -331,6 +331,12 @@ Ambient set =
 
 容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其[默认列表](https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19)。
 
+!!! note "违背 Capabilities 设计初衷的 `CAP_SYS_ADMIN`"
+
+    理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 `mount`，都依赖于 `CAP_SYS_ADMIN` 这一能力。这就导致了 `CAP_SYS_ADMIN` 成为事实上的 "the new root"。
+
+    可阅读 [lwn.net 的相关文章](https://lwn.net/Articles/486306/) 了解更多。
+
 除了以上提到的安全技术外，例如 Docker 等容器还会使用如 AppArmor、SELinux 等 MAC（Mandatory Access Control）机制进一步限制容器权限。这一部分会在[高级内容的「DAC 与 MAC」部分](../../advanced/dac-mac.md)进一步介绍。
 
 ### Overlay 文件系统 {#overlayfs}
