@@ -145,6 +145,8 @@ d959e182468be92957bd175d189472de91f614c8
 
     这被称为 "refspec"，基本格式为 `<source>:<destination>`，表示从 `<source>` 获取对象并存储到 `<destination>`。如果 `<source>` 以 `+` 开头，则表示强制覆盖。上面的例子表示将远程仓库中 `refs/heads` 下的所有分支获取到本地的 `refs/remotes/origin` 下，即 `git fetch` 的默认行为。
 
+    `git push` 同样也可以接受 refspec，默认的 `push.default` 配置项的值为 `simple`，表示将当前分支推送到与其同名的远程分支，相当于 `refs/heads/<some-branch>:refs/heads/<some-branch>`（把 `<source>` 的对象推送到远程的 `<destination>` 上）。
+
     更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
 
 !!! tip "`git reflog`"
