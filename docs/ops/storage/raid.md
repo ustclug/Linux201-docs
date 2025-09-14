@@ -1185,6 +1185,8 @@ Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**�
     No Self-tests have been logged
     ```
 
+SMART 还支持让磁盘自检，对应的参数为 `smartctl -t`，可以选择不同的测试参数（例如 short、long 等），详情可参考 [`smartctl(8)`][smartctl.8] 的 "SMART RUN/ABORT OFFLINE TEST AND SELF-TEST OPTIONS" 部分。
+
 安装 smartmontools 之后，可以启用 smartd 服务（smartd.service 或 smartmontools.service）。
 该服务会每隔一段时间检查硬盘的 SMART 信息，并在发现问题时发送邮件通知管理员（在正确配置的情况下）。
 默认 Debian 提供的 `/etc/smartd.conf` 的有效内容如下：

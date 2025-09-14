@@ -71,6 +71,7 @@ Do not link to a "generic" man page for these commands -->
 [mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
 [sg_unmap.8]: https://linux.die.net/man/8/sg_unmap
 [sg_write_same.8]: https://linux.die.net/man/8/sg_write_same
+[smartctl.8]: https://linux.die.net/man/8/smartctl
 [sshd.8]: https://linux.die.net/man/8/sshd
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
