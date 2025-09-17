@@ -3398,12 +3398,12 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
 这些服务提供的容器镜像也可以正常在 Docker 中使用。</p>
 </div>
-<p>镜像名称的格式是 <code>registry.example.com:username/image:tag</code>，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub；而如果没有指定 username，则默认会指定为 <code>library</code>，其代表 Docker Hub 中的「官方」镜像。</p>
-<p>Registry 服务大多允许用户上传自己的容器镜像。在对应的服务注册帐号，使用 <code>docker login</code> 登录之后，需要先使用 <code>docker tag</code> 为自己的镜像打上对应的标签：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="go">sudo docker tag example:latest registry.example.com:username/example:latest</span>
+<p>镜像名称的<a href="https://docs.docker.com/reference/cli/docker/image/tag/">格式</a>是 <code>registry/namespace/repository:tag</code>，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub（<code>docker.io</code>）；而如果没有指定 namespace，则默认会指定为 <code>library</code>，其代表 Docker Hub 中的「官方」镜像；如果没有指定 tag，则默认采用 <code>latest</code>。</p>
+<p>Registry 服务大多允许用户上传自己的容器镜像。在对应的服务平台注册帐号，使用 <code>docker login</code> 登录之后，需要先使用 <code>docker tag</code> 为自己的镜像打上对应的标签：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="go">sudo docker tag example:latest registry.example.com/username/example:latest</span>
 </code></pre></div>
 <p>然后再 <code>docker push</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="go">sudo docker push registry.example.com:username/example:latest</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="go">sudo docker push registry.example.com/username/example:latest</span>
 </code></pre></div>
 <p>除了 Docker Hub 以外，另一个比较常见的 registry 服务是 <a href="https://ghcr.io">GitHub Container Registry (ghcr)</a>。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 <code>${{ secrets.GITHUB_TOKEN }}</code> 来登录到 ghcr）。<a href="https://gcr.io">谷歌</a>和<a href="https://quay.io">红帽</a>也提供了自己的 registry 服务。</p>
 <h3 id="volume">Volume<a class="headerlink" href="#volume" title="Permanent link">&para;</a></h3>
@@ -3415,7 +3415,7 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">a</span>
 </code></pre></div>
 <p>Volume 在这里不会因为容器销毁被删除：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">root@c273ee70fe7a:/#</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">root@c273ee70fe7a:/# </span>^D
 <a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="gp">$ </span><span class="c1"># 原来的容器没了，挂载相同的 volume 开个新的</span>
 <a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>-v<span class="w"> </span>myvolume:/myvolume<span class="w"> </span>ustclug/debian:12
 <a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="gp">root@38e2da3a59f7:/# </span>ls<span class="w"> </span>/myvolume/
@@ -3649,7 +3649,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。Docker 支持 <code>macvlan</code> 和 <code>ipvlan</code> 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。</p>
 <div class="admonition note">
 <p class="admonition-title">Bridge 与 macvlan</p>
-<p>如果你曾经有过使用类似于 VMware 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。</p>
+<p>如果你曾经有过使用类似于 VMware Workstation / VMware Fusion 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。</p>
 <p>Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。这个 bridge 不对应到具体的物理设备（Docker 未提供相关的配置方式）。</p>
 <p>而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上，但是具体实现是不同的。</p>
 <p>Macvlan 与 IPvlan 功能也支持对接基于 IEEE 802.1Q 的 VLAN 配置，但是这里不做详细介绍。</p>
@@ -3742,14 +3742,15 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h3 id="docker-compose">Docker Compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h3>
 <p>Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工具：用户编写 YAML 描述如何启动容器，然后使用 <code>docker-compose</code> 命令启动、停止、删除服务。</p>
 <p>作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="go">docker run -it --rm -e &quot;DISPLAY=$DISPLAY&quot; \</span>
-<a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a><span class="go">                    -e &quot;XAUTHORITY=$XAUTHORITY&quot; \</span>
-<a id="__codelineno-62-3" name="__codelineno-62-3" href="#__codelineno-62-3"></a><span class="go">                    -v /tmp/.X11-unix:/tmp/.X11-unix \</span>
-<a id="__codelineno-62-4" name="__codelineno-62-4" href="#__codelineno-62-4"></a><span class="go">                    -v &quot;$XAUTHORITY:$XAUTHORITY&quot; \</span>
-<a id="__codelineno-62-5" name="__codelineno-62-5" href="#__codelineno-62-5"></a><span class="go">                    -v /dev/dri/renderD128:/dev/dri/renderD128 \</span>
-<a id="__codelineno-62-6" name="__codelineno-62-6" href="#__codelineno-62-6"></a><span class="go">                    -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \</span>
-<a id="__codelineno-62-7" name="__codelineno-62-7" href="#__codelineno-62-7"></a><span class="go">                    -v /run/user/1000/pulse:/run/pulse/native \</span>
-<a id="__codelineno-62-8" name="__codelineno-62-8" href="#__codelineno-62-8"></a><span class="go">                    local/example-desktop-1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="go">docker run -it --rm \</span>
+<a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a><span class="go">  -e &quot;DISPLAY=$DISPLAY&quot; \</span>
+<a id="__codelineno-62-3" name="__codelineno-62-3" href="#__codelineno-62-3"></a><span class="go">  -e &quot;XAUTHORITY=$XAUTHORITY&quot; \</span>
+<a id="__codelineno-62-4" name="__codelineno-62-4" href="#__codelineno-62-4"></a><span class="go">  -v /tmp/.X11-unix:/tmp/.X11-unix \</span>
+<a id="__codelineno-62-5" name="__codelineno-62-5" href="#__codelineno-62-5"></a><span class="go">  -v &quot;$XAUTHORITY:$XAUTHORITY&quot; \</span>
+<a id="__codelineno-62-6" name="__codelineno-62-6" href="#__codelineno-62-6"></a><span class="go">  -v /dev/dri/renderD128:/dev/dri/renderD128 \</span>
+<a id="__codelineno-62-7" name="__codelineno-62-7" href="#__codelineno-62-7"></a><span class="go">  -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \</span>
+<a id="__codelineno-62-8" name="__codelineno-62-8" href="#__codelineno-62-8"></a><span class="go">  -v /run/user/1000/pulse:/run/pulse/native \</span>
+<a id="__codelineno-62-9" name="__codelineno-62-9" href="#__codelineno-62-9"></a><span class="go">  local/example-desktop-1</span>
 </code></pre></div>
 <p>可以发现这样写不直观，并且容易出错（对于这里的例子，把 <code>-e</code> 和 <code>-v</code> 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 <code>docker-compose.yml</code> 文件：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
@@ -4290,35 +4291,12 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年9月9日 13:56:49 UTC">2025年9月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年9月17日 08:15:18 UTC">2025年9月17日</span>
   </span>
 
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
