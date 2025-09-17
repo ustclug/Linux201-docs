@@ -846,6 +846,8 @@ sudo (1.9.13p3-1+deb12u1.1) UNRELEASED; urgency=medium
 
 ```shell
 sudo apt build-dep sudo
+# 或者 sudo apt build-dep .
+# 如果当前目录是软件包的源代码目录（下一级有 debian/ 目录）
 ```
 
 从源代码目录构建软件包的命令为 `dpkg-buildpackage`，执行以下命令即可：
