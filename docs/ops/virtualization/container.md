@@ -145,7 +145,7 @@ root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux
 !!! note "命名空间的魔法"
 
     在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。
-    
+
     作为其中一个「花式操作」的例子，可以阅读这篇 USENIX ATC 2018 的论文：[Cntr: Lightweight OS Containers](https://www.usenix.org/conference/atc18/presentation/thalheim)（以及目前仍然在维护的[代码仓库](https://github.com/Mic92/cntr)）。这篇工作实现了在不包含调试工具的容器中使用包含调试工具的镜像（或者 host 的调试工具）进行调试的功能。
 
 ### Cgroups
@@ -298,7 +298,7 @@ $ getcap /usr/bin/ping
 ??? note "Permitted、Effective 和 Inheritable 集合"
 
     上面输出中的 `ep` 代表这个程序的 `CAP_NET_RAW` 能力被设置到了 Permitted 和 Effective 集合中。
-    
+
     对进程（线程）来说，它可以申请使用在 Permitted 集合中的能力，在 Effective 集合中的能力则是当前生效的能力。除此之外，还有一个 Inheritable 集合，代表可以被子进程继承的能力。而对文件来说，相关的集合定义有一些细微的差别，详情可以参考手册。
 
 ??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？"
@@ -702,18 +702,18 @@ Registry 是存储与分发容器镜像的服务。在大部分时候，我们�
     Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
     这些服务提供的容器镜像也可以正常在 Docker 中使用。
 
-镜像名称的格式是 `registry.example.com:username/image:tag`，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub；而如果没有指定 username，则默认会指定为 `library`，其代表 Docker Hub 中的「官方」镜像。
+镜像名称的[格式](https://docs.docker.com/reference/cli/docker/image/tag/)是 `registry/namespace/repository:tag`，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub（`docker.io`）；而如果没有指定 namespace，则默认会指定为 `library`，其代表 Docker Hub 中的「官方」镜像；如果没有指定 tag，则默认采用 `latest`。
 
-Registry 服务大多允许用户上传自己的容器镜像。在对应的服务注册帐号，使用 `docker login` 登录之后，需要先使用 `docker tag` 为自己的镜像打上对应的标签：
+Registry 服务大多允许用户上传自己的容器镜像。在对应的服务平台注册帐号，使用 `docker login` 登录之后，需要先使用 `docker tag` 为自己的镜像打上对应的标签：
 
 ```console
-sudo docker tag example:latest registry.example.com:username/example:latest
+sudo docker tag example:latest registry.example.com/username/example:latest
 ```
 
 然后再 `docker push`：
 
 ```console
-sudo docker push registry.example.com:username/example:latest
+sudo docker push registry.example.com/username/example:latest
 ```
 
 除了 Docker Hub 以外，另一个比较常见的 registry 服务是 [GitHub Container Registry (ghcr)](https://ghcr.io)。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 `${{ secrets.GITHUB_TOKEN }}` 来登录到 ghcr）。[谷歌](https://gcr.io)和[红帽](https://quay.io)也提供了自己的 registry 服务。
@@ -733,7 +733,7 @@ a
 Volume 在这里不会因为容器销毁被删除：
 
 ```console
-root@c273ee70fe7a:/#
+root@c273ee70fe7a:/# ^D
 $ # 原来的容器没了，挂载相同的 volume 开个新的
 $ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
 root@38e2da3a59f7:/# ls /myvolume/
@@ -1030,8 +1030,8 @@ VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上�
 
 !!! note "Bridge 与 macvlan"
 
-    如果你曾经有过使用类似于 VMware 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
-    
+    如果你曾经有过使用类似于 VMware Workstation / VMware Fusion 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
+
     Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。这个 bridge 不对应到具体的物理设备（Docker 未提供相关的配置方式）。
 
     而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上，但是具体实现是不同的。
@@ -1158,14 +1158,15 @@ Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工
 作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：
 
 ```console
-docker run -it --rm -e "DISPLAY=$DISPLAY" \
-                    -e "XAUTHORITY=$XAUTHORITY" \
-                    -v /tmp/.X11-unix:/tmp/.X11-unix \
-                    -v "$XAUTHORITY:$XAUTHORITY" \
-                    -v /dev/dri/renderD128:/dev/dri/renderD128 \
-                    -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \
-                    -v /run/user/1000/pulse:/run/pulse/native \
-                    local/example-desktop-1
+docker run -it --rm \
+  -e "DISPLAY=$DISPLAY" \
+  -e "XAUTHORITY=$XAUTHORITY" \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "$XAUTHORITY:$XAUTHORITY" \
+  -v /dev/dri/renderD128:/dev/dri/renderD128 \
+  -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \
+  -v /run/user/1000/pulse:/run/pulse/native \
+  local/example-desktop-1
 ```
 
 可以发现这样写不直观，并且容易出错（对于这里的例子，把 `-e` 和 `-v` 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 `docker-compose.yml` 文件：
