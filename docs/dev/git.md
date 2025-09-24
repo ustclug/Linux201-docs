@@ -145,7 +145,13 @@ d959e182468be92957bd175d189472de91f614c8
 
     这被称为 "refspec"，基本格式为 `<source>:<destination>`，表示从 `<source>` 获取对象并存储到 `<destination>`。如果 `<source>` 以 `+` 开头，则表示强制覆盖。上面的例子表示将远程仓库中 `refs/heads` 下的所有分支获取到本地的 `refs/remotes/origin` 下，即 `git fetch` 的默认行为。
 
+    `git push` 同样也可以接受 refspec，默认的 `push.default` 配置项的值为 `simple`，表示将当前分支推送到与其同名的远程分支，相当于 `refs/heads/<some-branch>:refs/heads/<some-branch>`（把 `<source>` 的对象推送到远程的 `<destination>` 上）。
+
     更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
+
+!!! tip "`git reflog`"
+
+    Reflogs（Reference logs）记录了 git 操作中 ref 的更新历史，在需要从误操作恢复，或确认之前操作给 ref 带来的变化时非常有用。例子参考 [Hackergame 2023 的 "Git? Git!" 一题](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Git%20Git!)。
 
 #### Remote {#git-remote}
 
@@ -712,6 +718,9 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
     - [ ] Task 2
     ```
 
+    - [x] Task 1 #123
+    - [ ] Task 2
+
     此时可以将这个 Issue 转化为一个任务列表，方便追踪任务的进度，同时 `#123` 会被标记为 `Tracked by #xxx`。
 
 #### Issue 模板 {#github-issue-template}
@@ -722,16 +731,16 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 name: Bug Report
 about: Create a report to help us improve
 labels:
-    - bug
+  - bug
 body:
-    - type: textarea
-      id: bug-description
-      attributes:
-        label: Describe the bug
-        description: A clear and concise description of what the bug is.
-        placeholder: I'm always frustrated when...
-      validations:
-        required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
 ```
 
 可以参考 [ustclug/mirrorrequest/.../01-mirror-request.yml](https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1), [GitHub 文档](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository).

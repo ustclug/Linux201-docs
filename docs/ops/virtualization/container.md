@@ -16,7 +16,7 @@
 
 Linux 内核的命名空间功能是容器技术的重要基础。命名空间可以控制进程所能看到的系统资源，包括其他进程、网络、文件系统、用户等。可以阅读 [namespaces(7)][namespaces.7] 了解相关的信息。
 
-可以在 procfs 看到某个进程所处的命名空间：
+可以在 procfs 看到某个进程所处的命名空间；使用 `lsns` 可以列出所有当前命名空间可以「看到」的命名空间：
 
 ```console
 $ ls -lh /proc/self/ns/
@@ -31,6 +31,12 @@ lrwxrwxrwx 1 username username 0 Mar 24 21:04 time -> 'time:[4026531834]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 time_for_children -> 'time:[4026531834]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 user -> 'user:[4026531837]'
 lrwxrwxrwx 1 username username 0 Mar 24 21:04 uts -> 'uts:[4026531838]'
+$ lsns
+        NS TYPE   NPROCS     PID USER     COMMAND
+4026531834 time      294    2440 username /usr/bin/dbus-broker-launch --scope user
+4026531835 cgroup    293    2440 username /usr/bin/dbus-broker-launch --scope user
+4026531836 pid       248    2440 username /usr/bin/dbus-broker-launch --scope user
+（以下省略）
 ```
 
 使用 `nsenter` 命令可以进入某个命名空间：
@@ -49,7 +55,9 @@ $ sudo nsenter --target 117426 --uts bash # 进入 UTS 命名空间
 
 !!! note "ustclug Docker image"
 
-    本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦。
+    本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦，支持包括 Ubuntu、Debian、Alpine 等多个发行版。
+
+    如果无法顺利访问 Docker Hub，也可以使用 `ghcr.io/ustclug/ubuntu:22.04`。
 
 那么 PID 命名空间也是同理吗？
 
@@ -64,9 +72,7 @@ ls: cannot access '/proc/417/': No such file or directory
 # # 如果使用 htop，仍然可以看到完整的进程列表
 ```
 
-这是因为这里挂载的 procfs 是对应整个系统的，因此即使进入了新的 PID 命名空间，
-在 mount 命名空间不变的情况下，`/proc` 目录下的内容仍然是宿主机的。
-因此需要同时进入 mount 命名空间：
+这是因为这里挂载的 procfs 是对应整个系统的，因此即使进入了新的 PID 命名空间，在 mount 命名空间不变的情况下，`/proc` 目录下的内容仍然是宿主机的。因此需要同时进入容器内对应进程的 mount 命名空间：
 
 ```console
 $ sudo nsenter --target 117426 --pid --mount bash
@@ -79,7 +85,7 @@ root         437  0.0  0.0   7060  2944 ?        R+   13:32   0:00 ps aux
 
 因此一般来讲，我们会希望同时进入进程所属所有的命名空间，以避免可能的不一致性问题。可以通过 `-a` 参数实现。
 
-另一个与命名空间有关的实用命令是 `unshare`，取自同名的系统调用，可以创建新的命名空间。对于上面展示 PID 命名空间的例子，可以使用 `unshare` 命令创建一个新的 PID 命名空间（与 mount 命名空间），并且挂载新的 `/proc`：
+另一个与命名空间有关的实用命令是 `unshare`，取自同名的系统调用，可以创建新的命名空间。对于上面展示 PID 命名空间的例子，可以使用 `unshare` 命令创建一个新的 PID 命名空间与 mount 命名空间，并且在新的 mount 命名空间里面挂载新的 `/proc`：
 
 ```console
 $ sudo unshare --pid --fork --mount-proc bash
@@ -88,6 +94,26 @@ USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 root           1  0.0  0.0  10876  4568 pts/17   S    21:42   0:00 bash
 root           2  0.0  0.0  14020  4464 pts/17   R+   21:42   0:00 ps aux
 ```
+
+!!! tip "bind mount"
+
+    对容器、沙盒等应用来说，在建立 mount 命名空间后一般都需要切换根目录到新位置（[pivot_root(2)][pivot_root.2]）。但是很多时候，我们需要将主机的某个目录或者文件挂载进来，这就需要用到 bind mount 了。bind mount 可以以挂载点的形式将某个文件或者目录「挂载」到其他地方。使用 [mount(8)][mount.8] 命令可以实现 bind mount：
+
+    ```sh
+    # 将 /dir1 挂载到 /dir2
+    sudo mount --bind /dir1 /dir2
+    # 将 /dir1，包括 /dir1 下面的其他子挂载点递归挂载到 /dir2
+    sudo mount --rbind /dir1 /dir2
+    ```
+
+    另一个关键的参数是挂载传播（mount propagation），它决定了某个挂载点内部子挂载点的变化是否会传播到它自己的其他「分身」（bind mount 或者其他的 mount namespace）上面。有四种不同的传播模式：
+
+    - shared：传播、接受变化，这一般是主机环境的默认值
+    - private：不传播、不接受变化
+    - slave：不传播变化，只接受它的父 mount namespace 里的变化（对应父 mount namespace 的挂载点需要是 shared）
+    - unbindable：不传播、不接受变化，也不允许被 bind mount
+
+    在这四项参数前面加上 `r` 就代表递归设置行为。一般来讲，容器都会选择 `rprivate` 传播模式，防止容器与主机之间互相影响。在特定需求情况下（例如[这个 issue](https://github.com/ustclug/Yuki/issues/134)），可以视情况选择 `rslave` 或者 `rshared` 传播模式。[Docker 支持相关的设置](https://docs.docker.com/engine/storage/bind-mounts/#configure-bind-propagation)。
 
 另外，有一种**用户命名空间**，允许非 root 用户创建新的用户命名空间（这也是 rootless 容器的基础），让我们简单试一试：
 
@@ -119,7 +145,7 @@ root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux
 !!! note "命名空间的魔法"
 
     在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。
-    
+
     作为其中一个「花式操作」的例子，可以阅读这篇 USENIX ATC 2018 的论文：[Cntr: Lightweight OS Containers](https://www.usenix.org/conference/atc18/presentation/thalheim)（以及目前仍然在维护的[代码仓库](https://github.com/Mic92/cntr)）。这篇工作实现了在不包含调试工具的容器中使用包含调试工具的镜像（或者 host 的调试工具）进行调试的功能。
 
 ### Cgroups
@@ -255,6 +281,63 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 
     使用 libseccomp 编写程序，设置系统调用白名单限制。
     尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。
+
+### Capabilities
+
+传统上，类 Unix 系统都根据用户来判断权限：root 用户什么都可以做，非 root 用户只能做有限的事情。但是这种模型在如今已经难以满足复杂的需求：例如 `ping` 等工具其实只需要原始套接字（raw socket）的权限，不需要完整的 root 权限——直接添加 SUID 权限会留下很大的攻击面；而容器环境中，我们一般也不希望 root 能做所有的事情。即使有 seccomp 限制系统调用，在一部分场景下也不够，例如 `ioctl` 这个调用是通用的——它既可以操作终端，也可以直接操作硬件设备。要在系统调用层面细化限制不是件容易事。
+
+Linux 内核的能力（[capabilities(7)][capabilities.7]）则把 root 的权限拆分成了许多个独立的能力。例如 `ping` 需要的 `CAP_NET_RAW` 能力，绕过 Unix 传统权限控制的 `CAP_DAC_OVERRIDE` 能力等。如果没有某个能力，进程即使是 root 用户，也无法执行对应的操作；反之即使不是 root，只要有对应的能力，也可以执行对应的操作。
+
+Capabilities 可以赋予给进程和可执行文件。例如在一部分较旧的系统上，`ping` 命令的可执行文件就被赋予了 `CAP_NET_RAW` 能力（`getcap` 等 capabilities 相关的工具在 `libcap2-bin` 包中）：
+
+```console
+$ getcap /usr/bin/ping
+/usr/bin/ping cap_net_raw=ep
+```
+
+??? note "Permitted、Effective 和 Inheritable 集合"
+
+    上面输出中的 `ep` 代表这个程序的 `CAP_NET_RAW` 能力被设置到了 Permitted 和 Effective 集合中。
+
+    对进程（线程）来说，它可以申请使用在 Permitted 集合中的能力，在 Effective 集合中的能力则是当前生效的能力。除此之外，还有一个 Inheritable 集合，代表可以被子进程继承的能力。而对文件来说，相关的集合定义有一些细微的差别，详情可以参考手册。
+
+??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？"
+
+    Linux 内核支持设置 [`net.ipv4.ping_group_range`][icmp.7]（这个选项也[控制 IPv6 下对应行为](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67)），指定哪些用户组可以对外发送 ICMP Echo，相比 capabilities 更加细化：
+
+    ```console
+    $ sysctl net.ipv4.ping_group_range
+    net.ipv4.ping_group_range = 0	2147483647
+    ```
+
+当前环境的 capabilities 则可以通过 `capsh` 查看（其中 Bounding 和 Ambient 集合的详细细节可参考手册）：
+
+```console
+$ capsh --print
+Current: cap_wake_alarm=i
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+（以下省略）
+# capsh --print # 是正常的 root 用户的话……
+Current: =ep cap_wake_alarm+i
+Bounding set =cap_chown,cap_dac_override,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_linux_immutable,cap_net_bind_service,cap_net_broadcast,cap_net_admin,cap_net_raw,cap_ipc_lock,cap_ipc_owner,cap_sys_module,cap_sys_rawio,cap_sys_chroot,cap_sys_ptrace,cap_sys_pacct,cap_sys_admin,cap_sys_boot,cap_sys_nice,cap_sys_resource,cap_sys_time,cap_sys_tty_config,cap_mknod,cap_lease,cap_audit_write,cap_audit_control,cap_setfcap,cap_mac_override,cap_mac_admin,cap_syslog,cap_wake_alarm,cap_block_suspend,cap_audit_read,cap_perfmon,cap_bpf,cap_checkpoint_restore
+Ambient set =
+（以下省略）
+```
+
+!!! lab "试一下限制 capabilities"
+
+    使用 `capsh` 限制 capabilities，尝试运行一些需要特定 capabilities 的命令，例如安装/卸载内核模块。
+
+容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其[默认列表](https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19)。
+
+!!! note "违背 Capabilities 设计初衷的 `CAP_SYS_ADMIN`"
+
+    理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 `mount`，都依赖于 `CAP_SYS_ADMIN` 这一能力。这就导致了 `CAP_SYS_ADMIN` 成为事实上的 "the new root"。
+
+    可阅读 [lwn.net 的相关文章](https://lwn.net/Articles/486306/) 了解更多。
+
+除了以上提到的安全技术外，例如 Docker 等容器还会使用如 AppArmor、SELinux 等 MAC（Mandatory Access Control）机制进一步限制容器权限。这一部分会在[高级内容的「DAC 与 MAC」部分](../../advanced/dac-mac.md)进一步介绍。
 
 ### Overlay 文件系统 {#overlayfs}
 
@@ -619,18 +702,18 @@ Registry 是存储与分发容器镜像的服务。在大部分时候，我们�
     Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
     这些服务提供的容器镜像也可以正常在 Docker 中使用。
 
-镜像名称的格式是 `registry.example.com:username/image:tag`，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub；而如果没有指定 username，则默认会指定为 `library`，其代表 Docker Hub 中的「官方」镜像。
+镜像名称的[格式](https://docs.docker.com/reference/cli/docker/image/tag/)是 `registry/namespace/repository:tag`，其中在 Docker 中，如果没有指定 registry，默认会使用 Docker Hub（`docker.io`）；而如果没有指定 namespace，则默认会指定为 `library`，其代表 Docker Hub 中的「官方」镜像；如果没有指定 tag，则默认采用 `latest`。
 
-Registry 服务大多允许用户上传自己的容器镜像。在对应的服务注册帐号，使用 `docker login` 登录之后，需要先使用 `docker tag` 为自己的镜像打上对应的标签：
+Registry 服务大多允许用户上传自己的容器镜像。在对应的服务平台注册帐号，使用 `docker login` 登录之后，需要先使用 `docker tag` 为自己的镜像打上对应的标签：
 
 ```console
-sudo docker tag example:latest registry.example.com:username/example:latest
+sudo docker tag example:latest registry.example.com/username/example:latest
 ```
 
 然后再 `docker push`：
 
 ```console
-sudo docker push registry.example.com:username/example:latest
+sudo docker push registry.example.com/username/example:latest
 ```
 
 除了 Docker Hub 以外，另一个比较常见的 registry 服务是 [GitHub Container Registry (ghcr)](https://ghcr.io)。它与 GitHub 的其他功能，如 Actions 有更好的集成（例如可以直接使用 `${{ secrets.GITHUB_TOKEN }}` 来登录到 ghcr）。[谷歌](https://gcr.io)和[红帽](https://quay.io)也提供了自己的 registry 服务。
@@ -650,7 +733,7 @@ a
 Volume 在这里不会因为容器销毁被删除：
 
 ```console
-root@c273ee70fe7a:/#
+root@c273ee70fe7a:/# ^D
 $ # 原来的容器没了，挂载相同的 volume 开个新的
 $ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
 root@38e2da3a59f7:/# ls /myvolume/
@@ -947,8 +1030,8 @@ VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上�
 
 !!! note "Bridge 与 macvlan"
 
-    如果你曾经有过使用类似于 VMware 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
-    
+    如果你曾经有过使用类似于 VMware Workstation / VMware Fusion 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
+
     Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。这个 bridge 不对应到具体的物理设备（Docker 未提供相关的配置方式）。
 
     而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上，但是具体实现是不同的。
@@ -1075,14 +1158,15 @@ Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工
 作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：
 
 ```console
-docker run -it --rm -e "DISPLAY=$DISPLAY" \
-                    -e "XAUTHORITY=$XAUTHORITY" \
-                    -v /tmp/.X11-unix:/tmp/.X11-unix \
-                    -v "$XAUTHORITY:$XAUTHORITY" \
-                    -v /dev/dri/renderD128:/dev/dri/renderD128 \
-                    -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \
-                    -v /run/user/1000/pulse:/run/pulse/native \
-                    local/example-desktop-1
+docker run -it --rm \
+  -e "DISPLAY=$DISPLAY" \
+  -e "XAUTHORITY=$XAUTHORITY" \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "$XAUTHORITY:$XAUTHORITY" \
+  -v /dev/dri/renderD128:/dev/dri/renderD128 \
+  -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \
+  -v /run/user/1000/pulse:/run/pulse/native \
+  local/example-desktop-1
 ```
 
 可以发现这样写不直观，并且容易出错（对于这里的例子，把 `-e` 和 `-v` 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 `docker-compose.yml` 文件：
@@ -1611,6 +1695,14 @@ Welcome to Debian GNU/Linux 12 (bookworm)!
 （以下省略）
 ```
 
+### 基于虚拟机的容器技术 {#vm-based-container}
+
+在我们的印象中，容器总是比虚拟机（hypervisor）更轻量级，但是对安全要求严苛的场合下，容器所依赖的 TCB（Trusted Computing Base）仍然太大了：你需要相信整个 kernel 与容器实现相关的部分都没有漏洞，而 KVM 等虚拟化技术的 TCB 就小很多，出现漏洞问题的可能性更小。
+
+那么是否有办法结合两者的优势呢？SOSP 17 的论文 [My VM is Lighter (and Safer) than your Container](https://dl.acm.org/doi/10.1145/3132747.3132763) 实验证明了，如果整个虚拟化 stack 足够精简，那么虚拟机的开销也可以非常低，实现既轻量又安全的目标。
+
+[Kata Containers](https://katacontainers.io/) 就是这样一个以虚拟机作为容器的方案。它实现了对 OCI 的兼容，因此容器实现也可以使用 Kata 作为运行时，例如 [Docker 就提供了对包括 Kata 在内的第三方运行时的支持](https://docs.docker.com/engine/daemon/alternative-runtimes/)。由 Amazon 开发的 [Firecracker](https://firecracker-microvm.github.io/) 也是轻量级虚拟机的方案，并且也提供了[与 containerd 的集成](https://github.com/firecracker-microvm/firecracker-containerd)。
+
 ### 基于容器技术的沙盒 {#container-sandbox}
 
 以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。
@@ -1657,5 +1749,9 @@ set -euo pipefail
 Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（[Docker](https://docs.docker.com/engine/security/rootless/)、[Podman](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md)）。
 
 不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
+
+!!! example "Rootless 容器与安全的 Docker-in-Docker 设计"
+
+    在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 [LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」](https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/)一文了解。
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。

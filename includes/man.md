@@ -13,10 +13,12 @@
 [perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
 [rrsync.1]: https://man7.org/linux/man-pages/man1/rrsync.1.html
 [rsync.1]: https://man7.org/linux/man-pages/man1/rsync.1.html
+[systemd-run.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html
 
 <!-- man 2 -->
 
 [mlock.2]: https://man7.org/linux/man-pages/man2/mlock.2.html
+[pivot_root.2]: https://man7.org/linux/man-pages/man2/pivot_root.2.html
 
 <!-- man 3 -->
 
@@ -52,7 +54,9 @@
 <!-- man 7 -->
 
 [apt-patterns.7]: https://manpages.debian.org/unstable/apt/apt-patterns.7.en.html
+[capabilities.7]: https://man7.org/linux/man-pages/man7/capabilities.7.html
 [cgroups.7]: https://man7.org/linux/man-pages/man7/cgroups.7.html
+[icmp.7]: https://man7.org/linux/man-pages/man7/icmp.7.html
 [namespaces.7]: https://man7.org/linux/man-pages/man7/namespaces.7.html
 [pcap-filter.7]: https://www.tcpdump.org/manpages/pcap-filter.7.html
 [zfsprops.7]: https://openzfs.github.io/openzfs-docs/man/master/7/zfsprops.7.html
@@ -64,6 +68,10 @@ Do not link to a "generic" man page for these commands -->
 [adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
+[mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
+[sg_unmap.8]: https://linux.die.net/man/8/sg_unmap
+[sg_write_same.8]: https://linux.die.net/man/8/sg_write_same
+[smartctl.8]: https://linux.die.net/man/8/smartctl
 [sshd.8]: https://linux.die.net/man/8/sshd
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html

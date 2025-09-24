@@ -4,7 +4,7 @@
 
 1. `python3 -m venv venv`
 2. `. venv/bin/activate`
-3. `pip install -r requirements.txt`
+3. `pip3 install -r requirements.txt`
 4. `mkdocs serve`
 
 ## 格式检查
@@ -20,3 +20,7 @@
 ## 许可
 
 本文档以 Creative Commons BY-NC-SA 4.0 协议发布。详情请见 [LICENSE](LICENSE)。
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ustclug/Linux201-docs&type=Date)](https://star-history.com/#ustclug/Linux201-docs&Date)

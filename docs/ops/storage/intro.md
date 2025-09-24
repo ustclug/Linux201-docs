@@ -43,15 +43,15 @@
 而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
 对于企业级硬盘，这些性能指标可能会更高。
 
-硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。有时也能看到 AFR（Annualized Failure Rate）这个指标，指代运行一年后的损坏率。假设硬盘全年通电，那么 AFR 可以估计为 1-e^(-8766/MTBF)。
+硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。有时也能看到 AFR（Annualized Failure Rate）这个指标，指代运行一年后的损坏率。假设硬盘全年通电，那么 AFR 可以估计为 1-e^(-8766/MTBF)（MTBF 单位为小时）。
 
 而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；读取操作对 SSD 的损耗可以忽略不计。
 
-另一项与可靠性有关的重要参数是 Non-recoverable Read Error Rate（不可恢复读错误率），它表示了硬盘在读取数据时出现错误的**概率**。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即**平均**每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到不可恢复错误（也被称为 URE）并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。
+另一项与可靠性有关的重要参数是 Unrecoverable Read Error Rate（不可恢复读错误率，URE），它表示了硬盘在读取数据时出现错误的**概率**。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即**平均**每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到 URE 并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。
 
 对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。此外，云服务商 Backblaze 会定期发布他们的硬盘使用报告，包含硬盘在真实数据中心工况下的 AFR 等信息，可前往 <https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data> 下载，以作参考。
 
-!!! tip "Zoned storage，与叠瓦（SMR）盘"
+!!! tip "Zoned storage 与叠瓦（SMR）盘"
 
     [Zoned storage](https://zonedstorage.io/) 是一种新型的硬盘存储技术，它将硬盘分为多个区域，每个区域的写入方式不同，
     通过暴露更多的信息给 OS 使得针对性的优化得以进行，以提升硬盘的容量和性能。
@@ -93,11 +93,11 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
 - M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。
 
     - 常见的 M.2 接口有 B-key 和 M-key 两种，主流的 NVMe SSD 通常使用 M-key 接口，而 SATA SSD 通常使用 B-key 或 B+M（两个缺口）。一个 M.2 接口是否支持 NVMe 或 SATA 协议取决于主板或控制器，因此具体情况需要参考产品的说明书。
-        - 作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVme 的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。
+        - 作为参考，2023 年以来市面上已经见不到只支持 SATA 而不支持 NVMe（即单 SATA 协议）的 M.2 接口了，尽管 M.2 SATA 的 SSD 仍然有卖。
     - 除了接口的形状，M.2 接口的长宽也有一系列选项，例如 2230、2242、2280、22110 等，即宽度为 22 mm，长度分别为 30、42、80、110 mm 等。个人电脑一般采用 2280 的尺寸，而服务器（和一些高端台式机主板）上可能会使用 22110 的尺寸。这些尺寸不影响接口的电气特性，只是为了适应不同的空间和散热需求。
   
 - U.2 接口形状与 SAS 类似，但是**不兼容 SAS**（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。
-- AIC 就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。
+- AIC（Add-In Card）就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。
 
 ??? example "图片：M.2 SSD"
 
@@ -137,19 +137,106 @@ $ sudo smartctl -a /dev/nvme0
 
 ### Trim (Discard/Unmap) {#trim}
 
-SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。
-SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，
-SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（`virtio-scsi`）、部分企业级的 SAN 等。
+SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（`virtio-scsi`）、部分企业级的 SAN 等。
 
-??? note "关注存储的可用空间比例"
+!!! note "关注存储的可用空间比例"
 
     不建议将存储的可用空间全部或接近全部耗尽，这是因为：
 
     - 机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；
     - 固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。
 
-一般来说，确保 `fstrim.timer` 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，
-一般推荐后者）。
+一般来说，确保 `fstrim.timer` 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。
+
+??? tip "为 USB 设备开启 Trim"
+
+    由于老旧的 USB 设备对获取设备功能的请求的支持存在问题，因此 Linux 内核默认不会尝试请求相关数据，进而无法探测 USB 连接的存储设备是否支持 trim 功能。可以使用 `lsblk --discard` 或查看 `/sys/block/sdX/queue/discard_max_bytes` 确认（以下 `sda` 为 USB 磁盘设备）：
+
+    ```console
+    $ lsblk --discard
+    NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO
+    sda                0      512B        0         0
+    ├─sda1             0      512B        0         0
+    ├─sda2             0      512B        0         0
+    ├─sda3             0      512B        0         0
+    └─sda4             0      512B        0         0
+    nvme0n1            0      512B       2T         0
+    ├─nvme0n1p1        0      512B       2T         0
+    ├─nvme0n1p2        0      512B       2T         0
+    └─nvme0n1p3        0      512B       2T         0
+    ```
+    
+    不过，Linux 允许用户手动覆盖这一行为。由于 USB 设备一般都以 USB Attached SCSI (UAS) 或 USB Mass Storage (UMS) 的形式连接，因此其由内核的 SCSI 子系统管理，可以发送 SCSI 命令来确认设备是否支持 trim 功能。
+
+    安装 `sg3-utils` 包后，使用 `sg_vpd` 查询 unmap 支持情况：
+
+    ```console
+    $ sudo sg_vpd --all /dev/sda
+    Supported VPD pages VPD page:
+      Supported VPD pages [sv]
+      Unit serial number [sn]
+      Device identification [di]
+      Block limits (SBC) [bl]
+      Block device characteristics (SBC) [bdc]
+      Logical block provisioning (SBC) [lbpv]
+    （省略）
+    Block limits VPD page (SBC):
+      Write same non-zero (WSNZ): 0
+      Maximum compare and write length: 0 blocks [Command not implemented]
+      Optimal transfer length granularity: 1 blocks
+      Maximum transfer length: 65535 blocks
+      Optimal transfer length: 65535 blocks
+      Maximum prefetch transfer length: 65535 blocks
+      Maximum unmap LBA count: 134217728
+      Maximum unmap block descriptor count: 1
+      Optimal unmap granularity: 0 blocks [not reported]
+      Unmap granularity alignment valid: false
+      Unmap granularity alignment: 0 [invalid]
+      Maximum write same length: 0 blocks [not reported]
+      Maximum atomic transfer length: 0 blocks [not reported]
+      Atomic alignment: 0 [unaligned atomic writes permitted]
+      Atomic transfer length granularity: 0 [no granularity requirement
+      Maximum atomic transfer length with atomic boundary: 0 blocks [not reported]
+      Maximum atomic boundary size: 0 blocks [can only write atomic 1 block]
+    （省略）
+    Logical block provisioning VPD page (SBC):
+      Unmap command supported (LBPU): 1
+      Write same (16) with unmap bit supported (LBPWS): 0
+      Write same (10) with unmap bit supported (LBPWS10): 0
+      Logical block provisioning read zeros (LBPRZ): 0
+      Anchored LBAs supported (ANC_SUP): 0
+      Threshold exponent: 0 [threshold sets not supported]
+      Descriptor present (DP): 0
+      Minimum percentage: 0 [not reported]
+      Provisioning type: 0 (not known or fully provisioned)
+      Threshold percentage: 0 [percentages not supported]
+    ```
+
+    LBPU、LBPWS 和 LBPWS10 分别为 unmap 的不同实现方式，详情参考 [sg_unmap(8)][sg_unmap.8] 和 [sg_write_same(8)][sg_write_same.8]。
+
+    对 SCSI 设备，sysfs 中的 "provisioning_mode" 控制 trim 功能，用户可以写入[支持的选项](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L446-L453)。LBPU、LBPWS 和 LBPWS10 分别对应 `unmap`、`writesame_16` 和 `writesame_10`。
+
+    ```sh
+    # 在你的设备上，路径会有所不同
+    echo unmap | sudo tee /sys/block/sda/device/scsi_disk/0:0:0:0/provisioning_mode
+    ```
+
+    此外，在设置 `provisioning_mode` 之后，`discard_max_bytes` 不会根据设备的实际能力更新（因为内核没有记录相应的数值），而是设置为[默认的 4G](https://elixir.bootlin.com/linux/v6.16.3/source/drivers/scsi/sd.c#L863-L864)。在一些场景下可能过大（设备不支持）。根据上面的输出得到的 "Maximum unmap LBA count"，乘以 LBA 的大小（通常为 512 字节，需要使用 `sg_readcap /dev/sdX` 确认）后，即可得到设备实际支持的 `discard_max_bytes`。只要小于等于 `/sys/block/sdX/queue/discard_max_hw_bytes` 的数值，即可写入 `discard_max_bytes`。
+
+    ```sh
+    # 例子：限制到每次最多 discard 1GiB
+    echo 1073741824 | sudo tee /sys/block/sda/queue/discard_max_bytes
+    ```
+
+    最后，上面的设置不是持久化的。如果需要持久化，则需要配置相关的 udev 规则。
+
+    其他介绍可参考：
+
+    - [Enabling TRIM on an external SSD on a Raspberry Pi](https://www.jeffgeerling.com/blog/2020/enabling-trim-on-external-ssd-on-raspberry-pi)
+    - [Gentoo Wiki: Discard over USB](https://wiki.gentoo.org/wiki/Discard_over_USB)
+    - [Superuser: No TRIM/DISCARD with a SATA SSD connected through an UASP-enabled USB adapter?](https://superuser.com/a/1741030)
+    - [scsi: sd: Enable modern protocol features on more devices](https://git.kernel.org/pub/scm/linux/kernel/git/mkp/linux.git/commit/?h=5.18/discovery&id=916740efdd2208564decee40a6049674f2063811)
+    - [Vlab 项目调试 iSCSI unmap 问题的记录](https://vlab.ibugone.com/records/2024-10-02/)
 
 ## RAID
 

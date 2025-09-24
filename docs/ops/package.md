@@ -95,6 +95,18 @@ The following packages will be REMOVED:
 
     某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 `99` 作为前缀，确保这个配置文件在其他配置文件之后被读取。
 
+!!! tip "为什么某个包会被安装"
+
+    由于推荐关系的存在，有时候在安装某个包时，会带上一些看起来无关的包。可以使用[下文介绍的 aptitude](#apt-frontend) 的 `why` 命令查看，例如确认为什么 `apt install lightdm` 会安装 `plymouth`：
+
+    ```console
+    $ aptitude why lightdm plymouth
+    p   lightdm             Depends    lightdm-gtk-greeter | lightdm-greeter
+    p   lightdm-gtk-greeter Recommends desktop-base
+    p   desktop-base        Recommends plymouth-label
+    p   plymouth-label      Depends    plymouth (= 24.004.60-5)
+    ```
+
 ### 搜索包 {#search}
 
 Debian 与 Ubuntu 均提供了网页端搜索软件包的服务：[Debian 软件包](https://packages.debian.org/)、[Ubuntu Packages Search](https://packages.ubuntu.com/)。不过，使用 apt 工具搜索来快得多。
@@ -834,6 +846,8 @@ sudo (1.9.13p3-1+deb12u1.1) UNRELEASED; urgency=medium
 
 ```shell
 sudo apt build-dep sudo
+# 或者 sudo apt build-dep .
+# 如果当前目录是软件包的源代码目录（下一级有 debian/ 目录）
 ```
 
 从源代码目录构建软件包的命令为 `dpkg-buildpackage`，执行以下命令即可：
@@ -853,7 +867,7 @@ Hello, world!
 Linux
 ```
 
-**试完记得装回正常的版本哦！**
+**试完记得装回正常的版本哦**！如果需要保持自己修改后的版本，可参考前文描述的[固定包的方法](#apt-hold)或[APT 优先级机制](#priority)。
 
 ```shell
 $ apt-cache policy sudo
@@ -944,22 +958,45 @@ esac
 
     这是一个 Makefile 的通配符规则，表示所有的目标都使用 `dh` 命令来处理。例如，执行 `debian/rules build` 时，Makefile 会将 `build` 作为目标传递给 `dh`，因此等价于执行 `dh build`。
 
-可以使用 `--no-act` 参数来查看 `dh` 会执行哪些操作：
+可以使用 `DH_NO_ACT=1` 环境变量来查看 `dh` 会执行哪些操作：
 
 ```shell
-$ dh clean --no-act
+$ DH_NO_ACT=1 debian/rules clean
+dh clean
    dh_testdir
    debian/rules override_dh_auto_clean
    dh_autoreconf_clean
    dh_clean
+$ # 或者使用 dh --no-act 命令
+$ # 此时需要阅读 `debian/rules` 确认 dh 是怎么被调用的
 ```
 
-如果需要覆盖某个 `dh` 的操作，可以在 `debian/rules` 中添加对应的规则，例如：
+`dh` 的各项操作细节都有其对应的 `man` 文档可以参考。如果需要覆盖某个 `dh` 的操作，可以在 `debian/rules` 中添加对应的规则，例如：
 
 ```makefile
+# 在某个操作之前做一些事情
+execute_before_dh_auto_clean:
+  echo "Something before dh_auto_clean"
+
+# 在某个操作之后做一些事情
+execute_after_dh_auto_clean:
+  echo "Something after dh_auto_clean"
+
+# 覆盖某个操作
 override_dh_auto_clean:
 	echo "Custom clean step"
-	dh_auto_clean
+```
+
+在使用 `dpkg-buildpackage` 构建完成后，可以使用 `lintian` 来检查包是否符合 Debian 的规范。在打包的目录执行即可：
+
+```shell
+lintian -i -I
+```
+
+添加的 `-i` 和 `-I` 选项可以显示更多的信息。如果你对打包质量的要求更高，可以开启 lintian 的 pedantic 模式，并且启用实验性质的一些检查：
+
+```shell
+lintian --pedantic -E -i -I
 ```
 
 #### 使用 `checkinstall` 快速打包 {#checkinstall}

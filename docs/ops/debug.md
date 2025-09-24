@@ -41,7 +41,7 @@ icon: material/bug
 
     不幸的是，有些时候出现问题的系统会卡在那里，无法操作，这可能是因为内存几乎已满（OOM），出现了大量 I/O 操作，也有可能是内核崩溃或是硬件问题。如果内核仍然在运行，可以尝试使用 SysRq 快捷键做一些操作。如果机器没有 SysRq 按键（例如笔记本电脑），可以使用 PrintScreen 键代替。
 
-    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的 "Linux Magic System Request Key Hacks" 部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
+    根据发行版配置的不同，默认情况下仅允许有限的 SysRq 操作，可以向 `/proc/sys/kernel/sysrq` 写入 1 来运行全部操作，或者自行计算允许的操作，详情见 [Linux 内核文档的「Linux Magic System Request Key Hacks」部分](https://docs.kernel.org/admin-guide/sysrq.html#how-do-i-enable-the-magic-sysrq-key)。需要在 sysctl 配置中设置 `kernel.sysrq=1` 以持久化相应设置。
 
     最常见的 SysRq 系列指令为 REISUB（即 busy 的比较级 busier 反过来），即按顺序按下 Alt+SysRq+R、E、I、S、U、B，分别对应的操作为：
 
@@ -66,13 +66,15 @@ icon: material/bug
 
     用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：
 
-    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者 swap 占用比例超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
+    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
 
         由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
         oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它同时适用于物理内存和 Swap 空间。oomd 触发的条件是：内存压力（PSI）超过 `OOMMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。
+        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
+        
+        在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的进程，而不是占用内存最多的进程，因此可能会出现占用了最多的内存的进程并没有被 kill，而是占用比较少内存的进程被 kill 了。
 
         ??? example "Debian 12 中的 systemd-oomd 配置"
 
@@ -88,7 +90,7 @@ icon: material/bug
             ManagedOOMMemoryPressure=kill
             ManagedOOMMemoryPressureLimit=50%
             ```
-        
+
         ??? example "Fedora 42 中的 systemd-oomd 配置"
 
             Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
@@ -109,7 +111,7 @@ icon: material/bug
         earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
 
         ![earlyoom in Vlab](../images/vlab-earlyoom.png)
-    
+
     !!! question "tmpfs?"
 
         思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
@@ -124,12 +126,14 @@ icon: material/bug
     - 占用空间小
     - `arch-chroot` 工具可以方便地 chroot 到安装的系统中，以便执行操作
         - 如果不使用 `arch-chroot`，在 chroot 进入系统前就需要手动挂载 `/proc`、`/sys`、`/dev` 等文件系统、配置 `/etc/resolv.conf` 等等，比较麻烦。
-    
+
     如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
 
     诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。
 
 ## 服务状态与日志 {#status-and-logs}
+
+### 日志简介 {#logs-intro}
 
 当出现异常，登录系统后，第一件事情可能是检查当前系统的服务状态。
 `systemctl --failed` 可以列出当前失败的服务。
@@ -182,6 +186,43 @@ logrotate 会定期（一般是每天，或者文件足够大的时候，请参�
     - [Debian Code Search](https://codesearch.debian.net/)，可以搜索 Debian 系统中所有包的源代码。
 
     某些大型程序也有专门的搜索网站，例如 [Chromium Code Search](https://source.chromium.org/chromium)。
+
+### Kernel panic 与 pstore {#kernel-panic-and-pstore}
+
+当内核遇到不可恢复的致命错误时，就会发生「内核恐慌」，即 kernel panic，表示内核崩溃，无法继续操作。
+默认情况下，kernel panic 的时候会打印出报错信息，然后需要人工重启。
+然而，对于实验室炼丹炉或者不易远程操作的服务器等一些场景来说，管理员可能更希望服务能够尽快恢复，此时可以通过设置 `kernel.panic` 这一项 sysctl 参数实现在 panic 时的自动重启，但这也使得管理员无法及时地在终端上看到重启前最后的 panic 信息。
+
+**pstore**（Persistent Storage）是一个内核特性，用于在系统崩溃时保存报错信息，以供后续分析。
+pstore 支持多种存储后端，包括一小段专门划分的内存区域（称为 [ramoops](https://docs.kernel.org/admin-guide/ramoops.html)）、ACPI ERST 表以及 UEFI 变量存储区域等。
+存储后端通常能够提供至少 64 KiB 的存储空间，足够保存数百行 dmesg（默认保留最后 10 KiB）及其他状态信息。
+默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
+pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/module/pstore/parameters/backend` 的内容确认当前 pstore 选用的存储后端。
+
+!!! tip "ACPI ERST"
+
+    可以使用以下命令验证硬件是否支持 ACPI ERST：
+
+    ```shell
+    ls /sys/firmware/acpi/tables/ | grep ERST
+    ```
+
+!!! note "UEFI 变量存储可能不会被默认启用"
+
+    UEFI 变量存储区域的空间是有限的，并且非常不幸的是，UEFI 固件的编写者不少都没有恰当处理**变量存储区域被写满**的情况。这意味着，一旦这种情况发生，那么**系统就可能变砖，无法正常启动**。因此内核提供了 `CONFIG_EFI_VARS_PSTORE_DEFAULT_DISABLE` 选项，如果它被启用，那么内核就不会默认使用 UEFI 变量存储区域作为 pstore 的存储后端。
+
+    视内核与发行版配置，可以使用 `zcat /proc/config.gz | grep PSTORE` 或 `cat /boot/config-$(uname -r) | grep PSTORE` 来检查当前内核是否启用了 pstore 以及相关配置情况。
+
+!!! note "ramoops 能够保留数据吗？"
+
+    pstore 的 ramoops 后端无法突破物理规律——如果机器断电重启了，那么（易失性）内存里的数据就自然没了。在不断电重启的情况下，内存是否会被清空取决于硬件实现。
+
+!!! tip "kdump"
+
+    如果无法使用 pstore，kdump 机制也可以作为替代方案。kdump 需要在启动时占用一块内存空间存储备用内核等信息。在 kernel panic 时，kernel 会 kexec 到备用内核上，备用内核此时就可以获取到内核的 coredump、dmesg 等信息。Debian 可以使用上文提到的 `kdump-tools` 包来配置 kdump。
+
+然而，pstore 的容量是有限的，因此 **systemd-pstore** 服务会在启动时自动将 pstore 的内容归档至 `/var/lib/systemd/pstore`，以便腾出空间，同时保留记录供管理员查阅。
+也就是说，如果你在重启后发现 `/sys/fs/pstore` 是空的，那么你应该去查看 `/var/lib/systemd/pstore`。
 
 ## procfs 与 strace {#procfs-and-strace}
 
@@ -778,7 +819,7 @@ tcpdump -ni eth0 host 8.8.8.8
 
     ![Wireshark setting pre-master-secret log filename](../images/wireshark-tls.png)
 
-    [bcc](#eBPF) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
+    [bcc](#ebpf) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
 
 !!! note "HTTP/HTTPS 抓包工具"
 
@@ -1139,6 +1180,14 @@ example(1023, 1024)
 
 - [The bpftrace One-Liner Tutorial](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md)（[中文版](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md)）
 - [bpftrace(8) Manual Page](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
+
+!!! lab "eBPF 程序编写实验"
+
+    尝试使用 bpftrace 或 bcc 完成以下任务：
+
+    - 对整个系统的程序做监测，当程序退出时，输出程序的运行时间（Wall time）。
+        - 挑战：能否尽可能输出程序被执行时的命令行参数？
+    - 对某个程序做监测，当该程序执行某种系统调用时（例如读取文件），输出程序的调用栈。
 
 ## 补充阅读 {#supplement}
 

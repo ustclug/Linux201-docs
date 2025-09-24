@@ -490,6 +490,28 @@ zfs send -i pool0/example@snap1 pool0/example@snap2 | zfs receive pool1/example
 zfs send -I pool0/example@snap1 pool0/example@snap2 | zfs receive pool1/example
 ```
 
+### 断点续传 {#receive-resume}
+
+在传输大型数据集时，ZFS 的发送过程容易因网络波动而中断，而默认情况下中断的传输需要完整重传，这容易浪费大量的时间和网络带宽。
+
+若你预计需要在不够稳定的网络环境（如公网）下进行一次较大的传输，可以在接收端使用 `zfs receive -s` 参数。
+添加 `-s` 参数后，若当前的接收被中断，则接收到一半的数据集将会被保留下来，并且包含一个属性 `receive_resume_token`。
+你可以使用以下命令获取该「续传 token」：
+
+```shell
+zfs get receive_resume_token pool1/example
+```
+
+此时在发送端使用 `zfs send -t <token>` 即可生成一个「断点续传流」，恢复之前被中断的传输。
+
+!!! tip "放弃中断的传输"
+
+    如果你想要放弃（**A**bort）一个被中断的 `zfs receive -s` 接收并删除已经接收一半的内容，可以使用 `-A` 参数：
+
+    ```shell
+    zfs receive -A pool0/example
+    ```
+
 ### 书签 {#bookmark}
 
 如果只使用快照进行备份的话，可能会遇到一个问题：为了使得后续能够进行增量发送，两端必须同时保留一个完整的、共同的快照。
