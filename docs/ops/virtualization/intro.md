@@ -282,7 +282,7 @@ Xen 是 x86 半虚拟化技术的先驱，其经典论文《Xen and the art of v
 
 - [阿里云课程 - 虚拟化技术入门](https://edu.aliyun.com/course/313115/)
 - [CTF Wiki - 虚拟化基础知识](https://ctf-wiki.org/pwn/virtualization/basic-knowledge/basic-knowledge/)
-- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](#_11)
+- [VMware White Paper - Understanding Full Virtualization, Paravirtualization, and Hardware Assist](https://www.academia.edu/31874108/VMware_Understanding_Full_Virtualization_Paravirtualization_and_Hardware_Assist)
 - [Intel® 64 and IA-32 Architectures Software Developer’s Manual Volume 3C: System Programming Guide, Part 3](https://cdrdv2.intel.com/v1/dl/getContent/671506)
 - [Virtio: An I/O virtualization framework for Linux](https://developer.ibm.com/articles/l-virtio/)
 - [Intel® Virtualization Technology for Directed I/O](https://cdrdv2-public.intel.com/774206/vt-directed-io-spec%20.pdf)
