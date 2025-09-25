@@ -33,6 +33,7 @@ sudo systemctl status nginx # 查看 Nginx 状态
 ```
 
 常用命令：
+
 ```bash
 sudo nginx -t # 检查配置文件是否正确
 sudo nginx -s reload # 不停机重新加载配置文件
@@ -41,7 +42,6 @@ sudo nginx -s stop # 停止 Nginx
 sudo nginx -s quit # 安全停止 Nginx（完成当前请求后停止）
 ```
 
-
 ## 配置
 
 ### 配置文件在哪
@@ -49,6 +49,7 @@ sudo nginx -s quit # 安全停止 Nginx（完成当前请求后停止）
 **对于 Debian & Ubuntu 系来说**
 
 nginx.conf:
+
 ```nginx
 http {
     …
@@ -71,6 +72,7 @@ http {
 **对于其他发行版和官方源来说**
 
 nginx 官方上游包的 /etc/nginx/nginx.conf:
+
 ```nginx
 http {
     …
@@ -83,7 +85,6 @@ http {
 所以其实 Debian & Ubuntu 系的配置文件中关于 `sites-*` 文件夹的抽象使事情更有条理，并允许你通过单独的脚本来管理它们。
 
 关于两者的区别，你可以查看[这篇文章](https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx)。
-
 
 ### 我该如何编辑？
 
@@ -157,7 +158,6 @@ sudo systemctl reload nginx
 
 需要注意的是，如果没有检查配置，并且配置中存在错误，`nginx -s reload` 会让 nginx 停止，而 `systemctl reload nginx` 不会，并且不会采用新的配置文件。
 
-
 ## 进阶教程
 
 ### Nginx 名词扫盲
@@ -169,6 +169,7 @@ sudo systemctl reload nginx
 Nginx 的配置文件中可以有多个 server 块，每个 server 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 server 块。
 Nginx 正是通过 server 块来实现多站点配置的。
 一个典型的 server 块：
+
 ```nginx
 server {
     listen 80;  # 监听的端口
@@ -222,11 +223,11 @@ Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多�
 
 那么如何实现呢？答案就是 server 块中的 server_name 指令。server_name 指令用于定义服务器的名称，可以是域名、IP 地址、通配符等。我们来看一个典型的示例：
 
-- 对于请求 `example.com` 和 `www.example.com`，Nginx 会使用第一个 server 块来处理请求，对应的网站根目录是 `/var/www/example.com`。
+* 对于请求 `example.com` 和 `www.example.com`，Nginx 会使用第一个 server 块来处理请求，对应的网站根目录是 `/var/www/example.com`。
 
-- 对于请求 `example.org` 和 `www.example.org`，Nginx 会使用第二个 server 块来处理请求。对应的网站根目录是 `/var/www/example.org`。
+* 对于请求 `example.org` 和 `www.example.org`，Nginx 会使用第二个 server 块来处理请求。对应的网站根目录是 `/var/www/example.org`。
 
-- 对于其他请求，Nginx 会返回 404 错误。
+* 对于其他请求，Nginx 会返回 404 错误。
 
 ```nginx
 server {
@@ -253,6 +254,7 @@ server {
     }
 }
 ```
+
 注意到除了指定的域名外，还有一个 `_`，它表示默认域名。如果请求的域名不在 server_name 中，Nginx 会使用 `_` 对应的 server 块来处理请求。
 那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 server_name 中时，Nginx 会使用 `default_server` 对应的 server 块来处理请求。
 一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
@@ -300,7 +302,7 @@ location [modifier] /path/ {
 
 首先来看 `modifier`，它是一个可选的修饰符，用于修改 location 块的匹配规则。常用的修饰符有：
 
-- 前缀匹配
+* 前缀匹配
 
 前缀匹配是 location 块的默认匹配规则，只要请求的路径以 location 块的路径开头，就会匹配成功。例如：
 
@@ -311,7 +313,7 @@ location /example {
 }
 ```
 
-- `=`
+* `=`
 
 精确匹配，只有请求的路径与 location 块的路径完全相同时才匹配。
 
@@ -323,11 +325,11 @@ location = /example {
 }
 ```
 
-- `~`
+* `~`
 
 区分大小写的正则匹配。
 
-- `~*`
+* `~*`
 
 不区分大小写的正则匹配。
 
@@ -350,7 +352,7 @@ location ~* \.(jpg|jpeg|png)$ {
 }
 ```
 
-- `^~`
+* `^~`
 
 通配符匹配，如果请求的 URI 以指定的路径开头，且该路径是最长的前缀匹配，则使用该 location 块。它优先于正则匹配。
 
@@ -377,11 +379,11 @@ Nginx 在处理请求时会按照以下顺序匹配 location 块：
 
 而在 Location 块中，我们可以使用一些指令来处理请求，如：
 
-- `proxy_pass http://backend_server;`：反向代理。
-- `root /var/www/html;`：指定网站根目录。
-- `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
-- `return 200 "Hello, World!";`：返回指定的状态码和内容。
-- `include fastcgi_params;`：引入 FastCGI 参数。
+* `proxy_pass http://backend_server;`：反向代理。
+* `root /var/www/html;`：指定网站根目录。
+* `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
+* `return 200 "Hello, World!";`：返回指定的状态码和内容。
+* `include fastcgi_params;`：引入 FastCGI 参数。
 
 #### SSL/TLS 配置
 
@@ -436,10 +438,10 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 
 比如 alist 默认端口是 5244，komga 默认端口是 25600，jellyfin 默认端口是 8096，grafana 的默认端口是 3000，你可以通过反向代理将它们统一到 80 或 443 端口上。使用如下的域名区分不同的服务。
 
-- alist.cherr.cc -> 5244
-- komga.cherr.cc -> 25600
-- jellyfin.cherr.cc -> 8096
-- grafana.cherr.cc -> 3000
+* alist.cherr.cc -> 5244
+* komga.cherr.cc -> 25600
+* jellyfin.cherr.cc -> 8096
+* grafana.cherr.cc -> 3000
 
 比如上面的例子，就可以通过下面的配置实现反向代理：
 
@@ -476,7 +478,7 @@ server {
 
 但是这只是最简单的反向代理配置，实际情况下往往还需要根据不同的服务做一些特殊的配置，可以通过两个狠狠坑过我的例子来学习。
 
-- alist 反向代理非标准端口或启用 https 后丢失 https 或端口号/无法播放视频
+* alist 反向代理非标准端口或启用 https 后丢失 https 或端口号/无法播放视频
 
 参考：<https://alist.nn.ci/zh/guide/install/reverse-proxy.html>
 
@@ -497,7 +499,7 @@ location / {
 }
 ```
 
-- Grafana 需要 websocket 反代支持
+* Grafana 需要 websocket 反代支持
 
 参考：<https://grafana.com/tutorials/run-grafana-behind-a-proxy/>
 
@@ -558,11 +560,12 @@ http {
 }
 ```
 
-- 负载均衡算法
+* 负载均衡算法
 
 Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
 
 最少连接：
+
 ```nginx
 upstream backend {
     least_conn;  # 使用最少连接算法
