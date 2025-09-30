@@ -478,6 +478,22 @@ git rebase master
 
     可以使用 pre-commit 的 [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#check-merge-conflict) 来避免不小心把未解决的冲突 commit 到仓库里。
 
+!!! tip "`git commit --fixup`"
+
+    git 提供了 fixup 功能，可以直接向指定的 commit 添加修改，并且在 rebase 时自动合并。一个常见的场景是：在编写 PR 时需要保证每个 commit 有意义、功能完整，同时需要向 PR 里之前的 commit 添加修复，此时使用 fixup 功能会很方便。方法如下：
+
+    ```bash
+    # 先 stage 修改，然后：
+    git commit --fixup <commit>
+    ```
+
+    此时会生成一个以 `fixup! <original commit message>` 命名的 commit。之后可以使用如下命令进行 rebase：
+
+    ```bash
+    # 需要包含 fixup 的目标 commit
+    git rebase -i --autosquash <base>
+    ```
+
 ### Bisect {#git-bisect}
 
 在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 `git bisect` 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：
