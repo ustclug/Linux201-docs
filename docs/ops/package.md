@@ -1156,7 +1156,23 @@ Trusted: yes
 
 !!! warning "`Signed-By` 与 GPG 签名"
 
-    [从 apt 2.9.24 开始，没有 `Signed-By` 字段的源会视作废弃状态](https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6)。以上不包含 GPG 签名的仓库在未来的 Debian 版本上可能会被拒绝使用。
+    [从 apt 2.9.24 开始，没有 `Signed-By` 字段的源会视作废弃状态](https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6)，并弹出警告信息：
+
+    ```console
+    Notice: Missing Signed-By in the sources.list(5) entry for 'https://deb.example.com/repo'
+    ```
+    
+    由于添加了 `Trusted: yes`，因此一种绕过的方案是添加一个不相关的 `Signed-By`，例如：
+
+    ```yaml
+    Types: deb
+    URIs: https://deb.example.com/repo/
+    Suites: ./
+    Trusted: yes
+    Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+    ```
+
+    当然了，如果需要在生产环境自行搭建软件源，仍然建议使用 GPG 签名保障软件包不被篡改。只需要给 `Release` 文件签名即可，可以将签名存储在 `Release.gpg` 文件中，或者将签名附加在 `Release` 文件中生成 `InRelease` 文件，然后将公钥提供给用户。软件包本身的完整性则由 `Release` 文件中的哈希值保障。如果需要进一步的安全性保障，软件包维护者还可以给软件包本身签名，此处不再赘述。
 
 ### 官方源结构 {#official-structure}
 
