@@ -2,35 +2,27 @@
 icon: simple/nginx
 ---
 
-1# Nginx 网页服务器
+# Nginx 网页服务器
 
 !!! note "主要作者"
 
     [@Cherrling][Cherrling]
 
-**_WebServer 不能失去 Nginx，就如同西方不能失去耶路撒冷_**
+> WebServer 不能失去 Nginx，就如同西方不能失去耶路撒冷
+>
+> —— [@Cherrling][Cherrling]
 
 Nginx 是一个高性能的 HTTP 和反向代理服务器，它可以作为一个独立的 Web 服务器，也可以作为其他 Web 服务器的反向代理服务器。
 
-如果你只是需要简单快速的拉起一个网站，或许也可以试试 [Caddy](https://201.ustclug.org/advanced/caddy/)，它是一个更加简单的 Web 服务器。
+如果你只是需要简单快速的拉起一个网站，或许也可以试试 [Caddy](../../advanced/caddy.md)，它是一个更加简单的 Web 服务器。
 
 ## 安装
 
-你可以直接从 Debian 官方源安装 Nginx：
+Nginx 可以直接从 Debian 官方源安装。如果有特殊的需求，也有其他的选择：
 
-```bash
-sudo apt update
-sudo apt install nginx -y
-sudo nginx -v # 查看 Nginx 版本
-```
-
-如果你需要的话，设置开机自启：
-
-```bash
-sudo systemctl enable nginx # 设置开机自启
-sudo systemctl start nginx # 启动 Nginx
-sudo systemctl status nginx # 查看 Nginx 状态
-```
+- [Nginx.org 官方源](https://nginx.org/en/linux_packages.html#Debian) 提供了最新主线和稳定版本的 Nginx。
+- [n.wtf](https://n.wtf/) 提供了最新的 Nginx，并内置了 Brotli、QUIC（HTTP/3）等支持。
+- [OpenResty](https://openresty.org/en/linux-packages.html) 提供了基于 Nginx 的高性能 Web 平台，内置了 LuaJIT 支持。用户可以编写 Lua 脚本来扩展 Nginx 的功能。
 
 常用命令：
 
@@ -44,15 +36,13 @@ sudo nginx -s quit # 安全停止 Nginx（完成当前请求后停止）
 
 ## 配置
 
-### 配置文件在哪
+### 配置文件结构简介
 
-**对于 Debian & Ubuntu 系来说**
-
-nginx.conf:
+对于 Debian & Ubuntu 来说，nginx.conf 的内容一般包含：
 
 ```nginx
 http {
-    …
+    # ...
     include /etc/nginx/conf.d/*.conf;
     include /etc/nginx/sites-enabled/*;
 }
@@ -60,41 +50,32 @@ http {
 
 配置 Nginx 主要涉及到三个目录，分别是 `/etc/nginx/nginx.conf`、`/etc/nginx/sites-available` 和 `/etc/nginx/sites-enabled`。
 
-* `nginx.conf` 是 Nginx 的主配置文件，它包含了 Nginx 的全局配置。
-* `sites-available` 目录下存放的是所有的站点配置文件。
-* `sites-enabled` 目录下存放的是启用的站点配置文件的符号链接。
+- `nginx.conf` 是 Nginx 的主配置文件，它包含了 Nginx 的全局配置。
+- `sites-available` 目录下存放的是所有的站点配置文件。
+- `sites-enabled` 目录下存放的是启用的站点配置文件的符号链接。
 
-一般情况下，我们不在 `nginx.conf` 文件中直接编写站点信息（`http` 块），而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。
-如果要暂时下线某个站点，只需要删除 `sites-enabled` 目录下的符号链接即可，而不需要删除配置文件。
+一般情况下，我们不在 `nginx.conf` 文件中直接编写站点信息（`http` 块），而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。如果要暂时下线某个站点，只需要删除 `sites-enabled` 目录下的符号链接即可，而不需要删除配置文件。
 
-从 NGINX 的角度来看，唯一的区别在于来自 `conf.d` 的文件能够更早被处理，因此，如果您有相互冲突的配置，那么来自 `conf.d` 的配置会优先于 `sites-enabled` 中的配置。
+从 Nginx 的角度来看，唯一的区别在于来自 `conf.d` 的文件能够更早被处理，因此，如果你有相互冲突的配置，那么来自 `conf.d` 的配置会优先于 `sites-enabled` 中的配置。
 
-**对于其他发行版和官方源来说**
+!!! note "其他发行版和 Nginx 官方的配置"
 
-nginx 官方上游包的 /etc/nginx/nginx.conf:
+    对于其他发行版和官方源来说，配置中则不包含 `sites-available` 和 `sites-enabled`，而是只会 `include` `conf.d` 目录：
 
-```nginx
-http {
-    …
-    include /etc/nginx/conf.d/*.conf;
-}
-```
+    ```nginx
+    http {
+        # ...
+        include /etc/nginx/conf.d/*.conf;
+    }
+    ```
 
-并没有`/etc/nginx/sites-available` 和 `/etc/nginx/sites-enabled`这两个目录，你需要将你编写的配置文件放置于 `/etc/nginx/conf.d` 目录下，但当你需要禁用某些内容时，必须将其移出文件夹、删除或进行更改。当然，你也可以自己创建 `sites-available` 和 `sites-enabled` 目录，然后在 `nginx.conf` 中引入。
+    此时，你需要将你编写的配置文件放置于 `/etc/nginx/conf.d` 目录下，但当你需要禁用某些内容时，必须将其移出文件夹、删除或进行更改。当然，你也可以自己创建 `sites-available` 和 `sites-enabled` 目录，然后在 `nginx.conf` 中引入。
 
-所以其实 Debian & Ubuntu 系的配置文件中关于 `sites-*` 文件夹的抽象使事情更有条理，并允许你通过单独的脚本来管理它们。
+    关于两者的区别，你可以查看[这篇文章](https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx)。
 
-关于两者的区别，你可以查看[这篇文章](https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx)。
+### 编辑站点配置
 
-### 我该如何编辑？
-
-编辑默认站点配置文件
-
-```bash
-sudo vim /etc/nginx/sites-available/default
-```
-
-一般来说，默认的站点配置长得像这样：
+默认的站点配置文件在 `/etc/nginx/sites-available/default`，你可以直接编辑它——以下为去除了所有注释的默认版本：
 
 ```nginx
 server {
@@ -112,10 +93,18 @@ server {
 }
 ```
 
-这个配置文件中定义了一个监听 80 端口的站点，根目录是 `/var/www/html`，默认的首页文件是 `index.html`、`index.htm` 和 `index.nginx-debian.html`。
-这时你可以在 `/var/www/html` 目录下放置你自己的网站文件，然后访问 `http://localhost` 就可以看到你的网站了。
+这个配置文件中定义了一个完整的 `server` 块。一个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。`server` 块中的指令如下：
 
-如果你需要反向代理，可以参考下面的配置：
+- `listen`：该默认站点在所有的 IPv4 和 IPv6 上监听 80 端口。
+- `root`：根目录是 `/var/www/html`。
+- `index`：在处理 URL 结尾为 `/` 的请求时，使用的默认的首页文件是 `index.html`、`index.htm` 和 `index.nginx-debian.html`；Nginx 会按顺序查找这些文件，找到第一个存在的文件后返回给客户端。
+- `server_name`：默认的服务器名称是 `_`，表示匹配所有未被其他 server 块匹配的请求。
+- `location /`：处理所有以 `/` 开头的请求。
+    - `try_files $uri $uri/ =404;`：尝试按顺序查找请求的文件 `$uri`（请求的路径），如果找不到则尝试查找目录 `$uri/`，如果仍然找不到则返回 404 错误。
+
+这时你可以在 `/var/www/html` 目录下放置你自己的 HTML、CSS、JS 等文件，然后访问 `http://localhost` 就可以看到你的网站了。
+
+反向代理是代表服务器接收客户端请求、转发到后端、再返回结果的一层中间代理。一种常见的需求是让 Nginx 作为其他后端服务的反向代理。可以参考下面的配置：
 
 ```nginx
 server {
@@ -132,9 +121,9 @@ server {
 }
 ```
 
-这时访问 `http://localhost` 就会被转发到 `http://backend_server:port`。对外网来说，Nginx 就是一个反向代理站点。
+这时访问 `http://localhost` 就会被转发到 `http://backend_server:port`。对外部网络来说，Nginx 就是一个反向代理站点。
 
-### 别忘了重启
+### 重新加载配置
 
 修改配置文件后，别忘了重新加载 Nginx 配置，否则修改不会生效。
 
