@@ -234,6 +234,16 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/mo
 - `fd` 目录包含了所有程序打开的文件描述符
 - `stack`：程序在内核态的栈信息，这一项信息在程序一直处于 D 状态（不可中断睡眠）时特别有用
 
+!!! tip "`lsof`"
+
+    lsof 工具可以遍历 procfs 上各个进程的 `fd` 目录，并输出进程打开的文件信息。以下命令可以快速地输出当前系统全部相关的信息：
+
+    ```sh
+    lsof -Ki -n
+    ```
+
+    其中 `-Ki` 避免 lsof 对线程打开的重复文件计数；而 `-n` 避免了不必要的 DNS 请求。此外，较新版本 `util-linux-extra` 包中的 lsfd 工具也有类似的功能。
+
 在分析进程行为时，另一个相当有用的工具是 `strace`。它可以输出程序使用的所有系统调用信息，在调试许多问题的时候都可以提供很大的帮助。一些常用的命令有：
 
 - `strace ls`：跟踪 `ls` 的系统调用
@@ -526,7 +536,7 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
 
-如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 工具。
+如果只需要看到程序的调用堆栈，不需要对程序进行调试，也可以使用 [`pstack`](https://github.com/peadar/pstack) 或 `eu-stack`（在 `elfutils` 包中）等工具。
 
 ## 网络问题调试简介 {#network-debug}
 
