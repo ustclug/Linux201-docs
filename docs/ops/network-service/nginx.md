@@ -436,7 +436,7 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 
 反向代理是 Nginx 的一个重要功能，可以用于隐藏后端服务器的真实 IP 地址，提高安全性。也可以将开在不同端口的服务统一到一个端口上。
 
-比如 alist 默认端口是 5244，komga 默认端口是 25600，jellyfin 默认端口是 8096，grafana 的默认端口是 3000，你可以通过反向代理将它们统一到 80 或 443 端口上。使用如下的域名区分不同的服务。
+假如你开设了一个多媒体服务器，在运行的服务器软件中，alist 默认端口是 5244，komga 默认端口是 25600，jellyfin 默认端口是 8096，grafana 的默认端口是 3000，你可以通过反向代理将它们统一到 80 或 443 端口上。使用如下的域名区分不同的服务：
 
 * alist.cherr.cc -> 5244
 * komga.cherr.cc -> 25600
@@ -480,45 +480,63 @@ server {
 
 * alist 反向代理非标准端口或启用 https 后丢失 https 或端口号/无法播放视频
 
-参考：<https://alist.nn.ci/zh/guide/install/reverse-proxy.html>
+    参考：<https://alist.nn.ci/zh/guide/install/reverse-proxy.html>
 
-问题就在于反代时需要正确的 Host 头，添加设置 `proxy_set_header Host $host;`，否则会导致反代失败。
+    问题就在于反代时需要正确的 Host 头，添加设置 `proxy_set_header Host $host;`，否则会导致反代失败。
 
-```nginx
-location / {
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Host $http_host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header Range $http_range;
-    proxy_set_header If-Range $http_if_range;
-    proxy_redirect off;
-    proxy_pass http://127.0.0.1:5244;
-    # the max size of file to upload
-    client_max_body_size 20000m;
-}
-```
+    这里要说明一下 `$host` 和 `$http_host` 的区别：
+
+    `$host` 是 Nginx 的一个内置变量，用于获取请求的主机名（Host）。它的值是根据以下优先级确定的：
+
+    1. 请求行中的主机名（HTTP/1.0）
+    2. Host 请求头字段
+    3. 与请求匹配的 `server_name`
+        
+    `$host` 变量的可靠性高。如果 Host 头缺失，会使用 `server_name` 作为后备值，保证有值。同时即使请求中有端口号，`$host` 也只会返回主机名部分，不包含端口号。
+
+    `$http_` 是 Nginx 的一个变量前缀，用于获取任意 HTTP 请求头的值。`$http_host` 就是专门用于获取 Host 请求头的变量。它纯粹是客户端发送过来的 Host 头的副本。
+
+    如果客户端请求是 GET / HTTP/1.1， 并且带了 `Host: www.example.com:8080`，那么 `$http_host` 的值就是 "www.example.com:8080"。
+
+    如果客户端请求是 GET / HTTP/1.0（HTTP/1.0 没有 Host 头），那么 `$http_host` 的值就是 空。
+
+    因为它可能为空，如果你在配置中直接使用它（例如 `proxy_set_header Host $http_host;`），当其为空时，转发给后端的请求的 Host 头也会是空的，这可能导致后端服务器无法正确处理请求（无法识别要访问哪个虚拟主机）。
+
+    ```nginx
+    location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Range $http_range;
+        proxy_set_header If-Range $http_if_range;
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:5244;
+        # the max size of file to upload
+        client_max_body_size 20000m;
+    }
+    ```
 
 * Grafana 需要 websocket 反代支持
 
-参考：<https://grafana.com/tutorials/run-grafana-behind-a-proxy/>
+    参考：<https://grafana.com/tutorials/run-grafana-behind-a-proxy/>
 
-关键在于 Grafana 加载数据时使用了 websocket，需要指示 Nginx 支持 websocket 反代。
+    关键在于 Grafana 加载数据时使用了 websocket，需要指示 Nginx 支持 websocket 反代。
 
-```nginx
-map $http_upgrade $connection_upgrade {
-    default upgrade;
-    '' close;
-}
-# Proxy Grafana Live WebSocket connections.
-location /api/live/ {
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
-    proxy_set_header Host $host;
-    proxy_pass http://grafana;
-}
-```
+    ```nginx
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+    # Proxy Grafana Live WebSocket connections.
+    location /api/live/ {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_pass http://grafana;
+    }
+    ```
 
 #### 负载均衡配置
 
