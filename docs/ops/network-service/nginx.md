@@ -491,12 +491,12 @@ server {
     1. 请求行中的主机名（HTTP/1.0）
     2. Host 请求头字段
     3. 与请求匹配的 `server_name`
-        
+
     `$host` 变量的可靠性高。如果 Host 头缺失，会使用 `server_name` 作为后备值，保证有值。同时即使请求中有端口号，`$host` 也只会返回主机名部分，不包含端口号。
 
     `$http_` 是 Nginx 的一个变量前缀，用于获取任意 HTTP 请求头的值。`$http_host` 就是专门用于获取 Host 请求头的变量。它纯粹是客户端发送过来的 Host 头的副本。
 
-    如果客户端请求是 GET / HTTP/1.1， 并且带了 `Host: www.example.com:8080`，那么 `$http_host` 的值就是 "www.example.com:8080"。
+    如果客户端请求是 GET / HTTP/1.1，并且带了 `Host: www.example.com:8080`，那么 `$http_host` 的值就是 "www.example.com:8080"。
 
     如果客户端请求是 GET / HTTP/1.0（HTTP/1.0 没有 Host 头），那么 `$http_host` 的值就是 空。
 
