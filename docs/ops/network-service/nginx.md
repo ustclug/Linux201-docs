@@ -212,11 +212,9 @@ Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多�
 
 那么如何实现呢？答案就是 server 块中的 server_name 指令。server_name 指令用于定义服务器的名称，可以是域名、IP 地址、通配符等。我们来看一个典型的示例：
 
-* 对于请求 `example.com` 和 `www.example.com`，Nginx 会使用第一个 server 块来处理请求，对应的网站根目录是 `/var/www/example.com`。
-
-* 对于请求 `example.org` 和 `www.example.org`，Nginx 会使用第二个 server 块来处理请求。对应的网站根目录是 `/var/www/example.org`。
-
-* 对于其他请求，Nginx 会返回 404 错误。
+- 对于请求 `example.com` 和 `www.example.com`，Nginx 会使用第一个 server 块来处理请求，对应的网站根目录是 `/var/www/example.com`。
+- 对于请求 `example.org` 和 `www.example.org`，Nginx 会使用第二个 server 块来处理请求。对应的网站根目录是 `/var/www/example.org`。
+- 对于其他请求，Nginx 会返回 404 错误。
 
 ```nginx
 server {
@@ -291,7 +289,7 @@ location [modifier] /path/ {
 
 首先来看 `modifier`，它是一个可选的修饰符，用于修改 location 块的匹配规则。常用的修饰符有：
 
-* 前缀匹配
+- 前缀匹配
 
 前缀匹配是 location 块的默认匹配规则，只要请求的路径以 location 块的路径开头，就会匹配成功。例如：
 
@@ -302,7 +300,7 @@ location /example {
 }
 ```
 
-* `=`
+- `=`
 
 精确匹配，只有请求的路径与 location 块的路径完全相同时才匹配。
 
@@ -314,11 +312,11 @@ location = /example {
 }
 ```
 
-* `~`
+- `~`
 
 区分大小写的正则匹配。
 
-* `~*`
+- `~*`
 
 不区分大小写的正则匹配。
 
@@ -341,7 +339,7 @@ location ~* \.(jpg|jpeg|png)$ {
 }
 ```
 
-* `^~`
+- `^~`
 
 通配符匹配，如果请求的 URI 以指定的路径开头，且该路径是最长的前缀匹配，则使用该 location 块。它优先于正则匹配。
 
@@ -368,11 +366,11 @@ Nginx 在处理请求时会按照以下顺序匹配 location 块：
 
 而在 Location 块中，我们可以使用一些指令来处理请求，如：
 
-* `proxy_pass http://backend_server;`：反向代理。
-* `root /var/www/html;`：指定网站根目录。
-* `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
-* `return 200 "Hello, World!";`：返回指定的状态码和内容。
-* `include fastcgi_params;`：引入 FastCGI 参数。
+- `proxy_pass http://backend_server;`：反向代理。
+- `root /var/www/html;`：指定网站根目录。
+- `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
+- `return 200 "Hello, World!";`：返回指定的状态码和内容。
+- `include fastcgi_params;`：引入 FastCGI 参数。
 
 #### SSL/TLS 配置
 
@@ -427,10 +425,10 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 
 假如你开设了一个多媒体服务器，在运行的服务器软件中，alist 默认端口是 5244，komga 默认端口是 25600，jellyfin 默认端口是 8096，grafana 的默认端口是 3000，你可以通过反向代理将它们统一到 80 或 443 端口上。使用如下的域名区分不同的服务：
 
-* alist.cherr.cc -> 5244
-* komga.cherr.cc -> 25600
-* jellyfin.cherr.cc -> 8096
-* grafana.cherr.cc -> 3000
+- alist.cherr.cc -> 5244
+- komga.cherr.cc -> 25600
+- jellyfin.cherr.cc -> 8096
+- grafana.cherr.cc -> 3000
 
 比如上面的例子，就可以通过下面的配置实现反向代理：
 
@@ -467,7 +465,7 @@ server {
 
 但是这只是最简单的反向代理配置，实际情况下往往还需要根据不同的服务做一些特殊的配置，可以通过两个狠狠坑过我的例子来学习。
 
-* alist 反向代理非标准端口或启用 https 后丢失 https 或端口号/无法播放视频
+- alist 反向代理非标准端口或启用 https 后丢失 https 或端口号/无法播放视频
 
     参考：<https://alist.nn.ci/zh/guide/install/reverse-proxy.html>
 
@@ -506,7 +504,7 @@ server {
     }
     ```
 
-* Grafana 需要 websocket 反代支持
+- Grafana 需要 websocket 反代支持
 
     参考：<https://grafana.com/tutorials/run-grafana-behind-a-proxy/>
 
@@ -567,7 +565,7 @@ http {
 }
 ```
 
-* 负载均衡算法
+- 负载均衡算法
 
 Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
 
