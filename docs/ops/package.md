@@ -802,7 +802,7 @@ Index: sudo-1.9.13p3/src/sudo.c
      sigset_t mask;
      debug_decl_vars(main, SUDO_DEBUG_MAIN);
 +    printf("Hello, world!\n");
- 
+
      /* Only allow "sudo" or "sudoedit" as the program name. */
      initprogname2(argc > 0 ? argv[0] : "sudo", allowed_prognames);
 ```
@@ -1161,7 +1161,7 @@ Trusted: yes
     ```console
     Notice: Missing Signed-By in the sources.list(5) entry for 'https://deb.example.com/repo'
     ```
-    
+
     由于添加了 `Trusted: yes`，因此一种绕过的方案是添加一个不相关的 `Signed-By`，例如：
 
     ```yaml
