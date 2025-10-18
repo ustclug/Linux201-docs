@@ -17,6 +17,7 @@
 [Integral-Tech]: https://github.com/Integral-Tech
 [stevapple]: https://github.com/stevapple
 [yuanyiwei]: https://github.com/yuanyiwei
+[Cherrling]: https://cherr.cc
 [TheRainstorm]: https://github.com/TheRainstorm
 [JiaminL]: https://github.com/JiaminL
 [xiao-h1024]: https://github.com/xiaoh1024
