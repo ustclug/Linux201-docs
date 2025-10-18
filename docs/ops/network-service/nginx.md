@@ -139,6 +139,8 @@ location [modifier] /path/ {
 }
 ```
 
+其中可选的 `modifier` 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配。
+
 ### 站点配置简介 {#site-config-intro}
 
 默认的站点配置文件在 `/etc/nginx/sites-available/default`，你可以直接编辑它——以下为去除了所有注释的默认版本：
@@ -305,10 +307,10 @@ server {
 然后在 `/etc/nginx/sites-enabled` 目录下创建符号链接：
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
 # 默认情况下 default 站点已经启用
-# sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+# sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 ```
 
 ### 处理复杂的 location 匹配 {#complex-location-matching}
@@ -423,11 +425,7 @@ Nginx 在处理请求时会按照以下顺序匹配 location 块：
     如果有匹配到的正则表达式，Nginx 会使用该 location 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 location 块处理请求。
 
-## 示例讲解
-
-以下给出一些实践中会使用的 Nginx 配置示例。
-
-### SSL/TLS 配置
+### TLS 配置 {#tls-configuration}
 
 TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
 
@@ -474,6 +472,10 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。
 如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。
 `add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
+
+## 示例讲解
+
+以下给出一些实践中会使用的 Nginx 配置示例。
 
 ### 反向代理配置
 
