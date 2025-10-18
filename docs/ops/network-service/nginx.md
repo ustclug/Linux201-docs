@@ -12,7 +12,7 @@ icon: simple/nginx
 >
 > —— [@Cherrling][Cherrling]
 
-Nginx 是一个高性能的 HTTP 和反向代理服务器，它可以作为一个独立的 Web 服务器，也可以作为其他 Web 服务的反向代理服务器。
+Nginx 是一个高性能的开源 Web 服务器和反向代理服务器，以稳定性高、性能优异、并发能力强等优势被广泛使用。
 
 如果你只是需要简单快速的拉起一个网站，或许也可以试试 [Caddy](../../advanced/caddy.md)，它是一个更加简单的 Web 服务器。
 
@@ -23,6 +23,8 @@ Nginx 可以直接从 Debian APT 源安装。
 ```bash
 sudo apt update
 sudo apt install nginx
+# 如果需要更多模块，可以安装 nginx-full 与 nginx-extras 包
+sudo apt install nginx-full nginx-extras
 ```
 
 如果有特殊的需求，也有其他的选择：
@@ -94,7 +96,7 @@ Nginx 的配置还支持变量。以上例子中 `$host`、`$remote_addr`、`$ur
 set $my_variable "Hello, World!";
 ```
 
-Nginx 是模块化的服务器，其中 [`ngx_http_core_module`](https://nginx.org/en/docs/http/ngx_http_core_module.html) 提供了基础的让 Nginx 提供 HTTP 服务的功能（包括 `http` 块）。Nginx 也不仅限于 HTTP 服务——可以转发 TCP 和 UDP 流量，甚至是当邮件服务器，或者 RTMP 直播服务器等。这些功能都是通过不同的模块来实现的。用户也可以自己编译安装第三方模块来扩展 Nginx 的功能。
+Nginx 是模块化的服务器，其中 [`ngx_http_core_module`](https://nginx.org/en/docs/http/ngx_http_core_module.html) 提供了基础的让 Nginx 提供 HTTP 服务的功能（包括 `http` 块）。Nginx 也不仅限于 HTTP 服务——可以转发 TCP 和 UDP 流量，甚至是当邮件服务器，或者 RTMP 直播服务器等。这些功能都是通过不同的模块来实现的。用户也可以自己编译安装第三方模块来扩展 Nginx 的功能。如果使用了 Debian 提供的 Nginx 包，那么可以使用 Debian 编写的一些第三方模块，这些模块以 `libnginx-mod-` 前缀开头；如果要自行编译模块，需要安装 `nginx-dev` 包。
 
 [Nginx 文档](https://nginx.org/en/docs/) 是非常重要的参考资料，其包含了：
 
@@ -137,7 +139,7 @@ location [modifier] /path/ {
 }
 ```
 
-### 编辑站点配置 {#edit-site-config}
+### 站点配置简介 {#site-config-intro}
 
 默认的站点配置文件在 `/etc/nginx/sites-available/default`，你可以直接编辑它——以下为去除了所有注释的默认版本：
 
@@ -211,11 +213,7 @@ sudo nginx -s reload
 
 需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
 
-## 示例讲解
-
-Nginx 主要用途可以分为固定站点和反代两类，可以通过几个例子来学习一下。
-
-### 多站点配置
+### 多站点配置 {#multiple-servers}
 
 Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多个网站，对不同的域名提供不同的服务。这就是所谓的虚拟主机配置。
 
@@ -278,7 +276,42 @@ server {
 
     一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。
 
-### Location 块详解
+我们建议将不同的站点配置放置于不同的文件中：
+
+```nginx title="/etc/nginx/sites-available/example.com"
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    # ...
+}
+```
+
+```nginx title="/etc/nginx/sites-available/example.org"
+server {
+    listen 80;
+    server_name example.org www.example.org;
+    # ...
+}
+```
+
+```nginx title="/etc/nginx/sites-available/default"
+server {
+    listen 80 default_server;
+    server_name _;
+    # ...
+}
+```
+
+然后在 `/etc/nginx/sites-enabled` 目录下创建符号链接：
+
+```bash
+sudo ln -s /etc/nginx/sites-available/example.com /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
+# 默认情况下 default 站点已经启用
+# sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+```
+
+### 处理复杂的 location 匹配 {#complex-location-matching}
 
 一个典型的 location 块如下：
 
@@ -389,6 +422,10 @@ Nginx 在处理请求时会按照以下顺序匹配 location 块：
 
     如果有匹配到的正则表达式，Nginx 会使用该 location 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 location 块处理请求。
+
+## 示例讲解
+
+以下给出一些实践中会使用的 Nginx 配置示例。
 
 ### SSL/TLS 配置
 
