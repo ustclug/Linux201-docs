@@ -1161,11 +1161,35 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tls" class="md-nav__link">
+    <span class="md-ellipsis">
+      TLS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TLS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      申请证书
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tls-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       TLS 配置
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2457,11 +2481,35 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tls" class="md-nav__link">
+    <span class="md-ellipsis">
+      TLS
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TLS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      申请证书
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tls-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       TLS 配置
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2540,7 +2588,7 @@
 <h1 id="nginx">Nginx 服务器<a class="headerlink" href="#nginx" title="Permanent link">&para;</a></h1>
 <div class="admonition note">
 <p class="admonition-title">主要作者</p>
-<p><a href="https://cherr.cc">@Cherrling</a></p>
+<p><a href="https://cherr.cc">@Cherrling</a>、<a href="https://github.com/iBug">@iBug</a>、<a href="https://github.com/taoky">@taoky</a></p>
 </div>
 <blockquote>
 <p>Web server 不能失去 Nginx，就如同西方不能失去耶路撒冷</p>
@@ -2634,7 +2682,7 @@
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="c1"># 处理请求的指令</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">}</span>
 </code></pre></div>
-<p>其中可选的 <code>modifier</code> 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配。</p>
+<p>其中可选的 <code>modifier</code> 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配，详细介绍见下面的 <a href="#location-matching">Location 匹配</a>部分。</p>
 <h3 id="site-config-intro">站点配置简介<a class="headerlink" href="#site-config-intro" title="Permanent link">&para;</a></h3>
 <p>默认的站点配置文件在 <code>/etc/nginx/sites-available/default</code>，你可以直接编辑它——以下为去除了所有注释的默认版本：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
@@ -2858,45 +2906,115 @@
 如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 <code>location</code> 块处理请求。</p>
 </li>
 </ol>
-<h3 id="tls-configuration">TLS 配置<a class="headerlink" href="#tls-configuration" title="Permanent link">&para;</a></h3>
+<h3 id="tls">TLS<a class="headerlink" href="#tls" title="Permanent link">&para;</a></h3>
 <p>TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <a href="https://cherr.cc/ssl.html">https://cherr.cc/ssl.html</a> 找到 SSL/TLS 的原理解释。</p>
 <div class="admonition note">
 <p class="admonition-title">SSL?</p>
 <p>在早期，HTTPS 使用 SSL 来加密通信，但是人们后续发现 SSL 存在一些安全漏洞，因此逐渐被 TLS 取代。尽管如此，SSL 这个术语仍然被广泛使用，尤其是在非正式场合下。因此，SSL 和 TLS 在很多情况下可以视为同义词。</p>
 </div>
 <p>一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。</p>
-<p>首先，你需要为你的域名申请一个 TLS 证书。你可以使用免费的 Let's Encrypt 证书，也可以购买商业证书。假设你的证书保存在 <code>/etc/ssl/certs/example.com.pem</code> 和 <code>/etc/ssl/private/example.com.pem</code>。</p>
-<p>然后，你需要在 Nginx 配置文件中添加 TLS 配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">example.com</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="kn">root</span><span class="w"> </span><span class="s">/var/www/example.com</span><span class="p">;</span><span class="w">  </span><span class="c1"># 网站根目录</span>
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
-<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w"> </span><span class="s">/etc/ssl/certs/example.com.pem</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 证书路径</span>
-<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/ssl/private/example.com.pem</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 证书密钥路径</span>
-<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>
-<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">    </span><span class="c1"># （可选）SSL 设置</span>
-<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">    </span><span class="kn">ssl_protocols</span><span class="w"> </span><span class="s">TLSv1.2</span><span class="w"> </span><span class="s">TLSv1.3</span><span class="p">;</span><span class="w">  </span><span class="c1"># 启用的 TLS 协议</span>
-<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">    </span><span class="kn">ssl_ciphers</span><span class="w"> </span><span class="s">&#39;HIGH:!aNULL:!MD5&#39;</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用的加密套件</span>
-<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">    </span><span class="kn">ssl_prefer_server_ciphers</span><span class="w"> </span><span class="no">on</span><span class="p">;</span><span class="w">  </span><span class="c1"># 优先使用服务器的加密套件</span>
-<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">    </span><span class="kn">ssl_session_cache</span><span class="w"> </span><span class="s">shared:SSL:10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 会话缓存大小</span>
-<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="w">    </span><span class="kn">ssl_session_timeout</span><span class="w"> </span><span class="mi">10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 会话超时时间</span>
-<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>
-<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="w">    </span><span class="c1"># （可选）HSTS（HTTP Strict Transport Security）</span>
-<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Strict-Transport-Security</span><span class="w"> </span><span class="s">&quot;max-age=31536000</span><span class="p">;</span><span class="w"> </span><span class="kn">includeSubDomains&quot;</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
-<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>
-<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
-<a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a><span class="p">}</span>
+<h4 id="getting-certificates">申请证书<a class="headerlink" href="#getting-certificates" title="Permanent link">&para;</a></h4>
+<p>首先，你需要为你的域名申请一个 TLS 证书。一般有以下几种方式：</p>
+<ul>
+<li>使用基于 ACME 协议的免费证书，例如 Let's Encrypt、ZeroSSL 等。可以使用 <a href="https://certbot.eff.org/">Certbot</a>、<a href="https://github.com/acmesh-official/acme.sh">acme.sh</a> 等工具来申请和自动续期证书。</li>
+<li>购买商业证书。</li>
+<li>自签名证书（仅用于测试环境，不建议在生产环境中使用）。</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">ngx_http_acme_module</p>
+<p>Nginx 的 <a href="https://nginx.org/en/docs/http/ngx_http_acme_module.html"><code>ngx_http_acme_module</code></a> 也实现了 ACME 协议，可以类似 Caddy 那样避免多余的证书管理工具，直接让 Nginx 自行申请和续期证书。该模块可能需要自行编译安装。</p>
+</div>
+<div class="admonition comment">
+<p class="admonition-title">@taoky: 商业证书一定比免费证书更好吗？</p>
+<p>不一定。经常有的一种论调是：商业证书因为付了钱，所以比 Let's Encrypt 等免费证书更可靠、更安全，例如像<a href="https://www.bilibili.com/opus/1119462279183597571">下面这样</a>：</p>
+<blockquote>
+<p>北大用的商业证书，这种证书能证明这个网站确实属于北京大学，你可以看证书颁发对象的组织栏。清华用的是免费证书（注：Let's Encrypt），没有组织信息，不能证明这个网站属于清华大学。商业证书大概每年万把块？我不清楚具体行情，但世一大不应该差这点钱[吃瓜]</p>
+</blockquote>
+<p>这里存在的几个常见的误解是：</p>
+<ol>
+<li>「商业证书」不代表一定有组织信息。证书分为三种：DV（Domain Validation，域名验证）、OV（Organization Validation，组织验证）和 EV（Extended Validation，扩展验证）。其中 DV 证书只验证域名所有权。以上提供免费证书的服务只签署 DV 证书，而付费 CA 除了 OV 和 EV 证书以外，也大量销售 DV 证书。</li>
+<li>证书的核心功能是：证明你连接的是域名对应的服务器，并且加密传输的数据。不管是 DV、OV 还是 EV 证书，都能同等安全地实现这个功能。</li>
+<li>
+<p>在很久以前，浏览器会给 EV 证书在地址栏显示组织信息，但是现代浏览器早已经不再这么做了。因为：</p>
+<ul>
+<li>大部分人不怎么看地址栏，更别说注意到组织信息了。</li>
+<li>用户大多只关注是不是 HTTPS（在很久以前，如果网站是 HTTPS 的话，地址栏左侧对应区域会是绿的），而不会刻意去区分证书类型。</li>
+<li>恶意攻击者可以合法注册一个名称相似的组织，然后申请 EV 证书用于诈骗，这样的 EV 证书可能反而会强化用户的错误信任。例如 <a href="https://www.bleepingcomputer.com/news/security/extended-validation-ev-certificates-abused-to-create-insanely-believable-phishing-sites/">2017 年曾有安全研究员注册了名叫「Identity Verified」（身份已验证）的公司，并申请到了 EV 证书</a>， <a href="https://arstechnica.com/information-technology/2017/12/nope-this-isnt-the-https-validated-stripe-website-you-think-it-is/">同年另一名安全研究员用不到 200 美元成功注册了一个名为「Stripe, Inc.」的组织，并给自己的域名申请到了对应的 EV 证书，用于展示 EV 证书的设计缺陷</a>。</li>
+</ul>
+<p>因此，即使申请 EV 证书，这种付费 CA 的「背书」意义也非常有限。至少除非你不怕麻烦，而且钱多得不够花，否则我个人并不建议为了 EV 证书而花钱。</p>
+</li>
+<li>
+<p>免费证书使用的 ACME 协议决定了，能为域名申请到有效证书的前提是申请方对域名有控制权。并且，现在所有证书签署都有证书透明度（Certificate Transparency，CT）机制，任何人都可以<a href="https://crt.sh/">查询</a>到某个域名对应的证书签署记录。因此想要骗签证书难度很大，并且很容易被发现。</p>
+</li>
+<li>安全性不取决于花了多少钱，而是取决于具体实践。ACME 协议支持自动化签署、续期证书，可以大大降低人为操作失误（包括泄漏私钥、忘记续期）的风险。而<strong>如果花了钱买了 EV 证书，但是最后部署的时候却是通过微信（我听说过不止一例类似的情况）给对应服务的运维传递证书私钥，那安全性反而大大降低了，远不如自动化的免费证书</strong>。</li>
+</ol>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Debian 的 snakeoil 自签名证书</p>
+<p>Debian 系统的 <code>ssl-cert</code> 包自带了一个自签名的测试证书。对应的证书在 <code>/etc/ssl/certs/ssl-cert-snakeoil.pem</code>，私钥在 <code>/etc/ssl/private/ssl-cert-snakeoil.key</code>。可以用它本地测试 HTTPS 配置，但不建议在生产环境中使用。</p>
+<p>如果需要重新生成，可以执行：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>make-ssl-cert<span class="w"> </span>generate-default-snakeoil<span class="w"> </span>-f
 </code></pre></div>
-<p>注意到和前文的配置不同，这里的监听端口是 443，而且增加了 <code>ssl</code> 选项。
-<code>ssl_certificate</code> 和 <code>ssl_certificate_key</code> 分别指定了 TLS 证书和密钥的路径。</p>
+</div>
+<p>以下假设你的证书保存在 <code>/etc/nginx/ssl/example.com.crt</code> 和 <code>/etc/nginx/ssl/example.com.key</code>。</p>
+<div class="admonition tip">
+<p class="admonition-title">证书格式</p>
+<p>PEM 格式是最常见的证书格式。其内容为纯文本，包含 base64 编码的相关数据。对于证书（一般为 <code>pem</code>、<code>crt</code> 或者 <code>cer</code> 后缀）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gh">-----BEGIN CERTIFICATE-----</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="s">（base64</span><span class="w"> </span><span class="s">编码的数据）</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="gh">-----END CERTIFICATE-----</span>
+</code></pre></div>
+<p>对于私钥（一般为 <code>pem</code> 或 <code>key</code> 后缀）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gh">-----BEGIN PRIVATE KEY-----</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="s">（base64</span><span class="w"> </span><span class="s">编码的数据）</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="gh">-----END PRIVATE KEY-----</span>
+</code></pre></div>
+<p>可以使用 OpenSSL 工具查看信息：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>openssl<span class="w"> </span>x509<span class="w"> </span>-in<span class="w"> </span>example.crt<span class="w"> </span>-text<span class="w"> </span>-noout<span class="w">  </span><span class="c1"># 查看证书信息</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>openssl<span class="w"> </span>pkey<span class="w"> </span>-in<span class="w"> </span>example.key<span class="w"> </span>-text<span class="w"> </span>-noout<span class="w">  </span><span class="c1"># 检查私钥</span>
+</code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">fullchain.pem</p>
+<p>一些 ACME 客户端会生成 <code>fullchain.pem</code> 文件，它包含了服务器证书和中间证书的完整链。如果存在这个文件，请<strong>优先使用</strong>它，否则浏览器以外的其他客户端可能会因为缺少中间证书而无法验证证书链。</p>
+</div>
+<h4 id="tls-configuration">TLS 配置<a class="headerlink" href="#tls-configuration" title="Permanent link">&para;</a></h4>
+<p>然后，你需要在 Nginx 配置文件中添加 TLS 配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">443</span><span class="w"> </span><span class="s">ssl</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">example.com</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">    </span><span class="kn">root</span><span class="w"> </span><span class="s">/var/www/example.com</span><span class="p">;</span><span class="w">  </span><span class="c1"># 网站根目录</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">    </span><span class="kn">ssl_certificate</span><span class="w"> </span><span class="s">/etc/nginx/ssl/example.com.crt</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 证书路径</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">    </span><span class="kn">ssl_certificate_key</span><span class="w"> </span><span class="s">/etc/nginx/ssl/example.com.key</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 证书密钥路径</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">    </span><span class="c1"># （可选）SSL 设置</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">    </span><span class="kn">ssl_protocols</span><span class="w"> </span><span class="s">TLSv1.2</span><span class="w"> </span><span class="s">TLSv1.3</span><span class="p">;</span><span class="w">  </span><span class="c1"># 启用的 TLS 协议（默认值）</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">    </span><span class="kn">ssl_ciphers</span><span class="w"> </span><span class="s">&#39;HIGH:!aNULL:!MD5&#39;</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用的加密套件（默认值）</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">    </span><span class="kn">ssl_prefer_server_ciphers</span><span class="w"> </span><span class="no">on</span><span class="p">;</span><span class="w">  </span><span class="c1"># 优先使用服务器的加密套件（默认为 off）</span>
+<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">    </span><span class="kn">ssl_session_cache</span><span class="w"> </span><span class="s">shared:SSL:10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 会话缓存大小（默认没有缓存）</span>
+<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">    </span><span class="kn">ssl_session_timeout</span><span class="w"> </span><span class="mi">10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># TLS 会话超时时间（默认为 5m）</span>
+<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a>
+<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">    </span><span class="c1"># （可选）HSTS（HTTP Strict Transport Security）</span>
+<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Strict-Transport-Security</span><span class="w"> </span><span class="s">&quot;max-age=31536000</span><span class="p">;</span><span class="w"> </span><span class="kn">includeSubDomains&quot;</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a>
+<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
+<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="p">}</span>
+</code></pre></div>
+<p>注意到和前文的配置不同，这里的监听端口是 443，而且增加了 <code>ssl</code> 选项。<code>ssl_certificate</code> 和 <code>ssl_certificate_key</code> 分别指定了 TLS 证书和密钥的路径。</p>
 <p>在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 <code>ssl_protocols TLSv1.2 TLSv1.3;</code>，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。</p>
-<p>HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。
-当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。
-如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。
-<code>add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;</code> 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。</p>
+<p>HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。<code>add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;</code> 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。</p>
+<div class="admonition tip">
+<p class="admonition-title">购买域名之前注意一下 HSTS 预加载列表哦！</p>
+<p><a href="https://hstspreload.org">HSTS 预加载列表（HSTS Preload List）</a>是一个由浏览器维护的列表，在这个列表里面的网站浏览器在访问时必须使用 HTTPS。如果买了一个在 HSTS 预加载列表上面的域名，但是不想用 HTTPS 的话，事情就会非常麻烦。</p>
+<p>此外，一些 TLD（顶级域）也被加入到了 HSTS 预加载列表中，例如 <code>.dev</code> 等。</p>
+</div>
+<div class="admonition lab">
+<p class="admonition-title">访问 HTTP 自动跳转到 HTTPS 的配置</p>
+<p>假设希望让用户访问 <code>http://example.com</code> 时自动跳转到 <code>https://example.com</code>，对应的 <code>server</code> 块要怎么写呢？（提示：<code>return</code> 指令；HTTP 301 是永久重定向）</p>
+</div>
 <h2 id="_1">示例讲解<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <p>以下给出一些实践中会使用的 Nginx 配置示例。</p>
 <h3 id="_2">反向代理配置<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
@@ -2909,33 +3027,33 @@
 <li>grafana.cherr.cc -&gt; 3000</li>
 </ul>
 <p>比如上面的例子，就可以通过下面的配置实现反向代理：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="p">}</span>
-<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>
-<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a>
-<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-24-25" name="__codelineno-24-25" href="#__codelineno-24-25"></a><span class="p">}</span>
-<a id="__codelineno-24-26" name="__codelineno-24-26" href="#__codelineno-24-26"></a>
-<a id="__codelineno-24-27" name="__codelineno-24-27" href="#__codelineno-24-27"></a><span class="k">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="p">}</span>
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a>
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-28-23" name="__codelineno-28-23" href="#__codelineno-28-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-28-24" name="__codelineno-28-24" href="#__codelineno-28-24"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-28-25" name="__codelineno-28-25" href="#__codelineno-28-25"></a><span class="p">}</span>
+<a id="__codelineno-28-26" name="__codelineno-28-26" href="#__codelineno-28-26"></a>
+<a id="__codelineno-28-27" name="__codelineno-28-27" href="#__codelineno-28-27"></a><span class="k">...</span>
 </code></pre></div>
 <p>但是这只是最简单的反向代理配置，实际情况下往往还需要根据不同的服务做一些特殊的配置，可以通过两个狠狠坑过我的例子来学习。</p>
 <div class="admonition bug">
@@ -2954,18 +3072,18 @@
 <p>如果客户端请求是 GET / HTTP/1.1，并且带了 <code>Host: www.example.com:8080</code>，那么 <code>$http_host</code> 的值就是 "www.example.com:8080"。</p>
 <p>如果客户端请求是 GET / HTTP/1.0（HTTP/1.0 没有 Host 头），那么 <code>$http_host</code> 的值就是 空。</p>
 <p>因为它可能为空，如果你在配置中直接使用它（例如 <code>proxy_set_header Host $http_host;</code>），当其为空时，转发给后端的请求的 Host 头也会是空的，这可能导致后端服务器无法正确处理请求（无法识别要访问哪个虚拟主机）。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
+<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="p">}</span>
 </code></pre></div>
 </div>
 <div class="admonition bug">
@@ -2973,72 +3091,72 @@
 <p>WebSocket 是一种全双工通信协议，用于在客户端和服务器之间建立持久连接，实现实时通信。Nginx 支持 WebSocket 协议，可以用来配置 WebSocket 服务器。</p>
 <p>参考：<a href="https://grafana.com/tutorials/run-grafana-behind-a-proxy/">https://grafana.com/tutorials/run-grafana-behind-a-proxy/</a></p>
 <p>关键在于 Grafana 加载数据时使用了 WebSocket，需要指示 Nginx 支持 WebSocket 反代。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">map</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="w"> </span><span class="nv">$connection_upgrade</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">    </span><span class="kn">default</span><span class="w"> </span><span class="s">upgrade</span><span class="p">;</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">    </span><span class="kn">&#39;&#39;</span><span class="w"> </span><span class="s">close</span><span class="p">;</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="p">}</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="c1"># Proxy Grafana Live WebSocket connections.</span>
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="k">location</span><span class="w"> </span><span class="s">/api/live/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">    </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Upgrade</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="p">;</span>
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Connection</span><span class="w"> </span><span class="nv">$connection_upgrade</span><span class="p">;</span>
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://grafana</span><span class="p">;</span>
-<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">map</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="w"> </span><span class="nv">$connection_upgrade</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">    </span><span class="kn">default</span><span class="w"> </span><span class="s">upgrade</span><span class="p">;</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">    </span><span class="kn">&#39;&#39;</span><span class="w"> </span><span class="s">close</span><span class="p">;</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="p">}</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="c1"># Proxy Grafana Live WebSocket connections.</span>
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="k">location</span><span class="w"> </span><span class="s">/api/live/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">    </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Upgrade</span><span class="w"> </span><span class="nv">$http_upgrade</span><span class="p">;</span>
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Connection</span><span class="w"> </span><span class="nv">$connection_upgrade</span><span class="p">;</span>
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://grafana</span><span class="p">;</span>
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="p">}</span>
 </code></pre></div>
 </div>
 <h3 id="_3">负载均衡配置<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
 <p>负载均衡是 Nginx 的另一个重要功能，可以用于分发请求到多个后端服务器，提高性能和可靠性。</p>
 <p>一个典型的负载均衡配置如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">    </span><span class="kn">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend3.example.com</span><span class="p">;</span>
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a>
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
-<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">        </span><span class="kn">server_name</span><span class="w"> </span><span class="s">example.com</span><span class="p">;</span>
-<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a>
-<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">        </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">            </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://backend</span><span class="p">;</span><span class="w">  </span><span class="c1"># 将请求转发到 upstream 定义的后端服务器</span>
-<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
-<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a>
-<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
-<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="w">        </span><span class="kn">server_name</span><span class="w"> </span><span class="s">another-example.com</span><span class="p">;</span>
-<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a>
-<a id="__codelineno-27-24" name="__codelineno-27-24" href="#__codelineno-27-24"></a><span class="w">        </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-27-25" name="__codelineno-27-25" href="#__codelineno-27-25"></a><span class="w">            </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://backend</span><span class="p">;</span><span class="w">  </span><span class="c1"># 也可以使用相同的 upstream</span>
-<a id="__codelineno-27-26" name="__codelineno-27-26" href="#__codelineno-27-26"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-27-27" name="__codelineno-27-27" href="#__codelineno-27-27"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-27-28" name="__codelineno-27-28" href="#__codelineno-27-28"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
-<a id="__codelineno-27-29" name="__codelineno-27-29" href="#__codelineno-27-29"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-27-30" name="__codelineno-27-30" href="#__codelineno-27-30"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-27-31" name="__codelineno-27-31" href="#__codelineno-27-31"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">    </span><span class="kn">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">        </span><span class="kn">server</span><span class="w"> </span><span class="s">backend3.example.com</span><span class="p">;</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">        </span><span class="kn">server_name</span><span class="w"> </span><span class="s">example.com</span><span class="p">;</span>
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="w">        </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="w">            </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://backend</span><span class="p">;</span><span class="w">  </span><span class="c1"># 将请求转发到 upstream 定义的后端服务器</span>
+<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-31-17" name="__codelineno-31-17" href="#__codelineno-31-17"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-31-18" name="__codelineno-31-18" href="#__codelineno-31-18"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-31-19" name="__codelineno-31-19" href="#__codelineno-31-19"></a>
+<a id="__codelineno-31-20" name="__codelineno-31-20" href="#__codelineno-31-20"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-21" name="__codelineno-31-21" href="#__codelineno-31-21"></a><span class="w">        </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span>
+<a id="__codelineno-31-22" name="__codelineno-31-22" href="#__codelineno-31-22"></a><span class="w">        </span><span class="kn">server_name</span><span class="w"> </span><span class="s">another-example.com</span><span class="p">;</span>
+<a id="__codelineno-31-23" name="__codelineno-31-23" href="#__codelineno-31-23"></a>
+<a id="__codelineno-31-24" name="__codelineno-31-24" href="#__codelineno-31-24"></a><span class="w">        </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-31-25" name="__codelineno-31-25" href="#__codelineno-31-25"></a><span class="w">            </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://backend</span><span class="p">;</span><span class="w">  </span><span class="c1"># 也可以使用相同的 upstream</span>
+<a id="__codelineno-31-26" name="__codelineno-31-26" href="#__codelineno-31-26"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-31-27" name="__codelineno-31-27" href="#__codelineno-31-27"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-31-28" name="__codelineno-31-28" href="#__codelineno-31-28"></a><span class="w">            </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-31-29" name="__codelineno-31-29" href="#__codelineno-31-29"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-31-30" name="__codelineno-31-30" href="#__codelineno-31-30"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-31-31" name="__codelineno-31-31" href="#__codelineno-31-31"></a><span class="p">}</span>
 </code></pre></div>
 <h4 id="_4">负载均衡算法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
 <p>负载均衡是指将请求分发给多个后端服务器，以达到均衡负载的目的。Nginx 支持多种负载均衡算法，如轮询、加权轮询、IP 哈希、最少连接等。</p>
 <p>一个十分巧妙的负载均衡算法是一致性哈希算法，它可以保证在服务器数量变化时，尽可能少地改变已有的映射关系。推荐阅读：<a href="https://zh.wikipedia.org/wiki/%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C">一致性哈希算法</a>。</p>
 <p>Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：</p>
 <p>最少连接：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">    </span><span class="kn">least_conn</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用最少连接算法</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">    </span><span class="kn">least_conn</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用最少连接算法</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="p">}</span>
 </code></pre></div>
 <p>IP 哈希：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="w">    </span><span class="kn">ip_hash</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用 IP 哈希算法</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">upstream</span><span class="w"> </span><span class="s">backend</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="w">    </span><span class="kn">ip_hash</span><span class="p">;</span><span class="w">  </span><span class="c1"># 使用 IP 哈希算法</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend1.example.com</span><span class="p">;</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">    </span><span class="kn">server</span><span class="w"> </span><span class="s">backend2.example.com</span><span class="p">;</span>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="p">}</span>
 </code></pre></div>
 <!--
   Links to man pages
@@ -3091,7 +3209,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月18日 11:50:39 UTC">2025年10月18日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月18日 17:36:54 UTC">2025年10月18日</span>
   </span>
 
     
