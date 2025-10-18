@@ -2089,7 +2089,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       安装
     </span>
@@ -2098,7 +2098,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#common-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       常用配置
     </span>
@@ -2108,7 +2108,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#static-file-server" class="md-nav__link">
     <span class="md-ellipsis">
       静态文件服务器
     </span>
@@ -2117,9 +2117,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#reverse-proxy" class="md-nav__link">
     <span class="md-ellipsis">
       反向代理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abort-unconfigured-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      阻止 Caddy 对未配置的域名进行 HTTPS 跳转
     </span>
   </a>
   
@@ -2223,7 +2232,7 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       安装
     </span>
@@ -2232,7 +2241,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#common-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       常用配置
     </span>
@@ -2242,7 +2251,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#_3" class="md-nav__link">
+  <a href="#static-file-server" class="md-nav__link">
     <span class="md-ellipsis">
       静态文件服务器
     </span>
@@ -2251,9 +2260,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_4" class="md-nav__link">
+  <a href="#reverse-proxy" class="md-nav__link">
     <span class="md-ellipsis">
       反向代理
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abort-unconfigured-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      阻止 Caddy 对未配置的域名进行 HTTPS 跳转
     </span>
   </a>
   
@@ -2293,7 +2311,7 @@
 </div>
 <p>Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。</p>
 <p>与 Nginx 相比，Caddy 确实更像是个玩具，但是更像是那种自带电池的玩具，更利于人类使用，可以快速搭建 Prototype 而不用花费太多时间在配置上。</p>
-<h2 id="_1">安装<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h2 id="installation">安装<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>以 Debian 为例：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>debian-keyring<span class="w"> </span>debian-archive-keyring<span class="w"> </span>apt-transport-https<span class="w"> </span>curl
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-1sLf<span class="w"> </span><span class="s1">&#39;https://dl.cloudsmith.io/public/caddy/stable/gpg.key&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -2313,41 +2331,39 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>caddy<span class="w"> </span>validate<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
 </code></pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">阻止 Caddy 对未配置的域名进行 HTTPS 跳转</p>
-<p>Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。这在某些情况下不符合备案的技术要求，可能会被运营商投诉要求处理。</p>
-<p>可以在配置中添加以下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>http:// {
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    abort
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>}
-</code></pre></div>
-<p>使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。</p>
-</div>
-<h2 id="_2">常用配置<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="common-configuration">常用配置<a class="headerlink" href="#common-configuration" title="Permanent link">&para;</a></h2>
 <p>以下是一些常用的 Caddyfile 配置示例：</p>
-<h3 id="_3">静态文件服务器<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>example.com {
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    root /var/www
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    gzip
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    log /var/log/access.log
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    errors /var/log/error.log
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>}
+<h3 id="static-file-server">静态文件服务器<a class="headerlink" href="#static-file-server" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>example.com {
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    root /var/www
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    gzip
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    log /var/log/access.log
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    errors /var/log/error.log
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>}
 </code></pre></div>
-<h3 id="_4">反向代理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>example.com {
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    proxy / localhost:8080
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>}
+<h3 id="reverse-proxy">反向代理<a class="headerlink" href="#reverse-proxy" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>example.com {
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    proxy / localhost:8080
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>}
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Simple LB</p>
 <p>使用如下配置可做简单的 Load Balance：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>example.com {
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    proxy / localhost:8080 localhost:8081 {
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>        policy round_robin
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    }
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>example.com {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    proxy / localhost:8080 localhost:8081 {
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        policy round_robin
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    }
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>}
 </code></pre></div>
 </div>
+<h3 id="abort-unconfigured-domains">阻止 Caddy 对未配置的域名进行 HTTPS 跳转<a class="headerlink" href="#abort-unconfigured-domains" title="Permanent link">&para;</a></h3>
+<p>Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。</p>
+<p>可以在配置中添加以下内容：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>http:// {
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    abort
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>}
+</code></pre></div>
+<p>使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。</p>
 <!--
   Links to man pages
 
@@ -2399,7 +2415,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年3月11日 06:24:45 UTC">2025年3月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月18日 11:23:45 UTC">2025年10月18日</span>
   </span>
 
     
