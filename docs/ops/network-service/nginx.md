@@ -2,7 +2,7 @@
 icon: simple/nginx
 ---
 
-# Nginx 网页服务器
+# Nginx 服务器
 
 !!! note "主要作者"
 
@@ -12,7 +12,7 @@ icon: simple/nginx
 >
 > —— [@Cherrling][Cherrling]
 
-Nginx 是一个高性能的 HTTP 和反向代理服务器，它可以作为一个独立的 Web 服务器，也可以作为其他 Web 服务器的反向代理服务器。
+Nginx 是一个高性能的 HTTP 和反向代理服务器，它可以作为一个独立的 Web 服务器，也可以作为其他 Web 服务的反向代理服务器。
 
 如果你只是需要简单快速的拉起一个网站，或许也可以试试 [Caddy](../../advanced/caddy.md)，它是一个更加简单的 Web 服务器。
 
@@ -49,7 +49,7 @@ sudo systemctl stop nginx # 安全停止 Nginx
 
 ## 配置 {#configuration}
 
-### 配置文件结构简介
+### 配置文件结构简介 {#config-file-structure}
 
 对于 Debian & Ubuntu 来说，`nginx.conf` 的内容一般包含：
 
@@ -67,7 +67,7 @@ http {
 - `sites-available` 目录下存放的是所有的站点配置文件。
 - `sites-enabled` 目录下存放的是启用的站点配置文件的符号链接。
 
-一般情况下，我们不在 `nginx.conf` 文件中直接编写站点信息（`http` 块），而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。如果要暂时下线某个站点，只需要删除 `sites-enabled` 目录下的符号链接即可，而不需要删除配置文件。
+一般情况下，我们不在 `nginx.conf` 文件的 `http` 块中直接编写站点信息，而是在 `sites-available` 目录下创建一个新的配置文件，然后在 `sites-enabled` 目录下创建一个符号链接。如果要暂时下线某个站点，只需要删除 `sites-enabled` 目录下的符号链接即可，而不需要删除配置文件。
 
 从 Nginx 的角度来看，唯一的区别在于来自 `conf.d` 的文件能够更早被处理，因此，如果你有相互冲突的配置，那么来自 `conf.d` 的配置会优先于 `sites-enabled` 中的配置。
 
@@ -84,9 +84,60 @@ http {
 
     此时，你需要将你编写的配置文件放置于 `/etc/nginx/conf.d` 目录下，但当你需要禁用某些内容时，必须将其移出文件夹、删除或进行更改。当然，你也可以自己创建 `sites-available` 和 `sites-enabled` 目录，然后在 `nginx.conf` 中引入。
 
-    关于两者的区别，你可以查看[这篇文章](https://serverfault.com/questions/527630/difference-in-sites-available-vs-sites-enabled-vs-conf-d-directories-nginx)。
+### 指令、变量与模块 {#directives-variables-modules}
 
-### 编辑站点配置
+Nginx 的配置由一系列的指令（directive）组成。directive 有两种：简单 directive 和块 directive。在上面的例子中，`server` 块就是一个块 directive，而 `listen`、`server_name`、`root` 等则是简单 directive。
+
+Nginx 的配置还支持变量。以上例子中 `$host`、`$remote_addr`、`$uri` 等都是变量，Nginx 会在处理请求的时候将它们替换为实际的值。用户也可以用 `set` 指令来定义自己的变量：
+
+```nginx
+set $my_variable "Hello, World!";
+```
+
+Nginx 是模块化的服务器，其中 [`ngx_http_core_module`](https://nginx.org/en/docs/http/ngx_http_core_module.html) 提供了基础的让 Nginx 提供 HTTP 服务的功能（包括 `http` 块）。Nginx 也不仅限于 HTTP 服务——可以转发 TCP 和 UDP 流量，甚至是当邮件服务器，或者 RTMP 直播服务器等。这些功能都是通过不同的模块来实现的。用户也可以自己编译安装第三方模块来扩展 Nginx 的功能。
+
+[Nginx 文档](https://nginx.org/en/docs/) 是非常重要的参考资料，其包含了：
+
+- [按字母序排序的 directive 列表文档](https://nginx.org/en/docs/dirindex.html)
+- [按字母序排序的变量列表文档](https://nginx.org/en/docs/varindex.html)
+- 官方模块的列表文档
+
+其中每个 directive 和变量都包含了详细的说明。
+
+### `server` 块与 `location` 块 {#server-location-blocks}
+
+Nginx 配置的 [`http` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#http)中可以有多个 [`server` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#server)，每个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。Nginx 正是通过 `server` 块来实现多站点配置的。
+
+一个典型的 `server` 块如下：
+
+```nginx
+server {
+    listen 80;  # 监听的端口
+    server_name example.com;  # 服务器名称
+
+    location / {
+        # 处理请求的指令
+    }
+}
+```
+
+[`location` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#location)嵌套于 `server` 块中，用于定义如何处理特定 URI 的请求。一个 `server` 块中可以有多个 `location` 块。
+
+??? tip "URI? URL?"
+
+    URI（Uniform Resource Identifier，统一资源标识符）包含 URL（Uniform Resource Locator，统一资源定位符）和 URN（Uniform Resource Name，统一资源名称）。其中 URL 大家都非常熟悉，而 URN 则比较少见。URN 的格式类似于 `urn:isbn:123456789`，用于标识资源（这里是一本书）的名称。因为 URN 很少见，在绝大部分场景下，URI 和 URL 可以视为同义词。
+
+Nginx 的 `location` 块用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许让 Nginx 根据请求的路径、参数或其他条件来执行不同的操作。
+
+一个 `location` 块的基本结构如下：
+
+```nginx
+location [modifier] /path/ {
+    # 处理请求的指令
+}
+```
+
+### 编辑站点配置 {#edit-site-config}
 
 默认的站点配置文件在 `/etc/nginx/sites-available/default`，你可以直接编辑它——以下为去除了所有注释的默认版本：
 
@@ -106,7 +157,7 @@ server {
 }
 ```
 
-这个配置文件中定义了一个完整的 `server` 块。一个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。`server` 块中的指令如下：
+这个配置文件中定义了一个完整的 `server` 块。`server` 块中的指令如下：
 
 - `listen`：该默认站点在所有的 IPv4 和 IPv6 上监听 80 端口。
 - `root`：根目录是 `/var/www/html`。
@@ -140,7 +191,7 @@ server {
 
 这时访问 `http://localhost` 就会被转发到 `http://backend_server:port`。对外部网络来说，Nginx 就是一个反向代理站点。
 
-### 重新加载配置
+### 重新加载配置 {#reload}
 
 修改配置文件后，别忘了重新加载 Nginx 配置，否则修改不会生效。
 
@@ -153,69 +204,12 @@ sudo nginx -t
 如果没有问题，就重新加载配置文件：
 
 ```bash
+sudo systemctl reload nginx  # 推荐使用
+# 或者
 sudo nginx -s reload
 ```
 
-或者使用：
-
-```bash
-sudo systemctl reload nginx
-```
-
-需要注意的是，如果配置文件中存在错误，`nginx -s reload` 会报出错误，然后 Nginx 会以旧的配置文件继续运行。
-
-## Nginx 名词解释
-
-在向你展示如何进阶配置 Nginx 之前，有一些你必须要了解的概念。
-
-### server 块
-
-Nginx 的配置文件中可以有多个 server 块，每个 server 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 server 块。
-Nginx 正是通过 server 块来实现多站点配置的。
-一个典型的 server 块：
-
-```nginx
-server {
-    listen 80;  # 监听的端口
-    server_name example.com;  # 服务器名称
-
-    location / {
-        # 处理请求的指令
-    }
-}
-```
-
-### location 块
-
-location 块嵌套于 server 块中，用于定义如何处理特定 URI 的请求。一个 server 块中可以有多个 location 块。
-
-Nginx 的 location 块用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许您根据请求的路径、参数或其他条件来执行不同的操作。
-
-一个 location 块的基本结构如下：
-
-```nginx
-location [modifier] /path/ {
-    # 处理请求的指令
-}
-```
-
-### 反向代理与负载均衡
-
-反向代理是指代理服务器接收客户端的请求，然后将请求转发给后端服务器，最后将后端服务器的响应返回给客户端。反代有不同协议的区分，如 HTTP 反代、TCP 反代、UDP 反代等。
-
-负载均衡是指将请求分发给多个后端服务器，以达到均衡负载的目的。Nginx 支持多种负载均衡算法，如轮询、加权轮询、IP 哈希、最少连接等。
-
-一个十分巧妙的负载均衡算法是一致性哈希算法，它可以保证在服务器数量变化时，尽可能少地改变已有的映射关系。推荐阅读：[一致性哈希算法](https://zh.wikipedia.org/wiki/%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C)。
-
-### TLS
-
-TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
-
-一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。
-
-### WebSocket
-
-WebSocket 是一种全双工通信协议，用于在客户端和服务器之间建立持久连接，实现实时通信。Nginx 支持 WebSocket 协议，可以用来配置 WebSocket 服务器。
+需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
 
 ## 示例讲解
 
@@ -261,9 +255,28 @@ server {
 ```
 
 那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 server_name 中时，Nginx 会使用 `default_server` 对应的 server 块来处理请求。
-该站点的 server_name 指定为 `_`，是一种约定俗成的默认域名，没有特殊含义。
+该站点的 server_name 指定为 `_`，是一种约定俗成的默认域名，本身没有特殊含义。
 对于配置了 `default_server` 的 server 块，你也可以完全不写 `server_name` 指令。
 一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
+
+!!! example "拒绝未知域名请求"
+
+    你也可以通过配置一个默认站点来拒绝未知域名的请求，例如：
+
+    ```nginx
+    server {
+        listen 80 default_server;  # 默认站点
+        listen [::]:80 default_server;
+        listen 443 default_server ssl;  # 默认站点（HTTPS）
+        listen [::]:443 default_server ssl;
+        ssl_reject_handshake on;  # 拒绝 SSL 握手
+        return 444;  # 直接关闭连接
+    }
+    ```
+
+    这样，当请求的域名不符合任何一个已经配置的 server_name 时，Nginx 对于 HTTP 请求会直接关闭连接，同时拒绝 HTTPS 请求的 SSL 握手。
+
+    一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。
 
 ### Location 块详解
 
@@ -275,11 +288,23 @@ location [modifier] /path/ {
 }
 ```
 
-首先来看 `modifier`，它是一个可选的修饰符，用于修改 location 块的匹配规则。常用的修饰符有：
+在 location 块里，我们可以使用一些指令来处理请求，如：
 
-- 前缀匹配（无修饰符）
+- `proxy_pass http://backend_server;`：反向代理。
+- `root /var/www/html;`：指定网站根目录。
+- `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
+- `return 200 "Hello, World!";`：返回指定的状态码和内容。
+- `include fastcgi_params;`：引入 FastCGI 参数。
 
-    前缀匹配是 location 块的默认匹配规则，只要请求的路径以 location 块的路径开头，就会匹配成功。例如：
+#### Location 匹配
+
+Nginx 需要决定由哪个 location 块来处理请求时，会根据请求的 URI path 来匹配 location 块。
+
+Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修饰符来区分。常用的修饰符有：
+
+前缀匹配（无修饰符）
+
+:   前缀匹配是最基本的匹配方式，只要请求的路径以 location 块的路径开头，就会匹配成功。例如：
 
     ```nginx
     location /example {
@@ -288,9 +313,18 @@ location [modifier] /path/ {
     }
     ```
 
-- 前缀匹配 `^~`
+    多个前缀匹配时，Nginx 会选择匹配前缀最长的 location 块。例如：
 
-    这是另一种形式的前缀匹配，匹配规则与无修饰符相同，但会阻止后续的正则匹配检查。
+    ```nginx
+    location /example { ...; }
+    location /example/sub { ...; }
+    ```
+
+    在此例中，请求 `/example`、`/example123` 和 `/example/test` 会匹配第一个 location；请求 `/example/sub/page` 会匹配到第二个 location，因为它的前缀更长。
+
+前缀匹配 `^~`
+
+:   这是另一种形式的前缀匹配，匹配规则与无修饰符相同，但会阻止后续的正则匹配检查。
 
     ```nginx
     location ^~ /static/ {
@@ -304,9 +338,11 @@ location [modifier] /path/ {
     }
     ```
 
-- `=`
+    在这个例子中，如果请求的 URI 是 `/static/style.css`，则会匹配到第一个 location 块，因为它是以 `/static/` 开头的前缀匹配，且使用了 `^~`，Nginx 不会继续检查正则匹配。
 
-    精确匹配，只有请求的路径与 location 块的路径完全相同时才匹配。
+精确匹配 `=`
+
+:   精确匹配，只有请求的路径与 location 块的路径完全相同时才匹配。
 
     ```nginx
     location = /example {
@@ -316,13 +352,17 @@ location [modifier] /path/ {
     }
     ```
 
-- 区分大小写的正则匹配 `~` 与不区分大小写的正则匹配 `~*`，例如：
+正则匹配
+
+:   正则匹配的 modifier 有两种，区分大小写的 `~` 与不区分大小写的 `~*`。
+    两种 modifier 具有完全相同的优先级，例如：
 
     ```nginx
     location ~ /example[0-9] {
         # 处理请求 /example1, /example2, ...
         return 200 "This is a case-sensitive regex match.";
     }
+
     location ~ \.php$ {
         # 处理以 .php 结尾的请求
         include fastcgi_params;
@@ -335,13 +375,11 @@ location [modifier] /path/ {
     }
     ```
 
-    在这个例子中，如果请求的 URI 是 `/static/style.css`，则会匹配到第一个 location 块，因为它是以 `/static/` 开头的前缀匹配。即使 `/static/style.css` 也符合第二个正则匹配的条件，但由于第一个 location 块使用了 `^~`，Nginx 不会继续检查正则匹配。
-
 #### Location 块的匹配顺序
 
 Nginx 在处理请求时会按照以下顺序匹配 location 块：
 
-1. 精确匹配 (=)。
+1. 精确匹配 (`=`)。
 2. 前缀匹配（无修饰符和 `^~`，按最长前缀匹配）。
 
     在此步骤中，所有无修饰符和 `^~` 的 location 块会一起参与匹配，Nginx 会选择匹配前缀最长的 location。
@@ -352,15 +390,11 @@ Nginx 在处理请求时会按照以下顺序匹配 location 块：
     如果有匹配到的正则表达式，Nginx 会使用该 location 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 location 块处理请求。
 
-而在 location 块中，我们可以使用一些指令来处理请求，如：
-
-- `proxy_pass http://backend_server;`：反向代理。
-- `root /var/www/html;`：指定网站根目录。
-- `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
-- `return 200 "Hello, World!";`：返回指定的状态码和内容。
-- `include fastcgi_params;`：引入 FastCGI 参数。
-
 ### SSL/TLS 配置
+
+TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
+
+一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。
 
 作为 WebServer，必不可少的功能就是支持 HTTPS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
 
@@ -490,6 +524,8 @@ server {
 
 !!! bug "Grafana 需要 websocket 反代支持"
 
+    WebSocket 是一种全双工通信协议，用于在客户端和服务器之间建立持久连接，实现实时通信。Nginx 支持 WebSocket 协议，可以用来配置 WebSocket 服务器。
+
     参考：<https://grafana.com/tutorials/run-grafana-behind-a-proxy/>
 
     关键在于 Grafana 加载数据时使用了 WebSocket，需要指示 Nginx 支持 WebSocket 反代。
@@ -550,6 +586,10 @@ http {
 ```
 
 #### 负载均衡算法
+
+负载均衡是指将请求分发给多个后端服务器，以达到均衡负载的目的。Nginx 支持多种负载均衡算法，如轮询、加权轮询、IP 哈希、最少连接等。
+
+一个十分巧妙的负载均衡算法是一致性哈希算法，它可以保证在服务器数量变化时，尽可能少地改变已有的映射关系。推荐阅读：[一致性哈希算法](https://zh.wikipedia.org/wiki/%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C)。
 
 Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
 
