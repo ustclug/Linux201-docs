@@ -453,7 +453,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
         - 用户大多只关注是不是 HTTPS（在很久以前，如果网站是 HTTPS 的话，地址栏左侧对应区域会是绿的），而不会刻意去区分证书类型。
         - 恶意攻击者可以合法注册一个名称相似的组织，然后申请 EV 证书用于诈骗，这样的 EV 证书可能反而会强化用户的错误信任。例如 [2017 年曾有安全研究员注册了名叫「Identity Verified」（身份已验证）的公司，并申请到了 EV 证书](https://www.bleepingcomputer.com/news/security/extended-validation-ev-certificates-abused-to-create-insanely-believable-phishing-sites/)， [同年另一名安全研究员用不到 200 美元成功注册了一个名为「Stripe, Inc.」的组织，并给自己的域名申请到了对应的 EV 证书，用于展示 EV 证书的设计缺陷](https://arstechnica.com/information-technology/2017/12/nope-this-isnt-the-https-validated-stripe-website-you-think-it-is/)。
 
-        因此，即使申请 EV 证书，这种付费 CA 的「背书」意义也非常有限。至少除非你不怕麻烦，而且钱多得不够花，否则我个人并不建议为了 EV 证书而花钱。
+        因此，即使申请 EV 证书，这种付费 CA 的「背书」意义也非常有限。至少除非你不怕麻烦，而且钱多得没地方花，否则我个人并不建议为了 EV 证书而花钱。
     4. 免费证书使用的 ACME 协议决定了，能为域名申请到有效证书的前提是申请方对域名有控制权。并且，现在所有证书签署都有证书透明度（Certificate Transparency，CT）机制，任何人都可以[查询](https://crt.sh/)到某个域名对应的证书签署记录。因此想要骗签证书难度很大，并且很容易被发现。
     5. 安全性不取决于花了多少钱，而是取决于具体实践。ACME 协议支持自动化签署、续期证书，可以大大降低人为操作失误（包括泄漏私钥、忘记续期）的风险。而**如果花了钱买了 EV 证书，但是最后部署的时候却是通过微信（我听说过不止一例类似的情况）给对应服务的运维传递证书私钥，那安全性反而大大降低了，远不如自动化的免费证书**。
 
