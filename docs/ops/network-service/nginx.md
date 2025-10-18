@@ -88,9 +88,9 @@ http {
 
 ### 指令、变量与模块 {#directives-variables-modules}
 
-Nginx 的配置由一系列的指令（directive）组成。directive 有两种：简单 directive 和块 directive。在上面的例子中，`server` 块就是一个块 directive，而 `listen`、`server_name`、`root` 等则是简单 directive。
+Nginx 的配置由一系列的指令（directive）组成。directive 有两种：简单 directive 和块 directive。在上面的例子中，`http` 块就是一个块 directive，而 `include` 则是简单 directive。
 
-Nginx 的配置还支持变量。以上例子中 `$host`、`$remote_addr`、`$uri` 等都是变量，Nginx 会在处理请求的时候将它们替换为实际的值。用户也可以用 `set` 指令来定义自己的变量：
+Nginx 的配置还支持变量。在之后的例子中，`$host`、`$remote_addr`、`$uri` 等都是变量，Nginx 会在处理请求的时候将它们替换为实际的值。用户也可以用 `set` 指令来定义自己的变量：
 
 ```nginx
 set $my_variable "Hello, World!";
@@ -163,12 +163,12 @@ server {
 
 这个配置文件中定义了一个完整的 `server` 块。`server` 块中的指令如下：
 
-- `listen`：该默认站点在所有的 IPv4 和 IPv6 上监听 80 端口。
-- `root`：根目录是 `/var/www/html`。
-- `index`：在处理 URL 结尾为 `/` 的请求时，使用的默认的首页文件是 `index.html`、`index.htm` 和 `index.nginx-debian.html`；Nginx 会按顺序查找这些文件，找到第一个存在的文件后返回给客户端。
-- `server_name`：一个约定俗成的“默认服务器”名称 `_`。
+- [`listen`](https://nginx.org/en/docs/http/ngx_http_core_module.html#listen)：该默认站点在所有的 IPv4 和 IPv6 上监听 80 端口。
+- [`root`](https://nginx.org/en/docs/http/ngx_http_core_module.html#root)：根目录是 `/var/www/html`。
+- [`index`](https://nginx.org/en/docs/http/ngx_http_index_module.html#index)：在处理 URL 结尾为 `/` 的请求时，使用的默认的首页文件是 `index.html`、`index.htm` 和 `index.nginx-debian.html`；Nginx 会按顺序查找这些文件，找到第一个存在的文件后返回给客户端。
+- [`server_name`](https://nginx.org/en/docs/http/ngx_http_core_module.html#server_name)：一个约定俗成的“默认服务器”名称 `_`。
 - `location /`：处理所有以 `/` 开头的请求。
-    - `try_files $uri $uri/ =404;`：尝试按顺序查找请求的文件 `$uri`（请求的路径），如果找不到则尝试查找目录 `$uri/`，如果仍然找不到则返回 404 错误。
+    - [`try_files $uri $uri/ =404;`](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files)：尝试按顺序查找请求的文件 `$uri`（请求的路径），如果找不到则尝试查找目录 `$uri/`，如果仍然找不到则返回 404 错误。
 
 这时你可以在 `/var/www/html` 目录下放置你自己的 HTML、CSS、JS 等文件，然后访问 `http://localhost` 就可以看到你的网站了。
 
@@ -219,7 +219,7 @@ sudo nginx -s reload
 
 Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多个网站，对不同的域名提供不同的服务。这就是所谓的虚拟主机配置。
 
-那么如何实现呢？答案就是 server 块中的 `server_name` 指令。`server_name` 指令用于定义服务器的名称，可以是域名、IP 地址、通配符等。我们来看一个典型的示例：
+那么如何实现呢？答案就是 `server` 块中的 `server_name` 指令。`server_name` 指令用于定义服务器的名称，可以是域名、IP 地址、通配符等。我们来看一个典型的示例：
 
 - 对于请求 `example.com` 和 `www.example.com`，Nginx 会使用第一个 server 块来处理请求，对应的网站根目录是 `/var/www/example.com`。
 - 对于请求 `example.org` 和 `www.example.org`，Nginx 会使用第二个 server 块来处理请求。对应的网站根目录是 `/var/www/example.org`。
@@ -254,10 +254,7 @@ server {
 }
 ```
 
-那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 server_name 中时，Nginx 会使用 `default_server` 对应的 server 块来处理请求。
-该站点的 server_name 指定为 `_`，是一种约定俗成的默认域名，本身没有特殊含义。
-对于配置了 `default_server` 的 server 块，你也可以完全不写 `server_name` 指令。
-一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
+那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 `server_name` 中时，Nginx 会使用 `default_server` 对应的 `server` 块来处理请求。该站点的 server_name 指定为 `_`，是一种约定俗成的默认域名，本身没有特殊含义。对于配置了 `default_server` 的 `server` 块，你也可以完全不写 `server_name` 指令。一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
 
 !!! example "拒绝未知域名请求"
 
@@ -274,7 +271,7 @@ server {
     }
     ```
 
-    这样，当请求的域名不符合任何一个已经配置的 server_name 时，Nginx 对于 HTTP 请求会直接关闭连接，同时拒绝 HTTPS 请求的 SSL 握手。
+    这样，当请求的域名不符合任何一个已经配置的 `server_name` 时，Nginx 对于 HTTP 请求会直接关闭连接，同时拒绝 HTTPS 请求的 SSL 握手。
 
     一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。
 
@@ -315,31 +312,25 @@ sudo ln -sf /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
 
 ### 处理复杂的 location 匹配 {#complex-location-matching}
 
-一个典型的 location 块如下：
-
-```nginx
-location [modifier] /path/ {
-    # 处理请求的指令
-}
-```
-
 在 location 块里，我们可以使用一些指令来处理请求，如：
 
-- `proxy_pass http://backend_server;`：反向代理。
+- [`proxy_pass http://backend_server;`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass)：反向代理。
 - `root /var/www/html;`：指定网站根目录。
 - `try_files $uri $uri/ =404;`：尝试查找文件，如果找不到返回 404 错误。
-- `return 200 "Hello, World!";`：返回指定的状态码和内容。
-- `include fastcgi_params;`：引入 FastCGI 参数。
+- [`return 200 "Hello, World!";`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#return)：返回指定的状态码和内容。
+- [`include fastcgi_params;`](https://nginx.org/en/docs/ngx_core_module.html#include)：导入 `fastcgi_params` 文件的内容，引入 FastCGI 参数。
 
-#### Location 匹配
+同时在一个 `server` 块中，我们也可以定义多个 `location` 块来处理不同的请求路径。以下介绍几种常见的 `location` 匹配方式。
 
-Nginx 需要决定由哪个 location 块来处理请求时，会根据请求的 URI path 来匹配 location 块。
+#### Location 匹配 {#location-matching}
 
-Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修饰符来区分。常用的修饰符有：
+Nginx 需要决定由哪个 `location` 块来处理请求时，会根据请求的 URI path 来匹配 `location` 块。
+
+Nginx 支持多种匹配方式，主要通过 `location` 指令后面的可选修饰符来区分。常用的修饰符有：
 
 前缀匹配（无修饰符）
 
-:   前缀匹配是最基本的匹配方式，只要请求的路径以 location 块的路径开头，就会匹配成功。例如：
+:   前缀匹配是最基本的匹配方式，只要请求的路径以 `location` 块的路径开头，就会匹配成功。例如：
 
     ```nginx
     location /example {
@@ -348,16 +339,16 @@ Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修�
     }
     ```
 
-    多个前缀匹配时，Nginx 会选择匹配前缀最长的 location 块。例如：
+    多个前缀匹配时，Nginx 会选择匹配前缀最长的 `location` 块。例如：
 
     ```nginx
     location /example { ...; }
     location /example/sub { ...; }
     ```
 
-    在此例中，请求 `/example`、`/example123` 和 `/example/test` 会匹配第一个 location；请求 `/example/sub/page` 会匹配到第二个 location，因为它的前缀更长。
+    在此例中，请求 `/example`、`/example123` 和 `/example/test` 会匹配第一个 `location`；请求 `/example/sub/page` 会匹配到第二个 `location`，因为它的前缀更长。
 
-前缀匹配 `^~`
+前缀匹配（`^~`）
 
 :   这是另一种形式的前缀匹配，匹配规则与无修饰符相同，但会阻止后续的正则匹配检查。
 
@@ -373,11 +364,11 @@ Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修�
     }
     ```
 
-    在这个例子中，如果请求的 URI 是 `/static/style.css`，则会匹配到第一个 location 块，因为它是以 `/static/` 开头的前缀匹配，且使用了 `^~`，Nginx 不会继续检查正则匹配。
+    在这个例子中，如果请求的 URI 是 `/static/style.css`，则会匹配到第一个 `location` 块，因为它是以 `/static/` 开头的前缀匹配，且使用了 `^~`，Nginx 不会继续检查正则匹配。
 
-精确匹配 `=`
+精确匹配（`=`）
 
-:   精确匹配，只有请求的路径与 location 块的路径完全相同时才匹配。
+:   精确匹配，只有请求的路径与 `location` 块的路径完全相同时才匹配，优先级最高。
 
     ```nginx
     location = /example {
@@ -387,10 +378,9 @@ Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修�
     }
     ```
 
-正则匹配
+正则匹配（`~` 和 `~*`）
 
-:   正则匹配的 modifier 有两种，区分大小写的 `~` 与不区分大小写的 `~*`。
-    两种 modifier 具有完全相同的优先级，例如：
+:   正则匹配的 modifier 有两种，区分大小写的 `~` 与不区分大小写的 `~*`。两种 modifier 的优先级都是最低的，例如：
 
     ```nginx
     location ~ /example[0-9] {
@@ -410,33 +400,34 @@ Nginx 支持多种匹配方式，主要通过 location 指令后面的可选修�
     }
     ```
 
-#### Location 块的匹配顺序
+#### Location 块的匹配顺序 {#location-matching-order}
 
-Nginx 在处理请求时会按照以下顺序匹配 location 块：
+Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
 
 1. 精确匹配 (`=`)。
 2. 前缀匹配（无修饰符和 `^~`，按最长前缀匹配）。
 
-    在此步骤中，所有无修饰符和 `^~` 的 location 块会一起参与匹配，Nginx 会选择匹配前缀最长的 location。
-    在确定了最长前缀匹配后，如果该 location 块使用了 `^~` 修饰符，Nginx 会停止匹配过程，直接使用该 location 块处理请求；否则，Nginx 会继续进行正则匹配检查。
+    在此步骤中，所有无修饰符和 `^~` 的 `location` 块会一起参与匹配，Nginx 会选择匹配前缀最长的 location。
+    在确定了最长前缀匹配后，如果该 `location` 块使用了 `^~` 修饰符，Nginx 会停止匹配过程，直接使用该 `location` 块处理请求；否则，Nginx 会继续进行正则匹配检查。
 
 3. 正则匹配（`~` 和 `~*`，按在配置文件中的出现顺序匹配）。
 
-    如果有匹配到的正则表达式，Nginx 会使用该 location 块处理请求。
-    如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 location 块处理请求。
+    如果有匹配到的正则表达式，Nginx 会使用该 `location` 块处理请求。
+    如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 `location` 块处理请求。
 
 ### TLS 配置 {#tls-configuration}
 
-TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
+TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
 
-一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。
+!!! note "SSL?"
 
-作为 WebServer，必不可少的功能就是支持 HTTPS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
+    在早期，HTTPS 使用 SSL 来加密通信，但是人们后续发现 SSL 存在一些安全漏洞，因此逐渐被 TLS 取代。尽管如此，SSL 这个术语仍然被广泛使用，尤其是在非正式场合下。因此，SSL 和 TLS 在很多情况下可以视为同义词。
 
-首先，你需要为你的域名申请一个 SSL 证书。你可以使用免费的 Let's Encrypt 证书，也可以购买商业证书。
-假设你的证书保存在 `/etc/ssl/certs/example.com.pem` 和 `/etc/ssl/private/example.com.pem`。
+一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
 
-然后，你需要在 Nginx 配置文件中添加 SSL 配置：
+首先，你需要为你的域名申请一个 TLS 证书。你可以使用免费的 Let's Encrypt 证书，也可以购买商业证书。假设你的证书保存在 `/etc/ssl/certs/example.com.pem` 和 `/etc/ssl/private/example.com.pem`。
+
+然后，你需要在 Nginx 配置文件中添加 TLS 配置：
 
 ```nginx
 server {
@@ -444,15 +435,15 @@ server {
     server_name example.com;  # 指定的域名
     root /var/www/example.com;  # 网站根目录
 
-    ssl_certificate /etc/ssl/certs/example.com.pem;  # SSL 证书路径
-    ssl_certificate_key /etc/ssl/private/example.com.pem;  # SSL 证书密钥路径
+    ssl_certificate /etc/ssl/certs/example.com.pem;  # TLS 证书路径
+    ssl_certificate_key /etc/ssl/private/example.com.pem;  # TLS 证书密钥路径
 
     # （可选）SSL 设置
-    ssl_protocols TLSv1.2 TLSv1.3;  # 启用的 SSL/TLS 协议
+    ssl_protocols TLSv1.2 TLSv1.3;  # 启用的 TLS 协议
     ssl_ciphers 'HIGH:!aNULL:!MD5';  # 使用的加密套件
     ssl_prefer_server_ciphers on;  # 优先使用服务器的加密套件
-    ssl_session_cache shared:SSL:10m;  # SSL 会话缓存大小
-    ssl_session_timeout 10m;  # SSL 会话超时时间
+    ssl_session_cache shared:SSL:10m;  # TLS 会话缓存大小
+    ssl_session_timeout 10m;  # TLS 会话超时时间
 
     # （可选）HSTS（HTTP Strict Transport Security）
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
@@ -463,10 +454,10 @@ server {
 }
 ```
 
-注意到和前文的配置不同，这里的监听端口是 443，而且增加了 ssl 选项。
-`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 SSL 证书和密钥的路径。
+注意到和前文的配置不同，这里的监听端口是 443，而且增加了 `ssl` 选项。
+`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 TLS 证书和密钥的路径。
 
-在配置文件中，我们还提到了一些可选的配置，如中间证书、SSL 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;` ，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
+在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
 HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。
 当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。
