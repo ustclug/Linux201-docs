@@ -14,7 +14,7 @@ Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能
 
 与 Nginx 相比，Caddy 确实更像是个玩具，但是更像是那种自带电池的玩具，更利于人类使用，可以快速搭建 Prototype 而不用花费太多时间在配置上。
 
-## 安装
+## 安装 {#installation}
 
 以 Debian 为例：
 
@@ -44,25 +44,11 @@ sudo systemctl restart caddy
     caddy validate --config /etc/caddy/Caddyfile
     ```
 
-!!! tip "阻止 Caddy 对未配置的域名进行 HTTPS 跳转"
-
-    Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。这在某些情况下不符合备案的技术要求，可能会被运营商投诉要求处理。
-
-    可以在配置中添加以下内容：
-
-    ```caddy
-    http:// {
-        abort
-    }
-    ```
-
-    使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。
-
-## 常用配置
+## 常用配置 {#common-configuration}
 
 以下是一些常用的 Caddyfile 配置示例：
 
-### 静态文件服务器
+### 静态文件服务器 {#static-file-server}
 
 ```caddy
 example.com {
@@ -73,7 +59,7 @@ example.com {
 }
 ```
 
-### 反向代理
+### 反向代理 {#reverse-proxy}
 
 ```caddy
 example.com {
@@ -92,3 +78,17 @@ example.com {
         }
     }
     ```
+
+### 阻止 Caddy 对未配置的域名进行 HTTPS 跳转 {#abort-unconfigured-domains}
+
+Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。
+
+可以在配置中添加以下内容：
+
+```caddy
+http:// {
+    abort
+}
+```
+
+使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。
