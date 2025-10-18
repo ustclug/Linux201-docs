@@ -6,7 +6,7 @@ icon: simple/nginx
 
 !!! note "主要作者"
 
-    [@Cherrling][Cherrling]
+    [@Cherrling][Cherrling]、[@iBug][iBug]、[@taoky][taoky]
 
 > Web server 不能失去 Nginx，就如同西方不能失去耶路撒冷
 >
@@ -139,7 +139,7 @@ location [modifier] /path/ {
 }
 ```
 
-其中可选的 `modifier` 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配。
+其中可选的 `modifier` 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配，详细介绍见下面的 [Location 匹配](#location-matching)部分。
 
 ### 站点配置简介 {#site-config-intro}
 
@@ -415,7 +415,7 @@ Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
     如果有匹配到的正则表达式，Nginx 会使用该 `location` 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 `location` 块处理请求。
 
-### TLS 配置 {#tls-configuration}
+### TLS {#tls}
 
 TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
 
@@ -425,7 +425,80 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 
 一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
 
-首先，你需要为你的域名申请一个 TLS 证书。你可以使用免费的 Let's Encrypt 证书，也可以购买商业证书。假设你的证书保存在 `/etc/ssl/certs/example.com.pem` 和 `/etc/ssl/private/example.com.pem`。
+#### 申请证书 {#getting-certificates}
+
+首先，你需要为你的域名申请一个 TLS 证书。一般有以下几种方式：
+
+- 使用基于 ACME 协议的免费证书，例如 Let's Encrypt、ZeroSSL 等。可以使用 [Certbot](https://certbot.eff.org/)、[acme.sh](https://github.com/acmesh-official/acme.sh) 等工具来申请和自动续期证书。
+- 购买商业证书。
+- 自签名证书（仅用于测试环境，不建议在生产环境中使用）。
+
+!!! tip "ngx_http_acme_module"
+
+    Nginx 的 [`ngx_http_acme_module`](https://nginx.org/en/docs/http/ngx_http_acme_module.html) 也实现了 ACME 协议，可以类似 Caddy 那样避免多余的证书管理工具，直接让 Nginx 自行申请和续期证书。该模块可能需要自行编译安装。
+
+!!! comment "@taoky: 商业证书一定比免费证书更好吗？"
+
+    不一定。经常有的一种论调是：商业证书因为付了钱，所以比 Let's Encrypt 等免费证书更可靠、更安全，例如像[下面这样](https://www.bilibili.com/opus/1119462279183597571)：
+
+    > 北大用的商业证书，这种证书能证明这个网站确实属于北京大学，你可以看证书颁发对象的组织栏。清华用的是免费证书（注：Let's Encrypt），没有组织信息，不能证明这个网站属于清华大学。商业证书大概每年万把块？我不清楚具体行情，但世一大不应该差这点钱[吃瓜]
+
+    这里存在的几个常见的误解是：
+
+    1. 「商业证书」不代表一定有组织信息。证书分为三种：DV（Domain Validation，域名验证）、OV（Organization Validation，组织验证）和 EV（Extended Validation，扩展验证）。其中 DV 证书只验证域名所有权。以上提供免费证书的服务只签署 DV 证书，而付费 CA 除了 OV 和 EV 证书以外，也大量销售 DV 证书。
+    2. 证书的核心功能是：证明你连接的是域名对应的服务器，并且加密传输的数据。不管是 DV、OV 还是 EV 证书，都能同等安全地实现这个功能。
+    3. 在很久以前，浏览器会给 EV 证书在地址栏显示组织信息，但是现代浏览器早已经不再这么做了。因为：
+
+        - 大部分人不怎么看地址栏，更别说注意到组织信息了。
+        - 用户大多只关注是不是 HTTPS（在很久以前，如果网站是 HTTPS 的话，地址栏左侧对应区域会是绿的），而不会刻意去区分证书类型。
+        - 恶意攻击者可以合法注册一个名称相似的组织，然后申请 EV 证书用于诈骗，这样的 EV 证书可能反而会强化用户的错误信任。例如 [2017 年曾有安全研究员注册了名叫「Identity Verified」（身份已验证）的公司，并申请到了 EV 证书](https://www.bleepingcomputer.com/news/security/extended-validation-ev-certificates-abused-to-create-insanely-believable-phishing-sites/)， [同年另一名安全研究员用不到 200 美元成功注册了一个名为「Stripe, Inc.」的组织，并给自己的域名申请到了对应的 EV 证书，用于展示 EV 证书的设计缺陷](https://arstechnica.com/information-technology/2017/12/nope-this-isnt-the-https-validated-stripe-website-you-think-it-is/)。
+
+        因此，即使申请 EV 证书，这种付费 CA 的「背书」意义也非常有限。至少除非你不怕麻烦，而且钱多得不够花，否则我个人并不建议为了 EV 证书而花钱。
+    4. 免费证书使用的 ACME 协议决定了，能为域名申请到有效证书的前提是申请方对域名有控制权。并且，现在所有证书签署都有证书透明度（Certificate Transparency，CT）机制，任何人都可以[查询](https://crt.sh/)到某个域名对应的证书签署记录。因此想要骗签证书难度很大，并且很容易被发现。
+    5. 安全性不取决于花了多少钱，而是取决于具体实践。ACME 协议支持自动化签署、续期证书，可以大大降低人为操作失误（包括泄漏私钥、忘记续期）的风险。而**如果花了钱买了 EV 证书，但是最后部署的时候却是通过微信（我听说过不止一例类似的情况）给对应服务的运维传递证书私钥，那安全性反而大大降低了，远不如自动化的免费证书**。
+
+!!! tip "Debian 的 snakeoil 自签名证书"
+
+    Debian 系统的 `ssl-cert` 包自带了一个自签名的测试证书。对应的证书在 `/etc/ssl/certs/ssl-cert-snakeoil.pem`，私钥在 `/etc/ssl/private/ssl-cert-snakeoil.key`。可以用它本地测试 HTTPS 配置，但不建议在生产环境中使用。
+
+    如果需要重新生成，可以执行：
+
+    ```bash
+    make-ssl-cert generate-default-snakeoil -f
+    ```
+
+以下假设你的证书保存在 `/etc/nginx/ssl/example.com.crt` 和 `/etc/nginx/ssl/example.com.key`。
+
+!!! tip "证书格式"
+
+    PEM 格式是最常见的证书格式。其内容为纯文本，包含 base64 编码的相关数据。对于证书（一般为 `pem`、`crt` 或者 `cer` 后缀）：
+
+    ```pem
+    -----BEGIN CERTIFICATE-----
+    （base64 编码的数据）
+    -----END CERTIFICATE-----
+    ```
+
+    对于私钥（一般为 `pem` 或 `key` 后缀）：
+
+    ```pem
+    -----BEGIN PRIVATE KEY-----
+    （base64 编码的数据）
+    -----END PRIVATE KEY-----
+    ```
+
+    可以使用 OpenSSL 工具查看信息：
+
+    ```bash
+    openssl x509 -in example.crt -text -noout  # 查看证书信息
+    openssl pkey -in example.key -text -noout  # 检查私钥
+    ```
+
+!!! tip "fullchain.pem"
+
+    一些 ACME 客户端会生成 `fullchain.pem` 文件，它包含了服务器证书和中间证书的完整链。如果存在这个文件，请**优先使用**它，否则浏览器以外的其他客户端可能会因为缺少中间证书而无法验证证书链。
+
+#### TLS 配置 {#tls-configuration}
 
 然后，你需要在 Nginx 配置文件中添加 TLS 配置：
 
@@ -435,15 +508,15 @@ server {
     server_name example.com;  # 指定的域名
     root /var/www/example.com;  # 网站根目录
 
-    ssl_certificate /etc/ssl/certs/example.com.pem;  # TLS 证书路径
-    ssl_certificate_key /etc/ssl/private/example.com.pem;  # TLS 证书密钥路径
+    ssl_certificate /etc/nginx/ssl/example.com.crt;  # TLS 证书路径
+    ssl_certificate_key /etc/nginx/ssl/example.com.key;  # TLS 证书密钥路径
 
     # （可选）SSL 设置
-    ssl_protocols TLSv1.2 TLSv1.3;  # 启用的 TLS 协议
-    ssl_ciphers 'HIGH:!aNULL:!MD5';  # 使用的加密套件
-    ssl_prefer_server_ciphers on;  # 优先使用服务器的加密套件
-    ssl_session_cache shared:SSL:10m;  # TLS 会话缓存大小
-    ssl_session_timeout 10m;  # TLS 会话超时时间
+    ssl_protocols TLSv1.2 TLSv1.3;  # 启用的 TLS 协议（默认值）
+    ssl_ciphers 'HIGH:!aNULL:!MD5';  # 使用的加密套件（默认值）
+    ssl_prefer_server_ciphers on;  # 优先使用服务器的加密套件（默认为 off）
+    ssl_session_cache shared:SSL:10m;  # TLS 会话缓存大小（默认没有缓存）
+    ssl_session_timeout 10m;  # TLS 会话超时时间（默认为 5m）
 
     # （可选）HSTS（HTTP Strict Transport Security）
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
@@ -454,15 +527,21 @@ server {
 }
 ```
 
-注意到和前文的配置不同，这里的监听端口是 443，而且增加了 `ssl` 选项。
-`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 TLS 证书和密钥的路径。
+注意到和前文的配置不同，这里的监听端口是 443，而且增加了 `ssl` 选项。`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 TLS 证书和密钥的路径。
 
 在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
-HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。
-当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。
-如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。
-`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
+HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
+
+!!! tip "购买域名之前注意一下 HSTS 预加载列表哦！"
+
+    [HSTS 预加载列表（HSTS Preload List）](https://hstspreload.org)是一个由浏览器维护的列表，在这个列表里面的网站浏览器在访问时必须使用 HTTPS。如果买了一个在 HSTS 预加载列表上面的域名，但是不想用 HTTPS 的话，事情就会非常麻烦。
+
+    此外，一些 TLD（顶级域）也被加入到了 HSTS 预加载列表中，例如 `.dev` 等。
+
+!!! lab "访问 HTTP 自动跳转到 HTTPS 的配置"
+
+    假设希望让用户访问 `http://example.com` 时自动跳转到 `https://example.com`，对应的 `server` 块要怎么写呢？（提示：`return` 指令；HTTP 301 是永久重定向）
 
 ## 示例讲解
 
