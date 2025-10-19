@@ -2067,9 +2067,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#x-protocol" class="md-nav__link">
+  <a href="#x-input" class="md-nav__link">
     <span class="md-ellipsis">
-      X 协议
+      输入
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      输出
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-compositor" class="md-nav__link">
+    <span class="md-ellipsis">
+      混成器
     </span>
   </a>
   
@@ -2084,6 +2102,15 @@
   <a href="#wayland" class="md-nav__link">
     <span class="md-ellipsis">
       Wayland
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      音频服务器
     </span>
   </a>
   
@@ -2269,9 +2296,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#x-protocol" class="md-nav__link">
+  <a href="#x-input" class="md-nav__link">
     <span class="md-ellipsis">
-      X 协议
+      输入
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      输出
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-compositor" class="md-nav__link">
+    <span class="md-ellipsis">
+      混成器
     </span>
   </a>
   
@@ -2286,6 +2331,15 @@
   <a href="#wayland" class="md-nav__link">
     <span class="md-ellipsis">
       Wayland
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      音频服务器
     </span>
   </a>
   
@@ -2327,8 +2381,17 @@
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">参考</p>
+<p>本章参考了 <a href="https://github.com/libreliu">@libreliu</a> 在 <a href="https://ftp.lug.ustc.edu.cn/weekly_party/2024.04.21_Linux_Graphics_Journey/">2024 年 4 月 21 日 USTCLUG 的小聚「Linux 图形堆栈初探」的内容</a>。</p>
+</div>
 <p>相比于久负盛名的 Windows 与 macOS，Linux 的桌面以及其生态是独特的。本文将简单介绍 Linux 桌面与窗口系统中一些重要的概念。</p>
 <h2 id="x">X<a class="headerlink" href="#x" title="Permanent link">&para;</a></h2>
+<p>以下未特殊标明的情况下，X11 协议均使用 Xorg 这个目前最主流的 X 实现。</p>
+<div class="admonition tip">
+<p class="admonition-title">部分内容在主章节中有介绍</p>
+<p>如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考<a href="../../ops/virtualization/container/#docker-gui">容器章节中的相关内容</a>。</p>
+</div>
 <h3 id="client-server-window">客户端、服务端与窗口<a class="headerlink" href="#client-server-window" title="Permanent link">&para;</a></h3>
 <p>X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的效果，相比之下，性能与资源占用重要得多。并且当时个人计算机还是一个新兴的概念，用户更多的时候需要使用终端机连接到服务器上运行任务。因此，X 的设计上包含了当时那个年代设计的局限性，并且有着独特的「网络透明性」的设计：需要显示窗口的程序（客户端）和可以给用户显示窗口的程序（服务端）是可以分离的，通过网络去连接。对于单机场景，这里的「网络」大部分时候是 UNIX socket，而在诸如 SSH X Forwarding 这种通过网络连接的场合则是 TCP socket。</p>
 <p>默认情况下，如果你正在使用 Linux 桌面，那么默认连接到的 socket 则为 <code>/tmp/.X11-unix/X0</code>（对应环境变量 <code>DISPLAY=:0</code>）。</p>
@@ -2456,9 +2519,68 @@
 <p>另一点有趣的是，尽管 X 中存储了各个窗口的状态（以及它们在 Z 轴的栈式关系），但是 X 本身不会去管理这些窗口要怎么被用户移动、缩放、最大最小化等，也不会去尝试装饰窗口，它只会按照自己记录的状态把这些窗口显示出来。对于具体的窗口管理工作，X 就当起了甩手掌柜，把事情都交给了<strong>窗口管理器</strong>。窗口管理器是一个特殊的 X 客户端，所有我们常用的窗口功能都是由窗口管理器负责的，包括但不限于管理窗口的显示布局、窗口装饰、焦点控制、虚拟桌面等等。X 服务端允许窗口管理器捕获创建窗口的事件，并且允许窗口管理器将对应的窗口 "reparent" 到窗口管理器创建的框架窗口中，以此实现让程序窗口被窗口管理器控制、装饰的效果。</p>
 <p>窗口管理器与 X 服务器之间的交互有一些标准规范，例如 ICCCM 与 EWMH，以减小不同的窗口管理器实现之间的混乱与不一致问题。</p>
 <p>窗口管理器本身也是一个独立的进程，如果窗口管理器退出，那么其他的 X 客户端不会停止运行，但是你可能无法再控制它们了（例如，可能它们被别的窗口挡住了，而没有窗口管理器的装饰的话，你可能没有办法移动它们）。这种分离的设计也帮助孕育了很多独特的窗口管理器设计，例如平铺式窗口管理器（例如 i3wm），相比于传统的浮动式窗口管理器，可以自动以不重叠的方式显示当前的所有窗口，用户不需要再用鼠标手动调整每个窗口的大小等等。</p>
-<h3 id="x-protocol">X 协议<a class="headerlink" href="#x-protocol" title="Permanent link">&para;</a></h3>
-<p>(TODO)</p>
+<h3 id="x-input">输入<a class="headerlink" href="#x-input" title="Permanent link">&para;</a></h3>
+<p>Linux 的输入子系统暴露的设备在 <code>/dev/input</code> 中，用户空间可以打开设备文件以读取输入设备的信息。可以通过 <code>evtest</code> 工具来查看输入设备的事件：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>evtest
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">No device specified, trying to scan all of /dev/input/event*</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">Available devices:</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="go">Select the device event number [0-17]: 7</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">（选择鼠标设备，省略）</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">Testing ... (interrupt to exit)</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">Event: time 1760901205.303790, type 2 (EV_REL), code 0 (REL_X), value -1</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">Event: time 1760901205.303790, -------------- SYN_REPORT ------------</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">Event: time 1760901205.343787, type 2 (EV_REL), code 0 (REL_X), value 1</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="go">Event: time 1760901205.343787, -------------- SYN_REPORT ------------</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">Event: time 1760901205.363788, type 2 (EV_REL), code 0 (REL_X), value 1</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">Event: time 1760901205.363788, -------------- SYN_REPORT ------------</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">（省略接下来鼠标移动的事件）</span>
+</code></pre></div>
+<p>在较早的 Xorg 实现中，X server 会使用 evdev 驱动（xf86-input-evdev）直接读取 <code>/dev/input</code> 中的设备文件以获取输入事件，但是目前绝大部分情况下，evdev 驱动已经不再使用，X server 通过 libinput（xf86-input-libinput）来处理输入设备。libinput 是一个通用的输入处理库，由它解析输入事件后再传递给 X server。</p>
+<p>libinput 则可以通过 <code>libinput list-devices</code> 来查看；<code>libinput</code> 程序还支持类似 <code>evtest</code> 的实时事件查看功能，可以使用 <code>libinput debug-events</code> 来查看输入事件：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>libinput<span class="w"> </span>list-devices
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">Device:                  Power Button</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">Kernel:                  /dev/input/event1</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="go">Id:                      host:0000:0001</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">Group:                   1</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">Seat:                    seat0, default</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="go">Capabilities:            keyboard </span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>libinput<span class="w"> </span>debug-events<span class="w"> </span>/dev/input/event7
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="go">-event7   DEVICE_ADDED                 Logitech G304                     seat0 default group1  cap:kp left scroll-nat scroll-button</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="go"> event7   POINTER_MOTION               +0.000s    0.30/  0.00 ( +1.00/ +0.00)</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="go"> event7   POINTER_MOTION            2  +0.003s    1.81/  0.00 ( +2.00/ +0.00)</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go"> event7   POINTER_MOTION            3  +0.007s    2.22/  0.00 ( +2.00/ +0.00)</span>
+</code></pre></div>
+<p>而如果要确认 X server 识别到了哪些输入设备，可以使用 <code>xinput</code> 工具。由于 <code>xinput</code> 是和 X server（而不是和设备文件）交互，因此不需要特权。以下是在 Xwayland 下执行的结果：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>xinput<span class="w"> </span>list
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">WARNING: running xinput against an Xwayland server. See the xinput man page for details.</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">⎡ Virtual core pointer                      id=2    [master pointer  (3)]</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">⎜   ↳ Virtual core XTEST pointer                id=4    [slave  pointer  (2)]</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">⎜   ↳ xwayland-pointer:16                       id=6    [slave  pointer  (2)]</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">⎜   ↳ xwayland-relative-pointer:16              id=7    [slave  pointer  (2)]</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">⎜   ↳ xwayland-pointer-gestures:16              id=8    [slave  pointer  (2)]</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">⎣ Virtual core keyboard                     id=3    [master keyboard (2)]</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="go">    ↳ Virtual core XTEST keyboard               id=5    [slave  keyboard (3)]</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">    ↳ xwayland-keyboard:16                      id=9    [slave  keyboard (3)]</span>
+</code></pre></div>
+<h3 id="x-output">输出<a class="headerlink" href="#x-output" title="Permanent link">&para;</a></h3>
+<p>在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 <code>/dev/fb0</code> 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 <code>fbdev</code>（xf86-video-fbdev）驱动来操作帧缓冲区。</p>
+<div class="admonition lab">
+<p class="admonition-title">尝试直接与 <code>/dev/fb0</code> 交互，在 TTY 中输出图片</p>
+<p>尝试搜索资料，写一个程序，打开 <code>/dev/fb0</code>，并使用 <code>ioctl</code> 读取必要的信息，然后 <code>mmap</code> 映射帧缓冲区后，将你想显示的图片数据写入对应的内存区域。</p>
+</div>
+<p>但是之后，显示加速的需求越来越大，显卡厂商之间设计的差异也越来越大，<code>fbdev</code> 已经不够用了。之后出现的一种解决方案是：编写 X 的输出驱动，直接操作 <code>/dev/mem</code>，通过物理地址访问显存，从而实现对显卡的控制。但是这种设计有很多问题：X 需要用 root 权限运行；如果 X 崩溃了，那么显卡的状态很可能也会坏掉；X 与 OpenGL 之间的协作也有不少问题。</p>
+<p>因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。你可以在 <code>/dev/dri</code> 中看到你的显卡的设备文件，一般分为主设备（<code>card0</code>）和渲染设备（<code>renderD128</code>），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。</p>
+<p>此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。</p>
+<p>最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动来获得显示加速。</p>
+<h3 id="x-compositor">混成器<a class="headerlink" href="#x-compositor" title="Permanent link">&para;</a></h3>
+<p>进入二十一世纪之后，桌面环境开始追求更炫酷的视觉效果，例如圆角的窗口、半透明的窗口、有阴影的窗口、不规则形状的窗口、动画效果等等。但是 X 传统仍然假设：窗口是个不透明矩形，X 服务器需要直接把这样的窗口画到屏幕上，并且跳过被挡住的部分——而且这个过程没有缓冲，动画只能靠窗口不停重绘自己来实现，非常不流畅。而混成器做的事情就是：接管图形显示的流程，让窗口不再直接画在屏幕上，而是画在一个缓冲区中，然后由混成器统一将这些缓冲区合成（composite）到屏幕上。这样一来，要显示什么酷炫的效果就由混成器说了算了。在 X 下，混成器需要调用 <a href="https://freedesktop.org/wiki/Software/CompositeExt/">X Composite 扩展</a>来实现。</p>
+<p>最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。</p>
+<p><img alt="Compiz Cube" src="../../images/Compiz-fusion_effects_Cube.jpg" /></p>
+<p class="caption">2007 年的 Compiz 的立方体效果。<a href="https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg">By Nicofo，CC BY-SA 3.0</a>。</p>
 <h2 id="wayland">Wayland<a class="headerlink" href="#wayland" title="Permanent link">&para;</a></h2>
+<h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <h2 id="dbus">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
@@ -2511,7 +2633,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月10日 18:11:45 UTC">2025年8月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月19日 20:16:22 UTC">2025年10月19日</span>
   </span>
 
     
