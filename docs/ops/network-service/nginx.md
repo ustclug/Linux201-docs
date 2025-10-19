@@ -18,40 +18,63 @@ Nginx 是一个高性能的开源 Web 服务器和反向代理服务器，以稳
 
 ## 安装 {#install}
 
-Nginx 可以直接从 Debian APT 源安装。
+Nginx 可以直接从 Debian APT 源安装。其许多常用模块被打包在额外的软件包中，它们的包名以 `libnginx-mod-` 开头，你可以根据需要选装。同时，Debian 也将模块按常用程度分为了四个不同的 meta 软件包，可以根据需要安装这些 meta 软件包：
 
-```bash
-sudo apt update
-sudo apt install nginx
-# 如果需要更多模块，可以安装 nginx-full 与 nginx-extras 包
-sudo apt install nginx-full nginx-extras
-```
+=== "仅 Nginx 本体与核心模块"
+
+    ```shell
+    sudo apt install nginx
+    ```
+
+=== "最轻量的模块集合"
+
+    ```shell
+    sudo apt install nginx-light
+    ```
+
+=== "「核心」模块集合"
+
+    ```shell
+    sudo apt install nginx-core
+    ```
+
+=== "常用的模块集合"
+
+    ```shell
+    sudo apt install nginx-full
+    ```
+
+=== "几乎所有的模块"
+
+    ```shell
+    sudo apt install nginx-extras
+    ```
 
 如果有特殊的需求，也有其他的选择：
 
 - [Nginx.org 源](https://nginx.org/en/linux_packages.html#Debian) 提供了最新主线和稳定版本的 Nginx。
-- [n.wtf](https://n.wtf/) 提供了最新的 Nginx，并内置了 Brotli、QUIC（HTTP/3）等支持。
+- [n.wtf](https://n.wtf/) 提供了最新版本的 Nginx，并内置了 Brotli、QUIC（HTTP/3）等支持。特别地，n.wtf 版本的 Nginx 采用 Debian 的打包方式，是 Debian 官方包很好的替代。
 - [OpenResty](https://openresty.org/en/linux-packages.html) 提供了基于 Nginx 的高性能 Web 平台，内置了 LuaJIT 支持。用户可以编写 Lua 脚本来扩展 Nginx 的功能。
+
+[科大镜像站](https://mirrors.ustc.edu.cn/) 提供了以上三种源的镜像，分别位于 [`nginx`](https://mirrors.ustc.edu.cn/nginx/)、[`sb`](https://mirrors.ustc.edu.cn/sb/)（n.wtf）和 [`openresty`](https://mirrors.ustc.edu.cn/openresty/)。
 
 管理 Nginx 的常用命令：
 
-```bash
+```shell
 sudo nginx -t # 检查配置文件是否正确
 sudo nginx -s reload # 不停机重新加载配置文件
 sudo nginx -s stop # 停止 Nginx
 sudo nginx -s quit # 安全停止 Nginx（完成当前请求后停止）
 ```
 
-对于使用 systemd 管理 Nginx 服务的系统，可以使用：
+对于使用 systemd 管理 Nginx 服务的系统，也可以使用：
 
-```bash
+```shell
 sudo systemctl reload nginx # 重新加载配置文件
 sudo systemctl stop nginx # 安全停止 Nginx
 ```
 
-## 配置 {#configuration}
-
-### 配置文件结构简介 {#config-file-structure}
+## 配置文件 {#configuration}
 
 对于 Debian & Ubuntu 来说，`nginx.conf` 的内容一般包含：
 
@@ -86,7 +109,31 @@ http {
 
     此时，你需要将你编写的配置文件放置于 `/etc/nginx/conf.d` 目录下，但当你需要禁用某些内容时，必须将其移出文件夹、删除或进行更改。当然，你也可以自己创建 `sites-available` 和 `sites-enabled` 目录，然后在 `nginx.conf` 中引入。
 
-### 指令、变量与模块 {#directives-variables-modules}
+### 重新加载配置 {#reload}
+
+修改配置文件后，别忘了重新加载 Nginx 配置，否则修改不会生效。
+
+你可以先检查配置文件是否正确：
+
+```bash
+sudo nginx -t
+```
+
+如果没有问题，就重新加载配置文件：
+
+```bash
+sudo systemctl reload nginx  # 推荐使用
+# 或者
+sudo nginx -s reload
+```
+
+需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
+
+??? note "Nginx 的主进程与工作进程的设计"
+
+    Nginx 采用了主进程（master process）和工作进程（worker process）的设计。主进程负责读取配置、打开端口、管理工作进程，而工作进程则负责处理实际的请求。当你向主进程发送 SIGHUP 信号时（重新加载配置文件），主进程先验证新的配置，成功后会启动新的工作进程来应用新的配置，并且让旧的工作进程停止接受新连接，处理完成已有的连接之后再退出，因此正在处理的请求不会被突然中断。
+
+## 指令、变量与模块 {#directives-variables-modules}
 
 Nginx 的配置由一系列的指令（directive）组成。directive 有两种：简单 directive 和块 directive。在上面的例子中，`http` 块就是一个块 directive，而 `include` 则是简单 directive。
 
@@ -106,7 +153,7 @@ Nginx 是模块化的服务器，其中 [`ngx_http_core_module`](https://nginx.o
 
 其中每个 directive 和变量都包含了详细的说明。
 
-### `server` 块与 `location` 块 {#server-location-blocks}
+## `server` 块与 `location` 块 {#server-location-blocks}
 
 Nginx 配置的 [`http` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#http)中可以有多个 [`server` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#server)，每个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。Nginx 正是通过 `server` 块来实现多站点配置的。
 
@@ -141,7 +188,7 @@ location [modifier] /path/ {
 
 其中可选的 `modifier` 用于指定匹配方式（例如精确匹配、正则匹配等），默认不填写的话则为前缀匹配，详细介绍见下面的 [Location 匹配](#location-matching)部分。
 
-### 站点配置简介 {#site-config-intro}
+## 站点配置简介 {#site-config-intro}
 
 默认的站点配置文件在 `/etc/nginx/sites-available/default`，你可以直接编辑它——以下为去除了所有注释的默认版本：
 
@@ -197,31 +244,7 @@ server {
 
 这时访问 `http://localhost` 就会被转发到 `http://backend_server:port`。对外部网络来说，Nginx 就是一个反向代理站点。
 
-### 重新加载配置 {#reload}
-
-修改配置文件后，别忘了重新加载 Nginx 配置，否则修改不会生效。
-
-你可以先检查配置文件是否正确：
-
-```bash
-sudo nginx -t
-```
-
-如果没有问题，就重新加载配置文件：
-
-```bash
-sudo systemctl reload nginx  # 推荐使用
-# 或者
-sudo nginx -s reload
-```
-
-需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
-
-??? note "Nginx 的主进程与工作进程的设计"
-
-    Nginx 采用了主进程（master process）和工作进程（worker process）的设计。主进程负责读取配置、打开端口、管理工作进程，而工作进程则负责处理实际的请求。当你向主进程发送 SIGHUP 信号时（重新加载配置文件），主进程先验证新的配置，成功后会启动新的工作进程来应用新的配置，并且让旧的工作进程停止接受新连接，处理完成已有的连接之后再退出，因此正在处理的请求不会被突然中断。
-
-### 多站点配置 {#multiple-servers}
+## 多站点配置 {#multiple-servers}
 
 Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多个网站，对不同的域名提供不同的服务。这就是所谓的虚拟主机配置。
 
@@ -253,10 +276,7 @@ server {
 server {
     listen 80 default_server;  # 默认站点
     server_name _;  # 默认域名
-    root /var/www/default;  # 默认网站根目录
-    location / {
-        try_files $uri $uri/ =404;
-    }
+    return 404;
 }
 ```
 
@@ -316,7 +336,7 @@ sudo ln -sf /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
 # sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 ```
 
-### 处理复杂的 location 匹配 {#complex-location-matching}
+## 处理复杂的 location 匹配 {#complex-location-matching}
 
 在 location 块里，我们可以使用一些指令来处理请求，如：
 
@@ -328,7 +348,7 @@ sudo ln -sf /etc/nginx/sites-available/example.org /etc/nginx/sites-enabled/
 
 同时在一个 `server` 块中，我们也可以定义多个 `location` 块来处理不同的请求路径。以下介绍几种常见的 `location` 匹配方式。
 
-#### Location 匹配 {#location-matching}
+### Location 匹配 {#location-matching}
 
 Nginx 需要决定由哪个 `location` 块来处理请求时，会根据请求的 URI path 来匹配 `location` 块。
 
@@ -406,7 +426,7 @@ Nginx 支持多种匹配方式，主要通过 `location` 指令后面的可选�
     }
     ```
 
-#### Location 块的匹配顺序 {#location-matching-order}
+### Location 块的匹配顺序 {#location-matching-order}
 
 Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
 
@@ -421,7 +441,7 @@ Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
     如果有匹配到的正则表达式，Nginx 会使用该 `location` 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 `location` 块处理请求。
 
-### TLS {#tls}
+## TLS {#tls}
 
 TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
 
@@ -431,11 +451,11 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 
 一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。
 
-#### 申请证书 {#getting-certificates}
+### 申请证书 {#getting-certificates}
 
 首先，你需要为你的域名申请一个 TLS 证书。一般有以下几种方式：
 
-- 使用基于 ACME 协议的免费证书，例如 Let's Encrypt、ZeroSSL 等。可以使用 [Certbot](https://certbot.eff.org/)、[acme.sh](https://github.com/acmesh-official/acme.sh) 等工具来申请和自动续期证书。
+- 使用基于 ACME 协议的免费证书，例如 Let's Encrypt、ZeroSSL 等。可以使用 [Certbot](https://certbot.eff.org/)、[acme.sh](https://github.com/acmesh-official/acme.sh)、[lego](https://github.com/go-acme/lego) 等工具来申请和自动续期证书。
 - 购买商业证书。
 - 自签名证书（仅用于测试环境，不建议在生产环境中使用）。
 
@@ -504,7 +524,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 
     一些 ACME 客户端会生成 `fullchain.pem` 文件，它包含了服务器证书和中间证书的完整链。如果存在这个文件，请**优先使用**它，否则浏览器以外的其他客户端可能会因为缺少中间证书而无法验证证书链。
 
-#### TLS 配置 {#tls-configuration}
+### TLS 配置 {#tls-configuration}
 
 然后，你需要在 Nginx 配置文件中添加 TLS 配置：
 
@@ -553,11 +573,11 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 
     假设希望让用户访问 `http://example.com` 时自动跳转到 `https://example.com`，对应的 `server` 块要怎么写呢？（提示：`return` 指令；HTTP 301 是永久重定向）
 
-### 反向代理与负载均衡 {#reverse-proxy-load-balancing}
+## 反向代理与负载均衡 {#reverse-proxy-load-balancing}
 
 在[站点配置简介](#site-config-intro)部分，我们给出了一个简单的反向代理配置示例。实际上，Nginx 的反向代理功能非常强大，可以实现负载均衡、缓存、请求修改等功能。
 
-#### 反向代理杂项配置 {#reverse-proxy-misc}
+### 反向代理杂项配置 {#reverse-proxy-misc}
 
 以下介绍一些常用的反向代理配置选项：
 
@@ -615,7 +635,7 @@ http {
 
     在 HTTP 标准中，[`Connection`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection) 头是 hop-by-hop 的，这意味着这个头[不应该按照原样转发](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#hop-by-hop_headers)。直接转发会存在非预期的副作用。
 
-#### 反代缓存 {#reverse-proxy-caching}
+### 反代缓存 {#reverse-proxy-caching}
 
 Nginx 可以作为反向代理缓存服务器，缓存后端的响应内容，从而减少后端的负载，提升性能。常用于缓存局域网外部的静态资源（将外部的网站作为反向代理的「后端」），提供给局域网内的用户访问。
 
@@ -658,7 +678,7 @@ location / {
 - [`proxy_cache_use_stale`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_use_stale) 指令允许在后端服务器出现错误时使用过期的缓存响应，从而提高可用性。
 - 最后的 `add_header` 用于在响应头中添加一个 `X-Cache-Status` 字段，显示缓存状态（`HIT`、`MISS`、`BYPASS` 等）。
 
-#### 负载均衡配置 {#load-balancing-configuration}
+### 负载均衡配置 {#load-balancing-configuration}
 
 负载均衡是 Nginx 的另一个重要功能，可以用于分发请求到多个后端服务器，提高性能和可靠性。
 
