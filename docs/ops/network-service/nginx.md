@@ -172,7 +172,7 @@ server {
 
 这时你可以在 `/var/www/html` 目录下放置你自己的 HTML、CSS、JS 等文件，然后访问 `http://localhost` 就可以看到你的网站了。
 
-反向代理是代表服务器接收客户端请求、转发到后端、再返回结果的一层中间代理。一种常见的需求是让 Nginx 作为其他后端服务的反向代理。可以参考下面的配置：
+反向代理是代表服务器接收客户端请求、转发到后端、再返回结果的一层中间代理。也可以认为这里的「后端」是反向代理的「上游」。一种常见的需求是让 Nginx 作为其他后端服务的反向代理。可以参考下面的配置：
 
 ```nginx
 server {
@@ -188,6 +188,8 @@ server {
     }
 }
 ```
+
+其中对绝大部分后端服务来说，`Host` 头是必须设置的。
 
 !!! note "约定俗成的 HTTP 请求头"
 
@@ -555,9 +557,63 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 
 在[站点配置简介](#site-config-intro)部分，我们给出了一个简单的反向代理配置示例。实际上，Nginx 的反向代理功能非常强大，可以实现负载均衡、缓存、请求修改等功能。
 
+#### 反向代理杂项配置 {#reverse-proxy-misc}
+
+以下介绍一些常用的反向代理配置选项：
+
+```nginx
+location / {
+    proxy_pass http://backend_server;  # 反向代理的地址
+    # 设置 header 部分略过
+    proxy_buffering on;  # 启用 buffering（默认启用）
+    proxy_ssl_server_name on;  # 向后端服务器发送 SNI（默认关闭）
+    proxy_connect_timeout 10s;  # 连接后端服务器的超时时间（默认 60s）
+    proxy_max_temp_file_size 128m;  # 临时文件的最大大小（默认 1024m）
+}
+```
+
+这里比较重要的配置是 [buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) 的启用与否。在启用 buffering 的时候，Nginx 在收到后端数据后，不会立刻给客户端，而是先将数据缓存在内存或者临时文件中，然后再发送，以此提高吞吐量。但是对于延迟敏感的应用，或者在磁盘空间有限的情况下，可能需要关闭 buffering。
+
+此外，在配置一些应用的时候，可能需要额外添加 WebSocket 支持。
+
+!!! note "WebSocket 是什么？"
+
+    在现代网站开发时，经常存在的一种需求是：服务端需要主动向客户端推送数据，而不是仅仅被动地响应客户端（浏览器）请求。如果让浏览器定期轮询服务器，既浪费资源，又增加延迟。WebSocket 协议正是为了解决这个问题而设计的。它允许在客户端和服务器之间建立一个持久的双向通信通道，从而实现实时数据传输。
+
+    WebSocket 协议在协商时会先发送一个 HTTP/1.1 请求，包含 `Upgrade: websocket` 与 `Connection: Upgrade` 头，表示请求升级到 WebSocket 协议。
+
+以下给出一个示例：
+
+```nginx
+http {
+    # ...
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    server {
+        # ...
+
+        location / {
+            # 其他反向代理配置略过
+            proxy_http_version 1.1;  # 使用 HTTP/1.1 协议
+            proxy_set_header Upgrade $http_upgrade;  # 支持 WebSocket 升级
+            proxy_set_header Connection $connection_upgrade;  # 支持 WebSocket 连接
+        }
+    }
+}
+```
+
+这里 [`map`](https://nginx.org/en/docs/http/ngx_http_map_module.html#map) 指令必须在 `http` 块中，定义了一个从 HTTP 请求的 `Upgrade` 头到 `$connection_upgrade` 变量的映射关系。
+
+!!! note "为什么不能 `proxy_set_header Connection $http_connection`？"
+
+    在 HTTP 标准中，[`Connection`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection) 头是 hop-by-hop 的，这意味着这个头[不应该按照原样转发](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#hop-by-hop_headers)。直接转发会存在非预期的副作用。
+
 #### 反代缓存 {#reverse-proxy-caching}
 
-Nginx 可以作为反向代理缓存服务器，缓存后端的响应内容，从而减少后端的负载，提升性能。
+Nginx 可以作为反向代理缓存服务器，缓存后端的响应内容，从而减少后端的负载，提升性能。常用于缓存局域网外部的静态资源（将外部的网站作为反向代理的「后端」），提供给局域网内的用户访问。
 
 首先需要在 `http` 块中设置缓存路径，类似如下：
 
@@ -598,7 +654,96 @@ location / {
 - [`proxy_cache_use_stale`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_use_stale) 指令允许在后端服务器出现错误时使用过期的缓存响应，从而提高可用性。
 - 最后的 `add_header` 用于在响应头中添加一个 `X-Cache-Status` 字段，显示缓存状态（`HIT`、`MISS`、`BYPASS` 等）。
 
-## 示例讲解
+#### 负载均衡配置 {#load-balancing-configuration}
+
+负载均衡是 Nginx 的另一个重要功能，可以用于分发请求到多个后端服务器，提高性能和可靠性。
+
+一个典型的负载均衡配置如下：
+
+```nginx
+http {
+    upstream backend {
+        server backend1.example.com;
+        server backend2.example.com;
+        server backend3.example.com;
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        location / {
+            proxy_pass http://backend;  # 将请求转发到 upstream 定义的后端服务器
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+
+    server {
+        listen 80;
+        server_name another-example.com;
+
+        location / {
+            proxy_pass http://backend;  # 也可以使用相同的 upstream
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
+Nginx 支持多种负载均衡算法，如轮询、加权轮询、IP 哈希、最少连接等。
+
+Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
+
+加权轮询：
+
+```nginx
+upstream backend {
+    server backend1.example.com weight=3;  # 权重为 3
+    server backend2.example.com weight=1;  # 权重为 1
+}
+```
+
+最少连接：
+
+```nginx
+upstream backend {
+    least_conn;  # 使用最少连接算法
+    server backend1.example.com;
+    server backend2.example.com;
+}
+```
+
+IP 哈希，使得同 IP 的用户始终可以访问到同一个节点：
+
+```nginx
+upstream backend {
+    ip_hash;  # 使用 IP 哈希算法
+    server backend1.example.com;
+    server backend2.example.com;
+}
+```
+
+根据 `key` 指定的变量进行哈希：
+
+```nginx
+upstream backend {
+    hash $request_uri consistent;  # 使用请求 URI 进行哈希
+    server backend1.example.com;
+    server backend2.example.com;
+}
+```
+
+!!! tip "一致性哈希算法"
+
+    在上面的配置中，我们添加了 `consistent` 选项，这表示使用[一致性哈希算法](https://en.wikipedia.org/wiki/Consistent_hashing)，而不是传统的 `hash(key) % N` 的方法。它可以保证在节点数量变化时，尽可能少地改变已有的映射关系。
+
+`server` 块后还可以添加诸如 `max_fails`（最大失败次数）、`fail_timeout`（失败超时时间）等参数来控制节点的故障转移行为。
+
+<!-- ## 示例讲解
 
 以下给出一些实践中会使用的 Nginx 配置示例。
 
@@ -707,72 +852,4 @@ server {
         proxy_set_header Host $host;
         proxy_pass http://grafana;
     }
-    ```
-
-### 负载均衡配置
-
-负载均衡是 Nginx 的另一个重要功能，可以用于分发请求到多个后端服务器，提高性能和可靠性。
-
-一个典型的负载均衡配置如下：
-
-```nginx
-http {
-    upstream backend {
-        server backend1.example.com;
-        server backend2.example.com;
-        server backend3.example.com;
-    }
-
-    server {
-        listen 80;
-        server_name example.com;
-
-        location / {
-            proxy_pass http://backend;  # 将请求转发到 upstream 定义的后端服务器
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-    }
-
-    server {
-        listen 80;
-        server_name another-example.com;
-
-        location / {
-            proxy_pass http://backend;  # 也可以使用相同的 upstream
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        }
-    }
-}
-```
-
-#### 负载均衡算法
-
-负载均衡是指将请求分发给多个后端服务器，以达到均衡负载的目的。Nginx 支持多种负载均衡算法，如轮询、加权轮询、IP 哈希、最少连接等。
-
-一个十分巧妙的负载均衡算法是一致性哈希算法，它可以保证在服务器数量变化时，尽可能少地改变已有的映射关系。推荐阅读：[一致性哈希算法](https://zh.wikipedia.org/wiki/%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C)。
-
-Nginx 支持多种负载均衡算法，默认是轮询（round-robin）。你可以通过在 upstream 块中指定不同的算法来更改负载均衡策略，例如：
-
-最少连接：
-
-```nginx
-upstream backend {
-    least_conn;  # 使用最少连接算法
-    server backend1.example.com;
-    server backend2.example.com;
-}
-```
-
-IP 哈希：
-
-```nginx
-upstream backend {
-    ip_hash;  # 使用 IP 哈希算法
-    server backend1.example.com;
-    server backend2.example.com;
-}
-```
+    ``` -->
