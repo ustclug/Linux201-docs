@@ -215,6 +215,10 @@ sudo nginx -s reload
 
 需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
 
+??? note "Nginx 的主进程与工作进程的设计"
+
+    Nginx 采用了主进程（master process）和工作进程（worker process）的设计。主进程负责读取配置、打开端口、管理工作进程，而工作进程则负责处理实际的请求。当你向主进程发送 SIGHUP 信号时（重新加载配置文件），主进程先验证新的配置，成功后会启动新的工作进程来应用新的配置，并且让旧的工作进程停止接受新连接，处理完成已有的连接之后再退出，因此正在处理的请求不会被突然中断。
+
 ### 多站点配置 {#multiple-servers}
 
 Nginx 的一个十分炫酷的功能就是可以实现一台主机上运行多个网站，对不同的域名提供不同的服务。这就是所谓的虚拟主机配置。
@@ -529,9 +533,13 @@ server {
 
 注意到和前文的配置不同，这里的监听端口是 443，而且增加了 `ssl` 选项。`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 TLS 证书和密钥的路径。
 
+!!! note "既然 TLS 是加密的，那么 Nginx 是怎么在握手阶段知道要用哪个 `server` 块，以及里面对应的证书呢？"
+
+    在 TLS 握手阶段，绝大多数客户端都会发送 SNI（Server Name Indication，服务器名称指示）信息，告诉服务器它想要连接的域名。**SNI 是明文的**，因此服务器可以根据 SNI 信息来选择对应的 `server` 块和证书。
+
 在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
-HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 Strict-Transport-Security 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
+HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 `Strict-Transport-Security` 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
 
 !!! tip "购买域名之前注意一下 HSTS 预加载列表哦！"
 
@@ -542,6 +550,53 @@ HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS �
 !!! lab "访问 HTTP 自动跳转到 HTTPS 的配置"
 
     假设希望让用户访问 `http://example.com` 时自动跳转到 `https://example.com`，对应的 `server` 块要怎么写呢？（提示：`return` 指令；HTTP 301 是永久重定向）
+
+### 反向代理与负载均衡 {#reverse-proxy-load-balancing}
+
+在[站点配置简介](#site-config-intro)部分，我们给出了一个简单的反向代理配置示例。实际上，Nginx 的反向代理功能非常强大，可以实现负载均衡、缓存、请求修改等功能。
+
+#### 反代缓存 {#reverse-proxy-caching}
+
+Nginx 可以作为反向代理缓存服务器，缓存后端的响应内容，从而减少后端的负载，提升性能。
+
+首先需要在 `http` 块中设置缓存路径，类似如下：
+
+```nginx
+http {
+    # ...
+    proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=exampleCache:128m inactive=1d max_size=4G;
+}
+```
+
+这里，[`proxy_cache_path`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_path) 指令定义了缓存存储路径等参数。这里的参数含义如下：
+
+- `levels=1:2`：定义缓存目录的层级结构，`1:2` 表示第一层目录使用 1 个字符，第二层目录使用 2 个字符，最终路径就类似于 `/var/cache/nginx/a/bc/...bca` 这样的形式。这是为了避免单个目录下文件过多在一些文件系统中会导致的性能问题。
+- `keys_zone=exampleCache:128m`：定义缓存键值区域的名称和大小，这里是 `exampleCache`，大小为 128MB。注意 128MB 不是缓存的总大小，而只是用于存储缓存键值的内存大小。1MB 大约可以存储 8000 个键。
+- `inactive=1d`：定义缓存项在多长时间内没有被访问就会被删除，这里是 1 天。默认是 10 分钟。
+- `max_size=4G`：定义缓存的最大大小，这里是 4GB。
+
+之后在需要缓存的块中加入 [`proxy_cache`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache) 指令。以下是一个比较激进的缓存配置：
+
+```nginx
+location / {
+    proxy_pass http://backend_server;
+    proxy_cache exampleCache;  # 启用 exampleCache 对应的缓存
+    proxy_cache_valid 200 12h;  # 定义 200 响应的缓存时间为 12 小时
+    proxy_cache_valid 301 302 6h;  # 定义 301 和 302 响应的缓存时间为 6 小时
+    proxy_cache_valid 400 500 502 504 1m;  # 定义 4xx 和 5xx 响应的缓存时间为 1 分钟
+    proxy_cache_valid any 5m;  # 定义其他响应的缓存时间为 5 分钟
+    proxy_cache_revalidate on;  # 对过期的缓存使用条件请求
+    proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;  # 在后端错误时使用过期缓存
+    add_header X-Cache-Status $upstream_cache_status;  # 添加响应头显示缓存状态
+}
+```
+
+这里加入的一些额外选项：
+
+- [`proxy_cache_valid`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_valid) 指令用于定义不同响应状态码的缓存时间。
+- [`proxy_cache_revalidate`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_revalidate) 则会在缓存过期后使用条件请求（If-Modified-Since 或 If-None-Match）来验证缓存的有效性，如果后端资源没有变化，则继续使用缓存。
+- [`proxy_cache_use_stale`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_use_stale) 指令允许在后端服务器出现错误时使用过期的缓存响应，从而提高可用性。
+- 最后的 `add_header` 用于在响应头中添加一个 `X-Cache-Status` 字段，显示缓存状态（`HIT`、`MISS`、`BYPASS` 等）。
 
 ## 示例讲解
 
