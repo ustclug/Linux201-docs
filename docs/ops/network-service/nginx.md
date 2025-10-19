@@ -605,6 +605,10 @@ http {
 }
 ```
 
+!!! tip "以 `$http_` 开头的变量"
+
+    Nginx 会自动将所有 HTTP 请求头转换为以 `$http_` 开头的变量，变量名中的连字符 `-` 会被替换为下划线 `_`。例如，HTTP 请求头 `Upgrade` 对应的变量是 `$http_upgrade`，`User-Agent` 对应的变量是 `$http_user_agent`。
+
 这里 [`map`](https://nginx.org/en/docs/http/ngx_http_map_module.html#map) 指令必须在 `http` 块中，定义了一个从 HTTP 请求的 `Upgrade` 头到 `$connection_upgrade` 变量的映射关系。
 
 !!! note "为什么不能 `proxy_set_header Connection $http_connection`？"
