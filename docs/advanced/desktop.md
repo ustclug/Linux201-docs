@@ -10,9 +10,19 @@ icon: octicons/device-desktop-16
 
 !!! warning "本文编写中"
 
+!!! note "参考"
+
+    本章参考了 [@libreliu][libreliu] 在 [2024 年 4 月 21 日 USTCLUG 的小聚「Linux 图形堆栈初探」的内容](https://ftp.lug.ustc.edu.cn/weekly_party/2024.04.21_Linux_Graphics_Journey/)。
+
 相比于久负盛名的 Windows 与 macOS，Linux 的桌面以及其生态是独特的。本文将简单介绍 Linux 桌面与窗口系统中一些重要的概念。
 
 ## X
+
+以下未特殊标明的情况下，X11 协议均使用 Xorg 这个目前最主流的 X 实现。
+
+!!! tip "部分内容在主章节中有介绍"
+
+    如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考[容器章节中的相关内容](../ops/virtualization/container.md#docker-gui)。
 
 ### 客户端、服务端与窗口 {#client-server-window}
 
@@ -178,10 +188,91 @@ xwininfo: Window id: 0x4200072 "xedit"
 
 窗口管理器本身也是一个独立的进程，如果窗口管理器退出，那么其他的 X 客户端不会停止运行，但是你可能无法再控制它们了（例如，可能它们被别的窗口挡住了，而没有窗口管理器的装饰的话，你可能没有办法移动它们）。这种分离的设计也帮助孕育了很多独特的窗口管理器设计，例如平铺式窗口管理器（例如 i3wm），相比于传统的浮动式窗口管理器，可以自动以不重叠的方式显示当前的所有窗口，用户不需要再用鼠标手动调整每个窗口的大小等等。
 
-### X 协议 {#x-protocol}
+### 输入 {#x-input}
 
-(TODO)
+Linux 的输入子系统暴露的设备在 `/dev/input` 中，用户空间可以打开设备文件以读取输入设备的信息。可以通过 `evtest` 工具来查看输入设备的事件：
+
+```console
+$ sudo evtest
+No device specified, trying to scan all of /dev/input/event*
+Available devices:
+（省略）
+Select the device event number [0-17]: 7
+（选择鼠标设备，省略）
+Testing ... (interrupt to exit)
+Event: time 1760901205.303790, type 2 (EV_REL), code 0 (REL_X), value -1
+Event: time 1760901205.303790, -------------- SYN_REPORT ------------
+Event: time 1760901205.343787, type 2 (EV_REL), code 0 (REL_X), value 1
+Event: time 1760901205.343787, -------------- SYN_REPORT ------------
+Event: time 1760901205.363788, type 2 (EV_REL), code 0 (REL_X), value 1
+Event: time 1760901205.363788, -------------- SYN_REPORT ------------
+（省略接下来鼠标移动的事件）
+```
+
+在较早的 Xorg 实现中，X server 会使用 evdev 驱动（xf86-input-evdev）直接读取 `/dev/input` 中的设备文件以获取输入事件，但是目前绝大部分情况下，evdev 驱动已经不再使用，X server 通过 libinput（xf86-input-libinput）来处理输入设备。libinput 是一个通用的输入处理库，由它解析输入事件后再传递给 X server。
+
+libinput 则可以通过 `libinput list-devices` 来查看；`libinput` 程序还支持类似 `evtest` 的实时事件查看功能，可以使用 `libinput debug-events` 来查看输入事件：
+
+```console
+$ sudo libinput list-devices
+Device:                  Power Button
+Kernel:                  /dev/input/event1
+Id:                      host:0000:0001
+Group:                   1
+Seat:                    seat0, default
+Capabilities:            keyboard 
+（以下省略）
+$ sudo libinput debug-events /dev/input/event7
+-event7   DEVICE_ADDED                 Logitech G304                     seat0 default group1  cap:kp left scroll-nat scroll-button
+ event7   POINTER_MOTION               +0.000s	  0.30/  0.00 ( +1.00/ +0.00)
+ event7   POINTER_MOTION            2  +0.003s	  1.81/  0.00 ( +2.00/ +0.00)
+ event7   POINTER_MOTION            3  +0.007s	  2.22/  0.00 ( +2.00/ +0.00)
+```
+
+而如果要确认 X server 识别到了哪些输入设备，可以使用 `xinput` 工具。由于 `xinput` 是和 X server（而不是和设备文件）交互，因此不需要特权。以下是在 Xwayland 下执行的结果：
+
+```console
+$ xinput list
+WARNING: running xinput against an Xwayland server. See the xinput man page for details.
+⎡ Virtual core pointer                    	id=2	[master pointer  (3)]
+⎜   ↳ Virtual core XTEST pointer              	id=4	[slave  pointer  (2)]
+⎜   ↳ xwayland-pointer:16                     	id=6	[slave  pointer  (2)]
+⎜   ↳ xwayland-relative-pointer:16            	id=7	[slave  pointer  (2)]
+⎜   ↳ xwayland-pointer-gestures:16            	id=8	[slave  pointer  (2)]
+⎣ Virtual core keyboard                   	id=3	[master keyboard (2)]
+    ↳ Virtual core XTEST keyboard             	id=5	[slave  keyboard (3)]
+    ↳ xwayland-keyboard:16                    	id=9	[slave  keyboard (3)]
+```
+
+### 输出 {#x-output}
+
+在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 `/dev/fb0` 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 `fbdev`（xf86-video-fbdev）驱动来操作帧缓冲区。
+
+!!! lab "尝试直接与 `/dev/fb0` 交互，在 TTY 中输出图片"
+
+    尝试搜索资料，写一个程序，打开 `/dev/fb0`，并使用 `ioctl` 读取必要的信息，然后 `mmap` 映射帧缓冲区后，将你想显示的图片数据写入对应的内存区域。
+
+但是之后，显示加速的需求越来越大，显卡厂商之间设计的差异也越来越大，`fbdev` 已经不够用了。之后出现的一种解决方案是：编写 X 的输出驱动，直接操作 `/dev/mem`，通过物理地址访问显存，从而实现对显卡的控制。但是这种设计有很多问题：X 需要用 root 权限运行；如果 X 崩溃了，那么显卡的状态很可能也会坏掉；X 与 OpenGL 之间的协作也有不少问题。
+
+因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。你可以在 `/dev/dri` 中看到你的显卡的设备文件，一般分为主设备（`card0`）和渲染设备（`renderD128`），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。
+
+此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。
+
+最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动来获得显示加速。
+
+### 混成器 {#x-compositor}
+
+进入二十一世纪之后，桌面环境开始追求更炫酷的视觉效果，例如圆角的窗口、半透明的窗口、有阴影的窗口、不规则形状的窗口、动画效果等等。但是 X 传统仍然假设：窗口是个不透明矩形，X 服务器需要直接把这样的窗口画到屏幕上，并且跳过被挡住的部分——而且这个过程没有缓冲，动画只能靠窗口不停重绘自己来实现，非常不流畅。而混成器做的事情就是：接管图形显示的流程，让窗口不再直接画在屏幕上，而是画在一个缓冲区中，然后由混成器统一将这些缓冲区合成（composite）到屏幕上。这样一来，要显示什么酷炫的效果就由混成器说了算了。在 X 下，混成器需要调用 [X Composite 扩展](https://freedesktop.org/wiki/Software/CompositeExt/)来实现。
+
+最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。
+
+![Compiz Cube](../images/Compiz-fusion_effects_Cube.jpg)
+
+2007 年的 Compiz 的立方体效果。[By Nicofo，CC BY-SA 3.0](https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg)。
+{: .caption }
 
 ## Wayland
+
+## 音频服务器
 
 ## DBus
