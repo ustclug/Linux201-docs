@@ -767,6 +767,12 @@ upstream backend {
 
 `server` 块后还可以添加诸如 `max_fails`（最大失败次数）、`fail_timeout`（失败超时时间）等参数来控制节点的故障转移行为。
 
+## Rewrite {#rewrite}
+
+## 日志 {#logging}
+
+## Lua {#lua}
+
 <!-- ## 示例讲解
 
 以下给出一些实践中会使用的 Nginx 配置示例。
