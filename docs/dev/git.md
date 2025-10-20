@@ -786,6 +786,12 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
 维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
 
+!!! note "在 Pull Request 之前：早期的邮件协作"
+
+    在基于网页端的 Pull Request 出现之前，早期的 Git 使用邮件列表作为协作的主要方式。贡献者通过 `git send-email` 将补丁发送到邮件列表，维护者通过 `git am` 将补丁应用到代码库中。目前诸如 Linux Kernel 等项目仍然使用邮件列表作为主要的协作方式。
+
+    本文不介绍相关使用方法。有兴趣的读者可以参考阅读由 [sourcehut](https://sourcehut.org/) 编写的 [git-send-email.io](https://git-send-email.io/) 与 [git-am.io](https://git-am.io/) 教程。一句题外话：sourcehut 与 GitHub、GitLab 等平台不同，它基于传统的邮件工作流，但是提供了简洁美观的网页界面。
+
 !!! note "GitLab"
 
     GitLab 的 Merge Request 整体上与 GitHub 的 Pull Request 类似，不过 checkout 到本地的操作有所不同。可以使用 GitLab 提供的命令行工具 [glab](https://docs.gitlab.com/editor_extensions/gitlab_cli/)，也可以使用 `git fetch origin merge-requests/1234/head:mr-1234` 的方式将编号为 1234 的 MR 对应的 HEAD 同步到本地的 `mr-1234` 分支。
