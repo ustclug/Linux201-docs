@@ -12,7 +12,11 @@ icon: octicons/device-desktop-16
 
 !!! note "参考"
 
-    本章参考了 [@libreliu][libreliu] 在 [2024 年 4 月 21 日 USTCLUG 的小聚「Linux 图形堆栈初探」的内容](https://ftp.lug.ustc.edu.cn/weekly_party/2024.04.21_Linux_Graphics_Journey/)。
+    本章参考了以下内容：
+    
+    - [@libreliu][libreliu] 在 [2024 年 4 月 21 日 USTCLUG 的小聚「Linux 图形堆栈初探」](https://ftp.lug.ustc.edu.cn/weekly_party/2024.04.21_Linux_Graphics_Journey/)。
+    - [farseerfc](https://github.com/farseerfc) 有关[桌面系统混成器](https://farseerfc.me/zhs/brief-history-of-compositors-in-desktop-os.html)的介绍。
+    - [@iBug][iBug] 的 [VNC 相关配置](https://wiki.ibugone.com/external/vserver/)。
 
 相比于久负盛名的 Windows 与 macOS，Linux 的桌面以及其生态是独特的。本文将简单介绍 Linux 桌面与窗口系统中一些重要的概念。
 
@@ -190,6 +194,8 @@ xwininfo: Window id: 0x4200072 "xedit"
 
 ### 输入 {#x-input}
 
+#### 输入设备 {#x-input-devices}
+
 Linux 的输入子系统暴露的设备在 `/dev/input` 中，用户空间可以打开设备文件以读取输入设备的信息。可以通过 `evtest` 工具来查看输入设备的事件：
 
 ```console
@@ -244,6 +250,20 @@ WARNING: running xinput against an Xwayland server. See the xinput man page for 
     ↳ xwayland-keyboard:16                    	id=9	[slave  keyboard (3)]
 ```
 
+#### 输入法 {#x-input-method}
+
+最早期的 X 设计上完全没有考虑输入法的问题。然而在东亚语言（中文、日文、韩文，CJK）场景下，输入法是正常使用桌面的必需组件。因此 X 在 1994 年尝试设计了被称为 [XIM（X Input Method）](https://www.x.org/releases/X11R7.6/doc/libX11/specs/XIM/xim.html)的输入法框架，但是这一套框架逐渐无法满足现代 UI 框架与输入法的需求。因此目前在 X 上，主流的 [IBus](https://github.com/ibus/ibus) 与 [Fcitx](https://fcitx-im.org/)（包括 Fcitx 4 与 Fcitx 5）均使用另一种方案：在 GTK 或 Qt 这样的图形库中直接集成输入法支持，而不再使用 XIM。GTK 或 Qt 会直接调用输入法模块，模块内会通过 DBus 与输入法进程通信，实现功能。
+
+这也是在做输入法配置时经常提到需要修改环境变量的原因。以 Fcitx 5 为例，通常需要设置以下环境变量：
+
+```shell
+XMODIFIERS="@im=fcitx"
+GTK_IM_MODULE="fcitx"
+QT_IM_MODULE="fcitx"
+```
+
+如果应用程序不使用 GTK 或 Qt，那么就会回退到 XIM 方案，即 `XMODIFIERS` 环境变量指定的输入法。
+
 ### 输出 {#x-output}
 
 在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 `/dev/fb0` 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 `fbdev`（xf86-video-fbdev）驱动来操作帧缓冲区。
@@ -264,12 +284,40 @@ WARNING: running xinput against an Xwayland server. See the xinput man page for 
 
 进入二十一世纪之后，桌面环境开始追求更炫酷的视觉效果，例如圆角的窗口、半透明的窗口、有阴影的窗口、不规则形状的窗口、动画效果等等。但是 X 传统仍然假设：窗口是个不透明矩形，X 服务器需要直接把这样的窗口画到屏幕上，并且跳过被挡住的部分——而且这个过程没有缓冲，动画只能靠窗口不停重绘自己来实现，非常不流畅。而混成器做的事情就是：接管图形显示的流程，让窗口不再直接画在屏幕上，而是画在一个缓冲区中，然后由混成器统一将这些缓冲区合成（composite）到屏幕上。这样一来，要显示什么酷炫的效果就由混成器说了算了。在 X 下，混成器需要调用 [X Composite 扩展](https://freedesktop.org/wiki/Software/CompositeExt/)来实现。
 
-最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。
+!!! tip "我的 X 服务器开启了哪些扩展？"
+
+    可以使用 `xdpyinfo` 来查看当前 X 服务器开启了哪些扩展：
+
+    ```console
+    $ xdpyinfo
+    （省略）
+    number of extensions:    25
+        BIG-REQUESTS
+        Composite
+        DAMAGE
+        DOUBLE-BUFFER
+    （省略）
+    ```
+
+最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 kwin 也都集成了混成器的功能。
 
 ![Compiz Cube](../images/Compiz-fusion_effects_Cube.jpg)
 
 2007 年的 Compiz 的立方体效果。[By Nicofo，CC BY-SA 3.0](https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg)。
 {: .caption }
+
+### 远程桌面访问 {#x-remote-desktop}
+
+X 的网络透明性设计似乎使得远程桌面访问变得非常简单，似乎只需要 `ssh -X` 或者 `ssh -Y` 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：
+
+1. X 协议很「啰嗦」，大量的操作都需要往返通信，这导致网络延迟会被协议放大数倍，甚至十几倍。
+2. 旧的 X 程序一般会调用 X 协议的接口来画线段、字体等（例如[客户端、服务端与窗口](#client-server-window)中展示的 xedit），但是绝大多数现代 UI 框架（例如 GTK、Qt）早已经不这么做了，而是直接画图给服务器。在远程环境下意味着传输大量未压缩的图像数据，网络带宽消耗大。
+
+因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
+
+!!! example "SSH + VNC 的远程桌面访问方案"
+
+    以下介绍一种常见的远程桌面访问方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。
 
 ## Wayland
 
