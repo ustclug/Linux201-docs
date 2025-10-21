@@ -2673,15 +2673,52 @@
 <p><img alt="Compiz Cube" src="../../images/Compiz-fusion_effects_Cube.jpg" /></p>
 <p class="caption">2007 年的 Compiz 的立方体效果。<a href="https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg">By Nicofo，CC BY-SA 3.0</a>。</p>
 <h3 id="x-remote-desktop">远程桌面访问<a class="headerlink" href="#x-remote-desktop" title="Permanent link">&para;</a></h3>
-<p>X 的网络透明性设计似乎使得远程桌面访问变得非常简单，似乎只需要 <code>ssh -X</code> 或者 <code>ssh -Y</code> 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：</p>
+<p>X 的网络透明性设计似乎使得远程桌面访问变得非常简单——只需要 <code>ssh -X</code> 或者 <code>ssh -Y</code> 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：</p>
 <ol>
 <li>X 协议很「啰嗦」，大量的操作都需要往返通信，这导致网络延迟会被协议放大数倍，甚至十几倍。</li>
 <li>旧的 X 程序一般会调用 X 协议的接口来画线段、字体等（例如<a href="#client-server-window">客户端、服务端与窗口</a>中展示的 xedit），但是绝大多数现代 UI 框架（例如 GTK、Qt）早已经不这么做了，而是直接画图给服务器。在远程环境下意味着传输大量未压缩的图像数据，网络带宽消耗大。</li>
 </ol>
-<p>因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，针对游戏场景优化的 <a href="https://github.com/LizardByte/Sunshine">Sunshine</a>，或者为远程协助设计的 <a href="https://rustdesk.com/">RustDesk</a> 等等。类似的远程桌面方案还有很多，可以按需选择。</p>
+<p>因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 <a href="https://github.com/Xpra-org/xpra">Xpra</a>，针对游戏场景优化的 <a href="https://github.com/LizardByte/Sunshine">Sunshine</a>，或者为远程协助设计的 <a href="https://rustdesk.com/">RustDesk</a> 等等。类似的远程桌面方案还有很多，可以按需选择。</p>
 <div class="admonition example">
 <p class="admonition-title">SSH + VNC 的远程桌面访问方案</p>
 <p>以下介绍一种常见的远程桌面访问方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。</p>
+<p><a href="https://github.com/TigerVNC/tigervnc">TigerVNC</a> 实现了 Xvnc，安装 <code>tigervnc-standalone-server</code> 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 <a href="https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html">tigervncserver(1)</a>）：</p>
+<div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1"># vncserver -&gt; tigervncserver</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/vncserver<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span>-rfbport<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span>-rfbunixpath<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.vncsock&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>之后我们需要指定 VNC 服务器使用的 session。Debian 下，tigervncserver 会查看 <code>/etc/tigervnc/vncserver-config-defaults</code> 中 <code>$session</code> 变量的值，如果没有定义，就会启动 <code>/usr/bin/x-session-manager</code>。作为例子，我们安装 LXQt。LXQt 是一个非常轻量级的桌面环境：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>lxqt
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">使用其他桌面环境</p>
+<p>也可以安装其他的桌面环境，例如 GNOME、KDE。在安装完成后，可以使用 <a href="../../ops/package/#alternatives">Alternatives</a> 来设置默认的 <code>x-session-manager</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>x-session-manager
+</code></pre></div>
+<p>注意，一些桌面环境可能需要完整的 systemd 支持才能正常工作，例如 GNOME。如果你的环境是没有 systemd 的容器，那么可能需要选择其他桌面环境。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">错误调试</p>
+<p>Session 的错误输出位于 <code>~/.xsession-errors</code> 文件中，可以查看该文件来调试 session 启动失败的问题。</p>
+</div>
+<p>之后 SSH 连接时，可以<a href="../../dev/ssh/#local-port-forwarding-local-port-forwarding">使用 <code>-L</code> 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上</a>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ssh<span class="w"> </span>user@host<span class="w"> </span>-L<span class="w"> </span><span class="m">5900</span>:/home/user/.vncsock
+</code></pre></div>
+<p>或者直接修改 SSH 配置文件，添加以下内容：</p>
+<div class="highlight"><span class="filename">~/.ssh/config</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Host<span class="w"> </span>myvncserver
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span>HostName<span class="w"> </span>host
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span>User<span class="w"> </span>user
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span>LocalForward<span class="w"> </span><span class="m">5900</span><span class="w"> </span>/home/user/.vncsock
+</code></pre></div>
+<p>SSH 登录，并且运行我们编写的 <code>startvnc</code> 脚本启动 VNC 服务器后，本地即可通过 VNC 客户端连接到 <code>localhost:5900</code> 来访问远程的 X 桌面环境。TigerVNC 也提供了 <code>vncviewer</code> 命令行客户端：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>vncviewer<span class="w"> </span>localhost:5900
+</code></pre></div>
+<p>如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 <code>startvnc</code> 即可。</p>
 </div>
 <h2 id="wayland">Wayland<a class="headerlink" href="#wayland" title="Permanent link">&para;</a></h2>
 <h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
@@ -2737,35 +2774,12 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月20日 20:19:06 UTC">2025年10月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月21日 19:10:16 UTC">2025年10月21日</span>
   </span>
 
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
