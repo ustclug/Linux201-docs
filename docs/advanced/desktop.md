@@ -306,6 +306,12 @@ QT_IM_MODULE="fcitx"
 2007 年的 Compiz 的立方体效果。[By Nicofo，CC BY-SA 3.0](https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg)。
 {: .caption }
 
+### 显示管理器 {#x-display-manager}
+
+在 X 下，显示管理器（Display Manager，DM）负责在 X 服务器上显示登录界面，在用户登录后启动对应的桌面环境或者窗口管理器。常见的 DM 有 [GDM](https://gitlab.gnome.org/GNOME/gdm/)（GNOME Display Manager）、[SDDM](https://github.com/sddm/sddm)（Simple Desktop Display Manager，KDE 默认使用）、[LightDM](https://github.com/canonical/lightdm) 等。DM 一般作为 systemd 的服务运行，在系统启动时自动启动 X 服务器，并且显示登录界面。
+
+之所以叫 Display Manager 而不是 Login Manager，是因为 DM 还管理着 X（即 "Display"）——比如说，如果 X 崩溃了，DM 会重新启动 X 并且重新显示登录界面。
+
 ### 远程桌面访问 {#x-remote-desktop}
 
 X 的网络透明性设计似乎使得远程桌面访问变得非常简单——只需要 `ssh -X` 或者 `ssh -Y` 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：
@@ -313,11 +319,11 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 1. X 协议很「啰嗦」，大量的操作都需要往返通信，这导致网络延迟会被协议放大数倍，甚至十几倍。
 2. 旧的 X 程序一般会调用 X 协议的接口来画线段、字体等（例如[客户端、服务端与窗口](#client-server-window)中展示的 xedit），但是绝大多数现代 UI 框架（例如 GTK、Qt）早已经不这么做了，而是直接画图给服务器。在远程环境下意味着传输大量未压缩的图像数据，网络带宽消耗大。
 
-因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 [Xpra](https://github.com/Xpra-org/xpra)，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
+因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用（基于同样的理由，我们也不介绍为远程使用 DM 设计的古早协议 XDMCP）。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 [Xpra](https://github.com/Xpra-org/xpra)，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
 
 !!! example "SSH + VNC 的远程桌面访问方案"
 
-    以下介绍一种常见的远程桌面访问方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。
+    以下介绍一种常见的远程桌面访问需求的解决方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。
 
     [TigerVNC](https://github.com/TigerVNC/tigervnc) 实现了 Xvnc，安装 `tigervnc-standalone-server` 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 [tigervncserver(1)][tigervncserver.1]）：
 
@@ -374,6 +380,73 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     ```
 
     如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 `startvnc` 即可。
+
+!!! example "VNC 与 LightDM 集成"
+
+    以下介绍 USTC Vlab 项目在客户容器中[集成 VNC 服务器与 LightDM 的方案](https://github.com/USTC-vlab/deb/tree/master/vlab-vnc)。集成的好处是：用户在连接到 VNC 后，就能看到熟悉的 LightDM 的登录界面，可以在界面中输入密码、选择桌面环境等，而不需要预先配置好 VNC session。
+
+    在 [lightdm.conf](https://github.com/canonical/lightdm/blob/5f14752419fc7f0fd763013c8195dcb0099c940a/data/lightdm.conf) 中，我们可以设置让 LightDM 使用的 X 服务器，以及 LightDM 启动 greeter（实际给用户展示的图形界面）之前要运行的程序：
+
+    ```ini title="/etc/lightdm/lightdm.conf"
+    [Seat:*]
+    xserver-command=/usr/local/bin/vncserver-lightdm
+    greeter-hide-users=false
+    greeter-setup-script=/usr/local/bin/vncserver-greeter-setup.sh
+    ```
+
+    ```shell title="/usr/local/bin/vncserver-lightdm"
+    #!/bin/bash
+    # Need Bash for $PPID
+
+    DISPLAY=":0"
+    LIGHTDM_PID=$PPID
+    XVNC_PID=0
+
+    kill_vnc() {
+      kill -s SIGTERM $XVNC_PID
+      wait
+    }
+
+    if [ $# -gt 0 ]; then
+      DISPLAY="$1"
+    fi
+
+    AUTHORITY="/var/run/lightdm/root/$DISPLAY"
+
+    Xvnc "$DISPLAY" -rfbport 5900 -seat seat0 -SecurityTypes None -auth "$AUTHORITY" -SendPrimary=0 &
+
+    XVNC_PID=$!
+    trap kill_vnc SIGTERM
+
+    sleep 2
+    kill -s SIGUSR1 $LIGHTDM_PID
+
+    wait
+    exit 0
+    ```
+
+    !!! danger "安全性注意事项"
+
+        在这里，VNC 服务没有安全性校验。在 Vlab 中，所有用户对 VNC 的访问都必须经过我们自己编写的 VNC 网关，并且用户之间的 VNC 端口由防火墙阻止互相访问，因此这种设计是安全的。如果你在其他场景使用，请务必注意安全性问题，**特别是需要暴露端口到公网的情况**。互联网中存在大量自动化扫描空密码、弱密码的 bot。如果你不注意安全，那么之后你就可能会看到自己的 VNC 的桌面被其他人分享在某些社交媒体上，然后发现自己的桌面被陌生人入侵操控。
+
+        VNC 传统的密码模式 `VncAuth` 是不安全的——它的密码明文传输，并且密码长度最多只有 8 个字节，因此不建议使用。建议至少使用 `TLSVnc`，或者使用 SSH 隧道等方式保护 VNC 连接。
+    
+    !!! note "为什么要给 LightDM 发送 SIGUSR1？"
+
+        这一点在 [xserver(1)][xserver.1] 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 `SIG_IGN`（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。
+
+        这里的 shell 脚本用了相对粗糙的 `sleep 2` 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。
+
+    ```shell title="/usr/local/bin/vncserver-greeter-setup.sh"
+    #!/bin/sh
+    vncconfig -nowin &
+    ```
+
+    !!! note "vncconfig 的作用"
+
+        [vncconfig(1)][vncconfig.1] 是 TigerVNC 提供的一个小工具，负责处理剪贴板同步等功能。如果不运行它，那么 VNC 客户端与服务器之间的剪贴板将无法同步。
+    
+    之后 LightDM 在启动时，就会启动 Xvnc，在 5900 端口上监听 VNC 连接。
 
 ## Wayland
 
