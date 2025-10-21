@@ -2118,6 +2118,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#x-display-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      显示管理器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#x-remote-desktop" class="md-nav__link">
     <span class="md-ellipsis">
       远程桌面访问
@@ -2374,6 +2383,15 @@
   <a href="#x-compositor" class="md-nav__link">
     <span class="md-ellipsis">
       混成器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-display-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      显示管理器
     </span>
   </a>
   
@@ -2672,16 +2690,19 @@
 <p>最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 kwin 也都集成了混成器的功能。</p>
 <p><img alt="Compiz Cube" src="../../images/Compiz-fusion_effects_Cube.jpg" /></p>
 <p class="caption">2007 年的 Compiz 的立方体效果。<a href="https://commons.wikimedia.org/wiki/Compiz#/media/File:Compiz-fusion_effects_Cube.jpg">By Nicofo，CC BY-SA 3.0</a>。</p>
+<h3 id="x-display-manager">显示管理器<a class="headerlink" href="#x-display-manager" title="Permanent link">&para;</a></h3>
+<p>在 X 下，显示管理器（Display Manager，DM）负责在 X 服务器上显示登录界面，在用户登录后启动对应的桌面环境或者窗口管理器。常见的 DM 有 <a href="https://gitlab.gnome.org/GNOME/gdm/">GDM</a>（GNOME Display Manager）、<a href="https://github.com/sddm/sddm">SDDM</a>（Simple Desktop Display Manager，KDE 默认使用）、<a href="https://github.com/canonical/lightdm">LightDM</a> 等。DM 一般作为 systemd 的服务运行，在系统启动时自动启动 X 服务器，并且显示登录界面。</p>
+<p>之所以叫 Display Manager 而不是 Login Manager，是因为 DM 还管理着 X（即 "Display"）——比如说，如果 X 崩溃了，DM 会重新启动 X 并且重新显示登录界面。</p>
 <h3 id="x-remote-desktop">远程桌面访问<a class="headerlink" href="#x-remote-desktop" title="Permanent link">&para;</a></h3>
 <p>X 的网络透明性设计似乎使得远程桌面访问变得非常简单——只需要 <code>ssh -X</code> 或者 <code>ssh -Y</code> 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：</p>
 <ol>
 <li>X 协议很「啰嗦」，大量的操作都需要往返通信，这导致网络延迟会被协议放大数倍，甚至十几倍。</li>
 <li>旧的 X 程序一般会调用 X 协议的接口来画线段、字体等（例如<a href="#client-server-window">客户端、服务端与窗口</a>中展示的 xedit），但是绝大多数现代 UI 框架（例如 GTK、Qt）早已经不这么做了，而是直接画图给服务器。在远程环境下意味着传输大量未压缩的图像数据，网络带宽消耗大。</li>
 </ol>
-<p>因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 <a href="https://github.com/Xpra-org/xpra">Xpra</a>，针对游戏场景优化的 <a href="https://github.com/LizardByte/Sunshine">Sunshine</a>，或者为远程协助设计的 <a href="https://rustdesk.com/">RustDesk</a> 等等。类似的远程桌面方案还有很多，可以按需选择。</p>
+<p>因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用（基于同样的理由，我们也不介绍为远程使用 DM 设计的古早协议 XDMCP）。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 <a href="https://github.com/Xpra-org/xpra">Xpra</a>，针对游戏场景优化的 <a href="https://github.com/LizardByte/Sunshine">Sunshine</a>，或者为远程协助设计的 <a href="https://rustdesk.com/">RustDesk</a> 等等。类似的远程桌面方案还有很多，可以按需选择。</p>
 <div class="admonition example">
 <p class="admonition-title">SSH + VNC 的远程桌面访问方案</p>
-<p>以下介绍一种常见的远程桌面访问方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。</p>
+<p>以下介绍一种常见的远程桌面访问需求的解决方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。</p>
 <p><a href="https://github.com/TigerVNC/tigervnc">TigerVNC</a> 实现了 Xvnc，安装 <code>tigervnc-standalone-server</code> 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 <a href="https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html">tigervncserver(1)</a>）：</p>
 <div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="ch">#!/bin/sh</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
@@ -2719,6 +2740,63 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>vncviewer<span class="w"> </span>localhost:5900
 </code></pre></div>
 <p>如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 <code>startvnc</code> 即可。</p>
+</div>
+<div class="admonition example">
+<p class="admonition-title">VNC 与 LightDM 集成</p>
+<p>以下介绍 USTC Vlab 项目在客户容器中<a href="https://github.com/USTC-vlab/deb/tree/master/vlab-vnc">集成 VNC 服务器与 LightDM 的方案</a>。集成的好处是：用户在连接到 VNC 后，就能看到熟悉的 LightDM 的登录界面，可以在界面中输入密码、选择桌面环境等，而不需要预先配置好 VNC session。</p>
+<p>在 <a href="https://github.com/canonical/lightdm/blob/5f14752419fc7f0fd763013c8195dcb0099c940a/data/lightdm.conf">lightdm.conf</a> 中，我们可以设置让 LightDM 使用的 X 服务器，以及 LightDM 启动 greeter（实际给用户展示的图形界面）之前要运行的程序：</p>
+<div class="highlight"><span class="filename">/etc/lightdm/lightdm.conf</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">[Seat:*]</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="na">xserver-command</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-lightdm</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="na">greeter-hide-users</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="na">greeter-setup-script</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-greeter-setup.sh</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-lightdm</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/bin/bash</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="c1"># Need Bash for $PPID</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;:0&quot;</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="nv">LIGHTDM_PID</span><span class="o">=</span><span class="nv">$PPID</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>kill_vnc<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGTERM<span class="w"> </span><span class="nv">$XVNC_PID</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">  </span><span class="nb">wait</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="o">}</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
+<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">  </span><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
+<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="k">fi</span>
+<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>
+<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="nv">AUTHORITY</span><span class="o">=</span><span class="s2">&quot;/var/run/lightdm/root/</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span>
+<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>
+<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a>Xvnc<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span>-rfbport<span class="w"> </span><span class="m">5900</span><span class="w"> </span>-seat<span class="w"> </span>seat0<span class="w"> </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span>-auth<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span>-SendPrimary<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a>
+<a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="nv">$!</span>
+<a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="nb">trap</span><span class="w"> </span>kill_vnc<span class="w"> </span>SIGTERM
+<a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a>
+<a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a>sleep<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGUSR1<span class="w"> </span><span class="nv">$LIGHTDM_PID</span>
+<a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a>
+<a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a><span class="nb">wait</span>
+<a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+</code></pre></div>
+<div class="admonition danger">
+<p class="admonition-title">安全性注意事项</p>
+<p>在这里，VNC 服务没有安全性校验。在 Vlab 中，所有用户对 VNC 的访问都必须经过我们自己编写的 VNC 网关，并且用户之间的 VNC 端口由防火墙阻止互相访问，因此这种设计是安全的。如果你在其他场景使用，请务必注意安全性问题，<strong>特别是需要暴露端口到公网的情况</strong>。互联网中存在大量自动化扫描空密码、弱密码的 bot。如果你不注意安全，那么之后你就可能会看到自己的 VNC 的桌面被其他人分享在某些社交媒体上，然后发现自己的桌面被陌生人入侵操控。</p>
+<p>VNC 传统的密码模式 <code>VncAuth</code> 是不安全的——它的密码明文传输，并且密码长度最多只有 8 个字节，因此不建议使用。建议至少使用 <code>TLSVnc</code>，或者使用 SSH 隧道等方式保护 VNC 连接。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">为什么要给 LightDM 发送 SIGUSR1？</p>
+<p>这一点在 <a href="https://linux.die.net/man/1/xserver">xserver(1)</a> 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 <code>SIG_IGN</code>（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。</p>
+<p>这里的 shell 脚本用了相对粗糙的 <code>sleep 2</code> 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。</p>
+</div>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-greeter-setup.sh</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>vncconfig<span class="w"> </span>-nowin<span class="w"> </span><span class="p">&amp;</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">vncconfig 的作用</p>
+<p><a href="https://linux.die.net/man/1/vncconfig">vncconfig(1)</a> 是 TigerVNC 提供的一个小工具，负责处理剪贴板同步等功能。如果不运行它，那么 VNC 客户端与服务器之间的剪贴板将无法同步。</p>
+</div>
+<p>之后 LightDM 在启动时，就会启动 Xvnc，在 5900 端口上监听 VNC 连接。</p>
 </div>
 <h2 id="wayland">Wayland<a class="headerlink" href="#wayland" title="Permanent link">&para;</a></h2>
 <h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
@@ -2774,12 +2852,35 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月21日 19:10:16 UTC">2025年10月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月21日 20:31:36 UTC">2025年10月21日</span>
   </span>
 
     
     
     
+    
+      
+  <span class="md-source-file__fact">
+    
+      
+  <span class="md-icon" title="贡献者">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
+  </span>
+  <span>GitHub</span>
+
+    
+    <nav>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+      
+      
+    </nav>
+  </span>
+
     
   </aside>
 
