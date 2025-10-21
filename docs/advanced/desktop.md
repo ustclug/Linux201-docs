@@ -308,16 +308,72 @@ QT_IM_MODULE="fcitx"
 
 ### 远程桌面访问 {#x-remote-desktop}
 
-X 的网络透明性设计似乎使得远程桌面访问变得非常简单，似乎只需要 `ssh -X` 或者 `ssh -Y` 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：
+X 的网络透明性设计似乎使得远程桌面访问变得非常简单——只需要 `ssh -X` 或者 `ssh -Y` 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：
 
 1. X 协议很「啰嗦」，大量的操作都需要往返通信，这导致网络延迟会被协议放大数倍，甚至十几倍。
 2. 旧的 X 程序一般会调用 X 协议的接口来画线段、字体等（例如[客户端、服务端与窗口](#client-server-window)中展示的 xedit），但是绝大多数现代 UI 框架（例如 GTK、Qt）早已经不这么做了，而是直接画图给服务器。在远程环境下意味着传输大量未压缩的图像数据，网络带宽消耗大。
 
-因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
+因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 [Xpra](https://github.com/Xpra-org/xpra)，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
 
 !!! example "SSH + VNC 的远程桌面访问方案"
 
     以下介绍一种常见的远程桌面访问方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。
+
+    [TigerVNC](https://github.com/TigerVNC/tigervnc) 实现了 Xvnc，安装 `tigervnc-standalone-server` 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 [tigervncserver(1)][tigervncserver.1]）：
+
+    ```shell title="/usr/local/bin/startvnc"
+    #!/bin/sh
+
+    # vncserver -> tigervncserver
+    exec /usr/bin/vncserver \
+      -rfbport -1 \
+      -rfbunixpath "$HOME/.vncsock" \
+      -SecurityTypes None \
+      "$@"
+    ```
+
+    之后我们需要指定 VNC 服务器使用的 session。Debian 下，tigervncserver 会查看 `/etc/tigervnc/vncserver-config-defaults` 中 `$session` 变量的值，如果没有定义，就会启动 `/usr/bin/x-session-manager`。作为例子，我们安装 LXQt。LXQt 是一个非常轻量级的桌面环境：
+
+    ```shell
+    sudo apt install --no-install-recommends lxqt
+    ```
+
+    !!! tip "使用其他桌面环境"
+
+        也可以安装其他的桌面环境，例如 GNOME、KDE。在安装完成后，可以使用 [Alternatives](../ops/package.md#alternatives) 来设置默认的 `x-session-manager`：
+
+        ```shell
+        sudo update-alternatives --config x-session-manager
+        ```
+
+        注意，一些桌面环境可能需要完整的 systemd 支持才能正常工作，例如 GNOME。如果你的环境是没有 systemd 的容器，那么可能需要选择其他桌面环境。
+    
+    !!! tip "错误调试"
+
+        Session 的错误输出位于 `~/.xsession-errors` 文件中，可以查看该文件来调试 session 启动失败的问题。
+
+    之后 SSH 连接时，可以[使用 `-L` 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上](../dev/ssh.md#local-port-forwarding-local-port-forwarding)：
+
+    ```shell
+    ssh user@host -L 5900:/home/user/.vncsock
+    ```
+
+    或者直接修改 SSH 配置文件，添加以下内容：
+
+    ```shell title="~/.ssh/config"
+    Host myvncserver
+        HostName host
+        User user
+        LocalForward 5900 /home/user/.vncsock
+    ```
+
+    SSH 登录，并且运行我们编写的 `startvnc` 脚本启动 VNC 服务器后，本地即可通过 VNC 客户端连接到 `localhost:5900` 来访问远程的 X 桌面环境。TigerVNC 也提供了 `vncviewer` 命令行客户端：
+
+    ```shell
+    vncviewer localhost:5900
+    ```
+
+    如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 `startvnc` 即可。
 
 ## Wayland
 
