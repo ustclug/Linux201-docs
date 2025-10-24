@@ -28,6 +28,10 @@ icon: octicons/device-desktop-16
 
     如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考[容器章节中的相关内容](../ops/virtualization/container.md#docker-gui)。
 
+!!! note "本部分不是 X 的开发介绍"
+
+    如果对 X 的实现细节有兴趣，可以参考这个交互式的教程：[xplain](https://magcius.github.io/xplain/article/index.html)。
+
 ### 客户端、服务端与窗口 {#client-server-window}
 
 X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的效果，相比之下，性能与资源占用重要得多。并且当时个人计算机还是一个新兴的概念，用户更多的时候需要使用终端机连接到服务器上运行任务。因此，X 的设计上包含了当时那个年代设计的局限性，并且有着独特的「网络透明性」的设计：需要显示窗口的程序（客户端）和可以给用户显示窗口的程序（服务端）是可以分离的，通过网络去连接。对于单机场景，这里的「网络」大部分时候是 UNIX socket，而在诸如 SSH X Forwarding 这种通过网络连接的场合则是 TCP socket。
