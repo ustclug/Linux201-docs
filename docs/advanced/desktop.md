@@ -262,9 +262,11 @@ GTK_IM_MODULE="fcitx"
 QT_IM_MODULE="fcitx"
 ```
 
-如果应用程序不使用 GTK 或 Qt，那么就会回退到 XIM 方案，即 `XMODIFIERS` 环境变量指定的输入法。
+如果应用程序不使用 GTK 或 Qt，那么一般来讲考虑到输入法需求的应用会基于 XIM 方案实现支持，即 `XMODIFIERS` 环境变量指定的输入法。
 
 ### 输出 {#x-output}
+
+#### 显示支持与显卡 {#x-gpu}
 
 在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 `/dev/fb0` 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 `fbdev`（xf86-video-fbdev）驱动来操作帧缓冲区。
 
@@ -278,7 +280,56 @@ QT_IM_MODULE="fcitx"
 
 此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。
 
-最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动来获得显示加速。
+最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动（也称为 Device Dependent X，DDX）来获得显示加速。
+
+#### HiDPI {#x-hidpi}
+
+随着高分屏的推广，如果在使用高分屏时仍然采用和非高分屏一样的策略，那么桌面元素就会变得非常小，因此需要对桌面进行缩放。在介绍下面的内容之前，首先需要了解 DPI（Dots Per Inch，点每英寸）的概念。显示器型号中的「英寸」一般指显示器对角线的长度，因此要计算 DPI，首先可以先从最佳分辨率的长和宽计算出对角线的像素数，然后用对角线的像素数除以对角线的英寸数，就可以得到 DPI 了。例如对一个 27 英寸的 2K（2560x1440）显示器来说：
+
+1. 计算对角线的像素数：sqrt(2560^2 + 1440^2) ≈ 2937.2 像素
+2. 计算 DPI：2937.2 / 27 ≈ 109 DPI
+
+一般来讲，在 Apple 以外的生态中，默认（1 倍）的 DPI 是 96。因此对上面的显示器，可能需要稍微放大一些，才能获得比较合适的显示效果。如果 DPI 是 144（1.5 倍）或者 192（2 倍）的话，默认缩放的不适感就会更明显。这些显示器也被称为 HiDPI 显示器。
+
+X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。
+
+因为 X server 提供的 DPI 的不可靠性，有一些应用就转而参考 X resources 中的 `Xft.dpi` 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 `xrdb` 工具来查看和修改：
+
+```console
+$ xrdb -query
+Xft.dpi:	96
+Xft.antialias:	1
+Xft.hinting:	1
+Xft.hintstyle:	hintslight
+Xft.rgba:	none
+Xcursor.size:	24
+Xcursor.theme:	Adwaita
+$ # 从约定俗成的配置文件位置读取并与当前 X resources 合并
+$ xrdb -merge ~/.Xresources
+```
+
+但是在语义上，这么做是存在问题的，因为 Xft 是字体相关的设置，因此它的 DPI 照理来说只是字体渲染时使用的 DPI，而不应该影响包括图片等在内的其他内容（尽管很多时候这个值就被拿来做整体 UI 的缩放了）；并且这种机制完全无法处理不同显示器不同 DPI 的情况。因此，各类 UI 库又引入了自己的 DPI 设置方式，例如 GTK 使用 `GDK_SCALE` 和 `GDK_DPI_SCALE` 环境变量，Qt 则使用 `QT_SCALE_FACTOR` 和 `QT_AUTO_SCREEN_SCALE_FACTOR` 等环境变量让用户调整 DPI。
+
+此外，由于 X resources 的修改无法通知到客户端，因此出现了 [Xsettings](https://www.freedesktop.org/wiki/Specifications/xsettings-spec/) 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 `Xft.dpi` 在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。
+
+从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。
+
+!!! note "平行世界：假如只有一种设置方法，X 的 HiDPI 支持会更好吗？"
+
+    让我们假设一下：假如说我们只有一种设置 DPI 的方式，让 X server 直接管理 DPI，客户端可以获取到每个屏幕的 DPI，并且在 DPI 变化时收到通知。那么这种情况下，X 的 HiDPI 支持会更好吗？
+
+    如果我们只考虑一台显示器，那么确实，这个更简洁的模型是更好的。但是，如果我们考虑多显示器的场景，那么有些麻烦的地方就来了：由于 X 维护的是一块由多个显示器拼起来的大画布（root window），应用需要自行从自己的坐标位置判断当前窗口在哪个显示器上，从而决定使用哪个 DPI 来渲染自己，这就存在两个问题：
+
+    1. 当窗口拖动的时候，应用需要不停向 X server 轮询自己的位置，从而决定使用哪个 DPI 来渲染自己，带来额外的性能开销。
+    2. 如果一个窗口跨多个显示器，那么应用需要决定使用哪个显示器的 DPI 来渲染自己，带来了复杂性与不确定性。
+
+    虽然有这些问题，但是即使是以上这个模型，在我们这个世界中也已经难以在不破坏兼容性的情况下实现——几乎所有的 UI 框架都需要修改代码才能支持。
+
+!!! tip "Kali Linux 的 HiDPI 设置脚本"
+
+    作为一个例子，Kali 为它们自定义的 Xfce 桌面环境提供了一个 [HiDPI 设置脚本](https://gitlab.com/kalilinux/packages/kali-hidpi-mode/-/blob/kali/master/kali-hidpi-mode?ref_type=heads)，可以作为以上描述的这种混乱的一个参考。
+
+    我们为 Linux 101 自动化构建编写的 101strap 项目提供了修改的版本，参见 [toggle-hidpi](https://github.com/ustclug/101strap/blob/master/assets/toggle-hidpi)。
 
 ### 混成器 {#x-compositor}
 
@@ -311,6 +362,16 @@ QT_IM_MODULE="fcitx"
 在 X 下，显示管理器（Display Manager，DM）负责在 X 服务器上显示登录界面，在用户登录后启动对应的桌面环境或者窗口管理器。常见的 DM 有 [GDM](https://gitlab.gnome.org/GNOME/gdm/)（GNOME Display Manager）、[SDDM](https://github.com/sddm/sddm)（Simple Desktop Display Manager，KDE 默认使用）、[LightDM](https://github.com/canonical/lightdm) 等。DM 一般作为 systemd 的服务运行，在系统启动时自动启动 X 服务器，并且显示登录界面。
 
 之所以叫 Display Manager 而不是 Login Manager，是因为 DM 还管理着 X（即 "Display"）——比如说，如果 X 崩溃了，DM 会重新启动 X 并且重新显示登录界面。
+
+### 剪贴板与拖放支持 {#x-clipboard-dnd}
+
+在 X 下，剪贴板和拖放（Drag and Drop，DND）功能都是由 X 的 Selection 机制实现的。Selection 机制用来表示一个程序拥有某个数据，并且允许其他的程序请求获取这个数据。
+
+X 的剪贴板相比其他的操作系统桌面环境特殊的地方在于：它有两种不同的 Selection（PRIMARY 和 CLIPBOARD），并且 X 不存储剪贴板内容。CLIPBOARD 就是我们非常熟悉的剪贴板了，而 PRIMARY 则代表鼠标刚刚选择的内容，用户可以按下鼠标中键（或者大部分触摸板上三指点击）来粘贴 PRIMARY 中的内容，不需要用户显式点击复制或者按下 Ctrl+C。
+
+在复制时，程序会向 X server 注册自己拥有对应的 Selection；在粘贴时，程序会向 X server 请求拥有对应 Selection 的程序提供指定类型的数据（例如纯文本、HTML、图片等等），然后由拥有 Selection 的程序将数据传递给请求的程序。由于 X server 并不存储剪贴板内容，因此如果拥有 Selection 的程序退出了，那么对应的 Selection 也就不存在了。如果需要保留数据，则需要使用剪贴板管理器程序来保存。
+
+而拖放也是类似的，应用之间使用 [XDND](https://www.freedesktop.org/wiki/Specifications/XDND/) 协议，通过 Selection 机制传递数据。具体流程可参考协议给出的示例。
 
 ### 远程桌面访问 {#x-remote-desktop}
 
@@ -449,6 +510,8 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     之后 LightDM 在启动时，就会启动 Xvnc，在 5900 端口上监听 VNC 连接。
 
 ## Wayland
+
+## Fontconfig
 
 ## 音频服务器
 
