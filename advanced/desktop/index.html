@@ -2106,6 +2106,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="输出">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#x-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      显示支持与显卡
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      HiDPI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2121,6 +2145,15 @@
   <a href="#x-display-manager" class="md-nav__link">
     <span class="md-ellipsis">
       显示管理器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-clipboard-dnd" class="md-nav__link">
+    <span class="md-ellipsis">
+      剪贴板与拖放支持
     </span>
   </a>
   
@@ -2144,6 +2177,15 @@
   <a href="#wayland" class="md-nav__link">
     <span class="md-ellipsis">
       Wayland
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fontconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fontconfig
     </span>
   </a>
   
@@ -2377,6 +2419,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="输出">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#x-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      显示支持与显卡
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      HiDPI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -2392,6 +2458,15 @@
   <a href="#x-display-manager" class="md-nav__link">
     <span class="md-ellipsis">
       显示管理器
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#x-clipboard-dnd" class="md-nav__link">
+    <span class="md-ellipsis">
+      剪贴板与拖放支持
     </span>
   </a>
   
@@ -2415,6 +2490,15 @@
   <a href="#wayland" class="md-nav__link">
     <span class="md-ellipsis">
       Wayland
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fontconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fontconfig
     </span>
   </a>
   
@@ -2480,6 +2564,10 @@
 <div class="admonition tip">
 <p class="admonition-title">部分内容在主章节中有介绍</p>
 <p>如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考<a href="../../ops/virtualization/container/#docker-gui">容器章节中的相关内容</a>。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">本部分不是 X 的开发介绍</p>
+<p>如果对 X 的实现细节有兴趣，可以参考这个交互式的教程：<a href="https://magcius.github.io/xplain/article/index.html">xplain</a>。</p>
 </div>
 <h3 id="client-server-window">客户端、服务端与窗口<a class="headerlink" href="#client-server-window" title="Permanent link">&para;</a></h3>
 <p>X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的效果，相比之下，性能与资源占用重要得多。并且当时个人计算机还是一个新兴的概念，用户更多的时候需要使用终端机连接到服务器上运行任务。因此，X 的设计上包含了当时那个年代设计的局限性，并且有着独特的「网络透明性」的设计：需要显示窗口的程序（客户端）和可以给用户显示窗口的程序（服务端）是可以分离的，通过网络去连接。对于单机场景，这里的「网络」大部分时候是 UNIX socket，而在诸如 SSH X Forwarding 这种通过网络连接的场合则是 TCP socket。</p>
@@ -2661,8 +2749,9 @@
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nv">GTK_IM_MODULE</span><span class="o">=</span><span class="s2">&quot;fcitx&quot;</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nv">QT_IM_MODULE</span><span class="o">=</span><span class="s2">&quot;fcitx&quot;</span>
 </code></pre></div>
-<p>如果应用程序不使用 GTK 或 Qt，那么就会回退到 XIM 方案，即 <code>XMODIFIERS</code> 环境变量指定的输入法。</p>
+<p>如果应用程序不使用 GTK 或 Qt，那么一般来讲考虑到输入法需求的应用会基于 XIM 方案实现支持，即 <code>XMODIFIERS</code> 环境变量指定的输入法。</p>
 <h3 id="x-output">输出<a class="headerlink" href="#x-output" title="Permanent link">&para;</a></h3>
+<h4 id="x-gpu">显示支持与显卡<a class="headerlink" href="#x-gpu" title="Permanent link">&para;</a></h4>
 <p>在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 <code>/dev/fb0</code> 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 <code>fbdev</code>（xf86-video-fbdev）驱动来操作帧缓冲区。</p>
 <div class="admonition lab">
 <p class="admonition-title">尝试直接与 <code>/dev/fb0</code> 交互，在 TTY 中输出图片</p>
@@ -2671,20 +2760,58 @@
 <p>但是之后，显示加速的需求越来越大，显卡厂商之间设计的差异也越来越大，<code>fbdev</code> 已经不够用了。之后出现的一种解决方案是：编写 X 的输出驱动，直接操作 <code>/dev/mem</code>，通过物理地址访问显存，从而实现对显卡的控制。但是这种设计有很多问题：X 需要用 root 权限运行；如果 X 崩溃了，那么显卡的状态很可能也会坏掉；X 与 OpenGL 之间的协作也有不少问题。</p>
 <p>因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。你可以在 <code>/dev/dri</code> 中看到你的显卡的设备文件，一般分为主设备（<code>card0</code>）和渲染设备（<code>renderD128</code>），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。</p>
 <p>此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。</p>
-<p>最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动来获得显示加速。</p>
+<p>最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动（也称为 Device Dependent X，DDX）来获得显示加速。</p>
+<h4 id="x-hidpi">HiDPI<a class="headerlink" href="#x-hidpi" title="Permanent link">&para;</a></h4>
+<p>随着高分屏的推广，如果在使用高分屏时仍然采用和非高分屏一样的策略，那么桌面元素就会变得非常小，因此需要对桌面进行缩放。在介绍下面的内容之前，首先需要了解 DPI（Dots Per Inch，点每英寸）的概念。显示器型号中的「英寸」一般指显示器对角线的长度，因此要计算 DPI，首先可以先从最佳分辨率的长和宽计算出对角线的像素数，然后用对角线的像素数除以对角线的英寸数，就可以得到 DPI 了。例如对一个 27 英寸的 2K（2560x1440）显示器来说：</p>
+<ol>
+<li>计算对角线的像素数：sqrt(2560^2 + 1440^2) ≈ 2937.2 像素</li>
+<li>计算 DPI：2937.2 / 27 ≈ 109 DPI</li>
+</ol>
+<p>一般来讲，在 Apple 以外的生态中，默认（1 倍）的 DPI 是 96。因此对上面的显示器，可能需要稍微放大一些，才能获得比较合适的显示效果。如果 DPI 是 144（1.5 倍）或者 192（2 倍）的话，默认缩放的不适感就会更明显。这些显示器也被称为 HiDPI 显示器。</p>
+<p>X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。</p>
+<p>因为 X server 提供的 DPI 的不可靠性，有一些应用就转而参考 X resources 中的 <code>Xft.dpi</code> 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 <code>xrdb</code> 工具来查看和修改：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-query
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">Xft.dpi:    96</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">Xft.antialias:  1</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">Xft.hinting:    1</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">Xft.hintstyle:  hintslight</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">Xft.rgba:   none</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">Xcursor.size:   24</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="go">Xcursor.theme:  Adwaita</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="gp">$ </span><span class="c1"># 从约定俗成的配置文件位置读取并与当前 X resources 合并</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-merge<span class="w"> </span>~/.Xresources
+</code></pre></div>
+<p>但是在语义上，这么做是存在问题的，因为 Xft 是字体相关的设置，因此它的 DPI 照理来说只是字体渲染时使用的 DPI，而不应该影响包括图片等在内的其他内容（尽管很多时候这个值就被拿来做整体 UI 的缩放了）；并且这种机制完全无法处理不同显示器不同 DPI 的情况。因此，各类 UI 库又引入了自己的 DPI 设置方式，例如 GTK 使用 <code>GDK_SCALE</code> 和 <code>GDK_DPI_SCALE</code> 环境变量，Qt 则使用 <code>QT_SCALE_FACTOR</code> 和 <code>QT_AUTO_SCREEN_SCALE_FACTOR</code> 等环境变量让用户调整 DPI。</p>
+<p>此外，由于 X resources 的修改无法通知到客户端，因此出现了 <a href="https://www.freedesktop.org/wiki/Specifications/xsettings-spec/">Xsettings</a> 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 <code>Xft.dpi</code> 在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。</p>
+<p>从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。</p>
+<div class="admonition note">
+<p class="admonition-title">平行世界：假如只有一种设置方法，X 的 HiDPI 支持会更好吗？</p>
+<p>让我们假设一下：假如说我们只有一种设置 DPI 的方式，让 X server 直接管理 DPI，客户端可以获取到每个屏幕的 DPI，并且在 DPI 变化时收到通知。那么这种情况下，X 的 HiDPI 支持会更好吗？</p>
+<p>如果我们只考虑一台显示器，那么确实，这个更简洁的模型是更好的。但是，如果我们考虑多显示器的场景，那么有些麻烦的地方就来了：由于 X 维护的是一块由多个显示器拼起来的大画布（root window），应用需要自行从自己的坐标位置判断当前窗口在哪个显示器上，从而决定使用哪个 DPI 来渲染自己，这就存在两个问题：</p>
+<ol>
+<li>当窗口拖动的时候，应用需要不停向 X server 轮询自己的位置，从而决定使用哪个 DPI 来渲染自己，带来额外的性能开销。</li>
+<li>如果一个窗口跨多个显示器，那么应用需要决定使用哪个显示器的 DPI 来渲染自己，带来了复杂性与不确定性。</li>
+</ol>
+<p>虽然有这些问题，但是即使是以上这个模型，在我们这个世界中也已经难以在不破坏兼容性的情况下实现——几乎所有的 UI 框架都需要修改代码才能支持。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Kali Linux 的 HiDPI 设置脚本</p>
+<p>作为一个例子，Kali 为它们自定义的 Xfce 桌面环境提供了一个 <a href="https://gitlab.com/kalilinux/packages/kali-hidpi-mode/-/blob/kali/master/kali-hidpi-mode?ref_type=heads">HiDPI 设置脚本</a>，可以作为以上描述的这种混乱的一个参考。</p>
+<p>我们为 Linux 101 自动化构建编写的 101strap 项目提供了修改的版本，参见 <a href="https://github.com/ustclug/101strap/blob/master/assets/toggle-hidpi">toggle-hidpi</a>。</p>
+</div>
 <h3 id="x-compositor">混成器<a class="headerlink" href="#x-compositor" title="Permanent link">&para;</a></h3>
 <p>进入二十一世纪之后，桌面环境开始追求更炫酷的视觉效果，例如圆角的窗口、半透明的窗口、有阴影的窗口、不规则形状的窗口、动画效果等等。但是 X 传统仍然假设：窗口是个不透明矩形，X 服务器需要直接把这样的窗口画到屏幕上，并且跳过被挡住的部分——而且这个过程没有缓冲，动画只能靠窗口不停重绘自己来实现，非常不流畅。而混成器做的事情就是：接管图形显示的流程，让窗口不再直接画在屏幕上，而是画在一个缓冲区中，然后由混成器统一将这些缓冲区合成（composite）到屏幕上。这样一来，要显示什么酷炫的效果就由混成器说了算了。在 X 下，混成器需要调用 <a href="https://freedesktop.org/wiki/Software/CompositeExt/">X Composite 扩展</a>来实现。</p>
 <div class="admonition tip">
 <p class="admonition-title">我的 X 服务器开启了哪些扩展？</p>
 <p>可以使用 <code>xdpyinfo</code> 来查看当前 X 服务器开启了哪些扩展：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>xdpyinfo
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">number of extensions:    25</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">    BIG-REQUESTS</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">    Composite</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="go">    DAMAGE</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">    DOUBLE-BUFFER</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="go">（省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>xdpyinfo
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">number of extensions:    25</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="go">    BIG-REQUESTS</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="go">    Composite</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="go">    DAMAGE</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="go">    DOUBLE-BUFFER</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="go">（省略）</span>
 </code></pre></div>
 </div>
 <p>最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 kwin 也都集成了混成器的功能。</p>
@@ -2693,6 +2820,11 @@
 <h3 id="x-display-manager">显示管理器<a class="headerlink" href="#x-display-manager" title="Permanent link">&para;</a></h3>
 <p>在 X 下，显示管理器（Display Manager，DM）负责在 X 服务器上显示登录界面，在用户登录后启动对应的桌面环境或者窗口管理器。常见的 DM 有 <a href="https://gitlab.gnome.org/GNOME/gdm/">GDM</a>（GNOME Display Manager）、<a href="https://github.com/sddm/sddm">SDDM</a>（Simple Desktop Display Manager，KDE 默认使用）、<a href="https://github.com/canonical/lightdm">LightDM</a> 等。DM 一般作为 systemd 的服务运行，在系统启动时自动启动 X 服务器，并且显示登录界面。</p>
 <p>之所以叫 Display Manager 而不是 Login Manager，是因为 DM 还管理着 X（即 "Display"）——比如说，如果 X 崩溃了，DM 会重新启动 X 并且重新显示登录界面。</p>
+<h3 id="x-clipboard-dnd">剪贴板与拖放支持<a class="headerlink" href="#x-clipboard-dnd" title="Permanent link">&para;</a></h3>
+<p>在 X 下，剪贴板和拖放（Drag and Drop，DND）功能都是由 X 的 Selection 机制实现的。Selection 机制用来表示一个程序拥有某个数据，并且允许其他的程序请求获取这个数据。</p>
+<p>X 的剪贴板相比其他的操作系统桌面环境特殊的地方在于：它有两种不同的 Selection（PRIMARY 和 CLIPBOARD），并且 X 不存储剪贴板内容。CLIPBOARD 就是我们非常熟悉的剪贴板了，而 PRIMARY 则代表鼠标刚刚选择的内容，用户可以按下鼠标中键（或者大部分触摸板上三指点击）来粘贴 PRIMARY 中的内容，不需要用户显式点击复制或者按下 Ctrl+C。</p>
+<p>在复制时，程序会向 X server 注册自己拥有对应的 Selection；在粘贴时，程序会向 X server 请求拥有对应 Selection 的程序提供指定类型的数据（例如纯文本、HTML、图片等等），然后由拥有 Selection 的程序将数据传递给请求的程序。由于 X server 并不存储剪贴板内容，因此如果拥有 Selection 的程序退出了，那么对应的 Selection 也就不存在了。如果需要保留数据，则需要使用剪贴板管理器程序来保存。</p>
+<p>而拖放也是类似的，应用之间使用 <a href="https://www.freedesktop.org/wiki/Specifications/XDND/">XDND</a> 协议，通过 Selection 机制传递数据。具体流程可参考协议给出的示例。</p>
 <h3 id="x-remote-desktop">远程桌面访问<a class="headerlink" href="#x-remote-desktop" title="Permanent link">&para;</a></h3>
 <p>X 的网络透明性设计似乎使得远程桌面访问变得非常简单——只需要 <code>ssh -X</code> 或者 <code>ssh -Y</code> 就可以了。但是由于 X 协议本身的设计问题，这么做的性能并不好，主要原因包括：</p>
 <ol>
@@ -2704,22 +2836,22 @@
 <p class="admonition-title">SSH + VNC 的远程桌面访问方案</p>
 <p>以下介绍一种常见的远程桌面访问需求的解决方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。</p>
 <p><a href="https://github.com/TigerVNC/tigervnc">TigerVNC</a> 实现了 Xvnc，安装 <code>tigervnc-standalone-server</code> 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 <a href="https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html">tigervncserver(1)</a>）：</p>
-<div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1"># vncserver -&gt; tigervncserver</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/vncserver<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span>-rfbport<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span>-rfbunixpath<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.vncsock&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
+<div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># vncserver -&gt; tigervncserver</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/vncserver<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span>-rfbport<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span>-rfbunixpath<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.vncsock&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="w">  </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">  </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
 </code></pre></div>
 <p>之后我们需要指定 VNC 服务器使用的 session。Debian 下，tigervncserver 会查看 <code>/etc/tigervnc/vncserver-config-defaults</code> 中 <code>$session</code> 变量的值，如果没有定义，就会启动 <code>/usr/bin/x-session-manager</code>。作为例子，我们安装 LXQt。LXQt 是一个非常轻量级的桌面环境：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>lxqt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>lxqt
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">使用其他桌面环境</p>
 <p>也可以安装其他的桌面环境，例如 GNOME、KDE。在安装完成后，可以使用 <a href="../../ops/package/#alternatives">Alternatives</a> 来设置默认的 <code>x-session-manager</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>x-session-manager
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>x-session-manager
 </code></pre></div>
 <p>注意，一些桌面环境可能需要完整的 systemd 支持才能正常工作，例如 GNOME。如果你的环境是没有 systemd 的容器，那么可能需要选择其他桌面环境。</p>
 </div>
@@ -2728,16 +2860,16 @@
 <p>Session 的错误输出位于 <code>~/.xsession-errors</code> 文件中，可以查看该文件来调试 session 启动失败的问题。</p>
 </div>
 <p>之后 SSH 连接时，可以<a href="../../dev/ssh/#local-port-forwarding-local-port-forwarding">使用 <code>-L</code> 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ssh<span class="w"> </span>user@host<span class="w"> </span>-L<span class="w"> </span><span class="m">5900</span>:/home/user/.vncsock
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ssh<span class="w"> </span>user@host<span class="w"> </span>-L<span class="w"> </span><span class="m">5900</span>:/home/user/.vncsock
 </code></pre></div>
 <p>或者直接修改 SSH 配置文件，添加以下内容：</p>
-<div class="highlight"><span class="filename">~/.ssh/config</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Host<span class="w"> </span>myvncserver
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span>HostName<span class="w"> </span>host
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span>User<span class="w"> </span>user
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span>LocalForward<span class="w"> </span><span class="m">5900</span><span class="w"> </span>/home/user/.vncsock
+<div class="highlight"><span class="filename">~/.ssh/config</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Host<span class="w"> </span>myvncserver
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span>HostName<span class="w"> </span>host
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span>User<span class="w"> </span>user
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span>LocalForward<span class="w"> </span><span class="m">5900</span><span class="w"> </span>/home/user/.vncsock
 </code></pre></div>
 <p>SSH 登录，并且运行我们编写的 <code>startvnc</code> 脚本启动 VNC 服务器后，本地即可通过 VNC 客户端连接到 <code>localhost:5900</code> 来访问远程的 X 桌面环境。TigerVNC 也提供了 <code>vncviewer</code> 命令行客户端：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>vncviewer<span class="w"> </span>localhost:5900
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>vncviewer<span class="w"> </span>localhost:5900
 </code></pre></div>
 <p>如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 <code>startvnc</code> 即可。</p>
 </div>
@@ -2745,39 +2877,39 @@
 <p class="admonition-title">VNC 与 LightDM 集成</p>
 <p>以下介绍 USTC Vlab 项目在客户容器中<a href="https://github.com/USTC-vlab/deb/tree/master/vlab-vnc">集成 VNC 服务器与 LightDM 的方案</a>。集成的好处是：用户在连接到 VNC 后，就能看到熟悉的 LightDM 的登录界面，可以在界面中输入密码、选择桌面环境等，而不需要预先配置好 VNC session。</p>
 <p>在 <a href="https://github.com/canonical/lightdm/blob/5f14752419fc7f0fd763013c8195dcb0099c940a/data/lightdm.conf">lightdm.conf</a> 中，我们可以设置让 LightDM 使用的 X 服务器，以及 LightDM 启动 greeter（实际给用户展示的图形界面）之前要运行的程序：</p>
-<div class="highlight"><span class="filename">/etc/lightdm/lightdm.conf</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">[Seat:*]</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="na">xserver-command</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-lightdm</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="na">greeter-hide-users</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="na">greeter-setup-script</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-greeter-setup.sh</span>
+<div class="highlight"><span class="filename">/etc/lightdm/lightdm.conf</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">[Seat:*]</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="na">xserver-command</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-lightdm</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="na">greeter-hide-users</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="na">greeter-setup-script</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-greeter-setup.sh</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">/usr/local/bin/vncserver-lightdm</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="ch">#!/bin/bash</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="c1"># Need Bash for $PPID</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;:0&quot;</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="nv">LIGHTDM_PID</span><span class="o">=</span><span class="nv">$PPID</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="m">0</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>kill_vnc<span class="o">()</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGTERM<span class="w"> </span><span class="nv">$XVNC_PID</span>
-<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">  </span><span class="nb">wait</span>
-<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="o">}</span>
-<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
-<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">  </span><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
-<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="k">fi</span>
-<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a>
-<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="nv">AUTHORITY</span><span class="o">=</span><span class="s2">&quot;/var/run/lightdm/root/</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span>
-<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a>
-<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a>Xvnc<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span>-rfbport<span class="w"> </span><span class="m">5900</span><span class="w"> </span>-seat<span class="w"> </span>seat0<span class="w"> </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span>-auth<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span>-SendPrimary<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a>
-<a id="__codelineno-20-21" name="__codelineno-20-21" href="#__codelineno-20-21"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="nv">$!</span>
-<a id="__codelineno-20-22" name="__codelineno-20-22" href="#__codelineno-20-22"></a><span class="nb">trap</span><span class="w"> </span>kill_vnc<span class="w"> </span>SIGTERM
-<a id="__codelineno-20-23" name="__codelineno-20-23" href="#__codelineno-20-23"></a>
-<a id="__codelineno-20-24" name="__codelineno-20-24" href="#__codelineno-20-24"></a>sleep<span class="w"> </span><span class="m">2</span>
-<a id="__codelineno-20-25" name="__codelineno-20-25" href="#__codelineno-20-25"></a><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGUSR1<span class="w"> </span><span class="nv">$LIGHTDM_PID</span>
-<a id="__codelineno-20-26" name="__codelineno-20-26" href="#__codelineno-20-26"></a>
-<a id="__codelineno-20-27" name="__codelineno-20-27" href="#__codelineno-20-27"></a><span class="nb">wait</span>
-<a id="__codelineno-20-28" name="__codelineno-20-28" href="#__codelineno-20-28"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-lightdm</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="ch">#!/bin/bash</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1"># Need Bash for $PPID</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;:0&quot;</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="nv">LIGHTDM_PID</span><span class="o">=</span><span class="nv">$PPID</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>kill_vnc<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">  </span><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGTERM<span class="w"> </span><span class="nv">$XVNC_PID</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">  </span><span class="nb">wait</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="o">}</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">  </span><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="k">fi</span>
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="nv">AUTHORITY</span><span class="o">=</span><span class="s2">&quot;/var/run/lightdm/root/</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span>
+<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a>
+<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a>Xvnc<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span>-rfbport<span class="w"> </span><span class="m">5900</span><span class="w"> </span>-seat<span class="w"> </span>seat0<span class="w"> </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span>-auth<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span>-SendPrimary<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a>
+<a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="nv">$!</span>
+<a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a><span class="nb">trap</span><span class="w"> </span>kill_vnc<span class="w"> </span>SIGTERM
+<a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a>
+<a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a>sleep<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-21-25" name="__codelineno-21-25" href="#__codelineno-21-25"></a><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGUSR1<span class="w"> </span><span class="nv">$LIGHTDM_PID</span>
+<a id="__codelineno-21-26" name="__codelineno-21-26" href="#__codelineno-21-26"></a>
+<a id="__codelineno-21-27" name="__codelineno-21-27" href="#__codelineno-21-27"></a><span class="nb">wait</span>
+<a id="__codelineno-21-28" name="__codelineno-21-28" href="#__codelineno-21-28"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <div class="admonition danger">
 <p class="admonition-title">安全性注意事项</p>
@@ -2789,8 +2921,8 @@
 <p>这一点在 <a href="https://linux.die.net/man/1/xserver">xserver(1)</a> 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 <code>SIG_IGN</code>（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。</p>
 <p>这里的 shell 脚本用了相对粗糙的 <code>sleep 2</code> 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。</p>
 </div>
-<div class="highlight"><span class="filename">/usr/local/bin/vncserver-greeter-setup.sh</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>vncconfig<span class="w"> </span>-nowin<span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-greeter-setup.sh</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>vncconfig<span class="w"> </span>-nowin<span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">vncconfig 的作用</p>
@@ -2799,6 +2931,7 @@
 <p>之后 LightDM 在启动时，就会启动 Xvnc，在 5900 端口上监听 VNC 连接。</p>
 </div>
 <h2 id="wayland">Wayland<a class="headerlink" href="#wayland" title="Permanent link">&para;</a></h2>
+<h2 id="fontconfig">Fontconfig<a class="headerlink" href="#fontconfig" title="Permanent link">&para;</a></h2>
 <h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <h2 id="dbus">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></h2>
 <!--
@@ -2852,7 +2985,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月21日 20:31:36 UTC">2025年10月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月24日 19:05:13 UTC">2025年10月24日</span>
   </span>
 
     
