@@ -295,7 +295,7 @@ QT_IM_MODULE="fcitx"
 
 一般来讲，在 Apple 以外的生态中，默认（1 倍）的 DPI 是 96。因此对上面的显示器，可能需要稍微放大一些，才能获得比较合适的显示效果。如果 DPI 是 144（1.5 倍）或者 192（2 倍）的话，默认缩放的不适感就会更明显。这些显示器也被称为 HiDPI 显示器。
 
-X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。
+X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出当前 screen 的 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。并且目前绝大多数情况下，X server 只会有一个 "screen"（即使连接了多个显示器），具体的显示器设置由 RandR 扩展管理，因此 X server 也无法为每个显示器提供不同的 DPI 信息。
 
 因为 X server 提供的 DPI 的不可靠性，有一些应用就转而参考 X resources 中的 `Xft.dpi` 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 `xrdb` 工具来查看和修改：
 
@@ -316,13 +316,19 @@ $ xrdb -merge ~/.Xresources
 
 此外，由于 X resources 的修改无法通知到客户端，因此出现了 [Xsettings](https://www.freedesktop.org/wiki/Specifications/xsettings-spec/) 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 `Xft.dpi` 在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。
 
+另一条不同的思路是使用 `xrandr` 的 DPI（`--dpi`，修改 X server 中整个 screen 的 DPI）和每个显示器的缩放（`--scale`）参数来整体缩放显示内容，不少桌面环境的显示器设置的缩放都是这么做的。但是在复杂情况下，完全做对而不模糊仍然非常困难，很多时候需要手动调整多个参数才能获得比较合适的显示效果。
+
 从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。
+
+!!! comment "@taoky：吐槽"
+
+    我不止一次看到过在笔记本上用 Linux X 桌面的人在需要做报告的时候，HDMI 线接上，然后发现大屏幕上只能显示一部分被截断的内容，或者内容太大/太小，而且还要花大半天才能调好。如果你经常需要拿着笔记本接投影做展示，Wayland 会是好得多的选择。
 
 !!! note "平行世界：假如只有一种设置方法，X 的 HiDPI 支持会更好吗？"
 
     让我们假设一下：假如说我们只有一种设置 DPI 的方式，让 X server 直接管理 DPI，客户端可以获取到每个屏幕的 DPI，并且在 DPI 变化时收到通知。那么这种情况下，X 的 HiDPI 支持会更好吗？
 
-    如果我们只考虑一台显示器，那么确实，这个更简洁的模型是更好的。但是，如果我们考虑多显示器的场景，那么有些麻烦的地方就来了：由于 X 维护的是一块由多个显示器拼起来的大画布（root window），应用需要自行从自己的坐标位置判断当前窗口在哪个显示器上，从而决定使用哪个 DPI 来渲染自己，这就存在两个问题：
+    如果我们只考虑一台显示器，那么确实，这个更简洁的模型是更好的。但是，如果我们考虑多显示器的场景，那么有些麻烦的地方就来了：由于 X 维护的是一块由多个显示器拼起来的大 screen（root window），应用需要自行从自己的坐标位置判断当前窗口在哪个显示器上，从而决定使用哪个 DPI 来渲染自己，这就存在两个问题：
 
     1. 当窗口拖动的时候，应用需要不停向 X server 轮询自己的位置，从而决定使用哪个 DPI 来渲染自己，带来额外的性能开销。
     2. 如果一个窗口跨多个显示器，那么应用需要决定使用哪个显示器的 DPI 来渲染自己，带来了复杂性与不确定性。
@@ -514,6 +520,32 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     之后 LightDM 在启动时，就会启动 Xvnc，在 5900 端口上监听 VNC 连接。
 
 ## Wayland
+
+从 1984 年开始到现在，X 陪伴 Unix（与类 Unix）桌面走过了四十多年的时间。在这个过程中，随着计算技术的不断发展，80 年代的设计暴露出了越来越多的问题，包括但不限于：
+
+- 安全性问题：连接到 X server 的任何客户端都可以随便看其他窗口，随便截取用户输入，带来了严重的安全隐患。
+- 混成器的性能：现代桌面下混成器已经是必需品。但是在 X 的 Composite 扩展框架下，窗口信息需要经过 X server，再经过混成器，混成器画好之后再传给 X server，最后才能显示出来。X server 成为了一个导致性能瓶颈的中间人。
+- 网络透明性的实用性：X 的网络透明性已经不再实用，VNC、RDP 等远程桌面协议已经成为主流选择。
+- 画面同步：X server 的无撕裂（TearFree）需要显卡驱动各自实现。
+- HiDPI 支持的一片混乱：[上文](#x-hidpi)已有说明。
+
+在[对 X12 的设想](https://www.x.org/wiki/Development/X12)中也提到了一些 X11 已经无法忽视的问题，并且其中不少问题已经无法在 X11 协议上渐进式地解决了。因此，新的显示协议 Wayland 于 2008 年开始开发，到如今 GNOME、KDE 已经有了完整可用的支持，其他的桌面环境也在逐步跟进，并且越来越多的应用程序开始支持 Wayland。以下部分介绍 Wayland 以及相关的一些基本概念。
+
+!!! note "参考阅读"
+
+    Xorg 与 Wayland 开发者 Daniel Stone 在 2013 年的 linux.conf.au 会议上做了 [the real story behind Wayland and X](https://people.freedesktop.org/~daniels/lca2013-wayland-x11.pdf) 的报告，其中详细介绍了 X 的设计问题以及 Wayland 的设计思路，推荐阅读。
+
+!!! note "本部分也不是 Wayland 的开发介绍"
+
+    如果对 Wayland 开发感兴趣，可以参考：
+
+    - [The Wayland Protocol](https://wayland.freedesktop.org/docs/html/)：官方文档
+    - [Wayland Book](https://wayland-book.com/)：社区编写的 Wayland 开发入门书籍
+    - [Wayland Explorer](https://wayland.app/)：所有常见 Wayland 协议的文档聚合
+
+### 基础架构 {#wayland-infrastructure}
+
+在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出。
 
 ## Fontconfig
 
