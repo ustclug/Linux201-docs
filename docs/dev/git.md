@@ -393,11 +393,18 @@ git checkout feature
 git rebase master
 ```
 
-通过如下设置，可以使得 `rebase` 成为默认行为：
+如果你或者你的团队对线性历史有需求，通过如下设置，可以使得 `rebase` 成为 `git pull` 时候的默认行为。这样可以防止与其他人在同一分支合作时，出现大量的 merge commit：
 
 ```ini
 [pull]
     rebase = true
+```
+
+或者也可以限制 `git pull` 只能进行 fast-forward，在出现分叉时用户可以手动 `git pull --rebase`，或者使用其他解决的方式：
+
+```ini
+[pull]
+    ff = only
 ```
 
 !!! question "更新一个有修改的本地仓库"
