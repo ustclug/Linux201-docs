@@ -3173,9 +3173,13 @@
 <a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>git<span class="w"> </span>checkout<span class="w"> </span>feature
 <a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>git<span class="w"> </span>rebase<span class="w"> </span>master
 </code></pre></div>
-<p>通过如下设置，可以使得 <code>rebase</code> 成为默认行为：</p>
+<p>如果你或者你的团队对线性历史有需求，通过如下设置，可以使得 <code>rebase</code> 成为 <code>git pull</code> 时候的默认行为。这样可以防止与其他人在同一分支合作时，出现大量的 merge commit：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">[pull]</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span><span class="na">rebase</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+</code></pre></div>
+<p>或者也可以限制 <code>git pull</code> 只能进行 fast-forward，在出现分叉时用户可以手动 <code>git pull --rebase</code>，或者使用其他解决的方式：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">[pull]</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">    </span><span class="na">ff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">only</span>
 </code></pre></div>
 <div class="admonition question">
 <p class="admonition-title">更新一个有修改的本地仓库</p>
@@ -3185,56 +3189,56 @@
 <div class="admonition tip">
 <p class="admonition-title">交互式 rebase</p>
 <p><code>git rebase</code> 另一个重要的功能是修改 commit 历史记录。使用 <code>git rebase -i HEAD~n</code> 来修改历史以来的 n 个 commit。在输入命令后，git 会打开编辑器，将 commit 从旧到新排序，显示类似如下的内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>pick b9c96cc Install XDG Desktop Portal
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>pick d20fcf1 Set 2048m mem when running qemu
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>pick 74fd856 Add gnome-software; clean comments
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a># Rebase ebb0dcf..74fd856 onto ebb0dcf (3 commands)
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>#
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a># Commands:
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a># p, pick &lt;commit&gt; = use commit
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a># r, reword &lt;commit&gt; = use commit, but edit the commit message
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a># e, edit &lt;commit&gt; = use commit, but stop for amending
-<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a># s, squash &lt;commit&gt; = use commit, but meld into previous commit
-<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a># f, fixup [-C | -c] &lt;commit&gt; = like &quot;squash&quot; but keep only the previous
-<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>#                    commit&#39;s log message, unless -C is used, in which case
-<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>#                    keep only this commit&#39;s message; -c is same as -C but
-<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>#                    opens the editor
-<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a># x, exec &lt;command&gt; = run command (the rest of the line) using shell
-<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a># b, break = stop here (continue rebase later with &#39;git rebase --continue&#39;)
-<a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a># d, drop &lt;commit&gt; = remove commit
-<a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a># l, label &lt;label&gt; = label current HEAD with a name
-<a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a># t, reset &lt;label&gt; = reset HEAD to a label
-<a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a># m, merge [-C &lt;commit&gt; | -c &lt;commit&gt;] &lt;label&gt; [# &lt;oneline&gt;]
-<a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a>#         create a merge commit using the original merge commit&#39;s
-<a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a>#         message (or the oneline, if no original merge commit was
-<a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a>#         specified); use -c &lt;commit&gt; to reword the commit message
-<a id="__codelineno-21-25" name="__codelineno-21-25" href="#__codelineno-21-25"></a># u, update-ref &lt;ref&gt; = track a placeholder for the &lt;ref&gt; to be updated
-<a id="__codelineno-21-26" name="__codelineno-21-26" href="#__codelineno-21-26"></a>#                       to this position in the new commits. The &lt;ref&gt; is
-<a id="__codelineno-21-27" name="__codelineno-21-27" href="#__codelineno-21-27"></a>#                       updated at the end of the rebase
-<a id="__codelineno-21-28" name="__codelineno-21-28" href="#__codelineno-21-28"></a>#
-<a id="__codelineno-21-29" name="__codelineno-21-29" href="#__codelineno-21-29"></a># These lines can be re-ordered; they are executed from top to bottom.
-<a id="__codelineno-21-30" name="__codelineno-21-30" href="#__codelineno-21-30"></a>#
-<a id="__codelineno-21-31" name="__codelineno-21-31" href="#__codelineno-21-31"></a># If you remove a line here THAT COMMIT WILL BE LOST.
-<a id="__codelineno-21-32" name="__codelineno-21-32" href="#__codelineno-21-32"></a>#
-<a id="__codelineno-21-33" name="__codelineno-21-33" href="#__codelineno-21-33"></a># However, if you remove everything, the rebase will be aborted.
-<a id="__codelineno-21-34" name="__codelineno-21-34" href="#__codelineno-21-34"></a>#
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>pick b9c96cc Install XDG Desktop Portal
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>pick d20fcf1 Set 2048m mem when running qemu
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>pick 74fd856 Add gnome-software; clean comments
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a># Rebase ebb0dcf..74fd856 onto ebb0dcf (3 commands)
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>#
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a># Commands:
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a># p, pick &lt;commit&gt; = use commit
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a># r, reword &lt;commit&gt; = use commit, but edit the commit message
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a># e, edit &lt;commit&gt; = use commit, but stop for amending
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a># s, squash &lt;commit&gt; = use commit, but meld into previous commit
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a># f, fixup [-C | -c] &lt;commit&gt; = like &quot;squash&quot; but keep only the previous
+<a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a>#                    commit&#39;s log message, unless -C is used, in which case
+<a id="__codelineno-22-14" name="__codelineno-22-14" href="#__codelineno-22-14"></a>#                    keep only this commit&#39;s message; -c is same as -C but
+<a id="__codelineno-22-15" name="__codelineno-22-15" href="#__codelineno-22-15"></a>#                    opens the editor
+<a id="__codelineno-22-16" name="__codelineno-22-16" href="#__codelineno-22-16"></a># x, exec &lt;command&gt; = run command (the rest of the line) using shell
+<a id="__codelineno-22-17" name="__codelineno-22-17" href="#__codelineno-22-17"></a># b, break = stop here (continue rebase later with &#39;git rebase --continue&#39;)
+<a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a># d, drop &lt;commit&gt; = remove commit
+<a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a># l, label &lt;label&gt; = label current HEAD with a name
+<a id="__codelineno-22-20" name="__codelineno-22-20" href="#__codelineno-22-20"></a># t, reset &lt;label&gt; = reset HEAD to a label
+<a id="__codelineno-22-21" name="__codelineno-22-21" href="#__codelineno-22-21"></a># m, merge [-C &lt;commit&gt; | -c &lt;commit&gt;] &lt;label&gt; [# &lt;oneline&gt;]
+<a id="__codelineno-22-22" name="__codelineno-22-22" href="#__codelineno-22-22"></a>#         create a merge commit using the original merge commit&#39;s
+<a id="__codelineno-22-23" name="__codelineno-22-23" href="#__codelineno-22-23"></a>#         message (or the oneline, if no original merge commit was
+<a id="__codelineno-22-24" name="__codelineno-22-24" href="#__codelineno-22-24"></a>#         specified); use -c &lt;commit&gt; to reword the commit message
+<a id="__codelineno-22-25" name="__codelineno-22-25" href="#__codelineno-22-25"></a># u, update-ref &lt;ref&gt; = track a placeholder for the &lt;ref&gt; to be updated
+<a id="__codelineno-22-26" name="__codelineno-22-26" href="#__codelineno-22-26"></a>#                       to this position in the new commits. The &lt;ref&gt; is
+<a id="__codelineno-22-27" name="__codelineno-22-27" href="#__codelineno-22-27"></a>#                       updated at the end of the rebase
+<a id="__codelineno-22-28" name="__codelineno-22-28" href="#__codelineno-22-28"></a>#
+<a id="__codelineno-22-29" name="__codelineno-22-29" href="#__codelineno-22-29"></a># These lines can be re-ordered; they are executed from top to bottom.
+<a id="__codelineno-22-30" name="__codelineno-22-30" href="#__codelineno-22-30"></a>#
+<a id="__codelineno-22-31" name="__codelineno-22-31" href="#__codelineno-22-31"></a># If you remove a line here THAT COMMIT WILL BE LOST.
+<a id="__codelineno-22-32" name="__codelineno-22-32" href="#__codelineno-22-32"></a>#
+<a id="__codelineno-22-33" name="__codelineno-22-33" href="#__codelineno-22-33"></a># However, if you remove everything, the rebase will be aborted.
+<a id="__codelineno-22-34" name="__codelineno-22-34" href="#__codelineno-22-34"></a>#
 </code></pre></div>
 <p>比如说，你想合并最近 3 个 commit 到 1 个，那么在编辑器中将上面的内容修改为如下，保存并退出即可：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>pick b9c96cc Install XDG Desktop Portal
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>squash d20fcf1 Set 2048m mem when running qemu
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>squash 74fd856 Add gnome-software; clean comments
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>pick b9c96cc Install XDG Desktop Portal
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>squash d20fcf1 Set 2048m mem when running qemu
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>squash 74fd856 Add gnome-software; clean comments
 </code></pre></div>
 <p>交互式 rebase 的其他用法请参考相关文档。</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">解决冲突</p>
 <p>在合并其他人的分支时，如果你和其他人的分支用不同的方式修改了相同的部分，那么就会出现冲突。当出现 git 无法处理的冲突时，合并会停在出现冲突的 commit 上，并且提示你解决冲突。出现冲突的文件类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>This is your own changes.
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>========
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>This is the changes from the other branch.
-<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>&gt;&gt;&gt;&gt;&gt;&gt;&gt; other-branch
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>This is your own changes.
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>========
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>This is the changes from the other branch.
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>&gt;&gt;&gt;&gt;&gt;&gt;&gt; other-branch
 </code></pre></div>
 <p>可以看到，这里同时给出了双方的修改，解决冲突需要：</p>
 <ul>
@@ -3248,19 +3252,19 @@
 <div class="admonition tip">
 <p class="admonition-title"><code>git commit --fixup</code></p>
 <p>git 提供了 fixup 功能，可以直接向指定的 commit 添加修改，并且在 rebase 时自动合并。一个常见的场景是：在编写 PR 时需要保证每个 commit 有意义、功能完整，同时需要向 PR 里之前的 commit 添加修复，此时使用 fixup 功能会很方便。方法如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># 先 stage 修改，然后：</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>git<span class="w"> </span>commit<span class="w"> </span>--fixup<span class="w"> </span>&lt;commit&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># 先 stage 修改，然后：</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>git<span class="w"> </span>commit<span class="w"> </span>--fixup<span class="w"> </span>&lt;commit&gt;
 </code></pre></div>
 <p>此时会生成一个以 <code>fixup! &lt;original commit message&gt;</code> 命名的 commit。之后可以使用如下命令进行 rebase：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># 需要包含 fixup 的目标 commit</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>--autosquash<span class="w"> </span>&lt;base&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># 需要包含 fixup 的目标 commit</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>--autosquash<span class="w"> </span>&lt;base&gt;
 </code></pre></div>
 </div>
 <h3 id="git-bisect">Bisect<a class="headerlink" href="#git-bisect" title="Permanent link">&para;</a></h3>
 <p>在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 <code>git bisect</code> 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="go">git bisect start</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">git bisect good &lt;old-commit&gt;</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">git bisect bad &lt;new-commit&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="go">git bisect start</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">git bisect good &lt;old-commit&gt;</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">git bisect bad &lt;new-commit&gt;</span>
 </code></pre></div>
 <p>之后 <code>git bisect</code> 就会帮助你做二分搜索，跳转到两者中间的 commit 以供测试，之后提供 <code>git bisect good</code> 或者 <code>git bisect bad</code> 引导 git 搜索，最终找到对应的 commit。</p>
 <div class="admonition question">
@@ -3272,11 +3276,11 @@
 <div class="admonition note">
 <p class="admonition-title">Conventional Commits</p>
 <p>一种常见的 Commit Message 格式是 <a href="https://www.conventionalcommits.org/">Conventional Commits</a>，它的格式是：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>&lt;type&gt;[optional scope]: &lt;description&gt;
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>[optional body]
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>[optional footer(s)]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>&lt;type&gt;[optional scope]: &lt;description&gt;
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>[optional body]
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>[optional footer(s)]
 </code></pre></div>
 <p>其中：</p>
 <ul>
@@ -3291,9 +3295,9 @@
 <div class="admonition note">
 <p class="admonition-title">Commit Message 模板</p>
 <p>即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 <a href="https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file">这里的例子</a> 添加到 <code>~/.gitmessage</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># ~/.gitconfig</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="k">[commit]</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span><span class="na">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitmessage</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># ~/.gitconfig</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="k">[commit]</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span><span class="na">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitmessage</span>
 </code></pre></div>
 <p>添加后不要忘记在首行添加空行，这样 <code>git commit</code> 时无需新建一行。</p>
 </div>
@@ -3301,9 +3305,9 @@
 <h3 id="github-cli"><a href="https://cli.github.com/">GitHub CLI</a><a class="headerlink" href="#github-cli" title="Permanent link">&para;</a></h3>
 <p>GitHub CLI 是 GitHub 官方提供的命令行工具，可以用于管理 GitHub 仓库、Issue、Pull Request 等。</p>
 <p>例如，给 <code>ustclug/Linux201-docs</code> 修 bug 的流程可以简化为：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>gh<span class="w"> </span>repo<span class="w"> </span>clone<span class="w"> </span>ustclug/Linux201-docs
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: some bug&quot;</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>gh<span class="w"> </span>pr<span class="w"> </span>create
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>gh<span class="w"> </span>repo<span class="w"> </span>clone<span class="w"> </span>ustclug/Linux201-docs
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: some bug&quot;</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>gh<span class="w"> </span>pr<span class="w"> </span>create
 </code></pre></div>
 <p>其他常用的 GitHub CLI 命令包括：</p>
 <ul>
@@ -3314,30 +3318,30 @@
 <details class="note">
 <summary><code>gh run watch</code></summary>
 <p>默认情况下 <code>gh run watch</code> 需要手动选择关注的 GitHub workflow, 如果只想关注最新的 workflow 可以将如下函数添加到 <code>~/.bashrc</code> 或 <code>~/.zshrc</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>watch_latest_run<span class="o">()</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="c1"># Fetch the latest run ID using gh and jq</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span><span class="nb">local</span><span class="w"> </span><span class="nv">latest_run_id</span><span class="o">=</span><span class="k">$(</span>gh<span class="w"> </span>run<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span><span class="w"> </span>--json<span class="w"> </span>databaseId<span class="w"> </span>--jq<span class="w"> </span><span class="s1">&#39;.[0].databaseId&#39;</span><span class="k">)</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;No runs found.&quot;</span>
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">  </span><span class="k">fi</span>
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">  </span><span class="c1"># Pass the latest run ID to gh run watch</span>
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">  </span>gh<span class="w"> </span>run<span class="w"> </span>watch<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span>
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="o">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>watch_latest_run<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="c1"># Fetch the latest run ID using gh and jq</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="w">  </span><span class="nb">local</span><span class="w"> </span><span class="nv">latest_run_id</span><span class="o">=</span><span class="k">$(</span>gh<span class="w"> </span>run<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span><span class="w"> </span>--json<span class="w"> </span>databaseId<span class="w"> </span>--jq<span class="w"> </span><span class="s1">&#39;.[0].databaseId&#39;</span><span class="k">)</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;No runs found.&quot;</span>
+<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="w">  </span><span class="k">fi</span>
+<a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a>
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="w">  </span><span class="c1"># Pass the latest run ID to gh run watch</span>
+<a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="w">  </span>gh<span class="w"> </span>run<span class="w"> </span>watch<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="o">}</span>
 </code></pre></div>
 <p>之后可以直接使用 <code>watch_latest_run</code> 命令即可。</p>
 </details>
 <h3 id="github-sign">GPG 与 SSH 密钥签名<a class="headerlink" href="#github-sign" title="Permanent link">&para;</a></h3>
 <p>在默认配置下，SSH Key 只用来验证你是否有权限修改指定的仓库，但有些时候我们需要证明某个 commit 就是由你（而不是其他人）提交的，以验证 commit 的真实性，此时就需要对 commit <strong>签名</strong>。GPG Key 和 SSH Key 都可以用来签名。</p>
 <p>在按照以下内容配置完成后，使用以下命令即可为 commit 和 tag 签名：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-S<span class="w"> </span>...
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-s<span class="w"> </span>...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>git<span class="w"> </span>commit<span class="w"> </span>-S<span class="w"> </span>...
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>git<span class="w"> </span>tag<span class="w"> </span>-s<span class="w"> </span>...
 </code></pre></div>
 <p>如果需要自动为所有 commit 和 tag 签名（不管是使用 GPG 还是 SSH 签名），则：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>commit.gpgSign<span class="w"> </span><span class="nb">true</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>tag.gpgSign<span class="w"> </span><span class="nb">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>commit.gpgSign<span class="w"> </span><span class="nb">true</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>tag.gpgSign<span class="w"> </span><span class="nb">true</span>
 </code></pre></div>
 <h4 id="github-gpg">GPG 签名<a class="headerlink" href="#github-gpg" title="Permanent link">&para;</a></h4>
 <p>GitHub 对 GPG Key 的文档描述很详细，我们将其列在这里：</p>
@@ -3348,10 +3352,10 @@
 <li><a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account">在 GitHub 上关联 GPG Key</a></li>
 </ul>
 <p>请注意备份 GPG Key, 并额外向其他 Key Server 发布 GPG Key, 以防止 GPG Key 丢失：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>gpg<span class="w"> </span>--list-secret-keys<span class="w"> </span>--keyid-format<span class="w"> </span>LONG
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>gpg<span class="w"> </span>--armor<span class="w"> </span>--export<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>gpg.key
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>keyserver.ubuntu.com<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>pgp.mit.edu<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>gpg<span class="w"> </span>--list-secret-keys<span class="w"> </span>--keyid-format<span class="w"> </span>LONG
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>gpg<span class="w"> </span>--armor<span class="w"> </span>--export<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>gpg.key
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>keyserver.ubuntu.com<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>gpg<span class="w"> </span>--keyserver<span class="w"> </span>pgp.mit.edu<span class="w"> </span>--send-keys<span class="w"> </span>&lt;GPG<span class="w"> </span>Key<span class="w"> </span>ID&gt;
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">过期的 GPG Key</p>
@@ -3361,8 +3365,8 @@
 </div>
 <h4 id="github-ssh">SSH 签名<a class="headerlink" href="#github-ssh" title="Permanent link">&para;</a></h4>
 <p>在已经为账户添加了 SSH Key 的基础上，SSH 签名的配置就简单得多：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>gpg.format<span class="w"> </span>ssh
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.signingkey<span class="w"> </span>~/.ssh/yourkey.pub
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>gpg.format<span class="w"> </span>ssh
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>git<span class="w"> </span>config<span class="w"> </span>--global<span class="w"> </span>user.signingkey<span class="w"> </span>~/.ssh/yourkey.pub
 </code></pre></div>
 <h3 id="github-deploy-keys">Deploy Keys<a class="headerlink" href="#github-deploy-keys" title="Permanent link">&para;</a></h3>
 <p>GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库的 SSH key，在需要将仓库 clone 到其它机器，但又不希望该机器有用户的全部权限时很有用。但是，GitHub 不允许同一个 SSH key 用在多个仓库上，对于需要在同一机器上 clone 多仓库的场景带来了不便。</p>
@@ -3370,21 +3374,21 @@
 <ol>
 <li>
 <p>进入仓库的 <code>.git</code> 目录，在该目录下创建密钥对。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="nb">cd</span><span class="w"> </span>.git
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="c1"># RSA key pair</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_rsa<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="c1"># or ED25519 key pair</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_ed25519<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nb">cd</span><span class="w"> </span>.git
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="c1"># RSA key pair</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_rsa<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="c1"># or ED25519 key pair</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_ed25519<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
 </code></pre></div>
 </li>
 <li>
 <p>修改 <code>.git/config</code> 内容，在 <code>[core]</code> 这个 section 下添加：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="k">[core]</span>
-<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="w">    </span><span class="c1"># ...</span>
-<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="w">    </span><span class="c1"># RSA key pair</span>
-<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_rsa</span>
-<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="w">    </span><span class="c1"># or ED25519 key pair</span>
-<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_ed25519</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="k">[core]</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="w">    </span><span class="c1"># ...</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="w">    </span><span class="c1"># RSA key pair</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_rsa</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="w">    </span><span class="c1"># or ED25519 key pair</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="w">    </span><span class="na">sshCommand</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">ssh -i .git/id_ed25519</span>
 </code></pre></div>
 </li>
 <li>
@@ -3403,9 +3407,9 @@
 <ul>
 <li>
 <p>当一个 PR 包含如下关键字，并且按照上述方法连接到一个 Issue 时，合并这个 PR 会关闭对应的 issue：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>close(s,d) #123
-<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>fix(es, ed) #123
-<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>resolve(s, d) #123
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>close(s,d) #123
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>fix(es, ed) #123
+<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>resolve(s, d) #123
 </code></pre></div>
 </li>
 </ul>
@@ -3425,13 +3429,13 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams">Mermaid 关系图</a></p>
 <p>Mermaid 是一种简单且强大的关系图/流程图语法，例如可以通过如下方式创建一个简单的关系图：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>```mermaid
-<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>graph LR;
-<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>    A--&gt;B;
-<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>    A--&gt;C;
-<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>    B--&gt;D;
-<a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a>    C--&gt;D;
-<a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a>```
+<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>```mermaid
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>graph LR;
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>    A--&gt;B;
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a>    A--&gt;C;
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a>    B--&gt;D;
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a>    C--&gt;D;
+<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a>```
 </code></pre></div>
 <pre class="mermaid"><code>graph LR;
     A--&gt;B;
@@ -3446,8 +3450,8 @@
 <li>
 <p><a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists">进度跟踪</a></p>
 <p>在 Issue 正文中创建一个任务列表，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="k">- [ ]</span> Task 2
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="k">- [x]</span> Task 1 <span class="ni">#123</span>
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="k">- [ ]</span> Task 2
 </code></pre></div>
 <ul class="task-list">
 <li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Task 1 #123</li>
@@ -3458,19 +3462,19 @@
 </ul>
 <h4 id="github-issue-template">Issue 模板<a class="headerlink" href="#github-issue-template" title="Permanent link">&para;</a></h4>
 <p>对于大型项目，使用 Issue template 可以使得 Issue 更加规范化，例如，可以在 <code>.github/ISSUE_TEMPLATE/bug_report.yml</code> 中添加如下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="nt">labels</span><span class="p">:</span>
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="nt">body</span><span class="p">:</span>
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="w">    </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
-<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a><span class="w">    </span><span class="nt">attributes</span><span class="p">:</span>
-<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="w">      </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
-<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
-<a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a><span class="w">      </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
-<a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a><span class="w">    </span><span class="nt">validations</span><span class="p">:</span>
-<a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a><span class="w">      </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Bug Report</span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="nt">about</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Create a report to help us improve</span>
+<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="nt">labels</span><span class="p">:</span>
+<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug</span>
+<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="nt">body</span><span class="p">:</span>
+<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">textarea</span>
+<a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a><span class="w">    </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bug-description</span>
+<a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a><span class="w">    </span><span class="nt">attributes</span><span class="p">:</span>
+<a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a><span class="w">      </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
+<a id="__codelineno-41-10" name="__codelineno-41-10" href="#__codelineno-41-10"></a><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
+<a id="__codelineno-41-11" name="__codelineno-41-11" href="#__codelineno-41-11"></a><span class="w">      </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
+<a id="__codelineno-41-12" name="__codelineno-41-12" href="#__codelineno-41-12"></a><span class="w">    </span><span class="nt">validations</span><span class="p">:</span>
+<a id="__codelineno-41-13" name="__codelineno-41-13" href="#__codelineno-41-13"></a><span class="w">      </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>可以参考 <a href="https://github.com/ustclug/mirrorrequest/blob/master/.github/ISSUE_TEMPLATE/01-mirror-request.yml?plain=1">ustclug/mirrorrequest/.../01-mirror-request.yml</a>, <a href="https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository">GitHub 文档</a>.</p>
 <h3 id="github-pr">Pull Request<a class="headerlink" href="#github-pr" title="Permanent link">&para;</a></h3>
@@ -3511,9 +3515,9 @@
 </div>
 <div class="admonition tip">
 <p class="admonition-title">便于同步 PR/MR 的参考 alias</p>
-<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="k">[alias]</span>
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
-<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
+<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="k">[alias]</span>
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
+<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
 </code></pre></div>
 <p>使用例子：<code>git pr origin 1234</code>（GitHub）、<code>git mr origin 1234</code>（GitLab）。重复执行可从 PR/MR 中获取最新的修改。</p>
 <div class="admonition question">
@@ -3524,9 +3528,9 @@
 <div class="admonition question">
 <p class="admonition-title">参数说明</p>
 <p>原始的 alias 如下：</p>
-<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="k">[alias]</span>
-<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2&#39; -</span>
-<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2&#39; -</span>
+<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="k">[alias]</span>
+<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2&#39; -</span>
+<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2&#39; -</span>
 </code></pre></div>
 <p>相比原始的 alias，这里的有什么变化？添加这些变化的目的是什么？是否有更好的解决方案？</p>
 </div>
@@ -3611,7 +3615,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月20日 16:46:22 UTC">2025年10月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年10月26日 07:22:59 UTC">2025年10月26日</span>
   </span>
 
     
