@@ -8,6 +8,8 @@ icon: simple/nginx
 
     [@Cherrling][Cherrling]、[@iBug][iBug]、[@taoky][taoky]
 
+!!! warning "本文编写中"
+
 > Web server 不能失去 Nginx，就如同西方不能失去耶路撒冷
 >
 > —— [@Cherrling][Cherrling]
