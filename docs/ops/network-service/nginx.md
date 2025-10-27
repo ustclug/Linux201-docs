@@ -830,7 +830,7 @@ http {
 }
 ```
 
-之后使用 `limit_conn` 指令限制连接数：
+之后使用 [`limit_conn`](https://nginx.org/en/docs/http/ngx_http_limit_conn_module.html#limit_conn) 指令限制连接数：
 
 ```nginx
 location /downloads/ {
