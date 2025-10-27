@@ -767,6 +767,77 @@ upstream backend {
 
 `server` 块后还可以添加诸如 `max_fails`（最大失败次数）、`fail_timeout`（失败超时时间）等参数来控制节点的故障转移行为。
 
+## 速率、请求与连接数限制 {#limiting}
+
+Nginx 提供了多种不同维度的限制功能，帮助减轻恶意流量对服务的影响，保护后端稳定运行，将更多资源分配给正常用户。以下介绍 Nginx 自带的限制功能，如果需要更复杂的规则，可以参考 [Lua](#lua) 部分。
+
+### 速率限制 {#rate-limiting}
+
+[`limit_rate`](https://nginx.org/en/docs/http/ngx_http_core_module.html#limit_rate) 指令可以限制每个请求的速率。例如：
+
+```nginx
+location /downloads/ {
+    limit_rate 100k;  # 限制下载速率为 100KiB/s
+}
+```
+
+!!! tip "Nginx 使用的单位"
+
+    在 Nginx 配置中，`k`、`m`、`g` 均使用 1024 作为基数，而不是 1000。即分别是 KiB（Kibibyte）、MiB（Mebibyte）、GiB（Gibibyte）等。
+
+如果希望做到类似「[下载 2M 后限速到 10KB/s](https://github.com/tuna/issues/issues/1174)」（当然实际没有部署过这种配置）的效果，可以使用 [`limit_rate_after`](https://nginx.org/en/docs/http/ngx_http_core_module.html#limit_rate_after) 指令：
+
+```nginx
+location /downloads/ {
+    limit_rate_after 2m;  # 先允许下载 2MiB
+    limit_rate 10k;  # 然后限速到 10KiB/s
+}
+```
+
+但是，由于 `limit_rate` 只限制单个请求的速率，因此如果用户开启多个并发连接下载，实际的总速率会超过限制，因此还需要配合下面介绍的请求与连接数限制机制。
+
+### 请求限制 {#request-limiting}
+
+[`ngx_http_limit_req_module`](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html) 模块可以限制单位时间内的请求数量。和[反代缓存](#reverse-proxy-caching)有些类似的是，我们需要先使用 [`limit_req_zone`](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html#limit_req_zone) 定义一个共享内存区域来存储请求计数器：
+
+```nginx
+http {
+    # ...
+    limit_req_zone $binary_remote_addr zone=global:10m rate=20r/s;
+}
+```
+
+这里定义了一个名字为 `global` 的区域，大小为 10MB。在使用 `$binary_remote_addr` 作为 key 的情况下，一个 IPv4 地址为 4 字节，IPv6 地址为 16 字节，每个 IP 的状态需要 128 字节（64 位系统）。这个 zone 限制为每秒 20 个请求（`20r/s`）。
+
+在需要限制请求的地方使用 [`limit_req`](https://nginx.org/en/docs/http/ngx_http_limit_req_module.html#limit_req) 指令：
+
+```nginx
+location /downloads/ {
+    limit_req zone=global burst=10 nodelay;
+}
+```
+
+`limit_req` 使用漏桶（leaky bucket）算法来限制请求速率，想象一个底部有个洞的水桶，这个水桶的大小是 burst，从底部的洞流出来的水速率是 rate，外部的请求就是往水桶里倒水。如果水桶满了，那么新的请求就会被拒绝（`nodelay`）或者延迟（`delay=0`，默认行为）。
+
+### 连接数限制 {#connection-limiting}
+
+[`ngx_http_limit_conn_module`](https://nginx.org/en/docs/http/ngx_http_limit_conn_module.html) 模块可以限制并发连接数。同样，使用 [`limit_conn_zone`](https://nginx.org/en/docs/http/ngx_http_limit_conn_module.html#limit_conn_zone) 定义一个共享内存区域：
+
+```nginx
+http {
+    # ...
+    limit_conn_zone $binary_remote_addr zone=addr:10m;
+}
+```
+
+之后使用 `limit_conn` 指令限制连接数：
+
+```nginx
+location /downloads/ {
+    limit_conn addr 5;  # 每个 IP 最多允许 5 个并发连接
+}
+```
+
 ## Rewrite {#rewrite}
 
 ## 日志 {#logging}
