@@ -24,6 +24,14 @@ icon: octicons/device-desktop-16
 
 以下未特殊标明的情况下，X11 协议均使用 Xorg 这个目前最主流的 X 实现。
 
+!!! note "X、X11、Xorg 的区别"
+
+    在讨论的时候，我们经常能看到 X、X11、Xorg 这些术语。它们的区别如下：
+
+    - X：泛指 X 窗口系统（X Window System）
+    - X11：指 X 窗口系统的第 11 个版本（X Version 11），是目前仍在使用的版本，也极大概率是最后一个版本了
+    - Xorg：由 X.Org 基金会维护的 X11 实现，是目前最主流的 X server 实现
+
 !!! tip "部分内容在主章节中有介绍"
 
     如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考[容器章节中的相关内容](../ops/virtualization/container.md#docker-gui)。
