@@ -190,7 +190,7 @@ server {
     GET /path/to/something?query=string HTTP/1.1
     ```
 
-    这里的 `/path/to/something?query=string` 就是 Request URI。在 Nginx 中，由 [`$request_uri`](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_request_uri) 变量表示。同时，Nginx 会对用户提供的 Request URI 进行归一化（处理 `%xx` 编码、`..` 等），然后将归一化后的路径存储在 [`$uri` 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_uri)中。`location` 块的匹配也是基于归一化后的 `$uri` 变量进行的。
+    这里的 `/path/to/something?query=string` 就是 Request URI。在 Nginx 中，由 [`$request_uri`](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_request_uri) 变量表示。同时，Nginx 会对用户提供的 Request URI 进行归一化（处理 `%xx` 编码、`..` 等），然后将归一化后的路径存储在 [`$uri`](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_uri) 变量中。`location` 块的匹配也是基于归一化后的 `$uri` 变量进行的。
 
 一个 `location` 块的基本结构如下：
 
@@ -993,7 +993,7 @@ if ($http_user_agent ~* "^Mozilla") {
 
 !!! warning "谨慎在 `location` 中使用 `if`"
 
-    曾有一篇[官方博客文章 "If is evil"](https://github.com/nginxinc/nginx-wiki/blob/master/source/start/topics/depth/ifisevil.rst)讨论了在 `location` 块中使用 `if` 指令可能带来的问题。简单来讲，以下的使用场景是安全的：
+    曾有一篇[官方博客文章 "If is evil"](https://github.com/nginxinc/nginx-wiki/blob/master/source/start/topics/depth/ifisevil.rst) 讨论了在 `location` 块中使用 `if` 指令可能带来的问题。简单来讲，以下的使用场景是安全的：
 
     - 在 `server` 块中使用 `if` 指令。
     - 在 `location` 块中使用 `if` 指令，但只包含 `return` 或者 `rewrite ... last` 指令。
@@ -1007,6 +1007,79 @@ if ($http_user_agent ~* "^Mozilla") {
     - 使用 Lua 脚本实现复杂逻辑。
 
 ## 日志 {#logging}
+
+Nginx 对日志提供了完善的支持，其中核心模块提供了 [`error_log`](https://nginx.org/en/docs/ngx_core_module.html#error_log)，HTTP 模块提供了 [`access_log`](https://nginx.org/en/docs/http/ngx_http_log_module.html#access_log) 指令，分别用于配置错误日志和访问日志。默认的配置一般如下：
+
+```nginx
+error_log /var/log/nginx/error.log;
+
+http {
+    access_log /var/log/nginx/access.log;
+    # ...
+}
+```
+
+!!! warning "不要写 `error_log off`"
+
+    `access_log` 支持 `off` 参数，表示关闭访问日志，但是 `error_log` 不支持 `off` 参数。如果写了 `error_log off`，Nginx 不会报错，看起来也能正常运行，但是实际上错误日志会被写入到**名为 `off` 的文件**中（默认情况下，路径会是 `/usr/share/nginx/off`）。很多时候要等待 `off` 这个文件变得非常大，才会发现问题所在。
+
+    如果需要关闭错误日志，可以将 `error_log` 输出到 `/dev/null`：
+
+    ```nginx
+    error_log /dev/null;
+    ```
+
+访问日志默认的格式是 `combined`，类似如下：
+
+```combined
+123.45.67.8 - - [12/Mar/2023:00:15:32 +0800] "GET /path/to/a/file HTTP/1.1" 200 3009 "-" ""
+```
+
+当然，其支持使用 [`log_format`](https://nginx.org/en/docs/http/ngx_http_log_module.html#log_format) 自定义日志格式，以下给出 combined 的定义，以及输出 JSON 格式日志的示例：
+
+```nginx
+log_format combined '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agent"';
+
+log_format ngx_json escape=json '{'
+    '"timestamp":$msec,'
+    '"clientip":"$remote_addr",'
+    '"serverip":"$server_addr",'
+    '"method":"$request_method",'
+    '"scheme":"$scheme",'
+    '"url":"$request_uri",'
+    '"status":$status,'
+    '"size":$body_bytes_sent,'
+    '"resp_time":$request_time,'
+    '"http_host":"$host",'
+    '"referer":"$http_referer",'
+    '"user_agent":"$http_user_agent",'
+    '"request_id":"$request_id",'
+    '"proto":"$server_protocol"'
+    '}';
+
+access_log /var/log/nginx/access_json.log ngx_json;
+```
+
+`escape=json` 参数会假设变量会出现在 JSON 字符串中，并由此进行 JSON 转义。
+
+访问日志也支持条件输出，例如下面这个将 HTTP 403 响应分开记录到单独日志文件的示例：
+
+```nginx
+map $status $log_403 {
+    403 1;
+    default 0;
+}
+
+map $log_403 $log_normal {
+    0 1;
+    default 0;
+}
+
+access_log /var/log/nginx/access_403.log combined if=$log_403;
+access_log /var/log/nginx/access.log combined if=$log_normal;
+```
 
 ## Lua {#lua}
 
