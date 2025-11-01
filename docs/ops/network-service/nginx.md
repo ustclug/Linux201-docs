@@ -172,13 +172,25 @@ server {
 }
 ```
 
-[`location` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#location)嵌套于 `server` 块中，用于定义如何处理特定 URI 的请求。一个 `server` 块中可以有多个 `location` 块。
+[`location` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#location)嵌套于 `server` 块中，用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许让 Nginx 根据请求的路径、参数或其他条件来执行不同的操作。一个 `server` 块中可以有多个 `location` 块。
 
-??? tip "URI? URL?"
+!!! tip "URI? URL? Request URI?"
 
     URI（Uniform Resource Identifier，统一资源标识符）包含 URL（Uniform Resource Locator，统一资源定位符）和 URN（Uniform Resource Name，统一资源名称）。其中 URL 大家都非常熟悉，而 URN 则比较少见。URN 的格式类似于 [`urn:isbn:0262510871`](https://web.mit.edu/6.001/6.037/sicp.pdf)，用于标识资源（这里是一本书）的名称。因为 URN 很少见，在绝大部分场景下，URI 和 URL 可以视为同义词。
 
-Nginx 的 `location` 块用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许让 Nginx 根据请求的路径、参数或其他条件来执行不同的操作。
+    而 Request URI 是 [HTTP 标准 RFC 2616](https://www.rfc-editor.org/rfc/rfc2616) 中规定的：
+
+    ```
+    Request-URI    = "*" | absoluteURI | abs_path | authority
+    ```
+
+    即 HTTP 请求第一行中在方法（如 GET、POST 等）后面的部分，例如：
+
+    ```http
+    GET /path/to/something?query=string HTTP/1.1
+    ```
+
+    这里的 `/path/to/something?query=string` 就是 Request URI。在 Nginx 中，由 [`$request_uri`](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_request_uri) 变量表示。同时，Nginx 会对用户提供的 Request URI 进行归一化（处理 `%xx` 编码、`..` 等），然后将归一化后的路径存储在 [`$uri` 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html#var_uri)中。`location` 块的匹配也是基于归一化后的 `$uri` 变量进行的。
 
 一个 `location` 块的基本结构如下：
 
@@ -443,6 +455,34 @@ Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
     如果有匹配到的正则表达式，Nginx 会使用该 `location` 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 `location` 块处理请求。
 
+!!! question "分析以下配置的问题"
+
+    以下配置节选自 [Hackergame 2020 题目「超简易的网盘服务器」](https://github.com/USTC-Hackergame/hackergame2020-writeups/tree/master/official/%E8%B6%85%E7%AE%80%E6%98%93%E7%9A%84%E7%BD%91%E7%9B%98%E6%9C%8D%E5%8A%A1%E5%99%A8)，该服务为 [h5ai](https://github.com/lrsjng/h5ai)（一个 PHP 编写的文件分享服务）：
+
+    ```nginx
+    # 根目录是私有目录，使用 basic auth 进行认证，只有我自己可以访问
+    location / {
+        auth_basic "easy h5ai. For visitors, please refer to public directory at `/Public!`";
+        auth_basic_user_file /etc/nginx/conf.d/htpasswd;
+    }
+
+    # Public 目录是公开的，任何人都可以访问，便于我给大家分享文件
+    location /Public {
+        allow all;
+        index /Public/_h5ai/public/index.php;
+    }
+
+    # PHP 的 fastcgi 配置，将请求转发给 php-fpm
+    location ~ \.php$ {
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+    ```
+
+    根据以上 location 匹配顺序的介绍，分析该配置存在什么**安全**问题？
+
 ## TLS {#tls}
 
 TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
@@ -596,6 +636,17 @@ location / {
 
 这里比较重要的配置是 [buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) 的启用与否。在启用 buffering 的时候，Nginx 在收到后端数据后，不会立刻给客户端，而是先将数据缓存在内存或者临时文件中，然后再发送，以此提高吞吐量。但是对于延迟敏感的应用，或者在磁盘空间有限的情况下，可能需要关闭 buffering。
 
+在以上的配置中，因为 `proxy_pass` 的地址中不包含任何路径（即域名/IP 之后没有 `/`），Nginx 会将用户请求的 URI（`$request_uri`）原样转发给后端服务器（如果额外添加了 [rewrite](#rewrite) 规则，则是修改后的 `$uri`）。但是有些时候，我们会希望后端服务器只处理某个路径下的请求，例如当用户请求 `/api/foo` 时，后端服务器看到的是 `/foo`。这时可以在 `proxy_pass` 的地址后面添加一个 `/`，例如：
+
+```nginx
+location /api/ {
+    proxy_pass http://backend_server/;
+    # 其他配置略过
+}
+```
+
+于是，当用户请求 `/api/foo` 时，`/api/` 会被替换为 `/`，后端服务器实际收到的请求路径是 `/foo`。
+
 此外，在配置一些应用的时候，可能需要额外添加 WebSocket 支持。
 
 !!! note "WebSocket 是什么？"
@@ -604,7 +655,7 @@ location / {
 
     WebSocket 协议在协商时会先发送一个 HTTP/1.1 请求，包含 `Upgrade: websocket` 与 `Connection: Upgrade` 头，表示请求升级到 WebSocket 协议。
 
-以下给出一个示例：
+Nginx 提供了[相关配置的文档](https://nginx.org/en/docs/http/websocket.html)。以下也给出一个示例：
 
 ```nginx
 http {
@@ -841,6 +892,119 @@ location /downloads/ {
 ```
 
 ## Rewrite {#rewrite}
+
+Nginx 的 [`ngx_http_rewrite_module`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html) 模块提供了强大的 URI 改写（rewrite）、重定向（return）、变量设置（set）和条件判断（if）功能。与其他配置不同的是，rewrite 模块的指令是命令式（imperative）的，而不是声明式（declarative）的。这意味着 rewrite 模块的指令实际的效果依赖于其在配置中出现的顺序。模块文档给出的执行顺序是：
+
+1. 首先，`server` 块中的 rewrite 模块指令会按顺序执行。
+2. 匹配到 `location` 块后，`location` 块中的 rewrite 模块指令会按顺序执行。如果 URI 被改写，Nginx 会重新进行 `location` 匹配，但是这样的过程最多不会超过 10 次。
+
+### URI 改写与重定向 {#uri-rewriting-redirecting}
+
+[`rewrite`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#rewrite) 指令可以根据正则表达式规则改写请求的 URI。以下展示一些实际的例子：
+
+```nginx
+rewrite ^/nvidia-container-runtime(/.*)$ /libnvidia-container$1 last;
+rewrite ^/pypi/(.*)$ /pypi/web/$1 break;
+rewrite ^/flathub/(.*)$ $scheme://dl.flathub.org/repo/$1 redirect;
+rewrite ^/fedora/linux/(.*?)$ /fedora/$1 permanent;
+```
+
+可以看到，`rewrite` 指令的第一个参数是一个正则表达式，用于匹配请求的 URI。第二个参数是改写后的 URI，可以使用正则表达式中的捕获组（例如 `$1`、`$2` 等）来引用匹配到的内容。第三个参数是可选的 flag：
+
+- `last`：不再执行当前块中后续 rewrite 模块的指令，并重新进行 `location` 匹配。
+- `break`：不再执行当前块中后续 rewrite 模块的指令，但不会重新进行 `location` 匹配。
+- `redirect`：返回 HTTP 302 临时重定向响应。
+- `permanent`：返回 HTTP 301 永久重定向响应。
+
+不过很多时候，我们不需要使用 `rewrite` 那么复杂的功能，直接使用 [`return`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#return) 指令就可以了。例如：
+
+```nginx
+location /old-path/ {
+    return 301 /new-path/;  # 永久重定向到 /new-path/
+}
+```
+
+!!! tip "internal 与 named location"
+
+    有时候我们希望某个路径只能在诸如 `rewrite`、[`error_page`](https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page) 或 [`try_files`](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files) 等指令中被跳转访问，而不能被外部直接请求，此时可以使用 [`internal`](https://nginx.org/en/docs/http/ngx_http_core_module.html#internal) 指令：
+
+    ```nginx
+    location /internal-path/ {
+        internal;  # 只能内部跳转访问
+        return 200 "This is an internal path.";
+    }
+    ```
+
+    或者将 `location` 以 `@` 开头，作为 named location 使用：
+
+    ```nginx
+    location @named-location {
+        return 200 "This is a named location.";
+    }
+    ```
+
+### 变量与条件判断 {#variables-conditions}
+
+[`set`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set) 指令可以设置变量的值，以上已有介绍。而 [`if`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) 指令可以根据条件执行一组 rewrite 模块的指令。以下是一个示例：
+
+```nginx
+if ($http_user_agent ~* "^Mozilla") {
+    return 403;  # 拒绝浏览器访问
+}
+```
+
+!!! tip "同时符合多个条件的判断"
+
+    Nginx 的 `if` 指令不支持 `&&` 或者 `||` 这样的逻辑运算，并且不支持 `if` 嵌套。如果需要同时满足多个条件，可以添加一个变量来实现：
+
+    ```nginx
+    set $condition_met 0;
+    if ($http_user_agent ~* "^Mozilla") {
+        set $condition_met 1;
+    }
+    if ($http_referer = "example.com") {
+        set $condition_met "${condition_met}1";
+    }
+    if ($condition_met = "11") {
+        return 403;  # 同时满足两个条件
+    }
+    ```
+
+    不过，当条件更加复杂的时候，建议使用 `map` 指令来实现：
+
+    ```nginx
+    map $http_user_agent $is_bad_ua {
+        "~*^Mozilla" 1;
+        "Go-http-client" 1;
+        default 0;
+    }
+
+    map $http_referer $is_bad_referer {
+        "~*example.com" 1;
+        "~*example.edu" 1;
+        default 0;
+    }
+
+    map "$is_bad_ua$is_bad_referer" $block_request {
+        "11" 1;
+        default 0;
+    }
+    ```
+
+!!! warning "谨慎在 `location` 中使用 `if`"
+
+    曾有一篇[官方博客文章 "If is evil"](https://github.com/nginxinc/nginx-wiki/blob/master/source/start/topics/depth/ifisevil.rst)讨论了在 `location` 块中使用 `if` 指令可能带来的问题。简单来讲，以下的使用场景是安全的：
+
+    - 在 `server` 块中使用 `if` 指令。
+    - 在 `location` 块中使用 `if` 指令，但只包含 `return` 或者 `rewrite ... last` 指令。
+
+    Nginx 在处理 `location` 块的 `if` 的时候，会创建一个临时的子 `location` 处理，因此如果在 `if` 中不做跳转的话，会有一些反直觉的行为。相关技术细节可阅读 [How nginx "location if" works](https://agentzh.blogspot.com/2011/03/how-nginx-location-if-works.html)。
+
+    如果真的需要复杂的条件判断，建议：
+
+    - 使用 `try_files` 指令结合 `internal` location，在文件/文件夹不存在时跳转到特定的 location 处理。
+    - 使用 `map` 指令对变量进行条件映射。
+    - 使用 Lua 脚本实现复杂逻辑。
 
 ## 日志 {#logging}
 
