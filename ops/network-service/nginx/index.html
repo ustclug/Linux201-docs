@@ -3558,8 +3558,8 @@
 <div class="admonition warning">
 <p class="admonition-title">不要写 <code>error_log off</code></p>
 <p><code>access_log</code> 支持 <code>off</code> 参数，表示关闭访问日志，但是 <code>error_log</code> 不支持 <code>off</code> 参数。如果写了 <code>error_log off</code>，Nginx 不会报错，看起来也能正常运行，但是实际上错误日志会被写入到<strong>名为 <code>off</code> 的文件</strong>中（默认情况下，路径会是 <code>/usr/share/nginx/off</code>）。很多时候要等待 <code>off</code> 这个文件变得非常大，才会发现问题所在。</p>
-<p>如果需要关闭错误日志，可以将 <code>error_log</code> 输出到 <code>/dev/null</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="k">error_log</span><span class="w"> </span><span class="s">/dev/null</span><span class="p">;</span>
+<p>如果需要完全关闭错误日志，可以将 <code>error_log</code> 输出到 <code>/dev/null</code>，并指定等级为 <code>crit</code> 以减少 nginx 尝试写入日志的频率：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="k">error_log</span><span class="w"> </span><span class="s">/dev/null</span><span class="w"> </span><span class="s">crit</span><span class="p">;</span>
 </code></pre></div>
 </div>
 <p>访问日志默认的格式是 <code>combined</code>，类似如下：</p>
@@ -3764,7 +3764,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月1日 22:11:05 UTC">2025年11月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月2日 12:24:09 UTC">2025年11月2日</span>
   </span>
 
     
@@ -3783,14 +3783,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/Cherrling" class="md-author" title="@Cherrling">
