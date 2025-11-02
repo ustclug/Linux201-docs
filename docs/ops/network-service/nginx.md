@@ -1141,9 +1141,82 @@ for _, pair in ipairs(map) do
 end
 
 print(table.concat(result, "\n"))  -- 使用 table.concat 将表元素连接成字符串
+
+local function factorial(n)  -- 定义函数
+    if n == 0 then
+        return 1
+    else
+        return n * factorial(n - 1)
+    end
+end
+
+print("Factorial of 5 is " .. factorial(5))
 ```
 
 #### Lua 模块 {#lua-modules}
+
+最简单的代码复用的方式是使用 `loadfile()` 函数直接加载另一个 Lua 脚本文件：
+
+```lua
+local f = loadfile("some_script.lua")
+if f then
+    f() -- 执行加载的脚本
+else
+    print("Failed to load some_script.lua")
+end
+```
+
+但是这样做存在很多问题：每次调用 `loadfile` 都会重新加载，并且无法利用到 LuaJIT 的编译缓存机制。因此更推荐的做法是包装成 Lua 模块，然后使用 `require` 导入。以下是调用 cjson 模块解析 JSON 的示例：
+
+```lua
+-- 导入 cjson 模块用于处理 JSON
+-- Debian 下包为 lua-cjson
+local cjson = require "cjson"
+local example = "{\"key1\":\"value1\",\"key2\":2}"
+local decoded = cjson.decode(example)
+print(decoded["key1"])
+```
+
+为了包装为模块，Lua 代码需要小幅修改。一个非常简单的模块示例如下：
+
+```lua
+local _M = {}
+
+local function some_internal_func(a)
+    return a + a
+end
+
+function _M.f1(a, b)
+    local aa = some_internal_func(a)
+    local bb = some_internal_func(b)
+    return aa + bb
+end
+
+return _M
+```
+
+### Nginx 中 Lua 的安装配置 {#lua-installation-configuration}
+
+要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。如果不希望使用 OpenResty，也可以自行安装 Lua 模块（`libnginx-mod-http-lua` 包）。安装此包后，`/etc/nginx/modules-enabled/` 会自动引入对应的配置：
+
+```console
+$ readlink /etc/nginx/modules-enabled/50-mod-http-lua.conf
+/usr/share/nginx/modules-available/mod-http-lua.conf
+$ cat /etc/nginx/modules-enabled/50-mod-http-lua.conf
+load_module modules/ngx_http_lua_module.so;
+```
+
+与 `sites-enabled` 类似，`modules-enabled` 目录下的配置文件会被 Nginx 主配置文件自动包含。配置后可以使用以下 `location` 测试：
+
+```nginx
+location / {
+    content_by_lua_block {
+        ngx.say("Hello, world!")
+    }
+}
+```
+
+其中 [`content_by_lua_block`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#content_by_lua_block) 控制了请求的响应内容，而 [`ngx.say`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxsay) 则会直接向响应中写入内容。
 
 ## 示例介绍 {#examples}
 
