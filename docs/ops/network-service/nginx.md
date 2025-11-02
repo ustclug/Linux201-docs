@@ -1083,6 +1083,68 @@ access_log /var/log/nginx/access.log combined if=$log_normal;
 
 ## Lua {#lua}
 
+由 OpenResty 团队维护的 [ngx_http_lua_module](https://github.com/openresty/lua-nginx-module) 提供了非常强大的 Lua 支持，可以在 Nginx 处理请求的各个阶段运行 Lua 脚本，实现复杂的逻辑。此外，Nginx 官方维护的 [ngx_http_js_module](https://nginx.org/en/docs/http/ngx_http_js_module.html) ([njs](https://nginx.org/en/docs/njs/index.html)) 也提供了类似的使用 JavaScript 脚本的功能，但就目前而言，Lua 模块的生态更加丰富，功能也更强大。
+
+### Lua 语言简介 {#lua-intro}
+
+Lua 是一种轻量的脚本语言，可以轻松集成到其他应用程序中，并且在 LuaJIT 的支持下，可以达到非常好的性能，常被用于游戏开发，以及各种需要用户自定义运行逻辑的场景。
+
+#### Lua 基础语法 {#lua-basic-syntax}
+
+以下给出一个简单的 Lua 代码示例，展示基本的语法，可以在 Lua 解释器中运行。如果希望进一步学习 Lua，可以参考[官方文档](https://www.lua.org/manual/)以及 [Programming in Lua](https://www.lua.org/pil/contents.html) 一书。
+
+```lua
+-- 这是注释
+
+local version = "1.0"  -- 使用 local 定义局部变量
+if version ~= "1.0" then  -- ~= 表示不等于
+    print("Version is not 1.0")
+else
+    print("Version is 1.0")
+end
+if something_not_defined == nil then  -- nil 表示空值/未定义
+    print("A nil variable")
+end
+
+-- 字符串正则匹配与替换
+local str = "Hello, Lua 123!"
+local match = string.match(str, "%d+")
+local match_2 = str:match("%d+")  -- 冒号语法糖，等价于 str.match(str, pattern)
+local new_str = str:gsub("%d+", "456"):lower()  -- gsub 替换，lower 转小写
+assert(match == match_2, "Matches should be equal")
+print(match)
+print(new_str)
+
+-- Lua 中的表（table）可以用来表示数组、字典（键值对）等数据结构
+local map = {
+    {"host", "host"},
+    {"server", "server_addr"},
+    {"ts", "msec"},
+    {"ip", "remote_addr"},
+    {"ua", "http_user_agent"}
+}  -- 定义一个表（数组）
+local another_map = {
+    host = "www.example.com",  -- 或者 ["host"] = "www.example.com"
+    server_addr = "www.example.com",
+    msec = 1234567890,
+    remote_addr = "127.0.0.1",
+    http_user_agent = "Mozilla/5.0"
+}  -- 定义一个表（字典）
+local result = {}
+
+-- 循环，使用 ipairs 遍历表，类似 Python 的 enumerate
+for _, pair in ipairs(map) do
+    -- 使用 table.insert 向表中添加元素
+    -- 使用 .. 进行字符串连接
+    -- Lua 的下标从 1 开始，不是 0！
+    table.insert(result, pair[1] .. "=" .. another_map[pair[2]])
+end
+
+print(table.concat(result, "\n"))  -- 使用 table.concat 将表元素连接成字符串
+```
+
+#### Lua 模块 {#lua-modules}
+
 ## 示例介绍 {#examples}
 
 <!-- 以下给出一些实践中会使用的 Nginx 配置示例。
