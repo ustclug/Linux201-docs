@@ -13,6 +13,7 @@
 [perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
 [rrsync.1]: https://man7.org/linux/man-pages/man1/rrsync.1.html
 [rsync.1]: https://man7.org/linux/man-pages/man1/rsync.1.html
+[ssh-keygen.1]: https://man7.org/linux/man-pages/man1/ssh-keygen.1.html
 [systemd-run.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html
 [tigervncserver.1]: https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html
 [vncconfig.1]: https://linux.die.net/man/1/vncconfig

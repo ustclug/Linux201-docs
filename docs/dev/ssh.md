@@ -51,7 +51,7 @@ Host example
 |       ECDSA       | 256 / 384 / 521 | 256 / 384 / 521 | 由于椭圆曲线参数选择的特殊性，只有这三种长度可选。注意最后一个选项是 521，不是 512 |
 |      Ed25519      |        -        |        -        | Ed25519 是基于 Edwards 曲线的算法，没有“长度”这种参数                              |
 
-另外，较早版本的 SSH 还有 DSA 算法（公钥以 `ssh-dss` 开头），它仅有 1024 位一种长度，安全性比 RSA 还差。因此 OpenSSH 7.0 开始默认不再生成或使用 DSA 密钥，OpenSSH 9.8 开始在编译期禁用 DSA 算法，并将很快从代码库中完全移除 DSA 相关代码。
+另外，较早版本的 SSH 还有 DSA 算法（公钥以 `ssh-dss` 开头），它仅有 1024 位一种长度，安全性比 RSA 还差。因此 OpenSSH 7.0 开始默认不再生成或使用 DSA 密钥，OpenSSH 9.8 开始在编译期禁用 DSA 算法，并将在后续版本中完全删除 DSA 相关代码。
 
 ### 端口转发 {#port-forwarding}
 
@@ -511,6 +511,35 @@ ssh-keygen -f my_ca [-t ed25519] [-C 'My CA'] [-N 'my-ca-p@ssw0rd']
 
 对于实验室等公用机器的场景，也可以将 CA 条目配置在 `/etc/ssh/ssh_known_hosts` 文件中，其会对所有用户生效，而无需再为每个用户单独配置。
 
+#### 配置服务端证书 {#create-server-certificates}
+
+签发服务端证书需要使用 CA 私钥和对应服务端的**公钥**：
+
+```shell
+ssh-keygen -s my_ca -I myserver.example.com -h -n myserver.example.com [-V validity] [-z serial] ssh_host_ed25519_key.pub
+```
+
+其中各参数的含义如下：
+
+- `-s my_ca`：指定 CA 私钥文件。
+- `-I myserver.example.com`：指定证书的“主体”（identity），即签发对象的一个可辨认的名字，类似 X.509 证书的 Common Name（CN）。常见的选项是使用服务器的 FQDN 作为 identity，便于辨认。
+- `-h`：表示签发的是服务端证书（host certificate），而非客户端证书（client certificate）。
+- `-n myserver.example.com`：指定证书的“有效主体名称”（principal names），类似 X.509 证书的 Subject Alternative Names（SAN）。客户端验证证书时会比较此参数与尝试连接的 Hostname，即 `ssh` 命令的主机参数，或客户端配置文件中的 `HostName` 选项。签发证书时可以指定多个名称，使用逗号分隔，如 `-n example.com,192.0.2.1`。
+    - 若 `-n` 参数未指定，则默认为不验证主机名。**我们不推荐省略 `-n` 参数**，因为这会降低证书的安全性。
+- `-V validity`：指定证书的有效期（validity period）。Validity 的格式为 `[from:]to`，且时间格式支持多种格式，如绝对时间 `YYYYMMDDhhmm` 和相对时间 `-n[unit]`、`+n[unit]` 等，详情见 [ssh-keygen(1)][ssh-keygen.1] 的 `-V` 参数说明。
+    - 对于服务端证书，常见的做法是指定 `-n` 但不指定 `-V` 以减少管理负担，因为服务端证书通常不会频繁更换。
+- `-z serial`：指定证书的编号（serial number），用于区分不同的证书。若未指定此参数，则默认为 0。
+- 最后的参数是需要签发证书的服务端公钥文件。
+
+`ssh-keygen` 会签发出的证书文件写入 `ssh_host_ed25519_key-cert.pub`，即将输入文件名结尾的 `.pub` 替换为 `-cert.pub`。你需要将该文件传输到服务器上，并修改配置文件指示 sshd 使用证书文件：
+
+```shell title="/etc/ssh/sshd_config.d/ca.conf"
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
+```
+
+在 reload 或重启 sshd 服务后，服务端就会在握手时发送证书给客户端。若客户端也正确配置了 CA 信任，则无需将服务端的公钥预先加入 `known_hosts` 文件即可完成验证。
+
 ### 客户端证书 {#client-certificates}
 
 首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 `authorized_keys` 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 `/etc/ssh/ssh_user_ca`：
@@ -518,6 +547,44 @@ ssh-keygen -f my_ca [-t ed25519] [-C 'My CA'] [-N 'my-ca-p@ssw0rd']
 ```text title="/etc/ssh/ssh_user_ca"
 ssh-ed25519 AAAAC3N... My org CA
 ```
+
+然后在 `sshd_config` 中指定该文件：
+
+```shell title="/etc/ssh/sshd_config.d/ca.conf"
+TrustedUserCAKeys /etc/ssh/ssh_user_ca
+```
+
+#### 签发客户端证书 {#sign-client-certificates}
+
+与服务端证书类似，签发客户端证书需要使用 CA 私钥和对应客户端的**公钥**：
+
+```shell
+ssh-keygen -s my_ca -I 'User 1' -n user1 [-V validity] [-z serial] [-O options] ~/.ssh/id_ed25519.pub
+```
+
+签发客户端证书时使用的命令行参数基本相同，仅有少许区别：
+
+- 不能使用 `-h` 参数，因为签发的是客户端证书。
+- `-n` 参数指定的是允许使用此证书登录的用户名（principal name）。
+    - 若 `-n` 参数未指定，则默认为允许以任意用户名登录。若为普通用户签发证书，请务必指定正确的用户名。
+- `-O` 参数可以指定一些额外的公钥选项，对应 [`authorized_keys` 文件中的选项](#authorized-keys)。详情见 [ssh-keygen(1)][ssh-keygen.1] 的 `CERTIFICATES` 一节。
+
+`ssh-keygen` 会签发出的证书文件写入 `~/.ssh/id_ed25519-cert.pub`，即相同的文件名规律。
+
+与服务端证书不同的是，`ssh` 客户端命令会根据此文件名规则自动寻找与私钥匹配的证书文件，因此无需修改客户端配置文件即可使用证书进行身份验证。若要指定使用其他证书文件，可以在配置文件中使用 `CertificateFile` 选项。例如：
+
+```shell title="~/.ssh/config"
+Host example
+  CertificateFile ~/.ssh/example-cert.pub
+```
+
+在服务器的登录日志（`/var/log/auth.log` 或 `journalctl -u ssh`）中，使用证书登录时会记录类似如下的信息：
+
+```text
+Accepted publickey for user1 from 192.0.2.1 port 1145 ssh2: ED25519-CERT SHA256:... ID User 1 (serial 1) CA RSA SHA256:...
+```
+
+其中 `ID` 后面的部分即为证书的“主体”（identity，签发时的 `-I` 参数值），`(serial 1)` 是证书的编号，`CA RSA SHA256:...` 是签发此证书的 CA 公钥的指纹。
 
 ## 杂项 {#misc}
 

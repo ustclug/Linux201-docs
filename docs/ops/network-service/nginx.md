@@ -1023,10 +1023,10 @@ http {
 
     `access_log` 支持 `off` 参数，表示关闭访问日志，但是 `error_log` 不支持 `off` 参数。如果写了 `error_log off`，Nginx 不会报错，看起来也能正常运行，但是实际上错误日志会被写入到**名为 `off` 的文件**中（默认情况下，路径会是 `/usr/share/nginx/off`）。很多时候要等待 `off` 这个文件变得非常大，才会发现问题所在。
 
-    如果需要关闭错误日志，可以将 `error_log` 输出到 `/dev/null`：
+    如果需要完全关闭错误日志，可以将 `error_log` 输出到 `/dev/null`，并指定等级为 `crit` 以减少 nginx 尝试写入日志的频率：
 
     ```nginx
-    error_log /dev/null;
+    error_log /dev/null crit;
     ```
 
 访问日志默认的格式是 `combined`，类似如下：
