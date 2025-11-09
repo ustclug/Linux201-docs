@@ -255,10 +255,7 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/mo
 
 !!! tip "Sysinternals' Procmon"
 
-    Windows 系统上的类似工具是 Sysinternals 的 [Procmon](https://docs.microsoft.com/en-us/sysinternals/downloads/procmon)，
-    可以查看所有进程对文件系统、注册表等的操作。
-    有趣的是，Sysinternals 在多年前也推出了 Procmon 的 [Linux 版本](https://github.com/Sysinternals/ProcMon-for-Linux)，
-    使用了 eBPF 技术实现（详见下文）。
+    Windows 系统上的类似工具是 Sysinternals 的 [Procmon](https://docs.microsoft.com/en-us/sysinternals/downloads/procmon)，可以查看所有进程对文件系统、注册表等的操作。有趣的是，Sysinternals 在多年前也推出了 Procmon 的 [Linux 版本](https://github.com/Sysinternals/ProcMon-for-Linux)，使用了 eBPF 技术实现（详见下文）。同样的功能（查看全系统的系统调用情况）也可以使用 `perf trace` 实现。
 
 !!! example "案例：CentOS 7 容器使用 `yum` 安装软件的 bug"
 
