@@ -3258,7 +3258,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="go">  /dev/loop0(0)</span>
 </code></pre></div>
 <p>另外在本地测试时发现，如果创建 cache 之后过短暂的时间后重启，LVM 调用的旧版本的 <a href="https://github.com/jthornber/thin-provisioning-tools">cache 检查工具</a>可能会认为 cache LV 的结构不正确，
-此时 LVM 无法挂载<sup id="fnref:t-p-t-bug"><a class="footnote-ref" href="#fn:t-p-t-bug">2</a></sup> cache，只能用一些 trick 来 uncache 掉这个坏掉的 LV
+此时 LVM 无法挂载<sup id="fnref:t-p-t-bug"><a class="footnote-ref" href="#fn:t-p-t-bug">4</a></sup> cache，只能用一些 trick 来 uncache 掉这个坏掉的 LV
 （cachevol 可能会麻烦一些，需要先使用 <code>dmsetup remove</code> 移除多余的卷；cachepool 可以直接 uncache）。
 或者将 thin-provisioning-tools 升级至 1.0.12 以上。</p>
 <p>来自 linux-lvm 邮件列表的可能相关的故障报告参见
@@ -3586,7 +3586,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <th>缓存模式</th>
 <th>缓存算法</th>
 <th>简介</th>
-<th>上次维护时间<sup id="fnref:time"><a class="footnote-ref" href="#fn:time">3</a></sup></th>
+<th>上次维护时间<sup id="fnref:time"><a class="footnote-ref" href="#fn:time">2</a></sup></th>
 </tr>
 </thead>
 <tbody>
@@ -3635,7 +3635,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <tr>
 <td>bcachefs</td>
 <td>writethrough, writeback, writearound</td>
-<td>lru<sup id="fnref:bcachefs-principles"><a class="footnote-ref" href="#fn:bcachefs-principles">4</a></sup></td>
+<td>lru<sup id="fnref:bcachefs-principles"><a class="footnote-ref" href="#fn:bcachefs-principles">3</a></sup></td>
 <td>由 bcache 作者开发的新 CoW 文件系统，内置 SSD 缓存支持</td>
 <td><a href="https://evilpiepirate.org/git/bcachefs.git">活跃开发</a></td>
 </tr>
@@ -3700,14 +3700,14 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:rhel-version">
 <p>推荐查看最新版本的 RHEL 手册进行阅读，因为新版本可能包含一些新特性，并且 Debian 的版本更新比 RHEL 更快。本链接指向目前最新的 RHEL 9 的 LVM 手册。&#160;<a class="footnote-backref" href="#fnref:rhel-version" title="Jump back to footnote 1 in the text">&#8617;</a></p>
 </li>
-<li id="fn:t-p-t-bug">
-<p>Cache 的完整性检查工具 <code>cache_check</code> 位于 <a href="https://github.com/jthornber/thin-provisioning-tools">thin-provisioning-tools</a> 中。其 1.0 版本使用 Rust 重写后<a href="https://github.com/jthornber/thin-provisioning-tools/issues/294">存在一个 bug</a>，会导致即使检查失败，LVM 也会继续尝试挂载。该问题在 1.0.12 被修复。&#160;<a class="footnote-backref" href="#fnref:t-p-t-bug" title="Jump back to footnote 2 in the text">&#8617;</a></p>
-</li>
 <li id="fn:time">
-<p>Retrieved on 2024-02-18.&#160;<a class="footnote-backref" href="#fnref:time" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>Retrieved on 2024-02-18.&#160;<a class="footnote-backref" href="#fnref:time" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:bcachefs-principles">
-<p>"Buckets containing only cached data are discarded as needed by the allocator in LRU order" (<a href="https://bcachefs.org/bcachefs-principles-of-operation.pdf">bcachefs: Principles of Operation</a> 2.2.4)&#160;<a class="footnote-backref" href="#fnref:bcachefs-principles" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p>"Buckets containing only cached data are discarded as needed by the allocator in LRU order" (<a href="https://bcachefs.org/bcachefs-principles-of-operation.pdf">bcachefs: Principles of Operation</a> 2.2.4)&#160;<a class="footnote-backref" href="#fnref:bcachefs-principles" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:t-p-t-bug">
+<p>Cache 的完整性检查工具 <code>cache_check</code> 位于 <a href="https://github.com/jthornber/thin-provisioning-tools">thin-provisioning-tools</a> 中。其 1.0 版本使用 Rust 重写后<a href="https://github.com/jthornber/thin-provisioning-tools/issues/294">存在一个 bug</a>，会导致即使检查失败，LVM 也会继续尝试挂载。该问题在 1.0.12 被修复。&#160;<a class="footnote-backref" href="#fnref:t-p-t-bug" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3737,34 +3737,6 @@ Do not link to a "generic" man page for these commands -->
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
