@@ -820,6 +820,80 @@ upstream backend {
 
 `server` 块后还可以添加诸如 `max_fails`（最大失败次数）、`fail_timeout`（失败超时时间）等参数来控制节点的故障转移行为。
 
+## 文件列表 {#file-listing}
+
+Nginx 自带的 [`ngx_http_autoindex_module`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html) 与非常流行的 [`ngx_http_fancyindex_module`](https://github.com/aperezdc/ngx-fancyindex) 模块都可以用于生成目录列表页面，方便用户浏览和下载文件。
+
+最简单的方式就是使用 [`autoindex on;`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html#autoindex) 指令，例如：
+
+```nginx
+index index.html index.htm;
+try_files $uri $uri/ =404;
+autoindex on;
+```
+
+如果 `autoindex` 设置为 `off`，并且 `index` 指令中没有匹配的文件，Nginx 会返回 HTTP 403。
+
+!!! tip "autoindex 的 JSON 输出支持"
+
+    `autoindex` 的 HTML 的输出很简陋。不过鲜为人知的是，`autoindex` 也支持输出为 XML、JSON 或 JSONP 格式。JSON 类格式可以方便前端的 JavaScript 进行处理，从而实现更复杂、美观的文件列表界面。对应的指令为 [`autoindex_format`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html#autoindex_format)。
+
+    生成的 JSON 类似如下：
+
+    ```json
+    [
+    { "name":"example_dir", "type":"directory", "mtime":"Wed, 12 Nov 2025 16:28:30 GMT" },
+    { "name":"example", "type":"file", "mtime":"Wed, 12 Nov 2025 16:28:26 GMT", "size":0 }
+    ]
+    ```
+
+    ??? tip "JSONP"
+
+        JSONP（JSON with Padding）是一种古老的在前端获取其他站点数据（跨域）的技术。在以上的例子中，如果 `autoindex_format` 设置为 `jsonp`，则在请求时添加 `callback` 参数即可获得 JSONP 格式的响应，例如 `http://example.com/files/?callback=handleFileList`：
+
+        ```javascript
+        /* callback */
+        handleFileList([
+        { "name":"example_dir", "type":"directory", "mtime":"Wed, 12 Nov 2025 16:28:30 GMT" },
+        { "name":"example", "type":"file", "mtime":"Wed, 12 Nov 2025 16:28:26 GMT", "size":0 }
+        ]);
+        ```
+
+        JSONP 设计是需要在 `<script>` 标签中引用：
+
+        ```html
+        <script src="http://example.com/files/?callback=handleFileList"></script>
+        ```
+
+        由于浏览器不会限制在 `<script>` 标签中使用其他站点的脚本，因此通过 JSONP 协议可以实现跨域数据获取。但是，这种技术存在严重的安全风险（需要执行不受信任的第三方代码），因此已经过时了。目前主流的方式是通过 CORS（跨域资源共享）来实现跨域请求。
+
+如果需要更好看的界面，一般会使用 fancyindex 模块（`libnginx-mod-http-fancyindex` 包）。添加 [`fancyindex on;`](https://github.com/aperezdc/ngx-fancyindex?tab=readme-ov-file#fancyindex) 指令后，fancyindex 就会以默认样式生成文件列表页面。用户可以自定义 CSS、header 和 footer 来美化页面，网络上也有不少现成的样式可以参考。
+
+!!! note "使用一个专门的后端程序生成文件列表页面"
+
+    你可能会希望使用其他的文件列表程序（例如 [h5ai](https://github.com/lrsjng/h5ai)），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：
+
+    ```nginx
+    root /var/www/files/;
+    autoindex off;
+    index index.html index.htm;
+
+    try_files $uri $uri/index.html $uri/index.htm @dir_check;
+
+    location @dir_check {
+        internal;
+        if (-d $request_filename) {
+            rewrite ^(.*)$ /_dir_handler/$1/ last;
+        }
+        return 404;
+    }
+
+    location /_dir_handler/ {
+        internal;
+        proxy_pass http://127.0.0.1:1234/;  # 文件列表程序监听的地址
+    }
+    ```
+
 ## 速率、请求与连接数限制 {#limiting}
 
 Nginx 提供了多种不同维度的限制功能，帮助减轻恶意流量对服务的影响，保护后端稳定运行，将更多资源分配给正常用户。以下介绍 Nginx 自带的限制功能，如果需要更复杂的规则，可以参考 [Lua](#lua) 部分。
