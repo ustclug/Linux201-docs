@@ -882,7 +882,7 @@ autoindex on;
 
     location @dir_check {
         internal;
-        if (-d $request_filename) {
+        if (-d $request_filename) {  # 判断目录是否存在
             rewrite ^(.*)$ /_dir_handler/$1/ last;
         }
         return 404;
@@ -893,6 +893,8 @@ autoindex on;
         proxy_pass http://127.0.0.1:1234/;  # 文件列表程序监听的地址
     }
     ```
+
+    有关 `internal` 与 `if` 等相关的介绍，可参考下文的 [Rewrite](#rewrite) 部分。
 
 ## 速率、请求与连接数限制 {#limiting}
 
@@ -1024,6 +1026,14 @@ location /old-path/ {
 ```nginx
 if ($http_user_agent ~* "^Mozilla") {
     return 403;  # 拒绝浏览器访问
+}
+```
+
+`if` 中的条件也可以使用类似 Shell 的语法做文件存在性判断，例如 `-d` 判断目录是否存在，`-f` 判断文件是否存在，`-x` 判断是否有可执行权限等：
+
+```nginx
+if (-x $request_filename) {
+    return 403;  # 拒绝访问可执行文件
 }
 ```
 
