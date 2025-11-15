@@ -43,10 +43,55 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
 在上图中，ROUTE 指[路由决策](routing.md)。
 
-## iptables 表 {#iptables-tables}
+需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于图片结果简化的考虑。
+这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 `localhost` 或 `127.0.0.1` 访问本机服务。
+
+## iptables {#iptables}
 
 iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
-iptables 将规则组织成不同的表，每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。
+iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。
+
+### iptables 操作 {#iptables-operations}
+
+### iptables 规则 {#iptables-rules}
+
+iptables 使用 GNU `getopt_long` 风格的命令行参数，即以短横线 `-` 开头的单字符选项和以双短横线 `--` 开头的长选项。
+
+每一条 iptables 命令及其所有参数构成一条规则，规则的基本结构如下：
+
+```shell
+iptables [全局选项] [-t 表名] 链操作 规则匹配条件 目标
+```
+
+在「规则匹配条件」部分，可以使用多种匹配模块来指定数据包的特征，如源地址、目的地址、协议类型、端口号等。
+匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。
+以科大镜像站上用于限制 80 / 443 端口并发连接数的规则为例：
+
+```shell
+iptables -A LIMIT \
+  -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN \
+  -m multiport --dports 80,443 \
+  -m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr \
+  -j REJECT --reject-with tcp-reset
+```
+
+这条命令的理解方式如下：
+
+- `iptables -A LIMIT`：将规则追加（`-A`）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 `ip6tables`。
+- `-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN`：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。
+    - 等价的写法是 `-p tcp --syn`
+    - 另一个（几乎）等价的写法是 `-m conntrack --ctstate NEW`，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。
+- `-m multiport --dports 80,443`：调用 `multiport` 模块，匹配目的端口为 80 或 443 的数据包。
+    - `-m tcp` 模块和 `-m udp` 模块也提供了 `--port` 参数，但只能用于单个端口的匹配，因此此处使用 `multiport` 模块来同时匹配多个端口。
+- `-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr`：调用 `connlimit` 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。
+- `-j REJECT --reject-with tcp-reset`：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。
+
+iptables 规则的目标（`-j` 参数）可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理），从而实现复杂的防火墙逻辑。
+
+完整的 iptables 规则语法和选项可以参考 [iptables(8)][iptables.8] 和 [iptables-extensions(8)][iptables-extensions.8] 手册页。
+
+### iptables 表 {#iptables-tables}
+
 iptables 的主要表类型有以下几种：
 
 filter
@@ -55,7 +100,7 @@ filter
 
 nat
 
-:   用于网络地址转换（NAT），如源地址转换（SNAT）和目的地址转换（DNAT）。其中「伪装」（MASQUERADE）是一种特殊的 SNAT 方式，让内核根据网卡上配置的地址自动决定替换后的源地址，通常用于动态 IP 地址的场景。
+:   用于网络地址转换（NAT），如源地址转换（SNAT）和目的地址转换（DNAT）。其中「伪装」（MASQUERADE）是一种特殊的 SNAT 方式，让内核根据出接口网卡上配置的地址自动决定替换后的源地址，通常用于动态 IP 地址的场景。
 
     需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
 

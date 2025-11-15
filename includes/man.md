@@ -71,6 +71,8 @@
 Do not link to a "generic" man page for these commands -->
 [adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
+[iptables.8]: https://www.man7.org/linux/man-pages/man8/iptables.8.html
+[iptables-extensions.8]: https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
 [mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
 [sg_unmap.8]: https://linux.die.net/man/8/sg_unmap
