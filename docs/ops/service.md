@@ -124,7 +124,65 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 :   指定启动顺序，即相关的 unit 需要在前者启动完成，进入 active 状态后才会尝试启动。这两个字段在 `[Unit]` section 中指定。
     与 Wants/Requires 不同，Before/After 只是指定启动顺序，不影响依赖关系。
 
-需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 `Requires=` 或 `Wants=`，没有写 `Before=` 或 `After=`，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序。
+需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 `Requires=` 或 `Wants=`，没有写 `Before=` 或 `After=`，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序；反过来，如果只写 `Before=` 或 `After=`，那么 systemd 不保证这些服务会被启动。
+
+!!! tip "获取某个 unit 的顺序与依赖关系"
+
+    使用 `systemctl show [unit]` 可以查看某个 unit 的所有属性，包括上面提到的依赖关系和启动顺序。例如：
+
+    ```console
+    $ systemctl show gdm.service
+    Id=gdm.service
+    Names=gdm.service display-manager.service
+    Requires=system.slice sysinit.target dbus.socket
+    WantedBy=graphical.target
+    Conflicts=getty@tty1.service shutdown.target plymouth-quit.service
+    Before=graphical.target shutdown.target
+    After=fwupd.service rc-local.service systemd-journald.socket sysinit.target basic.target system.slice plymouth-quit.service systemd-user-sessions.service plymouth-start.service dbus.socket getty@tty1.service
+    （以下省略）
+    ```
+
+    此外使用 `systemctl list-dependencies [unit]` 可以以树状结构显示某个 unit 的依赖关系：
+
+    ```console
+    $ systemctl list-dependencies gdm.service
+    gdm.service
+    ● ├─dbus.socket
+    ● ├─system.slice
+    ● └─sysinit.target
+    ●   ├─dev-hugepages.mount
+    ●   ├─dev-mqueue.mount
+    ●   ├─kmod-static-nodes.service
+    ●   ├─ldconfig.service
+    ●   ├─proc-sys-fs-binfmt_misc.automount
+    ●   ├─sys-fs-fuse-connections.mount
+    ●   ├─sys-kernel-config.mount
+    ●   ├─sys-kernel-debug.mount
+    ●   ├─sys-kernel-tracing.mount
+    ●   ├─systemd-ask-password-console.path
+    ●   ├─systemd-binfmt.service
+    （以下省略）
+    ```
+
+!!! tip "分析系统启动时间"
+
+    相比传统的 init，systemd 的一大卖点就是通过分析顺序与依赖，并行启动服务，从而缩短系统启动时间。可以使用 `systemd-analyze` 来绘制启动时间线：
+
+    ```console
+    systemd-analyze plot > boot.svg
+    ```
+
+    每个服务的启动时间可以使用 `blame` 子命令查看：
+
+    ```console
+    systemd-analyze blame
+    ```
+
+    不过，`systemd-analyze blame` 显示的最耗时的服务可能并不会实际影响启动。如果需要快速查看对启动时间影响最大的服务，可以查看关键路径：
+
+    ```console
+    systemd-analyze critical-chain
+    ```
 
 #### 模板 {#unit-template}
 
