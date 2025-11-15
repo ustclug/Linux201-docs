@@ -74,13 +74,13 @@ raw
 
 各个表在各个阶段的可用性如下表所示：
 
-| 阶段        | filter / security                        | nat                                      | mangle                                   | raw                                      |
-| ----------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
-| PREROUTING  | :fontawesome-solid-xmark:{: .orangered } | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
-| INPUT       | :fontawesome-solid-check:{: .limegreen } | SNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } |
-| FORWARD     | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen } |
-| OUTPUT      | :fontawesome-solid-check:{: .limegreen } | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
-| POSTROUTING | :fontawesome-solid-xmark:{: .orangered } | SNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-xmark:{: .orangered } |
+|    阶段     |            filter / security             |    nat    |                  mangle                  |                   raw                    |
+| :---------: | :--------------------------------------: | :-------: | :--------------------------------------: | :--------------------------------------: |
+| PREROUTING  |                                          | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
+|    INPUT    | :fontawesome-solid-check:{: .limegreen } | SNAT only | :fontawesome-solid-check:{: .limegreen } |                                          |
+|   FORWARD   | :fontawesome-solid-check:{: .limegreen } |           | :fontawesome-solid-check:{: .limegreen } |                                          |
+|   OUTPUT    | :fontawesome-solid-check:{: .limegreen } | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
+| POSTROUTING |                                          | SNAT only | :fontawesome-solid-check:{: .limegreen } |                                          |
 
 在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。
 
