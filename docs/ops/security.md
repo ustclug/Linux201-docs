@@ -76,13 +76,23 @@ icon: material/security
 SELECT * FROM users WHERE username = '$username' AND password = '$password';
 ```
 
-如果应用程序选择直接通过拼接字符串的方式构造这个查询，并且用户输入的 `username` 是 `admin`，`password` 是 `123' OR '1'='1`，那么查询就会变成：
+如果应用程序选择直接通过拼接字符串的方式构造这个查询，那么：
 
-```sql
-SELECT * FROM users WHERE username = 'admin' AND password = '123' OR '1'='1';
-```
+1. 如果用户输入的 `username` 是 `admin`，`password` 是 `123' OR '1'='1`，那么查询就会变成：
 
-可以发现，这个查询就不再起到检查密码的作用，恶意用户此时就可以以 `admin` 的身份登录系统。
+    ```sql
+    SELECT * FROM users WHERE username = 'admin' AND password = '123' OR '1'='1';
+    ```
+
+    这个查询中，`WHERE` 条件始终为真，因此攻击者就可以以返回中首个用户（不少时候是管理员用户）的身份登录系统。
+
+2. 如果用户输入的 `username` 是 `admin'; --`，`password` 是任意内容（例如 `xyz`），那么查询就会变成：
+
+    ```sql
+    SELECT * FROM users WHERE username = 'admin'; -- ' AND password = 'xyz';
+    ```
+
+    此时可以发现，这个查询只会筛选出用户名为 `admin` 的用户，而后面的密码检查部分被注释掉了（`--` 代表 SQL 注释），因此攻击者也可以以 `admin` 的身份登录系统。
 
 相似的问题还有 **XSS（跨站脚本攻击）**：如果应用程序直接将用户输入的内容插入到 HTML 中，那么攻击者可以构造恶意的 HTML 代码，例如：
 
