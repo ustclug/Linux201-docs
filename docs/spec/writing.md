@@ -111,13 +111,14 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 
 ### 为图片添加配字 {#image-caption}
 
-在图片下方写一行文字作为配字，并在这行字**紧接着的下一行**（不能有空行）写上 `{: .caption }`，这样配的这行字渲染成 HTML 时就加上了 `class="caption"`，显示为 0.94 倍的字体、灰色、贴近图片。
+使用 [Python Markdown Extension](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/caption/) 的语法，在图片后面添加配字，格式如下：
 
 ```markdown
 ![image](url)
 
-图 1. 这张图片的一行配字
-{: .caption }
+/// caption
+图 1. 这张图片的配字
+///
 ```
 
 ### 图片与附件文件 {#images-attachments}
