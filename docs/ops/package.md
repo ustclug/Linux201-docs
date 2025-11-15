@@ -218,7 +218,7 @@ htop: /usr/share/pixmaps/htop.png
     - `dpkg-deb -c <name_version.deb>` 可以查看 `.deb` 文件中的内容。
     - `dpkg-query -L <name>` 查看给定的安装了的包提供了哪些文件。
 
-    这几条命令的 `dpkg-*` 部分都可以直接替换为 `dpkg`，例如 `dpkg -S`、`dpkg -c` 等，`dpkg` 命令前端会帮你把请求转发到正确的子命令上。
+    这几条命令的 `dpkg-*` 部分都可以直接替换为 `dpkg`，例如 `dpkg -S`、`dpkg -c`、`dpkg -L` 等，`dpkg` 命令前端会帮你把请求转发到正确的子命令上。
 
 ### 固定包 {#apt-hold}
 
