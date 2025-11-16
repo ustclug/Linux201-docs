@@ -1055,10 +1055,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#routing-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
         路由表
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iproute2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ip route 命令
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#policy-based-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        策略路由
       
     </span>
   </a>
@@ -2580,10 +2602,32 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#_2" class="md-nav__link">
+  <a href="#routing-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
         路由表
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iproute2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ip route 命令
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#policy-based-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        策略路由
       
     </span>
   </a>
@@ -2680,7 +2724,31 @@
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
 </div>
-<h2 id="_2">路由表<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<h2 id="routing-tables">路由表<a class="headerlink" href="#routing-tables" title="Permanent link">&para;</a></h2>
+<p><strong>路由</strong>是网络系统用来决定数据包去向的过程，主要由<strong>路由表</strong>来实现。
+在 Linux 中，路由表存储在内核中，可以通过 <code>ip route</code> 命令查看当前的路由表：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>ip<span class="w"> </span>route
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">default via 192.0.2.1 dev eth0 src 192.0.2.100</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">192.0.2.0/24 dev eth0 src 192.0.2.100</span>
+</code></pre></div>
+<p>在以上示例中，第二行表示目标为 192.0.2.0/24 的地址发送到 eth0 设备的本地网络中，以源地址 192.0.2.100 进行通信（即本机地址）；而其他所有流量（<code>default</code>）都将发送给网关 192.0.2.1，由该网关决定进一步的去向。</p>
+<p>Linux 的路由表数据结构为 Trie（前缀树），可以高效地进行<strong>最长前缀匹配</strong>，这也是 Linux 的基本路由规则<sup id="fnref:windows"><a class="footnote-ref" href="#fn:windows">1</a></sup>。
+在此基础上，<code>default</code> 是 <code>0.0.0.0/0</code>（或 IPv6 <code>::/0</code>）的简写或别名，表示前缀长度为零的默认路由。</p>
+<h2 id="iproute2"><code>ip route</code> 命令<a class="headerlink" href="#iproute2" title="Permanent link">&para;</a></h2>
+<p><code>ip route</code> 命令是管理路由表的主要工具，其默认操作是显示当前的路由表，等价于 <code>ip route show table main</code>。
+如果要增加或替换一条路由规则，可以使用 <code>ip route add</code> 或 <code>ip route replace</code> 命令，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">198</span>.51.100.0/24<span class="w"> </span>via<span class="w"> </span><span class="m">192</span>.0.2.2<span class="w"> </span>dev<span class="w"> </span>eth0
+</code></pre></div>
+<p>此后，Linux 就会将目标地址为 198.51.100.0/24 的数据包发送给网关 192.0.2.2。</p>
+<p>对于本地网络的路由规则，可以省略 <code>via</code> 部分<sup id="fnref:via-zero"><a class="footnote-ref" href="#fn:via-zero">2</a></sup>，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ip<span class="w"> </span>route<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.0.2.0/24<span class="w"> </span>dev<span class="w"> </span>eth0
+</code></pre></div>
+<p>此后，Linux 就会将目标地址为 192.0.2.0/24 的数据包发送到 eth0 接口的本地网络中，不经过网关。</p>
+<p>对于没有链路层的接口（如 WireGuard 接口、其他三层隧道接口和 TUN 设备等），<code>via</code> 部分没有意义，即使指定了也不会产生任何影响。</p>
+<h2 id="policy-based-routing">策略路由<a class="headerlink" href="#policy-based-routing" title="Permanent link">&para;</a></h2>
+<p>单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
+一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「源进源出」的路由方式才能确保与客户端正常通信。
+<strong>策略路由</strong>（Policy-based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。</p>
 <!--
   Links to man pages
 
@@ -2713,6 +2781,18 @@ Do not link to a "generic" man page for these commands -->
 
 <!-- markdownlint-disable-file MD041 MD053 -->
 
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:windows">
+<p>Windows 系统的路由表使用线性表结构，匹配时会按优先级顺序遍历所有规则，效率较低，且不符合最长前缀匹配原则。&#160;<a class="footnote-backref" href="#fnref:windows" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:via-zero">
+<p>事实上，若省略了 <code>via</code> 部分，<code>ip</code> 命令向内核传递路由规则时会将其设置为 <code>0.0.0.0</code>（IPv4）或 <code>::</code>（IPv6），这是系统接口的实现细节。如果你明确指定 <code>via 0.0.0.0</code>，会得到相同的效果。&#160;<a class="footnote-backref" href="#fnref:via-zero" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
 
 
 
@@ -2732,7 +2812,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月15日 06:52:17 UTC">2025年11月15日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月16日 14:20:49 UTC">2025年11月16日</span>
   </span>
 
     
