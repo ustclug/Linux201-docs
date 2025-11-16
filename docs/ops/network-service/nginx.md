@@ -894,6 +894,18 @@ autoindex on;
     }
     ```
 
+    不过 `try_files` 的问题是：它没有办法继承到子 `location` 中，这在配置复杂的情况下是难以接受的。因此我们可以有另一个 workaround 方案：`index` 指令的最后一个参数可以是 URI 绝对路径，例如 `index index.html /_dir_handler`。于是我们的配置可以改成：
+
+    ```nginx
+    index index.html index.htm /_dir_handler;
+
+    location = /_dir_handler {
+        internal;
+        # 由于 $uri 已经是 /_dir_handler/，因此只能从 $request_uri 中获取原始请求路径
+        proxy_pass http://127.0.0.1:1234/$request_uri;  # 文件列表程序监听的地址
+    }
+    ```
+
     有关 `internal` 与 `if` 等相关的介绍，可参考下文的 [Rewrite](#rewrite) 部分。
 
 ## 速率、请求与连接数限制 {#limiting}
