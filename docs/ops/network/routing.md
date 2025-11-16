@@ -4,6 +4,10 @@ icon: material/router-network
 
 # 路由
 
+!!! note "主要作者"
+
+    [@iBug][iBug]
+
 !!! warning "本文编写中"
 
 ## 路由表 {#routing-tables}
@@ -24,7 +28,7 @@ Linux 的路由表数据结构为 Trie（前缀树），可以高效地进行**�
 
   [^windows]: Windows 系统的路由表使用线性表结构，匹配时会按优先级顺序遍历所有规则，效率较低，且不符合最长前缀匹配原则。
 
-## `ip route` 命令 {#iproute2}
+### `ip route` 命令 {#ip-route}
 
 `ip route` 命令是管理路由表的主要工具，其默认操作是显示当前的路由表，等价于 `ip route show table main`。
 如果要增加或替换一条路由规则，可以使用 `ip route add` 或 `ip route replace` 命令，例如：
@@ -34,6 +38,7 @@ ip route add 198.51.100.0/24 via 192.0.2.2 dev eth0
 ```
 
 此后，Linux 就会将目标地址为 198.51.100.0/24 的数据包发送给网关 192.0.2.2。
+`add` 与 `replace` 的区别如同字面含义，当完全相同的 CIDR 已经存在时，`add` 会报错，而 `replace` 会覆盖原有规则。
 
 对于本地网络的路由规则，可以省略 `via` 部分[^via-zero]，例如：
 
@@ -47,8 +52,45 @@ ip route add 192.0.2.0/24 dev eth0
 
 对于没有链路层的接口（如 WireGuard 接口、其他三层隧道接口和 TUN 设备等），`via` 部分没有意义，即使指定了也不会产生任何影响。
 
+### 路由类型 {#route-types}
+
+每条路由规则都有一个类型（type），常见的路由类型包括：
+
+unicast（默认）
+
+:   单播路由，表示数据包发送到单一目的地址。
+
+local
+
+:   本地路由，表示数据包由本机接收，通常用于本机的 IP 地址。
+
+broadcast / multicast
+
+:   广播或多播路由，表示数据包发送到广播或多播地址。该类型需要链路层支持多播，所以在三层隧道接口上通常不起作用。
+
+throw
+
+:   特殊的规则，表示跳出当前路由表，继续在后续的路由规则中查找匹配的规则（见下文「策略路由」部分）。
+
+blackhole / unreachable / prohibit
+
+:   拒绝路由，处理方式分别为静默丢弃、返回 ICMP unreachable 和 ICMP prohibited 响应。
+
+如果你尝试查看 `local` 表中的路由，就能发现 Linux 已经自动维护了许多 local 和 broadcast 类型的路由：
+
+```console
+$ ip route show table local
+local 127.0.0.0/8 dev lo proto kernel scope host src 127.0.0.1
+local 127.0.0.1 dev lo proto kernel scope host src 127.0.0.1
+broadcast 127.255.255.255 dev lo proto kernel scope link src 127.0.0.1
+local 192.0.2.1 dev eth0 proto kernel scope host src 192.0.2.1
+broadcast 192.0.2.255 dev eth0 proto kernel scope link src 192.0.2.1
+```
+
 ## 策略路由 {#policy-based-routing}
 
 单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
 一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「源进源出」的路由方式才能确保与客户端正常通信。
 **策略路由**（Policy-based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。
+
+### `ip rule` 命令 {#ip-rule}

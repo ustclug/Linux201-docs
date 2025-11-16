@@ -4,6 +4,10 @@ icon: material/wall-fire
 
 # 防火墙
 
+!!! note "主要作者"
+
+    [@iBug][iBug]
+
 !!! warning "本文编写中"
 
 Linux 内核网络栈中的防火墙模块称为 Netfilter，负责对进出主机的数据包进行过滤和修改。Netfilter 提供了一套强大的工具，用于实现各种防火墙功能，如包过滤、网络地址转换（NAT）和连接跟踪等。
