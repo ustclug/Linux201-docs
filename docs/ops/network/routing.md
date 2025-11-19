@@ -72,6 +72,8 @@ throw
 
 :   特殊的规则，表示跳出当前路由表，继续在后续的路由规则中查找匹配的规则（见下文「策略路由」部分）。
 
+    如果一个路由表中不包含 `default` 路由，则隐含一个 `throw default` 规则。
+
 blackhole / unreachable / prohibit
 
 :   拒绝路由，处理方式分别为静默丢弃、返回 ICMP unreachable 和 ICMP prohibited 响应。
@@ -91,6 +93,44 @@ broadcast 192.0.2.255 dev eth0 proto kernel scope link src 192.0.2.1
 
 单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
 一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「源进源出」的路由方式才能确保与客户端正常通信。
-**策略路由**（Policy-based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。
+**策略路由**（Policy-Based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。
+
+### 路由规则 {#routing-rules}
+
+在 Linux 中，路由决策的过程分为两个阶段：
+
+1. **路由规则匹配**：根据数据包的特征（如源地址、目的地址、TOS 等）在路由规则列表（Routing Policy DataBase，RPDB）中查找匹配的规则，确定使用哪个路由表；
+2. **路由表查找**：在选定的路由表中查找匹配的路由规则，决定数据包的去向。
+
+    特别地，如果路由规则的类型为 `throw`，则跳出当前路由表，继续考察后续的路由规则。
+
+路由规则存储在内核中的 RPDB，可以通过 `ip rule` 命令查看当前的路由规则列表。
+每条路由规则都有一个优先级（priority），数值越小优先级越高，默认情况下，内核会维护三条基本的路由规则（IPv6 为两条）：
+
+```shell title="IPv4 默认路由规则"
+$ ip rule
+0:      from all lookup local
+32766:  from all lookup main
+32767:  from all lookup default
+```
+
+<!-- `shell` language is required for rendering annotation: https://squidfunk.github.io/mkdocs-material/reference/code-blocks/#fn:1 -->
+```shell title="IPv6 默认路由规则"
+$ ip -6 rule
+0:      from all lookup local
+32766:  from all lookup main # (1)!
+```
+
+1. 注意到，IPv6 默认没有指向 `default` 路由表的规则
+
+在内核中，每个路由表都有一个编号，默认的路由表编号如下：
+
+| 路由表  | 编号  |
+| :-----: | :---: |
+|  local  |  255  |
+|  main   |  254  |
+| default |  253  |
+
+路由表的编号仅用于区分，不影响路由表的功能和优先级（优先级由路由规则决定）。
 
 ### `ip rule` 命令 {#ip-rule}

@@ -27,7 +27,7 @@ icon: material/xml
 !!! tip "IDE 推荐"
 
     - [Visual Studio Code](https://code.visualstudio.com/): 其实 Visual Studio Code 是个代码编辑器，但是在众多插件的帮助下，可以有 IDE 一样的体验。Visual Studio Code 可以用于各种语言的开发，更是拥有非常出色的远程开发功能。
-    - [Pycharm](https://www.jetbrains.com/pycharm/): Jetbrains 开发的 Python IDE，提供了开箱即用的 Python 开发体验，支持 Python 的各种框架
-    - [Clion](https://www.jetbrains.com/clion/): Jetbrains 开发的 C++ IDE，使用 CMake 管理工程，拥有强大的静态检查功能，以及强大的代码重构功能
-    - [QT Creator](https://www.qt.io/zh-cn/product/development-tools): 主要用于开发 Qt 应用的 IDE
+    - [Pycharm](https://www.jetbrains.com/pycharm/): JetBrains 开发的 Python IDE，提供了开箱即用的 Python 开发体验，支持 Python 的各种框架。
+    - [Clion](https://www.jetbrains.com/clion/): JetBrains 开发的 C++ IDE，使用 CMake 管理工程，拥有强大的静态检查功能，以及强大的代码重构功能。
+    - [Qt Creator](https://www.qt.io/zh-cn/product/development-tools): 主要用于开发 Qt 应用的 IDE。
     - [Cursor](https://www.cursor.com/): 深度集成了 AI 工具的代码编辑器，基于 Visual Studio Code 开发，兼容大部分 Visual Studio Code 的插件，Tab 键的体验谁用谁知道！
