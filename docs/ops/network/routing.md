@@ -204,10 +204,11 @@ ip rule add from 192.0.2.0/24 table 100 pref 1000
 
 - fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 `MARK` 目标结合使用，实现更复杂的路由策略。
 - iif 条件匹配数据包的输入接口，其中由本机发出的数据包可以用 `iif lo` 匹配。
-- oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（`setsockopt(SO_BINDTODEVICE)`）。
+- oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（`setsockopt(SO_BINDTODEVICE)`）[^oif-why]。
 - uidrange 条件匹配发包进程的 UID，但只能用于本机发出的数据包。特别地，许多 Android VPN 软件使用该条件实现应用级别的访问控制，利用了 Android 系统中的每个应用都有一个独立的 UID 这一特性。
 - sport 和 dport 条件只能用于 TCP 和 UDP 协议[^port-protocol]的数据包。
 
+  [^oif-why]: 否则，你觉得在路由决策阶段，内核怎么可能知道数据包将要从哪个接口发出呢？
   [^port-protocol]: 其实还有 DCCP 和 SCTP 协议也支持端口号，但这两种协议较少使用，因此本文在此不做赘述。
 
 ### 源进源出 {#source-based-routing}
