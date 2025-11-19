@@ -1106,6 +1106,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        路由规则
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#ip-rule" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2687,6 +2698,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#routing-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        路由规则
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#ip-rule" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2836,6 +2858,7 @@
 <dt>throw</dt>
 <dd>
 <p>特殊的规则，表示跳出当前路由表，继续在后续的路由规则中查找匹配的规则（见下文「策略路由」部分）。</p>
+<p>如果一个路由表中不包含 <code>default</code> 路由，则隐含一个 <code>throw default</code> 规则。</p>
 </dd>
 <dt>blackhole / unreachable / prohibit</dt>
 <dd>
@@ -2853,7 +2876,55 @@
 <h2 id="policy-based-routing">策略路由<a class="headerlink" href="#policy-based-routing" title="Permanent link">&para;</a></h2>
 <p>单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
 一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「源进源出」的路由方式才能确保与客户端正常通信。
-<strong>策略路由</strong>（Policy-based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。</p>
+<strong>策略路由</strong>（Policy-Based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。</p>
+<h3 id="routing-rules">路由规则<a class="headerlink" href="#routing-rules" title="Permanent link">&para;</a></h3>
+<p>在 Linux 中，路由决策的过程分为两个阶段：</p>
+<ol>
+<li><strong>路由规则匹配</strong>：根据数据包的特征（如源地址、目的地址、TOS 等）在路由规则列表（Routing Policy DataBase，RPDB）中查找匹配的规则，确定使用哪个路由表；</li>
+<li>
+<p><strong>路由表查找</strong>：在选定的路由表中查找匹配的路由规则，决定数据包的去向。</p>
+<p>特别地，如果路由规则的类型为 <code>throw</code>，则跳出当前路由表，继续考察后续的路由规则。</p>
+</li>
+</ol>
+<p>路由规则存储在内核中的 RPDB，可以通过 <code>ip rule</code> 命令查看当前的路由规则列表。
+每条路由规则都有一个优先级（priority），数值越小优先级越高，默认情况下，内核会维护三条基本的路由规则（IPv6 为两条）：</p>
+<div class="highlight"><span class="filename">IPv4 默认路由规则</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>ip<span class="w"> </span>rule
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="m">32767</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>default
+</code></pre></div>
+<!-- `shell` language is required for rendering annotation: https://squidfunk.github.io/mkdocs-material/reference/code-blocks/#fn:1 -->
+<div class="highlight"><span class="filename">IPv6 默认路由规则</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>ip<span class="w"> </span>-6<span class="w"> </span>rule
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main<span class="w"> </span><span class="c1"># (1)!</span>
+</code></pre></div>
+<ol>
+<li>注意到，IPv6 默认没有指向 <code>default</code> 路由表的规则</li>
+</ol>
+<p>在内核中，每个路由表都有一个编号，默认的路由表编号如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">路由表</th>
+<th style="text-align: center;">编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">local</td>
+<td style="text-align: center;">255</td>
+</tr>
+<tr>
+<td style="text-align: center;">main</td>
+<td style="text-align: center;">254</td>
+</tr>
+<tr>
+<td style="text-align: center;">default</td>
+<td style="text-align: center;">253</td>
+</tr>
+</tbody>
+</table>
+<p>路由表的编号仅用于区分，不影响路由表的功能和优先级（优先级由路由规则决定）。</p>
 <h3 id="ip-rule"><code>ip rule</code> 命令<a class="headerlink" href="#ip-rule" title="Permanent link">&para;</a></h3>
 <!--
   Links to man pages
@@ -2918,7 +2989,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月16日 17:10:55 UTC">2025年11月16日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月19日 16:51:21 UTC">2025年11月19日</span>
   </span>
 
     
