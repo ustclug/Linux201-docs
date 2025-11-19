@@ -187,21 +187,22 @@ ip rule add from 192.0.2.0/24 table 100 pref 1000
 
 路由规则的匹配条件可以包含多个字段，常用的匹配条件包括：
 
-| 条件                                | 说明                                      |
-| ----------------------------------- | ----------------------------------------- |
-| from CIDR                           | 源地址（CIDR）                            |
-| to CIDR                             | 目的地址（CIDR）                          |
-| fwmark mark<br>fwmark mark/mask     | 防火墙标记（firewall mark），可以附带掩码 |
-| iif IFACE                           | 数据包的输入接口                          |
-| oif IFACE                           | 数据包的输出接口                          |
-| uidrange MIN-MAX                    | 进程的用户 ID 范围                        |
-| tos TOS                             | 服务类型（Type of Service）               |
-| ipproto PROTOCOL                    | IP 层内协议（如 `tcp`、`udp`、`icmp` 等） |
-| sport port<br>sport portmin-portmax | 源端口号或范围                            |
-| dport port<br>dport portmin-portmax | 目的端口号或范围                          |
+| 条件                                | 说明                                       |
+| ----------------------------------- | ------------------------------------------ |
+| from CIDR                           | 源地址（CIDR）                             |
+| to CIDR                             | 目的地址（CIDR）                           |
+| fwmark mark<br>fwmark mark/mask     | 防火墙标记（firewall mark），可以附带掩码  |
+| iif IFACE                           | 数据包的输入接口                           |
+| oif IFACE                           | 数据包的输出接口                           |
+| uidrange MIN-MAX                    | 进程的用户 ID 范围                         |
+| tos TOS                             | IP 数据包的服务类型（Type of Service）字段 |
+| ipproto PROTOCOL                    | IP 层内协议（如 `tcp`、`udp`、`icmp` 等）  |
+| sport port<br>sport portmin-portmax | 源端口号或范围                             |
+| dport port<br>dport portmin-portmax | 目的端口号或范围                           |
 
 其中：
 
+- from 条件既适用于本机发出的数据包（需要 socket 已经 `bind()` 到一个 IP 地址上），也适用于经过本机转发的数据包（此时数据包的源地址是已知的）。如果要匹配没有 `bind()` 的数据包，可以使用 `from 0.0.0.0` 或 `from ::`。特别注意这里的 `from 0.0.0.0` 等价于 `from 0.0.0.0/32`，而非 `from all` 或 `from 0.0.0.0/0`
 - fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 `MARK` 目标结合使用，实现更复杂的路由策略。
 - iif 条件匹配数据包的输入接口，其中由本机发出的数据包可以用 `iif lo` 匹配。
 - oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（`setsockopt(SO_BINDTODEVICE)`）[^oif-why]。
