@@ -144,7 +144,7 @@ $ ip -6 rule
 ip rule add from 192.0.2.0/24 table 100 pref 1000
 ```
 
-在以上命令中，`from 192.0.2.0/24` 指定了匹配条件，`table 100` 指定“动作”为进入路由表 100，`pref 1000` 指定该规则的优先级为 1000。
+在以上命令中，`from 192.0.2.0/24` 指定了匹配条件，`table 100` 指定“动作”为进入路由表 100，`pref 1000` 指定该规则的优先级。
 
 由于内核不保证相同优先级的规则的顺序，因此我们建议仅为逻辑上完全互斥的规则使用相同的优先级，避免出现非预期的行为。
 
@@ -182,6 +182,33 @@ ip rule add from 192.0.2.0/24 table 100 pref 1000
     ```
 
     systemd-networkd 内置了 `local`、`main` 和 `default` 三个路由表名称映射，无需在 `networkd.conf` 中重复定义。
+
+### 路由策略匹配规则 {#routing-policy-matching}
+
+路由规则的匹配条件可以包含多个字段，常用的匹配条件包括：
+
+| 条件                                | 说明                                      |
+| ----------------------------------- | ----------------------------------------- |
+| from CIDR                           | 源地址（CIDR）                            |
+| to CIDR                             | 目的地址（CIDR）                          |
+| fwmark mark<br>fwmark mark/mask     | 防火墙标记（firewall mark），可以附带掩码 |
+| iif IFACE                           | 数据包的输入接口                          |
+| oif IFACE                           | 数据包的输出接口                          |
+| uidrange MIN-MAX                    | 进程的用户 ID 范围                        |
+| tos TOS                             | 服务类型（Type of Service）               |
+| ipproto PROTOCOL                    | IP 层内协议（如 `tcp`、`udp`、`icmp` 等） |
+| sport port<br>sport portmin-portmax | 源端口号或范围                            |
+| dport port<br>dport portmin-portmax | 目的端口号或范围                          |
+
+其中：
+
+- fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 `MARK` 目标结合使用，实现更复杂的路由策略。
+- iif 条件匹配数据包的输入接口，其中由本机发出的数据包可以用 `iif lo` 匹配。
+- oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（`setsockopt(SO_BINDTODEVICE)`）。
+- uidrange 条件匹配发包进程的 UID，但只能用于本机发出的数据包。特别地，许多 Android VPN 软件使用该条件实现应用级别的访问控制，利用了 Android 系统中的每个应用都有一个独立的 UID 这一特性。
+- sport 和 dport 条件只能用于 TCP 和 UDP 协议[^port-protocol]的数据包。
+
+  [^port-protocol]: 其实还有 DCCP 和 SCTP 协议也支持端口号，但这两种协议较少使用，因此本文在此不做赘述。
 
 ### 源进源出 {#source-based-routing}
 
