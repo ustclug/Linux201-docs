@@ -1125,6 +1125,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="ip rule 命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-routing-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自定义路由表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-based-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        源进源出
+      
+    </span>
+  </a>
+  
 </li>
         
       </ul>
@@ -2717,6 +2745,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="ip rule 命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-routing-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自定义路由表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-based-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        源进源出
+      
+    </span>
+  </a>
+  
 </li>
         
       </ul>
@@ -2875,7 +2931,7 @@
 </code></pre></div>
 <h2 id="policy-based-routing">策略路由<a class="headerlink" href="#policy-based-routing" title="Permanent link">&para;</a></h2>
 <p>单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
-一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「源进源出」的路由方式才能确保与客户端正常通信。
+一个典型的场景是，同时接入多个网络的服务器在处理网络连接时，需要「<a href="#source-based-routing">源进源出</a>」的路由方式才能确保与客户端正常通信。
 <strong>策略路由</strong>（Policy-Based Routing，PBR）通过引入多个路由表和（不仅仅根据目的地址的）路由规则，实现了更灵活的路由控制。</p>
 <h3 id="routing-rules">路由规则<a class="headerlink" href="#routing-rules" title="Permanent link">&para;</a></h3>
 <p>在 Linux 中，路由决策的过程分为两个阶段：</p>
@@ -2887,7 +2943,7 @@
 </li>
 </ol>
 <p>路由规则存储在内核中的 RPDB，可以通过 <code>ip rule</code> 命令查看当前的路由规则列表。
-每条路由规则都有一个优先级（priority），数值越小优先级越高，默认情况下，内核会维护三条基本的路由规则（IPv6 为两条）：</p>
+每条路由规则都有一个优先级（preference / priority），数值越小优先级越高，默认情况下，内核会维护三条基本的路由规则（IPv6 为两条）：</p>
 <div class="highlight"><span class="filename">IPv4 默认路由规则</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>$<span class="w"> </span>ip<span class="w"> </span>rule
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main
@@ -2899,7 +2955,7 @@
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main<span class="w"> </span><span class="c1"># (1)!</span>
 </code></pre></div>
 <ol>
-<li>注意到，IPv6 默认没有指向 <code>default</code> 路由表的规则</li>
+<li>注意 IPv6 默认没有指向 <code>default</code> 路由表的规则</li>
 </ol>
 <p>在内核中，每个路由表都有一个编号，默认的路由表编号如下：</p>
 <table>
@@ -2926,6 +2982,59 @@
 </table>
 <p>路由表的编号仅用于区分，不影响路由表的功能和优先级（优先级由路由规则决定）。</p>
 <h3 id="ip-rule"><code>ip rule</code> 命令<a class="headerlink" href="#ip-rule" title="Permanent link">&para;</a></h3>
+<p><code>ip rule</code> 命令用于管理路由规则，其默认操作是显示当前的路由规则列表（等价于 <code>ip rule list</code>）。</p>
+<p>如果要增减路由规则，可以使用 <code>ip rule add</code> 和 <code>ip rule delete</code> 命令，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ip<span class="w"> </span>rule<span class="w"> </span>add<span class="w"> </span>from<span class="w"> </span><span class="m">192</span>.0.2.0/24<span class="w"> </span>table<span class="w"> </span><span class="m">100</span><span class="w"> </span>pref<span class="w"> </span><span class="m">1000</span>
+</code></pre></div>
+<p>在以上命令中，<code>from 192.0.2.0/24</code> 指定了匹配条件，<code>table 100</code> 指定“动作”为进入路由表 100，<code>pref 1000</code> 指定该规则的优先级为 1000。</p>
+<p>由于内核不保证相同优先级的规则的顺序，因此我们建议仅为逻辑上完全互斥的规则使用相同的优先级，避免出现非预期的行为。</p>
+<h4 id="custom-routing-tables">自定义路由表<a class="headerlink" href="#custom-routing-tables" title="Permanent link">&para;</a></h4>
+<p><code>ip</code> 命令允许使用任意编号（1～MAX_INT）的路由表，但为了便于管理，建议为自定义路由表指定一个名称，并在 <code>/etc/iproute2/rt_tables</code> 文件中添加对应的映射关系，例如：</p>
+<div class="highlight"><span class="filename">/etc/iproute2/rt_tables</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">#</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># reserved values</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1">#</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="m">255</span><span class="w">     </span><span class="nb">local</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="m">254</span><span class="w">     </span>main
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="m">253</span><span class="w">     </span>default
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="m">0</span><span class="w">       </span>unspec
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1">#</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># local</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1">#</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="m">100</span><span class="w">     </span>eth0
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="m">101</span><span class="w">     </span>eth1
+</code></pre></div>
+<p>你也可以在 <code>/etc/iproute2/rt_tables.d/</code> 目录中创建单独的文件来定义路由表名称映射，以避免与软件包管理的文件冲突。</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code>/etc/iproute2/rt_tables</code> 为 iproute2 工具（即 <code>ip</code> 命令）的配置文件，修改该文件不会影响内核的实际路由表编号，也不会影响其他路由工具（如 <code>route</code> 命令）的行为。</p>
+<p>例如，若要在 systemd-networkd 的配置文件中使用自定义路由表名，则需要在 <code>/etc/systemd/networkd.conf</code> 中添加 <code>RouteTable=</code> 配置项。该配置项需要 systemd 版本 ≥ 252。</p>
+<div class="highlight"><span class="filename">/etc/systemd/networkd.conf.d/custom.conf</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Network]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">RouteTable</span><span class="o">=</span><span class="s">eth0:100</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">RouteTable</span><span class="o">=</span><span class="s">eth1:101</span>
+</code></pre></div>
+<p>systemd-networkd 内置了 <code>local</code>、<code>main</code> 和 <code>default</code> 三个路由表名称映射，无需在 <code>networkd.conf</code> 中重复定义。</p>
+</div>
+<h3 id="source-based-routing">源进源出<a class="headerlink" href="#source-based-routing" title="Permanent link">&para;</a></h3>
+<p>一种常见的做法是，新增一条优先级非常高的规则指向 main 表，然后为每个接口指定一张专属路由表，实现本机流量的「源进源出」：</p>
+<div class="highlight"><span class="filename">ip rule</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="m">1</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main<span class="w"> </span>suppress_prefixlength<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="c1"># (1)!</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">192</span>.0.2.2<span class="w"> </span>lookup<span class="w"> </span>eth0
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">198</span>.51.100.2<span class="w"> </span>lookup<span class="w"> </span>eth1
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="m">32767</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>default
+</code></pre></div>
+<ol>
+<li><code>suppress_prefixlength 0</code> 表示抑制所有前缀长度不大于 0 的路由规则（即 <code>default</code> 路由），避免 main 表中 <code>default</code> 路由过早生效。</li>
+</ol>
+<p>此时在 <code>eth0</code> 和 <code>eth1</code> 两个路由表中指定各自的 <code>default</code> 路由，就能确保流量从对应的接口发出：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth0
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">default via 192.0.2.1 dev eth0</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth1
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">default via 198.51.100.1 dev eth1</span>
+</code></pre></div>
+<p>这对于具有多张网卡或接入了多个网络的服务器尤为重要，否则可能会导致客户端无法与服务器建立连接。</p>
+<p>该方法的一个局限性是，它只能为本机运行的服务（进程）提供「源进源出」的能力，无法满足通过本机转发的流量（如经过 NAT 的转发）的需求。
+这种需求需要结合使用防火墙对数据包的 mark、连接跟踪器（conntrack）的 connmark 标记和路由规则的 <code>fwmark</code> 匹配条件综合实现。</p>
 <!--
   Links to man pages
 
@@ -2989,7 +3098,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月19日 16:51:21 UTC">2025年11月19日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月19日 17:16:17 UTC">2025年11月19日</span>
   </span>
 
     
