@@ -3092,9 +3092,9 @@
 <ul>
 <li>fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 <code>MARK</code> 目标结合使用，实现更复杂的路由策略。</li>
 <li>iif 条件匹配数据包的输入接口，其中由本机发出的数据包可以用 <code>iif lo</code> 匹配。</li>
-<li>oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（<code>setsockopt(SO_BINDTODEVICE)</code>）。</li>
+<li>oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（<code>setsockopt(SO_BINDTODEVICE)</code>）<sup id="fnref:oif-why"><a class="footnote-ref" href="#fn:oif-why">3</a></sup>。</li>
 <li>uidrange 条件匹配发包进程的 UID，但只能用于本机发出的数据包。特别地，许多 Android VPN 软件使用该条件实现应用级别的访问控制，利用了 Android 系统中的每个应用都有一个独立的 UID 这一特性。</li>
-<li>sport 和 dport 条件只能用于 TCP 和 UDP 协议<sup id="fnref:port-protocol"><a class="footnote-ref" href="#fn:port-protocol">3</a></sup>的数据包。</li>
+<li>sport 和 dport 条件只能用于 TCP 和 UDP 协议<sup id="fnref:port-protocol"><a class="footnote-ref" href="#fn:port-protocol">4</a></sup>的数据包。</li>
 </ul>
 <h3 id="source-based-routing">源进源出<a class="headerlink" href="#source-based-routing" title="Permanent link">&para;</a></h3>
 <p>一种常见的做法是，新增一条优先级非常高的规则指向 main 表，然后为每个接口指定一张专属路由表，实现本机流量的「源进源出」：</p>
@@ -3158,8 +3158,11 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:via-zero">
 <p>事实上，若省略了 <code>via</code> 部分，<code>ip</code> 命令向内核传递路由规则时会将其设置为 <code>0.0.0.0</code>（IPv4）或 <code>::</code>（IPv6），这是系统接口的实现细节。如果你明确指定 <code>via 0.0.0.0</code>，会得到相同的效果。&#160;<a class="footnote-backref" href="#fnref:via-zero" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
+<li id="fn:oif-why">
+<p>否则，你觉得在路由决策阶段，内核怎么可能知道数据包将要从哪个接口发出呢？&#160;<a class="footnote-backref" href="#fnref:oif-why" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
 <li id="fn:port-protocol">
-<p>其实还有 DCCP 和 SCTP 协议也支持端口号，但这两种协议较少使用，因此本文在此不做赘述。&#160;<a class="footnote-backref" href="#fnref:port-protocol" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>其实还有 DCCP 和 SCTP 协议也支持端口号，但这两种协议较少使用，因此本文在此不做赘述。&#160;<a class="footnote-backref" href="#fnref:port-protocol" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3183,7 +3186,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月19日 17:40:33 UTC">2025年11月19日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月19日 17:43:00 UTC">2025年11月19日</span>
   </span>
 
     
