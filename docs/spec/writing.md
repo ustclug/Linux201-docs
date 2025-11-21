@@ -109,6 +109,10 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 
 建议 ID 只包含小写字母、数字和横线 `-`，必要时使用句点（不使用大写字母和其他标点符号）。
 
+### 图片规格 {#image-specs}
+
+如果你使用 [draw.io](https://draw.io) 绘制图片，请在「文件→属性」中设置缩放比为 200%，并导出为 SVG 格式。如果使用其他绘图工具，请确保导出的图片清晰可见，且文字大小适中。
+
 ### 为图片添加配字 {#image-caption}
 
 使用 [Python Markdown Extension](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/caption/) 的语法，在图片后面添加配字，格式如下：

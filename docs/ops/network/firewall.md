@@ -39,7 +39,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
 从主机的视角来看，数据包经过 Netfilter 的各个阶段的路径如下图所示：
 
-![Netfilter 阶段](../../images/netfilter-host-view.png)
+![Netfilter 阶段](../../images/netfilter-host-view.svg)
 
 /// caption
 从主机视角看 Netfilter 的各个阶段
@@ -135,7 +135,7 @@ raw
 
 若从 Netfilter 自己的视角，将网卡和本地进程（数据包的来源和接收者）都看作外部元素的话，各个阶段及其可用的表和处理顺序如下图所示：
 
-![Netfilter 阶段](../../images/netfilter-kernel-view-tables.png)
+![Netfilter 阶段](../../images/netfilter-kernel-view-tables.svg)
 
 /// caption
 从 Netfilter 自己的视角看各个阶段，以及每个阶段可用的表

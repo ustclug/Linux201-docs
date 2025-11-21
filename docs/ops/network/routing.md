@@ -32,7 +32,10 @@ Linux 的路由表数据结构为 [Trie][trie]（前缀树），可以高效地�
 ### `ip route` 命令 {#ip-route}
 
 `ip route` 命令是管理路由表的主要工具，其默认操作是显示当前的路由表，等价于 `ip route show table main`。
-如果要增加或替换一条路由规则，可以使用 `ip route add` 或 `ip route replace` 命令，例如：
+
+#### 增、删、改 {#ip-route-manip}
+
+如果要**增加或替换**一条路由规则，可以使用 `ip route add` 或 `ip route replace` 命令，例如：
 
 ```shell
 ip route add 198.51.100.0/24 via 192.0.2.2 dev eth0
@@ -52,6 +55,15 @@ ip route add 192.0.2.0/24 dev eth0
   [^via-zero]: 事实上，若省略了 `via` 部分，`ip` 命令向内核传递路由规则时会将其设置为 `0.0.0.0`（IPv4）或 `::`（IPv6），这是系统接口的实现细节。如果你明确指定 `via 0.0.0.0`，会得到相同的效果。
 
 对于没有链路层的接口（如 WireGuard 接口、其他三层隧道接口和 TUN 设备等），`via` 部分没有意义，即使指定了也不会产生任何影响。
+
+如果要**删除**一条路由规则，可以使用 `ip route delete` 命令。
+与增加和修改的命令不同，由于每条路由由其 CIDR 唯一确定，因此只需要指定该 CIDR 即可删除路由。
+
+```shell
+ip route delete 192.0.2.0/24
+```
+
+#### 查 {#ip-route-show}
 
 ### 路由类型 {#route-types}
 
@@ -203,11 +215,17 @@ ip rule add from 192.0.2.0/24 table 100 pref 1000
 
 其中：
 
-- from 条件既适用于本机发出的数据包（需要 socket 已经 `bind()` 到一个 IP 地址上），也适用于经过本机转发的数据包（此时数据包的源地址是已知的）。如果要匹配没有 `bind()` 的数据包，可以使用 `from 0.0.0.0` 或 `from ::`。特别注意这里的 `from 0.0.0.0` 等价于 `from 0.0.0.0/32`，而非 `from all` 或 `from 0.0.0.0/0`
+- from 条件既适用于本机发出的数据包（需要 socket 已经 `bind()` 到一个 IP 地址上），也适用于经过本机转发的数据包（此时数据包的源地址是已知的）。
+
+    如果要匹配没有 `bind()` 的数据包，可以使用 `from 0.0.0.0` 或 `from ::`。特别注意这里的 `from 0.0.0.0` 等价于 `from 0.0.0.0/32`，而非 `from all` 或 `from 0.0.0.0/0`。
+
 - fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 `MARK` 目标结合使用，实现更复杂的路由策略。
 - iif 条件匹配数据包的输入接口，其中由本机发出的数据包可以用 `iif lo` 匹配。
 - oif 条件匹配数据包的输出接口，只适用于本机发出的包，对应的 socket 已经绑定到该接口（`setsockopt(SO_BINDTODEVICE)`）[^oif-why]。
-- uidrange 条件匹配发包进程的 UID，但只能用于本机发出的数据包。特别地，许多 Android VPN 软件使用该条件实现应用级别的访问控制，利用了 Android 系统中的每个应用都有一个独立的 UID 这一特性。
+- uidrange 条件匹配发包进程的 UID，但只适用于本机发出的数据包。
+
+    特别地，许多 Android VPN 软件使用该条件实现应用级别的访问控制，利用了 Android 系统中的每个应用都有一个独立的 UID 这一特性。
+
 - sport 和 dport 条件只能用于 TCP 和 UDP 协议[^port-protocol]的数据包。
 
   [^oif-why]: 否则，你觉得在路由决策阶段，内核怎么可能知道数据包将要从哪个接口发出呢？
