@@ -1,3 +1,7 @@
+---
+icon: material/information-outline
+---
+
 # 基础知识简介
 
 !!! warning "本文编写中"
