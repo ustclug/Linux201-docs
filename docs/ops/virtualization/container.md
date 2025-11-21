@@ -303,7 +303,7 @@ $ getcap /usr/bin/ping
 
 ??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？"
 
-    Linux 内核支持设置 [`net.ipv4.ping_group_range`][icmp.7]（这个选项也[控制 IPv6 下对应行为](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67)），指定哪些用户组可以对外发送 ICMP Echo，相比 capabilities 更加细化：
+    Linux 内核支持设置 [`net.ipv4.ping_group_range`][icmp.7]（这个选项也[控制 IPv6 下对应行为](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67)），指定哪些用户组可以不依赖 capabilities 而对外发送 ICMP Echo Request，相比 capabilities 更加细化，且不再局限于具体的程序：
 
     ```console
     $ sysctl net.ipv4.ping_group_range
@@ -335,7 +335,7 @@ Ambient set =
 
     理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 `mount`，都依赖于 `CAP_SYS_ADMIN` 这一能力。这就导致了 `CAP_SYS_ADMIN` 成为事实上的 "the new root"。
 
-    可阅读 [lwn.net 的相关文章](https://lwn.net/Articles/486306/) 了解更多。
+    可阅读 [LWN.net 的相关文章](https://lwn.net/Articles/486306/) 了解更多。
 
 除了以上提到的安全技术外，例如 Docker 等容器还会使用如 AppArmor、SELinux 等 MAC（Mandatory Access Control）机制进一步限制容器权限。这一部分会在[高级内容的「DAC 与 MAC」部分](../../advanced/dac-mac.md)进一步介绍。
 
