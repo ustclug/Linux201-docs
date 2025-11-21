@@ -1110,10 +1110,22 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#iptables-operations" class="md-nav__link">
+  <a href="#iptables-cmdline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        iptables 操作
+        iptables 命令
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="iptables 命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iptables-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        链操作
       
     </span>
   </a>
@@ -1121,13 +1133,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#iptables-rules" class="md-nav__link">
+  <a href="#iptables-match" class="md-nav__link">
     <span class="md-ellipsis">
       
-        iptables 规则
+        规则匹配条件
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1136,6 +1153,17 @@
     <span class="md-ellipsis">
       
         iptables 表
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iptables-save" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iptables-save
       
     </span>
   </a>
@@ -2666,10 +2694,22 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#iptables-operations" class="md-nav__link">
+  <a href="#iptables-cmdline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        iptables 操作
+        iptables 命令
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="iptables 命令">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iptables-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        链操作
       
     </span>
   </a>
@@ -2677,13 +2717,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#iptables-rules" class="md-nav__link">
+  <a href="#iptables-match" class="md-nav__link">
     <span class="md-ellipsis">
       
-        iptables 规则
+        规则匹配条件
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2692,6 +2737,17 @@
     <span class="md-ellipsis">
       
         iptables 表
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#iptables-save" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        iptables-save
       
     </span>
   </a>
@@ -2844,23 +2900,58 @@
 <p>在上图中，ROUTE 指<a href="../routing/">路由决策</a>。</p>
 <p>需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于图片结果简化的考虑。
 这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 <code>localhost</code> 或 <code>127.0.0.1</code> 访问本机服务。</p>
+<div class="admonition question">
+<p class="admonition-title">路由决策与 Reroute check 是什么关系？</p>
+<p>可能有部分读者见过 Wikipedia 的这张著名的 <a href="https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg">Netfilter packet flow</a>：</p>
+<p id="wikipedia-netfilter-packet-flow"><img alt="Netfilter flow chart" src="https://upload.wikimedia.org/wikipedia/commons/3/37/Netfilter-packet-flow.svg" /></p>
+<p>它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check。
+事实上 Wikipedia 的图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）。
+本文在介绍 iptables 的表时绘制了 <a href="#netfilter-kernel-view-tables">Netfilter 视角的阶段图</a>，能够更直观地反映出此「相似性」。</p>
+</div>
 <h2 id="iptables">iptables<a class="headerlink" href="#iptables" title="Permanent link">&para;</a></h2>
 <p>iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
 iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。</p>
-<h3 id="iptables-operations">iptables 操作<a class="headerlink" href="#iptables-operations" title="Permanent link">&para;</a></h3>
-<h3 id="iptables-rules">iptables 规则<a class="headerlink" href="#iptables-rules" title="Permanent link">&para;</a></h3>
+<p>操作 IPv4 防火墙规则时使用 <code>iptables</code> 命令，操作 IPv6 防火墙规则时使用 <code>ip6tables</code> 命令。除此之外，两者的用法完全相同。</p>
+<h3 id="iptables-cmdline">iptables 命令<a class="headerlink" href="#iptables-cmdline" title="Permanent link">&para;</a></h3>
 <p>iptables 使用 GNU <code>getopt_long</code> 风格的命令行参数，即以短横线 <code>-</code> 开头的单字符选项和以双短横线 <code>--</code> 开头的长选项。</p>
 <p>每一条 iptables 命令及其所有参数构成一条规则，规则的基本结构如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>iptables<span class="w"> </span><span class="o">[</span>全局选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>表名<span class="o">]</span><span class="w"> </span>链操作<span class="w"> </span>规则匹配条件<span class="w"> </span>目标
 </code></pre></div>
+<p>其中 <code>-t</code> 也是全局选项之一，用于指定要操作的表。若省略 <code>-t</code>，则默认该命令操作 filter 表。</p>
+<h4 id="iptables-commands">链操作<a class="headerlink" href="#iptables-commands" title="Permanent link">&para;</a></h4>
+<p>对 iptables 链的操作类似增删改查，常用的操作有以下几种：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>链名<span class="w"> </span>...<span class="w"> </span><span class="c1"># 追加规则到链尾</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>iptables<span class="w"> </span>-I<span class="w"> </span>链名<span class="w"> </span><span class="o">[</span>位置<span class="o">]</span><span class="w"> </span>...<span class="w"> </span><span class="c1"># 插入规则到指定位置（默认位置为链头）</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>iptables<span class="w"> </span>-D<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span><span class="c1"># 删除指定规则</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>iptables<span class="w"> </span>-R<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span>...<span class="w"> </span><span class="c1"># 替换指定规则</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>iptables<span class="w"> </span>-L<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 列出指定链的所有规则</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>iptables<span class="w"> </span>-S<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 以命令行格式列出指定链的所有规则</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>iptables<span class="w"> </span>-P<span class="w"> </span>链名<span class="w"> </span>目标<span class="w"> </span><span class="c1"># 设置链的默认策略</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>iptables<span class="w"> </span>-F<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 清空指定链的所有规则</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>iptables<span class="w"> </span>-Z<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 将指定链的所有规则的计数器归零</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>iptables<span class="w"> </span>-N<span class="w"> </span>链名<span class="w"> </span><span class="c1"># 新增一条用户自定义链</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>iptables<span class="w"> </span>-X<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 删除一条用户自定义链</span>
+</code></pre></div>
+<p>例如，要将 iptables 的 filter 表恢复到初始状态，可以执行以下命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>iptables<span class="w"> </span>-F
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>iptables<span class="w"> </span>-X
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>iptables<span class="w"> </span>-Z
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>iptables<span class="w"> </span>-P<span class="w"> </span>INPUT<span class="w"> </span>ACCEPT
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>ACCEPT
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>iptables<span class="w"> </span>-P<span class="w"> </span>OUTPUT<span class="w"> </span>ACCEPT
+</code></pre></div>
+<p>注意到 <code>-L</code>, <code>-S</code>, <code>-F</code>, <code>-X</code>, <code>-Z</code> 这些命令都可以省略链名参数，表示对所有链进行操作。</p>
+<h4 id="iptables-match">规则匹配条件<a class="headerlink" href="#iptables-match" title="Permanent link">&para;</a></h4>
 <p>在「规则匹配条件」部分，可以使用多种匹配模块来指定数据包的特征，如源地址、目的地址、协议类型、端口号等。
 匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。
 以科大镜像站上用于限制 80 / 443 端口并发连接数的规则为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
 </code></pre></div>
 <p>这条命令的理解方式如下：</p>
 <ul>
@@ -2878,6 +2969,43 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <li><code>-j REJECT --reject-with tcp-reset</code>：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。</li>
 </ul>
 <p>iptables 规则的目标（<code>-j</code> 参数）可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理），从而实现复杂的防火墙逻辑。</p>
+<p>由于 Netfilter 的结构和设计考虑，<code>-i</code>（输入接口）和 <code>-o</code>（输出接口）这两个匹配选项在不同阶段的可用性有所不同：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">阶段</th>
+<th style="text-align: center;">可以使用 <code>-i</code></th>
+<th style="text-align: center;">可以使用 <code>-o</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">PREROUTING</td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
+<td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
+</tr>
+<tr>
+<td style="text-align: center;">INPUT</td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
+<td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
+</tr>
+<tr>
+<td style="text-align: center;">FORWARD</td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
+</tr>
+<tr>
+<td style="text-align: center;">OUTPUT</td>
+<td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span><sup id="fnref:output-oif"><a class="footnote-ref" href="#fn:output-oif">1</a></sup></td>
+</tr>
+<tr>
+<td style="text-align: center;">POSTROUTING</td>
+<td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span></td>
+</tr>
+</tbody>
+</table>
 <p>完整的 iptables 规则语法和选项可以参考 <a href="https://www.man7.org/linux/man-pages/man8/iptables.8.html">iptables(8)</a> 和 <a href="https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html">iptables-extensions(8)</a> 手册页。</p>
 <h3 id="iptables-tables">iptables 表<a class="headerlink" href="#iptables-tables" title="Permanent link">&para;</a></h3>
 <p>iptables 的主要表类型有以下几种：</p>
@@ -2952,14 +3080,15 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </tr>
 </tbody>
 </table>
-<p>在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。</p>
+<p>在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。该顺序定义在 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30"><code>enum nf_ip_hook_priorities</code></a> 中。</p>
 <p>若从 Netfilter 自己的视角，将网卡和本地进程（数据包的来源和接收者）都看作外部元素的话，各个阶段及其可用的表和处理顺序如下图所示：</p>
 <figure>
-<p><img alt="Netfilter 阶段" src="../../../images/netfilter-kernel-view-tables.svg" /></p>
+<p id="netfilter-kernel-view-tables"><img alt="Netfilter 阶段" src="../../../images/netfilter-kernel-view-tables.svg" /></p>
 <figcaption>
 <p>从 Netfilter 自己的视角看各个阶段，以及每个阶段可用的表</p>
 </figcaption>
 </figure>
+<h3 id="iptables-save">iptables-save<a class="headerlink" href="#iptables-save" title="Permanent link">&para;</a></h3>
 <h2 id="nftables">nftables<a class="headerlink" href="#nftables" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
@@ -2993,6 +3122,15 @@ Do not link to a "generic" man page for these commands -->
 
 <!-- markdownlint-disable-file MD041 MD053 -->
 
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:output-oif">
+<p>还记得<a href="#wikipedia-netfilter-packet-flow">上文</a>为什么说 Wikipedia 的图更准确吗？&#160;<a class="footnote-backref" href="#fnref:output-oif" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
 
 
 
@@ -3012,7 +3150,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月21日 16:39:08 UTC">2025年11月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月21日 18:37:58 UTC">2025年11月21日</span>
   </span>
 
     
