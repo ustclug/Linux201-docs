@@ -50,14 +50,25 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于图片结果简化的考虑。
 这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 `localhost` 或 `127.0.0.1` 访问本机服务。
 
+!!! question "路由决策与 Reroute check 是什么关系？"
+
+    可能有部分读者见过 Wikipedia 的这张著名的 [Netfilter packet flow](https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg)：
+
+    ![Netfilter flow chart](https://upload.wikimedia.org/wikipedia/commons/3/37/Netfilter-packet-flow.svg)
+    {#wikipedia-netfilter-packet-flow}
+
+    它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check。
+    事实上 Wikipedia 的图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）。
+    本文在介绍 iptables 的表时绘制了 [Netfilter 视角的阶段图](#netfilter-kernel-view-tables)，能够更直观地反映出此「相似性」。
+
 ## iptables {#iptables}
 
 iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
 iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。
 
-### iptables 操作 {#iptables-operations}
+操作 IPv4 防火墙规则时使用 `iptables` 命令，操作 IPv6 防火墙规则时使用 `ip6tables` 命令。除此之外，两者的用法完全相同。
 
-### iptables 规则 {#iptables-rules}
+### iptables 命令 {#iptables-cmdline}
 
 iptables 使用 GNU `getopt_long` 风格的命令行参数，即以短横线 `-` 开头的单字符选项和以双短横线 `--` 开头的长选项。
 
@@ -66,6 +77,43 @@ iptables 使用 GNU `getopt_long` 风格的命令行参数，即以短横线 `-`
 ```shell
 iptables [全局选项] [-t 表名] 链操作 规则匹配条件 目标
 ```
+
+其中 `-t` 也是全局选项之一，用于指定要操作的表。若省略 `-t`，则默认该命令操作 filter 表。
+
+#### 链操作 {#iptables-commands}
+
+对 iptables 链的操作类似增删改查，常用的操作有以下几种：
+
+```shell
+iptables -A 链名 ... # 追加规则到链尾
+iptables -I 链名 [位置] ... # 插入规则到指定位置（默认位置为链头）
+iptables -D 链名 序号 # 删除指定规则
+iptables -R 链名 序号 ... # 替换指定规则
+iptables -L [链名] # 列出指定链的所有规则
+iptables -S [链名] # 以命令行格式列出指定链的所有规则
+
+iptables -P 链名 目标 # 设置链的默认策略
+iptables -F [链名] # 清空指定链的所有规则
+iptables -Z [链名] # 将指定链的所有规则的计数器归零
+
+iptables -N 链名 # 新增一条用户自定义链
+iptables -X [链名] # 删除一条用户自定义链
+```
+
+例如，要将 iptables 的 filter 表恢复到初始状态，可以执行以下命令：
+
+```shell
+iptables -F
+iptables -X
+iptables -Z
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+```
+
+注意到 `-L`, `-S`, `-F`, `-X`, `-Z` 这些命令都可以省略链名参数，表示对所有链进行操作。
+
+#### 规则匹配条件 {#iptables-match}
 
 在「规则匹配条件」部分，可以使用多种匹配模块来指定数据包的特征，如源地址、目的地址、协议类型、端口号等。
 匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。
@@ -91,6 +139,18 @@ iptables -A LIMIT \
 - `-j REJECT --reject-with tcp-reset`：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。
 
 iptables 规则的目标（`-j` 参数）可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理），从而实现复杂的防火墙逻辑。
+
+由于 Netfilter 的结构和设计考虑，`-i`（输入接口）和 `-o`（输出接口）这两个匹配选项在不同阶段的可用性有所不同：
+
+|    阶段     |              可以使用 `-i`               |                     可以使用 `-o`                     |
+| :---------: | :--------------------------------------: | :---------------------------------------------------: |
+| PREROUTING  | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
+|    INPUT    | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
+|   FORWARD   | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-check:{: .limegreen }        |
+|   OUTPUT    | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen }[^output-oif] |
+| POSTROUTING | :fontawesome-solid-xmark:{: .orangered } |       :fontawesome-solid-check:{: .limegreen }        |
+
+  [^output-oif]: 还记得[上文](#wikipedia-netfilter-packet-flow)为什么说 Wikipedia 的图更准确吗？
 
 完整的 iptables 规则语法和选项可以参考 [iptables(8)][iptables.8] 和 [iptables-extensions(8)][iptables-extensions.8] 手册页。
 
@@ -131,14 +191,17 @@ raw
 |   OUTPUT    | :fontawesome-solid-check:{: .limegreen } | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
 | POSTROUTING |                                          | SNAT only | :fontawesome-solid-check:{: .limegreen } |                                          |
 
-在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。
+在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。该顺序定义在 [`enum nf_ip_hook_priorities`](https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30) 中。
 
 若从 Netfilter 自己的视角，将网卡和本地进程（数据包的来源和接收者）都看作外部元素的话，各个阶段及其可用的表和处理顺序如下图所示：
 
 ![Netfilter 阶段](../../images/netfilter-kernel-view-tables.svg)
+{#netfilter-kernel-view-tables}
 
 /// caption
 从 Netfilter 自己的视角看各个阶段，以及每个阶段可用的表
 ///
+
+### iptables-save {#iptables-save}
 
 ## nftables {#nftables}
