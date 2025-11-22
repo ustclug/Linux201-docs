@@ -1119,7 +1119,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#more-routing-tables" class="md-nav__link">
+  <a href="#custom-routing-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
         自定义路由表
@@ -1178,6 +1178,23 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routing-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        路由案例
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="路由案例">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#source-based-routing" class="md-nav__link">
@@ -2772,7 +2789,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#more-routing-tables" class="md-nav__link">
+  <a href="#custom-routing-tables" class="md-nav__link">
     <span class="md-ellipsis">
       
         自定义路由表
@@ -2831,6 +2848,23 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#routing-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        路由案例
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="路由案例">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#source-based-routing" class="md-nav__link">
@@ -3003,7 +3037,7 @@
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">local 192.0.2.1 dev eth0 proto kernel scope host src 192.0.2.1</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="go">broadcast 192.0.2.255 dev eth0 proto kernel scope link src 192.0.2.1</span>
 </code></pre></div>
-<h3 id="more-routing-tables">自定义路由表<a class="headerlink" href="#more-routing-tables" title="Permanent link">&para;</a></h3>
+<h3 id="custom-routing-tables">自定义路由表<a class="headerlink" href="#custom-routing-tables" title="Permanent link">&para;</a></h3>
 <p>内核中有多张路由表，以编号区别，默认的路由表有三张：</p>
 <table>
 <thead>
@@ -3027,7 +3061,8 @@
 </tr>
 </tbody>
 </table>
-<p>其中 local 表和 main 表会由内核自动维护一些规则（如上一段所述），如本地路由等。其余路由表则需要用户手动管理。</p>
+<p>路由表的编号仅用于区分，不影响路由表的功能和优先级（优先级由路由规则决定）。
+其中 local 表和 main 表会由内核自动维护一些规则（如上一段所述），如本地路由等。其余的路由表则需要用户手动管理。</p>
 <p>在下文的「策略路由」部分，由于单一的路由表功能非常有限，自定义更多的路由表是实现复杂路由策略的基础。</p>
 <p><code>ip</code> 命令允许使用任意编号（1～MAX_INT）的路由表，但为了便于管理，建议为自定义路由表指定一个名称，并在 <code>/etc/iproute2/rt_tables</code> 文件中添加对应的映射关系，例如：</p>
 <div class="highlight"><span class="filename">/etc/iproute2/rt_tables</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">#</span>
@@ -3083,30 +3118,6 @@
 <ol>
 <li>IPv6 的默认路由规则不包括 <code>default</code> 路由表，尽管你可以手动添加该规则。</li>
 </ol>
-<p>在内核中，每个路由表都有一个编号，默认的路由表编号如下：</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: center;">路由表</th>
-<th style="text-align: center;">编号</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: center;">local</td>
-<td style="text-align: center;">255</td>
-</tr>
-<tr>
-<td style="text-align: center;">main</td>
-<td style="text-align: center;">254</td>
-</tr>
-<tr>
-<td style="text-align: center;">default</td>
-<td style="text-align: center;">253</td>
-</tr>
-</tbody>
-</table>
-<p>路由表的编号仅用于区分，不影响路由表的功能和优先级（优先级由路由规则决定）。</p>
 <h3 id="ip-rule"><code>ip rule</code> 命令<a class="headerlink" href="#ip-rule" title="Permanent link">&para;</a></h3>
 <p><code>ip rule</code> 命令用于管理路由规则，其默认操作是显示当前的路由规则列表（等价于 <code>ip rule list</code>）。</p>
 <p>如果要增减路由规则，可以使用 <code>ip rule add</code> 和 <code>ip rule delete</code> 命令，例如：</p>
@@ -3114,6 +3125,13 @@
 </code></pre></div>
 <p>在以上命令中，<code>from 192.0.2.0/24</code> 指定了匹配条件，<code>table 100</code> 指定“动作”为进入路由表 100，<code>pref 1000</code> 指定该规则的优先级。</p>
 <p>由于内核不保证相同优先级的规则之间的顺序，因此我们建议仅为逻辑上完全互斥的规则使用相同的优先级，避免出现非预期的行为。</p>
+<p>此时你可以在路由规则列表中看到新添加的规则：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>ip<span class="w"> </span>rule
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">[...]</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">1000:   from 192.0.2.0/24 lookup eth0</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">[...]</span>
+</code></pre></div>
+<p>如果你在<a href="#custom-routing-tables">前文</a>中为路由表 100 定义了名称映射（如 <code>eth0</code>），<code>ip rule</code> 命令就会显示该名称，便于识别。</p>
 <h3 id="routing-policy-matching">路由策略匹配规则<a class="headerlink" href="#routing-policy-matching" title="Permanent link">&para;</a></h3>
 <p>路由规则的匹配条件可以包含多个字段，常用的匹配条件包括：</p>
 <table>
@@ -3170,7 +3188,7 @@
 <ul>
 <li>
 <p>from 条件既适用于本机发出的数据包（需要 socket 已经 <code>bind()</code> 到一个 IP 地址上），也适用于经过本机转发的数据包（此时数据包的源地址是已知的）。</p>
-<p>如果要匹配没有 <code>bind()</code> 的数据包，可以使用 <code>from 0.0.0.0</code> 或 <code>from ::</code>。特别注意这里的 <code>from 0.0.0.0</code> 等价于 <code>from 0.0.0.0/32</code>，而非 <code>from all</code> 或 <code>from 0.0.0.0/0</code>。</p>
+<p>如果要匹配没有 <code>bind()</code> 的数据包，可以使用 <code>from 0.0.0.0</code> 或 <code>from ::</code>（即零地址，注意不是前缀为零的 CIDR）。</p>
 </li>
 <li>
 <p>fwmark 条件匹配防火墙的数据包标记，通常与 Netfilter 的 <code>MARK</code> 目标结合使用，实现更复杂的路由策略。</p>
@@ -3185,23 +3203,24 @@
 <p>sport 和 dport 条件只能用于 TCP 和 UDP 协议<sup id="fnref:port-protocol"><a class="footnote-ref" href="#fn:port-protocol">4</a></sup>的数据包。</p>
 </li>
 </ul>
+<h2 id="routing-examples">路由案例<a class="headerlink" href="#routing-examples" title="Permanent link">&para;</a></h2>
 <h3 id="source-based-routing">源进源出<a class="headerlink" href="#source-based-routing" title="Permanent link">&para;</a></h3>
 <p>一种常见的做法是，新增一条优先级非常高的规则指向 main 表，然后为每个接口指定一张专属路由表，实现本机流量的「源进源出」：</p>
-<div class="highlight"><span class="filename">ip rule</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="m">1</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main<span class="w"> </span>suppress_prefixlength<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="c1"># (1)!</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">192</span>.0.2.2<span class="w"> </span>lookup<span class="w"> </span>eth0
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">198</span>.51.100.2<span class="w"> </span>lookup<span class="w"> </span>eth1
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="m">32767</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>default
+<div class="highlight"><span class="filename">ip rule</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="m">0</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span><span class="nb">local</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="m">1</span>:<span class="w">      </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main<span class="w"> </span>suppress_prefixlength<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="c1"># (1)!</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">192</span>.0.2.2<span class="w"> </span>lookup<span class="w"> </span>eth0
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="m">3</span>:<span class="w">      </span>from<span class="w"> </span><span class="m">198</span>.51.100.2<span class="w"> </span>lookup<span class="w"> </span>eth1
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="m">32766</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>main
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="m">32767</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>default
 </code></pre></div>
 <ol>
 <li><code>suppress_prefixlength 0</code> 表示抑制所有前缀长度不大于 0 的路由规则（即 <code>default</code> 路由），避免 main 表中 <code>default</code> 路由过早生效。</li>
 </ol>
 <p>此时在 <code>eth0</code> 和 <code>eth1</code> 两个路由表中指定各自的 <code>default</code> 路由，就能确保流量从对应的接口发出：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth0
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">default via 192.0.2.1 dev eth0</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth1
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">default via 198.51.100.1 dev eth1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth0
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">default via 192.0.2.1 dev eth0</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth1
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">default via 198.51.100.1 dev eth1</span>
 </code></pre></div>
 <p>这对于具有多张网卡或接入了多个网络的服务器尤为重要，否则可能会导致客户端无法与服务器建立连接。</p>
 <p>该方法的一个局限性是，它只能为本机运行的服务（进程）提供「源进源出」的能力，无法满足通过本机转发的流量（如经过 NAT 的转发）的需求。
@@ -3230,6 +3249,7 @@
 
 <!-- Note: Debian man pages for useradd(8)/userdel(8) mentions the "low-level" feature and recommends adduser(8)/deluser(8) instead. 
 Do not link to a "generic" man page for these commands -->
+<!-- None of Debian, man7.org or linux.die.net provides conntrack(8), weird -->
 <!--
   Links to author URLs (usually GitHub profiles)
 
@@ -3275,35 +3295,12 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月22日 05:29:41 UTC">2025年11月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月22日 18:07:44 UTC">2025年11月22日</span>
   </span>
 
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
@@ -3318,6 +3315,8 @@ Do not link to a "generic" man page for these commands -->
             </div>
           
           
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
@@ -3387,7 +3386,7 @@ Do not link to a "generic" man page for these commands -->
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
       <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
