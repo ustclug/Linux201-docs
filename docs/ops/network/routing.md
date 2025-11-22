@@ -102,6 +102,53 @@ local 192.0.2.1 dev eth0 proto kernel scope host src 192.0.2.1
 broadcast 192.0.2.255 dev eth0 proto kernel scope link src 192.0.2.1
 ```
 
+### 自定义路由表 {#more-routing-tables}
+
+内核中有多张路由表，以编号区别，默认的路由表有三张：
+
+| 路由表  | 编号  |
+| :-----: | :---: |
+|  local  |  255  |
+|  main   |  254  |
+| default |  253  |
+
+其中 local 表和 main 表会由内核自动维护一些规则（如上一段所述），如本地路由等。其余路由表则需要用户手动管理。
+
+在下文的「策略路由」部分，由于单一的路由表功能非常有限，自定义更多的路由表是实现复杂路由策略的基础。
+
+`ip` 命令允许使用任意编号（1～MAX_INT）的路由表，但为了便于管理，建议为自定义路由表指定一个名称，并在 `/etc/iproute2/rt_tables` 文件中添加对应的映射关系，例如：
+
+```shell title="/etc/iproute2/rt_tables"
+#
+# reserved values
+#
+255     local
+254     main
+253     default
+0       unspec
+#
+# local
+#
+100     eth0
+101     eth1
+```
+
+你也可以在 `/etc/iproute2/rt_tables.d/` 目录中创建单独的文件来定义路由表名称映射，以避免与软件包管理的文件冲突。
+
+!!! warning
+
+    `/etc/iproute2/rt_tables` 为 iproute2 工具（即 `ip` 命令）的配置文件，修改该文件不会影响内核的实际路由表编号，也不会影响其他路由工具（如 `route` 命令）的行为。
+
+    例如，若要在 systemd-networkd 的配置文件中使用自定义路由表名，则需要在 `/etc/systemd/networkd.conf` 中添加 `RouteTable=` 配置项。该配置项需要 systemd 版本 ≥ 252。
+
+    ```ini title="/etc/systemd/networkd.conf.d/custom.conf"
+    [Network]
+    RouteTable=eth0:100
+    RouteTable=eth1:101
+    ```
+
+    systemd-networkd 内置了 `local`、`main` 和 `default` 三个路由表名称映射，无需在 `networkd.conf` 中重复定义。
+
 ## 策略路由 {#policy-based-routing}
 
 单一的路由表只能根据数据包的目的地址来决定去向，无法满足更复杂的路由需求。
@@ -160,41 +207,6 @@ ip rule add from 192.0.2.0/24 table 100 pref 1000
 在以上命令中，`from 192.0.2.0/24` 指定了匹配条件，`table 100` 指定“动作”为进入路由表 100，`pref 1000` 指定该规则的优先级。
 
 由于内核不保证相同优先级的规则之间的顺序，因此我们建议仅为逻辑上完全互斥的规则使用相同的优先级，避免出现非预期的行为。
-
-#### 自定义路由表 {#custom-routing-tables}
-
-`ip` 命令允许使用任意编号（1～MAX_INT）的路由表，但为了便于管理，建议为自定义路由表指定一个名称，并在 `/etc/iproute2/rt_tables` 文件中添加对应的映射关系，例如：
-
-```shell title="/etc/iproute2/rt_tables"
-#
-# reserved values
-#
-255     local
-254     main
-253     default
-0       unspec
-#
-# local
-#
-100     eth0
-101     eth1
-```
-
-你也可以在 `/etc/iproute2/rt_tables.d/` 目录中创建单独的文件来定义路由表名称映射，以避免与软件包管理的文件冲突。
-
-!!! warning
-
-    `/etc/iproute2/rt_tables` 为 iproute2 工具（即 `ip` 命令）的配置文件，修改该文件不会影响内核的实际路由表编号，也不会影响其他路由工具（如 `route` 命令）的行为。
-
-    例如，若要在 systemd-networkd 的配置文件中使用自定义路由表名，则需要在 `/etc/systemd/networkd.conf` 中添加 `RouteTable=` 配置项。该配置项需要 systemd 版本 ≥ 252。
-
-    ```ini title="/etc/systemd/networkd.conf.d/custom.conf"
-    [Network]
-    RouteTable=eth0:100
-    RouteTable=eth1:101
-    ```
-
-    systemd-networkd 内置了 `local`、`main` 和 `default` 三个路由表名称映射，无需在 `networkd.conf` 中重复定义。
 
 ### 路由策略匹配规则 {#routing-policy-matching}
 
