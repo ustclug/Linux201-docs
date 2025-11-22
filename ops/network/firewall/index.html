@@ -1143,6 +1143,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#iptables-jump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动作
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2727,6 +2738,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#iptables-jump" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        动作
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2943,32 +2965,30 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>iptables<span class="w"> </span>-P<span class="w"> </span>OUTPUT<span class="w"> </span>ACCEPT
 </code></pre></div>
 <p>注意到 <code>-L</code>, <code>-S</code>, <code>-F</code>, <code>-X</code>, <code>-Z</code> 这些命令都可以省略链名参数，表示对所有链进行操作。</p>
+<p>完整的 iptables 规则语法和选项可以参考 <a href="https://www.man7.org/linux/man-pages/man8/iptables.8.html">iptables(8)</a> 和 <a href="https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html">iptables-extensions(8)</a> 手册页。</p>
 <h4 id="iptables-match">规则匹配条件<a class="headerlink" href="#iptables-match" title="Permanent link">&para;</a></h4>
 <p>在「规则匹配条件」部分，可以使用多种匹配模块来指定数据包的特征，如源地址、目的地址、协议类型、端口号等。
-匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。
-以科大镜像站上用于限制 80 / 443 端口并发连接数的规则为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
-</code></pre></div>
-<p>这条命令的理解方式如下：</p>
-<ul>
-<li><code>iptables -A LIMIT</code>：将规则追加（<code>-A</code>）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 <code>ip6tables</code>。</li>
-<li><code>-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN</code>：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。<ul>
-<li>等价的写法是 <code>-p tcp --syn</code></li>
-<li>另一个（几乎）等价的写法是 <code>-m conntrack --ctstate NEW</code>，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。</li>
-</ul>
-</li>
-<li><code>-m multiport --dports 80,443</code>：调用 <code>multiport</code> 模块，匹配目的端口为 80 或 443 的数据包。<ul>
-<li><code>-m tcp</code> 模块和 <code>-m udp</code> 模块也提供了 <code>--port</code> 参数，但只能用于单个端口的匹配，因此此处使用 <code>multiport</code> 模块来同时匹配多个端口。</li>
-</ul>
-</li>
-<li><code>-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr</code>：调用 <code>connlimit</code> 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。</li>
-<li><code>-j REJECT --reject-with tcp-reset</code>：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。</li>
-</ul>
-<p>iptables 规则的目标（<code>-j</code> 参数）可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理），从而实现复杂的防火墙逻辑。</p>
+匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。</p>
+<p>常用的匹配规则包括：</p>
+<dl>
+<dt><code>-s</code> / <code>--source</code> / <code>-d</code> / <code>--destination</code></dt>
+<dd>
+<p>指定源地址或目的地址，可以是单个 IP 地址、CIDR 块或域名。一个 <code>-s</code> 或 <code>-d</code> 参数可以指定最多 15 个 IP 地址或 CIDR 块，多个地址之间用逗号分隔。</p>
+</dd>
+<dt><code>-p</code> / <code>--protocol</code></dt>
+<dd>
+<p>指定 IP 数据包内层的协议，如 <code>tcp</code>、<code>udp</code>、<code>icmp</code> 等。</p>
+</dd>
+<dt><code>--sport</code> / <code>--dport</code></dt>
+<dd>
+<p>指定源端口号或目的端口号，可以是单个端口号或端口范围（格式为 <code>起始端口-结束端口</code>）。该选项只能与 <code>-p tcp</code> 或 <code>-p udp</code> 一起使用。</p>
+<p>该参数事实上由 <code>-m tcp</code> 或 <code>-m udp</code> 模块提供，而 iptables 会根据 <code>-p</code> 参数自动加载相应的模块，因此不需要显式指定 <code>-m tcp</code> 或 <code>-m udp</code>。
+出于同样的原因，你也无法在一条规则内同时匹配 TCP 和 UDP 协议的端口号，需要分别使用两条规则来实现。</p>
+<p>此参数只能匹配一个端口号或一个端口范围（包含起止端口号），如果需要匹配多个不连续的端口号，可以使用 <code>-m multiport --sports</code> / <code>--dports</code> 模块。</p>
+</dd>
+<dt><code>-i</code> / <code>--in-interface</code> / <code>-o</code> / <code>--out-interface</code></dt>
+<dd>
+<p>指定数据包的输入接口或输出接口，可以是接口名称（如 <code>eth0</code>）或前缀通配符（如 <code>eth+</code>）。</p>
 <p>由于 Netfilter 的结构和设计考虑，<code>-i</code>（输入接口）和 <code>-o</code>（输出接口）这两个匹配选项在不同阶段的可用性有所不同：</p>
 <table>
 <thead>
@@ -3006,7 +3026,56 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </tr>
 </tbody>
 </table>
-<p>完整的 iptables 规则语法和选项可以参考 <a href="https://www.man7.org/linux/man-pages/man8/iptables.8.html">iptables(8)</a> 和 <a href="https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html">iptables-extensions(8)</a> 手册页。</p>
+</dd>
+</dl>
+<h4 id="iptables-jump">动作<a class="headerlink" href="#iptables-jump" title="Permanent link">&para;</a></h4>
+<p>若一个数据包满足某条规则的所有匹配条件，就会进执行该规则的目标（<code>-j</code> / <code>-g</code> 参数）。目标可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理）。</p>
+<p><code>-j</code> / <code>--jump</code> 与 <code>-g</code> / <code>--goto</code> 的区别是，当跳转到自定义链后，<code>-j</code> 会在自定义链处理完毕后返回到原链继续处理，而 <code>-g</code> 则不会返回原链，视作原链已完成处理。可以类比在 shell 中执行命令时的 <code>source</code>（对应 <code>-j</code>）和 <code>exec</code>（对应 <code>-g</code>）的区别。</p>
+<p>其中，内置目标包括：</p>
+<ul>
+<li>ACCEPT：接受数据包，允许其继续传输。</li>
+<li>DROP：丢弃数据包，不发送任何响应。</li>
+<li>REJECT：拒绝数据包，并发送响应给对端（默认响应为 ICMP port unreachable）。</li>
+</ul>
+<p>其他常用的、由扩展模块提供的目标包括：</p>
+<ul>
+<li>
+<p>DNAT (REDIRECT) / SNAT (MASQUERADE)：用于网络地址转换（NAT），分别用于更改数据包的目的地址和源地址。</p>
+<p>其中 REDIRECT 和 MASQUERADE 分别是 DNAT 和 SNAT 的特殊形式，用于将数据包的目的地址和源地址改写为对应网卡上的地址。</p>
+</li>
+<li>
+<p>LOG：记录数据包信息到系统日志，通常与其他目标结合使用。</p>
+</li>
+<li>MARK：为数据包打上防火墙标记（firewall mark），通常与路由策略结合使用。</li>
+<li>CONNMARK：为数据包对应的 conntrack 连接打上标记，或从连接中恢复标记。</li>
+</ul>
+<p>每条内置链都有一个<strong>默认策略</strong>（<code>-P</code> / <code>--policy</code>），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略可以只能是 ACCEPT、DROP 或 REJECT。</p>
+<div class="admonition example">
+<p class="admonition-title">例：科大镜像站上限制 80 / 443 端口并发连接数</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
+</code></pre></div>
+<p>这条命令的理解方式如下：</p>
+<ul>
+<li>
+<p><code>iptables -A LIMIT</code>：将规则追加（<code>-A</code>）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 <code>ip6tables</code>。</p>
+<p>LIMIT 是我们自定义的一条链，在 INPUT 阶段调用，负责执行类似的限流规则。</p>
+</li>
+<li>
+<p><code>-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN</code>：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。</p>
+<ul>
+<li>等价的写法是 <code>-p tcp --syn</code></li>
+<li>另一个（几乎）等价的写法是 <code>-m conntrack --ctstate NEW</code>，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。</li>
+</ul>
+</li>
+<li><code>-m multiport --dports 80,443</code>：调用 <code>multiport</code> 模块，匹配目的端口为 80 或 443 的数据包。</li>
+<li><code>-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr</code>：调用 <code>connlimit</code> 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。</li>
+<li><code>-j REJECT --reject-with tcp-reset</code>：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。</li>
+</ul>
+</div>
 <h3 id="iptables-tables">iptables 表<a class="headerlink" href="#iptables-tables" title="Permanent link">&para;</a></h3>
 <p>iptables 的主要表类型有以下几种：</p>
 <dl>
@@ -3150,7 +3219,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月21日 18:37:58 UTC">2025年11月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月22日 04:57:30 UTC">2025年11月22日</span>
   </span>
 
     
