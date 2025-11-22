@@ -1095,6 +1095,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Netfilter 阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netfilter-hook-priorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook 的优先级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conntrack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conntrack
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2690,6 +2718,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Netfilter 阶段">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netfilter-hook-priorities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook 的优先级
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conntrack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conntrack
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2930,6 +2986,11 @@
 事实上 Wikipedia 的图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）。
 本文在介绍 iptables 的表时绘制了 <a href="#netfilter-kernel-view-tables">Netfilter 视角的阶段图</a>，能够更直观地反映出此「相似性」。</p>
 </div>
+<h3 id="netfilter-hook-priorities">Hook 的优先级<a class="headerlink" href="#netfilter-hook-priorities" title="Permanent link">&para;</a></h3>
+<p>Netfilter 为 hook 定义了一系列优先级，优先级越高的 hook 越早执行。特别地，iptables 的各个表是注册在对应的优先级上的，因此不同表的处理顺序也由 hook 的优先级决定。</p>
+<p>在同一个阶段中，不同 hook 的处理顺序为 raw → (conntrack) → mangle → nat (DNAT) → filter → security → nat (SNAT)。
+该顺序定义在 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30"><code>enum nf_ip_hook_priorities</code></a> 中。</p>
+<h3 id="conntrack">conntrack<a class="headerlink" href="#conntrack" title="Permanent link">&para;</a></h3>
 <h2 id="iptables">iptables<a class="headerlink" href="#iptables" title="Permanent link">&para;</a></h2>
 <p>iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
 iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。</p>
@@ -3086,7 +3147,8 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <dt>nat</dt>
 <dd>
 <p>用于网络地址转换（NAT），如源地址转换（SNAT）和目的地址转换（DNAT）。其中「伪装」（MASQUERADE）是一种特殊的 SNAT 方式，让内核根据出接口网卡上配置的地址自动决定替换后的源地址，通常用于动态 IP 地址的场景。</p>
-<p>需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。</p>
+<p>需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
+这是因为 iptables 将 Netfilter 的两种 hook 优先级（<code>NAT_DST</code> 和 <code>NAT_SRC</code>）都放进了 nat 表，因此尽管四个链都在 nat 表中，它们实际上是分属于两种不同的 Netfilter hook。</p>
 <p>特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 conntrack 模块处理。
 对于用户而言，可以理解为「nat 表自带 <code>--ctstate NEW</code> 约束，之后的数据包都使用已经转换后的地址进行通信」。</p>
 </dd>
@@ -3100,6 +3162,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </dd>
 </dl>
 <p>另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统中不常用。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。</p>
+<p>iptables 的每个表都会注册到对应的 Netfilter hook 优先级上，因此同一个阶段（例如 PREROUTING）中，不同表的处理顺序与 <a href="#netfilter-hook-priorities">hook 的优先级</a>相同。</p>
 <p>各个表在各个阶段的可用性如下表所示：</p>
 <table>
 <thead>
@@ -3149,7 +3212,6 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </tr>
 </tbody>
 </table>
-<p>在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。该顺序定义在 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30"><code>enum nf_ip_hook_priorities</code></a> 中。</p>
 <p>若从 Netfilter 自己的视角，将网卡和本地进程（数据包的来源和接收者）都看作外部元素的话，各个阶段及其可用的表和处理顺序如下图所示：</p>
 <figure>
 <p id="netfilter-kernel-view-tables"><img alt="Netfilter 阶段" src="../../../images/netfilter-kernel-view-tables.svg" /></p>
@@ -3219,7 +3281,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月22日 04:57:30 UTC">2025年11月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月22日 05:17:48 UTC">2025年11月22日</span>
   </span>
 
     
