@@ -113,46 +113,94 @@ iptables -P OUTPUT ACCEPT
 
 注意到 `-L`, `-S`, `-F`, `-X`, `-Z` 这些命令都可以省略链名参数，表示对所有链进行操作。
 
+完整的 iptables 规则语法和选项可以参考 [iptables(8)][iptables.8] 和 [iptables-extensions(8)][iptables-extensions.8] 手册页。
+
 #### 规则匹配条件 {#iptables-match}
 
 在「规则匹配条件」部分，可以使用多种匹配模块来指定数据包的特征，如源地址、目的地址、协议类型、端口号等。
 匹配的顺序是按命令行参数的顺序依次进行的，只有当数据包满足所有匹配条件时，才会应用该规则的目标。
-以科大镜像站上用于限制 80 / 443 端口并发连接数的规则为例：
 
-```shell
-iptables -A LIMIT \
-  -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN \
-  -m multiport --dports 80,443 \
-  -m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr \
-  -j REJECT --reject-with tcp-reset
-```
+常用的匹配规则包括：
 
-这条命令的理解方式如下：
+`-s` / `--source` / `-d` / `--destination`
 
-- `iptables -A LIMIT`：将规则追加（`-A`）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 `ip6tables`。
-- `-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN`：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。
-    - 等价的写法是 `-p tcp --syn`
-    - 另一个（几乎）等价的写法是 `-m conntrack --ctstate NEW`，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。
-- `-m multiport --dports 80,443`：调用 `multiport` 模块，匹配目的端口为 80 或 443 的数据包。
-    - `-m tcp` 模块和 `-m udp` 模块也提供了 `--port` 参数，但只能用于单个端口的匹配，因此此处使用 `multiport` 模块来同时匹配多个端口。
-- `-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr`：调用 `connlimit` 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。
-- `-j REJECT --reject-with tcp-reset`：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。
+:   指定源地址或目的地址，可以是单个 IP 地址、CIDR 块或域名。一个 `-s` 或 `-d` 参数可以指定最多 15 个 IP 地址或 CIDR 块，多个地址之间用逗号分隔。
 
-iptables 规则的目标（`-j` 参数）可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理），从而实现复杂的防火墙逻辑。
+`-p` / `--protocol`
 
-由于 Netfilter 的结构和设计考虑，`-i`（输入接口）和 `-o`（输出接口）这两个匹配选项在不同阶段的可用性有所不同：
+:   指定 IP 数据包内层的协议，如 `tcp`、`udp`、`icmp` 等。
 
-|    阶段     |              可以使用 `-i`               |                     可以使用 `-o`                     |
-| :---------: | :--------------------------------------: | :---------------------------------------------------: |
-| PREROUTING  | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
-|    INPUT    | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
-|   FORWARD   | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-check:{: .limegreen }        |
-|   OUTPUT    | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen }[^output-oif] |
-| POSTROUTING | :fontawesome-solid-xmark:{: .orangered } |       :fontawesome-solid-check:{: .limegreen }        |
+`--sport` / `--dport`
+
+:   指定源端口号或目的端口号，可以是单个端口号或端口范围（格式为 `起始端口-结束端口`）。该选项只能与 `-p tcp` 或 `-p udp` 一起使用。
+
+    该参数事实上由 `-m tcp` 或 `-m udp` 模块提供，而 iptables 会根据 `-p` 参数自动加载相应的模块，因此不需要显式指定 `-m tcp` 或 `-m udp`。
+    出于同样的原因，你也无法在一条规则内同时匹配 TCP 和 UDP 协议的端口号，需要分别使用两条规则来实现。
+
+    此参数只能匹配一个端口号或一个端口范围（包含起止端口号），如果需要匹配多个不连续的端口号，可以使用 `-m multiport --sports` / `--dports` 模块。
+
+`-i` / `--in-interface` / `-o` / `--out-interface`
+
+:   指定数据包的输入接口或输出接口，可以是接口名称（如 `eth0`）或前缀通配符（如 `eth+`）。
+
+    由于 Netfilter 的结构和设计考虑，`-i`（输入接口）和 `-o`（输出接口）这两个匹配选项在不同阶段的可用性有所不同：
+
+    |    阶段     |              可以使用 `-i`               |                     可以使用 `-o`                     |
+    | :---------: | :--------------------------------------: | :---------------------------------------------------: |
+    | PREROUTING  | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
+    |    INPUT    | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-xmark:{: .orangered }        |
+    |   FORWARD   | :fontawesome-solid-check:{: .limegreen } |       :fontawesome-solid-check:{: .limegreen }        |
+    |   OUTPUT    | :fontawesome-solid-xmark:{: .orangered } | :fontawesome-solid-check:{: .limegreen }[^output-oif] |
+    | POSTROUTING | :fontawesome-solid-xmark:{: .orangered } |       :fontawesome-solid-check:{: .limegreen }        |
 
   [^output-oif]: 还记得[上文](#wikipedia-netfilter-packet-flow)为什么说 Wikipedia 的图更准确吗？
 
-完整的 iptables 规则语法和选项可以参考 [iptables(8)][iptables.8] 和 [iptables-extensions(8)][iptables-extensions.8] 手册页。
+#### 动作 {#iptables-jump}
+
+若一个数据包满足某条规则的所有匹配条件，就会进执行该规则的目标（`-j` / `-g` 参数）。目标可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理）。
+
+`-j` / `--jump` 与 `-g` / `--goto` 的区别是，当跳转到自定义链后，`-j` 会在自定义链处理完毕后返回到原链继续处理，而 `-g` 则不会返回原链，视作原链已完成处理。可以类比在 shell 中执行命令时的 `source`（对应 `-j`）和 `exec`（对应 `-g`）的区别。
+
+其中，内置目标包括：
+
+- ACCEPT：接受数据包，允许其继续传输。
+- DROP：丢弃数据包，不发送任何响应。
+- REJECT：拒绝数据包，并发送响应给对端（默认响应为 ICMP port unreachable）。
+
+其他常用的、由扩展模块提供的目标包括：
+
+- DNAT (REDIRECT) / SNAT (MASQUERADE)：用于网络地址转换（NAT），分别用于更改数据包的目的地址和源地址。
+
+    其中 REDIRECT 和 MASQUERADE 分别是 DNAT 和 SNAT 的特殊形式，用于将数据包的目的地址和源地址改写为对应网卡上的地址。
+
+- LOG：记录数据包信息到系统日志，通常与其他目标结合使用。
+- MARK：为数据包打上防火墙标记（firewall mark），通常与路由策略结合使用。
+- CONNMARK：为数据包对应的 conntrack 连接打上标记，或从连接中恢复标记。
+
+每条内置链都有一个**默认策略**（`-P` / `--policy`），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略可以只能是 ACCEPT、DROP 或 REJECT。
+
+!!! example "例：科大镜像站上限制 80 / 443 端口并发连接数"
+
+    ```shell
+    iptables -A LIMIT \
+      -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN \
+      -m multiport --dports 80,443 \
+      -m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr \
+      -j REJECT --reject-with tcp-reset
+    ```
+
+    这条命令的理解方式如下：
+
+    - `iptables -A LIMIT`：将规则追加（`-A`）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 `ip6tables`。
+  
+        LIMIT 是我们自定义的一条链，在 INPUT 阶段调用，负责执行类似的限流规则。
+
+    - `-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN`：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。
+        - 等价的写法是 `-p tcp --syn`
+        - 另一个（几乎）等价的写法是 `-m conntrack --ctstate NEW`，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。
+    - `-m multiport --dports 80,443`：调用 `multiport` 模块，匹配目的端口为 80 或 443 的数据包。
+    - `-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr`：调用 `connlimit` 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。
+    - `-j REJECT --reject-with tcp-reset`：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。
 
 ### iptables 表 {#iptables-tables}
 
