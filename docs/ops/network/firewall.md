@@ -12,10 +12,11 @@ icon: material/wall-fire
 
 Linux 内核网络栈中的防火墙模块称为 Netfilter，负责对进出主机的数据包进行过滤和修改。Netfilter 提供了一套强大的工具，用于实现各种防火墙功能，如包过滤、网络地址转换（NAT）和连接跟踪等。
 
-## Netfilter 阶段 {#netfilter-chains}
+## Netfilter {#netfilter}
 
-Netfilter 将数据包的处理过程划分为 5 个阶段，并在每个阶段提供 hook 点，允许用户定义规则来控制数据包的流动。
-这些阶段包括：
+### Netfilter 阶段 {#netfilter-chains}
+
+Netfilter 将数据包的处理过程划分为 5 个阶段，并在每个阶段提供 hook 点，允许用户定义规则来控制数据包的流动。这些阶段包括：
 
 PREROUTING / `NF_INET_PRE_ROUTING`
 
@@ -47,7 +48,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
 在上图中，ROUTE 指[路由决策](routing.md)。
 
-需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于图片结果简化的考虑。
+需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于简化图片的考虑。
 这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 `localhost` 或 `127.0.0.1` 访问本机服务。
 
 !!! question "路由决策与 Reroute check 是什么关系？"
@@ -58,17 +59,108 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     {#wikipedia-netfilter-packet-flow}
 
     它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check。
-    事实上 Wikipedia 的图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）。
+    事实上此图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）以及路由结果的准确性。
     本文在介绍 iptables 的表时绘制了 [Netfilter 视角的阶段图](#netfilter-kernel-view-tables)，能够更直观地反映出此「相似性」。
+
+??? info "Reroute check 的细节（待补充）"
 
 ### Hook 的优先级 {#netfilter-hook-priorities}
 
 Netfilter 为 hook 定义了一系列优先级，优先级越高的 hook 越早执行。特别地，iptables 的各个表是注册在对应的优先级上的，因此不同表的处理顺序也由 hook 的优先级决定。
 
 在同一个阶段中，不同 hook 的处理顺序为 raw → (conntrack) → mangle → nat (DNAT) → filter → security → nat (SNAT)。
-该顺序定义在 [`enum nf_ip_hook_priorities`](https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30) 中。
+该顺序定义在 [`enum nf_ip_hook_priorities`](https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30) 中，数值越小则优先级越高。
 
 ### conntrack {#conntrack}
+
+连接跟踪器（**Conn**ection **Track**er，conntrack，也经常简称为 CT）是 Netfilter 的一个核心组件，用于跟踪网络连接的状态。
+
+#### 连接跟踪 {#connection-tracking}
+
+Conntrack 表的一个重要作用是支持有状态防火墙，允许 Netfilter 组件获取连接状态，并据此做出过滤决策。
+一个典型的例子是，允许已建立连接的数据包通过防火墙，而仅过滤新连接请求。
+由于 iptables 和 nftables 的规则链都是按顺序线性执行的，若在规则链开头插入「允许 conntrack 状态为已建立（ESTABLISHED）」的规则，就能减少大量数据包的匹配开销。例如：
+
+=== "iptables / ip6tables"
+
+    ```shell
+    iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+    ```
+
+=== "nftables"
+
+    ```shell
+    nft add rule ip filter input ct state established,related accept
+    ```
+
+#### 连接标记 {#conntrack-mark}
+
+Conntrack 除了记录连接的五元组（四层协议、源地址、目的地址、源端口、目的端口）外，还可以为连接记录一个「标记」（conntrack mark，`CONNMARK`）。
+该标记可以在 iptables 或 nftables 规则中从数据包保存或恢复到数据包上，实现「数据包标记」与「连接标记」的双向互动，例如：
+
+=== "iptables / ip6tables"
+
+    ```shell
+    iptables -t mangle -A PREROUTING -j CONNMARK --restore-mark
+    iptables -t mangle -A POSTROUTING -j CONNMARK --save-mark
+    ```
+
+=== "nftables"
+
+    ```shell
+    nft add rule ip mangle prerouting meta mark set ct mark
+    nft add rule ip mangle postrouting ct mark set mark
+    ```
+
+#### NAT 支持 {#conntrack-nat}
+
+在 Netfilter 中，用户定义的 NAT 规则只会对**新连接**生效，而已建立的连接的后续数据包则由 conntrack 负责处理 NAT，确保同一连接内的所有数据包都能被正确处理。
+
+例如，在一个典型的家用路由器上，当内网主机向外网发起连接时，路由器上的 NAT 规则会将数据包的源地址改写为路由器的 WAN 口地址，整个流程如下：
+
+- 内网主机对外建立一个新的连接，发送第一个数据包到路由器
+- 第一个数据包经过 POSTROUTING 阶段，被 MASQUERADE 改写源地址
+    - 此时 conntrack 记录该连接**双向**的五元组（共 9 个字段，其中协议号只需记录一次），包括正向（original）的四元组和反向（reply）的四元组
+- 后续的数据包（不论方向）经过该路由器时，在 conntrack 阶段（`NF_IP_PRI_CONNTRACK`）匹配到某一方向的四元组，由 conntrack 改写为另一方向的四元组的反向地址[^nf_nat_manip_pkt]，使对端主机能够正确接收数据包。
+
+  [^nf_nat_manip_pkt]: 参见 [`nf_nat_manip_pkt`](https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L383) 函数。
+
+#### conntrack 命令 {#conntrack-command}
+
+[`conntrack(8)`][conntrack.8] 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。
+
+最常用的命令是列出当前的连接跟踪条目：
+
+```shell
+conntrack -L
+```
+
+!!! example "conntrack 输出示例"
+
+    ```text
+    udp      17 91 src=192.0.2.2 dst=8.8.8.8 sport=39043 dport=53 src=8.8.8.8 dst=198.51.100.1 sport=53 dport=39043 [ASSURED] mark=1 use=1
+    ```
+
+    - 协议：`udp`（协议号 17）
+    - 剩余超时时间：91 秒
+    - 正向四元组 src, dst, sport, dport
+    - 反向四元组 src, dst, sport, dport
+
+        本例中，当前主机为负责进行 NAT 的出口路由器，所以反向的 dst 地址为路由器的 WAN 口地址。
+
+    - 连接状态标记，如 `[ASSURED]`
+    - 连接标记 `mark`
+    - 引用计数器 `use`
+
+`conntrack` 命令支持一些与 iptables 语法相同的匹配条件，可以用来过滤输出的连接条目，例如：
+
+```shell
+conntrack -L -p udp --dport 53
+```
+
+`conntrack` 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 [conntrack(8)][conntrack.8]。
+
+另外，`conntrack -E` 命令可以实时监控 conntrack 表的变化，适合用于调试和分析网络连接的动向。`-E` 操作同样支持匹配条件，可以过滤出特定的连接事件，方便查找和分析。
 
 ## iptables {#iptables}
 
@@ -120,7 +212,7 @@ iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
 ```
 
-注意到 `-L`, `-S`, `-F`, `-X`, `-Z` 这些命令都可以省略链名参数，表示对所有链进行操作。
+注意到 `-L`, `-S`, `-F`, `-X`, `-Z` 这些操作都可以省略链名参数，表示对所有链进行操作。
 
 完整的 iptables 规则语法和选项可以参考 [iptables(8)][iptables.8] 和 [iptables-extensions(8)][iptables-extensions.8] 手册页。
 
@@ -186,7 +278,7 @@ iptables -P OUTPUT ACCEPT
 - MARK：为数据包打上防火墙标记（firewall mark），通常与路由策略结合使用。
 - CONNMARK：为数据包对应的 conntrack 连接打上标记，或从连接中恢复标记。
 
-每条内置链都有一个**默认策略**（`-P` / `--policy`），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略可以只能是 ACCEPT、DROP 或 REJECT。
+每条内置链都有一个**默认策略**（`-P` / `--policy`），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。
 
 !!! example "例：科大镜像站上限制 80 / 443 端口并发连接数"
 
@@ -226,8 +318,10 @@ nat
     需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
     这是因为 iptables 将 Netfilter 的两种 hook 优先级（`NAT_DST` 和 `NAT_SRC`）都放进了 nat 表，因此尽管四个链都在 nat 表中，它们实际上是分属于两种不同的 Netfilter hook。
 
-    特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 conntrack 模块处理。
-    对于用户而言，可以理解为「nat 表自带 `--ctstate NEW` 约束，之后的数据包都使用已经转换后的地址进行通信」。
+    特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 [conntrack 模块](#conntrack)处理。
+    对于用户而言，可以理解为「nat 表自带 `--ctstate NEW` 约束[^nf_nat_inet_fn]，之后的数据包都使用已经转换后的地址进行通信」。
+
+  [^nf_nat_inet_fn]: 该约束事实上是「NEW 或 RELATED」，具体可参考 [`nf_nat_inet_fn`](https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L936) 函数。
 
 mangle
 
