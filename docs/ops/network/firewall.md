@@ -61,6 +61,15 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     事实上 Wikipedia 的图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，尤其是这样能保持 OUTPUT 阶段与 PREROUTING 阶段的相似性（均在路由决策之前）。
     本文在介绍 iptables 的表时绘制了 [Netfilter 视角的阶段图](#netfilter-kernel-view-tables)，能够更直观地反映出此「相似性」。
 
+### Hook 的优先级 {#netfilter-hook-priorities}
+
+Netfilter 为 hook 定义了一系列优先级，优先级越高的 hook 越早执行。特别地，iptables 的各个表是注册在对应的优先级上的，因此不同表的处理顺序也由 hook 的优先级决定。
+
+在同一个阶段中，不同 hook 的处理顺序为 raw → (conntrack) → mangle → nat (DNAT) → filter → security → nat (SNAT)。
+该顺序定义在 [`enum nf_ip_hook_priorities`](https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30) 中。
+
+### conntrack {#conntrack}
+
 ## iptables {#iptables}
 
 iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
@@ -215,6 +224,7 @@ nat
 :   用于网络地址转换（NAT），如源地址转换（SNAT）和目的地址转换（DNAT）。其中「伪装」（MASQUERADE）是一种特殊的 SNAT 方式，让内核根据出接口网卡上配置的地址自动决定替换后的源地址，通常用于动态 IP 地址的场景。
 
     需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
+    这是因为 iptables 将 Netfilter 的两种 hook 优先级（`NAT_DST` 和 `NAT_SRC`）都放进了 nat 表，因此尽管四个链都在 nat 表中，它们实际上是分属于两种不同的 Netfilter hook。
 
     特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 conntrack 模块处理。
     对于用户而言，可以理解为「nat 表自带 `--ctstate NEW` 约束，之后的数据包都使用已经转换后的地址进行通信」。
@@ -229,6 +239,8 @@ raw
 
 另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统中不常用。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。
 
+iptables 的每个表都会注册到对应的 Netfilter hook 优先级上，因此同一个阶段（例如 PREROUTING）中，不同表的处理顺序与 [hook 的优先级](#netfilter-hook-priorities)相同。
+
 各个表在各个阶段的可用性如下表所示：
 
 |    阶段     |            filter / security             |    nat    |                  mangle                  |                   raw                    |
@@ -238,8 +250,6 @@ raw
 |   FORWARD   | :fontawesome-solid-check:{: .limegreen } |           | :fontawesome-solid-check:{: .limegreen } |                                          |
 |   OUTPUT    | :fontawesome-solid-check:{: .limegreen } | DNAT only | :fontawesome-solid-check:{: .limegreen } | :fontawesome-solid-check:{: .limegreen } |
 | POSTROUTING |                                          | SNAT only | :fontawesome-solid-check:{: .limegreen } |                                          |
-
-在同一个阶段中，不同表的处理顺序为 raw → mangle → nat (DNAT) → filter → security → nat (SNAT)。该顺序定义在 [`enum nf_ip_hook_priorities`](https://elixir.bootlin.com/linux/v6.17.8/source/include/uapi/linux/netfilter_ipv4.h#L30) 中。
 
 若从 Netfilter 自己的视角，将网卡和本地进程（数据包的来源和接收者）都看作外部元素的话，各个阶段及其可用的表和处理顺序如下图所示：
 
