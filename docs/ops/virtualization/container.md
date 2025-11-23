@@ -1640,7 +1640,19 @@ socket=:2018
 
     尝试编写一个 compose 文件，其中一个容器启动一个数据库（你可能需要自行定义 health check 命令），另一个容器需要在数据库准备好之后才能启动。
 
-## 容器运行时 {#container-runtime}
+## Rootless 容器 {#rootless-container}
+
+在 Docker 部分，我们提到将用户加入 `docker` 组就相当于给予了用户 root 权限，而传统的基于 SUID 的方式，如果 SUID 程序存在漏洞，那么也很容易被利用提权。那么是否有办法让普通用户创建容器，而不产生这样的安全风险呢？[Rootless 容器](https://rootlesscontaine.rs/)基于非特权 user namespace 技术，可以让普通用户创建容器，而不需要 root 权限。在这样的容器中，用户「看起来」获得了 root 权限，并且能够在容器中做 root 能做的事情，但是实际上容器内的 root 用户对应的是宿主机上的一个普通用户。
+
+Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（[Docker](https://docs.docker.com/engine/security/rootless/)、[Podman](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md)）。
+
+不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
+
+!!! example "Rootless 容器与安全的 Docker-in-Docker 设计"
+
+    在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 [LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」](https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/)一文了解。
+
+## 其他的容器实现 {#container-implementations}
 
 Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux Foundation 的项目，始于 2015 年，目标是为容器技术制定开放标准。目前有三个标准：
 
@@ -1648,7 +1660,7 @@ Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux
 - Image Specification：容器镜像规范，Docker 的镜像格式与之兼容。
 - Distribution Specification：容器镜像分发规范，这和 registry 有关。
 
-这一部分主要介绍其他的运行时。
+主流的容器实现一般都遵循 OCI 标准。以下介绍除了 Docker 以外的其他容器实现。
 
 ### Podman
 
@@ -1694,6 +1706,16 @@ Detected architecture x86-64.
 Welcome to Debian GNU/Linux 12 (bookworm)!
 （以下省略）
 ```
+
+### Singularity
+
+Singularity 是在 HPC（高性能计算）领域非常常用的容器工具。相比于 Docker、Podman 等我们平时使用的容器工具，Singularity 更加注重于 HPC 场景下的需求：
+
+- 其「容器」以单文件 SIF 的格式存储，方便在 HPC 集群中分发。
+- HPC 场景下，服务器会有很多用户，这些用户都不应该有 root 权限，而 Singularity 能够使用 rootless 的方式让普通用户也能正常使用（在不支持 rootless 的环境下，会使用传统的 SUID 方案）。
+- Singularity 相比于其他方案，默认与系统的集成程度更高——其默认不隔离 PID 命名空间、网络命名空间等，并允许容器直接访问 GPU 等资源。容器内的用户与执行它的用户的权限一致，以传统 UNIX 的用户作为安全性的边界。
+
+目前，Singularity 有两个分支：一为 Linux Foundation 旗下的 [Apptainer](https://apptainer.org/)，二为 Sylabs 公司维护的 [SingularityCE](https://sylabs.io/singularity/)（Community Edition）。
 
 ### 基于虚拟机的容器技术 {#vm-based-container}
 
@@ -1741,17 +1763,5 @@ set -euo pipefail
 在实践中，更常见的面向用户的方案有 [Flatpak](https://flatpak.org/) 和 [Snap](https://snapcraft.io/) 等。这些方案提供了应用沙盒与应用商店的功能，用户可以从它们的商店中安装应用，而这些应用会根据具体的需求以不同的配置隔离在沙盒中；而开发者也可以在公用的「运行时」上开发，保证自己的应用能够跨发行版顺利运行。
 
 近年来，Linux 桌面社区也在推动桌面应用的沙盒化，其中非常重要的部分是 [XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/)。Portal 的一个代表性例子是，应用需要显示文件选择对话框时，不直接访问文件系统，而是通过 Portal 请求文件选择器，Portal 会弹出一个文件选择器的窗口，用户选择文件后，Portal 会将文件的路径传递给应用。这样做的好处是，应用不需要直接访问文件系统，而是通过 Portal 与用户交互，Portal 可以根据用户的选择来限制应用的访问权限。
-
-## Rootless 容器 {#rootless-container}
-
-在 Docker 部分，我们提到将用户加入 `docker` 组就相当于给予了用户 root 权限，而传统的基于 SUID 的方式，如果 SUID 程序存在漏洞，那么也很容易被利用提权。那么是否有办法让普通用户创建容器，而不产生这样的安全风险呢？[Rootless 容器](https://rootlesscontaine.rs/)基于非特权 user namespace 技术，可以让普通用户创建容器，而不需要 root 权限。在这样的容器中，用户「看起来」获得了 root 权限，并且能够在容器中做 root 能做的事情，但是实际上容器内的 root 用户对应的是宿主机上的一个普通用户。
-
-Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（[Docker](https://docs.docker.com/engine/security/rootless/)、[Podman](https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md)）。
-
-不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
-
-!!! example "Rootless 容器与安全的 Docker-in-Docker 设计"
-
-    在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 [LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」](https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/)一文了解。
 
 [^ipv6-docaddr]: 需要注意的是，文档中的 2001:db8:1::/64 这个地址隶属于 2001:db8::/32 这个专门用于文档和样例代码的地址段（类似于 example.com 的功能），不能用于实际的网络配置。
