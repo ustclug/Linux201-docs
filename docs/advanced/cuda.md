@@ -43,7 +43,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 ### 安装 NVIDIA 驱动 {#nvidia-driver}
 
-![CUDA components](../../images/cuda.png)
+![CUDA components](../images/cuda.png)
 
 !!! note "NVIDIA 内核驱动"
 
@@ -183,7 +183,7 @@ pid, process_name, used_gpu_memory [MiB]
 
 [`nvitop`](https://github.com/XuehaiPan/nvitop) 是第三方工具，能够以美观的 TUI 界面显示 NVIDIA GPU 的状态信息。
 
-![nvitop](../../images/nvitop.png)
+![nvitop](../images/nvitop.png)
 
 使用 `pipx` 安装即可：
 
@@ -197,7 +197,7 @@ pipx install nvitop
 
 `nvtop` 在大部分发行版的仓库中都可以找到。
 
-![nvtop](../../images/nvtop.png)
+![nvtop](../images/nvtop.png)
 
 ##### `gpustat`
 
