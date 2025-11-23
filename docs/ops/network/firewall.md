@@ -68,7 +68,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
     本文在介绍 iptables 的表时绘制了 [Netfilter 视角的阶段图](#netfilter-kernel-view-tables)，能够更直观地反映出此「相似性」。
 
-  [^iptable_mangle_hook]: 此图仍然有一处错误：Reroute check 发生在 OUTPUT 阶段后，而 FORWARD 阶段是不经过 reroute check 的。细节可见 [`iptable_mangle_hook`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78) 函数。
+  [^iptable_mangle_hook]: 此图的 2021 年的版本仍然有一处错误：Reroute check 发生在 OUTPUT 阶段内部，而 FORWARD 阶段后不经过 reroute check。细节可见 [`iptable_mangle_hook`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78) 函数。
 
 ??? info "Reroute check 的细节"
 
