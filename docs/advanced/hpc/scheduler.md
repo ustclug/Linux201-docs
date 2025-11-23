@@ -110,7 +110,7 @@ slurmdbd 是其他守护进程访问数据库的代理，可以避免在配置�
 
 slurmdbd 需要单独安装，并提供 [`/etc/slurm/slurmdbd.conf`][slurmdbd.conf.5] 配置文件，指定数据库的连接信息和认证方式。此文件只需要保留在运行 slurmdbd 的结点上，不需要复制到其他结点，并且文件权限必须为 `600`。
 
-```
+```shell
 touch /etc/slurm/slurmdbd.conf # 填入相关配置
 apt-get install -y slurmdbd
 systemctl enable --now slurmdbd
@@ -122,7 +122,7 @@ systemctl enable --now slurmdbd
 
 在管理结点上安装并启用 Slurm 控制守护进程：
 
-```
+```shell
 touch /etc/slurm/slurm.conf # 填入相关配置
 apt-get install -y slurmctld slurm-client
 systemctl enable --now slurmctld
@@ -132,7 +132,7 @@ systemctl enable --now slurmctld
 
 ### 计算结点：slurmd
 
-```
+```shell
 apt-get install -y slurmd
 systemctl enable --now slurmd
 ```
@@ -141,7 +141,7 @@ systemctl enable --now slurmd
 
 如果需要使用 Slurm 管理硬件，则需要保证 `gres.conf` 中提及的设备文件在 slurmd 启动前已经存在，否则 slurmd 会因为找不到设备而无法启动。一个缓解办法是，让 `slurmd.service` 依赖 `systemd-modules-load.service`，即执行 `systemctl edit slurmd`，增加：
 
-```
+```ini
 [Unit]
 After=systemd-modules-load.service
 ```
@@ -169,7 +169,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
     下面是作者在管理的某个 Slurm 课程集群上运行 `sacctmgr show qos` 的输出，展示了三个 QoS 分组的配置情况：
 
-    ```
+    ```text
           Name   Priority  GraceTime    Preempt   PreemptExemptTime PreemptMode                                    Flags UsageThres UsageFactor       GrpTRES   GrpTRESMins GrpTRESRunMin GrpJobs GrpSubmit     GrpWall       MaxTRES MaxTRESPerNode   MaxTRESMins     MaxWall     MaxTRESPU MaxJobsPU MaxSubmitPU     MaxTRESPA MaxJobsPA MaxSubmitPA       MinTRES
     ---------- ---------- ---------- ---------- ------------------- ----------- ---------------------------------------- ---------- ----------- ------------- ------------- ------------- ------- --------- ----------- ------------- -------------- ------------- ----------- ------------- --------- ----------- ------------- --------- ----------- -------------
         normal          5   00:00:00                                    cluster                              DenyOnLimit               1.000000                                                                                                            cpu=112    00:02:00                                   5
@@ -183,7 +183,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
   
     此集群 `slurm.conf` 中的优先级相关配置是：
 
-    ```
+    ```ini
     PriorityType=priority/multifactor
     #PriorityDecayHalfLife=14-0
     #PriorityUsageResetPeriod=14-0
@@ -209,7 +209,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 * `/etc/ssh/sshd_config`：确认 `UsePAM` 已启用。
 * `/etc/pamd/sshd`：在 account 部分添加：
 
-    ```
+    ```text
     -account    required      pam_slurm_adopt.so
     ```
 
@@ -224,7 +224,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
     在作者管理的集群上，sshd 的 PAM 配置如下：
 
-    ```
+    ```text
     # PAM configuration for the Secure Shell service
     
     # Standard Un*x authentication.
@@ -280,7 +280,7 @@ TemporaryFileSystem=/etc/slurm
 
 如果有未安装任何守护进程的纯客户端结点，需要安装 [`sackd`][sackd.8]，负责请求控制器、拉取缓存的配置：
 
-```
+```shell
 apt-get install -y sackd
 echo 'SACKD_OPTIONS="--conf-server your_ctl_server:6817"' >> /etc/default/sackd
 systemctl enable --now sackd
