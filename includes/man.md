@@ -18,6 +18,8 @@
 [tigervncserver.1]: https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html
 [vncconfig.1]: https://linux.die.net/man/1/vncconfig
 [xserver.1]: https://linux.die.net/man/1/xserver
+[sacctmgr.1]: https://slurm.schedmd.com/sacctmgr.html
+[scrun.1]: https://slurm.schedmd.com/scrun.html
 
 <!-- man 2 -->
 
@@ -54,6 +56,13 @@
 [systemd.timer.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 [user@.service.5]: https://www.freedesktop.org/software/systemd/man/latest/user@.service.html
+<!-- Slurm configuration files -->
+[slurm.conf.5]: https://slurm.schedmd.com/slurm.conf.html
+[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
+[cgroup.conf.5]: https://slurm.schedmd.com/cgroup.conf.html
+[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
+[gres.conf.5]: https://slurm.schedmd.com/gres.conf.html
+[oci.conf.5]: https://slurm.schedmd.com/oci.conf.html
 
 <!-- man 7 -->
 
@@ -87,3 +96,9 @@ Do not link to a "generic" man page for these commands -->
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs
 [zfs-receive.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-receive.8.html
 [zfs-send.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-send.8.html
+
+[slurmd.8]: https://slurm.schedmd.com/slurmd.html
+[slurmctld.8]: https://slurm.schedmd.com/slurmctld.html
+[slurmdbd.8]: https://slurm.schedmd.com/slurmdbd.html
+[sackd.8]: https://slurm.schedmd.com/sackd.html
+[slurmrestd.8]: https://slurm.schedmd.com/slurmrestd.html
