@@ -3129,7 +3129,7 @@
 <li>在 nat 表中，若数据包的目的地址发生了变化，则还会重新进行一次路由决策<sup id="fnref:ip_route_me_harder.nat"><a class="footnote-ref" href="#fn:ip_route_me_harder.nat">4</a></sup>。</li>
 </ul>
 <p>需要注意的是，尽管数据包可能在 mangle 表和 nat 表中已经经过了至多两次额外路由决策，但其在 filter 表中时，<code>-o</code> 参数所匹配的输出接口始终是最初的路由决策结果。
-这是因为最终产生效果的路由决策的结果存储在数据包的 <code>skb-&gt;_skb_refdst</code> 字段中<sup id="fnref:skb._skb_refdst"><a class="footnote-ref" href="#fn:skb._skb_refdst">5</a></sup>，而 Netfilter 在进行匹配时使用的是 <code>nf_hook_state-&gt;out</code> 字段<sup id="fnref:ipt_do_table"><a class="footnote-ref" href="#fn:ipt_do_table">6</a></sup>，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。</p>
+这是因为最终生效的路由决策存储在数据包的 <code>skb-&gt;_skb_refdst</code> 字段中<sup id="fnref:skb._skb_refdst"><a class="footnote-ref" href="#fn:skb._skb_refdst">5</a></sup>，而 Netfilter 在进行匹配时使用的是 <code>nf_hook_state-&gt;out</code> 字段<sup id="fnref:ipt_do_table"><a class="footnote-ref" href="#fn:ipt_do_table">6</a></sup>，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。</p>
 <p>在搞清楚这些细节后，我们就能理解为什么以下两种理解方式都是正确的：</p>
 <ol>
 <li>路由决策位于 OUTPUT 之后：因为数据包最终的路由结果是基于经过 OUTPUT 阶段修改后的状态决定的。</li>
