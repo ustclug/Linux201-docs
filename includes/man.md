@@ -13,13 +13,13 @@
 [perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
 [rrsync.1]: https://man7.org/linux/man-pages/man1/rrsync.1.html
 [rsync.1]: https://man7.org/linux/man-pages/man1/rsync.1.html
+[sacctmgr.1]: https://slurm.schedmd.com/sacctmgr.html
+[scrun.1]: https://slurm.schedmd.com/scrun.html
 [ssh-keygen.1]: https://man7.org/linux/man-pages/man1/ssh-keygen.1.html
 [systemd-run.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html
 [tigervncserver.1]: https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html
 [vncconfig.1]: https://linux.die.net/man/1/vncconfig
 [xserver.1]: https://linux.die.net/man/1/xserver
-[sacctmgr.1]: https://slurm.schedmd.com/sacctmgr.html
-[scrun.1]: https://slurm.schedmd.com/scrun.html
 
 <!-- man 2 -->
 
@@ -43,6 +43,14 @@
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
 [sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
+<!-- begin slurm config files -->
+[slurm.conf.5]: https://slurm.schedmd.com/slurm.conf.html
+[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
+[cgroup.conf.5]: https://slurm.schedmd.com/cgroup.conf.html
+[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
+[gres.conf.5]: https://slurm.schedmd.com/gres.conf.html
+[oci.conf.5]: https://slurm.schedmd.com/oci.conf.html
+<!-- end slurm config files -->
 [smartd.conf.5]: https://linux.die.net/man/5/smartd.conf
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
@@ -56,13 +64,6 @@
 [systemd.timer.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 [user@.service.5]: https://www.freedesktop.org/software/systemd/man/latest/user@.service.html
-<!-- Slurm configuration files -->
-[slurm.conf.5]: https://slurm.schedmd.com/slurm.conf.html
-[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
-[cgroup.conf.5]: https://slurm.schedmd.com/cgroup.conf.html
-[slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
-[gres.conf.5]: https://slurm.schedmd.com/gres.conf.html
-[oci.conf.5]: https://slurm.schedmd.com/oci.conf.html
 
 <!-- man 7 -->
 
@@ -90,15 +91,16 @@ Do not link to a "generic" man page for these commands -->
 [sg_write_same.8]: https://linux.die.net/man/8/sg_write_same
 [smartctl.8]: https://linux.die.net/man/8/smartctl
 [sshd.8]: https://linux.die.net/man/8/sshd
+<!-- begin slurm daemons -->
+[sackd.8]: https://slurm.schedmd.com/sackd.html
+[slurmctld.8]: https://slurm.schedmd.com/slurmctld.html
+[slurmd.8]: https://slurm.schedmd.com/slurmd.html
+[slurmdbd.8]: https://slurm.schedmd.com/slurmdbd.html
+[slurmrestd.8]: https://slurm.schedmd.com/slurmrestd.html
+<!-- end slurm daemons -->
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
 [userdel.8]: https://manpages.debian.org/stable/passwd/userdel.8.en.html
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs
 [zfs-receive.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-receive.8.html
 [zfs-send.8]: https://openzfs.github.io/openzfs-docs/man/master/8/zfs-send.8.html
-
-[slurmd.8]: https://slurm.schedmd.com/slurmd.html
-[slurmctld.8]: https://slurm.schedmd.com/slurmctld.html
-[slurmdbd.8]: https://slurm.schedmd.com/slurmdbd.html
-[sackd.8]: https://slurm.schedmd.com/sackd.html
-[slurmrestd.8]: https://slurm.schedmd.com/slurmrestd.html
