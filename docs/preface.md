@@ -92,6 +92,8 @@ USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system
     - [GitHub 服务降级事故（2018）](https://github.blog/news-insights/company-news/oct21-post-incident-analysis/)
     - [Cloudflare 服务中断事故（2019）](https://blog.cloudflare.com/details-of-the-cloudflare-outage-on-july-2-2019/)
     - [Slack 服务中断事故（2020）](https://slack.engineering/a-terrible-horrible-no-good-very-bad-day-at-slack/)
+    - [AWS us-east-1 区域中断事故（2025）](https://aws.amazon.com/message/101925/)
+    - [Cloudflare 服务中断事故（2025）](https://blog.cloudflare.com/18-november-2025-outage/)
 
 !!! question "真实案例"
 
