@@ -19,8 +19,8 @@ icon: fontawesome/solid/tasks
     本文主要基于系统管理员的视角，重点介绍 Slurm 在 Debian 集群上的部署、管理。关于集群用户对 Slurm 客户端的使用（如 `srun`, `sbatch`, `sinfo`, `squeue` 等命令），请参考或者向用户提供如下资料：
 
     * [Slurm 官方文档](https://slurm.schedmd.com/documentation.html)
-    * [中国科大超级计算中心用户使用手册——Slurm作业调度系统](https://scc.ustc.edu.cn/zlsc/user_doc/html/slurm/slurm.html)，以及相应的[幻灯片](https://scc.ustc.edu.cn/hmli/doc/training/slurm-slide.pdf)
-    * [中科院高能所计算中心——Slurm计算集群使用方法](https://afsapply.ihep.ac.cn/cchelp/zh/local-cluster/jobs/slurm/)
+    * [中国科大超级计算中心用户使用手册——Slurm 作业调度系统](https://scc.ustc.edu.cn/zlsc/user_doc/html/slurm/slurm.html)，以及相应的[幻灯片](https://scc.ustc.edu.cn/hmli/doc/training/slurm-slide.pdf)
+    * [中科院高能所计算中心——Slurm 计算集群使用方法](https://afsapply.ihep.ac.cn/cchelp/zh/local-cluster/jobs/slurm/)
 
 ## Slurm 部署
 
@@ -28,7 +28,7 @@ icon: fontawesome/solid/tasks
 
     我们假设读者已经具备一定的基本概念，了解常见的名词（如 node、partition、job 等）。如果不熟悉这些概念，建议先阅读 Slurm 官方文档的[概述](https://slurm.schedmd.com/overview.html)，以及上面的用户文档。
 
-此部分的撰写参考了 [Slurm资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html) 的内容，并修改为使用 Debian 原生软件包，而非使用官方打包版本，或者从源码编译安装。
+此部分的撰写参考了 [Slurm 资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html) 的内容，并修改为使用 Debian 原生软件包，而非使用官方打包版本，或者从源码编译安装。
 
 ### 组件构成
 
@@ -84,7 +84,7 @@ Debian 打包的 Slurm 没有提供默认配置文件，可通过官方的 [Conf
 * `ProctrackType`, `JobAcctGatherType`: 均推荐使用 `cgroups`。
 * `AccountingStorageType`: 如果安装 slurmdbd，则启用，并对应修改连接信息。
 
-对于配置文件的详尽解释，请参考官方文档的[`slurm.conf`][slurm.conf.5] 章节，亦可参阅[Slurm资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html#id17)中的示例配置文件。
+对于配置文件的详尽解释，请参考官方文档的[`slurm.conf`][slurm.conf.5] 章节，亦可参阅[Slurm 资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html#id17)中的示例配置文件。
 
 `slurm.conf` 的底部是对所有结点（node）和分区（partition）的定义，根据实际情况修改即可。如果需要配置 GRES 资源（如 GPU），则还需要额外提供 [`gres.conf`][gres.conf.5] 文件描述每个结点上的设备情况。
 
@@ -208,9 +208,11 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 * `/etc/ssh/sshd_config`：确认 `UsePAM` 已启用。
 * `/etc/pamd/sshd`：在 account 部分添加：
+
     ```
     -account    required      pam_slurm_adopt.so
     ```
+
     最前面的 `-` 保证在模块不存在时，不会产生致命错误，从而阻止所有登录。
 
 此外，关于 PAM 配置，还需保证：
@@ -243,7 +245,6 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
     ```
     
     `/etc/ssh/allowed_users` 和 `/etc/ssh/allowed_groups` 额外列出了允许登录的用户和用户组，无论它们是否有正在运行的作业。作者还配置了更严格的 `action_adopt_failure=deny` 选项，进一步防止有用户进程残留。
-
 
 ### Configless Slurm
 
