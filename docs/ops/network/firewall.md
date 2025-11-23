@@ -60,13 +60,15 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     ![Netfilter flow chart](https://upload.wikimedia.org/wikipedia/commons/3/37/Netfilter-packet-flow.svg)
     {#wikipedia-netfilter-packet-flow}
 
-    它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check。
+    它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check[^iptable_mangle_hook]。
     事实上此图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，可以从以下两点看出：
     
     1. 保持 OUTPUT 阶段与 PREROUTING 阶段的相似性：两个阶段均发生在路由决策之前，且 NAT 模式为仅可更改目的地址（DNAT）。
     2. 路由结果的准确性：数据包最终的路由结果基于经过 OUTPUT 或 PREROUTING 阶段修改后的元信息，如目的地址和防火墙标记等。
 
     本文在介绍 iptables 的表时绘制了 [Netfilter 视角的阶段图](#netfilter-kernel-view-tables)，能够更直观地反映出此「相似性」。
+
+  [^iptable_mangle_hook]: 此图仍然有一处错误：Reroute check 发生在 OUTPUT 阶段后，而 FORWARD 阶段是不经过 reroute check 的。细节可见 [`iptable_mangle_hook`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78) 函数。
 
 ??? info "Reroute check 的细节"
 
@@ -77,7 +79,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     1. 只是一个历史遗留问题：早期的内核可能并没有考虑到 OUTPUT 阶段修改信息会导致路由变化，因此在数据包由本机进程发出后，直接进行路由决策。
     2. 「由本机往网卡发出」的数据包只会经过 OUTPUT 和 POSTROUTING 两个阶段，而仅有 OUTPUT 阶段[具有](#iptables-tables-validity) filter 表。在这种情况下，若要限制本机进程允许发出数据包的网络接口，则 OUTPUT 阶段必须支持 `-o` 参数，即需要在 OUTPUT 阶段前进行一次（初步的）路由决策。
 
-    为了兼顾「在 OUTPUT 链中可以使用 `-o`」和最终路由决策的正确性，内核采用了 Reroute 机制[^ip_route_me_harder]，即：
+    为了兼顾「在 OUTPUT 链中可以使用 `-o`」和最终路由决策的正确性，内核采用了 Reroute 机制[^ip_route_me_harder]，即针对 OUTPUT 阶段：
 
     - 数据包由本机进程 `send()` 到 Netfilter 之后，首先进行一次路由决策，确定初步的输出接口。
     - 在 mangle 表中，若数据包的源地址、目的地址、防火墙标记或 TOS 字段这 4 个元信息发生了变化[^ip6t_mangle_out]，则重新进行一次路由决策[^ip_route_me_harder.mangle]。
