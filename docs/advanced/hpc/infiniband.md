@@ -34,7 +34,7 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 | FDR | 14 Gbps | 4 | QSFP+ | PCIe 3.0 x8 | CX3, CX4 |
 | EDR | 25 Gbps | 4 | QSFP28 | PCIe 3.0 x16 | CX4, CX5 |
 | HDR | 50 Gbps | 4 | QSFP56 | PCIe 4.0 x16 | CX6 |
-| NDR | 100 Gbps | 4 | OSFP / 2 $\times$ QSFP112 | PCIe 5.0 x16 | CX7 |
+| NDR | 100 Gbps | 4 | OSFP / 2 &times; QSFP112 | PCIe 5.0 x16 | CX7 |
 
 表格中的 "CX" 是 Mellanox 的品牌，全名为 ConnectX。除了 CX4 系列有覆盖两个 IB 代际的产品外，其他的系列都对应了一代 IB 标准。IB 标准都是向下兼容的，较新的网卡和交换机都能降级为较老的标准运行。
 
@@ -73,9 +73,11 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 
 ??? tip "谨防捆绑销售"
 
-    [DOCA](https://developer.nvidia.com/networking/doca) 软件栈是 NVIDIA 对其所有网络设备（包括 IB、以太网、智能网卡等）的支持软件的综合十分庞杂。我们仅需其中的 OFED 部分即可，不需要安装多余的软件包。
+    [DOCA](https://developer.nvidia.com/networking/doca) 软件栈包含了 NVIDIA 所有网络设备（包括 IB 卡、以太网卡、智能网卡等）的驱动、运行时、SDK、文档等，内容十分庞杂。我们仅需其中的 OFED 部分即可，不必安装多余的软件包。
 
-在安装的大量软件包中，比较重要、耦合比较紧密的包括：
+OFED 的全称是 Open Fabrics Enterprise Distribution，这个名称表明其并非 NVIDIA 独有——话虽如此，目前也[没有其他厂商](https://stackoverflow.com/questions/58622347/what-is-the-difference-between-ofed-mlnx-ofed-and-the-inbox-driver)提供类似的软件包。
+
+在 DOCA-OFED 安装的大量软件包中，比较重要、耦合比较紧密的包括：
 
 * `{mlnx-ofed-kernel,srp,knem,iser,isert}-dkms`：通过 DKMS 编译的各类内核模块，提供网卡驱动和 RDMA 协议栈，以及各类扩展功能（如 SRP、iSER 等）；
 * `lib{ibverbs,rdmacm,ibumad}`：用户态 RDMA 库和管理工具
