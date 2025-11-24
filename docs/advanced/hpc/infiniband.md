@@ -24,7 +24,7 @@ InfiniBand (IB) 是高性能计算中常用的高带宽、低延迟的网络互�
 * 目标通道适配器（TCA, Target Channel Adapter）
 * 交换机：在子网（subnet）中连接多台 HCA 和 TCA 设备
 * 路由器：连接不同子网的交换机，实现跨子网通信
- 
+
 考虑到 IB TCA 和路由器非常稀有，目前市面上几乎无法见到，本文中将只讨论 HCA（通常称为“IB 卡”）和交换机两类设备。
 
 IB 网络有明确的代际划分，每两代之间最主要的差异就是带宽的提升。目前市面上还见到的 IB 设备主要有以下几代：
@@ -72,7 +72,7 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 虽然 Linux 内核包含 [`mlx5` 驱动程序](https://www.kernel.org/doc/html/v6.17/networking/device_drivers/ethernet/mellanox/mlx5/index.html)，几乎可以做到开箱即用；Debian 等发行版也打包了相应的用户态工具（如 `rdma-core`, `libibverbs` 等），但为了获得更好的性能和稳定性，建议安装 Mellanox 官方提供的 [DOCA-OFED](https://developer.nvidia.com/doca-downloads?deployment_platform=Host-Server&deployment_package=DOCA-Host&target_os=Linux&Architecture=x86_64&Profile=doca-ofed) 驱动包（曾经称为 MLNX_OFED）。官方的安装十分好用，根据情况自行点击选择，并使用 `apt-get install doca-ofed` 即可完成安装。
 
 ??? tip "谨防捆绑销售"
-    
+
     [DOCA](https://developer.nvidia.com/networking/doca) 软件栈是 NVIDIA 对其所有网络设备（包括 IB、以太网、智能网卡等）的支持软件的综合十分庞杂。我们仅需其中的 OFED 部分即可，不需要安装多余的软件包。
 
 在安装的大量软件包中，比较重要、耦合比较紧密的包括：
@@ -181,7 +181,7 @@ GPUDirect RDMA 的支持没有直接检测的手段，部分通信库（如 [NCC
 
 ### IP over IB {#ipoib}
 
-虽然 IB 网络不是以太网，但通过 IP over IB（IPoIB）协议，可以让 IB 支持 IP 协议栈，从而兼容现有的大量应用程序和工具。 IPoIB 协议由内核模块 `ib_ipoib` 提供，安装 OFED 驱动包时会一并安装。启用 IPoIB 后，系统中会多出 `ib` 开头的虚拟网络接口，每个 IB 子网对应为一个 IPoIB 的广播域。此接口可通过标准的网络配置工具（如 `ip`, `ifconfig`, `netplan` 等）进行配置和管理，也可以运行任何 TCP/IP 负载。
+虽然 IB 网络不是以太网，但通过 IP over IB（IPoIB）协议，可以让 IB 支持 IP 协议栈，从而兼容现有的大量应用程序和工具。IPoIB 协议由内核模块 `ib_ipoib` 提供，安装 OFED 驱动包时会一并安装。启用 IPoIB 后，系统中会多出 `ib` 开头的虚拟网络接口，每个 IB 子网对应为一个 IPoIB 的广播域。此接口可通过标准的网络配置工具（如 `ip`, `ifconfig`, `netplan` 等）进行配置和管理，也可以运行任何 TCP/IP 负载。
 
 ??? question "高级网络功能"
 
