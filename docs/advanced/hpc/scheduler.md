@@ -22,7 +22,7 @@ icon: fontawesome/solid/tasks
     * [中国科大超级计算中心用户使用手册——Slurm 作业调度系统](https://scc.ustc.edu.cn/zlsc/user_doc/html/slurm/slurm.html)，以及相应的[幻灯片](https://scc.ustc.edu.cn/hmli/doc/training/slurm-slide.pdf)
     * [中科院高能所计算中心——Slurm 计算集群使用方法](https://afsapply.ihep.ac.cn/cchelp/zh/local-cluster/jobs/slurm/)
 
-## Slurm 部署
+## Slurm 部署 {#slurm-deployment}
 
 !!! note "前提要求"
 
@@ -30,7 +30,7 @@ icon: fontawesome/solid/tasks
 
 此部分的撰写参考了 [Slurm 资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html) 的内容，并修改为使用 Debian 原生软件包，而非使用官方打包版本，或者从源码编译安装。
 
-### 组件构成
+### 组件构成 {#components}
 
 ![Slurm 架构](https://slurm.schedmd.com/arch.gif)
 
@@ -45,7 +45,7 @@ icon: fontawesome/solid/tasks
 * 登录、控制、数据库合一节点 `foo00`：部署 `slurmctld` 和 `slurmdbd`，同时也安装 Slurm 客户端工具，供用户登录和提交作业。
 * 计算节点 `foo[01-15]`：部署 `slurmd`，不允许用户登录，作为计算结点执行用户作业。
 
-### 基本依赖
+### 前置要求 {#prerequisites}
 
 需要保证集群上的所有结点，可以通过主机名（hostname）解析所有结点的 IP 地址。建议使用静态 IP 或 DHCP 绑定，并配置好 DNS 服务，或者同步 `/etc/hosts` 文件。
 
@@ -74,7 +74,7 @@ icon: fontawesome/solid/tasks
 
 统一的文件系统（如 NFS 或分布式文件系统）、网络配置和用户管理（如 LDAP）并非部署任何作业调度系统的强制要求，但通常是高性能计算集群的基础设施。请参阅本项目中的其他文档对此部分进行配置。
 
-### Slurm 配置文件
+### Slurm 配置文件 {#slurm-config-files}
 
 Slurm 需要的所有配置文件均存储在 `/etc/slurm` 下，管理员**务必**时刻保证集群中所有结点上文件内容一致（Slurm 会检查 hash），否则可能导致不可预期的错误。目前推荐的方式是使用 Configless Slurm（见后文），仅在管理结点上维护配置文件，其他结点实时进行拉取，以减少管理负担。
 
@@ -100,7 +100,7 @@ ConstrainRAMSpace=yes # 启用内存约束
 
 如果修改了任何 slurm 配置文件，通常需要执行 `scontrol reconfigure` 使得修改生效；在部分情况下，可能还需要重启 slurmctld。在一般情况下，重启 slurmctld 不会影响正在运行的作业，也不会导致作业丢失，但依旧需要谨慎操作。
 
-### 数据管理：slurmdbd
+### 数据管理：slurmdbd {#slurmdbd}
 
 slurmdbd 是其他守护进程访问数据库的代理，可以避免在配置文件中直接暴露数据库连接信息。目前 slurmdbd 只支持 MySQL/MariaDB 作为后端，并只支持通过网络连接（而非 UNIX Domain Socket）。
 
@@ -118,7 +118,7 @@ systemctl enable --now slurmdbd
 
 多个不同的 slurm 集群在技术上可以共享同一个 slurmdbd，但作者不推荐这样做，除非有明确的需要（如同样的用户群体需要访问多个集群的资源，又确实无法实现统一管理）。
 
-### 管理结点：slurmctld
+### 管理结点：slurmctld {#slurmctld}
 
 在管理结点上安装并启用 Slurm 控制守护进程：
 
@@ -130,7 +130,7 @@ systemctl enable --now slurmctld
 
 此时运行 `sinfo`，应当能看到集群的分区和结点信息。由于没有 slurmd 在计算结点上运行，所有结点都应该均显示为 `UNK` 状态。
 
-### 计算结点：slurmd
+### 计算结点：slurmd {#slurmd}
 
 ```shell
 apt-get install -y slurmd
@@ -148,7 +148,7 @@ After=systemd-modules-load.service
 
 并在 `/etc/modules-load.d/` 下创建配置文件，保证相应的内核模块在系统启动时被加载（如 `nvidia`）。或者，仅针对于 NVIDIA 设备，也可以直接依赖于 `nvidia-persistenced` 服务，或者 `nvidia-modprobe` 工具。
 
-## 权限管理与 QoS
+## 权限管理与 QoS {#accounting-and-qos}
 
 Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支持。管理员可以通过 [`sacctmgr`][sacctmgr.1] 命令行工具对账户数据库进行管理，包括创建和删除用户、组、账户和 QoS 等。Slurm 的权限实体是一个四元组：`(user, account, cluster, partition)`，其中：
 
@@ -198,7 +198,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
     此配置体现了短作业优先和 QoS 导向的策略，鼓励短小作业，并给予高优先级用户更多的资源倾斜。
 
-## 最佳实践
+## 最佳实践 {#best-practices}
 
 ### pam_slurm_adopt
 
@@ -248,7 +248,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 ### Configless Slurm
 
-在 20.02 版本后，Slurm 增加加了 [Configless](https://slurm.schedmd.com/configless_slurm.html) 的功能，只需要在运行 slurmctld 的控制结点上维护一份配置，其他结点的 slurmd 或者 slurm 客户端在有需要时会自动拉取最新的配置，而在运行时 reconfig 也不用担心受到本地惨烈配置的影响。
+在 20.02 版本后，Slurm 增加了 [Configless](https://slurm.schedmd.com/configless_slurm.html) 的功能，只需要在运行 slurmctld 的控制结点上维护一份配置，其他结点的 slurmd 或者 slurm 客户端在有需要时会自动拉取最新的配置，而在运行时进行 reconfig 也不用担心受到本地残留配置的影响。
 
 文档指出，实现 configless 需要满足以下要求：
 
@@ -271,7 +271,7 @@ TemporaryFileSystem=/etc/slurm
 
 ??? tip "trixie 前的特殊配置"
 
-    较旧（trixie 前）的 `slurmd.service` 中含有多余的 `ConditionPathExists=/etc/slurm/    slurmd.conf`，需要一并覆盖清除，否则会导致无配置的情况下，服务无法正常启动：
+    较旧（trixie 前）的 `slurmd.service` 中含有多余的 `ConditionPathExists=/etc/slurm/slurmd.conf`，需要一并覆盖清除，否则会导致无配置的情况下，服务无法正常启动：
     
     ```init
     [Unit]
@@ -286,11 +286,11 @@ echo 'SACKD_OPTIONS="--conf-server your_ctl_server:6817"' >> /etc/default/sackd
 systemctl enable --now sackd
 ```
 
-## 延伸阅读
+## 延伸阅读 {#further-reading}
 
 此部分简述 Slurm 近年的新功能，供有兴趣的读者进一步探索。
 
-### Slurm 与容器的集成
+### Slurm 与容器的集成 {#container-integration}
 
 目前有大量的高性能计算工作负载已经迁移到了容器化环境中运行，Slurm 也提供了对容器的原生支持，这包括两步：
 
