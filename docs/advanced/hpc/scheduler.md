@@ -10,7 +10,7 @@ icon: fontawesome/solid/tasks
 
 !!! warning "本文已完成，等待校对"
 
-在中到大型的高性能计算集群上，为了高效地分配计算资源、管理用户作业、实施权限控制和计费等，通常会部署作业调度系统（Job Scheduler）。用户只能登录到少数（甚至一台）登录结点（login node），向调度系统提交作业请求；调度系统会根据资源使用情况和调度策略，将用户的作业分配到计算结点（compute node）上运行，并记录作业的状态和资源使用情况。
+在中到大型的高性能计算集群上，为了高效地分配计算资源、管理用户作业、实施权限控制和计费等，通常会部署作业调度系统（Job Scheduler）。用户只能登录到少数（甚至一台）登录节点（login node），向调度系统提交作业请求；调度系统会根据资源使用情况和调度策略，将用户的作业分配到计算节点（compute node）上运行，并记录作业的状态和资源使用情况。
 
 常见的开源作业调度系统包括 [Slurm](https://github.com/SchedMD/slurm)、[OpenPBS](https://github.com/openpbs/openpbs)、[HTCondor](https://github.com/htcondor/htcondor) 等。其中由 SchedMD 开发的 Slurm（Simple Linux Utility for Resource Management）是目前最流行的作业调度系统之一，广泛应用于各大超算计算中心和超级计算机。
 
@@ -36,20 +36,20 @@ icon: fontawesome/solid/tasks
 
 根据上图所示，Slurm 的控制守护进程（或称为服务端）主要由以下几个核心组件组成：
 
-* [`slurmctld`][slurmctld.8]：Slurm 控制守护进程，运行在管理结点上，负责资源管理和作业调度。
-* [`slurmd`][slurmd.8]：Slurm 计算守护进程，运行在每个计算结点上，负责执行分配给该结点的作业。
+* [`slurmctld`][slurmctld.8]：Slurm 控制守护进程，运行在管理节点上，负责资源管理和作业调度。
+* [`slurmd`][slurmd.8]：Slurm 计算守护进程，运行在每个计算节点上，负责执行分配给该节点的作业。
 * [`slurmdbd`][slurmdbd.8]（可选）：Slurm 数据库守护进程，与其他进程通信，作为它们访问数据库的代理。
 
 上述组件可以任意组合，管理员应当通过根据集群的功能、规模和冗余需求来决定具体的部署方案。例如，一个常见的中小型计算集群上的部署方案是：
 
 * 登录/控制/数据库复合节点 `foo00`：部署 `slurmctld` 和 `slurmdbd`，同时也安装 Slurm 客户端工具，供用户登录和提交作业。
-* 计算节点 `foo[01-15]`：部署 `slurmd`，不允许用户登录，作为计算结点执行用户作业。
+* 计算节点 `foo[01-15]`：部署 `slurmd`，不允许用户登录，作为计算节点执行用户作业。
 
 ### 前置要求 {#prerequisites}
 
-需要保证集群上的所有结点，可以通过主机名（hostname）解析所有结点的 IP 地址。建议使用静态 IP 或 DHCP 绑定，并配置好 DNS 服务，或者同步 `/etc/hosts` 文件。
+需要保证集群上的所有节点，可以通过主机名（hostname）解析所有节点的 IP 地址。建议使用静态 IP 或 DHCP 绑定，并配置好 DNS 服务，或者同步 `/etc/hosts` 文件。
 
-运行控制守护进程的结点使用 `munge` 进行身份验证和通信，需要提前使用 apt 安装，并同步 `/etc/munge/munge.key`。munge 的正常工作还依赖于集群内时间的同步，请参阅 [网络时间同步](../../ops/network-service/ntp.md) 进行配置。
+运行控制守护进程的节点使用 `munge` 进行身份验证和通信，需要提前使用 apt 安装，并同步 `/etc/munge/munge.key`。munge 的正常工作还依赖于集群内时间的同步，请参阅 [网络时间同步](../../ops/network-service/ntp.md) 进行配置。
 
 ??? tip "munge 测试"
 
@@ -76,7 +76,7 @@ icon: fontawesome/solid/tasks
 
 ### Slurm 配置文件 {#slurm-config-files}
 
-Slurm 需要的所有配置文件均存储在 `/etc/slurm` 下，管理员**务必**时刻保证集群中所有结点上文件内容一致（Slurm 会检查 hash），否则可能导致不可预期的错误。目前推荐的方式是使用 Configless Slurm（见后文），仅在管理结点上维护配置文件，其他结点实时进行拉取，以减少管理负担。
+Slurm 需要的所有配置文件均存储在 `/etc/slurm` 下，管理员**务必**时刻保证集群中所有节点上文件内容一致（Slurm 会检查 hash），否则可能导致不可预期的错误。目前推荐的方式是使用 Configless Slurm（见后文），仅在管理节点上维护配置文件，其他节点实时进行拉取，以减少管理负担。
 
 Debian 打包的 Slurm 没有提供默认配置文件，可通过官方的 [Configuration Tool](https://slurm.schedmd.com/configurator.html) 生成 `slurm.conf`，并根据实际情况进行修改。一些关键的配置项包括：
 
@@ -88,7 +88,7 @@ Debian 打包的 Slurm 没有提供默认配置文件，可通过官方的 [Conf
 
 对于配置文件的详尽解释，请参考官方文档的[`slurm.conf`][slurm.conf.5] 章节，亦可参阅[Slurm 资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html#id17)中的示例配置文件。
 
-`slurm.conf` 的底部是对所有结点（node）和分区（partition）的定义，根据实际情况修改即可。如果需要配置 GRES 资源（如 GPU），则还需要额外提供 [`gres.conf`][gres.conf.5] 文件描述每个结点上的设备情况，或者使用 NVML 等插件进行自动检测。
+`slurm.conf` 的底部是对所有节点（node）和分区（partition）的定义，根据实际情况修改即可。如果需要配置 GRES 资源（如 GPU），则还需要额外提供 [`gres.conf`][gres.conf.5] 文件描述每个节点上的设备情况，或者使用 NVML 等插件进行自动检测。
 
 如果需要 Slurm 对资源分配施加控制，尤其是限制用户对 GRES 的使用，则还需要提供 [`cgroup.conf`][cgroup.conf.5] 文件，并打开（默认不启用的）相关选项：
 
@@ -98,7 +98,7 @@ ConstrainDevices=yes # 启用设备约束
 ConstrainRAMSpace=yes # 启用内存约束
 ```
 
-如此配置下，`slurmd` 会在计算结点启动作业时自动创建和管理相应的 cgroups，从而实现对资源的限制和隔离，避免用户占据未申请的资源，影响其他用户的作业运行。需要注意：目前 cgroups v1 已被绝大部分用户（如 Slurm、容器运行时、systemd 等）标记为过时，因此使用的是 cgroups v2。
+如此配置下，`slurmd` 会在计算节点启动作业时自动创建和管理相应的 cgroups，从而实现对资源的限制和隔离，避免用户占据未申请的资源，影响其他用户的作业运行。需要注意：目前 cgroups v1 已被绝大部分用户（如 Slurm、容器运行时、systemd 等）标记为过时，因此使用的是 cgroups v2。
 
 如果修改了任何 slurm 配置文件，通常需要执行 `scontrol reconfigure` 使得修改生效；在部分情况下，可能还需要重启 slurmctld。在一般情况下，重启 slurmctld 不会影响正在运行的作业，也不会导致作业丢失，但依旧需要谨慎操作。
 
@@ -110,7 +110,7 @@ slurmdbd 是其他守护进程访问数据库的代理，可以避免在配置�
 
     Slurm 数据库中存储了用户组织关系、作业历史记录、资源使用情况等重要信息，务必定期备份数据库，以防止数据丢失。
 
-slurmdbd 需要单独安装，并提供 [`/etc/slurm/slurmdbd.conf`][slurmdbd.conf.5] 配置文件，指定数据库的连接信息和认证方式。此文件只需要保留在运行 slurmdbd 的结点上，不需要复制到其他结点，并且文件权限必须为 `600`。
+slurmdbd 需要单独安装，并提供 [`/etc/slurm/slurmdbd.conf`][slurmdbd.conf.5] 配置文件，指定数据库的连接信息和认证方式。此文件只需要保留在运行 slurmdbd 的节点上，不需要复制到其他节点，并且文件权限必须为 `600`。
 
 ```shell
 touch /etc/slurm/slurmdbd.conf # 填入相关配置
@@ -120,9 +120,9 @@ systemctl enable --now slurmdbd
 
 多个不同的 slurm 集群在技术上可以共享同一个 slurmdbd，但作者不推荐这样做，除非有明确的需要（如同样的用户群体需要访问多个集群的资源，又确实无法实现统一管理）。
 
-### 管理结点：slurmctld {#slurmctld}
+### 管理节点：slurmctld {#slurmctld}
 
-在管理结点上安装并启用 Slurm 控制守护进程：
+在管理节点上安装并启用 Slurm 控制守护进程：
 
 ```shell
 touch /etc/slurm/slurm.conf # 填入相关配置
@@ -130,16 +130,16 @@ apt-get install -y slurmctld slurm-client
 systemctl enable --now slurmctld
 ```
 
-此时运行 `sinfo`，应当能看到集群的分区和结点信息。由于没有 slurmd 在计算结点上运行，所有结点都应该均显示为 `UNK` 状态。
+此时运行 `sinfo`，应当能看到集群的分区和节点信息。由于没有 slurmd 在计算节点上运行，所有节点都应该均显示为 `UNK` 状态。
 
-### 计算结点：slurmd {#slurmd}
+### 计算节点：slurmd {#slurmd}
 
 ```shell
 apt-get install -y slurmd
 systemctl enable --now slurmd
 ```
 
-此时在装有客户端的结点上运行 `sinfo`，应当能看到启动了 `slurmd` 的结点的状态转变为 `idle`。执行 `srun hostname`，可以看到作业确实被分配到了计算结点上运行。再运行 `sacct -a`，可以看到作业的记录已经被写入数据库。这样，一个基本的 Slurm 集群就搭建完成了。
+此时在装有客户端的节点上运行 `sinfo`，应当能看到启动了 `slurmd` 的节点的状态转变为 `idle`。执行 `srun hostname`，可以看到作业确实被分配到了计算节点上运行。再运行 `sacct -a`，可以看到作业的记录已经被写入数据库。这样，一个基本的 Slurm 集群就搭建完成了。
 
 如果需要使用 Slurm 管理硬件，则需要保证 `gres.conf` 中提及的设备文件在 slurmd 启动前已经存在，否则 slurmd 会因为找不到设备而无法启动，或者将自己标记为 `DOWN` 的不可用状态（具体行为根据版本不同而有变化）。一个缓解办法是，让 `slurmd.service` 依赖 `systemd-modules-load.service`，即执行 `systemctl edit slurmd`，增加：
 
@@ -204,9 +204,9 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 ### pam_slurm_adopt
 
-为了方便用户调试，超算集群通常会允许用户登录到此刻正在运行其任务的计算结点上，以方便调试程序，或者使用交互式的分配（salloc）。此前的 `pam_slurm` 虽然实现了这一功能，但无法在任务结束后自动收回资源，导致进程残留等一系列的问题。为此，Slurm 提供了新的 PAM 模块 [`pam_slurm_adopt`](https://slurm.schedmd.com/pam_slurm_adopt.html)，可以在用户登录时自动“认领”其正在运行的作业，并在用户退出登录后自动释放资源。
+为了方便用户调试，超算集群通常会允许用户登录到此刻正在运行其任务的计算节点上，以方便调试程序，或者使用交互式的分配（salloc）。此前的 `pam_slurm` 虽然实现了这一功能，但无法在任务结束后自动收回资源，导致进程残留等一系列的问题。为此，Slurm 提供了新的 PAM 模块 [`pam_slurm_adopt`](https://slurm.schedmd.com/pam_slurm_adopt.html)，可以在用户登录时自动“认领”其正在运行的作业，并在用户退出登录后自动释放资源。
 
-首先在 `slurm.conf` 中确认已经设置 `PrologFlags=contain`，并启用了 `task/cgroup` 和 `proctrack/cgroup` 插件。在所有计算结点上安装 `libpam-slurm-adopt`，修改如下配置文件：
+首先在 `slurm.conf` 中确认已经设置 `PrologFlags=contain`，并启用了 `task/cgroup` 和 `proctrack/cgroup` 插件。在所有计算节点上安装 `libpam-slurm-adopt`，修改如下配置文件：
 
 * `/etc/ssh/sshd_config`：确认 `UsePAM` 已启用。
 * `/etc/pam.d/sshd`：在 account 部分添加：
@@ -225,7 +225,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 !!! note "潜在影响"
 
     禁用 `pam_systemd` 可能会导致某些依赖于 systemd 用户会话的功能（如用户级别的定时任务、用户级别的服务等）无法正常工作。
-    考虑到计算结点通常不需要这些功能，作者认为这是可以接受的权衡。
+    考虑到计算节点通常不需要这些功能，作者认为这是可以接受的权衡。
 
 ??? example "样例 PAM 配置"
 
@@ -255,7 +255,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 ### Configless Slurm
 
-在 20.02 版本后，Slurm 增加了 [Configless](https://slurm.schedmd.com/configless_slurm.html) 的功能，只需要在运行 slurmctld 的控制结点上维护一份配置，其他结点的 slurmd 或者 slurm 客户端在有需要时会自动拉取最新的配置，而在运行时进行 reconfig 也不用担心受到本地残留配置的影响。
+在 20.02 版本后，Slurm 增加了 [Configless](https://slurm.schedmd.com/configless_slurm.html) 的功能，只需要在运行 slurmctld 的控制节点上维护一份配置，其他节点的 slurmd 或者 slurm 客户端在有需要时会自动拉取最新的配置，而在运行时进行 reconfig 也不用担心受到本地残留配置的影响。
 
 文档指出，实现 configless 需要满足以下要求：
 
@@ -263,7 +263,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 2. 使得 slurmd 能找到 slurmctld：可以通过 DNS SRV 记录或者启动时传递 `--conf-server` 参数，或者传递 `SLURM_CONF_SERVER` 环境变量；
 3. 如果使用 SRV 记录，需要保证 slurmd 启动时本地没有任何配置（因为 [搜索顺序](https://slurm.schedmd.com/configless_slurm.html#NOTES) 中 SRV 记录优先级最低）。
 
-简单起见，可以选择传参的方案，即在所有安装 slurmd 的结点上修改 `/etc/default/slurmd`，在 `SLURMD_OPTIONS` 中添加：
+简单起见，可以选择传参的方案，即在所有安装 slurmd 的节点上修改 `/etc/default/slurmd`，在 `SLURMD_OPTIONS` 中添加：
 
 ```text
 SLURMD_OPTIONS="--conf-server your_ctl_server:6817"
@@ -285,7 +285,7 @@ TemporaryFileSystem=/etc/slurm
     ConditionPathExists=
     ```
 
-如果有未安装任何 slurm 守护进程的结点（即“瘦”登录结点），需要安装 [`sackd`][sackd.8]（从 25.05 开始提供），负责请求控制器、拉取缓存的配置供 `srun` 等客户端程序使用：
+如果有未安装任何 slurm 守护进程的节点（即“瘦”登录节点），需要安装 [`sackd`][sackd.8]（从 25.05 开始提供），负责请求控制器、拉取缓存的配置供 `srun` 等客户端程序使用：
 
 ```shell
 apt-get install -y sackd
@@ -301,9 +301,9 @@ systemctl enable --now sackd
 
 目前有大量的高性能计算工作负载已经迁移到了容器化环境中运行，Slurm 也提供了对容器的原生支持，这包括两步：
 
-首先，Slurm 任务可以运行在容器中：通过配置 Slurm 的 [oci.conf][oci.conf.5]，让 Slurm 可以在计算结点上调用容器 OCI 运行时（如 `runc`, `crun`, `nvidia-container-runtime` 等）。用户可以通过 `srun --container $OCI_BUNDLE` 来提交作业，Slurm 会根据配置，在计算结点上启动指定的容器，并在容器内运行用户的作业。也就是说，具体的容器运行时对 Slurm 用户是透明的。
+首先，Slurm 任务可以运行在容器中：通过配置 Slurm 的 [oci.conf][oci.conf.5]，让 Slurm 可以在计算节点上调用容器 OCI 运行时（如 `runc`, `crun`, `nvidia-container-runtime` 等）。用户可以通过 `srun --container $OCI_BUNDLE` 来提交作业，Slurm 会根据配置，在计算节点上启动指定的容器，并在容器内运行用户的作业。也就是说，具体的容器运行时对 Slurm 用户是透明的。
 
-进一步地，Slurm 还可以作为 OCI 容器运行时（“后端”）：用户在提交作业时不需要使用 slurm 相关命令，而是直接使用 `podman`, `dockers` 或者 `singularity` 等前端工具，它们通过标准 OCI 接口调用 Slurm 的 [`scrun`][scrun.1] 命令来创建和运行容器，而 Slurm 会将容器提交到计算结点上运行。也就是说，Slurm 本身也对容器用户是透明的；最终效果是，用户可以像在单机上运行容器一样，在集群上运行容器，而不需要关心底层的调度和资源分配。
+进一步地，Slurm 还可以作为 OCI 容器运行时（“后端”）：用户在提交作业时不需要使用 slurm 相关命令，而是直接使用 `podman`, `dockers` 或者 `singularity` 等前端工具，它们通过标准 OCI 接口调用 Slurm 的 [`scrun`][scrun.1] 命令来创建和运行容器，而 Slurm 会将容器提交到计算节点上运行。也就是说，Slurm 本身也对容器用户是透明的；最终效果是，用户可以像在单机上运行容器一样，在集群上运行容器，而不需要关心底层的调度和资源分配。
 
 !!! warning "配置复杂"
 
