@@ -50,8 +50,10 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
 在上图中，ROUTE 指[路由决策](routing.md)。
 
-需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于简化图片的考虑。
-这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 `localhost` 或 `127.0.0.1` 访问本机服务。
+特别地，由本机发往本机（回环接口）的数据包会依次经过 OUTPUT 和 POSTROUTING 阶段，由 lo 接口“发出”的同时也由 lo 接口“收到”，并再次经过 PREROUTING 和 INPUT 阶段后到达接收端 socket。
+该路径的典型场景是使用 `localhost` 或 `127.0.0.1` 等地址访问本机服务，但不包括 Unix socket[^unix-socket]。
+
+  [^unix-socket]: 事实上 Unix socket 是一种 IPC 方式，与网络栈无关，没有「路由」和「防火墙」等组件。
 
 !!! question "路由决策与 Reroute check 是什么关系？"
 
@@ -62,7 +64,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
     它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check[^iptable_mangle_hook]。
     事实上此图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，可以从以下两点看出：
-    
+
     1. 保持 OUTPUT 阶段与 PREROUTING 阶段的相似性：两个阶段均发生在路由决策之前，且 NAT 模式为仅可更改目的地址（DNAT）。
     2. 路由结果的准确性：数据包最终的路由结果基于经过 OUTPUT 或 PREROUTING 阶段修改后的元信息，如目的地址和防火墙标记等。
 
@@ -329,7 +331,7 @@ iptables -P OUTPUT ACCEPT
     这条命令的理解方式如下：
 
     - `iptables -A LIMIT`：将规则追加（`-A`）到名为 LIMIT 的链中，该规则只会对 IPv4 数据包生效。IPv6 防火墙规则需要使用 `ip6tables`。
-  
+
         LIMIT 是我们自定义的一条链，在 INPUT 阶段调用，负责执行类似的限流规则。
 
     - `-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN`：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。
