@@ -40,9 +40,9 @@ icon: fontawesome/solid/tasks
 * [`slurmd`][slurmd.8]：Slurm 计算守护进程，运行在每个计算结点上，负责执行分配给该结点的作业。
 * [`slurmdbd`][slurmdbd.8]（可选）：Slurm 数据库守护进程，与其他进程通信，作为它们访问数据库的代理。
 
-上述组件可以任意组合，管理员应当通过根据集群的功能、规模和冗余需求来决定具体的部署方案。例如，一个常见的中小型结点的部署方案是：
+上述组件可以任意组合，管理员应当通过根据集群的功能、规模和冗余需求来决定具体的部署方案。例如，一个常见的中小型计算集群上的部署方案是：
 
-* 登录、控制、数据库合一节点 `foo00`：部署 `slurmctld` 和 `slurmdbd`，同时也安装 Slurm 客户端工具，供用户登录和提交作业。
+* 登录/控制/数据库复合节点 `foo00`：部署 `slurmctld` 和 `slurmdbd`，同时也安装 Slurm 客户端工具，供用户登录和提交作业。
 * 计算节点 `foo[01-15]`：部署 `slurmd`，不允许用户登录，作为计算结点执行用户作业。
 
 ### 前置要求 {#prerequisites}
@@ -81,12 +81,14 @@ Slurm 需要的所有配置文件均存储在 `/etc/slurm` 下，管理员**务�
 Debian 打包的 Slurm 没有提供默认配置文件，可通过官方的 [Configuration Tool](https://slurm.schedmd.com/configurator.html) 生成 `slurm.conf`，并根据实际情况进行修改。一些关键的配置项包括：
 
 * `ClusterName`, `SlurmctldHost`, `NodeName`：顾名思义，按实际情况填写即可。
-* `ProctrackType`, `JobAcctGatherType`: 均推荐使用 `cgroups`。
-* `AccountingStorageType`: 如果安装 slurmdbd，则启用，并对应修改连接信息。
+* `SelectType`：推荐使用 `select/cons_res`，以支持对不同类型资源（如 GPU）的管理。
+* `SelectTypeParameters`：根据实际情况填写，如 `CR_Core_Memory`。
+* `ProctrackType`, `JobAcctGatherType`: 均推荐使用 `cgroups` 类型的插件。
+* `AccountingStorageType`: 如果安装 slurmdbd 则设置为 `accounting_storage/slurmdbd`，并对应修改连接信息相关的配置。
 
 对于配置文件的详尽解释，请参考官方文档的[`slurm.conf`][slurm.conf.5] 章节，亦可参阅[Slurm 资源管理与作业调度系统安装配置](https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html#id17)中的示例配置文件。
 
-`slurm.conf` 的底部是对所有结点（node）和分区（partition）的定义，根据实际情况修改即可。如果需要配置 GRES 资源（如 GPU），则还需要额外提供 [`gres.conf`][gres.conf.5] 文件描述每个结点上的设备情况。
+`slurm.conf` 的底部是对所有结点（node）和分区（partition）的定义，根据实际情况修改即可。如果需要配置 GRES 资源（如 GPU），则还需要额外提供 [`gres.conf`][gres.conf.5] 文件描述每个结点上的设备情况，或者使用 NVML 等插件进行自动检测。
 
 如果需要 Slurm 对资源分配施加控制，尤其是限制用户对 GRES 的使用，则还需要提供 [`cgroup.conf`][cgroup.conf.5] 文件，并打开（默认不启用的）相关选项：
 
@@ -96,7 +98,7 @@ ConstrainDevices=yes # 启用设备约束
 ConstrainRAMSpace=yes # 启用内存约束
 ```
 
-如此配置下，`slurmd` 会在计算结点启动作业时自动创建和管理相应的 cgroups，从而实现对资源的限制和隔离，避免用户占据未申请的资源，影响其他用户的作业运行。需要注意：目前 Slurm 已经丢弃了对 cgroups v1 的支持，只能使用 cgroups v2。
+如此配置下，`slurmd` 会在计算结点启动作业时自动创建和管理相应的 cgroups，从而实现对资源的限制和隔离，避免用户占据未申请的资源，影响其他用户的作业运行。需要注意：目前 cgroups v1 已被绝大部分用户（如 Slurm、容器运行时、systemd 等）标记为过时，因此使用的是 cgroups v2。
 
 如果修改了任何 slurm 配置文件，通常需要执行 `scontrol reconfigure` 使得修改生效；在部分情况下，可能还需要重启 slurmctld。在一般情况下，重启 slurmctld 不会影响正在运行的作业，也不会导致作业丢失，但依旧需要谨慎操作。
 
@@ -139,7 +141,7 @@ systemctl enable --now slurmd
 
 此时在装有客户端的结点上运行 `sinfo`，应当能看到启动了 `slurmd` 的结点的状态转变为 `idle`。执行 `srun hostname`，可以看到作业确实被分配到了计算结点上运行。再运行 `sacct -a`，可以看到作业的记录已经被写入数据库。这样，一个基本的 Slurm 集群就搭建完成了。
 
-如果需要使用 Slurm 管理硬件，则需要保证 `gres.conf` 中提及的设备文件在 slurmd 启动前已经存在，否则 slurmd 会因为找不到设备而无法启动。一个缓解办法是，让 `slurmd.service` 依赖 `systemd-modules-load.service`，即执行 `systemctl edit slurmd`，增加：
+如果需要使用 Slurm 管理硬件，则需要保证 `gres.conf` 中提及的设备文件在 slurmd 启动前已经存在，否则 slurmd 会因为找不到设备而无法启动，或者将自己标记为 `DOWN` 的不可用状态（具体行为根据版本不同而有变化）。一个缓解办法是，让 `slurmd.service` 依赖 `systemd-modules-load.service`，即执行 `systemctl edit slurmd`，增加：
 
 ```ini
 [Unit]
@@ -163,7 +165,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 !!! tip "注意打开配置"
 
-    为了使得设置生效，需要正确配置 `slurm.conf` 中的 `AccountingStorageEnforce` 选项。
+    为了使得设置生效，需要正确配置 `slurm.conf` 中的 `AccountingStorageEnforce` 选项，常见的值是 `associations,limits,qos,safe`。
 
 ??? example "示例配置"
 
@@ -202,12 +204,12 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 ### pam_slurm_adopt
 
-为了方便用户调试，超算集群通常会允许用户登录到此刻正在运行其任务的结点上，以方便调试程序，或者使用交互式的分配（salloc）。此前的 `pam_slurm` 虽然实现了这一功能，但无法在任务结束后自动收回资源，导致进程残留等一系列的问题。为此，Slurm 提供了新的 PAM 模块 [`pam_slurm_adopt`](https://slurm.schedmd.com/pam_slurm_adopt.html)，可以在用户登录时自动“认领”其正在运行的作业，并在用户退出登录后自动释放资源。
+为了方便用户调试，超算集群通常会允许用户登录到此刻正在运行其任务的计算结点上，以方便调试程序，或者使用交互式的分配（salloc）。此前的 `pam_slurm` 虽然实现了这一功能，但无法在任务结束后自动收回资源，导致进程残留等一系列的问题。为此，Slurm 提供了新的 PAM 模块 [`pam_slurm_adopt`](https://slurm.schedmd.com/pam_slurm_adopt.html)，可以在用户登录时自动“认领”其正在运行的作业，并在用户退出登录后自动释放资源。
 
 首先在 `slurm.conf` 中确认已经设置 `PrologFlags=contain`，并启用了 `task/cgroup` 和 `proctrack/cgroup` 插件。在所有计算结点上安装 `libpam-slurm-adopt`，修改如下配置文件：
 
 * `/etc/ssh/sshd_config`：确认 `UsePAM` 已启用。
-* `/etc/pamd/sshd`：在 account 部分添加：
+* `/etc/pam.d/sshd`：在 account 部分添加：
 
     ```text
     -account    required      pam_slurm_adopt.so
@@ -215,10 +217,15 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
     最前面的 `-` 保证在模块不存在时，不会产生致命错误，从而阻止所有登录。
 
-此外，关于 PAM 配置，还需保证：
+为了使得 `pam_slurm_adopt` 正常工作，还需保证：
 
 * 禁用 `pam_systemd` 模块，否则会与 `pam_slurm_adopt` 冲突，导致其失效。可通过 `pam-auth-update` 工具进行配置。
 * 确保没有其他模块绕过了 `pam_slurm_adopt`。
+
+!!! note "潜在影响"
+
+    禁用 `pam_systemd` 可能会导致某些依赖于 systemd 用户会话的功能（如用户级别的定时任务、用户级别的服务等）无法正常工作。
+    考虑到计算结点通常不需要这些功能，作者认为这是可以接受的权衡。
 
 ??? example "样例 PAM 配置"
 
@@ -262,7 +269,7 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 SLURMD_OPTIONS="--conf-server your_ctl_server:6817"
 ```
 
-为了保险起见，还可以通过 systemd 对 slurmd 隐藏整个 `/etc/slurm` 的文件夹，避免潜在的冲突/混淆问题。运行 `systemctl edit slurmd`，增加：
+（此部分可选）保险起见，还可以通过 systemd 对 slurmd 隐藏整个 `/etc/slurm` 的文件夹，避免潜在的冲突/混淆问题。运行 `systemctl edit slurmd`，增加：
 
 ```init
 [Service]
@@ -278,7 +285,7 @@ TemporaryFileSystem=/etc/slurm
     ConditionPathExists=
     ```
 
-如果有未安装任何守护进程的纯客户端结点，需要安装 [`sackd`][sackd.8]，负责请求控制器、拉取缓存的配置：
+如果有未安装任何 slurm 守护进程的结点（即“瘦”登录结点），需要安装 [`sackd`][sackd.8]（从 25.05 开始提供），负责请求控制器、拉取缓存的配置供 `srun` 等客户端程序使用：
 
 ```shell
 apt-get install -y sackd
