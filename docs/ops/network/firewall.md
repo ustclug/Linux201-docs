@@ -50,10 +50,10 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
 在上图中，ROUTE 指[路由决策](routing.md)。
 
-特别地，由本机发往本机（回环接口）的数据包会依次经过 OUTPUT 和 POSTROUTING 阶段，由 lo 接口“发出”的同时也由 lo 接口“收到”，并再次经过 PREROUTING 和 INPUT 阶段后到达接收端 socket。
-该路径的典型场景是使用 `localhost` 或 `127.0.0.1` 等地址访问本机服务，但不包括 Unix socket[^unix-socket]。
+特别地，由本机发往本机（回环接口，即 `lo`）的数据包会依次经过 OUTPUT 和 POSTROUTING 阶段，由 lo 接口发出的同时也由 lo 接口收到，并再次经过 PREROUTING 和 INPUT 阶段后到达接收端 socket。
+该路径的典型场景是使用 `localhost`、`127.0.0.1` 或 `::1` 等地址访问本机服务，但不包括 Unix socket[^unix-socket]。
 
-  [^unix-socket]: 事实上 Unix socket 是一种 IPC 方式，与网络栈无关，没有「路由」和「防火墙」等组件。
+  [^unix-socket]: 事实上 Unix socket 是一种 IPC 方式，与网络栈几乎无关，没有「路由」和「防火墙」等组件。
 
 !!! question "路由决策与 Reroute check 是什么关系？"
 
@@ -96,7 +96,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     2. 路由决策位于 OUTPUT 之前，且 OUTPUT 后另有重新路由：因为 OUTPUT 阶段需要支持 `-o` 匹配方式，该信息依赖于初步的路由决策结果。
 
   [^ip_route_me_harder]: [`ip_route_me_harder`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter.c#L21) 或 [`ip6_route_me_harder`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter.c#L23) 函数
-  [^ip6t_mangle_out]: IPv6 采用的判断条件有所不同，具体请阅读 [`ip6t_mangle_out`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter/ip6table_mangle.c#L52) 函数。
+  [^ip6t_mangle_out]: IPv6 采用的判断条件有所不同，此处不再赘述。详情请见 [`ip6t_mangle_out`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter/ip6table_mangle.c#L52) 函数。
   [^ip_route_me_harder.mangle]: [`ipt_mangle_out`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L63) 函数
   [^ip_route_me_harder.nat]: [`nf_nat_ipv4_local_fn`](https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L767) 函数
   [^skb._skb_refdst]: [`skb_dst_set`](https://elixir.bootlin.com/linux/v6.17.8/source/include/linux/skbuff.h#L1173) 函数
