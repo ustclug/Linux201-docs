@@ -163,6 +163,10 @@ Conntrack 除了记录连接的五元组（四层协议、源地址、目的地�
 
   [^nf_nat_manip_pkt]: [`nf_nat_manip_pkt`](https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L383)
 
+对于经过 NAT 的连接，Linux 要求属于该连接的所有数据包都由相同的网卡发出（区分正反方向），否则会停止记录连接信息并丢掉即将发往不同网卡的数据包[^nf_nat_oif_changed]。
+
+  [^nf_nat_oif_changed]: [`nf_nat_inet_fn`](https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L978)
+
 #### conntrack 命令 {#conntrack-command}
 
 [`conntrack(8)`][conntrack.8] 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。
