@@ -3099,13 +3099,13 @@
 </figcaption>
 </figure>
 <p>在上图中，ROUTE 指<a href="../routing/">路由决策</a>。</p>
-<p>需要指出的是，网上的许多示意图中缺少了由 OUTPUT 阶段经过路由决策后进入 INPUT 阶段的路径，或许是出于简化图片的考虑。
-这条路径在实际中是存在的，即所有由本机发往本机（回环接口）的数据包都会依次经过 OUTPUT 和 INPUT 两个阶段，典型的场景是使用 <code>localhost</code> 或 <code>127.0.0.1</code> 访问本机服务。</p>
+<p>特别地，由本机发往本机（回环接口）的数据包会依次经过 OUTPUT 和 POSTROUTING 阶段，由 lo 接口“发出”的同时也由 lo 接口“收到”，并再次经过 PREROUTING 和 INPUT 阶段后到达接收端 socket。
+该路径的典型场景是使用 <code>localhost</code> 或 <code>127.0.0.1</code> 等地址访问本机服务，但不包括 Unix socket<sup id="fnref:unix-socket"><a class="footnote-ref" href="#fn:unix-socket">1</a></sup>。</p>
 <div class="admonition question">
 <p class="admonition-title">路由决策与 Reroute check 是什么关系？</p>
 <p>可能有部分读者见过 Wikipedia 的这张著名的 <a href="https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg">Netfilter packet flow</a>：</p>
 <p id="wikipedia-netfilter-packet-flow"><img alt="Netfilter flow chart" src="https://upload.wikimedia.org/wikipedia/commons/3/37/Netfilter-packet-flow.svg" /></p>
-<p>它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check<sup id="fnref:iptable_mangle_hook"><a class="footnote-ref" href="#fn:iptable_mangle_hook">1</a></sup>。
+<p>它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check<sup id="fnref:iptable_mangle_hook"><a class="footnote-ref" href="#fn:iptable_mangle_hook">2</a></sup>。
 事实上此图是更加准确的，但在大多数情况下，将路由决策视作位于 OUTPUT 之后更容易理解，可以从以下两点看出：</p>
 <ol>
 <li>保持 OUTPUT 阶段与 PREROUTING 阶段的相似性：两个阶段均发生在路由决策之前，且 NAT 模式为仅可更改目的地址（DNAT）。</li>
@@ -3122,14 +3122,14 @@
 <li>只是一个历史遗留问题：早期的内核可能并没有考虑到 OUTPUT 阶段修改信息会导致路由变化，因此在数据包由本机进程发出后，直接进行路由决策。</li>
 <li>「由本机往网卡发出」的数据包只会经过 OUTPUT 和 POSTROUTING 两个阶段，而仅有 OUTPUT 阶段<a href="#iptables-tables-validity">具有</a> filter 表。在这种情况下，若要限制本机进程允许发出数据包的网络接口，则 OUTPUT 阶段必须支持 <code>-o</code> 参数，即需要在 OUTPUT 阶段前进行一次（初步的）路由决策。</li>
 </ol>
-<p>为了兼顾「在 OUTPUT 链中可以使用 <code>-o</code>」和最终路由决策的正确性，内核采用了 Reroute 机制<sup id="fnref:ip_route_me_harder"><a class="footnote-ref" href="#fn:ip_route_me_harder">2</a></sup>，即针对 OUTPUT 阶段：</p>
+<p>为了兼顾「在 OUTPUT 链中可以使用 <code>-o</code>」和最终路由决策的正确性，内核采用了 Reroute 机制<sup id="fnref:ip_route_me_harder"><a class="footnote-ref" href="#fn:ip_route_me_harder">3</a></sup>，即针对 OUTPUT 阶段：</p>
 <ul>
 <li>数据包由本机进程 <code>send()</code> 到 Netfilter 之后，首先进行一次路由决策，确定初步的输出接口。</li>
-<li>在 mangle 表中，若数据包的源地址、目的地址、防火墙标记或 TOS 字段这 4 个元信息发生了变化<sup id="fnref:ip6t_mangle_out"><a class="footnote-ref" href="#fn:ip6t_mangle_out">3</a></sup>，则重新进行一次路由决策<sup id="fnref:ip_route_me_harder.mangle"><a class="footnote-ref" href="#fn:ip_route_me_harder.mangle">4</a></sup>。</li>
-<li>在 nat 表中，若数据包的目的地址发生了变化，则还会重新进行一次路由决策<sup id="fnref:ip_route_me_harder.nat"><a class="footnote-ref" href="#fn:ip_route_me_harder.nat">5</a></sup>。</li>
+<li>在 mangle 表中，若数据包的源地址、目的地址、防火墙标记或 TOS 字段这 4 个元信息发生了变化<sup id="fnref:ip6t_mangle_out"><a class="footnote-ref" href="#fn:ip6t_mangle_out">4</a></sup>，则重新进行一次路由决策<sup id="fnref:ip_route_me_harder.mangle"><a class="footnote-ref" href="#fn:ip_route_me_harder.mangle">5</a></sup>。</li>
+<li>在 nat 表中，若数据包的目的地址发生了变化，则还会重新进行一次路由决策<sup id="fnref:ip_route_me_harder.nat"><a class="footnote-ref" href="#fn:ip_route_me_harder.nat">6</a></sup>。</li>
 </ul>
 <p>需要注意的是，尽管数据包可能在 mangle 表和 nat 表中已经经过了至多两次额外路由决策，但其在 filter 表中时，<code>-o</code> 参数所匹配的输出接口始终是最初的路由决策结果。
-这是因为最终生效的路由决策存储在数据包的 <code>skb-&gt;_skb_refdst</code> 字段中<sup id="fnref:skb._skb_refdst"><a class="footnote-ref" href="#fn:skb._skb_refdst">6</a></sup>，而 Netfilter 在进行匹配时使用的是 <code>nf_hook_state-&gt;out</code> 字段<sup id="fnref:ipt_do_table"><a class="footnote-ref" href="#fn:ipt_do_table">7</a></sup>，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。</p>
+这是因为最终生效的路由决策存储在数据包的 <code>skb-&gt;_skb_refdst</code> 字段中<sup id="fnref:skb._skb_refdst"><a class="footnote-ref" href="#fn:skb._skb_refdst">7</a></sup>，而 Netfilter 在进行匹配时使用的是 <code>nf_hook_state-&gt;out</code> 字段<sup id="fnref:ipt_do_table"><a class="footnote-ref" href="#fn:ipt_do_table">8</a></sup>，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。</p>
 <p>在搞清楚这些细节后，我们就能理解为什么以下两种理解方式都是正确的：</p>
 <ol>
 <li>路由决策位于 OUTPUT 之后：因为数据包最终的路由结果是基于经过 OUTPUT 阶段修改后的状态决定的。</li>
@@ -3184,7 +3184,7 @@
 <li>此时 conntrack 记录该连接<strong>双向</strong>的五元组（共 9 个字段，其中协议号只需记录一次），包括正向（original）的四元组和反向（reply）的四元组</li>
 </ul>
 </li>
-<li>后续的数据包（不论方向）经过该路由器时，在 conntrack 阶段（<code>NF_IP_PRI_CONNTRACK</code>）匹配到某一方向的四元组，由 conntrack 改写为另一方向的四元组的反向地址<sup id="fnref:nf_nat_manip_pkt"><a class="footnote-ref" href="#fn:nf_nat_manip_pkt">8</a></sup>，使对端主机能够正确接收数据包。</li>
+<li>后续的数据包（不论方向）经过该路由器时，在 conntrack 阶段（<code>NF_IP_PRI_CONNTRACK</code>）匹配到某一方向的四元组，由 conntrack 改写为另一方向的四元组的反向地址<sup id="fnref:nf_nat_manip_pkt"><a class="footnote-ref" href="#fn:nf_nat_manip_pkt">9</a></sup>，使对端主机能够正确接收数据包。</li>
 </ul>
 <h4 id="conntrack-command">conntrack 命令<a class="headerlink" href="#conntrack-command" title="Permanent link">&para;</a></h4>
 <p><a href="https://man.archlinux.org/man/conntrack.8.en"><code>conntrack(8)</code></a> 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。</p>
@@ -3302,7 +3302,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <tr>
 <td style="text-align: center;">OUTPUT</td>
 <td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
-<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span><sup id="fnref:output-oif"><a class="footnote-ref" href="#fn:output-oif">9</a></sup></td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span><sup id="fnref:output-oif"><a class="footnote-ref" href="#fn:output-oif">10</a></sup></td>
 </tr>
 <tr>
 <td style="text-align: center;">POSTROUTING</td>
@@ -3374,7 +3374,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <p>需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
 这是因为 iptables 将 Netfilter 的两种 hook 优先级（<code>NAT_DST</code> 和 <code>NAT_SRC</code>）都放进了 nat 表，因此尽管四个链都在 nat 表中，它们实际上是分属于两种不同的 Netfilter hook。</p>
 <p>特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 <a href="#conntrack">conntrack 模块</a>处理。
-对于用户而言，可以理解为「nat 表自带 <code>--ctstate NEW</code> 约束<sup id="fnref:nf_nat_inet_fn"><a class="footnote-ref" href="#fn:nf_nat_inet_fn">10</a></sup>，之后的数据包都使用已经转换后的地址进行通信」。</p>
+对于用户而言，可以理解为「nat 表自带 <code>--ctstate NEW</code> 约束<sup id="fnref:nf_nat_inet_fn"><a class="footnote-ref" href="#fn:nf_nat_inet_fn">11</a></sup>，之后的数据包都使用已经转换后的地址进行通信」。</p>
 </dd>
 <dt>mangle</dt>
 <dd>
@@ -3481,35 +3481,38 @@ Do not link to a "generic" man page for these commands -->
 <div class="footnote">
 <hr />
 <ol>
+<li id="fn:unix-socket">
+<p>事实上 Unix socket 是一种 IPC 方式，与网络栈无关，没有「路由」和「防火墙」等组件。&#160;<a class="footnote-backref" href="#fnref:unix-socket" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
 <li id="fn:iptable_mangle_hook">
-<p>此图的 2021 年的版本仍然有一处错误：Reroute check 发生在 OUTPUT 阶段内部，而 FORWARD 阶段后不经过 reroute check。细节可见 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78"><code>iptable_mangle_hook</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:iptable_mangle_hook" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+<p>此图的 2021 年的版本仍然有一处错误：Reroute check 发生在 OUTPUT 阶段内部，而 FORWARD 阶段后不经过 reroute check。细节可见 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78"><code>iptable_mangle_hook</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:iptable_mangle_hook" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 <li id="fn:ip_route_me_harder">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter.c#L21"><code>ip_route_me_harder</code></a> 或 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter.c#L23"><code>ip6_route_me_harder</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter.c#L21"><code>ip_route_me_harder</code></a> 或 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter.c#L23"><code>ip6_route_me_harder</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 <li id="fn:ip6t_mangle_out">
-<p>IPv6 采用的判断条件有所不同，具体请阅读 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter/ip6table_mangle.c#L52"><code>ip6t_mangle_out</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:ip6t_mangle_out" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p>IPv6 采用的判断条件有所不同，具体请阅读 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv6/netfilter/ip6table_mangle.c#L52"><code>ip6t_mangle_out</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:ip6t_mangle_out" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 <li id="fn:ip_route_me_harder.mangle">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L63"><code>ipt_mangle_out</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder.mangle" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L63"><code>ipt_mangle_out</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder.mangle" title="Jump back to footnote 5 in the text">&#8617;</a></p>
 </li>
 <li id="fn:ip_route_me_harder.nat">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L767"><code>nf_nat_ipv4_local_fn</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder.nat" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L767"><code>nf_nat_ipv4_local_fn</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ip_route_me_harder.nat" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 <li id="fn:skb._skb_refdst">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/include/linux/skbuff.h#L1173"><code>skb_dst_set</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:skb._skb_refdst" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/include/linux/skbuff.h#L1173"><code>skb_dst_set</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:skb._skb_refdst" title="Jump back to footnote 7 in the text">&#8617;</a></p>
 </li>
 <li id="fn:ipt_do_table">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/ip_tables.c#L245"><code>ipt_do_table</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ipt_do_table" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/ip_tables.c#L245"><code>ipt_do_table</code></a> 函数&#160;<a class="footnote-backref" href="#fnref:ipt_do_table" title="Jump back to footnote 8 in the text">&#8617;</a></p>
 </li>
 <li id="fn:nf_nat_manip_pkt">
-<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L383"><code>nf_nat_manip_pkt</code></a>&#160;<a class="footnote-backref" href="#fnref:nf_nat_manip_pkt" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L383"><code>nf_nat_manip_pkt</code></a>&#160;<a class="footnote-backref" href="#fnref:nf_nat_manip_pkt" title="Jump back to footnote 9 in the text">&#8617;</a></p>
 </li>
 <li id="fn:output-oif">
-<p>还记得<a href="#wikipedia-netfilter-packet-flow">上文</a>为什么说 Wikipedia 的图更准确吗？&#160;<a class="footnote-backref" href="#fnref:output-oif" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+<p>还记得<a href="#wikipedia-netfilter-packet-flow">上文</a>为什么说 Wikipedia 的图更准确吗？&#160;<a class="footnote-backref" href="#fnref:output-oif" title="Jump back to footnote 10 in the text">&#8617;</a></p>
 </li>
 <li id="fn:nf_nat_inet_fn">
-<p>该约束事实上是「NEW 或 RELATED」，具体可参考 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L936"><code>nf_nat_inet_fn</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:nf_nat_inet_fn" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+<p>该约束事实上是「NEW 或 RELATED」，具体可参考 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L936"><code>nf_nat_inet_fn</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:nf_nat_inet_fn" title="Jump back to footnote 11 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3533,7 +3536,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月23日 18:00:11 UTC">2025年11月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月24日 03:46:23 UTC">2025年11月24日</span>
   </span>
 
     
