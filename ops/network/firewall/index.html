@@ -3186,6 +3186,7 @@
 </li>
 <li>后续的数据包（不论方向）经过该路由器时，在 conntrack 阶段（<code>NF_IP_PRI_CONNTRACK</code>）匹配到某一方向的四元组，由 conntrack 改写为另一方向的四元组的反向地址<sup id="fnref:nf_nat_manip_pkt"><a class="footnote-ref" href="#fn:nf_nat_manip_pkt">9</a></sup>，使对端主机能够正确接收数据包。</li>
 </ul>
+<p>对于经过 NAT 的连接，Linux 要求属于该连接的所有数据包都由相同的网卡发出（区分正反方向），否则会停止记录连接信息并丢掉即将发往不同网卡的数据包<sup id="fnref:nf_nat_oif_changed"><a class="footnote-ref" href="#fn:nf_nat_oif_changed">10</a></sup>。</p>
 <h4 id="conntrack-command">conntrack 命令<a class="headerlink" href="#conntrack-command" title="Permanent link">&para;</a></h4>
 <p><a href="https://man.archlinux.org/man/conntrack.8.en"><code>conntrack(8)</code></a> 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。</p>
 <p>最常用的命令是列出当前的连接跟踪条目：</p>
@@ -3302,7 +3303,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <tr>
 <td style="text-align: center;">OUTPUT</td>
 <td style="text-align: center;"><span class="twemoji orangered"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M55.1 73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L147.2 256 9.9 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l137.3-137.4 137.4 137.3c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.8 256l137.3-137.4c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192.5 210.7z"/></svg></span></td>
-<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span><sup id="fnref:output-oif"><a class="footnote-ref" href="#fn:output-oif">10</a></sup></td>
+<td style="text-align: center;"><span class="twemoji limegreen"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M434.8 70.1c14.3 10.4 17.5 30.4 7.1 44.7l-256 352c-5.5 7.6-14 12.3-23.4 13.1s-18.5-2.7-25.1-9.3l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l101.5 101.5 234-321.7c10.4-14.3 30.4-17.5 44.7-7.1z"/></svg></span><sup id="fnref:output-oif"><a class="footnote-ref" href="#fn:output-oif">11</a></sup></td>
 </tr>
 <tr>
 <td style="text-align: center;">POSTROUTING</td>
@@ -3374,7 +3375,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <p>需要注意的是，nat 表的 PREROUTING 和 OUTPUT 链只能使用 DNAT 目标，而 INPUT 和 POSTROUTING 链只能使用 SNAT（或 MASQUERADE）目标。
 这是因为 iptables 将 Netfilter 的两种 hook 优先级（<code>NAT_DST</code> 和 <code>NAT_SRC</code>）都放进了 nat 表，因此尽管四个链都在 nat 表中，它们实际上是分属于两种不同的 Netfilter hook。</p>
 <p>特别的是，仅有建立新连接的数据包会经过 nat 表，而已经建立连接的数据包不会经过 nat 表，而是由 <a href="#conntrack">conntrack 模块</a>处理。
-对于用户而言，可以理解为「nat 表自带 <code>--ctstate NEW</code> 约束<sup id="fnref:nf_nat_inet_fn"><a class="footnote-ref" href="#fn:nf_nat_inet_fn">11</a></sup>，之后的数据包都使用已经转换后的地址进行通信」。</p>
+对于用户而言，可以理解为「nat 表自带 <code>--ctstate NEW</code> 约束<sup id="fnref:nf_nat_inet_fn"><a class="footnote-ref" href="#fn:nf_nat_inet_fn">12</a></sup>，之后的数据包都使用已经转换后的地址进行通信」。</p>
 </dd>
 <dt>mangle</dt>
 <dd>
@@ -3508,11 +3509,14 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:nf_nat_manip_pkt">
 <p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_proto.c#L383"><code>nf_nat_manip_pkt</code></a>&#160;<a class="footnote-backref" href="#fnref:nf_nat_manip_pkt" title="Jump back to footnote 9 in the text">&#8617;</a></p>
 </li>
+<li id="fn:nf_nat_oif_changed">
+<p><a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L978"><code>nf_nat_inet_fn</code></a>&#160;<a class="footnote-backref" href="#fnref:nf_nat_oif_changed" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
 <li id="fn:output-oif">
-<p>还记得<a href="#wikipedia-netfilter-packet-flow">上文</a>为什么说 Wikipedia 的图更准确吗？&#160;<a class="footnote-backref" href="#fnref:output-oif" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+<p>还记得<a href="#wikipedia-netfilter-packet-flow">上文</a>为什么说 Wikipedia 的图更准确吗？&#160;<a class="footnote-backref" href="#fnref:output-oif" title="Jump back to footnote 11 in the text">&#8617;</a></p>
 </li>
 <li id="fn:nf_nat_inet_fn">
-<p>该约束事实上是「NEW 或 RELATED」，具体可参考 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L936"><code>nf_nat_inet_fn</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:nf_nat_inet_fn" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+<p>该约束事实上是「NEW 或 RELATED」，具体可参考 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/netfilter/nf_nat_core.c#L936"><code>nf_nat_inet_fn</code></a> 函数。&#160;<a class="footnote-backref" href="#fnref:nf_nat_inet_fn" title="Jump back to footnote 12 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3536,7 +3540,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月24日 03:46:23 UTC">2025年11月24日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月24日 05:12:29 UTC">2025年11月24日</span>
   </span>
 
     
