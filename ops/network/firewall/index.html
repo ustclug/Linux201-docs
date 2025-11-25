@@ -1181,6 +1181,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ipset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPset
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3005,6 +3016,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ipset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IPset
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3270,7 +3292,7 @@
 </ul>
 <p>需要注意的是，尽管数据包可能在 mangle 表和 nat 表中已经经过了至多两次额外路由决策，但其在 filter 表中时，<code>-o</code> 参数所匹配的输出接口始终是最初的路由决策结果。
 这是因为最终生效的路由决策存储在数据包的 <code>skb-&gt;_skb_refdst</code> 字段中<sup id="fnref:skb._skb_refdst"><a class="footnote-ref" href="#fn:skb._skb_refdst">7</a></sup>，而 Netfilter 在进行匹配时使用的是 <code>nf_hook_state-&gt;out</code> 字段<sup id="fnref:ipt_do_table"><a class="footnote-ref" href="#fn:ipt_do_table">8</a></sup>，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。</p>
-<p>在搞清楚这些细节后，我们就能理解为什么以下两种理解方式都是正确的：</p>
+<p>在搞清楚这些细节后，我们就知道为什么以下两种理解方式都是正确的：</p>
 <ol>
 <li>路由决策位于 OUTPUT 之后：因为数据包最终的路由结果是基于经过 OUTPUT 阶段修改后的状态决定的。</li>
 <li>路由决策位于 OUTPUT 之前，且 OUTPUT 后另有重新路由：因为 OUTPUT 阶段需要支持 <code>-o</code> 匹配方式，该信息依赖于初步的路由决策结果。</li>
@@ -3298,6 +3320,33 @@
 </div>
 </div>
 </div>
+<p>在 conntrack 看来，数据包与连接的关系有以下几种：</p>
+<dl>
+<dt>NEW</dt>
+<dd>
+<p>该数据包将要建立一个新连接</p>
+</dd>
+<dt>ESTABLISHED</dt>
+<dd>
+<p>该数据包属于一个已经建立的连接</p>
+</dd>
+<dt>RELATED</dt>
+<dd>
+<p>该数据包将要建立一个新连接，但是由某一项 helper 认为是与一个已有连接相关联的，例如 FTP 的数据连接。</p>
+</dd>
+<dt>INVALID</dt>
+<dd>
+<p>该数据包不属于任何连接，conntrack 无法辨认</p>
+</dd>
+<dt>UNTRACKED</dt>
+<dd>
+<p>该数据包在 raw 表中已经被标记为 notrack（不要跟踪）</p>
+</dd>
+<dt>DNAT、SNAT</dt>
+<dd>
+<p>两个特殊的状态，仅用于匹配数据包（<code>--ctstate</code>），表示数据包经过了 DNAT / SNAT。</p>
+</dd>
+</dl>
 <h4 id="conntrack-mark">连接标记<a class="headerlink" href="#conntrack-mark" title="Permanent link">&para;</a></h4>
 <p>Conntrack 除了记录连接的五元组（四层协议、源地址、目的地址、源端口、目的端口）外，还可以为连接记录一个「标记」（conntrack mark，<code>CONNMARK</code>）。
 该标记可以在 iptables 或 nftables 规则中从数据包保存或恢复到数据包上，实现「数据包标记」与「连接标记」的双向互动，例如：</p>
@@ -3315,6 +3364,7 @@
 </div>
 </div>
 </div>
+<p>对于经过 NAT 的连接，CONNMARK 在实现「源进源出」时非常重要，</p>
 <h4 id="conntrack-nat">NAT 支持<a class="headerlink" href="#conntrack-nat" title="Permanent link">&para;</a></h4>
 <p>在 Netfilter 中，用户定义的 NAT 规则只会对<strong>新连接</strong>生效，而已建立的连接的后续数据包则由 conntrack 负责处理 NAT，确保同一连接内的所有数据包都能被正确处理。</p>
 <p>例如，在一个典型的家用路由器上，当内网主机向外网发起连接时，路由器上的 NAT 规则会将数据包的源地址改写为路由器的 WAN 口地址，整个流程如下：</p>
@@ -3356,6 +3406,8 @@
 </code></pre></div>
 <p><code>conntrack</code> 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 <a href="https://man.archlinux.org/man/conntrack.8.en">conntrack(8)</a>。</p>
 <p>另外，<code>conntrack -E</code> 命令可以实时监控 conntrack 表的变化，适合用于调试和分析网络连接的动向。<code>-E</code> 操作同样支持匹配条件，可以过滤出特定的连接事件，方便查找和分析。</p>
+<h3 id="ipset">IPset<a class="headerlink" href="#ipset" title="Permanent link">&para;</a></h3>
+<p>IPset 是</p>
 <h2 id="iptables">iptables<a class="headerlink" href="#iptables" title="Permanent link">&para;</a></h2>
 <p>iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
 iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。</p>
@@ -3453,6 +3505,14 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </tbody>
 </table>
 </dd>
+<dt><code>-m conntrack --ctstate</code></dt>
+<dd>
+<p>调用 conntrack 模块判断当前数据包所属的连接类型，参见上文的 <a href="#connection-tracking">conntrack 段落</a>。</p>
+</dd>
+<dt><code>-m set --match-set set_name src</code></dt>
+<dd>
+<p>调用 <code>set</code> 模块从 IPset 中匹配数据包的地址和端口，参见上文的 <a href="#ipset">IPset 段落</a>。</p>
+</dd>
 </dl>
 <h4 id="iptables-jump">动作<a class="headerlink" href="#iptables-jump" title="Permanent link">&para;</a></h4>
 <p>若一个数据包满足某条规则的所有匹配条件，就会进执行该规则的目标（<code>-j</code> / <code>-g</code> 参数）。目标可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理）。</p>
@@ -3476,8 +3536,8 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <li>CONNMARK：为数据包对应的 conntrack 连接打上标记，或从连接中恢复标记。</li>
 </ul>
 <p>每条内置链都有一个<strong>默认策略</strong>（<code>-P</code> / <code>--policy</code>），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。</p>
-<div class="admonition example">
-<p class="admonition-title">例：科大镜像站上限制 80 / 443 端口并发连接数</p>
+<details class="example" open="open">
+<summary>例：科大镜像站上限制 80 / 443 端口并发连接数</summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
@@ -3494,14 +3554,14 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <p><code>-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN</code>：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。</p>
 <ul>
 <li>等价的写法是 <code>-p tcp --syn</code></li>
-<li>另一个（几乎）等价的写法是 <code>-m conntrack --ctstate NEW</code>，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。</li>
+<li>另一个（几乎）等价的写法是 <code>-m conntrack --ctstate NEW</code>，该写法调用了 conntrack 模块，由 conntrack 判断什么样的数据包是新连接请求。</li>
 </ul>
 </li>
 <li><code>-m multiport --dports 80,443</code>：调用 <code>multiport</code> 模块，匹配目的端口为 80 或 443 的数据包。</li>
 <li><code>-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr</code>：调用 <code>connlimit</code> 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。</li>
 <li><code>-j REJECT --reject-with tcp-reset</code>：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。</li>
 </ul>
-</div>
+</details>
 <h3 id="iptables-tables">iptables 表<a class="headerlink" href="#iptables-tables" title="Permanent link">&para;</a></h3>
 <p>iptables 的主要表类型有以下几种：</p>
 <dl>
@@ -3523,10 +3583,10 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </dd>
 <dt>raw</dt>
 <dd>
-<p>用于处理原始数据包，将包标记为不经过连接跟踪（如 <code>-j CT --notrack</code>），或引入其他连接跟踪帮助模块（如 <code>-j CT --helper</code>）。</p>
+<p>改变 conntrack 对当前数据包的行为，可以标记为不经过 conntrack（不进行跟踪，如 <code>-j CT --notrack</code>），或引入其他 conntrack 帮助模块（如 <code>-j CT --helper</code>）。</p>
 </dd>
 </dl>
-<p>另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统中不常用。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。</p>
+<p>另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统（尤其是 Debian 系列发行版）中不常用，因此本文不作详细讨论。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。</p>
 <p>iptables 的每个表都会注册到对应的 Netfilter hook 优先级上，因此同一个阶段（例如 PREROUTING）中，不同表的处理顺序与 <a href="#netfilter-hook-priorities">hook 的优先级</a>相同。</p>
 <p id="iptables-tables-validity">各个表在各个阶段的可用性如下表所示：</p>
 <table>
@@ -3684,35 +3744,12 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月24日 05:18:27 UTC">2025年11月24日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月25日 16:28:01 UTC">2025年11月25日</span>
   </span>
 
     
     
     
-    
-      
-  <span class="md-source-file__fact">
-    
-      
-  <span class="md-icon" title="贡献者">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/></svg>
-  </span>
-  <span>GitHub</span>
-
-    
-    <nav>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-      
-      
-    </nav>
-  </span>
-
     
   </aside>
 
