@@ -90,7 +90,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
     需要注意的是，尽管数据包可能在 mangle 表和 nat 表中已经经过了至多两次额外路由决策，但其在 filter 表中时，`-o` 参数所匹配的输出接口始终是最初的路由决策结果。
     这是因为最终生效的路由决策存储在数据包的 `skb->_skb_refdst` 字段中[^skb._skb_refdst]，而 Netfilter 在进行匹配时使用的是 `nf_hook_state->out` 字段[^ipt_do_table]，该字段在数据包进入 OUTPUT 阶段之前就已经确定，并不会随着后续的 reroute check 而改变。
 
-    在搞清楚这些细节后，我们就能理解为什么以下两种理解方式都是正确的：
+    在搞清楚这些细节后，我们就知道为什么以下两种理解方式都是正确的：
 
     1. 路由决策位于 OUTPUT 之后：因为数据包最终的路由结果是基于经过 OUTPUT 阶段修改后的状态决定的。
     2. 路由决策位于 OUTPUT 之前，且 OUTPUT 后另有重新路由：因为 OUTPUT 阶段需要支持 `-o` 匹配方式，该信息依赖于初步的路由决策结果。
@@ -131,6 +131,32 @@ Conntrack 表的一个重要作用是支持有状态防火墙，允许 Netfilter
     nft add rule ip filter input ct state established,related accept
     ```
 
+在 conntrack 看来，数据包与连接的关系有以下几种：
+
+NEW
+
+:   该数据包将要建立一个新连接
+
+ESTABLISHED
+
+:   该数据包属于一个已经建立的连接
+
+RELATED
+
+:   该数据包将要建立一个新连接，但是由某一项 helper 认为是与一个已有连接相关联的，例如 FTP 的数据连接。
+
+INVALID
+
+:   该数据包不属于任何连接，conntrack 无法辨认
+
+UNTRACKED
+
+:   该数据包在 raw 表中已经被标记为 notrack（不要跟踪）
+
+DNAT、SNAT
+
+:   两个特殊的状态，仅用于匹配数据包（`--ctstate`），表示数据包经过了 DNAT / SNAT。
+
 #### 连接标记 {#conntrack-mark}
 
 Conntrack 除了记录连接的五元组（四层协议、源地址、目的地址、源端口、目的端口）外，还可以为连接记录一个「标记」（conntrack mark，`CONNMARK`）。
@@ -149,6 +175,8 @@ Conntrack 除了记录连接的五元组（四层协议、源地址、目的地�
     nft add rule ip mangle prerouting meta mark set ct mark
     nft add rule ip mangle postrouting ct mark set mark
     ```
+
+对于经过 NAT 的连接，CONNMARK 在实现「源进源出」时非常重要，
 
 #### NAT 支持 {#conntrack-nat}
 
@@ -203,6 +231,10 @@ conntrack -L -p udp --dport 53
 `conntrack` 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 [conntrack(8)][conntrack.8]。
 
 另外，`conntrack -E` 命令可以实时监控 conntrack 表的变化，适合用于调试和分析网络连接的动向。`-E` 操作同样支持匹配条件，可以过滤出特定的连接事件，方便查找和分析。
+
+### IPset {#ipset}
+
+IPset 是
 
 ## iptables {#iptables}
 
@@ -298,6 +330,14 @@ iptables -P OUTPUT ACCEPT
 
   [^output-oif]: 还记得[上文](#wikipedia-netfilter-packet-flow)为什么说 Wikipedia 的图更准确吗？
 
+`-m conntrack --ctstate`
+
+:   调用 conntrack 模块判断当前数据包所属的连接类型，参见上文的 [conntrack 段落](#connection-tracking)。
+
+`-m set --match-set set_name src`
+
+:   调用 `set` 模块从 IPset 中匹配数据包的地址和端口，参见上文的 [IPset 段落](#ipset)。
+
 #### 动作 {#iptables-jump}
 
 若一个数据包满足某条规则的所有匹配条件，就会进执行该规则的目标（`-j` / `-g` 参数）。目标可以是内置目标（如 ACCEPT、DROP、REJECT 等），也可以是用户自定义链的名称（跳转至自定义链继续处理）。
@@ -322,7 +362,7 @@ iptables -P OUTPUT ACCEPT
 
 每条内置链都有一个**默认策略**（`-P` / `--policy`），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。
 
-!!! example "例：科大镜像站上限制 80 / 443 端口并发连接数"
+???+ example "例：科大镜像站上限制 80 / 443 端口并发连接数"
 
     ```shell
     iptables -A LIMIT \
@@ -340,7 +380,7 @@ iptables -P OUTPUT ACCEPT
 
     - `-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN`：匹配 TCP 协议的数据包，且匹配仅有 SYN 标志位被设置的数据包（即新连接请求）。
         - 等价的写法是 `-p tcp --syn`
-        - 另一个（几乎）等价的写法是 `-m conntrack --ctstate NEW`，该写法事实上调用了连接跟踪模块，匹配将要建立新连接的数据包。
+        - 另一个（几乎）等价的写法是 `-m conntrack --ctstate NEW`，该写法调用了 conntrack 模块，由 conntrack 判断什么样的数据包是新连接请求。
     - `-m multiport --dports 80,443`：调用 `multiport` 模块，匹配目的端口为 80 或 443 的数据包。
     - `-m connlimit --connlimit-above 12 --connlimit-mask 29 --connlimit-saddr`：调用 `connlimit` 模块，匹配来自同一子网（掩码长度 29，即每 8 个 IP 地址为一个子网）且当前已建立连接数超过 12 的数据包。
     - `-j REJECT --reject-with tcp-reset`：目标为 REJECT，即主动拒绝匹配的数据包，并发送 TCP RST 响应给对端。
@@ -371,9 +411,9 @@ mangle
 
 raw
 
-:   用于处理原始数据包，将包标记为不经过连接跟踪（如 `-j CT --notrack`），或引入其他连接跟踪帮助模块（如 `-j CT --helper`）。
+:   改变 conntrack 对当前数据包的行为，可以标记为不经过 conntrack（不进行跟踪，如 `-j CT --notrack`），或引入其他 conntrack 帮助模块（如 `-j CT --helper`）。
 
-另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统中不常用。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。
+另有 security 表用于 SELinux 等安全模块的集成，但在大多数系统（尤其是 Debian 系列发行版）中不常用，因此本文不作详细讨论。Security 表与 filter 表适用于相同的阶段（Netfilter hook 点），且运行在 filter 表之后，即能够进入 security 表中的数据包都已由 filter 表标记为接受（ACCEPT）了。
 
 iptables 的每个表都会注册到对应的 Netfilter hook 优先级上，因此同一个阶段（例如 PREROUTING）中，不同表的处理顺序与 [hook 的优先级](#netfilter-hook-priorities)相同。
 
