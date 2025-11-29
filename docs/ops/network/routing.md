@@ -316,11 +316,11 @@ default via 198.51.100.1 dev eth1
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
-# 若数据包属于已建立连接，恢复 connmark 到 fwmark
+# 若数据包属于已建立的连接，从 connmark 恢复到 fwmark
 -A PREROUTING -j CONNMARK --restore-mark
 -A PREROUTING -m mark ! --mark 0 -j RETURN
 
-# 初次确定上游接口，打标并保存到 conntrack
+# 初次确定上游接口，打标并保存到 connmark
 -A PREROUTING -i eth0 -j MARK --set-mark 100
 -A PREROUTING -i eth1 -j MARK --set-mark 101
 -A PREROUTING -j CONNMARK --save-mark
@@ -330,4 +330,10 @@ COMMIT
 前两条规则会尝试从 CT 中恢复 connmark 到 fwmark，如果恢复成功，那么数据包的标记就不再为零，可以直接 RETURN，避免重复打标。
 若标记仍为零，则表示这是一个新连接的数据包，需要根据输入接口打上对应的标记，并保存到 CT 中以备后续使用。
 
-注意到，尽管打标的规则仅使用了 `-i`（输入接口）条件，对于从 LAN 侧向 WAN 侧发起的连接来说，在收到第一个回包时，输入接口自然就是对应的 WAN 接口，因此打标是正确的。
+注意到，尽管打标的规则仅使用了 `-i`（输入接口）条件，对于从 LAN 侧向 WAN 侧发起的连接来说，在收到第一个回包时，输入接口自然就是对应的 WAN 接口，此时根据 `-i` 条件能够正确打标。
+
+对于入向（WAN → LAN）的连接，由于 `main` 表的优先级很高（1 &lt; 3），因此会优先匹配到 `main` 表中的路由规则，从而无视标记正常发送到 LAN 侧。
+
+显然，本节所述的方法不区分 IPv4 和 IPv6，因此只需要将相同的配置在 `ip -6 rule` 和 `ip6tables` 中重复一遍即可。
+
+相信你也注意到了，如果 LAN 侧还需要进一步的类似「源进源出」式路由的话，就需要更复杂的打标和路由规则设计了。
