@@ -3426,6 +3426,7 @@
 <a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-i<span class="w"> </span>eth0<span class="w"> </span>-j<span class="w"> </span>MARK<span class="w"> </span>--set-mark<span class="w"> </span><span class="m">100</span>
 <a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-i<span class="w"> </span>eth1<span class="w"> </span>-j<span class="w"> </span>MARK<span class="w"> </span>--set-mark<span class="w"> </span><span class="m">101</span>
 <a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-j<span class="w"> </span>CONNMARK<span class="w"> </span>--save-mark
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>COMMIT
 </code></pre></div>
 <p>前两条规则会尝试从 CT 中恢复 connmark 到 fwmark，如果恢复成功，那么数据包的标记就不再为零，可以直接 RETURN，避免重复打标。
 若标记仍为零，则表示这是一个新连接的数据包，需要根据输入接口打上对应的标记，并保存到 CT 中以备后续使用。</p>
