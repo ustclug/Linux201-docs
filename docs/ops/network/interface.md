@@ -4,6 +4,10 @@ icon: material/link-box
 
 # 网络接口
 
+!!! note "主要作者"
+
+    [@iBug][iBug]
+
 !!! warning "本文编写中"
 
 本章介绍 Linux 系统中的各种虚拟网络接口类型及其配置方法。
@@ -19,7 +23,7 @@ icon: material/link-box
 
     这是因为被桥接的网口已经失去了上层的功能，所有从该网口接收到的数据包都会直接转交给桥接接口处理，而不会再经过网口本身的协议栈。
 
-    具体来说，在将网口加入桥接的时候，bridge 模块会将 [`br_handle_frame` 函数][br_handle_frame] 注册为该网口的 `rx_handler` 回调函数中，从而接管该网口的所有入向数据包处理逻辑。
+    具体来说，在将网口加入桥接的时候，bridge 模块会将 [`br_handle_frame` 函数][br_handle_frame] 注册为该网口的 `rx_handler` 回调函数，从而接管该网口的所有入向数据包处理逻辑。
     在处理完接收的数据包后，`br_handle_frame` 会返回 `RX_HANDLER_CONSUMED`，表示该数据包已经被 bridge 处理完毕，不再在网口本身的协议栈中继续处理。
     因此，即使你再在网口上配置 IP 地址等信息，这些信息也不会被使用到。
 
