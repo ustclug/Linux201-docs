@@ -234,7 +234,59 @@ conntrack -L -p udp --dport 53
 
 ### IPset {#ipset}
 
-IPset 是
+IPset 是 Netfilter 的一个扩展模块，用于管理 IP 地址集合（set），可以高效地匹配大量的 IP 地址或网络段。
+
+IPset 的用户态工具为 [`ipset(8)`][ipset.8]，可以创建、删除和管理 IPset 集合。
+IPset 支持多种集合类型，如 `hash:ip`（单个 IP 地址的哈希集合）、`hash:net`（CIDR 网段的哈希集合）和 `bitmap:ip`（IP 地址的 bitmap 集合）等。
+完整的集合类型和用法可以参考 `ipset help` 的输出，以下给出一些基本的示例：
+
+```shell title="创建集合、添加和删除地址"
+ipset create blacklist hash:ip
+ipset add blacklist 192.0.2.1
+ipset del blacklist 192.0.2.1
+
+# 即使地址已存在（add 操作）或不存在（del 操作），也不会报错
+ipset add -exist blacklist 192.0.2.1
+ipset del -exist blacklist 192.0.2.1
+```
+
+IPset 集合可以在 iptables 或 nftables 规则中使用，实现高效的地址匹配。例如：
+
+```shell
+iptables -A INPUT -m set --match-set blacklist src -j DROP
+```
+
+其中 `--match-set blacklist src` 表示从名为 `blacklist` 的 IPset 集合中匹配数据包的源地址。
+相比于在 iptables 规则中逐条列出黑名单地址，使用 IPset 可以显著提高匹配效率，尤其是在黑名单地址数量较多的情况下。
+
+如果集合是多元素类型的话，还可以指定端口号等其他字段进行匹配，例如：
+
+```shell
+ipset create blacklist hash:ip,port
+iptables -A INPUT -m set --match-set blacklist src,dst -j DROP
+```
+
+此时 `blacklist` 集合中的每个元素都包含一个 IP 地址和一个端口号，命令中的 `src,dst` 表示匹配数据包的**源**地址和**目的**端口号。
+完整的匹配能力请在 [iptables-extensions(8)][iptables-extensions.8] 手册页中查阅 `set` 模块的说明。
+
+类似地，IPset 中的元素也可以通过 iptables 增减：
+
+```shell
+iptables -m my-fantastic-match -j SET --add-set blacklist src [--exist]
+iptables -m my-fantastic-match -j SET --del-set blacklist src [--exist]
+```
+
+#### skbinfo {#ipset-skbinfo}
+
+部分集合类型支持一项 skbinfo 扩展，可以为每个条目存储额外的信息（skbmark、skbprio、skbqueue），并在匹配时将这些信息附加到数据包上（`--map-mark`、`--map-prio`、`--map-queue`）。
+
+例如：
+
+```shell
+ipset create qos hash:ip skbinfo
+ipset add qos 192.0.2.1 mark 0x1 prio 5 queue 2
+iptables -t mangle -A PREROUTING -m set --match-set qos src --map-mark --map-prio --map-queue -j ACCEPT
+```
 
 ## iptables {#iptables}
 
