@@ -8,7 +8,7 @@ icon: material/cable-data
 
     [@Harry-Chen][Harry-Chen]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 InfiniBand (IB) 是高性能计算中常用的高带宽、低延迟的网络互联技术。得益于其简单的部署方式和优秀的扩展能力，IB 网络被广泛应用于各种规模的计算集群中。在多年的发展中，IB 战胜了 Intel OmniPath 等技术，成为了 HPC 领域的事实标准。
 

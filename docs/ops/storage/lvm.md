@@ -4,7 +4,7 @@
 
     [@taoky][taoky]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 本文将介绍常见 LVM 特性的使用与维护。
 

@@ -8,7 +8,7 @@ icon: material/router-network
 
     [@iBug][iBug]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 ## 路由表 {#routing-tables}
 

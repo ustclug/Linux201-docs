@@ -37,7 +37,7 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 或
 
 ```markdown
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 ```
 
 或

@@ -8,7 +8,7 @@ icon: fontawesome/solid/tasks
 
     [@Harry-Chen][Harry-Chen]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 在中到大型的高性能计算集群上，为了高效地分配计算资源、管理用户作业、实施权限控制和计费等，通常会部署作业调度系统（Job Scheduler）。用户只能登录到少数（甚至一台）登录节点（login node），向调度系统提交作业请求；调度系统会根据资源使用情况和调度策略，将用户的作业分配到计算节点（compute node）上运行，并记录作业的状态和资源使用情况。
 

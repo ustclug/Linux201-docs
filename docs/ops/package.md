@@ -8,7 +8,7 @@ icon: material/package
 
     [@taoky][taoky]、[@2403772980ygy][2403772980ygy]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 包管理系统是现代 Linux 发行版的重要组成部分。以下介绍与 Debian 的包管理系统相关工具，例如 APT（Advanced Package Tool）。其他发行版的包管理系统会有所不同，可参考 [Arch Linux Wiki 的 pacman/Rosetta 页面](https://wiki.archlinux.org/title/Pacman/Rosetta)。
 

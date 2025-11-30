@@ -8,7 +8,7 @@ icon: material/security
 
     [@taoky][taoky]、[@tiankaima][tiankaima]、[@Crabtux][Crabtux]、[@JiaminL][JiaminL]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 !!! note "阅读注意事项"
 

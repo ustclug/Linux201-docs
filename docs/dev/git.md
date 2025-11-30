@@ -8,7 +8,7 @@ icon: simple/git
 
     [@tiankaima][tiankaima]、[@taoky][taoky]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 本部分面向已经了解 git 最基本的操作的用户。如果你从未使用过 git，请参考网络上的其他教程，例如 USTC Vlab 项目的 [Git 简明教程](https://vlab.ustc.edu.cn/docs/tutorial/git/)。
 

@@ -8,7 +8,7 @@ icon: simple/caddy
 
     [@tiankaima][tiankaima]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。
 

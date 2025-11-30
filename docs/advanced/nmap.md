@@ -8,7 +8,7 @@ icon: material/skull-scan
 
     [@taoky][taoky]、[@sscscc][sscscc]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 Nmap（Network Mapper）是开源的网络探测和安全检查工具。其主要功能包括主机发现、端口扫描、服务版本探测、操作系统检测、脚本扫描等。不管是在红方（攻击方）还是蓝方（防御方）的工作中，Nmap 都是一个非常有用的工具。
 

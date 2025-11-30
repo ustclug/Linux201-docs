@@ -4,7 +4,7 @@
 
     [@taoky][taoky]、[@iBug][iBug]、[@stevapple][stevapple]、[@Integral-Tech][Integral-Tech]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 ## 相关概念 {#concepts}
 

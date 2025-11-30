@@ -4,7 +4,7 @@
 
     [@taoky][taoky]、[@iBug][iBug]、[@TheRainstorm][TheRainstorm]
 
-!!! warning "本文已完成，等待校对"
+!!! success "本文已完成"
 
 服务器需要使用的存储方案与个人计算机的差异较大，例如：
 
