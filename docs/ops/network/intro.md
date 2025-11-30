@@ -12,5 +12,3 @@ icon: material/information-outline
 OSI 模型将网络通信分为七个层次，偏向于理论研究；而 TCP/IP 模型则将其简化为四个层次，更加贴近实际应用。
 
 ![网络层次结构](../../images/osi-vs-tcpip.svg)
-
-## 网络接口 {#network-interfaces}
