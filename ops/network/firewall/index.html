@@ -1190,6 +1190,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="IPset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ipset-skbinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skbinfo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3025,6 +3042,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="IPset">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ipset-skbinfo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        skbinfo
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3407,7 +3441,40 @@
 <p><code>conntrack</code> 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 <a href="https://man.archlinux.org/man/conntrack.8.en">conntrack(8)</a>。</p>
 <p>另外，<code>conntrack -E</code> 命令可以实时监控 conntrack 表的变化，适合用于调试和分析网络连接的动向。<code>-E</code> 操作同样支持匹配条件，可以过滤出特定的连接事件，方便查找和分析。</p>
 <h3 id="ipset">IPset<a class="headerlink" href="#ipset" title="Permanent link">&para;</a></h3>
-<p>IPset 是</p>
+<p>IPset 是 Netfilter 的一个扩展模块，用于管理 IP 地址集合（set），可以高效地匹配大量的 IP 地址或网络段。</p>
+<p>IPset 的用户态工具为 <a href="https://linux.die.net/man/8/ipset"><code>ipset(8)</code></a>，可以创建、删除和管理 IPset 集合。
+IPset 支持多种集合类型，如 <code>hash:ip</code>（单个 IP 地址的哈希集合）、<code>hash:net</code>（CIDR 网段的哈希集合）和 <code>bitmap:ip</code>（IP 地址的 bitmap 集合）等。
+完整的集合类型和用法可以参考 <code>ipset help</code> 的输出，以下给出一些基本的示例：</p>
+<div class="highlight"><span class="filename">创建集合、添加和删除地址</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ipset<span class="w"> </span>create<span class="w"> </span>blacklist<span class="w"> </span>hash:ip
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>ipset<span class="w"> </span>add<span class="w"> </span>blacklist<span class="w"> </span><span class="m">192</span>.0.2.1
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>ipset<span class="w"> </span>del<span class="w"> </span>blacklist<span class="w"> </span><span class="m">192</span>.0.2.1
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># 即使地址已存在（add 操作）或不存在（del 操作），也不会报错</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>ipset<span class="w"> </span>add<span class="w"> </span>-exist<span class="w"> </span>blacklist<span class="w"> </span><span class="m">192</span>.0.2.1
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>ipset<span class="w"> </span>del<span class="w"> </span>-exist<span class="w"> </span>blacklist<span class="w"> </span><span class="m">192</span>.0.2.1
+</code></pre></div>
+<p>IPset 集合可以在 iptables 或 nftables 规则中使用，实现高效的地址匹配。例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-m<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--match-set<span class="w"> </span>blacklist<span class="w"> </span>src<span class="w"> </span>-j<span class="w"> </span>DROP
+</code></pre></div>
+<p>其中 <code>--match-set blacklist src</code> 表示从名为 <code>blacklist</code> 的 IPset 集合中匹配数据包的源地址。
+相比于在 iptables 规则中逐条列出黑名单地址，使用 IPset 可以显著提高匹配效率，尤其是在黑名单地址数量较多的情况下。</p>
+<p>如果集合是多元素类型的话，还可以指定端口号等其他字段进行匹配，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ipset<span class="w"> </span>create<span class="w"> </span>blacklist<span class="w"> </span>hash:ip,port
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-m<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--match-set<span class="w"> </span>blacklist<span class="w"> </span>src,dst<span class="w"> </span>-j<span class="w"> </span>DROP
+</code></pre></div>
+<p>此时 <code>blacklist</code> 集合中的每个元素都包含一个 IP 地址和一个端口号，命令中的 <code>src,dst</code> 表示匹配数据包的<strong>源</strong>地址和<strong>目的</strong>端口号。
+完整的匹配能力请在 <a href="https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html">iptables-extensions(8)</a> 手册页中查阅 <code>set</code> 模块的说明。</p>
+<p>类似地，IPset 中的元素也可以通过 iptables 增减：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>iptables<span class="w"> </span>-m<span class="w"> </span>my-fantastic-match<span class="w"> </span>-j<span class="w"> </span>SET<span class="w"> </span>--add-set<span class="w"> </span>blacklist<span class="w"> </span>src<span class="w"> </span><span class="o">[</span>--exist<span class="o">]</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>iptables<span class="w"> </span>-m<span class="w"> </span>my-fantastic-match<span class="w"> </span>-j<span class="w"> </span>SET<span class="w"> </span>--del-set<span class="w"> </span>blacklist<span class="w"> </span>src<span class="w"> </span><span class="o">[</span>--exist<span class="o">]</span>
+</code></pre></div>
+<h4 id="ipset-skbinfo">skbinfo<a class="headerlink" href="#ipset-skbinfo" title="Permanent link">&para;</a></h4>
+<p>部分集合类型支持一项 skbinfo 扩展，可以为每个条目存储额外的信息（skbmark、skbprio、skbqueue），并在匹配时将这些信息附加到数据包上（<code>--map-mark</code>、<code>--map-prio</code>、<code>--map-queue</code>）。</p>
+<p>例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ipset<span class="w"> </span>create<span class="w"> </span>qos<span class="w"> </span>hash:ip<span class="w"> </span>skbinfo
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ipset<span class="w"> </span>add<span class="w"> </span>qos<span class="w"> </span><span class="m">192</span>.0.2.1<span class="w"> </span>mark<span class="w"> </span>0x1<span class="w"> </span>prio<span class="w"> </span><span class="m">5</span><span class="w"> </span>queue<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>iptables<span class="w"> </span>-t<span class="w"> </span>mangle<span class="w"> </span>-A<span class="w"> </span>PREROUTING<span class="w"> </span>-m<span class="w"> </span><span class="nb">set</span><span class="w"> </span>--match-set<span class="w"> </span>qos<span class="w"> </span>src<span class="w"> </span>--map-mark<span class="w"> </span>--map-prio<span class="w"> </span>--map-queue<span class="w"> </span>-j<span class="w"> </span>ACCEPT
+</code></pre></div>
 <h2 id="iptables">iptables<a class="headerlink" href="#iptables" title="Permanent link">&para;</a></h2>
 <p>iptables 是 Netfilter 的用户空间工具，用于管理防火墙规则。
 iptables 将规则组织成不同的表（table），每个表包含多个链（chain），每个链对应一个 Netfilter 阶段。</p>
@@ -3415,32 +3482,32 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <h3 id="iptables-cmdline">iptables 命令<a class="headerlink" href="#iptables-cmdline" title="Permanent link">&para;</a></h3>
 <p>iptables 使用 GNU <code>getopt_long</code> 风格的命令行参数，即以短横线 <code>-</code> 开头的单字符选项和以双短横线 <code>--</code> 开头的长选项。</p>
 <p>每一条 iptables 命令及其所有参数构成一条规则，规则的基本结构如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>iptables<span class="w"> </span><span class="o">[</span>全局选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>表名<span class="o">]</span><span class="w"> </span>链操作<span class="w"> </span>规则匹配条件<span class="w"> </span>目标
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>iptables<span class="w"> </span><span class="o">[</span>全局选项<span class="o">]</span><span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>表名<span class="o">]</span><span class="w"> </span>链操作<span class="w"> </span>规则匹配条件<span class="w"> </span>目标
 </code></pre></div>
 <p>其中 <code>-t</code> 也是全局选项之一，用于指定要操作的表。若省略 <code>-t</code>，则默认该命令操作 filter 表。</p>
 <h4 id="iptables-commands">链操作<a class="headerlink" href="#iptables-commands" title="Permanent link">&para;</a></h4>
 <p>对 iptables 链的操作类似增删改查，常用的操作有以下几种：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>链名<span class="w"> </span>...<span class="w"> </span><span class="c1"># 追加规则到链尾</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>iptables<span class="w"> </span>-I<span class="w"> </span>链名<span class="w"> </span><span class="o">[</span>位置<span class="o">]</span><span class="w"> </span>...<span class="w"> </span><span class="c1"># 插入规则到指定位置（默认位置为链头）</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>iptables<span class="w"> </span>-D<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span><span class="c1"># 删除指定规则</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>iptables<span class="w"> </span>-R<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span>...<span class="w"> </span><span class="c1"># 替换指定规则</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>iptables<span class="w"> </span>-L<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 列出指定链的所有规则</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>iptables<span class="w"> </span>-S<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 以命令行格式列出指定链的所有规则</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>iptables<span class="w"> </span>-P<span class="w"> </span>链名<span class="w"> </span>目标<span class="w"> </span><span class="c1"># 设置链的默认策略</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>iptables<span class="w"> </span>-F<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 清空指定链的所有规则</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>iptables<span class="w"> </span>-Z<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 将指定链的所有规则的计数器归零</span>
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>iptables<span class="w"> </span>-N<span class="w"> </span>链名<span class="w"> </span><span class="c1"># 新增一条用户自定义链</span>
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>iptables<span class="w"> </span>-X<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 删除一条用户自定义链</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>链名<span class="w"> </span>...<span class="w"> </span><span class="c1"># 追加规则到链尾</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>iptables<span class="w"> </span>-I<span class="w"> </span>链名<span class="w"> </span><span class="o">[</span>位置<span class="o">]</span><span class="w"> </span>...<span class="w"> </span><span class="c1"># 插入规则到指定位置（默认位置为链头）</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>iptables<span class="w"> </span>-D<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span><span class="c1"># 删除指定规则</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>iptables<span class="w"> </span>-R<span class="w"> </span>链名<span class="w"> </span>序号<span class="w"> </span>...<span class="w"> </span><span class="c1"># 替换指定规则</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>iptables<span class="w"> </span>-L<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 列出指定链的所有规则</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>iptables<span class="w"> </span>-S<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 以命令行格式列出指定链的所有规则</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>iptables<span class="w"> </span>-P<span class="w"> </span>链名<span class="w"> </span>目标<span class="w"> </span><span class="c1"># 设置链的默认策略</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>iptables<span class="w"> </span>-F<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 清空指定链的所有规则</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>iptables<span class="w"> </span>-Z<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 将指定链的所有规则的计数器归零</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>iptables<span class="w"> </span>-N<span class="w"> </span>链名<span class="w"> </span><span class="c1"># 新增一条用户自定义链</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>iptables<span class="w"> </span>-X<span class="w"> </span><span class="o">[</span>链名<span class="o">]</span><span class="w"> </span><span class="c1"># 删除一条用户自定义链</span>
 </code></pre></div>
 <p>例如，要将 iptables 的 filter 表恢复到初始状态，可以执行以下命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>iptables<span class="w"> </span>-F
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>iptables<span class="w"> </span>-X
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>iptables<span class="w"> </span>-Z
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>iptables<span class="w"> </span>-P<span class="w"> </span>INPUT<span class="w"> </span>ACCEPT
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>ACCEPT
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>iptables<span class="w"> </span>-P<span class="w"> </span>OUTPUT<span class="w"> </span>ACCEPT
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>iptables<span class="w"> </span>-F
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>iptables<span class="w"> </span>-X
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>iptables<span class="w"> </span>-Z
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>iptables<span class="w"> </span>-P<span class="w"> </span>INPUT<span class="w"> </span>ACCEPT
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>iptables<span class="w"> </span>-P<span class="w"> </span>FORWARD<span class="w"> </span>ACCEPT
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>iptables<span class="w"> </span>-P<span class="w"> </span>OUTPUT<span class="w"> </span>ACCEPT
 </code></pre></div>
 <p>注意到 <code>-L</code>, <code>-S</code>, <code>-F</code>, <code>-X</code>, <code>-Z</code> 这些操作都可以省略链名参数，表示对所有链进行操作。</p>
 <p>完整的 iptables 规则语法和选项可以参考 <a href="https://www.man7.org/linux/man-pages/man8/iptables.8.html">iptables(8)</a> 和 <a href="https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html">iptables-extensions(8)</a> 手册页。</p>
@@ -3538,11 +3605,11 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 <p>每条内置链都有一个<strong>默认策略</strong>（<code>-P</code> / <code>--policy</code>），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。</p>
 <details class="example" open="open">
 <summary>例：科大镜像站上限制 80 / 443 端口并发连接数</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span>-m<span class="w"> </span>connlimit<span class="w"> </span>--connlimit-above<span class="w"> </span><span class="m">12</span><span class="w"> </span>--connlimit-mask<span class="w"> </span><span class="m">29</span><span class="w"> </span>--connlimit-saddr<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span>-j<span class="w"> </span>REJECT<span class="w"> </span>--reject-with<span class="w"> </span>tcp-reset
 </code></pre></div>
 <p>这条命令的理解方式如下：</p>
 <ul>
@@ -3744,7 +3811,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月25日 16:28:01 UTC">2025年11月25日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月30日 04:55:10 UTC">2025年11月30日</span>
   </span>
 
     

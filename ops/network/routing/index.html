@@ -1218,6 +1218,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#wlt-lite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        「网络通」青春版
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3039,6 +3050,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#wlt-lite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        「网络通」青春版
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3379,7 +3401,7 @@
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="m">32767</span>:<span class="w">  </span>from<span class="w"> </span>all<span class="w"> </span>lookup<span class="w"> </span>default
 </code></pre></div>
 <ol>
-<li><code>suppress_prefixlength 0</code> 表示抑制所有前缀长度不大于 0 的路由规则（即 <code>default</code> 路由），避免 main 表中 <code>default</code> 路由过早生效。</li>
+<li><code>suppress_prefixlength 0</code> 表示屏蔽所有前缀长度不大于 0 的路由规则（即 <code>default</code> 路由），避免 main 表中 <code>default</code> 路由过早生效。</li>
 </ol>
 <p>此时在 <code>eth0</code> 和 <code>eth1</code> 两个路由表中指定各自的 <code>default</code> 路由，就能确保流量从对应的接口发出：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>ip<span class="w"> </span>route<span class="w"> </span>show<span class="w"> </span>table<span class="w"> </span>eth0
@@ -3431,9 +3453,29 @@
 <p>前两条规则会尝试从 CT 中恢复 connmark 到 fwmark，如果恢复成功，那么数据包的标记就不再为零，可以直接 RETURN，避免重复打标。
 若标记仍为零，则表示这是一个新连接的数据包，需要根据输入接口打上对应的标记，并保存到 CT 中以备后续使用。</p>
 <p>注意到，尽管打标的规则仅使用了 <code>-i</code>（输入接口）条件，对于从 LAN 侧向 WAN 侧发起的连接来说，在收到第一个回包时，输入接口自然就是对应的 WAN 接口，此时根据 <code>-i</code> 条件能够正确打标。</p>
-<p>对于入向（WAN → LAN）的连接，由于 <code>main</code> 表的优先级很高（1 &lt; 3），因此会优先匹配到 <code>main</code> 表中的路由规则，从而无视标记正常发送到 LAN 侧。</p>
+<p>对于入向（WAN → LAN）的连接，由于 <code>main</code> 表的优先级很高（1 &lt; 3），因此会优先匹配到 <code>main</code> 表中的路由规则，从而不受标记影响，正常发送到 LAN 侧。</p>
 <p>显然，本节所述的方法不区分 IPv4 和 IPv6，因此只需要将相同的配置在 <code>ip -6 rule</code> 和 <code>ip6tables</code> 中重复一遍即可。</p>
-<p>相信你也注意到了，如果 LAN 侧还需要进一步的类似「源进源出」式路由的话，就需要更复杂的打标和路由规则设计了。</p>
+<div class="admonition question">
+<p class="admonition-title">Question</p>
+<p>相信你也注意到了，如果 LAN 侧还需要进一步的类似「源进源出」式路由的话，就需要更复杂的打标和路由规则设计了。
+本文将这个问题留给读者作为练习。</p>
+<p>作为提示，<a href="#routing-policy-matching">上文</a>提到 <code>fwmark</code> 路由规则有两种格式。</p>
+</div>
+<h3 id="wlt-lite">「网络通」青春版<a class="headerlink" href="#wlt-lite" title="Permanent link">&para;</a></h3>
+<p>「网络通」是中国科学技术大学校园网的一项服务，只需每月 20 元，用户即可通过网络通的网页平台，在四个运营商出口之间自由切换，实现「单线多拨」的效果。
+此过程中，用户设备在校园网中的 IP 地址保持不变，由网络通根据此 IP 地址及用户的选择进行分流。</p>
+<p>原版的网络通服务在校园网出口处部署了魔改过的 Linux 内核，添加了额外的路由匹配规则，作为分流路由器。
+但在多宽带接入的家庭网络等小规模场景中，<a href="../firewall/#ipset-skbinfo">ipset 的 skbinfo 功能</a>使得我们能够在未修改的 Linux 上实现类似的功能。</p>
+<div class="admonition question">
+<p class="admonition-title">Question</p>
+<p>本文到此已经把实现「网络通青春版」所需的知识都介绍完了，那么系统设计和实现就留给读者作为练习吧。  </p>
+<p>同样作为提示，该系统需要结合本文介绍的技术实现，至少具有以下几个组件：</p>
+<ul>
+<li>基于 fwmark 的策略路由规则</li>
+<li>结合 ipset 进行打标（<code>--map-mark</code>）的防火墙规则</li>
+<li>一个 Web 平台，供用户选择运营商出口，并保存到 ipset 中</li>
+</ul>
+</div>
 <!--
   Links to man pages
 
@@ -3508,7 +3550,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月29日 18:49:20 UTC">2025年11月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月30日 04:55:10 UTC">2025年11月30日</span>
   </span>
 
     
