@@ -2986,7 +2986,22 @@
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
 </div>
+<p>本章介绍 Linux 系统中的各种虚拟网络接口类型及其配置方法。</p>
 <h2 id="bridge">桥接<a class="headerlink" href="#bridge" title="Permanent link">&para;</a></h2>
+<div class="admonition question">
+<p class="admonition-title">桥不就是一个交换机吗？</p>
+<p>是的，尽管「桥接」指的是将网口加入到一个虚拟交换机中，但在 Linux 中，桥接接口（bridge interface）除了这个虚拟交换机之外，也包含了一根由本机接入该交换机的虚拟接口。
+因此 bridge interface 上可以配置 IP 地址，本机也可以通过该接口进行通信。</p>
+</div>
+<div class="admonition question">
+<p class="admonition-title">为什么 IP 地址要配置在桥接接口上，而不是被桥接的网口上？</p>
+<p>这是因为被桥接的网口已经失去了上层的功能，所有从该网口接收到的数据包都会直接转交给桥接接口处理，而不会再经过网口本身的协议栈。</p>
+<p>具体来说，在将网口加入桥接的时候，bridge 模块会将 <a href="https://elixir.bootlin.com/linux/v6.17.8/source/net/bridge/br_input.c#L331"><code>br_handle_frame</code> 函数</a> 注册为该网口的 <code>rx_handler</code> 回调函数中，从而接管该网口的所有入向数据包处理逻辑。
+在处理完接收的数据包后，<code>br_handle_frame</code> 会返回 <code>RX_HANDLER_CONSUMED</code>，表示该数据包已经被 bridge 处理完毕，不再在网口本身的协议栈中继续处理。
+因此，即使你再在网口上配置 IP 地址等信息，这些信息也不会被使用到。</p>
+<p>类似地，由于每个网口的 <code>rx_handler</code> 是唯一的，因此在网口被加入桥接后，就无法再注册其他的 <code>rx_handler</code> 回调函数了，例如加入另一个桥或引申出 MACVLAN 接口等。
+此处唯一的例外是 802.1Q VLAN 接口，因为 VLAN 子接口并不通过 <code>rx_handler</code> 机制实现。</p>
+</div>
 <h3 id="veth-pair">Veth 对<a class="headerlink" href="#veth-pair" title="Permanent link">&para;</a></h3>
 <h2 id="bonding">网卡聚合<a class="headerlink" href="#bonding" title="Permanent link">&para;</a></h2>
 <h2 id="macvlan-ipvlan">MACVLAN 与 IPVLAN<a class="headerlink" href="#macvlan-ipvlan" title="Permanent link">&para;</a></h2>
@@ -3047,7 +3062,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月30日 14:37:02 UTC">2025年11月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月30日 18:09:13 UTC">2025年11月30日</span>
   </span>
 
     
