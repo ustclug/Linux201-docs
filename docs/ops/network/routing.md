@@ -8,7 +8,7 @@ icon: material/router-network
 
     [@iBug][iBug]
 
-!!! warning "本文编写中"
+!!! warning "本文已完成，等待校对"
 
 ## 路由表 {#routing-tables}
 
@@ -64,6 +64,26 @@ ip route delete 192.0.2.0/24
 ```
 
 #### 查 {#ip-route-show}
+
+前文提到，`ip route` 命令等价于 `ip route show table main`，用于显示主路由表的内容。
+如果要查看其他路由表的内容，可以使用 `table` 选项指定路由表，例如：
+
+```shell
+ip route show table local
+```
+
+如果要测试某个数据包会匹配到哪条路由规则，可以使用 `ip route get` 命令，例如：
+
+```console
+$ ip route get 8.8.8.8
+8.8.8.8 via 192.0.2.1 dev eth0 src 192.0.2.100
+```
+
+对于策略路由，`ip route get` 命令也允许指定额外的数据包信息（如源地址、TOS 等），以便测试路由规则的匹配情况，例如：
+
+```shell
+ip route get 8.8.8.8 from 192.0.2.100 mark 1
+```
 
 ### 路由类型 {#route-types}
 
