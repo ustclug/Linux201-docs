@@ -284,7 +284,7 @@ iptables -m my-fantastic-match -j SET --del-set blacklist src [--exist]
 
 ```shell
 ipset create qos hash:ip skbinfo
-ipset add qos 192.0.2.1 mark 0x1 prio 5 queue 2
+ipset add qos 192.0.2.1 skbmark 0x1 skbprio 5 skbqueue 2
 iptables -t mangle -A PREROUTING -m set --match-set qos src --map-mark --map-prio --map-queue -j ACCEPT
 ```
 
