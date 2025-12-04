@@ -4093,16 +4093,18 @@
 <p>在 OpenSSH 内部，同一个“代号”可能指代多种（有关联但）不同的细节。例如 <code>ssh-rsa</code> 至少有以下三种不同的含义：</p>
 <ul>
 <li>RSA 密钥对或 RSA 公钥算法（<code>id_rsa</code> 和 <code>id_rsa.pub</code> 文件）</li>
-<li>基于 RSA / SHA-1 的 SSH 证书的签名算法（<code>CASignatureAlgorithms</code>）</li>
-</ul>
+<li>
+<p>基于 RSA / SHA-1 的 SSH 证书的签名算法（<code>CASignatureAlgorithms</code>）</p>
 <p>这种算法已经在 OpenSSH 8.2 中被淘汰，而 OpenSSH 7.2 起就已经支持替代算法 <code>rsa-sha2-256</code> 和 <code>rsa-sha2-512</code>（采用 SHA-256 和 SHA-512 哈希算法），虽然直到 OpenSSH 8.2，使用 RSA CA 私钥签出来的证书才<strong>默认</strong>采用 <code>rsa-sha2-512</code> 算法。</p>
 <p>如果你正在使用一个 RSA CA，那么你需要将已有的证书使用 OpenSSH 8.2 以上的版本重新签名。</p>
 <p>如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以在 <code>~/.ssh/config</code> 或 <code>sshd_config</code> 中指定 <code>CASignatureAlgorithms +ssh-rsa</code>，这样就可以使用旧版本的证书签名算法了。</p>
-<ul>
-<li>基于 RSA / SHA-1 的公钥签名算法套件（<code>ssh-rsa</code>）。与前面的证书不同，这种签名算法是用于用户登录时的公钥验证，不会保存在文件里，而是在 SSH 协议内部使用。</li>
-</ul>
+</li>
+<li>
+<p>基于 RSA / SHA-1 的公钥签名算法套件（<code>ssh-rsa</code>）。与前面的证书不同，这种签名算法是用于用户登录时的公钥验证，不会保存在文件里，而是在 SSH 协议内部使用。</p>
 <p>与前一个采用 SHA-1 作为哈希算法的算法套件类似，OpenSSH 8.8 起也不再默认启用，且替代算法也分别叫做 <code>rsa-sha2-256</code> 和 <code>rsa-sha2-512</code>。好消息是，你不需要重新签发任何证书，只要确保客户端和服务端的 OpenSSH 版本都不低于 7.2 就可以了。</p>
 <p>如果需要临时兼容 &le; 7.1 版本的 OpenSSH，可以通过配置选项 <code>HostkeyAlgorithms</code> 和 <code>PubkeyAcceptedAlgorithms</code> 启用。这两个选项分别控制服务端和客户端的公钥签名算法套件，并且在两端都可以指定。</p>
+</li>
+</ul>
 <h3 id="escape-sequences">SSH 转义序列<a class="headerlink" href="#escape-sequences" title="Permanent link">&para;</a></h3>
 <p>SSH 连接由本地的 ssh 客户端发起，建立连接后，你在终端输入的内容默认都会发送到远端服务器。但有时候，我们需要让本地 ssh 客户端立即响应一些特殊操作，比如断开连接、挂起会话、配置端口转发等，这时就可以用“转义序列”来实现。</p>
 <p>转义序列的用法是：在新的一行先按回车，然后输入 <code>~</code>，后面的内容就会被本地 ssh 客户端识别为命令，而不会发给远端服务器。以下展示的转义序列均以 <code>~</code> 开头表示。</p>
@@ -4198,7 +4200,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月1日 17:07:25 UTC">2025年12月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月4日 16:50:23 UTC">2025年12月4日</span>
   </span>
 
     
