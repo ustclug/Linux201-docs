@@ -553,10 +553,10 @@ fio 输出内容比较丰富，除了带宽 BW 外，还可以关注 IOPS、提�
 下面给出一个在 QEMU 虚拟机中的 Linux 系统的 `/etc/fstab` 的例子：
 
 ```fstab
-# <file system> <mount point>   <type>  <options>       <dump>  <pass>
-UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4    errors=remount-ro 0       1
-/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
-sharing	/mnt/sharing	virtiofs	defaults,nofail	0	0
+# <file system>                           <mount point>   <type>      <options>         <dump>  <pass>
+UUID=6cf8f654-9a14-4703-be4e-c5a059c9f7f8 /               ext4        errors=remount-ro 0       1
+/dev/sr0                                  /media/cdrom0   udf,iso9660 user,noauto       0       0
+sharing                                   /mnt/sharing    virtiofs    defaults,nofail   0      0
 ```
 
 可以看到第一部分定位了文件系统的位置。对于物理磁盘来说，使用 UUID 是比较好的选择，详情可参考[分区与文件系统](filesystem.md)中对 `/dev/disk` 的介绍。`/dev/sda1` 这样的设备名虽然也可以使用，但是可能会出现意料之外的问题。
