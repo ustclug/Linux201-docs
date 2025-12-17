@@ -97,11 +97,25 @@ rsync -avP /A /tmp/
 将 `/etc` 文件夹复制为/复制到 `/tmp/example`。区别在 source 的结尾是否有 `/`，如果没有的话，源文件夹就会**作为一个整体**复制到目标文件夹内；否则如果有 `/`，源文件夹内的**内容**会被复制到目标文件夹内。
 
 ```shell
-rsync -avP /etc /tmp/example1
+rsync -avP /etc /tmp/example1/
 # 此时 /etc/passwd 对应 /tmp/example1/etc/passwd
-rsync -avP /etc/ /tmp/example2
+rsync -avP /etc/ /tmp/example2/
 # 此时 /etc/passwd 对应 /tmp/example2/passwd
 ```
+
+!!! warning "是否要在目标路径后添加 `/`？"
+
+    在以上的例子中，我们给目标路径（`/tmp/example1/` 和 `/tmp/example2/`）结尾都添加了 `/`。这是因为如果不在目标结尾添加 `/`，如果原始路径是文件或者**空目录**，并且目标路径不存在的话，rsync 的行为会变成复制并重命名为目标路径。对以下的例子，结果会出现区别：
+
+    ```shell
+    mkdir /tmp/example3
+    rsync -avP /tmp/example3 /tmp/example4
+    # rsync 将 /tmp/example3 复制并重命名为 /tmp/example4
+    rsync -avP /tmp/example3 /tmp/example5/
+    # rsync 将 /tmp/example3 复制到 /tmp/example5 目录下，即 /tmp/example5/example3
+    ```
+
+    在编写脚本的时候，这可能会出现问题，因为如果在测试时没有考虑到原始路径是空目录的情况，那么脚本在运行时就可能会出现意外的行为（例如后续的脚本假设 rsync 会将文件夹复制到目标目录下，但是实际上 rsync 却将其重命名了）。因此，**建议在目标目录路径结尾都添加 `/`**，以避免这种情况的发生。
 
 作为 `scp` 的高效替代，`rsync` 也支持基于 SSH 的远程复制（远程服务器也需要安装 rsync）。可以使用 `-z` 开启压缩，以 CPU 为代价减小传输量。`rsync` 对增量复制的支持允许了「断点续传」的功能，在网络情况欠佳的时候尤其有用。
 
