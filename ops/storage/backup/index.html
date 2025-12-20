@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.618322db.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -995,6 +995,34 @@
     <span class="md-ellipsis">
       
         文件备份
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backup-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        备份配置示例
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="备份配置示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restic-backblaze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用 restic 备份到 Backblaze B2
       
     </span>
   </a>
@@ -3016,6 +3044,34 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#backup-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        备份配置示例
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="备份配置示例">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#restic-backblaze" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用 restic 备份到 Backblaze B2
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3119,7 +3175,7 @@
 <li>使用数据库的 dump 工具（例如 <code>mysqldump</code>）备份数据库。</li>
 <li>使用 <a href="../filesystem/#btrfs-snapshot">Btrfs</a>、<a href="../zfs/#snapshot">ZFS</a> 或 LVM 提供的快照功能。Btrfs 与 ZFS 提供了 send/receive 功能以便网络传输。</li>
 <li>使用 <code>rclone</code> 同步到云存储（例如 OneDrive、S3 对象存储等）。</li>
-<li>使用诸如 <a href="https://duplicity.gitlab.io/">Duplicity</a>、<a href="https://www.borgbackup.org/">BorgBackup</a> 等备份工具。</li>
+<li>使用诸如 <a href="https://duplicity.gitlab.io/">Duplicity</a>、<a href="https://www.borgbackup.org/">BorgBackup</a>、<a href="https://restic.net/">restic</a> 等备份工具。</li>
 <li>特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 <a href="https://proxmox.com/en/products/proxmox-backup-server/overview">Proxmox Backup Server</a>。</li>
 </ul>
 <div class="admonition warning">
@@ -3405,6 +3461,83 @@
 <p>详情可以参考<a href="../../../dev/ssh/#authorized-keys">本教程关于 SSH 的章节</a>。</p>
 <h3 id="rsync-backup">文件备份<a class="headerlink" href="#rsync-backup" title="Permanent link">&para;</a></h3>
 <p>Rsync 本身不是完整的备份工具，其没有版本管理功能，因此如果某个文件被误删除/修改，那么 rsync 会将这个变化同步到备份中。不过基于 rsync 高效复制文件的能力，有工具实现了基于 rsync 和文件系统硬链接功能的备份，例如 Linux Mint 的 <a href="https://github.com/linuxmint/timeshift">Timeshift</a> 项目就通过硬链接实现不同时间点备份的去重操作，而 rsync 负责文件的复制。</p>
+<h2 id="backup-examples">备份配置示例<a class="headerlink" href="#backup-examples" title="Permanent link">&para;</a></h2>
+<p>以下是一些实际使用的备份配置示例（其中一些严格意义来说，不是完整的备份方案），以供读者参考。</p>
+<h3 id="restic-backblaze">使用 restic 备份到 Backblaze B2<a class="headerlink" href="#restic-backblaze" title="Permanent link">&para;</a></h3>
+<p>restic 是一款现代的备份工具，支持使用包括本地、SFTP、S3 等多种后端存储备份数据，同时支持加密、多主机备份、版本管理等功能。Backblaze B2 云对象存储则以实惠的价格（截至写作时，每月存储开销 6 美元/TB；下载量超过存储 3 倍后流量收费 0.01 美元/GB）与对自动化程序友好的 API 成为了个人用户的热门选择。</p>
+<p>首先在 Backblaze 处创建桶和 Application Key，记录下 Bucket 名称和 Application Key 的 ID 和 Key。</p>
+<div class="admonition note">
+<p class="admonition-title">为每台主机设置单独的 Application Key</p>
+<p>为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。</p>
+</div>
+<p>之后设置环境变量并初始化仓库：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_ID</span><span class="o">=</span><span class="s2">&quot;your_account_id&quot;</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_KEY</span><span class="o">=</span><span class="s2">&quot;your_account_key&quot;</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">&quot;b2:your_bucket_name:/&quot;</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_PASSWORD</span><span class="o">=</span><span class="s2">&quot;your_strong_password&quot;</span><span class="w">  </span><span class="c1"># restic 使用这个密码加密备份数据</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_HOST</span><span class="o">=</span><span class="s2">&quot;your_hostname&quot;</span><span class="w">  </span><span class="c1"># 用于区分不同主机的备份</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>restic<span class="w"> </span>init
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">也可使用 S3 兼容模式连接 Backblaze B2</p>
+<p>事实上，由于使用的第三方库的错误处理问题，<a href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2">restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2</a>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">&quot;your_account_id&quot;</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">&quot;your_account_key&quot;</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># 以下 endpoint 需要根据桶所在的实际区域修改</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">&quot;s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name&quot;</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># ...</span>
+</code></pre></div>
+<p>有关 S3 兼容模式的注意事项，请参阅上述文档。</p>
+</div>
+<p>之后就可以备份了，不过先让我们排除一些不需要备份的目录：</p>
+<div class="highlight"><span class="filename">excludes</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>.local/share/Trash/
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>.cache/
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>.local/share/Steam/steamapps/
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>target/
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>node_modules/
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>.cargo/registry/
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>.cargo/git/
+</code></pre></div>
+<p>以上的排除项是针对备份个人电脑的家目录设置的，排除了回收站、缓存、Steam 游戏库、Rust 与 Node.js 的依赖与构建产物等目录。可以根据自己的实际情况调整。</p>
+<p>之后就可以执行备份了：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>restic<span class="w"> </span>backup<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>--one-file-system<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>--exclude-file<span class="o">=</span>/path/to/excludes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span>/home/username
+</code></pre></div>
+<p>备份完成后，可以使用以下命令查看备份状态：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># 查看所有的备份</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>restic<span class="w"> </span>snapshots
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="c1"># 查看某个备份下的所有文件</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>restic<span class="w"> </span>ls<span class="w"> </span>&lt;snapshot_id&gt;
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1"># 使用 FUSE 挂载备份</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>restic<span class="w"> </span>mount<span class="w"> </span>/path/to/mountpoint
+</code></pre></div>
+<p>备份积累到一定程度后，可以参考<a href="https://restic.readthedocs.io/en/latest/060_forget.html#removing-snapshots-according-to-a-policy">以下命令</a>清理旧的备份：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 每个主机保留最近 100 个备份</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>restic<span class="w"> </span>forget<span class="w"> </span>--group-by<span class="o">=</span>host<span class="w"> </span>--keep-last<span class="w"> </span><span class="m">100</span>
+</code></pre></div>
+<p>建议定时进行备份，以下是一个参考的 systemd timer 配置。其中 <code>/etc/restic/env</code> 存储环境变量信息（记得限制权限！），<code>/usr/local/bin/restic-backup.sh</code> 则是调用上述备份命令的脚本。</p>
+<div class="highlight"><span class="filename">restic-backup.service</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Backup to B2 by restic</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">[Service]</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/etc/restic/env</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/local/bin/restic-backup.sh</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">restic-backup.timer</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run restic backup daily with random delay</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">[Timer]</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">daily</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">3600</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+</code></pre></div>
 <!--
   Links to man pages
 
@@ -3461,7 +3594,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月17日 19:33:52 UTC">2025年12月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月20日 14:46:49 UTC">2025年12月20日</span>
   </span>
 
     
@@ -3575,10 +3708,10 @@ Do not link to a "generic" man page for these commands -->
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
