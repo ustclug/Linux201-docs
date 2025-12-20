@@ -17,7 +17,7 @@
 - 使用数据库的 dump 工具（例如 `mysqldump`）备份数据库。
 - 使用 [Btrfs](./filesystem.md#btrfs-snapshot)、[ZFS](./zfs.md#snapshot) 或 LVM 提供的快照功能。Btrfs 与 ZFS 提供了 send/receive 功能以便网络传输。
 - 使用 `rclone` 同步到云存储（例如 OneDrive、S3 对象存储等）。
-- 使用诸如 [Duplicity](https://duplicity.gitlab.io/)、[BorgBackup](https://www.borgbackup.org/) 等备份工具。
+- 使用诸如 [Duplicity](https://duplicity.gitlab.io/)、[BorgBackup](https://www.borgbackup.org/)、[restic](https://restic.net/) 等备份工具。
 - 特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 [Proxmox Backup Server](https://proxmox.com/en/products/proxmox-backup-server/overview)。
 
 !!! warning "单纯的快照与 RAID 都不是备份"
@@ -288,3 +288,109 @@ rsync 支持利用 [rrsync 脚本][rrsync.1]限制使用 SSH 连接的用户只�
 ### 文件备份 {#rsync-backup}
 
 Rsync 本身不是完整的备份工具，其没有版本管理功能，因此如果某个文件被误删除/修改，那么 rsync 会将这个变化同步到备份中。不过基于 rsync 高效复制文件的能力，有工具实现了基于 rsync 和文件系统硬链接功能的备份，例如 Linux Mint 的 [Timeshift](https://github.com/linuxmint/timeshift) 项目就通过硬链接实现不同时间点备份的去重操作，而 rsync 负责文件的复制。
+
+## 备份配置示例 {#backup-examples}
+
+以下是一些实际使用的备份配置示例（其中一些严格意义来说，不是完整的备份方案），以供读者参考。
+
+### 使用 restic 备份到 Backblaze B2 {#restic-backblaze}
+
+restic 是一款现代的备份工具，支持使用包括本地、SFTP、S3 等多种后端存储备份数据，同时支持加密、多主机备份、版本管理等功能。Backblaze B2 云对象存储则以实惠的价格（截至写作时，每月存储开销 6 美元/TB；下载量超过存储 3 倍后流量收费 0.01 美元/GB）与对自动化程序友好的 API 成为了个人用户的热门选择。
+
+首先在 Backblaze 处创建桶和 Application Key，记录下 Bucket 名称和 Application Key 的 ID 和 Key。
+
+!!! note "为每台主机设置单独的 Application Key"
+
+    为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。
+
+之后设置环境变量并初始化仓库：
+
+```shell
+export B2_ACCOUNT_ID="your_account_id"
+export B2_ACCOUNT_KEY="your_account_key"
+export RESTIC_REPOSITORY="b2:your_bucket_name:/"
+export RESTIC_PASSWORD="your_strong_password"  # restic 使用这个密码加密备份数据
+export RESTIC_HOST="your_hostname"  # 用于区分不同主机的备份
+
+restic init
+```
+
+!!! tip "也可使用 S3 兼容模式连接 Backblaze B2"
+
+    事实上，由于使用的第三方库的错误处理问题，[restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2)：
+
+    ```shell
+    export AWS_ACCESS_KEY_ID="your_account_id"
+    export AWS_SECRET_ACCESS_KEY="your_account_key"
+    # 以下 endpoint 需要根据桶所在的实际区域修改
+    export RESTIC_REPOSITORY="s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name"
+    # ...
+    ```
+
+    有关 S3 兼容模式的注意事项，请参阅上述文档。
+
+之后就可以备份了，不过先让我们排除一些不需要备份的目录：
+
+```shell title="excludes"
+.local/share/Trash/
+.cache/
+.local/share/Steam/steamapps/
+target/
+node_modules/
+.cargo/registry/
+.cargo/git/
+```
+
+以上的排除项是针对备份个人电脑的家目录设置的，排除了回收站、缓存、Steam 游戏库、Rust 与 Node.js 的依赖与构建产物等目录。可以根据自己的实际情况调整。
+
+之后就可以执行备份了：
+
+```shell
+restic backup \
+  --one-file-system \
+  --exclude-file=/path/to/excludes \
+  /home/username
+```
+
+备份完成后，可以使用以下命令查看备份状态：
+
+```shell
+# 查看所有的备份
+restic snapshots
+# 查看某个备份下的所有文件
+restic ls <snapshot_id>
+# 使用 FUSE 挂载备份
+restic mount /path/to/mountpoint
+```
+
+备份积累到一定程度后，可以参考[以下命令](https://restic.readthedocs.io/en/latest/060_forget.html#removing-snapshots-according-to-a-policy)清理旧的备份：
+
+```shell
+# 每个主机保留最近 100 个备份
+restic forget --group-by=host --keep-last 100
+```
+
+建议定时进行备份，以下是一个参考的 systemd timer 配置。其中 `/etc/restic/env` 存储环境变量信息（记得限制权限！），`/usr/local/bin/restic-backup.sh` 则是调用上述备份命令的脚本。
+
+```ini title="restic-backup.service"
+[Unit]
+Description=Backup to B2 by restic
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/restic/env
+ExecStart=/usr/local/bin/restic-backup.sh
+```
+
+```ini title="restic-backup.timer"
+[Unit]
+Description=Run restic backup daily with random delay
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=3600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
