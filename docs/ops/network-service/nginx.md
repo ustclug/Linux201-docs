@@ -871,7 +871,7 @@ autoindex on;
 
 !!! note "使用一个专门的后端程序生成文件列表页面"
 
-    你可能会希望使用其他的文件列表程序（例如 [h5ai](https://github.com/lrsjng/h5ai)），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：
+    你可能会希望使用其他的文件列表程序（例如 [h5ai](https://github.com/lrsjng/h5ai)，或者我们编写的用于科大镜像站的 [yadex](https://github.com/ustclug/yadex)），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：
 
     ```nginx
     root /var/www/files/;
@@ -1278,13 +1278,13 @@ print(decoded["key1"])
 ```lua
 local _M = {}
 
-local function some_internal_func(a)
+local function double_var(a)
     return a + a
 end
 
-function _M.f1(a, b)
-    local aa = some_internal_func(a)
-    local bb = some_internal_func(b)
+function _M.double_plus(a, b)
+    local aa = double_var(a)
+    local bb = double_var(b)
     return aa + bb
 end
 
@@ -1313,6 +1313,96 @@ location / {
 ```
 
 其中 [`content_by_lua_block`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#content_by_lua_block) 控制了请求的响应内容，而 [`ngx.say`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxsay) 则会直接向响应中写入内容。
+
+### 执行阶段 {#execution-phases}
+
+有一张经典的图展示了 Nginx 处理请求的各个阶段中，Lua 脚本可以插入的位置：
+
+![Order of Lua Nginx Module Directives](https://cloud.githubusercontent.com/assets/2137369/15272097/77d1c09e-1a37-11e6-97ef-d9767035fc3e.png)
+
+/// caption
+图来自 [openresty/lua-nginx-module](https://github.com/openresty/lua-nginx-module) 仓库
+///
+
+有关 Nginx 处理请求的各个阶段的介绍，可以参考 [Nginx 的 Development guide](https://nginx.org/en/docs/dev/development_guide.html#http_phases)。
+
+如果不熟悉相关的阶段的话，那么在写代码的时候可能会遇到非预期的行为。这是一个我们实际遇到的例子：
+
+```nginx
+server {
+    # ...
+
+    access_by_lua_file /etc/nginx/lua/access.lua;
+    header_filter_by_lua_file /etc/nginx/lua/header_filter.lua;
+    log_by_lua_file /etc/nginx/lua/log.lua;
+
+    location /lua-test0 {
+        return 200;
+    }
+
+    location /lua-test1 {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+那么在访问 `/lua-test0` 的时候，上面三个 Lua 脚本都会被执行吗？`/lua-test1` 呢？答案是：对 `/lua-test1`，这三个脚本都会被执行，但是对 `/lua-test0`，`access_by_lua_file` 不会被执行，其他两个会。这是因为 `return` 在 rewrite 阶段执行重定向，结束了对请求的处理，因此后面的 access 阶段的脚本不会被执行。但是 header_filter（输出过滤的一部分，未在 Phase 中列出，但是会在 content 生成后，发送数据前执行）和 log（日志记录）阶段仍然会被执行，因此就产生了和上图矛盾的现象。
+
+### 存储与共享状态 {#storing-state}
+
+在编写脚本时我们常见的需求有：
+
+- 在某个阶段存储的状态需要在后续的阶段使用
+- 多个 worker 进程之间需要共享状态
+
+以下介绍 Lua 模块提供解决方案。
+
+#### `ngx.ctx` 与 `ngx.var` {#ngx-ctx-ngx-var}
+
+[`ngx.ctx`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxctx) 是可以存储任意 Lua 变量的表，在当前请求有效。使用方法类似如下：
+
+```nginx
+location /example {
+    access_by_lua_block {
+        ngx.ctx.start_time = ngx.now()
+        ngx.sleep(0.1)
+    }
+
+    log_by_lua_block {
+        local duration = ngx.now() - ngx.ctx.start_time
+        ngx.log(ngx.ERR, "Request took " .. duration .. " seconds")
+    }
+}
+```
+
+可以看到，这里在 access 阶段存储了请求的开始时间，并在 log 阶段计算并输出了请求的持续时间。
+
+不过有一个无法忽视的问题是：如果请求使用了内部跳转（internal redirect，例如 `try_files`、`error_page`、`index`），那么 `ngx.ctx` 会被清空。因此，退而求其次，需要使用 Nginx 的变量机制来存储数据。可以使用 [`ngx.var.VARIABLE`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxvarvariable) 来访问 Nginx 变量，不过 `ngx.var` 相比 `ngx.ctx` 有一些限制：
+
+- 性能相比 `ngx.ctx` 较差。
+- 每次访问 `ngx.var` 都会产生一次内存分配，因此编程时需要先获取到本地变量再使用。
+- `ngx.var` 只能存储字符串或数字。
+- 需要提前使用 `set` 定义变量。
+
+对于需要使用 `ngx.var` 存储复杂 Lua 变量的场景，可以使用第三方的 [lua-resty-ctxdump](https://github.com/tokers/lua-resty-ctxdump/)。其原理是：将实际内容保存在模块内部的 `memo` 表中，而需要存储在 `ngx.var` 里面的只是 `memo` 表的 key（数字）。
+
+#### 共享 dict {#shared-dict}
+
+针对不同的工作进程之间需要共享状态的场景（例如统计某个 `location` 的访问状态），Lua 模块提供了 [`lua_shared_dict`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_shared_dict) 指令，可以在 `http` 块中定义一个共享 dict 区域：
+
+```nginx
+http {
+    lua_shared_dict my_cache 10m;  # 定义一个名字为 my_cache 的共享 dict，大小 10M。
+}
+```
+
+在 Lua 代码中使用 [`ngx.shared.DICT`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxshareddict) 调用。
+
+!!! lab "获取共享 dict 的剩余空间"
+
+    对比较复杂的需求场景下，获取共享 dict 的剩余空间是有必要的——可以据此添加监控告警，防止共享 dict 被写满导致服务异常。请编写一个 Lua 脚本，当用户访问 `/shared-dict-info` 时，返回共享 dict 的总大小和剩余空间。
+
+    如果需要测试，可能还需要添加一些其他的 `location` 来向共享 dict 中写入/删除数据。
 
 ## 示例介绍 {#examples}
 
