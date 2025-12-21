@@ -35,7 +35,6 @@ icon: material/link-box
     2. 一个网络接口可以在被加入桥接的同时扩展出 MACVLAN 子接口吗？
     3. 一个网络接口可以在被加入桥接的同时扩展出 802.1Q VLAN 子接口吗？
 
-
 ### Veth 对 {#veth-pair}
 
 ## 网卡聚合 {#bonding}
