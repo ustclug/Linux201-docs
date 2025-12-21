@@ -1706,6 +1706,56 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#execution-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        执行阶段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#storing-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        存储与共享状态
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="存储与共享状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ngx-ctx-ngx-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ngx.ctx 与 ngx.var
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        共享 dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3558,6 +3608,56 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#execution-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        执行阶段
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#storing-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        存储与共享状态
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="存储与共享状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ngx-ctx-ngx-var" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ngx.ctx 与 ngx.var
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        共享 dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4344,7 +4444,7 @@
 <p>如果需要更好看的界面，一般会使用 fancyindex 模块（<code>libnginx-mod-http-fancyindex</code> 包）。添加 <a href="https://github.com/aperezdc/ngx-fancyindex?tab=readme-ov-file#fancyindex"><code>fancyindex on;</code></a> 指令后，fancyindex 就会以默认样式生成文件列表页面。用户可以自定义 CSS、header 和 footer 来美化页面，网络上也有不少现成的样式可以参考。</p>
 <div class="admonition note">
 <p class="admonition-title">使用一个专门的后端程序生成文件列表页面</p>
-<p>你可能会希望使用其他的文件列表程序（例如 <a href="https://github.com/lrsjng/h5ai">h5ai</a>），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：</p>
+<p>你可能会希望使用其他的文件列表程序（例如 <a href="https://github.com/lrsjng/h5ai">h5ai</a>，或者我们编写的用于科大镜像站的 <a href="https://github.com/ustclug/yadex">yadex</a>），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="k">root</span><span class="w"> </span><span class="s">/var/www/files/</span><span class="p">;</span>
 <a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="k">autoindex</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
 <a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="k">index</span><span class="w"> </span><span class="s">index.html</span><span class="w"> </span><span class="s">index.htm</span><span class="p">;</span>
@@ -4660,13 +4760,13 @@
 <p>为了包装为模块，Lua 代码需要小幅修改。一个非常简单的模块示例如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">_M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
 <a id="__codelineno-73-2" name="__codelineno-73-2" href="#__codelineno-73-2"></a>
-<a id="__codelineno-73-3" name="__codelineno-73-3" href="#__codelineno-73-3"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">some_internal_func</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
+<a id="__codelineno-73-3" name="__codelineno-73-3" href="#__codelineno-73-3"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
 <a id="__codelineno-73-4" name="__codelineno-73-4" href="#__codelineno-73-4"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span>
 <a id="__codelineno-73-5" name="__codelineno-73-5" href="#__codelineno-73-5"></a><span class="kr">end</span>
 <a id="__codelineno-73-6" name="__codelineno-73-6" href="#__codelineno-73-6"></a>
-<a id="__codelineno-73-7" name="__codelineno-73-7" href="#__codelineno-73-7"></a><span class="kr">function</span><span class="w"> </span><span class="nc">_M</span><span class="p">.</span><span class="nf">f1</span><span class="p">(</span><span class="nv">a</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
-<a id="__codelineno-73-8" name="__codelineno-73-8" href="#__codelineno-73-8"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">some_internal_func</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
-<a id="__codelineno-73-9" name="__codelineno-73-9" href="#__codelineno-73-9"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">bb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">some_internal_func</span><span class="p">(</span><span class="nv">b</span><span class="p">)</span>
+<a id="__codelineno-73-7" name="__codelineno-73-7" href="#__codelineno-73-7"></a><span class="kr">function</span><span class="w"> </span><span class="nc">_M</span><span class="p">.</span><span class="nf">double_plus</span><span class="p">(</span><span class="nv">a</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
+<a id="__codelineno-73-8" name="__codelineno-73-8" href="#__codelineno-73-8"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
+<a id="__codelineno-73-9" name="__codelineno-73-9" href="#__codelineno-73-9"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">bb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">b</span><span class="p">)</span>
 <a id="__codelineno-73-10" name="__codelineno-73-10" href="#__codelineno-73-10"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">bb</span>
 <a id="__codelineno-73-11" name="__codelineno-73-11" href="#__codelineno-73-11"></a><span class="kr">end</span>
 <a id="__codelineno-73-12" name="__codelineno-73-12" href="#__codelineno-73-12"></a>
@@ -4687,6 +4787,75 @@
 <a id="__codelineno-75-5" name="__codelineno-75-5" href="#__codelineno-75-5"></a><span class="err">}</span>
 </code></pre></div>
 <p>其中 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#content_by_lua_block"><code>content_by_lua_block</code></a> 控制了请求的响应内容，而 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxsay"><code>ngx.say</code></a> 则会直接向响应中写入内容。</p>
+<h3 id="execution-phases">执行阶段<a class="headerlink" href="#execution-phases" title="Permanent link">&para;</a></h3>
+<p>有一张经典的图展示了 Nginx 处理请求的各个阶段中，Lua 脚本可以插入的位置：</p>
+<figure>
+<p><img alt="Order of Lua Nginx Module Directives" src="https://cloud.githubusercontent.com/assets/2137369/15272097/77d1c09e-1a37-11e6-97ef-d9767035fc3e.png" /></p>
+<figcaption>
+<p>图来自 <a href="https://github.com/openresty/lua-nginx-module">openresty/lua-nginx-module</a> 仓库</p>
+</figcaption>
+</figure>
+<p>有关 Nginx 处理请求的各个阶段的介绍，可以参考 <a href="https://nginx.org/en/docs/dev/development_guide.html#http_phases">Nginx 的 Development guide</a>。</p>
+<p>如果不熟悉相关的阶段的话，那么在写代码的时候可能会遇到非预期的行为。这是一个我们实际遇到的例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="w">    </span><span class="c1"># ...</span>
+<a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a>
+<a id="__codelineno-76-4" name="__codelineno-76-4" href="#__codelineno-76-4"></a><span class="w">    </span><span class="kn">access_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/access.lua</span><span class="p">;</span>
+<a id="__codelineno-76-5" name="__codelineno-76-5" href="#__codelineno-76-5"></a><span class="w">    </span><span class="kn">header_filter_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/header_filter.lua</span><span class="p">;</span>
+<a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a><span class="w">    </span><span class="kn">log_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/log.lua</span><span class="p">;</span>
+<a id="__codelineno-76-7" name="__codelineno-76-7" href="#__codelineno-76-7"></a>
+<a id="__codelineno-76-8" name="__codelineno-76-8" href="#__codelineno-76-8"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test0</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-76-9" name="__codelineno-76-9" href="#__codelineno-76-9"></a><span class="w">        </span><span class="kn">return</span><span class="w"> </span><span class="mi">200</span><span class="p">;</span>
+<a id="__codelineno-76-10" name="__codelineno-76-10" href="#__codelineno-76-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-76-11" name="__codelineno-76-11" href="#__codelineno-76-11"></a>
+<a id="__codelineno-76-12" name="__codelineno-76-12" href="#__codelineno-76-12"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test1</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-76-13" name="__codelineno-76-13" href="#__codelineno-76-13"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
+<a id="__codelineno-76-14" name="__codelineno-76-14" href="#__codelineno-76-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-76-15" name="__codelineno-76-15" href="#__codelineno-76-15"></a><span class="p">}</span>
+</code></pre></div>
+<p>那么在访问 <code>/lua-test0</code> 的时候，上面三个 Lua 脚本都会被执行吗？<code>/lua-test1</code> 呢？答案是：对 <code>/lua-test1</code>，这三个脚本都会被执行，但是对 <code>/lua-test0</code>，<code>access_by_lua_file</code> 不会被执行，其他两个会。这是因为 <code>return</code> 在 rewrite 阶段执行重定向，结束了对请求的处理，因此后面的 access 阶段的脚本不会被执行。但是 header_filter（输出过滤的一部分，未在 Phase 中列出，但是会在 content 生成后，发送数据前执行）和 log（日志记录）阶段仍然会被执行，因此就产生了和上图矛盾的现象。</p>
+<h3 id="storing-state">存储与共享状态<a class="headerlink" href="#storing-state" title="Permanent link">&para;</a></h3>
+<p>在编写脚本时我们常见的需求有：</p>
+<ul>
+<li>在某个阶段存储的状态需要在后续的阶段使用</li>
+<li>多个 worker 进程之间需要共享状态</li>
+</ul>
+<p>以下介绍 Lua 模块提供解决方案。</p>
+<h4 id="ngx-ctx-ngx-var"><code>ngx.ctx</code> 与 <code>ngx.var</code><a class="headerlink" href="#ngx-ctx-ngx-var" title="Permanent link">&para;</a></h4>
+<p><a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxctx"><code>ngx.ctx</code></a> 是可以存储任意 Lua 变量的表，在当前请求有效。使用方法类似如下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/example</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a><span class="w">    </span><span class="kn">access_by_lua_block</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a><span class="w">        </span><span class="kn">ngx.ctx.start_time</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span>
+<a id="__codelineno-77-4" name="__codelineno-77-4" href="#__codelineno-77-4"></a><span class="w">        </span><span class="s">ngx.sleep(0.1)</span>
+<a id="__codelineno-77-5" name="__codelineno-77-5" href="#__codelineno-77-5"></a><span class="w">    </span><span class="err">}</span>
+<a id="__codelineno-77-6" name="__codelineno-77-6" href="#__codelineno-77-6"></a>
+<a id="__codelineno-77-7" name="__codelineno-77-7" href="#__codelineno-77-7"></a><span class="w">    </span><span class="s">log_by_lua_block</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-77-8" name="__codelineno-77-8" href="#__codelineno-77-8"></a><span class="w">        </span><span class="kn">local</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span><span class="w"> </span><span class="s">-</span><span class="w"> </span><span class="s">ngx.ctx.start_time</span>
+<a id="__codelineno-77-9" name="__codelineno-77-9" href="#__codelineno-77-9"></a><span class="w">        </span><span class="s">ngx.log(ngx.ERR,</span><span class="w"> </span><span class="s">&quot;Request</span><span class="w"> </span><span class="s">took</span><span class="w"> </span><span class="s">&quot;</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">&quot;</span><span class="w"> </span><span class="s">seconds&quot;)</span>
+<a id="__codelineno-77-10" name="__codelineno-77-10" href="#__codelineno-77-10"></a><span class="w">    </span><span class="err">}</span>
+<a id="__codelineno-77-11" name="__codelineno-77-11" href="#__codelineno-77-11"></a><span class="err">}</span>
+</code></pre></div>
+<p>可以看到，这里在 access 阶段存储了请求的开始时间，并在 log 阶段计算并输出了请求的持续时间。</p>
+<p>不过有一个无法忽视的问题是：如果请求使用了内部跳转（internal redirect，例如 <code>try_files</code>、<code>error_page</code>、<code>index</code>），那么 <code>ngx.ctx</code> 会被清空。因此，退而求其次，需要使用 Nginx 的变量机制来存储数据。可以使用 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxvarvariable"><code>ngx.var.VARIABLE</code></a> 来访问 Nginx 变量，不过 <code>ngx.var</code> 相比 <code>ngx.ctx</code> 有一些限制：</p>
+<ul>
+<li>性能相比 <code>ngx.ctx</code> 较差。</li>
+<li>每次访问 <code>ngx.var</code> 都会产生一次内存分配，因此编程时需要先获取到本地变量再使用。</li>
+<li><code>ngx.var</code> 只能存储字符串或数字。</li>
+<li>需要提前使用 <code>set</code> 定义变量。</li>
+</ul>
+<p>对于需要使用 <code>ngx.var</code> 存储复杂 Lua 变量的场景，可以使用第三方的 <a href="https://github.com/tokers/lua-resty-ctxdump/">lua-resty-ctxdump</a>。其原理是：将实际内容保存在模块内部的 <code>memo</code> 表中，而需要存储在 <code>ngx.var</code> 里面的只是 <code>memo</code> 表的 key（数字）。</p>
+<h4 id="shared-dict">共享 dict<a class="headerlink" href="#shared-dict" title="Permanent link">&para;</a></h4>
+<p>针对不同的工作进程之间需要共享状态的场景（例如统计某个 <code>location</code> 的访问状态），Lua 模块提供了 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_shared_dict"><code>lua_shared_dict</code></a> 指令，可以在 <code>http</code> 块中定义一个共享 dict 区域：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-78-1" name="__codelineno-78-1" href="#__codelineno-78-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-78-2" name="__codelineno-78-2" href="#__codelineno-78-2"></a><span class="w">    </span><span class="kn">lua_shared_dict</span><span class="w"> </span><span class="s">my_cache</span><span class="w"> </span><span class="mi">10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># 定义一个名字为 my_cache 的共享 dict，大小 10M。</span>
+<a id="__codelineno-78-3" name="__codelineno-78-3" href="#__codelineno-78-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>在 Lua 代码中使用 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxshareddict"><code>ngx.shared.DICT</code></a> 调用。</p>
+<div class="admonition lab">
+<p class="admonition-title">获取共享 dict 的剩余空间</p>
+<p>对比较复杂的需求场景下，获取共享 dict 的剩余空间是有必要的——可以据此添加监控告警，防止共享 dict 被写满导致服务异常。请编写一个 Lua 脚本，当用户访问 <code>/shared-dict-info</code> 时，返回共享 dict 的总大小和剩余空间。</p>
+<p>如果需要测试，可能还需要添加一些其他的 <code>location</code> 来向共享 dict 中写入/删除数据。</p>
+</div>
 <h2 id="examples">示例介绍<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
 <!-- 以下给出一些实践中会使用的 Nginx 配置示例。
 
@@ -4703,33 +4872,33 @@
 
 比如上面的例子，就可以通过下面的配置实现反向代理：
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-76-4" name="__codelineno-76-4" href="#__codelineno-76-4"></a>
-<a id="__codelineno-76-5" name="__codelineno-76-5" href="#__codelineno-76-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-76-7" name="__codelineno-76-7" href="#__codelineno-76-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-76-8" name="__codelineno-76-8" href="#__codelineno-76-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-76-9" name="__codelineno-76-9" href="#__codelineno-76-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-76-10" name="__codelineno-76-10" href="#__codelineno-76-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-76-11" name="__codelineno-76-11" href="#__codelineno-76-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-76-12" name="__codelineno-76-12" href="#__codelineno-76-12"></a><span class="p">}</span>
-<a id="__codelineno-76-13" name="__codelineno-76-13" href="#__codelineno-76-13"></a>
-<a id="__codelineno-76-14" name="__codelineno-76-14" href="#__codelineno-76-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-76-15" name="__codelineno-76-15" href="#__codelineno-76-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-76-16" name="__codelineno-76-16" href="#__codelineno-76-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-76-17" name="__codelineno-76-17" href="#__codelineno-76-17"></a>
-<a id="__codelineno-76-18" name="__codelineno-76-18" href="#__codelineno-76-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-76-19" name="__codelineno-76-19" href="#__codelineno-76-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-76-20" name="__codelineno-76-20" href="#__codelineno-76-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-76-21" name="__codelineno-76-21" href="#__codelineno-76-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-76-22" name="__codelineno-76-22" href="#__codelineno-76-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-76-23" name="__codelineno-76-23" href="#__codelineno-76-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-76-24" name="__codelineno-76-24" href="#__codelineno-76-24"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-76-25" name="__codelineno-76-25" href="#__codelineno-76-25"></a><span class="p">}</span>
-<a id="__codelineno-76-26" name="__codelineno-76-26" href="#__codelineno-76-26"></a>
-<a id="__codelineno-76-27" name="__codelineno-76-27" href="#__codelineno-76-27"></a><span class="k">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-79-1" name="__codelineno-79-1" href="#__codelineno-79-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-2" name="__codelineno-79-2" href="#__codelineno-79-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-79-4" name="__codelineno-79-4" href="#__codelineno-79-4"></a>
+<a id="__codelineno-79-5" name="__codelineno-79-5" href="#__codelineno-79-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-79-8" name="__codelineno-79-8" href="#__codelineno-79-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-79-11" name="__codelineno-79-11" href="#__codelineno-79-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-79-12" name="__codelineno-79-12" href="#__codelineno-79-12"></a><span class="p">}</span>
+<a id="__codelineno-79-13" name="__codelineno-79-13" href="#__codelineno-79-13"></a>
+<a id="__codelineno-79-14" name="__codelineno-79-14" href="#__codelineno-79-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-15" name="__codelineno-79-15" href="#__codelineno-79-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-79-16" name="__codelineno-79-16" href="#__codelineno-79-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-79-17" name="__codelineno-79-17" href="#__codelineno-79-17"></a>
+<a id="__codelineno-79-18" name="__codelineno-79-18" href="#__codelineno-79-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-79-19" name="__codelineno-79-19" href="#__codelineno-79-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-79-20" name="__codelineno-79-20" href="#__codelineno-79-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-79-21" name="__codelineno-79-21" href="#__codelineno-79-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-79-22" name="__codelineno-79-22" href="#__codelineno-79-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-79-23" name="__codelineno-79-23" href="#__codelineno-79-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-79-24" name="__codelineno-79-24" href="#__codelineno-79-24"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-79-25" name="__codelineno-79-25" href="#__codelineno-79-25"></a><span class="p">}</span>
+<a id="__codelineno-79-26" name="__codelineno-79-26" href="#__codelineno-79-26"></a>
+<a id="__codelineno-79-27" name="__codelineno-79-27" href="#__codelineno-79-27"></a><span class="k">...</span>
 </code></pre></div>
 
 但是这只是最简单的反向代理配置，实际情况下往往还需要根据不同的服务做一些特殊的配置，可以通过两个狠狠坑过我的例子来学习。
@@ -4758,18 +4927,18 @@
 
     因为它可能为空，如果你在配置中直接使用它（例如 `proxy_set_header Host $http_host;`），当其为空时，转发给后端的请求的 Host 头也会是空的，这可能导致后端服务器无法正确处理请求（无法识别要访问哪个虚拟主机）。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
-<a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
-<a id="__codelineno-77-4" name="__codelineno-77-4" href="#__codelineno-77-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-77-5" name="__codelineno-77-5" href="#__codelineno-77-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-77-6" name="__codelineno-77-6" href="#__codelineno-77-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
-<a id="__codelineno-77-7" name="__codelineno-77-7" href="#__codelineno-77-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
-<a id="__codelineno-77-8" name="__codelineno-77-8" href="#__codelineno-77-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
-<a id="__codelineno-77-9" name="__codelineno-77-9" href="#__codelineno-77-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
-<a id="__codelineno-77-10" name="__codelineno-77-10" href="#__codelineno-77-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
-<a id="__codelineno-77-11" name="__codelineno-77-11" href="#__codelineno-77-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
-<a id="__codelineno-77-12" name="__codelineno-77-12" href="#__codelineno-77-12"></a><span class="p">}</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-80-1" name="__codelineno-80-1" href="#__codelineno-80-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-80-2" name="__codelineno-80-2" href="#__codelineno-80-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-80-3" name="__codelineno-80-3" href="#__codelineno-80-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-80-4" name="__codelineno-80-4" href="#__codelineno-80-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-80-5" name="__codelineno-80-5" href="#__codelineno-80-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-80-6" name="__codelineno-80-6" href="#__codelineno-80-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
+<a id="__codelineno-80-7" name="__codelineno-80-7" href="#__codelineno-80-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
+<a id="__codelineno-80-8" name="__codelineno-80-8" href="#__codelineno-80-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-80-9" name="__codelineno-80-9" href="#__codelineno-80-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
+<a id="__codelineno-80-10" name="__codelineno-80-10" href="#__codelineno-80-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
+<a id="__codelineno-80-11" name="__codelineno-80-11" href="#__codelineno-80-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
+<a id="__codelineno-80-12" name="__codelineno-80-12" href="#__codelineno-80-12"></a><span class="p">}</span>
 </code></pre></div>
 
 !!! bug "Grafana 需要 websocket 反代支持"
@@ -4851,7 +5020,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月16日 11:03:41 UTC">2025年11月16日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月21日 09:40:32 UTC">2025年12月21日</span>
   </span>
 
     
