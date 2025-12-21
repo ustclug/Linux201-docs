@@ -2937,7 +2937,7 @@
 <p>Zeroconf 是一套在局域网中进行自动网络配置的方案，分为三个部分：</p>
 <ul>
 <li>Link-local 地址分配：在没有 DHCP 服务器的情况下，设备可以为自己分配一个 link-local 地址。<ul>
-<li>但是正常情况下，不会有人依赖于这个特性组网。</li>
+<li>但是正常情况下，不会有人依赖于这个特性组网。这个特性主要用于点对点连接（例如两台电脑通过网线直接连接），或者小型的、不需要访问外部网络的局域网中。</li>
 </ul>
 </li>
 <li>名称解析：设备可以通过 mDNS 协议解析局域网内部其他设备的名称。</li>
@@ -2945,9 +2945,25 @@
 </ul>
 <p>以下主要介绍上面三个部分的需求对应的各类协议，包括但不限于 mDNS 与 DNS-SD。</p>
 <h2 id="link-local">Link-local 地址分配<a class="headerlink" href="#link-local" title="Permanent link">&para;</a></h2>
-<!-- How IPv4 & IPv6 handle this -->
-<!-- Why nobody uses them -->
-
+<p>Link-local 在 IPv4 和 IPv6 中有着不同的表现。IPv4 下，如果网络中没有 DHCP 服务器，并且用户也没有手动配置 IP 地址，那么设备会自动为自己分配一个 Link-local 地址。这个地址在 169.254.0.0/16（除了 169.254.0.0/24 和 169.254.255.0/24 以外）中。在 IPv4 下的 Link-local 地址分配使用的是 APIPA（Automatic Private IP Addressing）协议，这个协议很简单：</p>
+<ol>
+<li>随机在上面的地址段中选择一个地址。</li>
+<li>发送 ARP 请求，检查这个地址是否已经被使用。</li>
+<li>如果有人回应了 ARP 请求，说明地址已经被使用，回到步骤 1。</li>
+</ol>
+<p>而在 IPv6 下，Link-local 的地址段是 <code>fe80::/10</code>，无论如何，设备都会为自己分配一个 Link-local 地址（有些设备上会基于接口的 MAC 地址来分配），所以在支持 IPv6 的场合下，你会发现设备会有多个 IPv6 地址，其中就包括一个 Link-local 地址。和 IPv4 类似，在选择地址之后，也需要避免和其他人的地址冲突。IPv6 不再使用 ARP，而是使用基于 ICMPv6 的 NDP（Neighbor Discovery Protocol）完成地址冲突检测（DAD，Duplicate Address Detection）。</p>
+<div class="admonition note">
+<p class="admonition-title">为什么 IPv6 没有 ARP？</p>
+<p>IPv6 并非「更大地址空间的 IPv4」。IPv6 的设计者在设计时，就希望将 IPv4 中能用，但是设计得不好的东西改进掉。ARP 是一个横跨二层（数据链路层，最常见的是以太网）和三层（网络层，这里是 IP）的特殊协议，在解析 IP 到 MAC 地址的过程中需要在二层广播（在以太网中，是将目标 MAC 地址设置为 ff:ff:ff:ff:ff:ff），在大型网络中这样做开销很大。而 ARP 也无法基于 ICMP 实现，因为 ICMP 协议依赖于 IP 层，而 ARP 要解决的问题就是在 IP 层还没有准备好的时候，获取 IP 到 MAC 的映射关系。</p>
+<p>而在 IPv6 中，所有接口都必须有 Link-local 地址，因此 NDP 就可以在 ICMPv6 的基础上实现。在检测地址冲突时，NDP 会构造 <a href="https://datatracker.ietf.org/doc/html/rfc4291#section-2.7.1">solicited-node multicast address</a> 多播地址，只有可能使用该地址的节点会收到这个多播包，从而避免了广播带来的开销。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Link-local 地址 = 网坏了？</p>
+<p>有一定网络经验的读者可能对 169.254.0.0/16 和 fe80::/10 这两个地址段比较熟悉，因为如果自己的设备只分配到了这个地址段的地址，通常意味着网络出现了问题。</p>
+<p>对 IPv4 来说，这是因为 DHCP 服务器做的事情除了分配 IP 地址以外，还会将网关、DNS 服务器等信息一并发送给客户端，而如果没有网关信息的话，设备就无法和局域网外的设备通信了（无法连接到互联网），对很多场景来讲，这就是网络出现了故障的表现。</p>
+<p>那么，假如我们回到过去，修改 IPv4 下关于 Link-local 的约定，让设备在 APIPA 的时候自动将默认网关和默认 DNS 设置为 169.254.0.1 的话，那么就可以不需要 DHCP 服务器，也能够组建小型的局域网络，并且让这个网络有访问外部网络的能力了（假设网关支持 NAT）——这个模型就比较接近 IPv6 有关 Link-local 的设计思路了。</p>
+<p>在 IPv6 下，路由器需要通过 RA（Router Advertisement）消息告诉设备包括网关、网络前缀、DNS 等信息，在 Link-local 地址收到 RA 之后，设备会使用 SLAAC（Stateless Address Autoconfiguration）为自己分配一个全局单播地址（这个地址是全局唯一的——可以在其他的网络里面访问），从而实现和外部网络的通信。在 IPv6 下，Link-local 地址是「IPv6 控制面」接口，不承载其他的功能。</p>
+</div>
 <h2 id="name-resolution">名称解析<a class="headerlink" href="#name-resolution" title="Permanent link">&para;</a></h2>
 <!-- mDNS and LLMNR -->
 
@@ -3030,7 +3046,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年8月11日 19:14:31 UTC">2025年8月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月21日 13:16:10 UTC">2025年12月21日</span>
   </span>
 
     
