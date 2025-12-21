@@ -394,3 +394,7 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 ```
+
+!!! note "restic 的缓存"
+
+    默认情况下，restic 会在 `$XDG_CACHE_HOME/restic` 或 `~/.cache/restic` 下缓存一些索引文件以提升性能。不过 systemd 默认不会给服务设置 `XDG_CACHE_HOME` 和 `HOME` 环境变量。因此，环境变量文件中需要额外设置 `RESTIC_CACHE_DIR`，或前述的与家目录相关的环境变量。
