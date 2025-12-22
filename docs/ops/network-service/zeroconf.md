@@ -33,7 +33,7 @@ Link-local 在 IPv4 和 IPv6 中有着不同的表现。IPv4 下，如果网络�
 
     IPv6 并非「更大地址空间的 IPv4」。IPv6 的设计者在设计时，就希望将 IPv4 中能用，但是设计得不好的东西改进掉。ARP 是一个横跨二层（数据链路层，最常见的是以太网）和三层（网络层，这里是 IP）的特殊协议，在解析 IP 到 MAC 地址的过程中需要在二层广播（在以太网中，是将目标 MAC 地址设置为 ff:ff:ff:ff:ff:ff），在大型网络中这样做开销很大。而 ARP 也无法基于 ICMP 实现，因为 ICMP 协议依赖于 IP 层，而 ARP 要解决的问题就是在 IP 层还没有准备好的时候，获取 IP 到 MAC 的映射关系。
 
-    而在 IPv6 中，所有接口都必须有 link-local 地址，因此 NDP 就可以在 ICMPv6 的基础上实现。在检测地址冲突时，NDP 会构造 [solicited-node multicast address](https://datatracker.ietf.org/doc/html/rfc4291#section-2.7.1) 多播地址，只有可能使用该地址的节点会收到这个多播包，从而避免了广播带来的开销。
+    而在 IPv6 中，所有接口都必须有 link-local 地址，因此 NDP 就可以在 ICMPv6 的基础上实现。在检测地址冲突时，NDP 会构造 [solicited-node multicast address](https://datatracker.ietf.org/doc/html/rfc4291#section-2.7.1) 多播地址（IPv6 ff02::1:ff00:0/104，对应 MAC 地址 33:33:FF:xx:xx:xx，以太网也是支持多播的），只有可能使用该地址的节点会收到这个多播包，从而避免了广播带来的开销。
 
 !!! note "Link-local 地址 = 网坏了？"
 
