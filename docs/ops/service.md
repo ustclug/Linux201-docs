@@ -63,9 +63,33 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
         - 同理，`systemctl disable --now [some-unit]` 可以在 disable 一个 unit 的同时立即停止它。
 
+    !!! note "`systemctl mask`"
+
+        有些时候，`systemctl disable` 无法满足需求，例如：
+
+        - 对应的 unit 没有 `[Install]` 部分，因此无法被 enable/disable。
+        - Unit 会被其他 unit Wants/Requires，但是又不想 disable 依赖它的 unit。
+
+        此时可以使用 `systemctl mask`，它做的事情就是在 `/etc/systemd/system` 下，将对应的 unit 文件替换为一个指向 `/dev/null` 的软链接，从而彻底禁止该 unit 被启动。例如，在配置了自动挂载 /tmp 为 tmpfs 的系统上（`/usr/lib/systemd/system/tmp.mount`），如果不希望 /tmp 被挂载为 tmpfs，可以运行下面的命令来禁用：
+
+        ```console
+        systemctl mask tmp.mount
+        ```
+
+        由于 `tmp.mount` 没有 `[Install]` 部分，因此 `systemctl disable tmp.mount` 是无效的。
+
 - `systemctl edit [some-unit]` 会提供一个临时文件，并在编辑完之后将其保存到 `/etc/systemd/system/[some-unit].d/override.conf` 文件中，实现对 unit 的修改。
 
     相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
+
+    !!! tip "修改可以指定多次的字段"
+
+        Systemd unit 中有一些字段是可以指定多次的，例如下文介绍的服务的 `ExecStart=`。如果你想在 `systemctl edit` 中覆盖这些字段，那么需要先指定空值，再设置，类似下面这样：
+
+        ```ini
+        ExecStart=
+        ExecStart=/your/new/command arg1 arg2
+        ```
 
 Unit 的配置文件是一个 INI 格式的文件，通常包括一个 `[Unit]` section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 `[Service]` section，并通常会包含一个 `[Install]` section。以 cron 服务的配置文件为例：
 
