@@ -3282,10 +3282,29 @@ U --&gt; F(scope)</code></pre>
 <li>同理，<code>systemctl disable --now [some-unit]</code> 可以在 disable 一个 unit 的同时立即停止它。</li>
 </ul>
 </div>
+<div class="admonition note">
+<p class="admonition-title"><code>systemctl mask</code></p>
+<p>有些时候，<code>systemctl disable</code> 无法满足需求，例如：</p>
+<ul>
+<li>对应的 unit 没有 <code>[Install]</code> 部分，因此无法被 enable/disable。</li>
+<li>Unit 会被其他 unit Wants/Requires，但是又不想 disable 依赖它的 unit。</li>
+</ul>
+<p>此时可以使用 <code>systemctl mask</code>，它做的事情就是在 <code>/etc/systemd/system</code> 下，将对应的 unit 文件替换为一个指向 <code>/dev/null</code> 的软链接，从而彻底禁止该 unit 被启动。例如，在配置了自动挂载 /tmp 为 tmpfs 的系统上（<code>/usr/lib/systemd/system/tmp.mount</code>），如果不希望 /tmp 被挂载为 tmpfs，可以运行下面的命令来禁用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">systemctl mask tmp.mount</span>
+</code></pre></div>
+<p>由于 <code>tmp.mount</code> 没有 <code>[Install]</code> 部分，因此 <code>systemctl disable tmp.mount</code> 是无效的。</p>
+</div>
 </li>
 <li>
 <p><code>systemctl edit [some-unit]</code> 会提供一个临时文件，并在编辑完之后将其保存到 <code>/etc/systemd/system/[some-unit].d/override.conf</code> 文件中，实现对 unit 的修改。</p>
 <p>相比于手工修改文件，使用 <code>systemctl edit</code> 更加安全，它会检查配置文件的语法，而且不需要再额外运行 <code>systemctl daemon-reload</code>。</p>
+<div class="admonition tip">
+<p class="admonition-title">修改可以指定多次的字段</p>
+<p>Systemd unit 中有一些字段是可以指定多次的，例如下文介绍的服务的 <code>ExecStart=</code>。如果你想在 <code>systemctl edit</code> 中覆盖这些字段，那么需要先指定空值，再设置，类似下面这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">ExecStart</span><span class="o">=</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/your/new/command arg1 arg2</span>
+</code></pre></div>
+</div>
 </li>
 </ul>
 <p>Unit 的配置文件是一个 INI 格式的文件，通常包括一个 <code>[Unit]</code> section，然后根据 unit 的类型不同有不同的 section。例如一个服务的配置文件会有 <code>[Service]</code> section，并通常会包含一个 <code>[Install]</code> section。以 cron 服务的配置文件为例：</p>
@@ -3343,57 +3362,57 @@ U --&gt; F(scope)</code></pre>
 <div class="admonition tip">
 <p class="admonition-title">获取某个 unit 的顺序与依赖关系</p>
 <p>使用 <code>systemctl show [unit]</code> 可以查看某个 unit 的所有属性，包括上面提到的依赖关系和启动顺序。例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>show<span class="w"> </span>gdm.service
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">Id=gdm.service</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">Names=gdm.service display-manager.service</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">Requires=system.slice sysinit.target dbus.socket</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">WantedBy=graphical.target</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">Conflicts=getty@tty1.service shutdown.target plymouth-quit.service</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">Before=graphical.target shutdown.target</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">After=fwupd.service rc-local.service systemd-journald.socket sysinit.target basic.target system.slice plymouth-quit.service systemd-user-sessions.service plymouth-start.service dbus.socket getty@tty1.service</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>show<span class="w"> </span>gdm.service
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">Id=gdm.service</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">Names=gdm.service display-manager.service</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">Requires=system.slice sysinit.target dbus.socket</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">WantedBy=graphical.target</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">Conflicts=getty@tty1.service shutdown.target plymouth-quit.service</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">Before=graphical.target shutdown.target</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="go">After=fwupd.service rc-local.service systemd-journald.socket sysinit.target basic.target system.slice plymouth-quit.service systemd-user-sessions.service plymouth-start.service dbus.socket getty@tty1.service</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 <p>此外使用 <code>systemctl list-dependencies [unit]</code> 可以以树状结构显示某个 unit 的依赖关系：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>list-dependencies<span class="w"> </span>gdm.service
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">gdm.service</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">● ├─dbus.socket</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">● ├─system.slice</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">● └─sysinit.target</span>
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="go">●   ├─dev-hugepages.mount</span>
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="go">●   ├─dev-mqueue.mount</span>
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="go">●   ├─kmod-static-nodes.service</span>
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="go">●   ├─ldconfig.service</span>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="go">●   ├─proc-sys-fs-binfmt_misc.automount</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="go">●   ├─sys-fs-fuse-connections.mount</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="go">●   ├─sys-kernel-config.mount</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="go">●   ├─sys-kernel-debug.mount</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">●   ├─sys-kernel-tracing.mount</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">●   ├─systemd-ask-password-console.path</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="go">●   ├─systemd-binfmt.service</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>list-dependencies<span class="w"> </span>gdm.service
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">gdm.service</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">● ├─dbus.socket</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">● ├─system.slice</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">● └─sysinit.target</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="go">●   ├─dev-hugepages.mount</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="go">●   ├─dev-mqueue.mount</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="go">●   ├─kmod-static-nodes.service</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="go">●   ├─ldconfig.service</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="go">●   ├─proc-sys-fs-binfmt_misc.automount</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="go">●   ├─sys-fs-fuse-connections.mount</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="go">●   ├─sys-kernel-config.mount</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="go">●   ├─sys-kernel-debug.mount</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="go">●   ├─sys-kernel-tracing.mount</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="go">●   ├─systemd-ask-password-console.path</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="go">●   ├─systemd-binfmt.service</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">分析系统启动时间</p>
 <p>相比传统的 init，systemd 的一大卖点就是通过分析顺序与依赖，并行启动服务，从而缩短系统启动时间。可以使用 <code>systemd-analyze</code> 来绘制启动时间线：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">systemd-analyze plot &gt; boot.svg</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">systemd-analyze plot &gt; boot.svg</span>
 </code></pre></div>
 <p>每个服务的启动时间可以使用 <code>blame</code> 子命令查看：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">systemd-analyze blame</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">systemd-analyze blame</span>
 </code></pre></div>
 <p>不过，<code>systemd-analyze blame</code> 显示的最耗时的服务可能并不会实际影响启动。如果需要快速查看对启动时间影响最大的服务，可以查看关键路径：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">systemd-analyze critical-chain</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">systemd-analyze critical-chain</span>
 </code></pre></div>
 </div>
 <h4 id="unit-template">模板<a class="headerlink" href="#unit-template" title="Permanent link">&para;</a></h4>
 <p>Systemd 的 unit 支持模板特性：一个 unit 文件可以实例化为多个 unit。模板 unit 的文件名（不含扩展名）结尾是 <code>@</code>，例如 <code>foo@.service</code>。用户使用时需要提供一个参数，例如 <code>systemctl enable --now foo@arg.service</code>。</p>
 <p>在 unit 文件内部，可以使用 <code>%i</code> 和 <code>%I</code> 来引用这个参数（其中 <code>%I</code> 是没有经过转义的），例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Hello for %I</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">[Service]</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># ...</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/echo Hello, %i</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Hello for %I</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">[Service]</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># ...</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/echo Hello, %i</span>
 </code></pre></div>
 <h3 id="target">Target<a class="headerlink" href="#target" title="Permanent link">&para;</a></h3>
 <p>Target 是一组服务（其他 unit）的集合，通过 target 这样一层抽象可以更方便地管理服务的启动顺序，类似 SysVinit 中的 runlevel，可以理解为“系统启动目标”。
@@ -3495,13 +3514,13 @@ U --&gt; F(scope)</code></pre>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>如果你有额外的安全需求，可以参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing">Sandboxing</a> 一节使用 systemd 提供的高级隔离功能。可以使用 <code>systemd-analyze security</code> 命令检查整个系统的服务安全性配置情况，与单个服务的具体配置是否安全。该命令会根据服务配置计算 "exposure level" 分数，并且提供相关配置以及解释，类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager<span class="w"> </span>caddy.service
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">  NAME                                         DESCRIPTION                                  EXPOSURE</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="go">✗ RemoveIPC=                                   Service user may leave SysV IPC objects aro…      0.1</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">✗ RootDirectory=/RootImage=                    Service runs within the host&#39;s root directo…      0.1</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="go">✓ User=/DynamicUser=                           Service runs under a static non-root user i…</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="go">✗ CapabilityBoundingSet=~CAP_SYS_TIME          Service processes may change the system clo…      0.2</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager<span class="w"> </span>caddy.service
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">  NAME                                         DESCRIPTION                                  EXPOSURE</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="go">✗ RemoveIPC=                                   Service user may leave SysV IPC objects aro…      0.1</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="go">✗ RootDirectory=/RootImage=                    Service runs within the host&#39;s root directo…      0.1</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">✓ User=/DynamicUser=                           Service runs under a static non-root user i…</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">✗ CapabilityBoundingSet=~CAP_SYS_TIME          Service processes may change the system clo…      0.2</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 </div>
 </dd>
@@ -3554,9 +3573,9 @@ U --&gt; F(scope)</code></pre>
 <ul>
 <li>
 <p>例如，<code>systemd-tmpfiles-clean.timer</code> 就是在系统启动后 15 分钟触发一次 <code>systemd-tmpfiles-clean.service</code>，然后每天触发一次，用于清理临时文件。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/systemd-tmpfiles-clean.timer</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[Timer]</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">OnBootSec</span><span class="o">=</span><span class="s">15min</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">OnUnitActiveSec</span><span class="o">=</span><span class="s">1d</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/systemd-tmpfiles-clean.timer</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[Timer]</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">OnBootSec</span><span class="o">=</span><span class="s">15min</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="na">OnUnitActiveSec</span><span class="o">=</span><span class="s">1d</span>
 </code></pre></div>
 </li>
 <li>
@@ -3588,34 +3607,34 @@ U --&gt; F(scope)</code></pre>
 <h4 id="create-timer">创建一个定时任务<a class="headerlink" href="#create-timer" title="Permanent link">&para;</a></h4>
 <p>如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。</p>
 <p>首先创建一个 service，需要注意的是 <code>Type=oneshot</code>，并且<strong>不能</strong>使用 <code>RemainAfterExit=yes</code>（一般将其忽略即可，它的默认值是 no）。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Certbot</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">file:///usr/share/doc/python-certbot-doc/html/index.html</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">https://certbot.eff.org/docs</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="k">[Service]</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/certbot -q renew</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Certbot</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">file:///usr/share/doc/python-certbot-doc/html/index.html</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">https://certbot.eff.org/docs</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/certbot -q renew</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
 </code></pre></div>
 <p>接下来创建一个 timer，指定触发时间，并按需启用 <code>Persistent=</code>。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/certbot.timer</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run certbot twice daily</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="k">[Timer]</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 00,12:00:00</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">43200</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="k">[Install]</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.timer</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run certbot twice daily</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">[Timer]</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 00,12:00:00</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">43200</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
 </code></pre></div>
 <p>此时 <code>certbot.timer</code> 会自动触发同名的 service，也就是 <code>certbot.service</code>。</p>
 <p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
 <h3 id="transient-service">临时服务<a class="headerlink" href="#transient-service" title="Permanent link">&para;</a></h3>
 <p>systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 <code>.service</code> 文件，这对于一些临时任务或一次性操作非常有用。</p>
 <p><code>systemd-run</code> 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
 </code></pre></div>
 <p>此后，你就可以通过 <code>systemctl status my-sleep</code> 查看临时服务的状态，或者使用诸如 <code>systemctl stop</code> / <code>systemctl restart</code> 等命令管理其状态了。同时，你也可以使用 <code>journalctl</code> 命令查看进程的输出（<a href="#log">见下</a>）。</p>
 <p>默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 <code>systemctl status my-sleep</code> 将会显示 service not found。此时你仍然可以使用 <code>journalctl</code> 命令查看日志，回收服务并不会清除其运行日志。<code>systemd-run</code> 有两个参数可以改变此默认行为：</p>
@@ -3688,24 +3707,24 @@ U --&gt; F(scope)</code></pre>
 <p class="admonition-title">避免覆盖由包管理器管理的文件</p>
 <p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
 <p>例如，要限制磁盘占用（<code>/var/log/journal</code>）为 1G，可以创建如下文件，然后重启 <code>systemd-journald</code> 服务：</p>
-<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[Journal]</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
+<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">[Journal]</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
 </code></pre></div>
 </div>
 <p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
 <p>按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责日志的“滚动”（rotate），即重命名、压缩、删除等操作。</p>
 <p>logrotate 的全局配置文件位于 <code>/etc/logrotate.conf</code>，而每个服务的配置文件则位于 <code>/etc/logrotate.d/</code> 目录下。以 Telegraf 为例，其配置文件如下：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>/var/log/telegraf/telegraf.log
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="o">{</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span>daily
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span>missingok
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span>dateext
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span>copytruncate
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span>notifempty
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">    </span>compress
-<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="o">}</span>
+<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>/var/log/telegraf/telegraf.log
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="o">{</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">    </span>daily
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span>missingok
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">    </span>dateext
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span>copytruncate
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">    </span>notifempty
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">    </span>compress
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="o">}</span>
 </code></pre></div>
 <p>配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：</p>
 <dl>
@@ -3738,10 +3757,10 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>压缩旧的日志文件，以及压缩参数（默认使用 <code>gzip</code> / <code>gunzip</code> / <code>.gz</code> / <code>-9</code>）。其中 <code>compress</code> 是开关，默认行为是 <code>nocompress</code>。</p>
 <p>例如，如果使用 Zstd 压缩，可以使用以下配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>compressext<span class="w"> </span>.zst
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>compressext<span class="w"> </span>.zst
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
 </code></pre></div>
 </dd>
 <dt>delaycompress</dt>
@@ -3752,9 +3771,9 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>在 rotate 之前/之后执行的命令，命令块需要以 <code>endscript</code> 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 <code>if</code> 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。</p>
 <p>例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>postrotate
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>endscript
+<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>postrotate
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>endscript
 </code></pre></div>
 </dd>
 </dl>
@@ -3764,11 +3783,11 @@ U --&gt; F(scope)</code></pre>
 <p>systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html">systemd-logind(8)</a>。本部分主要关注在日常运维中可能会用到的一部分特性。</p>
 <p>在登录系统时，PAM 的 <code>pam_systemd.so</code> 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。</p>
 <p><code>loginctl list-sessions</code> 可以显示当前的所有用户 session：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">      2 1000 user  seat0</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">1 sessions listed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">      2 1000 user  seat0</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">1 sessions listed.</span>
 </code></pre></div>
 <p><code>loginctl</code> 支持锁定（<code>lock-session</code>）、解锁（<code>unlock-session</code>）、注销（<code>terminate-session</code>）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 <code>loginctl</code> 的功能来实现。</p>
 <p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
@@ -3846,7 +3865,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月15日 14:16:14 UTC">2025年11月15日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月23日 18:46:26 UTC">2025年12月23日</span>
   </span>
 
     
