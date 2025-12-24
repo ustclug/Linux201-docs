@@ -517,6 +517,59 @@ git bisect bad <new-commit>
 
     有时候我们会需要确认哪个 commit **修复**（而不是导致）了问题，但是 `git bisect` 默认 good 需要早于 bad，直接 `git bisect start` 的话很容易误操作。请阅读 [git-bisect(1)][git-bisect.1] 了解应该如何处理此类情况。
 
+### Worktree {#git-worktree}
+
+有时候我们会需要同时在多个分支上进行开发。你可能会这么做：
+
+- 再 `git clone` 一份仓库
+- 或者每次切换的时候都要 `git stash`，切换回来之后再 `git stash pop`
+
+可以注意到，这两种方式其实都不是很方便。Git 的 worktree 功能可以帮助解决这个需求：将不同的分支 checkout 到不同的目录下，但是这些目录仍然共享同一个 `.git` 目录，在节约磁盘空间的同时，避免了频繁切换分支的麻烦，特别是在需要并行在多个分支上做处理时非常有用（甚至包括 [Claude Code 的文档](https://code.claude.com/docs/en/common-workflows#run-parallel-claude-code-sessions-with-git-worktrees) 也提到了 worktree 的使用方法）。
+
+在默认情况下，只有一个 worktree，即当前的仓库目录：
+
+```console
+$ git worktree list
+/home/username/Projects/Linux201-docs  abf5b5c8 [master]
+```
+
+可以用 `git worktree add` 添加新的 worktree：
+
+```bash
+# 新建 dev1 分支，并将其 checkout 到 /tmp/201-dev1 目录下
+git worktree add /tmp/201-dev1 -b dev1
+
+git branch --copy dev2
+# 将已有的 dev2 分支 checkout 到 /tmp/201-dev2 目录下
+git worktree add /tmp/201-dev2 dev2
+```
+
+!!! note "新的 worktree 目录结构"
+
+    在新的 worktree 目录下，并不会有完整的 `.git` 目录，而是一个 `.git` 文件，内容类似如下：
+
+    ```text
+    gitdir: /home/username/Projects/Linux201-docs/.git/worktrees/201-dev1
+    ```
+
+可以使用 `git worktree remove <path>` 来删除指定的 worktree。如果没有用这个指令，而是直接把目录删掉了，那么 `git worktree list` 结果类似如下：
+
+```console
+> git worktree list
+/home/username/Projects/Linux201-docs  abf5b5c8 [master]
+/tmp/201-dev1                          abf5b5c8 [dev1] prunable
+```
+
+需要使用 `git worktree prune` 来清理这些已经不存在的 worktree。
+
+!!! warning "worktree 与 submodule 的兼容性"
+
+    目前 worktree 对 submodule 的支持还不完善，这一点在 [git-worktree(1)][git-worktree.1] 中也有提到：
+
+    > ... and the support for submodules is incomplete.
+
+    <https://stackoverflow.com/questions/31871888/what-goes-wrong-when-using-git-worktree-with-git-submodules> 中整理了不同 Git 版本的 worktree 对 submodule 支持的行为差异。
+
 ### Commit Message Convention {#git-commit-message}
 
 对于多人协作的项目，良好的 commit message 是非常重要的。胡乱使用诸如 `update`、`fix`、`change` 等无意义的 Commit Message，会使得项目的历史记录变得难以理解，也会给后续的维护带来困难。
