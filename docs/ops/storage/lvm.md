@@ -610,7 +610,7 @@ LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm
     但是 bcachefs 的稳定性仍然需要至少数年的时间来验证。ZFS 同样也包含缓存功能（ARC 与 L2ARC），将在 [ZFS](./zfs.md) 中介绍。
 
     不过，随着 SSD 单位空间成本逐渐降低，SSD 缓存的意义也在逐渐减小。
-    甚至也[有预测表明](https://thecuberesearch.com/flash-native-drives-real-time-business-process/)，到 2026 年后 SSD 的成本甚至会低于 HDD。内核中 `dm-cache` 的开发也不活跃。
+    甚至[在 2021 年有预测表明](https://thecuberesearch.com/flash-native-drives-real-time-business-process/)，到 2026 年[^wrong-prediction]后 SSD 的成本甚至会低于 HDD。内核中 `dm-cache` 的开发也不活跃。
 
     科大镜像站于 2024 年 7 月将缓存方案由 lvmcache（基于 SSD）迁移至了 ZFS ARC（基于内存），以减小下文中提到的相关问题导致的运维压力。
 
@@ -1303,3 +1303,4 @@ PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部�
 [^bcachefs-principles]: "Buckets containing only cached data are discarded as needed by the allocator in LRU order" ([bcachefs: Principles of Operation](https://bcachefs.org/bcachefs-principles-of-operation.pdf) 2.2.4)
 <!-- markdownlint-disable -->
 [^t-p-t-bug]: Cache 的完整性检查工具 `cache_check` 位于 [thin-provisioning-tools](https://github.com/jthornber/thin-provisioning-tools) 中。其 1.0 版本使用 Rust 重写后[存在一个 bug](https://github.com/jthornber/thin-provisioning-tools/issues/294)，会导致即使检查失败，LVM 也会继续尝试挂载。该问题在 1.0.12 被修复。
+[^wrong-prediction]: 不过站在 2021 年的视角，估计怎么也预测不到，在 2025 年存储设备会因为 AI 公司对算力的疯狂需求而变得极度紧张、价格水涨船高吧。
