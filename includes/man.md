@@ -30,6 +30,8 @@
 <!-- man 3 -->
 
 [getaddrinfo.3]: https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+[gethostbyname.3]: https://man7.org/linux/man-pages/man3/gethostbyname.3.html
+[getnameinfo.3]: https://man7.org/linux/man-pages/man3/getnameinfo.3.html
 
 <!-- man 4 -->
 
@@ -89,6 +91,7 @@ Do not link to a "generic" man page for these commands -->
 [iptables-extensions.8]: https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html
 [logrotate.8]: https://linux.die.net/man/8/logrotate
 [mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
+[nscd.8]: https://man7.org/linux/man-pages/man8/nscd.8.html
 [sg_unmap.8]: https://linux.die.net/man/8/sg_unmap
 [sg_write_same.8]: https://linux.die.net/man/8/sg_write_same
 [smartctl.8]: https://linux.die.net/man/8/smartctl
