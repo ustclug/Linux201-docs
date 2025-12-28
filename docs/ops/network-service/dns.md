@@ -282,6 +282,8 @@ musl 追求简洁、可移植（一大好处是：静态链接变得极其方便
 
 其他技术区别的整理可参考：[Functional differences from glibc](https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver/DNS)。
 
+### resolvconf
+
 ### DNS 缓存服务 {#dns-cache}
 
 可以注意到，glibc 设置了非常复杂的 DNS 解析逻辑，但是问题也是很明显的：
@@ -291,5 +293,9 @@ musl 追求简洁、可移植（一大好处是：静态链接变得极其方便
 - 如果程序不使用 glibc 的 API 做 DNS 解析，那么这些配置就完全无效了（最典型的例子是使用 Go 语言在关闭了 cgo 的情况下编译的程序）
 
 因此目前来讲，更推荐的做法是：在本地运行一个 DNS 缓存服务器，并且修改 `/etc/resolv.conf` 等配置将所有的 DNS 请求都发给这个缓存服务器，以统一整个系统的 DNS 解析行为。
+
+#### systemd-resolved
+
+#### dnsmasq
 
 ## 服务端 {#server}
