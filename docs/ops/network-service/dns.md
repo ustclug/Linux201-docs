@@ -269,6 +269,7 @@ glibc 在实际发 DNS 请求前会读取 [`/etc/resolv.conf`][resolv.conf.5]。
         ```
 
     这个行为也可以被 `options ndots:n` 配置项控制，默认值是 1，表示只有查询的域名中没有点的时候，才会使用 `search` 列表进行搜索。
+
 - 默认情况下，glibc 会对每个 `nameserver` 等待 5 秒（`options timeout:n`），尝试 2 次（`options attempts:n`）。所以如果你发现有什么东西刚好会卡住 5 秒或者 5 秒的倍数，那么检查一下 DNS 可能会有帮助，特别是在写了多个 `nameserver`，而第一个 `nameserver` 有问题的情况下。
 
 #### musl
