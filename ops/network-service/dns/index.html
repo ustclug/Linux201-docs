@@ -1425,6 +1425,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#dns-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DNS 缓存服务
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3024,6 +3035,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#dns-cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DNS 缓存服务
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3196,6 +3218,15 @@
 <p>musl 不支持 <code>res_nquery()</code>，但是支持 <code>res_query()</code>。</p>
 <p>libresolv 在其他平台上可能有不同的行为，可参考：<a href="https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse">getaddrinfo sucks. everything else is much worse</a>。</p>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">获取 C 库解析 API 的延迟</p>
+<p>bcc 提供的基于 eBPF 的 <a href="https://github.com/iovisor/bcc/blob/master/tools/gethostlatency.py">gethostlatency</a> 工具可以用来获取使用 C 运行时库的 DNS 解析延迟：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>gethostlatency
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">TIME     PID     COMM             LATms      HOST</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">02:59:28 10680   ThreadPoolForeg  166.831    main.vscode-cdn.net</span>
+</code></pre></div>
+<p>有关 eBPF 的介绍，可参考<a href="../../debug/#ebpf">问题调试部分</a>。</p>
+</div>
 <p>不同的 C 运行时库对 DNS 会采取不同的解析方式。以下介绍 Linux 下最流行的两种 C 运行时库：glibc 和 musl。</p>
 <h4 id="glibc">glibc<a class="headerlink" href="#glibc" title="Permanent link">&para;</a></h4>
 <p>glibc 会使用一套复杂的逻辑来决定如何解析用户提供的域名。其 <a href="https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L2286"><code>getaddrinfo()</code></a> 的内部实现调用了 <a href="https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L1134"><code>gaih_inet()</code></a> 函数执行实际的解析工作。简单来讲，这个函数会：</p>
@@ -3206,12 +3237,12 @@
 <p>在 <code>gaih_inet()</code> 完成后，<code>getaddrinfo()</code> 会根据 <a href="https://datatracker.ietf.org/doc/html/rfc3484">RFC 3484</a>（以及其继任者 <a href="https://datatracker.ietf.org/doc/html/rfc6724">RFC 6724</a>）的规则，对返回的结果进行排序，然后返回给用户。</p>
 <h5 id="nscd">nscd<a class="headerlink" href="#nscd" title="Permanent link">&para;</a></h5>
 <p><a href="https://man7.org/linux/man-pages/man8/nscd.8.html">nscd</a>（Name Service Cache Daemon）是 glibc 提供的用于缓存 DNS、用户信息等结果的服务。如果你在 Debian 下尝试对使用 glibc DNS 查询的程序 <code>strace</code> 的话，你会发现 glibc 会尝试连接 <code>/var/run/nscd/socket</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>connect(3, {sa_family=AF_UNIX, sun_path=&quot;/var/run/nscd/socket&quot;}, 110) = -1 ENOENT (No such file or directory)
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>close(3)                                = 0
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>connect(3, {sa_family=AF_UNIX, sun_path=&quot;/var/run/nscd/socket&quot;}, 110) = -1 ENOENT (No such file or directory)
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>close(3)                                = 0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>connect(3, {sa_family=AF_UNIX, sun_path=&quot;/var/run/nscd/socket&quot;}, 110) = -1 ENOENT (No such file or directory)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>close(3)                                = 0
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>connect(3, {sa_family=AF_UNIX, sun_path=&quot;/var/run/nscd/socket&quot;}, 110) = -1 ENOENT (No such file or directory)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>close(3)                                = 0
 </code></pre></div>
 <p>尽管 Debian 的 glibc 仍然还有 nscd 的支持，但是其他一些发行版，例如 <a href="https://fedoraproject.org/wiki/Changes/RemoveNSCD">Fedora</a>、<a href="https://gitlab.archlinux.org/archlinux/packaging/packages/glibc/-/blob/bb99fc244e3d1404c3d5fdd2d205bfe4bb6080bd/PKGBUILD#L57">Arch Linux</a> 等都移除了 nscd 的支持，因为：</p>
 <ul>
@@ -3225,20 +3256,20 @@
 <h5 id="nss">NSS<a class="headerlink" href="#nss" title="Permanent link">&para;</a></h5>
 <p>NSS 模块是 glibc 提供的一套插件机制，用于从不同的数据源获取名称解析结果。相关模块的配置在 <code>/etc/nsswitch.conf</code> 文件中。glibc 会根据这个配置加载 NSS 模块（<code>/lib/libnss_xxx.so</code>，<code>xxx</code> 为模块名，如 <code>files</code>），然后调用模块中的接口来获取名称解析结果。</p>
 <p>以下是 Debian 13 容器的默认配置：</p>
-<div class="highlight"><span class="filename">/etc/nsswitch.conf</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>passwd:         files
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>group:          files
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>shadow:         files
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>gshadow:        files
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>hosts:          files dns
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>networks:       files
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>protocols:      db files
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>services:       db files
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>ethers:         db files
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>rpc:            db files
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
-<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>netgroup:       nis
+<div class="highlight"><span class="filename">/etc/nsswitch.conf</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>passwd:         files
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>group:          files
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>shadow:         files
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>gshadow:        files
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>hosts:          files dns
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>networks:       files
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>protocols:      db files
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>services:       db files
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>ethers:         db files
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>rpc:            db files
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>netgroup:       nis
 </code></pre></div>
 <p>这里与 DNS 相关的配置是 <code>hosts</code> 一行，以上配置表示：</p>
 <ol>
@@ -3246,12 +3277,12 @@
 <li>如果 <code>files</code> 模块没有解析出结果，那么就使用 <code>dns</code> 模块进行 DNS 查询（使用 <code>/etc/resolv.conf</code> 作为配置）。</li>
 </ol>
 <p>另一种非常常见的配置是安装了 <code>systemd-resolved</code> 的场景。那么 <code>hosts</code> 可能会变成这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>hosts:          files myhostname resolve [!UNAVAIL=return] dns
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>hosts:          files myhostname resolve [!UNAVAIL=return] dns
 </code></pre></div>
 <p>其中 <a href="https://man7.org/linux/man-pages/man8/nss-myhostname.8.html">myhostname</a> 负责解析本机的主机名，<a href="https://man7.org/linux/man-pages/man8/nss-resolve.8.html">resolve</a> 模块则会通过 <code>systemd-resolved</code> 的 Unix socket（<code>/run/systemd/resolve/io.systemd.Resolve</code>）来进行解析。</p>
 <p><code>[!UNAVAIL=return]</code> 表示，除非（<code>!</code>）<code>resolve</code> 模块不可用（例如 <code>systemd-resolved</code> 没有运行），否则就直接返回，不再继续使用后面的 <code>dns</code> 模块。这样设置下，如果 <code>systemd-resolved</code> 出现故障，那么系统仍然可以回退到直接使用 DNS 服务器进行解析。而如果只是域名不存在，那么就不会继续使用 <code>dns</code> 模块，避免了不必要的 DNS 查询。</p>
 <p>可以使用 <code>getent</code> 测试 NSS 的解析结果，例如 <code>getent hosts example.com</code>、<code>getent passwd</code> 等。同时可以使用 <code>-s</code> 参数来指定使用的 NSS 模块，用于调试，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>getent<span class="w"> </span>-s<span class="w"> </span>files<span class="w"> </span>hosts<span class="w"> </span>example.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>getent<span class="w"> </span>-s<span class="w"> </span>files<span class="w"> </span>hosts<span class="w"> </span>example.com
 </code></pre></div>
 <p>就（一般来说）会返回空，因为其只会用 <code>files</code> 模块来解析 <code>example.com</code>，如果 <code>/etc/hosts</code> 中没有相关的记录，那么就不会有结果。</p>
 <div class="admonition note">
@@ -3264,37 +3295,37 @@
 <li><code>TRYAGAIN</code>：模块（暂时）不可用，可以重试。</li>
 </ul>
 <p>默认配置相当于 <code>[SUCCESS=return !SUCCESS=continue]</code>。除了 <code>return</code> 和 <code>continue</code> 之外，还有 <code>merge</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>group:          files [SUCCESS=merge] sss
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>group:          files [SUCCESS=merge] sss
 </code></pre></div>
 <p>这样的话，如果某用户在本地（<code>files</code>）属于组 A，在 sssd（<code>sss</code>）中属于组 B，那么最终该用户就会同时属于组 A 和组 B。</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">为什么解析本机还需要 <code>myhostname</code> 模块？</p>
 <p>一个约定俗成的做法是，将主机名放在 <code>/etc/hostname</code> 文件，而在 <code>/etc/hosts</code> 中添加相关的映射：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>127.0.0.1 myhost
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>127.0.0.1 myhost
 </code></pre></div>
 <p>不过，如果 <code>/etc/hosts</code> 里面忘写了/忘改了对应的条目，那么就可能会出现非预期的行为。例如，如果忘记添加 <code>localhost</code>，那么有些程序就可能会因为无法解析 <code>localhost</code> 而出现问题。</p>
 <p>systemd-hostnamed 服务则负责管理系统的主机名——静态的主机名（static hostname）仍然在 <code>/etc/hostname</code> 中，用户可读的主机名（pretty hostname，比如说 "Xiao Ming's Computer" 或者 "我的电脑" 这种有空格、特殊字符，甚至汉字的名字）等存储在 <code>/etc/machine-info</code> 中，同时其也会记录从网络（例如 DHCP）获取的主机名（transient hostname）。而 <code>myhostname</code> 模块就是 systemd-hostnamed 提供的 NSS 模块，确保系统主机名总是可以被正确解析，请看下面的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span>localhost
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">::1             localhost</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="gp">$ </span><span class="c1"># hostnamed 能获取网络接口的地址</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span>myhost
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="go">fd36:cccc:bbbb:aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="go">2001:da8:d800:aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="go">fe80::aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="go">fe80::bbbb:bbbb:bbbb:bbbb:bbbb myhost</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span><span class="m">127</span>.0.0.1
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="go">127.0.0.1       localhost</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="gp">$ </span><span class="c1"># hostnamed 中，127.0.0.2 对应主机名，127.0.0.1 对应 localhost</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span><span class="m">127</span>.0.0.2
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go">127.0.0.2       myhost</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span>localhost
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">::1             localhost</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">$ </span><span class="c1"># hostnamed 能获取网络接口的地址</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span>myhost
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">fd36:cccc:bbbb:aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">2001:da8:d800:aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">fe80::aaaa:aaaa:aaaa:aaaa:aaaa myhost</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">fe80::bbbb:bbbb:bbbb:bbbb:bbbb myhost</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span><span class="m">127</span>.0.0.1
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">127.0.0.1       localhost</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="gp">$ </span><span class="c1"># hostnamed 中，127.0.0.2 对应主机名，127.0.0.1 对应 localhost</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="gp">$ </span>getent<span class="w"> </span>-s<span class="w"> </span>myhostname<span class="w"> </span>hosts<span class="w"> </span><span class="m">127</span>.0.0.2
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="go">127.0.0.2       myhost</span>
 </code></pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">glibc、NSS 与静态链接</p>
 <p>如果有尝试对访问网络（使用了 NSS 的）C 程序进行静态链接（<code>-static</code>）的话，那么你可能会看到：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>/usr/bin/ld: /tmp/cchbUcHT.o: in function `main&#39;:
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>example.c:(.text+0x2a): warning: Using &#39;gethostbyname&#39; in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>/usr/bin/ld: /tmp/cchbUcHT.o: in function `main&#39;:
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>example.c:(.text+0x2a): warning: Using &#39;gethostbyname&#39; in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
 </code></pre></div>
 <p>这是因为 NSS 是动态加载（<code>dlopen</code>）的，如果静态链接之后扔到别的机器上，那么对应的 NSS 模块可能就不存在或者不兼容，从而导致程序无法运行。</p>
 </div>
@@ -3302,7 +3333,7 @@
 <p>glibc 的 <code>getaddrinfo()</code> 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 <a href="https://man7.org/linux/man-pages/man5/gai.conf.5.html"><code>/etc/gai.conf</code></a> 文件中自定义排序规则。</p>
 <p>RFC 3484 的排序包含两者：源地址选择（source address selection）和目的地址选择（destination address selection）。这里只涉及目的地址选择。目的地址选择具体的规则可以阅读 RFC 的<a href="https://www.rfc-editor.org/rfc/rfc3484#section-6">第 6 节</a>。其中需要了解的是 <a href="https://www.rfc-editor.org/rfc/rfc3484#section-2.1">Policy Table（第 2.1 节）</a>，它是一个最长匹配的前缀表，对每个在表中的前缀定义了优先级（Precedence）和标签（Label），这些值会影响排序结果。<code>gai.conf</code> 配置的其实就是这个表。</p>
 <p>最常见需要修改 <code>gai.conf</code> 的情况是希望优先使用 IPv4 地址。在进行目的地址选择时，IPv4 地址会映射到 <code>::ffff:0:0/96</code> 前缀（例如 <code>1.1.1.1</code> 会映射到 <code>::ffff:101:101</code>），而默认情况它的优先级是 10，比其他的 IPv6 地址都要低。因此如果希望优先使用 IPv4 地址，可以添加如下配置：</p>
-<div class="highlight"><span class="filename">/etc/gai.conf</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>precedence ::ffff:0:0/96  100
+<div class="highlight"><span class="filename">/etc/gai.conf</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>precedence ::ffff:0:0/96  100
 </code></pre></div>
 <h5 id="resolv-conf-glibc">resolv.conf<a class="headerlink" href="#resolv-conf-glibc" title="Permanent link">&para;</a></h5>
 <p>glibc 在实际发 DNS 请求前会读取 <a href="https://man7.org/linux/man-pages/man5/resolv.conf.5.html"><code>/etc/resolv.conf</code></a>。其最多支持 <a href="https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/resolv/bits/types/res_state.h#L8">MAXNS</a>（默认为 3）个 <code>nameserver</code> 配置。如果配置了多个 <code>nameserver</code>，那么 glibc 会依次尝试这些服务器。</p>
@@ -3313,8 +3344,8 @@
 <div class="admonition tip">
 <p class="admonition-title">没有点（dot）的公开域名</p>
 <p>其实反直觉的是，有非常少量（有解析）的域名是没有点的，比如说 <code>bd</code>（孟加拉国的顶级域）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>dig<span class="w"> </span>bd<span class="w"> </span>A<span class="w"> </span>+short
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="go">203.112.194.232</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>dig<span class="w"> </span>bd<span class="w"> </span>A<span class="w"> </span>+short
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">203.112.194.232</span>
 </code></pre></div>
 </div>
 <p>这个行为也可以被 <code>options ndots:n</code> 配置项控制，默认值是 1，表示只有查询的域名中没有点的时候，才会使用 <code>search</code> 列表进行搜索。
@@ -3322,6 +3353,21 @@
 </li>
 </ul>
 <h4 id="musl">musl<a class="headerlink" href="#musl" title="Permanent link">&para;</a></h4>
+<p>musl 追求简洁、可移植（一大好处是：静态链接变得极其方便），其和 glibc 在 DNS 解析方面有非常大的区别：</p>
+<ul>
+<li>musl 不使用 nscd、NSS，也不会读取 <code>/etc/gai.conf</code>。其固定使用 <code>/etc/hosts</code> 和 <code>/etc/resolv.conf</code> 作为解析的配置来源。</li>
+<li>对于 <code>/etc/resolv.conf</code> 中有多个 <code>nameserver</code> 的情况，musl 会并发请求（最多 3 个 <code>nameserver</code>），并取首个返回的结果。这会导致网络压力增大，因此建议在这种情况下配置好本地的 DNS 缓存服务以缓解网络压力，减小 DNS 解析出错的可能。</li>
+<li>在 musl 1.2.4（2023/5/1）之前，musl 不支持 TCP DNS 查询——这对 DNS 响应会超过 512 字节的场景是致命的。</li>
+</ul>
+<p>其他技术区别的整理可参考：<a href="https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver/DNS">Functional differences from glibc</a>。</p>
+<h3 id="dns-cache">DNS 缓存服务<a class="headerlink" href="#dns-cache" title="Permanent link">&para;</a></h3>
+<p>可以注意到，glibc 设置了非常复杂的 DNS 解析逻辑，但是问题也是很明显的：</p>
+<ul>
+<li><code>nsswitch.conf</code> 和 <code>gai.conf</code> 配置文件对容器场景难以适用</li>
+<li>nscd 缓存服务不稳定且也不适合容器化</li>
+<li>如果程序不使用 glibc 的 API 做 DNS 解析，那么这些配置就完全无效了（最典型的例子是使用 Go 语言在关闭了 cgo 的情况下编译的程序）</li>
+</ul>
+<p>因此目前来讲，更推荐的做法是：在本地运行一个 DNS 缓存服务器，并且修改 <code>/etc/resolv.conf</code> 等配置将所有的 DNS 请求都发给这个缓存服务器，以统一整个系统的 DNS 解析行为。</p>
 <h2 id="server">服务端<a class="headerlink" href="#server" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
@@ -3379,7 +3425,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月28日 18:39:40 UTC">2025年12月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月28日 19:11:29 UTC">2025年12月28日</span>
   </span>
 
     
