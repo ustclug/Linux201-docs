@@ -82,6 +82,14 @@ int ret_2 = getnameinfo((struct sockaddr *)&sa, sizeof(sa),
 // 域名在 hostname 中
 ```
 
+!!! note "`res_query`"
+
+    尽管 `getaddrinfo()` 可以解决不少问题，并且跨平台兼容性也不错，但是如果我们需要更底层的 DNS 查询功能（例如查询 A/AAAA 以外的记录）的时候，上面的 API 就不太够用了。而 libresolv（包含在 glibc 中）则提供了更底层的 [`res_nquery()`/`res_query()`][resolver.3] 等接口，便于需要直接构造 DNS 报文进行查询的程序使用。
+
+    musl 不支持 `res_nquery()`，但是支持 `res_query()`。
+
+    libresolv 在其他平台上可能有不同的行为，可参考：[getaddrinfo sucks. everything else is much worse](https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse)。
+
 不同的 C 运行时库对 DNS 会采取不同的解析方式。以下介绍 Linux 下最流行的两种 C 运行时库：glibc 和 musl。
 
 #### glibc
@@ -91,7 +99,7 @@ glibc 会使用一套复杂的逻辑来决定如何解析用户提供的域名�
 1. 尝试从 nscd 缓存中获取结果（如果编译期启用了相关支持）
 2. 如果 nscd 缓存没有结果，那么就根据 `/etc/nsswitch.conf` 文件中的配置，依次使用不同的 NSS（Name Service Switch）模块来解析域名
 
-在 `gaih_inet()` 完成后，`getaddrinfo()` 会根据 [RFC 3484](https://datatracker.ietf.org/doc/html/rfc3484) 的规则，对返回的结果进行排序，然后返回给用户。
+在 `gaih_inet()` 完成后，`getaddrinfo()` 会根据 [RFC 3484](https://datatracker.ietf.org/doc/html/rfc3484)（以及其继任者 [RFC 6724](https://datatracker.ietf.org/doc/html/rfc6724)）的规则，对返回的结果进行排序，然后返回给用户。
 
 ##### nscd
 
@@ -218,6 +226,18 @@ getent -s files hosts example.com
     ```
 
     这是因为 NSS 是动态加载（`dlopen`）的，如果静态链接之后扔到别的机器上，那么对应的 NSS 模块可能就不存在或者不兼容，从而导致程序无法运行。
+
+##### 地址排序与 gai.conf {#addr-sort-and-gai-conf}
+
+glibc 的 `getaddrinfo()` 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 `/etc/gai.conf` 文件中自定义排序规则。
+
+RFC 3484 的排序包含两者：源地址选择（source address selection）和目的地址选择（destination address selection）。这里只涉及目的地址选择。目的地址选择具体的规则可以阅读 RFC 的[第 6 节](https://www.rfc-editor.org/rfc/rfc3484#section-6)。其中需要了解的是 [Policy Table（第 2.1 节）](https://www.rfc-editor.org/rfc/rfc3484#section-2.1)，它是一个最长匹配的前缀表，对每个在表中的前缀定义了优先级（Precedence）和标签（Label），这些值会影响排序结果。`gai.conf` 配置的其实就是这个表。
+
+最常见需要修改 `gai.conf` 的情况是希望优先使用 IPv4 地址。在进行目的地址选择时，IPv4 地址会映射到 `::ffff:0:0/96` 前缀（例如 `1.1.1.1` 会映射到 `::ffff:101:101`），而默认情况它的优先级是 10，比其他的 IPv6 地址都要低。因此如果希望优先使用 IPv4 地址，可以添加如下配置：
+
+```text title="/etc/gai.conf"
+precedence ::ffff:0:0/96  100
+```
 
 #### musl
 

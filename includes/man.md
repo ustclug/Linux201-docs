@@ -32,6 +32,7 @@
 [getaddrinfo.3]: https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
 [gethostbyname.3]: https://man7.org/linux/man-pages/man3/gethostbyname.3.html
 [getnameinfo.3]: https://man7.org/linux/man-pages/man3/getnameinfo.3.html
+[resolver.3]: https://man7.org/linux/man-pages/man3/resolver.3.html
 
 <!-- man 4 -->
 
