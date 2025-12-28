@@ -90,6 +90,18 @@ int ret_2 = getnameinfo((struct sockaddr *)&sa, sizeof(sa),
 
     libresolv 在其他平台上可能有不同的行为，可参考：[getaddrinfo sucks. everything else is much worse](https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse)。
 
+!!! tip "获取 C 库解析 API 的延迟"
+
+    bcc 提供的基于 eBPF 的 [gethostlatency](https://github.com/iovisor/bcc/blob/master/tools/gethostlatency.py) 工具可以用来获取使用 C 运行时库的 DNS 解析延迟：
+
+    ```console
+    $ sudo gethostlatency
+    TIME     PID     COMM             LATms      HOST
+    02:59:28 10680   ThreadPoolForeg  166.831    main.vscode-cdn.net
+    ```
+
+    有关 eBPF 的介绍，可参考[问题调试部分](../debug.md#ebpf)。
+
 不同的 C 运行时库对 DNS 会采取不同的解析方式。以下介绍 Linux 下最流行的两种 C 运行时库：glibc 和 musl。
 
 #### glibc
@@ -260,5 +272,23 @@ glibc 在实际发 DNS 请求前会读取 [`/etc/resolv.conf`][resolv.conf.5]。
 - 默认情况下，glibc 会对每个 `nameserver` 等待 5 秒（`options timeout:n`），尝试 2 次（`options attempts:n`）。所以如果你发现有什么东西刚好会卡住 5 秒或者 5 秒的倍数，那么检查一下 DNS 可能会有帮助，特别是在写了多个 `nameserver`，而第一个 `nameserver` 有问题的情况下。
 
 #### musl
+
+musl 追求简洁、可移植（一大好处是：静态链接变得极其方便），其和 glibc 在 DNS 解析方面有非常大的区别：
+
+- musl 不使用 nscd、NSS，也不会读取 `/etc/gai.conf`。其固定使用 `/etc/hosts` 和 `/etc/resolv.conf` 作为解析的配置来源。
+- 对于 `/etc/resolv.conf` 中有多个 `nameserver` 的情况，musl 会并发请求（最多 3 个 `nameserver`），并取首个返回的结果。这会导致网络压力增大，因此建议在这种情况下配置好本地的 DNS 缓存服务以缓解网络压力，减小 DNS 解析出错的可能。
+- 在 musl 1.2.4（2023/5/1）之前，musl 不支持 TCP DNS 查询——这对 DNS 响应会超过 512 字节的场景是致命的。
+
+其他技术区别的整理可参考：[Functional differences from glibc](https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver/DNS)。
+
+### DNS 缓存服务 {#dns-cache}
+
+可以注意到，glibc 设置了非常复杂的 DNS 解析逻辑，但是问题也是很明显的：
+
+- `nsswitch.conf` 和 `gai.conf` 配置文件对容器场景难以适用
+- nscd 缓存服务不稳定且也不适合容器化
+- 如果程序不使用 glibc 的 API 做 DNS 解析，那么这些配置就完全无效了（最典型的例子是使用 Go 语言在关闭了 cgo 的情况下编译的程序）
+
+因此目前来讲，更推荐的做法是：在本地运行一个 DNS 缓存服务器，并且修改 `/etc/resolv.conf` 等配置将所有的 DNS 请求都发给这个缓存服务器，以统一整个系统的 DNS 解析行为。
 
 ## 服务端 {#server}
