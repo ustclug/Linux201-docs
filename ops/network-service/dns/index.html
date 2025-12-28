@@ -1382,6 +1382,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#addr-sort-and-gai-conf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        地址排序与 gai.conf
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2959,6 +2970,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#addr-sort-and-gai-conf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        地址排序与 gai.conf
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3146,6 +3168,12 @@
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">                        </span><span class="n">hostname</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">hostname</span><span class="p">),</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">// 域名在 hostname 中</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title"><code>res_query</code></p>
+<p>尽管 <code>getaddrinfo()</code> 可以解决不少问题，并且跨平台兼容性也不错，但是如果我们需要更底层的 DNS 查询功能（例如查询 A/AAAA 以外的记录）的时候，上面的 API 就不太够用了。而 libresolv（包含在 glibc 中）则提供了更底层的 <a href="https://man7.org/linux/man-pages/man3/resolver.3.html"><code>res_nquery()</code>/<code>res_query()</code></a> 等接口，便于需要直接构造 DNS 报文进行查询的程序使用。</p>
+<p>musl 不支持 <code>res_nquery()</code>，但是支持 <code>res_query()</code>。</p>
+<p>libresolv 在其他平台上可能有不同的行为，可参考：<a href="https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse">getaddrinfo sucks. everything else is much worse</a>。</p>
+</div>
 <p>不同的 C 运行时库对 DNS 会采取不同的解析方式。以下介绍 Linux 下最流行的两种 C 运行时库：glibc 和 musl。</p>
 <h4 id="glibc">glibc<a class="headerlink" href="#glibc" title="Permanent link">&para;</a></h4>
 <p>glibc 会使用一套复杂的逻辑来决定如何解析用户提供的域名。其 <a href="https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L2286"><code>getaddrinfo()</code></a> 的内部实现调用了 <a href="https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L1134"><code>gaih_inet()</code></a> 函数执行实际的解析工作。简单来讲，这个函数会：</p>
@@ -3153,7 +3181,7 @@
 <li>尝试从 nscd 缓存中获取结果（如果编译期启用了相关支持）</li>
 <li>如果 nscd 缓存没有结果，那么就根据 <code>/etc/nsswitch.conf</code> 文件中的配置，依次使用不同的 NSS（Name Service Switch）模块来解析域名</li>
 </ol>
-<p>在 <code>gaih_inet()</code> 完成后，<code>getaddrinfo()</code> 会根据 <a href="https://datatracker.ietf.org/doc/html/rfc3484">RFC 3484</a> 的规则，对返回的结果进行排序，然后返回给用户。</p>
+<p>在 <code>gaih_inet()</code> 完成后，<code>getaddrinfo()</code> 会根据 <a href="https://datatracker.ietf.org/doc/html/rfc3484">RFC 3484</a>（以及其继任者 <a href="https://datatracker.ietf.org/doc/html/rfc6724">RFC 6724</a>）的规则，对返回的结果进行排序，然后返回给用户。</p>
 <h5 id="nscd">nscd<a class="headerlink" href="#nscd" title="Permanent link">&para;</a></h5>
 <p><a href="https://man7.org/linux/man-pages/man8/nscd.8.html">nscd</a>（Name Service Cache Daemon）是 glibc 提供的用于缓存 DNS、用户信息等结果的服务。如果你在 Debian 下尝试对使用 glibc DNS 查询的程序 <code>strace</code> 的话，你会发现 glibc 会尝试连接 <code>/var/run/nscd/socket</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
@@ -3248,6 +3276,12 @@
 </code></pre></div>
 <p>这是因为 NSS 是动态加载（<code>dlopen</code>）的，如果静态链接之后扔到别的机器上，那么对应的 NSS 模块可能就不存在或者不兼容，从而导致程序无法运行。</p>
 </div>
+<h5 id="addr-sort-and-gai-conf">地址排序与 gai.conf<a class="headerlink" href="#addr-sort-and-gai-conf" title="Permanent link">&para;</a></h5>
+<p>glibc 的 <code>getaddrinfo()</code> 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 <code>/etc/gai.conf</code> 文件中自定义排序规则。</p>
+<p>RFC 3484 的排序包含两者：源地址选择（source address selection）和目的地址选择（destination address selection）。这里只涉及目的地址选择。目的地址选择具体的规则可以阅读 RFC 的<a href="https://www.rfc-editor.org/rfc/rfc3484#section-6">第 6 节</a>。其中需要了解的是 <a href="https://www.rfc-editor.org/rfc/rfc3484#section-2.1">Policy Table（第 2.1 节）</a>，它是一个最长匹配的前缀表，对每个在表中的前缀定义了优先级（Precedence）和标签（Label），这些值会影响排序结果。<code>gai.conf</code> 配置的其实就是这个表。</p>
+<p>最常见需要修改 <code>gai.conf</code> 的情况是希望优先使用 IPv4 地址。在进行目的地址选择时，IPv4 地址会映射到 <code>::ffff:0:0/96</code> 前缀（例如 <code>1.1.1.1</code> 会映射到 <code>::ffff:101:101</code>），而默认情况它的优先级是 10，比其他的 IPv6 地址都要低。因此如果希望优先使用 IPv4 地址，可以添加如下配置：</p>
+<div class="highlight"><span class="filename">/etc/gai.conf</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>precedence ::ffff:0:0/96  100
+</code></pre></div>
 <h4 id="musl">musl<a class="headerlink" href="#musl" title="Permanent link">&para;</a></h4>
 <h2 id="server">服务端<a class="headerlink" href="#server" title="Permanent link">&para;</a></h2>
 <!--
@@ -3306,7 +3340,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月28日 14:15:13 UTC">2025年12月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月28日 17:57:01 UTC">2025年12月28日</span>
   </span>
 
     
