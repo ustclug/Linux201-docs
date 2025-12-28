@@ -699,7 +699,7 @@ curl: (6) Could not resolve host: www.example.com
 
     许多程序会直接使用系统 C 运行时库的 [`getaddrinfo()`][getaddrinfo.3] 等函数获取 DNS 解析的结果。但是 `dig` 不会。这可能导致 `dig` 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。
 
-    可以使用 `getent hosts www.example.com` 命令来测试 C 运行时库的 DNS 解析情况。
+    可以使用 `getent hosts www.example.com` 命令来测试 C 运行时库的 DNS 解析情况。在 glibc 下，该命令会根据 `/etc/nsswitch.conf` 调用对应的 NSS 模块。详情可参考 [DNS 部分对 NSS 的介绍](./network-service/dns.md#nss)。
 
 #### ip
 

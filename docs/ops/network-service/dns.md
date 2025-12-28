@@ -95,7 +95,7 @@ glibc 会使用一套复杂的逻辑来决定如何解析用户提供的域名�
 
 ##### nscd
 
-[nscd][nscd.8]（Name Service Cache Daemon）是 glibc 提供的用于缓存 DNS 等结果的服务。如果你在 Debian 下尝试对使用 glibc DNS 查询的程序 `strace` 的话，你会发现 glibc 会尝试连接 `/var/run/nscd/socket`：
+[nscd][nscd.8]（Name Service Cache Daemon）是 glibc 提供的用于缓存 DNS、用户信息等结果的服务。如果你在 Debian 下尝试对使用 glibc DNS 查询的程序 `strace` 的话，你会发现 glibc 会尝试连接 `/var/run/nscd/socket`：
 
 ```text
 socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
@@ -115,7 +115,109 @@ close(3)                                = 0
 
 因此这里也不推荐使用 nscd。
 
+如果需要清理 nscd 的缓存，可以使用 `nscd -i` 命令。
+
 ##### NSS
+
+NSS 模块是 glibc 提供的一套插件机制，用于从不同的数据源获取名称解析结果。相关模块的配置在 `/etc/nsswitch.conf` 文件中。glibc 会根据这个配置加载 NSS 模块（`/lib/libnss_xxx.so`，`xxx` 为模块名，如 `files`），然后调用模块中的接口来获取名称解析结果。
+
+以下是 Debian 13 容器的默认配置：
+
+```text title="/etc/nsswitch.conf"
+passwd:         files
+group:          files
+shadow:         files
+gshadow:        files
+
+hosts:          files dns
+networks:       files
+
+protocols:      db files
+services:       db files
+ethers:         db files
+rpc:            db files
+
+netgroup:       nis
+```
+
+这里与 DNS 相关的配置是 `hosts` 一行，以上配置表示：
+
+1. `files` 模块会解析 `/etc/hosts` 文件的内容，查看是否能够解析。
+2. 如果 `files` 模块没有解析出结果，那么就使用 `dns` 模块进行 DNS 查询。
+
+另一种非常常见的配置是安装了 `systemd-resolved` 的场景。那么 `hosts` 可能会变成这样：
+
+```text
+hosts:          files myhostname resolve [!UNAVAIL=return] dns
+```
+
+其中 [myhostname][nss-myhostname.8] 负责解析本机的主机名，[resolve][nss-resolve.8] 模块则会通过 `systemd-resolved` 的 Unix socket（`/run/systemd/resolve/io.systemd.Resolve`）来进行解析。
+
+`[!UNAVAIL=return]` 表示，除非（`!`）`resolve` 模块不可用（例如 `systemd-resolved` 没有运行），否则就直接返回，不再继续使用后面的 `dns` 模块。这样设置下，如果 `systemd-resolved` 出现故障，那么系统仍然可以回退到直接使用 DNS 服务器进行解析。而如果只是域名不存在，那么就不会继续使用 `dns` 模块，避免了不必要的 DNS 查询。
+
+可以使用 `getent` 测试 NSS 的解析结果，例如 `getent hosts example.com`、`getent passwd` 等。同时可以使用 `-s` 参数来指定使用的 NSS 模块，用于调试，例如：
+
+```shell
+getent -s files hosts example.com
+```
+
+就（一般来说）会返回空，因为其只会用 `files` 模块来解析 `example.com`，如果 `/etc/hosts` 中没有相关的记录，那么就不会有结果。
+
+!!! note "NSS 的返回状态"
+
+    NSS 模块可能会返回以下几种状态：
+
+    - `SUCCESS`：解析成功。
+    - `NOTFOUND`：没有找到对应的记录。
+    - `UNAVAIL`：模块（永久）不可用。
+    - `TRYAGAIN`：模块（暂时）不可用，可以重试。
+
+    默认配置相当于 `[SUCCESS=return !SUCCESS=continue]`。除了 `return` 和 `continue` 之外，还有 `merge`：
+
+    ```text
+    group:          files [SUCCESS=merge] sss
+    ```
+
+    这样的话，如果某用户在本地（`files`）属于组 A，在 sssd（`sss`）中属于组 B，那么最终该用户就会同时属于组 A 和组 B。
+
+!!! note "为什么解析本机还需要 `myhostname` 模块？"
+
+    一个约定俗成的做法是，将主机名放在 `/etc/hostname` 文件，而在 `/etc/hosts` 中添加相关的映射：
+
+    ```text
+    127.0.0.1 myhost
+    ```
+
+    不过，如果 `/etc/hosts` 里面忘写了/忘改了对应的条目，那么就可能会出现非预期的行为。例如，如果忘记添加 `localhost`，那么有些程序就可能会因为无法解析 `localhost` 而出现问题。
+    
+    systemd-hostnamed 服务则负责管理系统的主机名——静态的主机名（static hostname）仍然在 `/etc/hostname` 中，用户可读的主机名（pretty hostname，比如说 "Xiao Ming's Computer" 或者 "我的电脑" 这种有空格、特殊字符，甚至汉字的名字）等存储在 `/etc/machine-info` 中，同时其也会记录从网络（例如 DHCP）获取的主机名（transient hostname）。而 `myhostname` 模块就是 systemd-hostnamed 提供的 NSS 模块，确保系统主机名总是可以被正确解析，请看下面的例子：
+
+    ```console
+    $ getent -s myhostname hosts localhost
+    ::1             localhost
+    $ # hostnamed 能获取网络接口的地址
+    $ getent -s myhostname hosts myhost
+    fd36:cccc:bbbb:aaaa:aaaa:aaaa:aaaa:aaaa myhost
+    2001:da8:d800:aaaa:aaaa:aaaa:aaaa:aaaa myhost
+    fe80::aaaa:aaaa:aaaa:aaaa:aaaa myhost
+    fe80::bbbb:bbbb:bbbb:bbbb:bbbb myhost
+    $ getent -s myhostname hosts 127.0.0.1
+    127.0.0.1       localhost
+    $ # hostnamed 中，127.0.0.2 对应主机名，127.0.0.1 对应 localhost
+    $ getent -s myhostname hosts 127.0.0.2
+    127.0.0.2       myhost
+    ```
+
+!!! note "glibc、NSS 与静态链接"
+
+    如果有尝试对访问网络（使用了 NSS 的）C 程序进行静态链接（`-static`）的话，那么你可能会看到：
+
+    ```
+    /usr/bin/ld: /tmp/cchbUcHT.o: in function `main':
+    example.c:(.text+0x2a): warning: Using 'gethostbyname' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
+    ```
+
+    这是因为 NSS 是动态加载（`dlopen`）的，如果静态链接之后扔到别的机器上，那么对应的 NSS 模块可能就不存在或者不兼容，从而导致程序无法运行。
 
 #### musl
 

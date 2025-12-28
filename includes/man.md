@@ -92,6 +92,8 @@ Do not link to a "generic" man page for these commands -->
 [logrotate.8]: https://linux.die.net/man/8/logrotate
 [mount.8]: https://man7.org/linux/man-pages/man8/mount.8.html
 [nscd.8]: https://man7.org/linux/man-pages/man8/nscd.8.html
+[nss-myhostname.8]: https://man7.org/linux/man-pages/man8/nss-myhostname.8.html
+[nss-resolve.8]: https://man7.org/linux/man-pages/man8/nss-resolve.8.html
 [sg_unmap.8]: https://linux.die.net/man/8/sg_unmap
 [sg_write_same.8]: https://linux.die.net/man/8/sg_write_same
 [smartctl.8]: https://linux.die.net/man/8/smartctl
