@@ -45,7 +45,10 @@
 [apt_preferences.5]: https://manpages.debian.org/unstable/apt/apt_preferences.5.en.html
 [deluser.conf.5]: https://manpages.debian.org/stable/adduser/deluser.conf.5.en.html
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
+[gai.conf.5]: https://man7.org/linux/man-pages/man5/gai.conf.5.html
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
+[nsswitch.conf.5]: https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html
+[resolv.conf.5]: https://man7.org/linux/man-pages/man5/resolv.conf.5.html
 [sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
 <!-- begin slurm config files -->
 [slurm.conf.5]: https://slurm.schedmd.com/slurm.conf.html

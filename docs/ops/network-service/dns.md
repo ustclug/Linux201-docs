@@ -97,7 +97,7 @@ int ret_2 = getnameinfo((struct sockaddr *)&sa, sizeof(sa),
 glibc 会使用一套复杂的逻辑来决定如何解析用户提供的域名。其 [`getaddrinfo()`](https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L2286) 的内部实现调用了 [`gaih_inet()`](https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/nss/getaddrinfo.c#L1134) 函数执行实际的解析工作。简单来讲，这个函数会：
 
 1. 尝试从 nscd 缓存中获取结果（如果编译期启用了相关支持）
-2. 如果 nscd 缓存没有结果，那么就根据 `/etc/nsswitch.conf` 文件中的配置，依次使用不同的 NSS（Name Service Switch）模块来解析域名
+2. 如果 nscd 缓存没有结果，那么就根据 [`/etc/nsswitch.conf`][nsswitch.conf.5] 文件中的配置，依次使用不同的 NSS（Name Service Switch）模块来解析域名
 
 在 `gaih_inet()` 完成后，`getaddrinfo()` 会根据 [RFC 3484](https://datatracker.ietf.org/doc/html/rfc3484)（以及其继任者 [RFC 6724](https://datatracker.ietf.org/doc/html/rfc6724)）的规则，对返回的结果进行排序，然后返回给用户。
 
@@ -151,7 +151,7 @@ netgroup:       nis
 这里与 DNS 相关的配置是 `hosts` 一行，以上配置表示：
 
 1. `files` 模块会解析 `/etc/hosts` 文件的内容，查看是否能够解析。
-2. 如果 `files` 模块没有解析出结果，那么就使用 `dns` 模块进行 DNS 查询。
+2. 如果 `files` 模块没有解析出结果，那么就使用 `dns` 模块进行 DNS 查询（使用 `/etc/resolv.conf` 作为配置）。
 
 另一种非常常见的配置是安装了 `systemd-resolved` 的场景。那么 `hosts` 可能会变成这样：
 
@@ -229,7 +229,7 @@ getent -s files hosts example.com
 
 ##### 地址排序与 gai.conf {#addr-sort-and-gai-conf}
 
-glibc 的 `getaddrinfo()` 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 `/etc/gai.conf` 文件中自定义排序规则。
+glibc 的 `getaddrinfo()` 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 [`/etc/gai.conf`][gai.conf.5] 文件中自定义排序规则。
 
 RFC 3484 的排序包含两者：源地址选择（source address selection）和目的地址选择（destination address selection）。这里只涉及目的地址选择。目的地址选择具体的规则可以阅读 RFC 的[第 6 节](https://www.rfc-editor.org/rfc/rfc3484#section-6)。其中需要了解的是 [Policy Table（第 2.1 节）](https://www.rfc-editor.org/rfc/rfc3484#section-2.1)，它是一个最长匹配的前缀表，对每个在表中的前缀定义了优先级（Precedence）和标签（Label），这些值会影响排序结果。`gai.conf` 配置的其实就是这个表。
 
@@ -238,6 +238,26 @@ RFC 3484 的排序包含两者：源地址选择（source address selection）�
 ```text title="/etc/gai.conf"
 precedence ::ffff:0:0/96  100
 ```
+
+##### resolv.conf {#resolv-conf-glibc}
+
+glibc 在实际发 DNS 请求前会读取 [`/etc/resolv.conf`][resolv.conf.5]。其最多支持 [MAXNS](https://elixir.bootlin.com/glibc/glibc-2.42.9000/source/resolv/bits/types/res_state.h#L8)（默认为 3）个 `nameserver` 配置。如果配置了多个 `nameserver`，那么 glibc 会依次尝试这些服务器。
+
+此外，一些可能有帮助的配置包括：
+
+- 对查询非完整域名（例如主机名）的场景，glibc 会依次将 `search` 列表中的域名附加到查询的域名后面进行查询。例如，假设配置了 `search example.com`，那么查询 `myhost` 的时候，会优先搜索 `myhost.example.com`。
+
+    !!! tip "没有点（dot）的公开域名"
+
+        其实反直觉的是，有非常少量（有解析）的域名是没有点的，比如说 `bd`（孟加拉国的顶级域）：
+
+        ```console
+        $ dig bd A +short
+        203.112.194.232
+        ```
+
+    这个行为也可以被 `options ndots:n` 配置项控制，默认值是 1，表示只有查询的域名中没有点的时候，才会使用 `search` 列表进行搜索。
+- 默认情况下，glibc 会对每个 `nameserver` 等待 5 秒（`options timeout:n`），尝试 2 次（`options attempts:n`）。所以如果你发现有什么东西刚好会卡住 5 秒或者 5 秒的倍数，那么检查一下 DNS 可能会有帮助，特别是在写了多个 `nameserver`，而第一个 `nameserver` 有问题的情况下。
 
 #### musl
 
