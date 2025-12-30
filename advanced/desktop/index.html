@@ -2694,6 +2694,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dbus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DBus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fontconfig" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2709,17 +2720,6 @@
     <span class="md-ellipsis">
       
         音频服务器
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dbus" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DBus
       
     </span>
   </a>
@@ -3216,6 +3216,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#dbus" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DBus
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#fontconfig" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3231,17 +3242,6 @@
     <span class="md-ellipsis">
       
         音频服务器
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dbus" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DBus
       
     </span>
   </a>
@@ -3744,9 +3744,76 @@
 </div>
 <h3 id="wayland-infrastructure">基础架构<a class="headerlink" href="#wayland-infrastructure" title="Permanent link">&para;</a></h3>
 <p>在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出。</p>
+<p>(TODO)</p>
+<h2 id="dbus">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></h2>
+<p>DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，进程间通信）机制，被 systemd 以及 Linux 桌面生态广泛使用。DBus 提供了一个集中的消息总线（message bus），进程可以连接到这个总线上，发送消息给其他进程，或者接收其他进程发送的消息。在基于 systemd 的环境下，一般会有两个 DBus 总线：</p>
+<ul>
+<li>系统总线（system bus）：位于 <code>/run/dbus/system_bus_socket</code>。</li>
+<li>会话总线（session bus）：地址由环境变量 <code>DBUS_SESSION_BUS_ADDRESS</code> 设置。一般位于 <code>/run/user/&lt;UID&gt;/bus</code>。</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title"><code>DBUS_SESSION_BUS_ADDRESS</code> 是谁设置的？</p>
+<p>在现代的 systemd 环境下，当用户登录时 systemd 的 PAM 模块会启动用户级别的 systemd 实例，而默认 <code>dbus.socket</code> 是启用的：</p>
+<div class="highlight"><span class="filename">/usr/lib/systemd/user/dbus.socket</span><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">D-Bus User Message Bus Socket</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="k">[Socket]</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">%t/bus</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="na">ExecStartPost</span><span class="o">=</span><span class="s">-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus</span>
+</code></pre></div>
+<p>在 <code>dbus.socket</code> 启动后，其就会给这个 systemd 实例设置上 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，并且开始监听 <code>/run/user/&lt;UID&gt;/bus</code>，在有程序根据这个环境变量访问这个 Unix socket 的时候，systemd 就会自动启动 <code>dbus.service</code>，从而启动用户级别的 DBus 守护进程。</p>
+<p>如果你在 systemd 流行之前就是 Linux 桌面用户的话，那么你可能会对类似这样的配置有印象：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>dbus-run-session<span class="w"> </span>--exit-with-session<span class="w"> </span>your-desktop-environment
+</code></pre></div>
+<p>这里 <code>dbus-run-session</code> 就会创建一个新的 DBus 会话总线，设置 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，然后运行你给出的命令，从而完成桌面环境必须的 DBus 会话总线的配置。</p>
+</div>
+<p>DBus 的状态可以使用 systemd 提供的命令行工具 <code>busctl</code> 来查看，也可以使用诸如 <a href="https://apps.gnome.org/zh-CN/Dspy/">D-Spy</a>、<a href="https://gitlab.gnome.org/Archive/d-feet">D-Feet</a>、<a href="https://doc.qt.io/qt-6/qdbusviewer.html">qdbusviewer</a> 等图形化工具来查看。以下是 D-Spy 的截图：</p>
+<p><img alt="D-Spy Screenshot" src="../../images/d-spy.png" /></p>
+<p>从图中可以看到 DBus 的几个关键概念：</p>
+<ul>
+<li>Bus Name：每个连接到 DBus 的进程都至少有一个唯一的 Bus Name，其中进程至少能获取到一个唯一名称（unique name），例如 <code>:1.123</code>。同时，进程也可以注册公认名称（well-known name），例如 <code>org.freedesktop.NetworkManager</code>，其他进程可以通过这个名称来访问它。可以认为 Unique name 直接标识进程到 DBus 的连接，而 well-known name 则是这个 unique name 的别名——因此可以看到 <code>com.redhat.tuned</code> 这个 well-known name 的 "Owner" 一栏显示了对应的 unique name（<code>:1.16</code>）。</li>
+<li>Object Path：进程可以有多个对象（object），每个对象都有一个路径（path），例如图中的 <code>/Tuned</code>。</li>
+<li>Interface：每个对象可以有多个接口（interface），例如图中的 <code>com.redhat.tuned.control</code>。每个接口有 Property（属性）、Method（方法）和 Signal（信号）。</li>
+<li>Property：只读的状态。</li>
+<li>Method：可以调用的方法。</li>
+<li>Signal：进程可以发送的事件通知，其他进程可以监听这些事件。</li>
+</ul>
+<p>此外还可以注意到，DBus 有类型定义。不过对不熟悉的人来讲，这个类型表示是很晦涩的，因为其作为二进制 IPC 协议，在设计时考虑的是方便代码解析类型，而不是人类可读性。图中出现的一些类型包括：</p>
+<ul>
+<li><code>(bs)</code>：代表一个包含布尔值（b）和字符串（s）的结构体（struct）。</li>
+<li><code>a{sa{ss}}</code>：这是一个数组（a），数组的元素类型是字典（dictionary，<code>{}</code>），字典的 key 是字符串，value 是另一个数组，这个数组的元素又是字典，内层字典的 key 和 value 都是字符串。</li>
+<li><code>(bsa(ss))</code>：这是一个包含布尔值、字符串、数组的结构体，数组的元素类型是包含两个字符串的结构体。</li>
+</ul>
+<p>有关类型系统的更多信息，可参考 <a href="https://dbus.freedesktop.org/doc/dbus-specification.html#type-system">DBus 标准文档的类型系统部分</a>。</p>
+<div class="admonition note">
+<p class="admonition-title">VARIANT 类型</p>
+<p>DBus 中还有一种特殊的类型 VARIANT（在类型字符串中表示为 <code>v</code>），表示任意类型的值。这个类型对开发者来说是很方便的：不需要事先定义好类型（有些情况下也不好做），就可以传递任意类型的数据。但是在文档不佳的情况下，这对使用者来说是比较折磨的。以 <code>org.freedesktop.systemd1</code> 中 <code>/org/freedesktop/systemd1</code> 下的 <code>org.freedesktop.systemd1.Manager</code> 接口的 <code>StartTransientUnit</code> 方法为例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>busctl<span class="w"> </span>introspect<span class="w"> </span>org.freedesktop.systemd1<span class="w"> </span>/org/freedesktop/systemd1<span class="w"> </span>--xml
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">  &lt;method name=&quot;StartTransientUnit&quot;&gt;</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;name&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;mode&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="go">   &lt;arg type=&quot;a(sv)&quot; name=&quot;properties&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="go">   &lt;arg type=&quot;a(sa(sv))&quot; name=&quot;aux&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="go">   &lt;arg type=&quot;o&quot; name=&quot;job&quot; direction=&quot;out&quot;/&gt;</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="go">  &lt;/method&gt;</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="go">（省略）</span>
+</code></pre></div>
+<p>可以看到，这里的 <code>properties</code> 参数类型是 <code>a(sv)</code>，表示这是一个数组，数组元素是一个包含字符串和 VARIANT 的结构体。但是这个 VARIANT 究竟能接受哪些类型的数据呢？<a href="https://www.freedesktop.org/wiki/Software/systemd/dbus/#Manager-SetUnitProperties">Systemd 的文档</a> 对此的介绍并不是很具体。在较早期版本的 systemd 中，它可能甚至不会告诉你是 VARIANT 出了问题：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="go">System.Error.ENXIO: No such device or address</span>
+</code></pre></div>
+<p>而现在的报错或许稍微好一些（虽然也没好到哪里去）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="go">System.Error.ENXIO: Failed to set unit properties: Unexpected message contents</span>
+</code></pre></div>
+<p>遇到这种情况，只能自己看源代码，别无他法。</p>
+</div>
+<p>可以注意到，开发者需要用 XML 来描述 DBus 接口（在 DBus 那个时代，JSON 什么的还不存在——XML 是最流行的选择）。这被称为 introspection。客户端可以调用对象的 <code>org.freedesktop.DBus.Introspectable</code> 接口的 <code>Introspect</code> 方法来获取某个对象的 XML 描述，从而获取到该对象的接口信息。XML 信息主要用于人类阅读（了解接口信息）和代码生成。</p>
+<div class="admonition warning">
+<p class="admonition-title">Introspection 可以返回任意信息</p>
+<p>DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。</p>
+</div>
 <h2 id="fontconfig">Fontconfig<a class="headerlink" href="#fontconfig" title="Permanent link">&para;</a></h2>
 <h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<h2 id="dbus">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
@@ -3803,7 +3870,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月1日 10:43:22 UTC">2025年11月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月30日 20:05:10 UTC">2025年12月30日</span>
   </span>
 
     
