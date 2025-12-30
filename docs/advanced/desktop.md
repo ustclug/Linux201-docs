@@ -555,8 +555,96 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出。
 
+(TODO)
+
+## DBus
+
+DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，进程间通信）机制，被 systemd 以及 Linux 桌面生态广泛使用。DBus 提供了一个集中的消息总线（message bus），进程可以连接到这个总线上，发送消息给其他进程，或者接收其他进程发送的消息。在基于 systemd 的环境下，一般会有两个 DBus 总线：
+
+- 系统总线（system bus）：位于 `/run/dbus/system_bus_socket`。
+- 会话总线（session bus）：地址由环境变量 `DBUS_SESSION_BUS_ADDRESS` 设置。一般位于 `/run/user/<UID>/bus`。
+
+!!! note "`DBUS_SESSION_BUS_ADDRESS` 是谁设置的？"
+
+    在现代的 systemd 环境下，当用户登录时 systemd 的 PAM 模块会启动用户级别的 systemd 实例，而默认 `dbus.socket` 是启用的：
+
+    ```ini title="/usr/lib/systemd/user/dbus.socket"
+    [Unit]
+    Description=D-Bus User Message Bus Socket
+
+    [Socket]
+    ListenStream=%t/bus
+    ExecStartPost=-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
+    ```
+
+    在 `dbus.socket` 启动后，其就会给这个 systemd 实例设置上 `DBUS_SESSION_BUS_ADDRESS` 环境变量，并且开始监听 `/run/user/<UID>/bus`，在有程序根据这个环境变量访问这个 Unix socket 的时候，systemd 就会自动启动 `dbus.service`，从而启动用户级别的 DBus 守护进程。
+
+    如果你在 systemd 流行之前就是 Linux 桌面用户的话，那么你可能会对类似这样的配置有印象：
+
+    ```sh
+    dbus-run-session --exit-with-session your-desktop-environment
+    ```
+
+    这里 `dbus-run-session` 就会创建一个新的 DBus 会话总线，设置 `DBUS_SESSION_BUS_ADDRESS` 环境变量，然后运行你给出的命令，从而完成桌面环境必须的 DBus 会话总线的配置。
+
+DBus 的状态可以使用 systemd 提供的命令行工具 `busctl` 来查看，也可以使用诸如 [D-Spy](https://apps.gnome.org/zh-CN/Dspy/)、[D-Feet](https://gitlab.gnome.org/Archive/d-feet)、[qdbusviewer](https://doc.qt.io/qt-6/qdbusviewer.html) 等图形化工具来查看。以下是 D-Spy 的截图：
+
+![D-Spy Screenshot](../images/d-spy.png)
+
+从图中可以看到 DBus 的几个关键概念：
+
+- Bus Name：每个连接到 DBus 的进程都至少有一个唯一的 Bus Name，其中进程至少能获取到一个唯一名称（unique name），例如 `:1.123`。同时，进程也可以注册公认名称（well-known name），例如 `org.freedesktop.NetworkManager`，其他进程可以通过这个名称来访问它。可以认为 Unique name 直接标识进程到 DBus 的连接，而 well-known name 则是这个 unique name 的别名——因此可以看到 `com.redhat.tuned` 这个 well-known name 的 "Owner" 一栏显示了对应的 unique name（`:1.16`）。
+- Object Path：进程可以有多个对象（object），每个对象都有一个路径（path），例如图中的 `/Tuned`。
+- Interface：每个对象可以有多个接口（interface），例如图中的 `com.redhat.tuned.control`。每个接口有 Property（属性）、Method（方法）和 Signal（信号）。
+- Property：只读的状态。
+- Method：可以调用的方法。
+- Signal：进程可以发送的事件通知，其他进程可以监听这些事件。
+
+此外还可以注意到，DBus 有类型定义。不过对不熟悉的人来讲，这个类型表示是很晦涩的，因为其作为二进制 IPC 协议，在设计时考虑的是方便代码解析类型，而不是人类可读性。图中出现的一些类型包括：
+
+- `(bs)`：代表一个包含布尔值（b）和字符串（s）的结构体（struct）。
+- `a{sa{ss}}`：这是一个数组（a），数组的元素类型是字典（dictionary，`{}`），字典的 key 是字符串，value 是另一个数组，这个数组的元素又是字典，内层字典的 key 和 value 都是字符串。
+- `(bsa(ss))`：这是一个包含布尔值、字符串、数组的结构体，数组的元素类型是包含两个字符串的结构体。
+
+有关类型系统的更多信息，可参考 [DBus 标准文档的类型系统部分](https://dbus.freedesktop.org/doc/dbus-specification.html#type-system)。
+
+!!! note "VARIANT 类型"
+
+    DBus 中还有一种特殊的类型 VARIANT（在类型字符串中表示为 `v`），表示任意类型的值。这个类型对开发者来说是很方便的：不需要事先定义好类型（有些情况下也不好做），就可以传递任意类型的数据。但是在文档不佳的情况下，这对使用者来说是比较折磨的。以 `org.freedesktop.systemd1` 中 `/org/freedesktop/systemd1` 下的 `org.freedesktop.systemd1.Manager` 接口的 `StartTransientUnit` 方法为例：
+
+    ```console
+    $ busctl introspect org.freedesktop.systemd1 /org/freedesktop/systemd1 --xml
+    （省略）
+      <method name="StartTransientUnit">
+       <arg type="s" name="name" direction="in"/>
+       <arg type="s" name="mode" direction="in"/>
+       <arg type="a(sv)" name="properties" direction="in"/>
+       <arg type="a(sa(sv))" name="aux" direction="in"/>
+       <arg type="o" name="job" direction="out"/>
+      </method>
+    （省略）
+    ```
+
+    可以看到，这里的 `properties` 参数类型是 `a(sv)`，表示这是一个数组，数组元素是一个包含字符串和 VARIANT 的结构体。但是这个 VARIANT 究竟能接受哪些类型的数据呢？[Systemd 的文档](https://www.freedesktop.org/wiki/Software/systemd/dbus/#Manager-SetUnitProperties) 对此的介绍并不是很具体。在较早期版本的 systemd 中，它可能甚至不会告诉你是 VARIANT 出了问题：
+
+    ```console
+    System.Error.ENXIO: No such device or address
+    ```
+
+    而现在的报错或许稍微好一些（虽然也没好到哪里去）：
+
+    ```console
+    System.Error.ENXIO: Failed to set unit properties: Unexpected message contents
+    ```
+
+    遇到这种情况，只能自己看源代码，别无他法。
+
+可以注意到，开发者需要用 XML 来描述 DBus 接口（在 DBus 那个时代，JSON 什么的还不存在——XML 是最流行的选择）。这被称为 introspection。客户端可以调用对象的 `org.freedesktop.DBus.Introspectable` 接口的 `Introspect` 方法来获取某个对象的 XML 描述，从而获取到该对象的接口信息。XML 信息主要用于人类阅读（了解接口信息）和代码生成。
+
+!!! warning "Introspection 可以返回任意信息"
+
+    DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。
+
 ## Fontconfig
 
 ## 音频服务器
-
-## DBus
