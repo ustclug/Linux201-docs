@@ -559,7 +559,24 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 ## DBus
 
-DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，进程间通信）机制，被 systemd 以及 Linux 桌面生态广泛使用。DBus 提供了一个集中的消息总线（message bus），进程可以连接到这个总线上，发送消息给其他进程，或者接收其他进程发送的消息。在基于 systemd 的环境下，一般会有两个 DBus 总线：
+### 基础概念 {#dbus-concepts}
+
+DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，进程间通信）机制，被 systemd 以及 Linux 桌面生态广泛使用。DBus 提供了一个集中的消息总线（message bus），进程可以连接到这个总线上，发送消息给其他进程，或者接收其他进程发送的消息。
+
+!!! note "Hackergame 2024 题目「不太分布式的软总线」"
+
+    该题目是一道 DBus 基础的应用题目，可参考阅读 [writeup](https://github.com/USTC-Hackergame/hackergame2024-writeups/tree/master/official/%E4%B8%8D%E5%A4%AA%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E8%BD%AF%E6%80%BB%E7%BA%BF)。
+
+!!! note "DBus 总线的实现"
+
+    目前有两个主要的 DBus 总线实现：
+
+    - [dbus-daemon](https://dbus.freedesktop.org/doc/dbus-daemon.1.html)：最早的 DBus 总线实现。
+    - [dbus-broker](https://github.com/bus1/dbus-broker)：更加现代的 DBus 总线实现，只支持 Linux，解决了很多 dbus-daemon 的性能与稳定性问题。
+
+    目前 [Fedora](https://fedoraproject.org/wiki/Changes/DbusBrokerAsTheDefaultDbusImplementation) 和 [Arch Linux](https://rfc.archlinux.page/0025-dbus-broker-default/) 已经默认使用 dbus-broker。有关 dbus-broker 改进的技术细节，可以参考 [Rethinking the D-Bus Message Bus](https://dvdhrm.github.io/rethinking-the-dbus-message-bus/)。
+
+在基于 systemd 的环境下，一般会有两个 DBus 总线：
 
 - 系统总线（system bus）：位于 `/run/dbus/system_bus_socket`。
 - 会话总线（session bus）：地址由环境变量 `DBUS_SESSION_BUS_ADDRESS` 设置。一般位于 `/run/user/<UID>/bus`。
@@ -593,10 +610,10 @@ DBus 的状态可以使用 systemd 提供的命令行工具 `busctl` 来查看�
 
 从图中可以看到 DBus 的几个关键概念：
 
-- Bus Name：每个连接到 DBus 的进程都至少有一个唯一的 Bus Name，其中进程至少能获取到一个唯一名称（unique name），例如 `:1.123`。同时，进程也可以注册公认名称（well-known name），例如 `org.freedesktop.NetworkManager`，其他进程可以通过这个名称来访问它。可以认为 Unique name 直接标识进程到 DBus 的连接，而 well-known name 则是这个 unique name 的别名——因此可以看到 `com.redhat.tuned` 这个 well-known name 的 "Owner" 一栏显示了对应的 unique name（`:1.16`）。
+- Bus Name：每个连接到 DBus 的进程都至少有一个唯一的 Bus Name，其中进程至少能获取到一个唯一名称（unique name），例如 `:1.123`。同时，进程也可以拥有（own）公认名称（well-known name），例如 `org.freedesktop.NetworkManager`，其他进程可以通过这个名称来访问它。可以认为 Unique name 直接标识进程到 DBus 的连接，而 well-known name 则是这个 unique name 的别名——因此可以看到 `com.redhat.tuned` 这个 well-known name 的 "Owner" 一栏显示了对应的 unique name（`:1.16`）。
 - Object Path：进程可以有多个对象（object），每个对象都有一个路径（path），例如图中的 `/Tuned`。
 - Interface：每个对象可以有多个接口（interface），例如图中的 `com.redhat.tuned.control`。每个接口有 Property（属性）、Method（方法）和 Signal（信号）。
-- Property：只读的状态。
+- Property：表示对象的状态。读取属性实际上是调用 `org.freedesktop.DBus.Properties` 接口的 `Get` 方法来获取对应属性的值。`org.freedesktop.DBus.Properties` 也提供 `Set` 方法来设置属性值，`GetAll` 方法来获取所有属性的值，以及 `PropertiesChanged` 信号来通知属性变化。
 - Method：可以调用的方法。
 - Signal：进程可以发送的事件通知，其他进程可以监听这些事件。
 
@@ -644,6 +661,85 @@ DBus 的状态可以使用 systemd 提供的命令行工具 `busctl` 来查看�
 !!! warning "Introspection 可以返回任意信息"
 
     DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。
+
+此外，在图中我们可以看到每个 Bus Name 都有是否可以激活（Activatable）的标记。在使用 systemd 的系统上，DBus 会调用 systemd 的激活机制来启动对应的服务单元（service unit）。例如图中的 `org.bluez`：
+
+```ini title="/usr/share/dbus-1/system-services/org.bluez.service"
+[D-BUS Service]
+Name=org.bluez
+Exec=/bin/false
+User=root
+SystemdService=dbus-org.bluez.service
+```
+
+如果某个进程尝试连接 `org.bluez`，但是该服务还没有运行，那么 DBus 会调用 systemd 来启动 `dbus-org.bluez.service` 单元，从而启动蓝牙服务。如果不和某个 systemd 服务绑定，如果需要让某个程序能在系统总线上拥有对应的 well-known name，也需要编写类似上述的 `.service` 文件，并配置 `Name` 和 `Exec`。
+
+此外如果在系统总线列表里多点点，可以注意到有些 Bus Name 不允许普通用户请求——这同样也是在 DBus 的配置中定义的，例如下面是 `fi.w1.wpa_supplicant1` 的配置：
+
+```xml title="/usr/share/dbus-1/system.d/wpa_supplicant.conf"
+<!DOCTYPE busconfig PUBLIC
+ "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+        <policy user="root">
+                <allow own="fi.w1.wpa_supplicant1"/>
+
+                <allow send_destination="fi.w1.wpa_supplicant1"/>
+                <allow send_interface="fi.w1.wpa_supplicant1"/>
+                <allow receive_sender="fi.w1.wpa_supplicant1" receive_type="signal"/>
+        </policy>
+        <policy context="default">
+                <deny own="fi.w1.wpa_supplicant1"/>
+                <deny send_destination="fi.w1.wpa_supplicant1"/>
+                <deny receive_sender="fi.w1.wpa_supplicant1" receive_type="signal"/>
+        </policy>
+</busconfig>
+```
+
+这个配置阻止了 root 以外的用户与 `fi.w1.wpa_supplicant1` 的交互。
+
+### 交互与调试 {#dbus-interaction-debugging}
+
+有不少命令行工具可以用来和 DBus 交互（调用方法、发送或接收信号等），例如上面介绍的 `busctl`，以及 `dbus-send`、`gdbus` 等等。并且各类编程语言都有对应的 DBus 库，可以用来编写 DBus 客户端或者服务端程序。
+
+!!! example "发送通知"
+
+    `notify-send` 命令行工具可以发送桌面通知。其实际上会与会话总线的 `org.freedesktop.Notifications` 接口交互。相关标准文档可参考 [Desktop Notifications Specification](https://specifications.freedesktop.org/notification/latest/)。其核心是 [`org.freedesktop.Notifications.Notify` 方法](https://specifications.freedesktop.org/notification/latest/protocol.html#command-notify)：
+
+    ```
+    UINT32 org.freedesktop.Notifications.Notify ( STRING app_name,
+                                                  UINT32 replaces_id,
+                                                  STRING app_icon,
+                                                  STRING summary,
+                                                  STRING body,
+                                                  as actions,
+                                                  a{sv} hints,
+                                                  INT32 expire_timeout );
+    ```
+    
+    我们也可以来试一下：
+
+    ```sh
+    gdbus call --session \
+      --dest org.freedesktop.Notifications \
+      --object-path /org/freedesktop/Notifications \
+      --method org.freedesktop.Notifications.Notify \
+      "testapp" 0 "" "This is summary" "This is body text" [] [] 0
+    ```
+
+    运行就可以发现桌面上弹出了我们的通知。
+
+!!! lab "获取当前正在播放的音乐信息"
+
+    [MPRIS 接口](https://specifications.freedesktop.org/mpris/latest/) 是 Linux 下音乐播放器与桌面组件（以及其他需要相关信息的软件）的标准接口。假如你的音乐播放器名字叫 `playmusic`，那么它在 DBus 上的 well-known name 就是 `org.mpris.MediaPlayer2.playmusic`。`org.mpris.MediaPlayer2.Player` 接口提供了一些属性，可以让我们获取当前播放器的状态，以及歌曲元数据等。
+
+    尝试使用你最喜欢的编程语言的 DBus 库，编写一个小程序，获取当前正在播放的音乐信息。
+
+DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总线需要 root 权限）。`dbus-monitor`、`busctl monitor`，以及图形界面的 [Bustle](https://apps.gnome.org/zh-CN/Bustle/) 都可以做到这一点。例如，如果希望实时显示会话总线的所有消息，可以运行：
+
+```sh
+busctl monitor --user
+```
 
 ## Fontconfig
 
