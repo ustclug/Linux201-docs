@@ -284,6 +284,27 @@ musl 追求简洁、可移植（一大好处是：静态链接变得极其方便
 
 ### resolvconf
 
+在某些网络配置下，`/etc/resolv.conf` 可能会需要被多个程序修改，例如在接入网络时，DHCP 客户端会修改 `resolv.conf` 添加从 DHCP 服务器获取的 DNS 服务器，之后如果打开了 VPN，VPN 客户端也可能会修改 `resolv.conf` 添加 VPN 提供的 DNS 服务器，可以发现在这个模型下，`/etc/resolv.conf` 很容易就会被留在一个不正确的状态，导致 DNS 解析失败。
+
+为了解决这种多个程序需要修改 `/etc/resolv.conf` 的场景，resolvconf 程序提供了一种解决途径：需要调整 DNS 的程序不修改 `/etc/resolv.conf`，而是调用 `resolvconf` 程序注册自己的 DNS 服务器信息，由 resolvconf 负责生成最终的 `/etc/resolv.conf`。以下是一个示意：
+
+```sh
+# 程序 1 在 eth0 接口上注册 DNS 服务器
+echo <<EOF | resolvconf -a eth0
+nameserver 192.168.1.1
+EOF
+
+# 程序 2 在 vpn0 接口上注册 DNS 服务器
+echo <<EOF | resolvconf -a vpn0
+nameserver 10.1.1.1
+EOF
+
+# 程序 2 退出
+resolvconf -d vpn0
+```
+
+不过在目前的 Linux 系统中，resolvconf 已经不多见了：在桌面系统下，NetworkManager 管理整个系统的网络配置，同时也只有它会修改 `/etc/resolv.conf`；并且现在发行版的趋势是使用 systemd-resolved 来全权管理 DNS（NetworkManager 也可以调用 systemd-resolved 来设置 DNS）。同时 systemd-resolved 也提供了兼容 resolvconf 的接口。
+
 ### DNS 缓存服务 {#dns-cache}
 
 可以注意到，glibc 设置了非常复杂的 DNS 解析逻辑，但是问题也是很明显的：
