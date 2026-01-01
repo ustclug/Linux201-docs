@@ -3441,6 +3441,22 @@
 </ul>
 <p>其他技术区别的整理可参考：<a href="https://wiki.musl-libc.org/functional-differences-from-glibc.html#Name_Resolver/DNS">Functional differences from glibc</a>。</p>
 <h3 id="resolvconf">resolvconf<a class="headerlink" href="#resolvconf" title="Permanent link">&para;</a></h3>
+<p>在某些网络配置下，<code>/etc/resolv.conf</code> 可能会需要被多个程序修改，例如在接入网络时，DHCP 客户端会修改 <code>resolv.conf</code> 添加从 DHCP 服务器获取的 DNS 服务器，之后如果打开了 VPN，VPN 客户端也可能会修改 <code>resolv.conf</code> 添加 VPN 提供的 DNS 服务器，可以发现在这个模型下，<code>/etc/resolv.conf</code> 很容易就会被留在一个不正确的状态，导致 DNS 解析失败。</p>
+<p>为了解决这种多个程序需要修改 <code>/etc/resolv.conf</code> 的场景，resolvconf 程序提供了一种解决途径：需要调整 DNS 的程序不修改 <code>/etc/resolv.conf</code>，而是调用 <code>resolvconf</code> 程序注册自己的 DNS 服务器信息，由 resolvconf 负责生成最终的 <code>/etc/resolv.conf</code>。以下是一个示意：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># 程序 1 在 eth0 接口上注册 DNS 服务器</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s">&lt;&lt;EOF | resolvconf -a eth0</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="s">nameserver 192.168.1.1</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="s">EOF</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1"># 程序 2 在 vpn0 接口上注册 DNS 服务器</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="nb">echo</span><span class="w"> </span><span class="s">&lt;&lt;EOF | resolvconf -a vpn0</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="s">nameserver 10.1.1.1</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="s">EOF</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># 程序 2 退出</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>resolvconf<span class="w"> </span>-d<span class="w"> </span>vpn0
+</code></pre></div>
+<p>不过在目前的 Linux 系统中，resolvconf 已经不多见了：在桌面系统下，NetworkManager 管理整个系统的网络配置，同时也只有它会修改 <code>/etc/resolv.conf</code>；并且现在发行版的趋势是使用 systemd-resolved 来全权管理 DNS（NetworkManager 也可以调用 systemd-resolved 来设置 DNS）。同时 systemd-resolved 也提供了兼容 resolvconf 的接口。</p>
 <h3 id="dns-cache">DNS 缓存服务<a class="headerlink" href="#dns-cache" title="Permanent link">&para;</a></h3>
 <p>可以注意到，glibc 设置了非常复杂的 DNS 解析逻辑，但是问题也是很明显的：</p>
 <ul>
@@ -3508,7 +3524,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月28日 19:28:54 UTC">2025年12月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月1日 15:36:12 UTC">2026年1月1日</span>
   </span>
 
     
