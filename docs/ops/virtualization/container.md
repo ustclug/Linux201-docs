@@ -896,7 +896,7 @@ a490cc0dc175   host                   host      local
 
     对于外部到本机的访问，`PREROUTING` 链在跳转到 `DOCKER` 链之后，对于未进入 `docker0` 的 TCP 数据包，会根据 `DNAT` 规则将端口 `8080` 的数据包的目的地址修改为到该容器内部的 `80` 端口。
 
-    <!-- TODO: 到网络部分的链接 -->
+    有关 iptables 的更多细节，可参考[防火墙](../network/firewall.md)部分。
 
     特别地，到本地回环 8080 端口的连接，会由用户态的 `docker-proxy` 程序负责「转发」到容器对应的端口上。
     对该用户态程序的讨论，可以阅读 <https://github.com/moby/moby/issues/11185>。
@@ -928,6 +928,44 @@ a490cc0dc175   host                   host      local
     "bip": "172.17.0.1/24"
 }
 ```
+
+!!! tip "创建只允许访问某个特定 interface 的 Docker bridge 网络"
+
+    在有多个 interface 的主机上（例如对外提供服务的机器可能会接入多个 ISP 的网络，每个 interface 对应不同的 ISP），我们可能会希望能够控制程序访问网络时使用的 interface。一些程序支持用户提供 `bind()` 的参数来指定使用哪个 interface，但是也有一些程序没有给用户暴露这个功能。如果不想 hook 程序的话，使用 Docker 的 bridge 网络，结合一些配置也可以起到类似的效果，并且不需要像下面介绍的 Macvlan 或者 IPvlan 那样需要在对应的 interface 上获取额外的 IP 地址（有些环境下是不可行的）。
+
+    首先创建一个 bridge 网络：
+
+    ```sh
+    docker network create \
+        --driver bridge \
+        --subnet=172.17.4.0/24 \
+        -o "com.docker.network.bridge.name=dockerB1" \
+        bridge1
+    ```
+
+    这里我们限制这个网络在 `172.17.4.0/24` 中，并且创建出的 bridge 设备名为 `dockerB1`。需要注意的是，这里的 **`subnet` 不能与其他 Docker 网络冲突——包括默认的 `docker0` 网络**。默认情况下 `docker0` 是 `172.17.0.1/16`，因此会和这里的命令冲突。可以将 `bip` 参数修改为 `172.17.0.1/22` 或者更小的网段，或者换个 `subnet`。
+
+    如果需要支持 IPv6，则需要添加 `--ipv6` 参数，并添加 `--subnet` 选项指定 IPv6 网段。[新版本的 Docker](https://github.com/moby/moby/pull/48271) 支持使用 `-o com.docker.network.enable_ipv4=false` 关闭 IPv4 支持，从而只使用 IPv6。
+
+    不过可以注意到的是，上面的配置完全没有将这个 network 与任何东西绑定起来。因此我们还需要给我们的 network [创建策略路由](../network/routing.md#policy-based-routing)，即给这个网段添加一个单独的路由表。首先在 `/etc/iproute2/rt_tables` 中给我们的新路由表选个编号、起个名字吧：
+
+    ```text
+    1234 bridge1
+    ```
+
+    之后就可以使用 `ip route` 在路由表中添加路由了。假设对应的设备是 `eth1`，网关是 `192.168.122.1`：
+
+    ```sh
+    ip route replace default via 192.168.122.1 dev eth1 table bridge1
+    ```
+
+    并且需要使用 `ip rule`，让 `172.17.4.0/24` 的流量走这个路由表：
+
+    ```sh
+    ip rule add from 172.17.4.0/24 table bridge1 pref 5
+    ```
+
+    之后启动容器时，指定使用这个网络即可。以上 `ip` 的配置测试无误后，需要在你所使用的网络配置管理工具中持久化。此外，用户自定义的 bridge 网络默认使用的 DNS 为 Docker 内置的 DNS 服务器（`127.0.0.11`），会将 DNS 请求转发到主机设置的 DNS 服务器。如果有自定义 DNS 的需求，需要在创建容器时指定。
 
 #### 防火墙配置 {#docker-firewall}
 

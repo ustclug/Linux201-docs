@@ -319,4 +319,13 @@ resolvconf -d vpn0
 
 #### dnsmasq
 
+!!! warning "dnsmasq 与 Docker 默认 bridge 网络的行为"
+
+    Docker 的默认 bridge 网络不会使用其内置的 DNS 服务器，而是直接使用主机的 `/etc/resolv.conf` 配置放进容器中。假如 Docker 发现 `nameserver` 全都是本地地址，那么就会 fallback 到 8.8.8.8/8.8.4.4 上，绕过 dnsmasq 的缓存功能（Docker 对 systemd-resolved 做了特殊处理，可以获取到实际上游的 DNS 地址并设置，但是缓存也就失效了）。
+
+    因此，如果希望 Docker 容器使用到缓存功能，那么请考虑以下方法之一：
+
+    - 不使用默认 bridge 网络，使用 `docker network create` 创建自定义的 bridge 网络。
+    - 让 dnsmasq 同时在 `docker0` 上监听，并在 `/etc/resolv.conf` 中配置 `nameserver` 为 `docker0` 上的地址。
+
 ## 服务端 {#server}
