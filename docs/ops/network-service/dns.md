@@ -171,7 +171,7 @@ netgroup:       nis
 hosts:          files myhostname resolve [!UNAVAIL=return] dns
 ```
 
-其中 [myhostname][nss-myhostname.8] 负责解析本机的主机名，[resolve][nss-resolve.8] 模块则会通过 `systemd-resolved` 的 Unix socket（`/run/systemd/resolve/io.systemd.Resolve`）来进行解析。
+其中 [myhostname][nss-myhostname.8] 负责解析本机的主机名，[resolve][nss-resolve.8] 模块则会通过 `systemd-resolved` 的 Unix socket（`/run/systemd/resolve/io.systemd.Resolve`）来进行解析（详情可阅读[我们对 Varlink 的介绍](../../advanced/desktop.md#:~:text=Varlink)）。
 
 `[!UNAVAIL=return]` 表示，除非（`!`）`resolve` 模块不可用（例如 `systemd-resolved` 没有运行），否则就直接返回，不再继续使用后面的 `dns` 模块。这样设置下，如果 `systemd-resolved` 出现故障，那么系统仍然可以回退到直接使用 DNS 服务器进行解析。而如果只是域名不存在，那么就不会继续使用 `dns` 模块，避免了不必要的 DNS 查询。
 

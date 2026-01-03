@@ -741,6 +741,49 @@ DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总
 busctl monitor --user
 ```
 
+!!! note "Varlink"
+
+    看到 DBus 这一节的结尾，你可能会觉得 DBus 的设计太复杂了，对很多不需要总线的点对点的场景来说显得过于笨重。并且对 systemd 的场景来说，DBus 在系统启动早期也是不可用的（要等到 DBus 服务启动之后才行）。相关团队曾经尝试过将 DBus 引入 Linux 内核（[kdbus](https://lwn.net/Articles/580194/)），但结果以不被采纳告终。
+
+    因此，[Varlink](https://lwn.net/Articles/742675/) 诞生了。这是一个非常轻量级的 IPC 协议，简单来说：
+
+    - 服务端监听一个 Unix socket（不再有「总线」的概念）。
+    - 客户端与服务端之间数据通信使用 JSON 格式（简单胜过执行效率）。
+    - 使用 varlink 格式描述接口（比 XML 简单得多，并且描述中包含了给人类阅读的文档，更容易使用）。
+
+    Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。
+
+    以下是调用 systemd-resolved 解析域名的例子：
+
+    ```console
+    $ varlinkctl introspect /run/systemd/resolve/io.systemd.Resolve
+    （省略）
+    interface io.systemd.Resolve
+    （省略）
+    # Resolves a hostname to one or more IP addresses.
+    method ResolveHostname(
+            # The Linux interface index for the network interface to search on. Typically left unspecified, in
+            # order to search on all interfaces.
+            ifindex: ?int,
+            # The host name to resolve.
+            name: string,
+            # The address family to search for, one of AF_INET or AF_INET6.
+            family: ?int,
+            # Various search flags.
+            flags: ?int
+    ) -> (
+            # Array of resolved IP addresses
+            addresses: []ResolvedAddress,
+            # Canonical name of the host.
+            name: string,
+            # Various flags indicating details on discovered data.
+            flags: int
+    )
+    （省略）
+    $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.ResolveHostname '{"name": "www.example.com"}' | jq -c .
+    {"addresses":[{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{"ifindex":2,"family":2,"address":[104,18,27,120]},{"ifindex":2,"family":2,"address":[104,18,26,120]}],"name":"www.example.com","flags":1048577}
+    ```
+
 ## Fontconfig
 
 ## 音频服务器
