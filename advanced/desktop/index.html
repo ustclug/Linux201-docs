@@ -3942,6 +3942,45 @@
 <p>DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总线需要 root 权限）。<code>dbus-monitor</code>、<code>busctl monitor</code>，以及图形界面的 <a href="https://apps.gnome.org/zh-CN/Bustle/">Bustle</a> 都可以做到这一点。例如，如果希望实时显示会话总线的所有消息，可以运行：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Varlink</p>
+<p>看到 DBus 这一节的结尾，你可能会觉得 DBus 的设计太复杂了，对很多不需要总线的点对点的场景来说显得过于笨重。并且对 systemd 的场景来说，DBus 在系统启动早期也是不可用的（要等到 DBus 服务启动之后才行）。相关团队曾经尝试过将 DBus 引入 Linux 内核（<a href="https://lwn.net/Articles/580194/">kdbus</a>），但结果以不被采纳告终。</p>
+<p>因此，<a href="https://lwn.net/Articles/742675/">Varlink</a> 诞生了。这是一个非常轻量级的 IPC 协议，简单来说：</p>
+<ul>
+<li>服务端监听一个 Unix socket（不再有「总线」的概念）。</li>
+<li>客户端与服务端之间数据通信使用 JSON 格式（简单胜过执行效率）。</li>
+<li>使用 varlink 格式描述接口（比 XML 简单得多，并且描述中包含了给人类阅读的文档，更容易使用）。</li>
+</ul>
+<p>Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。</p>
+<p>以下是调用 systemd-resolved 解析域名的例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>introspect<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="go">interface io.systemd.Resolve</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="gp"># </span>Resolves<span class="w"> </span>a<span class="w"> </span>hostname<span class="w"> </span>to<span class="w"> </span>one<span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>IP<span class="w"> </span>addresses.
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="go">method ResolveHostname(</span>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a><span class="gp">        # </span>The<span class="w"> </span>Linux<span class="w"> </span>interface<span class="w"> </span>index<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>network<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on.<span class="w"> </span>Typically<span class="w"> </span>left<span class="w"> </span>unspecified,<span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a><span class="gp">        # </span>order<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on<span class="w"> </span>all<span class="w"> </span>interfaces.
+<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a><span class="go">        ifindex: ?int,</span>
+<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a><span class="gp">        # </span>The<span class="w"> </span>host<span class="w"> </span>name<span class="w"> </span>to<span class="w"> </span>resolve.
+<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a><span class="go">        name: string,</span>
+<a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a><span class="gp">        # </span>The<span class="w"> </span>address<span class="w"> </span>family<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span><span class="k">for</span>,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>AF_INET<span class="w"> </span>or<span class="w"> </span>AF_INET6.
+<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a><span class="go">        family: ?int,</span>
+<a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a><span class="gp">        # </span>Various<span class="w"> </span>search<span class="w"> </span>flags.
+<a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a><span class="go">        flags: ?int</span>
+<a id="__codelineno-33-16" name="__codelineno-33-16" href="#__codelineno-33-16"></a><span class="go">) -&gt; (</span>
+<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a><span class="gp">        # </span>Array<span class="w"> </span>of<span class="w"> </span>resolved<span class="w"> </span>IP<span class="w"> </span>addresses
+<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a><span class="go">        addresses: []ResolvedAddress,</span>
+<a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a><span class="gp">        # </span>Canonical<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>host.
+<a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a><span class="go">        name: string,</span>
+<a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a><span class="gp">        # </span>Various<span class="w"> </span>flags<span class="w"> </span>indicating<span class="w"> </span>details<span class="w"> </span>on<span class="w"> </span>discovered<span class="w"> </span>data.
+<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a><span class="go">        flags: int</span>
+<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a><span class="go">)</span>
+<a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a><span class="go">（省略）</span>
+<a id="__codelineno-33-25" name="__codelineno-33-25" href="#__codelineno-33-25"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>call<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve<span class="w"> </span>io.systemd.Resolve.ResolveHostname<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;www.example.com&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span>.
+<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a><span class="go">{&quot;addresses&quot;:[{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,26,120]}],&quot;name&quot;:&quot;www.example.com&quot;,&quot;flags&quot;:1048577}</span>
+</code></pre></div>
+</div>
 <h2 id="fontconfig">Fontconfig<a class="headerlink" href="#fontconfig" title="Permanent link">&para;</a></h2>
 <h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <!--
@@ -4000,7 +4039,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月31日 20:15:06 UTC">2025年12月31日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月3日 15:48:51 UTC">2026年1月3日</span>
   </span>
 
     
