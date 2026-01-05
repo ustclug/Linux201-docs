@@ -553,7 +553,65 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 ### 基础架构 {#wayland-infrastructure}
 
-在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出。
+在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出，如下面这张官方架构图所示：
+
+![Wayland Architecture](https://wayland.freedesktop.org/docs/html/images/wayland-architecture.png)
+
+常见的 Wayland 混成器包含：
+
+- [Mutter](https://gitlab.gnome.org/GNOME/mutter)：GNOME 的混成器，以运行时库的形式集成在 GNOME Shell 中
+- [KWin](https://invent.kde.org/plasma/kwin)：KDE 的混成器
+- [Weston](https://wayland.pages.freedesktop.org/weston/)：Wayland 混成器的「参考实现」，通常用于二次开发、测试等场景，普通用户一般不使用
+- [Sway](https://swaywm.org/)：可以看作是 i3 平铺式窗口管理器的 Wayland 版本，基于 wlroots 库实现
+- [Hyprland](https://hypr.land/)：以炫酷的效果知名的平铺式的混成器
+- [labwc](https://labwc.github.io/)：类似 Openbox 的轻量级混成器
+- [niri](https://github.com/YaLTeR/niri)：近来流行的卷轴平铺式的混成器
+
+在与内核特性交互时，混成器一般也不会直接调用内核接口，而是使用一些包装库来简化开发。例如使用 [libdrm](https://cgit.freedesktop.org/drm/libdrm/) 调用 DRM 接口操作显卡，使用 libinput 调用 evdev 接口处理输入设备等等。
+
+Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 `$XDG_RUNTIME_DIR/wayland-<N>`（`XDG_RUNTIME_DIR` 默认为 `/run/user/<UID>`）上监听 Unix socket，客户端通过 `WAYLAND_DISPLAY` 环境变量指定要连接的 Unix socket（一般为 `wayland-0`）。相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 `WAYLAND_DEBUG=1` 环境变量即可，相关信息会输出到 stderr：
+
+```console
+$ WAYLAND_DEBUG=1 gtk4-demo
+[1603406.936] {Default Queue}  -> wl_display#1.get_registry(new id wl_registry#2)
+[1603406.945] {Default Queue}  -> wl_display#1.sync(new id wl_callback#3)
+[1603406.991] {Display Queue} wl_display#1.delete_id(3)
+[1603406.997] {Default Queue} wl_registry#2.global(1, "wl_compositor", 6)
+[1603406.999] {Default Queue}  -> wl_registry#2.bind(1, "wl_compositor", 6, new id [unknown]#4)
+[1603407.001] {Default Queue} wl_registry#2.global(2, "wl_shm", 2)
+[1603407.003] {Default Queue}  -> wl_registry#2.bind(2, "wl_shm", 1, new id [unknown]#5)
+[1603407.004] {Default Queue} wl_registry#2.global(3, "wl_output", 4)
+[1603407.005] {Default Queue}  -> wl_registry#2.bind(3, "wl_output", 4, new id [unknown]#6)
+[1603407.033] {Default Queue}  -> wl_display#1.sync(new id wl_callback#7)
+（以下省略）
+```
+
+Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml)）随 Wayland 库分发。其他不少协议则在 [wayland-protocols 仓库](https://gitlab.freedesktop.org/wayland/wayland-protocols) 中。可以注意到，只有少数协议是 stable 的（例如 [xdg-shell](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads)、[linux-dmabuf](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads) 等），大部分协议都在 staging、unstable 或者 experimental 中。尽管不少协议 stable 化的进展极慢（要让所有人达成共识，是世界上最难的事情之一），不过大量非 stable 状态的协议目前已经被广泛使用，包括：
+
+- [text-input-v3](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v3.xml?ref_type=heads)：混成器与客户端之间的输入法协议，在除了 Weston 以外的主流混成器中均有支持。
+- [fractional-scale-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/fractional-scale/fractional-scale-v1.xml)：分数缩放协议，大部分的主流混成器均有支持。
+- [color-management-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/color-management/color-management-v1.xml)：于 2025 年加入的色彩管理协议，正在被各大混成器采纳中。
+- [xdg-decoration-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml)：允许混成器为客户端提供窗口装饰的协议，除 GNOME、Weston 以外的主流混成器均有支持。
+
+可以注意到，混成器可以选择只支持部分协议，同样客户端也可以选择只使用部分协议。因此类似「Wayland 开始支持 XX 协议」实际的意义大多时候是：该协议进入了 wayland-protocols 仓库（进入的前提一般是有一些混成器/客户端已经写了相关的支持代码），但是不代表所有的混成器/客户端都会自动支持。
+
+!!! note "协议采纳的流程好慢！"
+
+    wayland-protocols 的流程最为人诟病的地方是：整个流程实在是太慢了。一个协议要被采纳至少得好几个月，而且有很多过了好几年才有一点点进展。Valve 的工程师在 2024 年曾经尝试用 [frog-protocols](https://github.com/misyltoad/frog-protocols) 绕过流程来实现需要的功能。各个混成器（KWin、wlroots、Hyprland 等）也有不少私有协议，以支持自己需要的功能。
+
+    从 2026 初的角度来说，wayland-protocols 有一些改善，不过仍然说不上快。目前大致的[流程](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/main/GOVERNANCE.md?ref_type=heads)是：
+
+    - review 两周内没有 NACK（反对）的提案会被合并到 experimental（在 `xx` 命名空间）。
+    - 要合并到 staging 至少要 30 天 review
+    - 合并到 `xdg` 或 `wp` 命名空间的协议需要 3 个成员 ACK（同意），有 3 个开源实现（客户端和混成器都要有），并且没有 NACK
+    - 合并到 `ext` 命名空间的协议需要 2 个成员 ACK，有 2 个开源实现（客户端和混成器都要有）
+
+    尽管实验性质的协议确实看起来门槛降低了，但是要让大部分混成器/客户端采纳的话，进入 `xdg` 或 `wp` 命名空间仍然是必要的，而这个过程依然很慢。一些用户等了很久的协议包括：
+
+    - [xdg-pip](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/132)：画中画协议。
+    - [xdg-session-management](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/18)：会话管理协议（最主要的用途是记住窗口的位置）。
+    - [xdg-dbus-annotation](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52)：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。
+    - [xx-zones](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/264)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议。
 
 (TODO)
 
