@@ -649,6 +649,8 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 - `shlibs`，如果软件包包含了动态库（`.so`），那么这个文件就需要包含库的版本信息，以帮助其他软件包解决相关的依赖问题。
 - `triggers`，定义了软件包感兴趣（interest）的触发器，以及软件包状态变化时会触发（activate）的触发器。
 
+这些 hook 脚本与额外的信息文件在软件包安装后会保存在 `/var/lib/dpkg/info` 目录下，以便在维护软件包时参考，如卸载软件包或进行完整性校验（`dpkg -V`）等。
+
 ### 获取软件包源码 {#apt-source}
 
 Debian 目前大多数的包的源代码都可以在 Debian Salsa GitLab 上找到，可以在 [Debian Package Tracker](https://tracker.debian.org/) 上找到相关信息。
