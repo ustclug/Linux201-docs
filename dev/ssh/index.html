@@ -2689,6 +2689,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#view-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        查看 SSH 证书
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3529,6 +3540,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#view-certificates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        查看 SSH 证书
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4088,37 +4110,60 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>Accepted publickey for user1 from 192.0.2.1 port 1145 ssh2: ED25519-CERT SHA256:... ID User 1 (serial 1) CA RSA SHA256:...
 </code></pre></div>
 <p>其中 <code>ID</code> 后面的部分即为证书的“主体”（identity，签发时的 <code>-I</code> 参数值），<code>(serial 1)</code> 是证书的编号，<code>CA RSA SHA256:...</code> 是签发此证书的 CA 公钥的指纹。</p>
+<h3 id="view-certificates">查看 SSH 证书<a class="headerlink" href="#view-certificates" title="Permanent link">&para;</a></h3>
+<p>还是使用 <code>ssh-keygen</code> 命令：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>ssh-keygen<span class="w"> </span>-L<span class="w"> </span>-f<span class="w"> </span>&lt;filename-cert.pub&gt;
+</code></pre></div>
+<p>例如：</p>
+<div class="highlight"><span class="filename">ssh-keygen -Lf ~/.ssh/id_ed25519-cert.pub</span><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>/home/ustclug/.ssh/id_ed25519-cert.pub:
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">        </span>Type:<span class="w"> </span>ssh-ed25519-cert-v01@openssh.com<span class="w"> </span>user<span class="w"> </span>certificate
+<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">        </span>Public<span class="w"> </span>key:<span class="w"> </span>ED25519-CERT<span class="w"> </span>SHA256:A2ZueGXJGzK3nnECPgD7rJTxMAY9wbhUDGq+cEjf5qA
+<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">        </span>Signing<span class="w"> </span>CA:<span class="w"> </span>RSA<span class="w"> </span>SHA256:6evsncr34cyV1FzWyCozOg8pbHMeiSgAknUYJJlbuFs<span class="w"> </span><span class="o">(</span>using<span class="w"> </span>rsa-sha2-512<span class="o">)</span>
+<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="w">        </span>Key<span class="w"> </span>ID:<span class="w"> </span><span class="s2">&quot;ustc@ustclug&quot;</span>
+<a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="w">        </span>Serial:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a><span class="w">        </span>Valid:<span class="w"> </span>from<span class="w"> </span><span class="m">2025</span>-01-01T19:55:00<span class="w"> </span>to<span class="w"> </span><span class="m">2025</span>-02-01T20:00:00
+<a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a><span class="w">        </span>Principals:
+<a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a><span class="w">                </span>root
+<a id="__codelineno-42-10" name="__codelineno-42-10" href="#__codelineno-42-10"></a><span class="w">                </span>ustc
+<a id="__codelineno-42-11" name="__codelineno-42-11" href="#__codelineno-42-11"></a><span class="w">        </span>Critical<span class="w"> </span>Options:<span class="w"> </span><span class="o">(</span>none<span class="o">)</span>
+<a id="__codelineno-42-12" name="__codelineno-42-12" href="#__codelineno-42-12"></a><span class="w">        </span>Extensions:
+<a id="__codelineno-42-13" name="__codelineno-42-13" href="#__codelineno-42-13"></a><span class="w">                </span>permit-X11-forwarding
+<a id="__codelineno-42-14" name="__codelineno-42-14" href="#__codelineno-42-14"></a><span class="w">                </span>permit-agent-forwarding
+<a id="__codelineno-42-15" name="__codelineno-42-15" href="#__codelineno-42-15"></a><span class="w">                </span>permit-port-forwarding
+<a id="__codelineno-42-16" name="__codelineno-42-16" href="#__codelineno-42-16"></a><span class="w">                </span>permit-pty
+<a id="__codelineno-42-17" name="__codelineno-42-17" href="#__codelineno-42-17"></a><span class="w">                </span>permit-user-rc
+</code></pre></div>
 <h2 id="misc">杂项<a class="headerlink" href="#misc" title="Permanent link">&para;</a></h2>
 <h3 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h3>
 <p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中，出现在这两个块中的 <code>Include</code> 会被视作条件包含。因此一个（不太常见的）坑是：</p>
 <details class="failure">
 <summary>错误写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>
-<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a>
+<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
 <details class="success">
 <summary>正确写法</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>Host<span class="w"> </span>example
-<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">  </span>User<span class="w"> </span>user
-<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a>
-<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a>Match<span class="w"> </span>all
-<a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>Host<span class="w"> </span>example
+<a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="w">  </span>User<span class="w"> </span>user
+<a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a>
+<a id="__codelineno-44-5" name="__codelineno-44-5" href="#__codelineno-44-5"></a>Match<span class="w"> </span>all
+<a id="__codelineno-44-6" name="__codelineno-44-6" href="#__codelineno-44-6"></a><span class="w">  </span>Include<span class="w"> </span>~/.ssh/global.conf
 </code></pre></div>
 </details>
 <p>更加推荐的写法是将 <code>Include</code> 放在配置文件开头：</p>
 <div class="admonition success">
 <p class="admonition-title">推荐写法</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
-<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a>
-<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a>Host<span class="w"> </span>example
-<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
-<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="w">  </span>User<span class="w"> </span>user
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
+<a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a>
+<a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a>Host<span class="w"> </span>example
+<a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
+<a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a><span class="w">  </span>User<span class="w"> </span>user
 </code></pre></div>
 </div>
 <h3 id="traps">一些坑点<a class="headerlink" href="#traps" title="Permanent link">&para;</a></h3>
@@ -4232,7 +4277,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月4日 16:50:23 UTC">2025年12月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月8日 07:18:28 UTC">2026年1月8日</span>
   </span>
 
     
