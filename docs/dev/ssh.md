@@ -586,6 +586,36 @@ Accepted publickey for user1 from 192.0.2.1 port 1145 ssh2: ED25519-CERT SHA256:
 
 其中 `ID` 后面的部分即为证书的“主体”（identity，签发时的 `-I` 参数值），`(serial 1)` 是证书的编号，`CA RSA SHA256:...` 是签发此证书的 CA 公钥的指纹。
 
+### 查看 SSH 证书 {#view-certificates}
+
+还是使用 `ssh-keygen` 命令：
+
+```shell
+ssh-keygen -L -f <filename-cert.pub>
+```
+
+例如：
+
+```shell title="ssh-keygen -Lf ~/.ssh/id_ed25519-cert.pub"
+/home/ustclug/.ssh/id_ed25519-cert.pub:
+        Type: ssh-ed25519-cert-v01@openssh.com user certificate
+        Public key: ED25519-CERT SHA256:A2ZueGXJGzK3nnECPgD7rJTxMAY9wbhUDGq+cEjf5qA
+        Signing CA: RSA SHA256:6evsncr34cyV1FzWyCozOg8pbHMeiSgAknUYJJlbuFs (using rsa-sha2-512)
+        Key ID: "ustc@ustclug"
+        Serial: 0
+        Valid: from 2025-01-01T19:55:00 to 2025-02-01T20:00:00
+        Principals:
+                root
+                ustc
+        Critical Options: (none)
+        Extensions:
+                permit-X11-forwarding
+                permit-agent-forwarding
+                permit-port-forwarding
+                permit-pty
+                permit-user-rc
+```
+
 ## 杂项 {#misc}
 
 ### 拆分配置文件 {#include}

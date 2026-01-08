@@ -329,3 +329,11 @@ resolvconf -d vpn0
     - 让 dnsmasq 同时在 `docker0` 上监听，并在 `/etc/resolv.conf` 中配置 `nameserver` 为 `docker0` 上的地址。
 
 ## 服务端 {#server}
+
+### 递归服务器 {#recursive-server}
+
+### 权威服务器 {#authoritative-server}
+
+主流的权威 DNS 服务端软件包括 BIND、Knot DNS、PowerDNS 和 Unbound 等。
+
+USTCLUG 的域名（即 `ustclug.org`，以及一些其他域名）使用 BIND 9 作为权威 DNS 服务器。
