@@ -577,7 +577,7 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用
     - `machinectl shell username@`
     - `run0`（需要很新的发行版，如 Debian 13）
 
-    相关设计原因可阅读 <https://github.com/systemd/systemd/issues/7451#issuecomment-346787237>。注意，以上方法对非 root 使用 polkit 鉴权，与 sudo 配置无关。
+    相关设计原因可阅读 [systemd/systemd#7451](https://github.com/systemd/systemd/issues/7451#issuecomment-346787237)。注意，以上方法对非 root 用户使用 polkit 鉴权，与 sudo 配置无关。
 
     如果需要使用 `sudo` 或 `su` 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
 
