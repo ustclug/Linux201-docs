@@ -59,6 +59,7 @@
 [oci.conf.5]: https://slurm.schedmd.com/oci.conf.html
 <!-- end slurm config files -->
 [smartd.conf.5]: https://linux.die.net/man/5/smartd.conf
+[snapper-configs.5]: https://manpages.debian.org/unstable/snapper/snapper-configs.5.en.html
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html

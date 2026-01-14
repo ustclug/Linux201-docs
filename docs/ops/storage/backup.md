@@ -398,3 +398,52 @@ WantedBy=timers.target
 !!! note "restic 的缓存"
 
     默认情况下，restic 会在 `$XDG_CACHE_HOME/restic` 或 `~/.cache/restic` 下缓存一些索引文件以提升性能。不过 systemd 默认不会给服务设置 `XDG_CACHE_HOME` 和 `HOME` 环境变量。因此，环境变量文件中需要额外设置 `RESTIC_CACHE_DIR`，或前述的与家目录相关的环境变量。
+
+### 使用 snapper 定时创建 Btrfs 快照 {#snapper-snapshots}
+
+虽然快照不是备份，但是快照可以作为备份方案的一部分：
+
+- 快照可以保证数据的一致性
+- 对误删除文件的场景（例如不小心把 `rm -rf ./*` 敲成了 `rm -rf /*`）可以快速恢复文件
+- 创建快照一般来说是非常快速的操作，开销较小
+
+由 OpenSUSE 维护的 [snapper](https://github.com/openSUSE/snapper) 可以定时创建、管理 Btrfs 或 LVM 的快照。以下介绍其与 Btrfs 配合使用的场景。
+
+假设系统 rootfs 为 Btrfs，有两个 Btrfs subvolume：[`@`（`/`）与 `@home`（`/home`）](./filesystem.md#btrfs-subvolume)，那么创建对应的配置：
+
+```sh
+sudo snapper -c root create-config /
+sudo snapper -c home create-config /home
+```
+
+!!! note "在给 `/` 创建配置时的注意事项"
+
+    给 `/` 设置自动快照的一种用途是在系统升级出现问题时回滚到以前的状态。不过你应该不会希望回滚系统的时候把系统日志、你的个人数据、虚拟机磁盘、临时文件等等也一起回滚了。这些不希望被回滚（被快照）的目录需要创建单独的 subvolume，避免在给 `@` 打快照的时候被包含。
+
+    可以参考 [SUSE 的手册](https://documentation.suse.com/smart/systems-management/html/snapper-basic-concepts/index.html#snapper-subvolumes)做调整。
+
+相关配置信息存储在 `/etc/snapper/configs/root` 和 `/etc/snapper/configs/home` 中，可以编辑来调整快照的保留方案（主要需要设置的是每小时、每天、每周、每月、每年需要保留多少快照等），文档可参考 [snapper-configs(5)][snapper-configs.5]。之后启用 `snapper-timeline.timer` 和 `snapper-cleanup.timer` 定时器即可。如果希望每次开机的时候都给 `root` 创建快照，也可以启用 `snapper-boot.timer`。
+
+在进行首次快照后，可以看到在 `/` 和 `/home` 下多出了 `.snapshots` 目录，可以从其中访问快照内容（默认只读）：
+
+```console
+$ sudo ls /.snapshots
+1
+$ sudo ls /.snapshots/1
+info.xml  snapshot
+$ sudo ls /.snapshots/1/snapshot/
+bin  boot（后续内容省略）
+```
+
+同时可以使用 `snapper` 命令查看或删除快照：
+
+```console
+$ sudo snapper -c root list
+# │ Type   │ Pre # │ Date                     │ User │ Cleanup  │ Description │ Userdata
+──┼────────┼───────┼──────────────────────────┼──────┼──────────┼─────────────┼─────────
+0 │ single │       │                          │ root │          │ current     │
+1 │ single │       │ Thu Jan 15 04:50:37 2026 │ root │ timeline │ timeline    │
+$ sudo snapper -c root delete 1
+```
+
+其他和 snapper 相关的用法可以参考手册等资料。

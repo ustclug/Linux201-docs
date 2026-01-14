@@ -707,8 +707,13 @@ Filesystem     Size   Used  Avail Use% Pathname
 
 #### Subvolume {#btrfs-subvolume}
 
-Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」。与目录不同，Subvolume 是独立的，可以有自己的挂载点。
-同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。
+Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」。与目录不同，Subvolume 是独立的，可以有自己的挂载点。同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。
+
+!!! tip "约定俗成的 subvolume 名称"
+
+    几乎所有支持在安装时由发行版安装器选择 Btrfs 的 Linux 发行版都不会创建 Btrfs 文件系统后就直接开始使用，而是会创建名为 `@` 的 subvolume 作为根文件系统，`@home` 作为 `/home` subvolume 等等。这种起名不是强制要求，但是许多工具都会做这样的假设。
+
+    更多信息可参考 [Why the @ in Btrfs subvolume names](https://askubuntu.com/a/987116)。
 
 我们可以来试一试：
 
@@ -755,6 +760,10 @@ $ sudo umount /media/btrfs2
     后续挂载使用的参数会被忽略。
 
 在 Btrfs 挂载参数中，`subvol=<path>` 和 `subvolid=<id>` 用来标识需要挂载的 subvolume。如果两个参数都不指定，则会挂载默认 subvolume。
+
+!!! note "顶层 subvolume"
+
+    每个 Btrfs 文件系统都有一个顶层（top-level）subvolume，其 ID 永远是 5（`subvolid=5`）。顶层 subvolume 不会出现在 `btrfs subvolume list` 的输出中。
 
 ```console
 $ sudo mount btrfs.img /media/btrfs # 挂载整个文件系统
