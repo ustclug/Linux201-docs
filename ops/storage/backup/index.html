@@ -1029,6 +1029,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#snapper-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用 snapper 定时创建 Btrfs 快照
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3099,6 +3110,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#snapper-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用 snapper 定时创建 Btrfs 快照
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3574,6 +3596,41 @@
 <p class="admonition-title">restic 的缓存</p>
 <p>默认情况下，restic 会在 <code>$XDG_CACHE_HOME/restic</code> 或 <code>~/.cache/restic</code> 下缓存一些索引文件以提升性能。不过 systemd 默认不会给服务设置 <code>XDG_CACHE_HOME</code> 和 <code>HOME</code> 环境变量。因此，环境变量文件中需要额外设置 <code>RESTIC_CACHE_DIR</code>，或前述的与家目录相关的环境变量。</p>
 </div>
+<h3 id="snapper-snapshots">使用 snapper 定时创建 Btrfs 快照<a class="headerlink" href="#snapper-snapshots" title="Permanent link">&para;</a></h3>
+<p>虽然快照不是备份，但是快照可以作为备份方案的一部分：</p>
+<ul>
+<li>快照可以保证数据的一致性</li>
+<li>对误删除文件的场景（例如不小心把 <code>rm -rf ./*</code> 敲成了 <code>rm -rf /*</code>）可以快速恢复文件</li>
+<li>创建快照一般来说是非常快速的操作，开销较小</li>
+</ul>
+<p>由 OpenSUSE 维护的 <a href="https://github.com/openSUSE/snapper">snapper</a> 可以定时创建、管理 Btrfs 或 LVM 的快照。以下介绍其与 Btrfs 配合使用的场景。</p>
+<p>假设系统 rootfs 为 Btrfs，有两个 Btrfs subvolume：<a href="../filesystem/#btrfs-subvolume"><code>@</code>（<code>/</code>）与 <code>@home</code>（<code>/home</code>）</a>，那么创建对应的配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>create-config<span class="w"> </span>/
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>home<span class="w"> </span>create-config<span class="w"> </span>/home
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">在给 <code>/</code> 创建配置时的注意事项</p>
+<p>给 <code>/</code> 设置自动快照的一种用途是在系统升级出现问题时回滚到以前的状态。不过你应该不会希望回滚系统的时候把系统日志、你的个人数据、虚拟机磁盘、临时文件等等也一起回滚了。这些不希望被回滚（被快照）的目录需要创建单独的 subvolume，避免在给 <code>@</code> 打快照的时候被包含。</p>
+<p>可以参考 <a href="https://documentation.suse.com/smart/systems-management/html/snapper-basic-concepts/index.html#snapper-subvolumes">SUSE 的手册</a>做调整。</p>
+</div>
+<p>相关配置信息存储在 <code>/etc/snapper/configs/root</code> 和 <code>/etc/snapper/configs/home</code> 中，可以编辑来调整快照的保留方案（主要需要设置的是每小时、每天、每周、每月、每年需要保留多少快照等），文档可参考 <a href="https://manpages.debian.org/unstable/snapper/snapper-configs.5.en.html">snapper-configs(5)</a>。之后启用 <code>snapper-timeline.timer</code> 和 <code>snapper-cleanup.timer</code> 定时器即可。如果希望每次开机的时候都给 <code>root</code> 创建快照，也可以启用 <code>snapper-boot.timer</code>。</p>
+<p>在进行首次快照后，可以看到在 <code>/</code> 和 <code>/home</code> 下多出了 <code>.snapshots</code> 目录，可以从其中访问快照内容（默认只读）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">1</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">info.xml  snapshot</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1/snapshot/
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">bin  boot（后续内容省略）</span>
+</code></pre></div>
+<p>同时可以使用 <code>snapper</code> 命令查看或删除快照：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>list
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="gp"># </span>│<span class="w"> </span>Type<span class="w">   </span>│<span class="w"> </span>Pre<span class="w"> </span><span class="c1"># │ Date                     │ User │ Cleanup  │ Description │ Userdata</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">──┼────────┼───────┼──────────────────────────┼──────┼──────────┼─────────────┼─────────</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">0 │ single │       │                          │ root │          │ current     │</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">1 │ single │       │ Thu Jan 15 04:50:37 2026 │ root │ timeline │ timeline    │</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>delete<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p>其他和 snapper 相关的用法可以参考手册等资料。</p>
 <!--
   Links to man pages
 
@@ -3630,7 +3687,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月21日 20:39:36 UTC">2025年12月21日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月14日 21:10:41 UTC">2026年1月14日</span>
   </span>
 
     
