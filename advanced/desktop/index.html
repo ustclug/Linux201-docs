@@ -2688,6 +2688,45 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#wayland-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HiDPI 支持
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HiDPI 支持">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wayland_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wayland 与分数缩放
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xwayland-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        XWayland 下的 HiDPI 支持
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2733,21 +2772,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fontconfig" class="md-nav__link">
+  <a href="#portal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fontconfig
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        音频服务器
+        Portal
       
     </span>
   </a>
@@ -3238,6 +3266,45 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#wayland-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HiDPI 支持
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="HiDPI 支持">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wayland_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wayland 与分数缩放
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xwayland-hidpi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        XWayland 下的 HiDPI 支持
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3283,21 +3350,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fontconfig" class="md-nav__link">
+  <a href="#portal" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fontconfig
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        音频服务器
+        Portal
       
     </span>
   </a>
@@ -3801,6 +3857,11 @@
 <h3 id="wayland-infrastructure">基础架构<a class="headerlink" href="#wayland-infrastructure" title="Permanent link">&para;</a></h3>
 <p>在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出，如下面这张官方架构图所示：</p>
 <p><img alt="Wayland Architecture" src="https://wayland.freedesktop.org/docs/html/images/wayland-architecture.png" /></p>
+<p>只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 <a href="#client-server-window:~:text=%E5%A6%82%E6%9E%9C%E5%B8%8C%E6%9C%9B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%20X%20server%20%E5%B9%B6%E4%B8%94%E8%83%BD%E5%A4%9F%E4%BB%A5%E5%AD%90%E7%AA%97%E5%8F%A3%E7%9A%84%E5%BD%A2%E5%BC%8F%E6%98%BE%E7%A4%BA%E5%87%BA%E6%9D%A5%EF%BC%8C%E9%82%A3%E4%B9%88%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%20Xephyr%20%E6%88%96%E8%80%85%20Xwayland%20%E6%9D%A5%E5%88%9B%E5%BB%BA%E3%80%82">Xephyr</a> 表现类似。</p>
+<div class="admonition note">
+<p class="admonition-title">xwayland-satellite</p>
+<p>对混成器来说，实现 XWayland rootless 的支持并不算很容易。如果 XWayland 没有那么特殊会怎么样？<a href="https://github.com/Supreeeme/xwayland-satellite">xwayland-satellite</a> 作为普通的 Wayland 客户端实现了类似于 XWayland rootless 的功能，是一些轻量级混成器的选择。</p>
+</div>
 <p>常见的 Wayland 混成器包含：</p>
 <ul>
 <li><a href="https://gitlab.gnome.org/GNOME/mutter">Mutter</a>：GNOME 的混成器，以运行时库的形式集成在 GNOME Shell 中</li>
@@ -3852,6 +3913,56 @@
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/264">xx-zones</a>：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议。</li>
 </ul>
 </div>
+<details class="note">
+<summary>Wayland 协议细节</summary>
+<p>Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="nt">&lt;interface</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;wp_fractional_scale_v1&quot;</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;fractional scale interface to a wl_surface&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span>An<span class="w"> </span>additional<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>a<span class="w"> </span>wl_surface<span class="w"> </span>object<span class="w"> </span>which<span class="w"> </span>allows<span class="w"> </span>the<span class="w"> </span>compositor
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span>to<span class="w"> </span>inform<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>preferred<span class="w"> </span>scale.
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">  </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">  </span><span class="nt">&lt;request</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;destroy&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;destructor&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;remove surface scale information for surface&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">      </span>Destroy<span class="w"> </span>the<span class="w"> </span>fractional<span class="w"> </span>scale<span class="w"> </span>object.<span class="w"> </span>When<span class="w"> </span>this<span class="w"> </span>object<span class="w"> </span>is<span class="w"> </span>destroyed,
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">      </span>preferred_scale<span class="w"> </span>events<span class="w"> </span>will<span class="w"> </span>no<span class="w"> </span>longer<span class="w"> </span>be<span class="w"> </span>sent.
+<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="w">  </span><span class="nt">&lt;/request&gt;</span>
+<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a>
+<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="w">  </span><span class="nt">&lt;event</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;preferred_scale&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;notify of new preferred scale&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a><span class="w">      </span>Notification<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>new<span class="w"> </span>preferred<span class="w"> </span>scale<span class="w"> </span>for<span class="w"> </span>this<span class="w"> </span>surface<span class="w"> </span>that<span class="w"> </span>the
+<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a><span class="w">      </span>compositor<span class="w"> </span>suggests<span class="w"> </span>that<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>should<span class="w"> </span>use.
+<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a>
+<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a><span class="w">      </span>The<span class="w"> </span>sent<span class="w"> </span>scale<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>numerator<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>fraction<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>denominator<span class="w"> </span>of<span class="w"> </span>120.
+<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;scale&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;uint&quot;</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;the new preferred scale&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a><span class="w">  </span><span class="nt">&lt;/event&gt;</span>
+<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a><span class="nt">&lt;/interface&gt;</span>
+</code></pre></div>
+<p>接口（interface）是对象的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 <code>wp_fractional_scale_v1</code> 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。</p>
+<p>另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。</p>
+</details>
+<h3 id="wayland-hidpi">HiDPI 支持<a class="headerlink" href="#wayland-hidpi" title="Permanent link">&para;</a></h3>
+<h4 id="wayland_1">Wayland 与分数缩放<a class="headerlink" href="#wayland_1" title="Permanent link">&para;</a></h4>
+<p>在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 <code>wl_output</code> 的 event 拿到显示器的 <code>scale</code>，可以使用 <code>wl_surface</code> 的 <code>set_buffer_scale</code> request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，<a href="https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation">macOS 现在仍然是采用这种策略来实现分数缩放的</a>）。</p>
+<p>fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 <code>preferred_scale</code> event 通知客户端推荐的缩放比例。由于 <code>wl_surface</code> 在核心稳定协议中，已有的类型不能随意修改，因此 <code>set_buffer_scale</code>（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml">viewporter</a> 提供。viewporter 允许为 <code>wl_surface</code> 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为按照分数缩放后的大小。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。</p>
+<div class="admonition note">
+<p class="admonition-title">逃离浮点数</p>
+<p>我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。</p>
+<p>在客户端和服务器计算 viewport 的时候，也需要尽量使用整数运算来避免误差。一个<a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/309">参考的公式</a>是：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_width</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_height</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
+</code></pre></div>
+<p>通过添加 0.5 的偏移量，加上整数除法的向下取整，就能实现四舍五入的效果。否则如果直接用 naive 的浮点除法的话，就有可能会出现浮点误差导致的 off-by-one 问题。基于 MR 的例子，假设后者使用 32-bit 浮点数存储，如果 preferred_scale 是 126，surface_width 是 30，那么两种计算方式的结果分别是：</p>
+<ul>
+<li>参考公式：<code>(30 * 126 + 60) / 120 = 32</code></li>
+<li>浮点计算：<code>round(126 / 120 * 30) = round(31.499998) = 31</code></li>
+</ul>
+<p>如果多了/少了一个像素，混成器就需要手动缩放，就会导致画面模糊。</p>
+</div>
+<h4 id="xwayland-hidpi">XWayland 下的 HiDPI 支持<a class="headerlink" href="#xwayland-hidpi" title="Permanent link">&para;</a></h4>
+<p>由于仍然还有一些应用程序只支持 X，或在 Wayland 下表现暂时不佳，因此 XWayland 仍然是 Wayland 桌面环境中不可或缺的一部分——也就意味着混成器也需要考虑到 XWayland 下的 HiDPI 支持问题。</p>
 <p>(TODO)</p>
 <h2 id="dbus">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></h2>
 <h3 id="dbus-concepts">基础概念<a class="headerlink" href="#dbus-concepts" title="Permanent link">&para;</a></h3>
@@ -3877,16 +3988,16 @@
 <div class="admonition note">
 <p class="admonition-title"><code>DBUS_SESSION_BUS_ADDRESS</code> 是谁设置的？</p>
 <p>在现代的 systemd 环境下，当用户登录时 systemd 的 PAM 模块会启动用户级别的 systemd 实例，而默认 <code>dbus.socket</code> 是启用的：</p>
-<div class="highlight"><span class="filename">/usr/lib/systemd/user/dbus.socket</span><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">D-Bus User Message Bus Socket</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="k">[Socket]</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">%t/bus</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="na">ExecStartPost</span><span class="o">=</span><span class="s">-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus</span>
+<div class="highlight"><span class="filename">/usr/lib/systemd/user/dbus.socket</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">D-Bus User Message Bus Socket</span>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="k">[Socket]</span>
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">%t/bus</span>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="na">ExecStartPost</span><span class="o">=</span><span class="s">-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus</span>
 </code></pre></div>
 <p>在 <code>dbus.socket</code> 启动后，其就会给这个 systemd 实例设置上 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，并且开始监听 <code>/run/user/&lt;UID&gt;/bus</code>，在有程序根据这个环境变量访问这个 Unix socket 的时候，systemd 就会自动启动 <code>dbus.service</code>，从而启动用户级别的 DBus 守护进程。</p>
 <p>如果你在 systemd 流行之前就是 Linux 桌面用户的话，那么你可能会对类似这样的配置有印象：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>dbus-run-session<span class="w"> </span>--exit-with-session<span class="w"> </span>your-desktop-environment
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>dbus-run-session<span class="w"> </span>--exit-with-session<span class="w"> </span>your-desktop-environment
 </code></pre></div>
 <p>这里 <code>dbus-run-session</code> 就会创建一个新的 DBus 会话总线，设置 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，然后运行你给出的命令，从而完成桌面环境必须的 DBus 会话总线的配置。</p>
 </div>
@@ -3911,22 +4022,22 @@
 <div class="admonition note">
 <p class="admonition-title">VARIANT 类型</p>
 <p>DBus 中还有一种特殊的类型 VARIANT（在类型字符串中表示为 <code>v</code>），表示任意类型的值。这个类型对开发者来说是很方便的：不需要事先定义好类型（有些情况下也不好做），就可以传递任意类型的数据。但是在文档不佳的情况下，这对使用者来说是比较折磨的。以 <code>org.freedesktop.systemd1</code> 中 <code>/org/freedesktop/systemd1</code> 下的 <code>org.freedesktop.systemd1.Manager</code> 接口的 <code>StartTransientUnit</code> 方法为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>busctl<span class="w"> </span>introspect<span class="w"> </span>org.freedesktop.systemd1<span class="w"> </span>/org/freedesktop/systemd1<span class="w"> </span>--xml
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">  &lt;method name=&quot;StartTransientUnit&quot;&gt;</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;name&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;mode&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="go">   &lt;arg type=&quot;a(sv)&quot; name=&quot;properties&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="go">   &lt;arg type=&quot;a(sa(sv))&quot; name=&quot;aux&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="go">   &lt;arg type=&quot;o&quot; name=&quot;job&quot; direction=&quot;out&quot;/&gt;</span>
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="go">  &lt;/method&gt;</span>
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="go">（省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>busctl<span class="w"> </span>introspect<span class="w"> </span>org.freedesktop.systemd1<span class="w"> </span>/org/freedesktop/systemd1<span class="w"> </span>--xml
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="go">  &lt;method name=&quot;StartTransientUnit&quot;&gt;</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;name&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;mode&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="go">   &lt;arg type=&quot;a(sv)&quot; name=&quot;properties&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="go">   &lt;arg type=&quot;a(sa(sv))&quot; name=&quot;aux&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="go">   &lt;arg type=&quot;o&quot; name=&quot;job&quot; direction=&quot;out&quot;/&gt;</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="go">  &lt;/method&gt;</span>
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="go">（省略）</span>
 </code></pre></div>
 <p>可以看到，这里的 <code>properties</code> 参数类型是 <code>a(sv)</code>，表示这是一个数组，数组元素是一个包含字符串和 VARIANT 的结构体。但是这个 VARIANT 究竟能接受哪些类型的数据呢？<a href="https://www.freedesktop.org/wiki/Software/systemd/dbus/#Manager-SetUnitProperties">Systemd 的文档</a> 对此的介绍并不是很具体。在较早期版本的 systemd 中，它可能甚至不会告诉你是 VARIANT 出了问题：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="go">System.Error.ENXIO: No such device or address</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="go">System.Error.ENXIO: No such device or address</span>
 </code></pre></div>
 <p>而现在的报错或许稍微好一些（虽然也没好到哪里去）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="go">System.Error.ENXIO: Failed to set unit properties: Unexpected message contents</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="go">System.Error.ENXIO: Failed to set unit properties: Unexpected message contents</span>
 </code></pre></div>
 <p>遇到这种情况，只能自己看源代码，别无他法。</p>
 </div>
@@ -3936,31 +4047,31 @@
 <p>DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。</p>
 </div>
 <p>此外，在图中我们可以看到每个 Bus Name 都有是否可以激活（Activatable）的标记。在使用 systemd 的系统上，DBus 会调用 systemd 的激活机制来启动对应的服务单元（service unit）。例如图中的 <code>org.bluez</code>：</p>
-<div class="highlight"><span class="filename">/usr/share/dbus-1/system-services/org.bluez.service</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">[D-BUS Service]</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="na">Name</span><span class="o">=</span><span class="s">org.bluez</span>
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="na">Exec</span><span class="o">=</span><span class="s">/bin/false</span>
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="na">User</span><span class="o">=</span><span class="s">root</span>
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="na">SystemdService</span><span class="o">=</span><span class="s">dbus-org.bluez.service</span>
+<div class="highlight"><span class="filename">/usr/share/dbus-1/system-services/org.bluez.service</span><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">[D-BUS Service]</span>
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="na">Name</span><span class="o">=</span><span class="s">org.bluez</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="na">Exec</span><span class="o">=</span><span class="s">/bin/false</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="na">User</span><span class="o">=</span><span class="s">root</span>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="na">SystemdService</span><span class="o">=</span><span class="s">dbus-org.bluez.service</span>
 </code></pre></div>
 <p>如果某个进程尝试连接 <code>org.bluez</code>，但是该服务还没有运行，那么 DBus 会调用 systemd 来启动 <code>dbus-org.bluez.service</code> 单元，从而启动蓝牙服务。如果不和某个 systemd 服务绑定，如果需要让某个程序能在系统总线上拥有对应的 well-known name，也需要编写类似上述的 <code>.service</code> 文件，并配置 <code>Name</code> 和 <code>Exec</code>。</p>
 <p>此外如果在系统总线列表里多点点，可以注意到有些 Bus Name 不允许普通用户请求——这同样也是在 DBus 的配置中定义的，例如下面是 <code>fi.w1.wpa_supplicant1</code> 的配置：</p>
-<div class="highlight"><span class="filename">/usr/share/dbus-1/system.d/wpa_supplicant.conf</span><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="cp">&lt;!DOCTYPE busconfig PUBLIC</span>
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="cp"> &quot;-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN&quot;</span>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="cp"> &quot;http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd&quot;&gt;</span>
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="nt">&lt;busconfig&gt;</span>
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">user=</span><span class="s">&quot;root&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_interface=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">context=</span><span class="s">&quot;default&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-30-16" name="__codelineno-30-16" href="#__codelineno-30-16"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
-<a id="__codelineno-30-17" name="__codelineno-30-17" href="#__codelineno-30-17"></a><span class="nt">&lt;/busconfig&gt;</span>
+<div class="highlight"><span class="filename">/usr/share/dbus-1/system.d/wpa_supplicant.conf</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="cp">&lt;!DOCTYPE busconfig PUBLIC</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="cp"> &quot;-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN&quot;</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="cp"> &quot;http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd&quot;&gt;</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="nt">&lt;busconfig&gt;</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">user=</span><span class="s">&quot;root&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_interface=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">context=</span><span class="s">&quot;default&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-32-16" name="__codelineno-32-16" href="#__codelineno-32-16"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
+<a id="__codelineno-32-17" name="__codelineno-32-17" href="#__codelineno-32-17"></a><span class="nt">&lt;/busconfig&gt;</span>
 </code></pre></div>
 <p>这个配置阻止了 root 以外的用户与 <code>fi.w1.wpa_supplicant1</code> 的交互。</p>
 <h3 id="dbus-interaction-debugging">交互与调试<a class="headerlink" href="#dbus-interaction-debugging" title="Permanent link">&para;</a></h3>
@@ -3968,21 +4079,21 @@
 <div class="admonition example">
 <p class="admonition-title">发送通知</p>
 <p><code>notify-send</code> 命令行工具可以发送桌面通知。其实际上会与会话总线的 <code>org.freedesktop.Notifications</code> 接口交互。相关标准文档可参考 <a href="https://specifications.freedesktop.org/notification/latest/">Desktop Notifications Specification</a>。其核心是 <a href="https://specifications.freedesktop.org/notification/latest/protocol.html#command-notify"><code>org.freedesktop.Notifications.Notify</code> 方法</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>UINT32 org.freedesktop.Notifications.Notify ( STRING app_name,
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>                                              UINT32 replaces_id,
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>                                              STRING app_icon,
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>                                              STRING summary,
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a>                                              STRING body,
-<a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a>                                              as actions,
-<a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a>                                              a{sv} hints,
-<a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a>                                              INT32 expire_timeout );
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>UINT32 org.freedesktop.Notifications.Notify ( STRING app_name,
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>                                              UINT32 replaces_id,
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>                                              STRING app_icon,
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>                                              STRING summary,
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>                                              STRING body,
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>                                              as actions,
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>                                              a{sv} hints,
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>                                              INT32 expire_timeout );
 </code></pre></div>
 <p>我们也可以来试一下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>gdbus<span class="w"> </span>call<span class="w"> </span>--session<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span>--dest<span class="w"> </span>org.freedesktop.Notifications<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span>--object-path<span class="w"> </span>/org/freedesktop/Notifications<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">  </span>--method<span class="w"> </span>org.freedesktop.Notifications.Notify<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">  </span><span class="s2">&quot;testapp&quot;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="s2">&quot;This is summary&quot;</span><span class="w"> </span><span class="s2">&quot;This is body text&quot;</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>gdbus<span class="w"> </span>call<span class="w"> </span>--session<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span>--dest<span class="w"> </span>org.freedesktop.Notifications<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span>--object-path<span class="w"> </span>/org/freedesktop/Notifications<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span>--method<span class="w"> </span>org.freedesktop.Notifications.Notify<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="s2">&quot;testapp&quot;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="s2">&quot;This is summary&quot;</span><span class="w"> </span><span class="s2">&quot;This is body text&quot;</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <p>运行就可以发现桌面上弹出了我们的通知。</p>
 </div>
@@ -3992,7 +4103,7 @@
 <p>尝试使用你最喜欢的编程语言的 DBus 库，编写一个小程序，获取当前正在播放的音乐信息。</p>
 </div>
 <p>DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总线需要 root 权限）。<code>dbus-monitor</code>、<code>busctl monitor</code>，以及图形界面的 <a href="https://apps.gnome.org/zh-CN/Bustle/">Bustle</a> 都可以做到这一点。例如，如果希望实时显示会话总线的所有消息，可以运行：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Varlink</p>
@@ -4005,36 +4116,35 @@
 </ul>
 <p>Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。</p>
 <p>以下是调用 systemd-resolved 解析域名的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>introspect<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve
-<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="go">interface io.systemd.Resolve</span>
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="go">（省略）</span>
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="gp"># </span>Resolves<span class="w"> </span>a<span class="w"> </span>hostname<span class="w"> </span>to<span class="w"> </span>one<span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>IP<span class="w"> </span>addresses.
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="go">method ResolveHostname(</span>
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="gp">        # </span>The<span class="w"> </span>Linux<span class="w"> </span>interface<span class="w"> </span>index<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>network<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on.<span class="w"> </span>Typically<span class="w"> </span>left<span class="w"> </span>unspecified,<span class="w"> </span><span class="k">in</span>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="gp">        # </span>order<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on<span class="w"> </span>all<span class="w"> </span>interfaces.
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="go">        ifindex: ?int,</span>
-<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="gp">        # </span>The<span class="w"> </span>host<span class="w"> </span>name<span class="w"> </span>to<span class="w"> </span>resolve.
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="go">        name: string,</span>
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="gp">        # </span>The<span class="w"> </span>address<span class="w"> </span>family<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span><span class="k">for</span>,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>AF_INET<span class="w"> </span>or<span class="w"> </span>AF_INET6.
-<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="go">        family: ?int,</span>
-<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a><span class="gp">        # </span>Various<span class="w"> </span>search<span class="w"> </span>flags.
-<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="go">        flags: ?int</span>
-<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="go">) -&gt; (</span>
-<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="gp">        # </span>Array<span class="w"> </span>of<span class="w"> </span>resolved<span class="w"> </span>IP<span class="w"> </span>addresses
-<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a><span class="go">        addresses: []ResolvedAddress,</span>
-<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a><span class="gp">        # </span>Canonical<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>host.
-<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a><span class="go">        name: string,</span>
-<a id="__codelineno-34-21" name="__codelineno-34-21" href="#__codelineno-34-21"></a><span class="gp">        # </span>Various<span class="w"> </span>flags<span class="w"> </span>indicating<span class="w"> </span>details<span class="w"> </span>on<span class="w"> </span>discovered<span class="w"> </span>data.
-<a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a><span class="go">        flags: int</span>
-<a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a><span class="go">)</span>
-<a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a><span class="go">（省略）</span>
-<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>call<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve<span class="w"> </span>io.systemd.Resolve.ResolveHostname<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;www.example.com&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span>.
-<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a><span class="go">{&quot;addresses&quot;:[{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,26,120]}],&quot;name&quot;:&quot;www.example.com&quot;,&quot;flags&quot;:1048577}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>introspect<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="go">interface io.systemd.Resolve</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="gp"># </span>Resolves<span class="w"> </span>a<span class="w"> </span>hostname<span class="w"> </span>to<span class="w"> </span>one<span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>IP<span class="w"> </span>addresses.
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="go">method ResolveHostname(</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="gp">        # </span>The<span class="w"> </span>Linux<span class="w"> </span>interface<span class="w"> </span>index<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>network<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on.<span class="w"> </span>Typically<span class="w"> </span>left<span class="w"> </span>unspecified,<span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="gp">        # </span>order<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on<span class="w"> </span>all<span class="w"> </span>interfaces.
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">        ifindex: ?int,</span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="gp">        # </span>The<span class="w"> </span>host<span class="w"> </span>name<span class="w"> </span>to<span class="w"> </span>resolve.
+<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a><span class="go">        name: string,</span>
+<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a><span class="gp">        # </span>The<span class="w"> </span>address<span class="w"> </span>family<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span><span class="k">for</span>,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>AF_INET<span class="w"> </span>or<span class="w"> </span>AF_INET6.
+<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a><span class="go">        family: ?int,</span>
+<a id="__codelineno-36-14" name="__codelineno-36-14" href="#__codelineno-36-14"></a><span class="gp">        # </span>Various<span class="w"> </span>search<span class="w"> </span>flags.
+<a id="__codelineno-36-15" name="__codelineno-36-15" href="#__codelineno-36-15"></a><span class="go">        flags: ?int</span>
+<a id="__codelineno-36-16" name="__codelineno-36-16" href="#__codelineno-36-16"></a><span class="go">) -&gt; (</span>
+<a id="__codelineno-36-17" name="__codelineno-36-17" href="#__codelineno-36-17"></a><span class="gp">        # </span>Array<span class="w"> </span>of<span class="w"> </span>resolved<span class="w"> </span>IP<span class="w"> </span>addresses
+<a id="__codelineno-36-18" name="__codelineno-36-18" href="#__codelineno-36-18"></a><span class="go">        addresses: []ResolvedAddress,</span>
+<a id="__codelineno-36-19" name="__codelineno-36-19" href="#__codelineno-36-19"></a><span class="gp">        # </span>Canonical<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>host.
+<a id="__codelineno-36-20" name="__codelineno-36-20" href="#__codelineno-36-20"></a><span class="go">        name: string,</span>
+<a id="__codelineno-36-21" name="__codelineno-36-21" href="#__codelineno-36-21"></a><span class="gp">        # </span>Various<span class="w"> </span>flags<span class="w"> </span>indicating<span class="w"> </span>details<span class="w"> </span>on<span class="w"> </span>discovered<span class="w"> </span>data.
+<a id="__codelineno-36-22" name="__codelineno-36-22" href="#__codelineno-36-22"></a><span class="go">        flags: int</span>
+<a id="__codelineno-36-23" name="__codelineno-36-23" href="#__codelineno-36-23"></a><span class="go">)</span>
+<a id="__codelineno-36-24" name="__codelineno-36-24" href="#__codelineno-36-24"></a><span class="go">（省略）</span>
+<a id="__codelineno-36-25" name="__codelineno-36-25" href="#__codelineno-36-25"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>call<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve<span class="w"> </span>io.systemd.Resolve.ResolveHostname<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;www.example.com&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span>.
+<a id="__codelineno-36-26" name="__codelineno-36-26" href="#__codelineno-36-26"></a><span class="go">{&quot;addresses&quot;:[{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,26,120]}],&quot;name&quot;:&quot;www.example.com&quot;,&quot;flags&quot;:1048577}</span>
 </code></pre></div>
 </div>
-<h2 id="fontconfig">Fontconfig<a class="headerlink" href="#fontconfig" title="Permanent link">&para;</a></h2>
-<h2 id="_1">音频服务器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<h2 id="portal">Portal<a class="headerlink" href="#portal" title="Permanent link">&para;</a></h2>
 <!--
   Links to man pages
 
@@ -4091,7 +4201,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月5日 20:42:49 UTC">2026年1月5日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月28日 20:28:49 UTC">2026年1月28日</span>
   </span>
 
     
