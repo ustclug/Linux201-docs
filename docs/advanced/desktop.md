@@ -557,6 +557,12 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 ![Wayland Architecture](https://wayland.freedesktop.org/docs/html/images/wayland-architecture.png)
 
+只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 [Xephyr](#client-server-window:~:text=%E5%A6%82%E6%9E%9C%E5%B8%8C%E6%9C%9B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%20X%20server%20%E5%B9%B6%E4%B8%94%E8%83%BD%E5%A4%9F%E4%BB%A5%E5%AD%90%E7%AA%97%E5%8F%A3%E7%9A%84%E5%BD%A2%E5%BC%8F%E6%98%BE%E7%A4%BA%E5%87%BA%E6%9D%A5%EF%BC%8C%E9%82%A3%E4%B9%88%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%20Xephyr%20%E6%88%96%E8%80%85%20Xwayland%20%E6%9D%A5%E5%88%9B%E5%BB%BA%E3%80%82) 表现类似。
+
+!!! note "xwayland-satellite"
+
+    对混成器来说，实现 XWayland rootless 的支持并不算很容易。如果 XWayland 没有那么特殊会怎么样？[xwayland-satellite](https://github.com/Supreeeme/xwayland-satellite) 作为普通的 Wayland 客户端实现了类似于 XWayland rootless 的功能，是一些轻量级混成器的选择。
+
 常见的 Wayland 混成器包含：
 
 - [Mutter](https://gitlab.gnome.org/GNOME/mutter)：GNOME 的混成器，以运行时库的形式集成在 GNOME Shell 中
@@ -612,6 +618,70 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     - [xdg-session-management](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/18)：会话管理协议（最主要的用途是记住窗口的位置）。
     - [xdg-dbus-annotation](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52)：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。
     - [xx-zones](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/264)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议。
+
+??? note "Wayland 协议细节"
+
+    Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：
+
+    ```xml
+    <interface name="wp_fractional_scale_v1" version="1">
+      <description summary="fractional scale interface to a wl_surface">
+        An additional interface to a wl_surface object which allows the compositor
+        to inform the client of the preferred scale.
+      </description>
+
+      <request name="destroy" type="destructor">
+        <description summary="remove surface scale information for surface">
+          Destroy the fractional scale object. When this object is destroyed,
+          preferred_scale events will no longer be sent.
+        </description>
+      </request>
+
+      <event name="preferred_scale">
+        <description summary="notify of new preferred scale">
+          Notification of a new preferred scale for this surface that the
+          compositor suggests that the client should use.
+
+          The sent scale is the numerator of a fraction with a denominator of 120.
+        </description>
+        <arg name="scale" type="uint" summary="the new preferred scale"/>
+      </event>
+    </interface>
+    ```
+
+    接口（interface）是对象的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 `wp_fractional_scale_v1` 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。
+    
+    另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
+
+### HiDPI 支持 {#wayland-hidpi}
+
+#### Wayland 与分数缩放
+
+在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 `wl_output` 的 event 拿到显示器的 `scale`，可以使用 `wl_surface` 的 `set_buffer_scale` request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，[macOS 现在仍然是采用这种策略来实现分数缩放的](https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation)）。
+
+fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为按照分数缩放后的大小。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。
+
+!!! note "逃离浮点数"
+
+    我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。
+
+    在客户端和服务器计算 viewport 的时候，也需要尽量使用整数运算来避免误差。一个[参考的公式](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/309)是：
+
+    ```c
+    int32_t buffer_width = (surface_width * preferred_scale + 60) / 120;
+    int32_t buffer_height = (surface_height * preferred_scale + 60) / 120;
+    ```
+
+    通过添加 0.5 的偏移量，加上整数除法的向下取整，就能实现四舍五入的效果。否则如果直接用 naive 的浮点除法的话，就有可能会出现浮点误差导致的 off-by-one 问题。基于 MR 的例子，假设后者使用 32-bit 浮点数存储，如果 preferred_scale 是 126，surface_width 是 30，那么两种计算方式的结果分别是：
+
+    - 参考公式：`(30 * 126 + 60) / 120 = 32`
+    - 浮点计算：`round(126 / 120 * 30) = round(31.499998) = 31`
+
+    如果多了/少了一个像素，混成器就需要手动缩放，就会导致画面模糊。
+
+#### XWayland 下的 HiDPI 支持
+
+由于仍然还有一些应用程序只支持 X，或在 Wayland 下表现暂时不佳，因此 XWayland 仍然是 Wayland 桌面环境中不可或缺的一部分——也就意味着混成器也需要考虑到 XWayland 下的 HiDPI 支持问题。
 
 (TODO)
 
@@ -842,6 +912,4 @@ busctl monitor --user
     {"addresses":[{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{"ifindex":2,"family":2,"address":[104,18,27,120]},{"ifindex":2,"family":2,"address":[104,18,26,120]}],"name":"www.example.com","flags":1048577}
     ```
 
-## Fontconfig
-
-## 音频服务器
+## Portal
