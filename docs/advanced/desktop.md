@@ -537,7 +537,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 - 画面同步：X server 的无撕裂（TearFree）需要显卡驱动各自实现。
 - HiDPI 支持的一片混乱：[上文](#x-hidpi)已有说明。
 
-在[对 X12 的设想](https://www.x.org/wiki/Development/X12)中也提到了一些 X11 已经无法忽视的问题，并且其中不少问题已经无法在 X11 协议上渐进式地解决了。因此，新的显示协议 Wayland 于 2008 年开始开发，到如今 GNOME、KDE 已经有了完整可用的支持，其他的桌面环境也在逐步跟进，并且越来越多的应用程序开始支持 Wayland。以下部分介绍 Wayland 以及相关的一些基本概念。
+在[对 X12 的设想](https://www.x.org/wiki/Development/X12)中也提到了一些 X11 已经无法忽视的问题，并且其中不少问题已经无法在 X11 协议上渐进式地解决了。因此，新的显示协议 Wayland 于 2008 年开始开发，到如今 GNOME、KDE 已经有了完整可用的支持，其他的桌面环境也在逐步跟进，并且越来越多的应用程序开始支持 Wayland。以下部分介绍 Wayland 相关的一些基本概念，以及常见的问题解释。
 
 !!! note "参考阅读"
 
@@ -562,6 +562,10 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 !!! note "xwayland-satellite"
 
     对混成器来说，实现 XWayland rootless 的支持并不算很容易。如果 XWayland 没有那么特殊会怎么样？[xwayland-satellite](https://github.com/Supreeeme/xwayland-satellite) 作为普通的 Wayland 客户端实现了类似于 XWayland rootless 的功能，是一些轻量级混成器的选择。
+
+!!! tip "这个窗口是 Wayland 的还是 X 的？"
+
+    最简单的判断方法是：启动 `xeyes` 程序，将鼠标移动到窗口上，如果眼睛跟着动，那么这个窗口就是 X 的，否则就是 Wayland 的——因为 `xeyes` 无法获取 Wayland 窗口下鼠标的位置。
 
 常见的 Wayland 混成器包含：
 
@@ -653,6 +657,22 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     
     另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
 
+### 输入法 {#wayland-ime}
+
+在 Wayland 架构下，输入法需要作为一种特殊的 Wayland 客户端来获取用户的输入、在其他程序中显示候选词列表等。其中重要的协议为：
+
+- [`xx-input-method-v2`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-input-method/xx-input-method-v2.xml) 或 [`input-method-unstable-v1`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/input-method/input-method-unstable-v1.xml)：混成器与输入法之间的协议，负责传递输入相关数据，以及将输入法指定的特殊窗口（候选词列表等）显示在正确的位置。
+- [`text-input-unstable-v1`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v1.xml) 或 [`xx-text-input-v3`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-text-input/xx-text-input-v3.xml)：混成器与客户端（非输入法程序）之间的协议。
+
+由于设计等历史遗留原因，目前 Wayland 下的输入法支持仍然存在一定的混乱。具体来说：
+
+- GNOME 下由于设计上输入法候选词等由 gnome-shell 直接绘制（而不是由输入法绘制窗口），shell 需要获取具体的候选词列表等信息，因此 GNOME 不支持 `input-method` 相关协议，而是由 DBus 协议与 iBus 输入法框架通信。Fcitx 亦兼容了这个 DBus 协议（如果需要在 GNOME 下正常使用 Fcitx，还需要安装 [gnome-shell-extension-kimpanel](https://github.com/wengxt/gnome-shell-extension-kimpanel)）。
+- Weston 仅支持 `input-method-unstable-v1` 和 `text-input-unstable-v1` 协议。其他大部分混成器至少支持了 `xx-input-method-v2` 和 `xx-text-input-v3` 协议。
+- 在很长一段时间内，Chromium 仅支持 `text-input-unstable-v1` 协议，导致在除了 Weston 与 Kwin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 `xx-text-input-v3` 协议。
+- Qt 同样在很长一段时间内仅支持 [`text-input-unstable-v2`](https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml)（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 `xx-text-input-v3` 协议。
+
+目前来讲，从应用开发者的角度，只支持 `xx-text-input-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
+
 ### HiDPI 支持 {#wayland-hidpi}
 
 #### Wayland 与分数缩放
@@ -682,6 +702,24 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 #### XWayland 下的 HiDPI 支持
 
 由于仍然还有一些应用程序只支持 X，或在 Wayland 下表现暂时不佳，因此 XWayland 仍然是 Wayland 桌面环境中不可或缺的一部分——也就意味着混成器也需要考虑到 XWayland 下的 HiDPI 支持问题。
+
+目前主流的混成器一般有以下三种策略：
+
+1. 应用按 1x 渲染，由混成器按比例缩放——窗口的大小是正确的，但是内容模糊。
+2. 尝试通过 [Xsettings、X resources 等机制](#x-hidpi)通知应用以需要的最大整数倍缩放（例如，如果显示器配置为 1.5x，那么通知应用以 2x 渲染）。如果是分数缩放，或者在缩放比例不同的显示器切换时，由混成器按比例缩放——对支持的应用来说，窗口大小是正确的，但是在分数缩放场景下游戏等应用渲染的计算量会超过实际需要的量。如果应用不支持相关机制，那么窗口会变得很小。
+3. 与 2 类似，但是尝试将分数缩放信息传递给应用，混成器不会再做缩放——对游戏类应用适配较好，但是由于有些程序对分数缩放支持不好，可能会导致仅支持整数缩放的应用窗口大小不正确。
+
+其中 GNOME、Sway 等默认使用第一种策略；在[开启 `scale-monitor-framebuffer` 和 `xwayland-native-scaling` 实验选项](https://release.gnome.org/47/#:~:text=GNOME%2047%20includes%20an%20enhanced%20fractional%20display%20scaling%20feature%2C%20which%20provides%20better%20support%20for%20legacy%20X11%20apps%2E)后，GNOME 会使用第二种策略；KDE 下用户可选择使用第一种或者第三种策略。
+
+### 远程桌面访问 {#wayland-remote-desktop}
+
+Wayland 设计上不支持类似 X 的网络透明性，因为 Wayland 协议需要传递文件描述符，而文件描述符无法直接通过网络传递。不过，[waypipe](https://gitlab.freedesktop.org/mstoeckl/waypipe/) 项目实现了类似的功能（需要本地和远程都安装 waypipe），允许通过 SSH 连接启动远程的 Wayland 客户端程序，并将其显示在本地的 Wayland 桌面中。
+
+而如果要通过 VNC 或 RDP 等方式访问整个图形界面，那么相比于 X 就复杂一些。在 Wayland 下，实现远程桌面有两种方式：与混成器合作或者与内核合作。
+
+GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GNOME/gnome-remote-desktop) 和 [KRdp](https://invent.kde.org/plasma/krdp)。对于使用 wlroots 的混成器（例如 Sway），则可以使用 [wayvnc](https://github.com/any1/wayvnc/)。此外，TigerVNC 也实现了基于 [Remote Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.RemoteDesktop.html) 的 [w0vncserver](https://github.com/TigerVNC/tigervnc/tree/master/unix/w0vncserver)，可以共享已经启动的桌面的界面。
+
+由于不同的混成器实现存在差异，如果需要统一的远程桌面解决方案，那么可能就需要基于内核接口来实现。[kmsvnc](https://github.com/isjerryxiao/kmsvnc/) 和 [reframe](https://github.com/AlynxZhou/reframe) 项目实现了基于 DRM/KMS 接口的 VNC 服务器，可以在不依赖混成器的情况下实现远程桌面访问。Sunshine 也支持通过 DRM/KMS 实现屏幕捕获，实现游戏或桌面的串流。
 
 (TODO)
 
