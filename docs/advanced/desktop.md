@@ -721,7 +721,73 @@ GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GN
 
 由于不同的混成器实现存在差异，如果需要统一的远程桌面解决方案，那么可能就需要基于内核接口来实现。[kmsvnc](https://github.com/isjerryxiao/kmsvnc/) 和 [reframe](https://github.com/AlynxZhou/reframe) 项目实现了基于 DRM/KMS 接口的 VNC 服务器，可以在不依赖混成器的情况下实现远程桌面访问。Sunshine 也支持通过 DRM/KMS 实现屏幕捕获，实现游戏或桌面的串流。
 
-(TODO)
+!!! note "无头的 DRM/KMS 显示"
+
+    如果 GPU 没有连接显示器，那么基于内核接口的远程桌面方案可能无法使用。可以购买显卡诱骗器（dummy plug），也可以通过一些 trick（添加不存在的显示器的 EDID 信息并设置内核参数，或者使用 [VKMS](https://docs.kernel.org/gpu/vkms.html) 内核模块）实现。详情可参考 [Arch Wiki 的 headless 一文](https://wiki.archlinux.org/title/Headless)。
+
+!!! example "SSH + wayvnc + LXQt（labwc）的远程桌面方案"
+
+    由于 DRM 内核接口对硬件依赖较大，并且要求的用户权限也更高，以下介绍基于混成器的类似于[上文 X 部分介绍的远程桌面方案](#x-remote-desktop)的例子。
+
+    作为轻量级的且基于 wlroots 的混成器，labwc 支持通过 wayvnc 实现 VNC 远程桌面访问。LXQt 自 2.1.0 之后实现了对 Wayland 的支持，且允许用户在[支持的混成器](https://lxqt-project.org/wiki/Wayland-Session.html)中自选。这里我们选择 labwc 作为混成器。
+
+    !!! note "`lxqt-wayland-session` 只在 Debian forky（14）及之后版本中可用"
+
+        该包未被包含在 Debian 目前的 stable 版本（trixie）中。当然也可以不安装 LXQt，而是自行组装基于 labwc 的 Wayland 桌面环境（和基于 OpenBox 的 X 桌面环境类似）。
+
+    在安装了 `lxqt`、`lxqt-wayland-session`、`labwc` 和 `wayvnc` 之后，编辑 LXQt session 配置：
+
+    ```ini title="~/.config/lxqt/session.conf"
+    [General]
+    compositor=labwc
+    ```
+
+    将 LXQt 的 labwc 配置复制到用户目录：
+
+    ```sh
+    cp -a /usr/share/lxqt/wayland/labwc ~/.config/
+    ```
+
+    修改 `~/.config/labwc/autostart`，添加 wayvnc 启动命令：
+
+    ```sh title="~/.config/labwc/autostart"
+    # 省略已有内容
+
+    # -u -> Unix socket
+    wayvnc -u ~/.vncsock
+    ```
+
+    然后配置类似的启动脚本：
+
+    ```shell title="/usr/local/bin/startvnc-wayland"
+    #!/bin/sh -e
+
+    if [ -z "$XDG_RUNTIME_DIR" ]; then
+        echo "XDG_RUNTIME_DIR is not set"
+        exit 1
+    fi
+
+    # Start LXQt Wayland session
+    WLR_BACKENDS=headless startlxqtwayland > ~/startlxqtwayland.log 2>&1 &
+    ```
+
+    !!! note "`XDG_RUNTIME_DIR` 环境变量"
+
+        `XDG_RUNTIME_DIR` 是必须的环境变量，一般为 `/run/user/<UID>`。如果是容器等场景，这个环境变量可能未被设置，需要手动处理。
+
+    !!! note "可能需要额外安装的包"
+
+        如果 DBus 会话总线未启动，`startlxqtwayland` 脚本会尝试使用 `dbus-launch` 启动一个新的会话总线，需要 `dbus-x11` 包。
+
+        托盘、桌面图标等 LXQt 组件需要 Qt6 安装 Wayland 支持包 `qt6-wayland`，否则这些组件会启动为 X 程序，可能会导致非预期的问题。
+
+    之后的操作与 X 部分类似，配置 SSH 转发 `~/.vncsock` 即可。
+
+!!! note "包含 GDM 显示管理器集成的 GNOME 远程桌面方案"
+
+    与 X 不同的是，一般显示管理器使用的混成器和桌面环境的混成器不是同一进程，而让两者在远程桌面场景下无缝切换目前没有通用的解决方案。GNOME 的远程桌面方案利用 RDP 的 [Server Redirection](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/f3f722e3-cabd-4c58-9140-c0b49963b641) 特性实现了 GDM 与 GNOME 桌面环境（Shell）的协同。具体配置方法可参考[文档](https://gitlab.gnome.org/GNOME/gnome-remote-desktop/-/blob/main/README.md)。
+
+    需要注意的是，不是所有 RDP 客户端都实现了 Server Redirection 特性。
 
 ## DBus
 
