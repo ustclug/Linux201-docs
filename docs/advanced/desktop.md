@@ -1017,3 +1017,32 @@ busctl monitor --user
     ```
 
 ## Portal
+
+[XDG Desktop Portal](https://flatpak.github.io/xdg-desktop-portal/docs/) 提供了一套标准的 DBus 接口，允许应用程序访问系统与桌面资源。其最常见的用途是：
+
+- 为沙盒化（Flatpak/Snap 等）的应用提供安全访问沙盒外部资源的能力。
+- 为 Wayland 桌面环境下的应用提供诸如屏幕共享、全局快捷键设置等能力。
+    - 其中一些功能可以以 Wayland 协议的形式实现，但是不是所有混成器都会去支持。
+
+不同的桌面环境会有不同的 portal 实现，并且不同 portal 实现支持的功能也存在差异。实现了 portal 用户程序接口的 Rust 库 [ASHPD](https://github.com/bilelmoussaoui/ashpd) 提供了一个 demo 程序，可以在 [Flathub 上找到](https://flathub.org/apps/details/com.belmoussaoui.ashpd.demo)，可以用来测试你的桌面上 portal 目前实现的功能。
+
+!!! note "Portal 如何判断应用身份，兼 Linux 桌面的安全模型讨论"
+
+    可以注意到，portal 有必要准确判断应用的身份，否则假如程序 A 获取了录屏的权限，而程序 B 想偷偷录屏的话，用程序 A 的名字去请求 portal 就行了。因此 portal 不能光凭应用声称的名字说了算，需要有更可靠的身份验证机制。
+
+    对 Flatpak、Snap 等 portal 支持的沙盒，portal 可以按照沙盒的设计来获取应用身份：
+
+    - Flatpak 保证沙盒化应用运行时其挂载命名空间中存在 `/.flatpak-info` 文件，并且该文件无法被沙盒内的程序修改、删除。因此 portal 可以通过 procfs 读取该文件来获取应用的应用名称。
+    - 对 Snap，portal 会先从 cgroup 信息确认是否为 Snap 应用，再调用 `snap routine portal-info` 命令获取应用的 Snap 名称。
+
+    同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如[基于 cgroup 扩展属性](https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/)的方案。
+
+    而对非沙盒化应用，portal 会尝试从[进程所属 cgroup 的名称](https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754)来获取到应用名称（例如 `app-com.example.test-12345.scope` -> `com.example.test`）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在合适的 cgroup（systemd scope）下。而非沙盒化的应用可以轻松用 `systemd-run` 来实现这一点：
+
+    ```sh
+    systemd-run --user --scope -u app-com.example.test-12345.scope path/to/app
+    ```
+
+    非沙盒化应用也可以用 [org.freedesktop.host.portal.Registry](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.host.portal.Registry.html) 来注册自己的名称。
+
+    可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 [secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。
