@@ -605,6 +605,17 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 可以注意到，混成器可以选择只支持部分协议，同样客户端也可以选择只使用部分协议。因此类似「Wayland 开始支持 XX 协议」实际的意义大多时候是：该协议进入了 wayland-protocols 仓库（进入的前提一般是有一些混成器/客户端已经写了相关的支持代码），但是不代表所有的混成器/客户端都会自动支持。
 
+!!! note "很多原来能做的事情做不了了！"
+
+    X 的老用户在迁移时可能都会有这样的感觉：自己累积起来的不少基于 X 的 workflow（例如自动化操作、获取窗口信息等等）在迁移到 Wayland 之后都受到了影响，甚至有些（取决于混成器）完全无法实现。一个重要的原因是，Wayland 协议在设计上服务于 Policy（策略），而不是 Mechanism（机制）。以右键菜单（是个 popup window）为例：
+
+    - X 不管这是个什么窗口，它只负责把窗口画在指定的坐标处，至于这个窗口在哪里，要做什么额外处理（比如说获取焦点，让 WM 忽略自己），由创建窗口的应用自己负责。
+    - Wayland 下，混成器知道这是个 popup window，应用只提供大小、相当于 parent surface 的位置等辅助信息，其他所有事情都由混成器负责。
+
+    Wayland 在设计上确实更加干净，当然 Wayland 下能实现的功能也全都取决于混成器。一部分功能以 Wayland 协议的形式实现（不管是已经标准化了的，还是混成器自己做的私有协议）、一部分功能以 [Portal](#portal) 的形式暴露给应用，而还有一部分功能由混成器暴露私有的 API 给插件或者脚本来实现（例如 GNOME 的扩展、Sway 的 IPC 等等）。而像让应用指定自己的窗口位置这样的事情几乎没有混成器支持，这或许是一种默契（混成器作者对策略胜于机制的认同），更有可能的是，这件事情没有那么简单（需要考虑多显示器的布局、显示器的旋转、缩放比、窗口装饰等等问题），而且会导致可能的混乱（如果提供了绝对地址，那么应用就会写死，然后在各种 corner case 出问题），目前也几乎没有应用实现。混成器最多也只会通过配置项让用户自己写相关的规则来控制窗口的位置。
+
+    不过换句话说，Wayland 的这种设计选择当然也不是完美的——确实需要控制窗口的程序（例如需要下文中 `xx-zones` 协议的多窗口应用，以及一些会在窗口上玩花样的游戏）会受到影响，需要用完全不同的方式实现（或者完全无法实现）。比如像 [OneShot](https://store.steampowered.com/app/420530/OneShot) 或者[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)这种需要移动窗口/获取窗口位置的游戏，就会头疼了。就目前来看，如果真的要在 Wayland 下原生实现这些游戏的需求，唯一的办法可能是：创建一个全屏的窗口，然后在窗口内管理子窗口的位置（不能用 xdg-decoration-v1，只能让客户端画边框），其他的地方完全透明 + 输入穿透，不过这种修改的代价很有可能太大了。
+
 !!! note "协议采纳的流程好慢！"
 
     wayland-protocols 的流程最为人诟病的地方是：整个流程实在是太慢了。一个协议要被采纳至少得好几个月，而且有很多过了好几年才有一点点进展。Valve 的工程师在 2024 年曾经尝试用 [frog-protocols](https://github.com/misyltoad/frog-protocols) 绕过流程来实现需要的功能。各个混成器（KWin、wlroots、Hyprland 等）也有不少私有协议，以支持自己需要的功能。
@@ -1045,4 +1056,31 @@ busctl monitor --user
 
     非沙盒化应用也可以用 [org.freedesktop.host.portal.Registry](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.host.portal.Registry.html) 来注册自己的名称。
 
-    可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 [secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。
+    可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 [Secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。
+
+!!! note "Portal 是如何将沙盒外的文件提供给沙盒内的应用的？"
+
+    有两个关键的 portal 接口：[Documents portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Documents.html) 和 [File Chooser portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html)。
+
+    Documents portal 由 portal 源代码提供的 [`xdg-document-portal`](https://github.com/flatpak/xdg-desktop-portal/tree/36e1652e0779654d1ac5ca6acd4be3d486b76c9a/document-portal) 实现。它提供了一个 FUSE 文件系统，挂载在 `/run/user/<UID>/doc/` 下。在 host 上可以看到所有通过 Documents portal 提供的文件，而在沙盒内，应用只能在这个路径看到自己被授权访问的文件。Documents portal 也当然提供 DBus 接口让其他主机上的程序（例如 `flatpak`）向 portal 添加文件、给指定的应用提供文件权限。
+
+    那么应用自己怎么请求访问外部的文件呢？这就是 File Chooser portal 的工作了。Gtk、Qt 等 GUI 框架都实现了对 File Chooser portal 的支持，当应用调用文件选择对话框时，这些框架不会再自己实现文件选择对话框，而是调用 File Chooser portal 的 DBus 接口，请求在指定窗口的上方显示文件选择对话框（在 Wayland 下使用 [xdg-foreign-unstable-v2](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/xdg-foreign/xdg-foreign-unstable-v2.xml) 实现）。用户在 portal 的对话框中选择文件之后，portal 会将用户选择的文件通过 Documents portal 提供给应用——应用看不到主机上的其他文件。
+
+!!! note "使用 portal 在 Wayland 下自动化键盘输入"
+
+    在 Wayland 下如果需要自动化键盘输入，目前有以下几种方案：
+
+    - XWayland 实现了 XTEST 的模拟——会把请求转发到 Portal。在支持的环境下，可以使用传统的 `xdotool type` 来实现。
+    - 如果混成器支持 [virtual-keyboard-unstable-v1](https://gitlab.freedesktop.org/wlroots/wlroots/-/blob/master/protocol/virtual-keyboard-unstable-v1.xml)，那么可以使用 [wtype](https://github.com/atx/wtype) 工具（甚至可以「模拟输入」一般不能直接用键盘输入的非 ASCII 字符）。
+    - 使用内核的 uinput 接口（`/dev/uinput`），例如 [ydotool](https://github.com/ReimuNotMoe/ydotool) 工具。
+    - 直接与 Portal 交互。
+
+    这里的 portal 方案使用的是 [Remote Desktop portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.RemoteDesktop.html)，允许程序在取得授权的情况下控制鼠标、键盘和触摸屏。需要注意的是，portal 一般都需要明确允许，并且 portal 可能不会记住授权状态，因此只适合临时的自动化任务，例如突然需要向某个无法粘贴内容的地方（比如说 IPMI KVM 界面）输入一段文本。
+
+    如果你需要一个好用的与 portal 交互的库，可以考虑使用 [enigo](https://github.com/enigo-rs/enigo)（Rust）。（题外话：[这个库被 Claude Desktop 使用了，但是作者去 Anthropic 面试被拒绝了](https://grell.dev/blog/ai_rejection)）。
+
+    另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。[在 writeup 附录](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96)中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。
+
+## 音频服务
+
+(TODO)
