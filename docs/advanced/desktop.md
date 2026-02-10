@@ -614,7 +614,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     Wayland 在设计上确实更加干净，当然 Wayland 下能实现的功能也全都取决于混成器。一部分功能以 Wayland 协议的形式实现（不管是已经标准化了的，还是混成器自己做的私有协议）、一部分功能以 [Portal](#portal) 的形式暴露给应用，而还有一部分功能由混成器暴露私有的 API 给插件或者脚本来实现（例如 GNOME 的扩展、Sway 的 IPC 等等）。而像让应用指定自己的窗口位置这样的事情几乎没有混成器支持，这或许是一种默契（混成器作者对策略胜于机制的认同），更有可能的是，这件事情没有那么简单（需要考虑多显示器的布局、显示器的旋转、缩放比、窗口装饰等等问题），而且会导致可能的混乱（如果提供了绝对地址，那么应用就会写死，然后在各种 corner case 出问题），目前也几乎没有应用实现。混成器最多也只会通过配置项让用户自己写相关的规则来控制窗口的位置。
 
-    不过换句话说，Wayland 的这种设计选择当然也不是完美的——确实需要控制窗口的程序（例如需要下文中 `xx-zones` 协议的多窗口应用，以及一些会在窗口上玩花样的游戏）会受到影响，需要用完全不同的方式实现（或者完全无法实现）。比如像 [OneShot](https://store.steampowered.com/app/420530/OneShot) 或者[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)这种需要移动窗口/获取窗口位置的游戏，就会头疼了。就目前来看，如果真的要在 Wayland 下原生实现这些游戏的需求，唯一的办法可能是：创建一个全屏的窗口，然后在窗口内管理子窗口的位置（不能用 xdg-decoration-v1，只能让客户端画边框），其他的地方完全透明 + 输入穿透，不过这种修改的代价很有可能太大了。
+    不过换句话说，Wayland 的这种设计选择当然也不是完美的——确实需要控制窗口的程序（例如需要下文中 `xx-zones` 协议的多窗口应用，以及一些会在窗口上玩花样的游戏）会受到影响，需要用完全不同的方式实现（或者完全无法实现）。比如像 [OneShot](https://store.steampowered.com/app/420530/OneShot) 或者[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)这种需要移动窗口/获取窗口位置的游戏，就会头疼了。就目前来看，如果真的要在 Wayland 下原生实现这些游戏的需求，如果不考虑 `xx-zones` 支持，唯一的办法可能是：创建一个全屏的窗口，然后在窗口内管理子窗口的位置（不能用 xdg-decoration-v1，只能让客户端画边框），其他的地方完全透明 + 输入穿透，不过这种修改的代价很有可能太大了。
 
 !!! note "协议采纳的流程好慢！"
 
@@ -632,7 +632,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     - [xdg-pip](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/132)：画中画协议。
     - [xdg-session-management](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/18)：会话管理协议（最主要的用途是记住窗口的位置）。
     - [xdg-dbus-annotation](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52)：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。
-    - [xx-zones](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/264)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议。
+    - [xx-zones-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-zones/xx-zones-v1.xml)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议，允许应用申请 zone，并在 zone 中组织窗口。于 2026 年 2 月合入，目前仅有 KWin 与 SDL 有实验性实现。
 
 ??? note "Wayland 协议细节"
 
