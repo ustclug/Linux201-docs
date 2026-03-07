@@ -277,6 +277,15 @@ glibc 在实际发 DNS 请求前会读取 [`/etc/resolv.conf`][resolv.conf.5]。
     这个行为也可以被 `options ndots:n` 配置项控制，默认值是 1，表示只有查询的域名中没有点的时候，才会使用 `search` 列表进行搜索。
 
 - 默认情况下，glibc 会对每个 `nameserver` 等待 5 秒（`options timeout:n`），尝试 2 次（`options attempts:n`）。所以如果你发现有什么东西刚好会卡住 5 秒或者 5 秒的倍数，那么检查一下 DNS 可能会有帮助，特别是在写了多个 `nameserver`，而第一个 `nameserver` 有问题的情况下。
+- 如果你配置了 systemd-resolved，那么 `resolv.conf` 有可能会是这样：
+
+    ```text
+    nameserver 127.0.0.53
+    options edns0 trust-ad
+    search .
+    ```
+
+    选项中的 `edns0` 为 [RFC 2671](https://datatracker.ietf.org/doc/html/rfc2671) 中定义的扩展 DNS 功能，允许在 DNS 包中添加额外信息，包括能够接收的 UDP 响应的最大大小——以避免回退到 TCP 查询的额外网络开销；而 `trust-ad` 则与 DNSSEC 相关，表示信任 DNS 响应中与 DNSSEC 校验有关的 AD 标志。
 
 #### musl
 
@@ -323,11 +332,71 @@ resolvconf -d vpn0
 
 #### systemd-resolved
 
+systemd-resolved 是 systemd 的本地 DNS 解析服务，用于提供缓存、DNSSEC、DNS-over-TLS、[mDNS/LLMNR](./zeroconf.md#name-resolution) 等功能。我们主要关注其缓存功能。目前，Ubuntu 默认使用 systemd-resolved，但是 Debian 不是。resolved 对系统中的应用提供了多种接口，包括其 [DBus/Varlink](../../advanced/desktop.md#dbus) 接口、NSS 模块接口（`nss-resolve`）以及一个内置的 DNS 服务器（127.0.0.53）——大部分的应用使用的都是后两者。
+
+使用 `resolvectl status` 可以查看全局以及每个网络接口的 DNS 配置，`resolvectl statistics` 可以查看查询统计信息，`resolvectl query` 则可以直接查询 DNS 记录，用于调试。如果需要清空缓存，可以使用 `resolvectl flush-caches`。
+
+##### `/etc/resolv.conf` 的配置
+
+resolved 提供了以下几种 `resolv.conf` 文件，分别对应不同的模式：
+
+- `/run/systemd/resolve/stub-resolv.conf`：由 resolved 动态生成，指向 127.0.0.53，包含 `search` 域名搜索域。
+- `/run/systemd/resolve/resolv.conf`：由 resolved 动态生成，包含实际的上游 DNS 服务器地址。
+- `/usr/lib/systemd/resolv.conf`：安装 `systemd-resolved` 包后就有的文件，指向 127.0.0.53，不包含搜索域。
+
+将 `/etc/resolv.conf` 软链接到上述文件即可指定对应的模式，一般来说使用的都是 stub 模式（第一种）。如果 `/etc/resolv.conf` 不是软链接，而且包含其他的 DNS 服务器，那么 resolved 会读取并设置为自己的上游。
+
+##### 缓存行为
+
+默认情况下，resolved 会启用 DNS 缓存，根据 DNS 响应的 TTL 信息缓存数据，避免额外的网络开销。
+
+!!! tip "TTL"
+
+    每条 DNS 记录都有 TTL 时间（秒为单位），标志下游的服务器可以缓存该记录的时间。例如：
+
+    ```console
+    $ dig www.example.com
+    （省略）
+    ;; ANSWER SECTION:
+    www.example.com.        237     IN      A       104.18.26.120
+    www.example.com.        237     IN      A       104.18.27.120
+    （省略）
+    ```
+
+    这里的 237 就是获取到的 TTL 秒数。显然，如果 TTL 设置较长，那么每次更新之后，其他机器就可能需要更长的时间获取到修改后的记录；而如果 TTL 太短，那么就可能会给 DNS 服务器（特别是权威 DNS 服务器）带来较大的压力。
+
+!!! tip "Negative cache 与 SOA 记录"
+
+    为了减小网络开销，不仅成功的查询需要缓存，失败的也需要。这被称为 Negative cache。一些常见的情况：
+
+    - 某个域名只有 A 记录，但是没有 AAAA 记录（或者反过来）
+    - 在 `search` 列表中有多个域名，或者 `ndots` 的值比较大，那么就可能会有多个查询尝试，其中一些查询会找不到记录
+
+    但是没有记录的话，客户端怎么知道要缓存多长时间呢？这个信息就由 SOA 记录来提供。每个 DNS zone 只有一个 SOA 记录，包含一些基础的参数，其中最后一个参数就是 Negative cache TTL。在查询到由某个 DNS zone 负责，但是不存在记录的域名时，DNS 服务器一般会返回 SOA 记录，类似如下：
+
+    ```console
+    $ dig AAAA ipv4.mirrors.ustc.edu.cn  # IPv4-only 的域名，没有 AAAA
+    （省略）
+    ;; AUTHORITY SECTION:
+    mirrors.ustc.edu.cn.    60      IN      SOA     ns-a.ustclug.org. lug.ustc.edu.cn. 2026022401 3600 600 604800 60
+    （省略）
+    ```
+
+    这里的 negative cache TTL 就是 60 秒（一般来说，会取 SOA 本体的 TTL 和宣告的 negative TTL 的最小值）。
+
+    而如果 DNS 服务器本身查询失败（返回 SERVFAIL），那么也就没有 SOA 记录。[resolved 对此默认缓存 10 秒](https://github.com/systemd/systemd/pull/17814)。
+
+!!! warning "Ubuntu 默认不启用 negative cache"
+
+    与 systemd 上游设置不同，Ubuntu 的 systemd-resolved 包的 `Cache` 参数默认值为 `no-negative`，而不是 `yes`。
+
+(TODO)
+
 #### dnsmasq
 
 !!! warning "dnsmasq 与 Docker 默认 bridge 网络的行为"
 
-    Docker 的默认 bridge 网络不会使用其内置的 DNS 服务器，而是直接使用主机的 `/etc/resolv.conf` 配置放进容器中。假如 Docker 发现 `nameserver` 全都是本地地址，那么就会 fallback 到 8.8.8.8/8.8.4.4 上，绕过 dnsmasq 的缓存功能（Docker 对 systemd-resolved 做了特殊处理，可以获取到实际上游的 DNS 地址并设置，但是缓存也就失效了）。
+    Docker 的默认 bridge 网络不会使用其内置的 DNS 服务器，而是直接使用主机的 `/etc/resolv.conf` 配置放进容器中。假如 Docker 发现 `nameserver` 全都是本地地址，那么就会 fallback 到 8.8.8.8/8.8.4.4 上，绕过 dnsmasq 的缓存功能（Docker 对 systemd-resolved 做了特殊处理，可以从 `/run/systemd/resolve/resolv.conf` 获取到实际上游的 DNS 地址并设置，但是缓存也就失效了）。
 
     因此，如果希望 Docker 容器使用到缓存功能，那么请考虑以下方法之一：
 
