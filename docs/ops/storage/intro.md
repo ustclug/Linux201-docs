@@ -88,6 +88,17 @@
 
 SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节](https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA)。
 
+??? example "图片：SATA & SAS HDD"
+
+    SATA 和 SAS 接口非常相似，都使用了类似的 7 针数据接口和 15 针电源接口，难以分辨，但是两者在外观上仍存在一些细微的差别。
+    
+    <figure markdown="span">
+      ![SAS & SATA](../../images/SATA-SAS-iface.jpg)
+      <figcaption>SATA HDD 2.5 英寸（上）和 SAS HDD 3.5 英寸（下）</figcaption>
+    </figure>
+
+    如图所示，SATA 接口的磁盘的 7 针数据接口和 15 针电源接口之间存在一个缺口，而 SAS 接口的磁盘则没有这个缺口。这和 SAS 向下兼容 SATA 的设计一致，支持 SAS 接口的控制器或线缆可以同时连接 SATA 和 SAS 磁盘，而支持 SATA 的控制器或线缆只能连接 SATA 磁盘。
+
 随着固态硬盘的普及，PCIe 接口的固态硬盘也越来越多见。PCIe 接口的固态硬盘通常使用 NVMe 协议，因此也被称为 NVMe SSD。NVMe SSD 常见的接口形态有 U.2、M.2 和 AIC（PCIe Add-in Card，即扩展卡）。
 
 - M.2 接口的尺寸最小，在个人计算机上也更常见，甚至可以放入硬盘盒中作为小巧轻便的移动硬盘使用。
@@ -109,7 +120,7 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
 ??? example "图片：U.2 SSD"
 
     <figure markdown="span">
-      ![U.2 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/620px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg)
+      ![U.2 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/960px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg)
       <figcaption>U.2 SSD</figcaption>
     </figure>
 
