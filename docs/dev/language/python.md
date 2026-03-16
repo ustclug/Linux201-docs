@@ -16,10 +16,10 @@ icon: simple/python
 
 !!! note "特点"
 
-    - 社区生态完善，有大量的第三方库，例如 Django、Flask、numpy、pandas 等。
+    - 社区生态完善，有大量的第三方库和框架，例如 Django、Flask、numpy、pandas 等。
     - 语法简洁，易于学习，适合初学者。
     - 「年长但恰逢新春」, 即没有 C++ 那样的历史包袱，也没有新型语言那样的不稳定性、不成熟性。
-    - 类型检查不严格，但是也有完整的类型检查工具 (mypy)。
+    - 类型检查不严格，但是也有完整的类型检查工具，如久经考验的 mypy 和新时代工具 [ty](https://docs.astral.sh/ty/)。
 
 参考资料：
 

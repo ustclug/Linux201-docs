@@ -209,7 +209,7 @@ getent -s files hosts example.com
     ```
 
     不过，如果 `/etc/hosts` 里面忘写了/忘改了对应的条目，那么就可能会出现非预期的行为。例如，如果忘记添加 `localhost`，那么有些程序就可能会因为无法解析 `localhost` 而出现问题。
-    
+
     systemd-hostnamed 服务则负责管理系统的主机名——静态的主机名（static hostname）仍然在 `/etc/hostname` 中，用户可读的主机名（pretty hostname，比如说 "Xiao Ming's Computer" 或者 "我的电脑" 这种有空格、特殊字符，甚至汉字的名字）等存储在 `/etc/machine-info` 中，同时其也会记录从网络（例如 DHCP）获取的主机名（transient hostname）。而 `myhostname` 模块就是 systemd-hostnamed 提供的 NSS 模块，确保系统主机名总是可以被正确解析，请看下面的例子：
 
     ```console
@@ -244,6 +244,13 @@ getent -s files hosts example.com
 glibc 的 `getaddrinfo()` 默认根据 RFC 3484 的规则对返回的结果进行排序，不过用户也可以在 [`/etc/gai.conf`][gai.conf.5] 文件中自定义排序规则。
 
 RFC 3484 的排序包含两者：源地址选择（source address selection）和目的地址选择（destination address selection）。这里只涉及目的地址选择。目的地址选择具体的规则可以阅读 RFC 的[第 6 节](https://www.rfc-editor.org/rfc/rfc3484#section-6)。其中需要了解的是 [Policy Table（第 2.1 节）](https://www.rfc-editor.org/rfc/rfc3484#section-2.1)，它是一个最长匹配的前缀表，对每个在表中的前缀定义了优先级（Precedence）和标签（Label），这些值会影响排序结果。`gai.conf` 配置的其实就是这个表。
+
+简而言之，RFC 3484 规定的地址选择顺序是：
+
+1. 避免不可用的地址、避免不匹配的 scope、避免 deprecated 的地址；
+2. 优先选择具有相同 Label 的源地址和目的地址；
+3. 优先选择 Precedence 较高的目的地址（数值越大则优先级越高）；
+4. 其他规则，如原生 IPv4 地址优先于 6to4 / Teredo、最长前缀匹配原则等。
 
 最常见需要修改 `gai.conf` 的情况是希望优先使用 IPv4 地址。在进行目的地址选择时，IPv4 地址会映射到 `::ffff:0:0/96` 前缀（例如 `1.1.1.1` 会映射到 `::ffff:101:101`），而默认情况它的优先级是 10，比其他的 IPv6 地址都要低。因此如果希望优先使用 IPv4 地址，可以添加如下配置：
 
