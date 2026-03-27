@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -1461,7 +1461,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#etcresolvconf" class="md-nav__link">
+  <a href="#resolved-resolv-conf" class="md-nav__link">
     <span class="md-ellipsis">
       
         /etc/resolv.conf 的配置
@@ -1472,7 +1472,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#resolved-cache" class="md-nav__link">
     <span class="md-ellipsis">
       
         缓存行为
@@ -3166,7 +3166,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#etcresolvconf" class="md-nav__link">
+  <a href="#resolved-resolv-conf" class="md-nav__link">
     <span class="md-ellipsis">
       
         /etc/resolv.conf 的配置
@@ -3177,7 +3177,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#resolved-cache" class="md-nav__link">
     <span class="md-ellipsis">
       
         缓存行为
@@ -3600,7 +3600,7 @@
 <h4 id="systemd-resolved">systemd-resolved<a class="headerlink" href="#systemd-resolved" title="Permanent link">&para;</a></h4>
 <p>systemd-resolved 是 systemd 的本地 DNS 解析服务，用于提供缓存、DNSSEC、DNS-over-TLS、<a href="../zeroconf/#name-resolution">mDNS/LLMNR</a> 等功能。我们主要关注其缓存功能。目前，Ubuntu 默认使用 systemd-resolved，但是 Debian 不是。resolved 对系统中的应用提供了多种接口，包括其 <a href="../../../advanced/desktop/#dbus">DBus/Varlink</a> 接口、NSS 模块接口（<code>nss-resolve</code>）以及一个内置的 DNS 服务器（127.0.0.53）——大部分的应用使用的都是后两者。</p>
 <p>使用 <code>resolvectl status</code> 可以查看全局以及每个网络接口的 DNS 配置，<code>resolvectl statistics</code> 可以查看查询统计信息，<code>resolvectl query</code> 则可以直接查询 DNS 记录，用于调试。如果需要清空缓存，可以使用 <code>resolvectl flush-caches</code>。</p>
-<h5 id="etcresolvconf"><code>/etc/resolv.conf</code> 的配置<a class="headerlink" href="#etcresolvconf" title="Permanent link">&para;</a></h5>
+<h5 id="resolved-resolv-conf"><code>/etc/resolv.conf</code> 的配置<a class="headerlink" href="#resolved-resolv-conf" title="Permanent link">&para;</a></h5>
 <p>resolved 提供了以下几种 <code>resolv.conf</code> 文件，分别对应不同的模式：</p>
 <ul>
 <li><code>/run/systemd/resolve/stub-resolv.conf</code>：由 resolved 动态生成，指向 127.0.0.53，包含 <code>search</code> 域名搜索域。</li>
@@ -3608,7 +3608,7 @@
 <li><code>/usr/lib/systemd/resolv.conf</code>：安装 <code>systemd-resolved</code> 包后就有的文件，指向 127.0.0.53，不包含搜索域。</li>
 </ul>
 <p>将 <code>/etc/resolv.conf</code> 软链接到上述文件即可指定对应的模式，一般来说使用的都是 stub 模式（第一种）。如果 <code>/etc/resolv.conf</code> 不是软链接，而且包含其他的 DNS 服务器，那么 resolved 会读取并设置为自己的上游。</p>
-<h5 id="_1">缓存行为<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h5>
+<h5 id="resolved-cache">缓存行为<a class="headerlink" href="#resolved-cache" title="Permanent link">&para;</a></h5>
 <p>默认情况下，resolved 会启用 DNS 缓存，根据 DNS 响应的 TTL 信息缓存数据，避免额外的网络开销。</p>
 <div class="admonition tip">
 <p class="admonition-title">TTL</p>
@@ -3715,7 +3715,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月16日 05:23:01 UTC">2026年3月16日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月27日 13:44:09 UTC">2026年3月27日</span>
   </span>
 
     
@@ -3734,14 +3734,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
         <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
