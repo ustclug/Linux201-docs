@@ -24,7 +24,7 @@ icon: material/bug
     - [PSI（Pressure Stall Information）信息](https://docs.kernel.org/accounting/psi.html)可以确认系统的具体的压力情况。在 `/proc/pressure` 目录下可以看到 CPU、I/O、IRQ 以及内存的压力情况。只要有一个或多个进程需要缺少某种资源而等待，那么对应的时间就会被计入 `some` 行中；如果所有的进程都因为缺少某种资源而等待，那么对应的时间就会被计入 `full` 行中。`some` 和 `full` 中的 `avg10`、`avg60`、`avg300` 分别表示过去 10 秒、60 秒、300 秒的等待时间百分比（0 到 100）。
         - PSI 可以精确到 [cgroup](./virtualization/container.md#cgroups)——每个 cgroup 下的 `*.pressure` 就是对应的压力信息。
     - `htop` 可以快速查看系统的 CPU、内存（包括 swap）以及进程情况。在进程数量很多的时候，`top` 的性能会更好一些（虽然易用性不如 `htop`）。
-    - `iostat 1` 可以每隔 1 秒输出一次磁盘 I/O 情况。
+    - `iostat -x 1` 可以每隔 1 秒输出一次磁盘 I/O 情况。
 - 系统日志
     - `journalctl -f`
     - `dmesg -w`
@@ -157,18 +157,15 @@ journalctl 默认会使用 pager（换句话说，`less`）显示日志，当然
 
 !!! comment "@taoky: journald 的一点吐槽"
 
-    首先……journald 看日志太慢了，日志很多的话实在是慢。
-    而且 `systemctl status xxx.service` 因为要显示最近几条日志，
-    也跟着慢——在 mirrors 服务器上甚至要一分多钟才能显示出服务状态。
-    关于这个问题，可以阅读以下讨论:
+    首先……journald 看日志太慢了，日志很多的话实在是慢。而且 `systemctl status xxx.service` 因为要显示最近几条日志，也跟着慢——在 mirrors 服务器上甚至要一分多钟才能显示出服务状态。关于这个问题，可以阅读以下讨论:
 
     - <https://github.com/systemd/systemd/issues/2460>
     - <https://github.com/systemd/systemd/pull/29261>
     - <https://github.com/systemd/systemd/pull/30209>
 
-    然后，journald 设置按照时间的 retention 也不太方便。
-    比如说，如果想保留 180 天的日志的话，怎么设置 journald 呢？
-    `MaxRetentionSec` 似乎不够……
+    如果你发现自己的环境有类似的问题，可以添加 `-n 0` 参数，让 `systemctl` 不再输出日志来绕过。
+
+    然后，journald 设置按照时间的 retention 也不太方便。比如说，如果想保留 180 天的日志的话，怎么设置 journald 呢？`MaxRetentionSec` 似乎不够……
 
     最后一点是，如果要实时看内核态日志，我更推荐用 `dmesg -w`，因为颜色更好看一些。
 
