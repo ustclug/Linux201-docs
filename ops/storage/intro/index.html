@@ -867,6 +867,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        性能指标与测试
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="性能指标与测试">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iostat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        性能指标
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#benchmark" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -874,6 +897,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3099,6 +3127,29 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        性能指标与测试
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="性能指标与测试">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#iostat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        性能指标
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#benchmark" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3106,6 +3157,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3271,9 +3327,9 @@
 <h3 id="disk-type">磁盘类型简介<a class="headerlink" href="#disk-type" title="Permanent link">&para;</a></h3>
 <p>在服务器上最常见的为机械硬盘（HDD）和固态硬盘（SSD）。机械硬盘使用磁盘片和机械臂进行数据读写，固态硬盘使用闪存芯片进行数据读写。
 除此以外，还可能有一些特殊的存储设备，例如磁带、Intel Optane 等，这里不做详细介绍。</p>
-<p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。
-而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。
-对于企业级硬盘，这些性能指标可能会更高。</p>
+<p>一般来讲，单块机械硬盘的性能取决于 RPM（转速）。在估算时可以认为顺序读写带宽在 100 MB/s 左右，4K 随机读写带宽在 1 MB/s 左右，IOPS<sup id="fnref:1"><a class="footnote-ref" href="#fn:1">1</a></sup> 在 100 左右。而单块固态硬盘的顺序读写带宽在 500 MB/s (SATA) 或 1500 MB/s (NVMe) 以上，4K 随机读写带宽在 50 MB/s 左右，IOPS 在 10000 左右。固态硬盘相比机械硬盘，因为不需要机械寻道，同时处理多个请求的性能好得多。对于企业级硬盘，这些性能指标可能会更高。</p>
+<p>在性能测试时，可能会看到队列深度（Queue Depth，QD）这个词，可以认为是同时的并发度。SATA 协议只支持一个队列，深度为 32，而 NVMe 支持 65535 个队列，每个队列最大深度 65535，但是一般来说达不到这个水平。厂商可能会同时提供 QD1 和 QD32 等下的参考性能指标。</p>
+<p>此外，对固态硬盘，在购买时还需要注意每个存储单元中存储的数据位数。SLC、MLC、TLC、QLC 分别对应在一个单元（Cell）中存储 1、2、3、4 位数据，存储得越多，成本越低、容量越大，但是对应写入性能越差、寿命越短。在家用场景下，TLC 或者 QLC SSD 比较常见。另外不少 TLC 或者 QLC 的固态硬盘固件会使用一部分空间用作 SLC 缓存，因此在进行性能测试的时候很容易会发现最开始的时候写入性能很好，但是在缓存耗尽后，性能就会明显降低。对 QLC，写入性能可能会低于 100 MB/s。</p>
 <p>硬盘的使用寿命的一项重要参数是 MTBF（Mean Time Between Failures，平均故障间隔时间）。由于机械硬盘包含运动的部件，机械硬盘的 MTBF 一般会比固态硬盘低，大致在 10 万小时到 100 万小时。尽管看起来很长，但是由于实际使用中的振动、温度、读写次数等因素，硬盘的实际寿命可能会远远低于 MTBF。有时也能看到 AFR（Annualized Failure Rate）这个指标，指代运行一年后的损坏率。假设硬盘全年通电，那么 AFR 可以估计为 1-e^(-8766/MTBF)（MTBF 单位为小时）。</p>
 <p>而对于 SSD 来说，一项更加重要的参数是 TBW（Total Bytes Written，总写入字节数），它表示了闪存芯片可以承受的总写入量，一般在几十到数千 TB；读取操作对 SSD 的损耗可以忽略不计。</p>
 <p>另一项与可靠性有关的重要参数是 Unrecoverable Read Error Rate（不可恢复读错误率，URE），它表示了硬盘在读取数据时出现错误的<strong>概率</strong>。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即<strong>平均</strong>每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到 URE 并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。</p>
@@ -3376,7 +3432,7 @@
 <p>不建议将存储的可用空间全部或接近全部耗尽，这是因为：</p>
 <ul>
 <li>机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；</li>
-<li>固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。</li>
+<li>固态硬盘：可用空间不足会导致没有足够的空区块改写内容，因此可能不得不大量重复擦写已有的区块，加速磨损。此外对使用了 SLC 缓存的固态硬盘，可用空间不足时 SLC 缓存大小也会小很多，导致性能降级。</li>
 </ul>
 </div>
 <p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。</p>
@@ -3590,7 +3646,17 @@
 </ul>
 <p>服务器一般都配备了硬件 RAID 卡，如果需要使用软件 RAID，需要设置 RAID 卡或对应磁盘到 HBA 模式（也叫 JBOD/Non-RAID/直通 模式）。
 一部分低端 RAID 卡不提供相关功能的支持，尽管可以通过为每块磁盘创建单独的 RAID 0 阵列实现类似的功能，但是并不推荐。</p>
-<h2 id="benchmark">性能测试<a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h2>
+<h2 id="performance">性能指标与测试<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h2>
+<h3 id="iostat">性能指标<a class="headerlink" href="#iostat" title="Permanent link">&para;</a></h3>
+<p>在实际运行的系统中，可以使用 <code>iostat -x 1</code> 命令查看每块磁盘设备每秒的性能信息。<code>iostat</code> 会输出磁盘读写、Trim（discard）和 Flush 操作的性能。以读取为例，包括每秒的操作次数（<code>r/s</code>）、数据量（<code>rkB/s</code>）、合并后的请求数（<code>rrqm/s</code>）、合并的请求占的比例（<code>%rrqm</code>）、处理请求的时间（<code>r_await</code>，毫秒）与请求的平均大小（<code>rareq-sz</code>，KiB）。此外还有磁盘队列的平均深度（<code>aqu-sz</code>）和磁盘利用率（<code>%util</code>）。</p>
+<p><code>iostat</code>，配合<a href="#benchmark">下文使用 <code>fio</code> 的测试</a>，可以辅助判断：</p>
+<ul>
+<li>磁盘 I/O 是不是当前的瓶颈（如果磁盘的利用率低、读写操作次数和数据量都不高，那么程序可能忙在 CPU 或者网络上）</li>
+<li>磁盘是否忙在 Trim 或者 Flush 操作上（如果当前没有重 I/O 操作，但是系统卡顿；或者程序频繁进行 sync 操作导致 I/O 慢）</li>
+<li>当前负载的瓶颈在 IOPS 还是带宽上（观察操作次数与数据量）</li>
+<li>并发进行磁盘 I/O 是否有机会提升 I/O 性能（队列深度，特别是对 NVMe 设备）</li>
+</ul>
+<h3 id="benchmark">性能测试<a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h3>
 <p>我们可以使用 <a href="https://fio.readthedocs.io/en/latest/"><code>fio</code></a> 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。</p>
 <div class="admonition info">
 <p class="admonition-title">使用 dd 测速的不足</p>
@@ -3873,7 +3939,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月8日 15:11:39 UTC">2026年3月8日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月29日 10:05:12 UTC">2026年3月29日</span>
   </span>
 
     
@@ -3892,6 +3958,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
@@ -3905,11 +3976,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
       
