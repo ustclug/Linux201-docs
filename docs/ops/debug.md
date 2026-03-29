@@ -890,6 +890,17 @@ FlameGraph/stackcollapse-perf.pl out.perf > out.folded
 FlameGraph/flamegraph.pl out.folded > out.svg
 ```
 
+!!! tip "包含 PID 的输出信息"
+
+    有些情况下，我们会希望火焰图输出中能够区分相同程序、不同进程的情况。此时需要在 `perf script` 时让它在输出中添加 PID 和 TID 信息，`stackcollapse-perf.pl` 脚本才能正常提取：
+
+    ```shell
+    perf script -F comm,pid,tid,time,event,ip,sym,dso > out.perf
+    FlameGraph/stackcollapse-perf.pl --pid out.perf > out.folded
+    ```
+
+    相关内容可参考 `stackcollapse-perf.pl` 脚本的帮助。
+
 !!! tip "`perf report`"
 
     `perf.data` 文件也可以使用 TUI 的 `perf report` 命令查看。`perf report` 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。
