@@ -1714,9 +1714,55 @@ Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux
 [Podman](https://podman.io/) 是红帽主推的容器方案，在 Fedora 和 RHEL 上自带。相比于 Docker，其最主要的特点是，没有 daemon，因此在一些操作上和 Docker 有显著的不同，例如：
 
 - Podman 使用 rootless container 的方式让普通用户创建容器，而不是像 Docker 那样需要向用户授予与 root 等价的权限。
+    - 尽管 Docker 后续也提供了 rootless 的支持，但是从实际用户体验上，Podman 在 rootless 场景下仍然更易用一些。
 - 由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。
 
 Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。
+
+!!! tip "配置容器镜像的默认 registry"
+
+    在 Docker 中如果没有指定镜像的 [registry](#registry)，那么它就会默认以 `docker.io` 作为 registry。但是 Podman 不会这么做。[`/etc/containers/registries.conf.d/shortnames.conf`](https://github.com/containers/shortnames/blob/main/shortnames.conf) 会包含一些常用镜像的短命名与实际命名的映射（例如 `"debian" = "docker.io/library/debian"`），但是在实际使用时用户可能还是更习惯于 Docker 的行为。
+
+    可以添加以下配置文件：
+
+    ```conf title="/etc/containers/registries.conf.d/unqualified-search-registries.conf"
+    unqualified-search-registries = ["docker.io"]
+    ```
+
+!!! tip "兼容使用 Docker API 的程序"
+
+    例如 `docker-compose` 等程序默认会连接 Docker 的 socket（`/var/run/docker.sock`），但是 Podman 默认不会监听这个 socket。为了提供支持，需要在系统或者用户 systemd session（取决于是否为 rootless）启动 `podman.service` 服务或 `podman.socket`（由 systemd 在收到连接后激活服务）。
+
+    Socket 默认在 `/run/podman/podman.sock` 或 `/run/user/<uid>/podman/podman.sock`（rootless）。对需要使用 Docker API 的程序，一般设置 `DOCKER_HOST` 环境变量即可。仍然需要提醒的是，Podman 提供的是尝试兼容 Docker API 的实现，可能无法满足某些程序的需求。
+
+!!! tip "配置 Podman 容器的自启动"
+
+    Podman 使用 [Quadlet](https://github.com/containers/podman/tree/main/pkg/systemd/quadlet) 为 systemd 环境提供自启动支持。Quadlet 是一个 systemd generator（位于 `/usr/lib/systemd/system-generators/podman-system-generator`）——会从 quadlet 文件生成 systemd 服务。Quadlet 文件的格式和 systemd 单元的配置很像：
+
+    ```ini title="example.container"
+    [Container]
+    ContainerName=example
+    Image=docker.io/library/debian
+    PublishPort=127.0.0.1:1234:1234
+    Exec=sleep 1234
+
+    [Service]
+    Restart=always
+
+    [Install]
+    WantedBy=default.target
+    ```
+
+    然后放在 `/etc/containers/systemd/` 或者 `~/.config/containers/systemd/`（rootless）即可。不过手写这个文件还是太麻烦了，可以使用 [podlet](https://github.com/containers/podlet) 帮我们代劳：
+
+    ```shell
+    # 生成已有的某个容器的 quadlet
+    podlet -i generate container example
+    # 根据启动命令生成 quadlet
+    podlet -i podman run --name example -p 127.0.0.1:1234:1234 --restart=always docker.io/library/debian sleep 1234
+    ```
+
+    有关配置文件格式，详情可参考 [podman-systemd.unit.5][podman-systemd.unit.5]。
 
 ### LXC
 
