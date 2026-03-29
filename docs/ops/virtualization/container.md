@@ -1065,7 +1065,7 @@ PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data 
 !!! warning "IPv6 与 IPv4 的优先级"
 
     由于 RFC 3848 对 IPv6 公网地址（Global Unique Address）和 ULA 规定了不同的优先级，为容器分配 ULA 时，容器内的应用程序仍然可能优先使用 IPv4。
-    此问题在 [DNS](../../network-service/dns.md##addr-sort-and-gai-conf) 一页有更详细的介绍。
+    此问题在 [DNS](../network-service/dns.md#addr-sort-and-gai-conf) 一页有更详细的介绍。
 
 !!! note "ip6tables"
 
