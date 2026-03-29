@@ -5036,38 +5036,76 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h3 id="podman">Podman<a class="headerlink" href="#podman" title="Permanent link">&para;</a></h3>
 <p><a href="https://podman.io/">Podman</a> 是红帽主推的容器方案，在 Fedora 和 RHEL 上自带。相比于 Docker，其最主要的特点是，没有 daemon，因此在一些操作上和 Docker 有显著的不同，例如：</p>
 <ul>
-<li>Podman 使用 rootless container 的方式让普通用户创建容器，而不是像 Docker 那样需要向用户授予与 root 等价的权限。</li>
+<li>Podman 使用 rootless container 的方式让普通用户创建容器，而不是像 Docker 那样需要向用户授予与 root 等价的权限。<ul>
+<li>尽管 Docker 后续也提供了 rootless 的支持，但是从实际用户体验上，Podman 在 rootless 场景下仍然更易用一些。</li>
+</ul>
+</li>
 <li>由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。</li>
 </ul>
 <p>Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。</p>
+<div class="admonition tip">
+<p class="admonition-title">配置容器镜像的默认 registry</p>
+<p>在 Docker 中如果没有指定镜像的 <a href="#registry">registry</a>，那么它就会默认以 <code>docker.io</code> 作为 registry。但是 Podman 不会这么做。<a href="https://github.com/containers/shortnames/blob/main/shortnames.conf"><code>/etc/containers/registries.conf.d/shortnames.conf</code></a> 会包含一些常用镜像的短命名与实际命名的映射（例如 <code>"debian" = "docker.io/library/debian"</code>），但是在实际使用时用户可能还是更习惯于 Docker 的行为。</p>
+<p>可以添加以下配置文件：</p>
+<div class="highlight"><span class="filename">/etc/containers/registries.conf.d/unqualified-search-registries.conf</span><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a>unqualified-search-registries = [&quot;docker.io&quot;]
+</code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">兼容使用 Docker API 的程序</p>
+<p>例如 <code>docker-compose</code> 等程序默认会连接 Docker 的 socket（<code>/var/run/docker.sock</code>），但是 Podman 默认不会监听这个 socket。为了提供支持，需要在系统或者用户 systemd session（取决于是否为 rootless）启动 <code>podman.service</code> 服务或 <code>podman.socket</code>（由 systemd 在收到连接后激活服务）。</p>
+<p>Socket 默认在 <code>/run/podman/podman.sock</code> 或 <code>/run/user/&lt;uid&gt;/podman/podman.sock</code>（rootless）。对需要使用 Docker API 的程序，一般设置 <code>DOCKER_HOST</code> 环境变量即可。仍然需要提醒的是，Podman 提供的是尝试兼容 Docker API 的实现，可能无法满足某些程序的需求。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">配置 Podman 容器的自启动</p>
+<p>Podman 使用 <a href="https://github.com/containers/podman/tree/main/pkg/systemd/quadlet">Quadlet</a> 为 systemd 环境提供自启动支持。Quadlet 是一个 systemd generator（位于 <code>/usr/lib/systemd/system-generators/podman-system-generator</code>）——会从 quadlet 文件生成 systemd 服务。Quadlet 文件的格式和 systemd 单元的配置很像：</p>
+<div class="highlight"><span class="filename">example.container</span><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="k">[Container]</span>
+<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a><span class="na">ContainerName</span><span class="o">=</span><span class="s">example</span>
+<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="na">Image</span><span class="o">=</span><span class="s">docker.io/library/debian</span>
+<a id="__codelineno-88-4" name="__codelineno-88-4" href="#__codelineno-88-4"></a><span class="na">PublishPort</span><span class="o">=</span><span class="s">127.0.0.1:1234:1234</span>
+<a id="__codelineno-88-5" name="__codelineno-88-5" href="#__codelineno-88-5"></a><span class="na">Exec</span><span class="o">=</span><span class="s">sleep 1234</span>
+<a id="__codelineno-88-6" name="__codelineno-88-6" href="#__codelineno-88-6"></a>
+<a id="__codelineno-88-7" name="__codelineno-88-7" href="#__codelineno-88-7"></a><span class="k">[Service]</span>
+<a id="__codelineno-88-8" name="__codelineno-88-8" href="#__codelineno-88-8"></a><span class="na">Restart</span><span class="o">=</span><span class="s">always</span>
+<a id="__codelineno-88-9" name="__codelineno-88-9" href="#__codelineno-88-9"></a>
+<a id="__codelineno-88-10" name="__codelineno-88-10" href="#__codelineno-88-10"></a><span class="k">[Install]</span>
+<a id="__codelineno-88-11" name="__codelineno-88-11" href="#__codelineno-88-11"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">default.target</span>
+</code></pre></div>
+<p>然后放在 <code>/etc/containers/systemd/</code> 或者 <code>~/.config/containers/systemd/</code>（rootless）即可。不过手写这个文件还是太麻烦了，可以使用 <a href="https://github.com/containers/podlet">podlet</a> 帮我们代劳：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a><span class="c1"># 生成已有的某个容器的 quadlet</span>
+<a id="__codelineno-89-2" name="__codelineno-89-2" href="#__codelineno-89-2"></a>podlet<span class="w"> </span>-i<span class="w"> </span>generate<span class="w"> </span>container<span class="w"> </span>example
+<a id="__codelineno-89-3" name="__codelineno-89-3" href="#__codelineno-89-3"></a><span class="c1"># 根据启动命令生成 quadlet</span>
+<a id="__codelineno-89-4" name="__codelineno-89-4" href="#__codelineno-89-4"></a>podlet<span class="w"> </span>-i<span class="w"> </span>podman<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>example<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:1234:1234<span class="w"> </span>--restart<span class="o">=</span>always<span class="w"> </span>docker.io/library/debian<span class="w"> </span>sleep<span class="w"> </span><span class="m">1234</span>
+</code></pre></div>
+<p>有关配置文件格式，详情可参考 <a href="https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html">podman-systemd.unit.5</a>。</p>
+</div>
 <h3 id="lxc">LXC<a class="headerlink" href="#lxc" title="Permanent link">&para;</a></h3>
 <p><a href="https://linuxcontainers.org/lxc/introduction/">LXC</a> 是一个 low level 的容器工具，提供了一些底层的 API 与命令行工具。在实际使用中，用户一般不会直接使用 LXC 的工具，而是使用 LXC 的高层次封装工具；开发者也可以基于 LXC 自行开发工具。Proxmox VE 的容器支持就是基于 LXC 的封装，而 LXD 则是 Canonical 开发的基于 LXC 的工具。</p>
 <p>由于在 2023 年，Canonical 将 LXD 从 <a href="https://linuxcontainers.org">Linux Containers 项目</a>中分离出来，因此出现了一个新社区 fork <a href="https://linuxcontainers.org/incus/">Incus</a>。以上工具相比于 Docker 更加注重于系统级的容器，而不是应用级的容器。</p>
 <h3 id="systemd-nspawn">Systemd-nspawn<a class="headerlink" href="#systemd-nspawn" title="Permanent link">&para;</a></h3>
 <p>Systemd-nspawn 是由 systemd 提供的轻量级容器工具，提供了与 systemd 的集成。以下是一个简单的使用例子，其中初始化了一个 Debian Bookworm 的 rootfs，并且启动了这个 "Debian"：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>debootstrap<span class="w"> </span>bookworm<span class="w"> </span>debian<span class="w"> </span>https://mirrors.ustc.edu.cn/debian
-<a id="__codelineno-87-2" name="__codelineno-87-2" href="#__codelineno-87-2"></a><span class="go">W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg</span>
-<a id="__codelineno-87-3" name="__codelineno-87-3" href="#__codelineno-87-3"></a><span class="go">I: Retrieving InRelease</span>
-<a id="__codelineno-87-4" name="__codelineno-87-4" href="#__codelineno-87-4"></a><span class="go">（以下省略）</span>
-<a id="__codelineno-87-5" name="__codelineno-87-5" href="#__codelineno-87-5"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>debian
-<a id="__codelineno-87-6" name="__codelineno-87-6" href="#__codelineno-87-6"></a><span class="gp">$ </span><span class="c1"># 由于 debootstrap 创建的 root 没有密码，需要设置密码</span>
-<a id="__codelineno-87-7" name="__codelineno-87-7" href="#__codelineno-87-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>passwd<span class="w"> </span>root
-<a id="__codelineno-87-8" name="__codelineno-87-8" href="#__codelineno-87-8"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
-<a id="__codelineno-87-9" name="__codelineno-87-9" href="#__codelineno-87-9"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
-<a id="__codelineno-87-10" name="__codelineno-87-10" href="#__codelineno-87-10"></a><span class="go">New password:</span>
-<a id="__codelineno-87-11" name="__codelineno-87-11" href="#__codelineno-87-11"></a><span class="go">Retype new password:</span>
-<a id="__codelineno-87-12" name="__codelineno-87-12" href="#__codelineno-87-12"></a><span class="go">passwd: password updated successfully</span>
-<a id="__codelineno-87-13" name="__codelineno-87-13" href="#__codelineno-87-13"></a><span class="go">Container debian exited successfully.</span>
-<a id="__codelineno-87-14" name="__codelineno-87-14" href="#__codelineno-87-14"></a><span class="gp">$ </span><span class="c1"># 引导容器</span>
-<a id="__codelineno-87-15" name="__codelineno-87-15" href="#__codelineno-87-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>--boot<span class="w"> </span>.
-<a id="__codelineno-87-16" name="__codelineno-87-16" href="#__codelineno-87-16"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
-<a id="__codelineno-87-17" name="__codelineno-87-17" href="#__codelineno-87-17"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
-<a id="__codelineno-87-18" name="__codelineno-87-18" href="#__codelineno-87-18"></a><span class="go">systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)</span>
-<a id="__codelineno-87-19" name="__codelineno-87-19" href="#__codelineno-87-19"></a><span class="go">Detected virtualization systemd-nspawn.</span>
-<a id="__codelineno-87-20" name="__codelineno-87-20" href="#__codelineno-87-20"></a><span class="go">Detected architecture x86-64.</span>
-<a id="__codelineno-87-21" name="__codelineno-87-21" href="#__codelineno-87-21"></a>
-<a id="__codelineno-87-22" name="__codelineno-87-22" href="#__codelineno-87-22"></a><span class="go">Welcome to Debian GNU/Linux 12 (bookworm)!</span>
-<a id="__codelineno-87-23" name="__codelineno-87-23" href="#__codelineno-87-23"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>debootstrap<span class="w"> </span>bookworm<span class="w"> </span>debian<span class="w"> </span>https://mirrors.ustc.edu.cn/debian
+<a id="__codelineno-90-2" name="__codelineno-90-2" href="#__codelineno-90-2"></a><span class="go">W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg</span>
+<a id="__codelineno-90-3" name="__codelineno-90-3" href="#__codelineno-90-3"></a><span class="go">I: Retrieving InRelease</span>
+<a id="__codelineno-90-4" name="__codelineno-90-4" href="#__codelineno-90-4"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-90-5" name="__codelineno-90-5" href="#__codelineno-90-5"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>debian
+<a id="__codelineno-90-6" name="__codelineno-90-6" href="#__codelineno-90-6"></a><span class="gp">$ </span><span class="c1"># 由于 debootstrap 创建的 root 没有密码，需要设置密码</span>
+<a id="__codelineno-90-7" name="__codelineno-90-7" href="#__codelineno-90-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>passwd<span class="w"> </span>root
+<a id="__codelineno-90-8" name="__codelineno-90-8" href="#__codelineno-90-8"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-90-9" name="__codelineno-90-9" href="#__codelineno-90-9"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-90-10" name="__codelineno-90-10" href="#__codelineno-90-10"></a><span class="go">New password:</span>
+<a id="__codelineno-90-11" name="__codelineno-90-11" href="#__codelineno-90-11"></a><span class="go">Retype new password:</span>
+<a id="__codelineno-90-12" name="__codelineno-90-12" href="#__codelineno-90-12"></a><span class="go">passwd: password updated successfully</span>
+<a id="__codelineno-90-13" name="__codelineno-90-13" href="#__codelineno-90-13"></a><span class="go">Container debian exited successfully.</span>
+<a id="__codelineno-90-14" name="__codelineno-90-14" href="#__codelineno-90-14"></a><span class="gp">$ </span><span class="c1"># 引导容器</span>
+<a id="__codelineno-90-15" name="__codelineno-90-15" href="#__codelineno-90-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>--boot<span class="w"> </span>.
+<a id="__codelineno-90-16" name="__codelineno-90-16" href="#__codelineno-90-16"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-90-17" name="__codelineno-90-17" href="#__codelineno-90-17"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-90-18" name="__codelineno-90-18" href="#__codelineno-90-18"></a><span class="go">systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)</span>
+<a id="__codelineno-90-19" name="__codelineno-90-19" href="#__codelineno-90-19"></a><span class="go">Detected virtualization systemd-nspawn.</span>
+<a id="__codelineno-90-20" name="__codelineno-90-20" href="#__codelineno-90-20"></a><span class="go">Detected architecture x86-64.</span>
+<a id="__codelineno-90-21" name="__codelineno-90-21" href="#__codelineno-90-21"></a>
+<a id="__codelineno-90-22" name="__codelineno-90-22" href="#__codelineno-90-22"></a><span class="go">Welcome to Debian GNU/Linux 12 (bookworm)!</span>
+<a id="__codelineno-90-23" name="__codelineno-90-23" href="#__codelineno-90-23"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 <h3 id="singularity">Singularity<a class="headerlink" href="#singularity" title="Permanent link">&para;</a></h3>
 <p>Singularity 是在 HPC（高性能计算）领域非常常用的容器工具。相比于 Docker、Podman 等我们平时使用的容器工具，Singularity 更加注重于 HPC 场景下的需求：</p>
@@ -5084,30 +5122,30 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h3 id="container-sandbox">基于容器技术的沙盒<a class="headerlink" href="#container-sandbox" title="Permanent link">&para;</a></h3>
 <p>以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。</p>
 <p>Bubblewrap 是目前相对常用的底层沙盒工具之一，并且允许非 root 用户使用。以下是<a href="https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh">使用 bubblewrap 创建 shell 沙盒的例子</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
-<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a><span class="o">(</span><span class="nb">exec</span><span class="w"> </span>bwrap<span class="w"> </span>--ro-bind<span class="w"> </span>/usr<span class="w"> </span>/usr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="w">      </span>--dir<span class="w"> </span>/tmp<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-4" name="__codelineno-88-4" href="#__codelineno-88-4"></a><span class="w">      </span>--dir<span class="w"> </span>/var<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-5" name="__codelineno-88-5" href="#__codelineno-88-5"></a><span class="w">      </span>--symlink<span class="w"> </span>../tmp<span class="w"> </span>var/tmp<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-6" name="__codelineno-88-6" href="#__codelineno-88-6"></a><span class="w">      </span>--proc<span class="w"> </span>/proc<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-7" name="__codelineno-88-7" href="#__codelineno-88-7"></a><span class="w">      </span>--dev<span class="w"> </span>/dev<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-8" name="__codelineno-88-8" href="#__codelineno-88-8"></a><span class="w">      </span>--ro-bind<span class="w"> </span>/etc/resolv.conf<span class="w"> </span>/etc/resolv.conf<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-9" name="__codelineno-88-9" href="#__codelineno-88-9"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib<span class="w"> </span>/lib<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-10" name="__codelineno-88-10" href="#__codelineno-88-10"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib64<span class="w"> </span>/lib64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-11" name="__codelineno-88-11" href="#__codelineno-88-11"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/bin<span class="w"> </span>/bin<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-12" name="__codelineno-88-12" href="#__codelineno-88-12"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/sbin<span class="w"> </span>/sbin<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-13" name="__codelineno-88-13" href="#__codelineno-88-13"></a><span class="w">      </span>--chdir<span class="w"> </span>/<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-14" name="__codelineno-88-14" href="#__codelineno-88-14"></a><span class="w">      </span>--unshare-all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-15" name="__codelineno-88-15" href="#__codelineno-88-15"></a><span class="w">      </span>--share-net<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-16" name="__codelineno-88-16" href="#__codelineno-88-16"></a><span class="w">      </span>--die-with-parent<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-17" name="__codelineno-88-17" href="#__codelineno-88-17"></a><span class="w">      </span>--dir<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-18" name="__codelineno-88-18" href="#__codelineno-88-18"></a><span class="w">      </span>--setenv<span class="w"> </span>XDG_RUNTIME_DIR<span class="w"> </span><span class="s2">&quot;/run/user/`id -u`&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-19" name="__codelineno-88-19" href="#__codelineno-88-19"></a><span class="w">      </span>--setenv<span class="w"> </span>PS1<span class="w"> </span><span class="s2">&quot;bwrap-demo</span>$<span class="s2"> &quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-20" name="__codelineno-88-20" href="#__codelineno-88-20"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">11</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-21" name="__codelineno-88-21" href="#__codelineno-88-21"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">12</span><span class="w"> </span>/etc/group<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-22" name="__codelineno-88-22" href="#__codelineno-88-22"></a><span class="w">      </span>/bin/sh<span class="o">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-23" name="__codelineno-88-23" href="#__codelineno-88-23"></a><span class="w">    </span><span class="m">11</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>passwd<span class="w"> </span><span class="nv">$UID</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-88-24" name="__codelineno-88-24" href="#__codelineno-88-24"></a><span class="w">    </span><span class="m">12</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>group<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-91-1" name="__codelineno-91-1" href="#__codelineno-91-1"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+<a id="__codelineno-91-2" name="__codelineno-91-2" href="#__codelineno-91-2"></a><span class="o">(</span><span class="nb">exec</span><span class="w"> </span>bwrap<span class="w"> </span>--ro-bind<span class="w"> </span>/usr<span class="w"> </span>/usr<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-3" name="__codelineno-91-3" href="#__codelineno-91-3"></a><span class="w">      </span>--dir<span class="w"> </span>/tmp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-4" name="__codelineno-91-4" href="#__codelineno-91-4"></a><span class="w">      </span>--dir<span class="w"> </span>/var<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-5" name="__codelineno-91-5" href="#__codelineno-91-5"></a><span class="w">      </span>--symlink<span class="w"> </span>../tmp<span class="w"> </span>var/tmp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-6" name="__codelineno-91-6" href="#__codelineno-91-6"></a><span class="w">      </span>--proc<span class="w"> </span>/proc<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-7" name="__codelineno-91-7" href="#__codelineno-91-7"></a><span class="w">      </span>--dev<span class="w"> </span>/dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-8" name="__codelineno-91-8" href="#__codelineno-91-8"></a><span class="w">      </span>--ro-bind<span class="w"> </span>/etc/resolv.conf<span class="w"> </span>/etc/resolv.conf<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-9" name="__codelineno-91-9" href="#__codelineno-91-9"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib<span class="w"> </span>/lib<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-10" name="__codelineno-91-10" href="#__codelineno-91-10"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib64<span class="w"> </span>/lib64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-11" name="__codelineno-91-11" href="#__codelineno-91-11"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/bin<span class="w"> </span>/bin<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-12" name="__codelineno-91-12" href="#__codelineno-91-12"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/sbin<span class="w"> </span>/sbin<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-13" name="__codelineno-91-13" href="#__codelineno-91-13"></a><span class="w">      </span>--chdir<span class="w"> </span>/<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-14" name="__codelineno-91-14" href="#__codelineno-91-14"></a><span class="w">      </span>--unshare-all<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-15" name="__codelineno-91-15" href="#__codelineno-91-15"></a><span class="w">      </span>--share-net<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-16" name="__codelineno-91-16" href="#__codelineno-91-16"></a><span class="w">      </span>--die-with-parent<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-17" name="__codelineno-91-17" href="#__codelineno-91-17"></a><span class="w">      </span>--dir<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-18" name="__codelineno-91-18" href="#__codelineno-91-18"></a><span class="w">      </span>--setenv<span class="w"> </span>XDG_RUNTIME_DIR<span class="w"> </span><span class="s2">&quot;/run/user/`id -u`&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-19" name="__codelineno-91-19" href="#__codelineno-91-19"></a><span class="w">      </span>--setenv<span class="w"> </span>PS1<span class="w"> </span><span class="s2">&quot;bwrap-demo</span>$<span class="s2"> &quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-20" name="__codelineno-91-20" href="#__codelineno-91-20"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">11</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-21" name="__codelineno-91-21" href="#__codelineno-91-21"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">12</span><span class="w"> </span>/etc/group<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-22" name="__codelineno-91-22" href="#__codelineno-91-22"></a><span class="w">      </span>/bin/sh<span class="o">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-23" name="__codelineno-91-23" href="#__codelineno-91-23"></a><span class="w">    </span><span class="m">11</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>passwd<span class="w"> </span><span class="nv">$UID</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-91-24" name="__codelineno-91-24" href="#__codelineno-91-24"></a><span class="w">    </span><span class="m">12</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>group<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span>
 </code></pre></div>
 <p>这个「沙盒」只读绑定了主机的 <code>/usr</code> 目录，并且处理了一些 <code>/etc</code> 下的配置。</p>
 <p>在实践中，更常见的面向用户的方案有 <a href="https://flatpak.org/">Flatpak</a> 和 <a href="https://snapcraft.io/">Snap</a> 等。这些方案提供了应用沙盒与应用商店的功能，用户可以从它们的商店中安装应用，而这些应用会根据具体的需求以不同的配置隔离在沙盒中；而开发者也可以在公用的「运行时」上开发，保证自己的应用能够跨发行版顺利运行。</p>
@@ -5177,7 +5215,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月29日 14:36:58 UTC">2026年3月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月29日 20:17:50 UTC">2026年3月29日</span>
   </span>
 
     
