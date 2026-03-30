@@ -5042,7 +5042,12 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </li>
 <li>由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。</li>
 </ul>
-<p>Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。</p>
+<p>Podman 提供了与 Docker 兼容的命令行工具，包括 compose 在内也有支持（可以使用 <a href="https://github.com/containers/podman-compose">podman-compose</a> 或 docker-compose），但是在一些细节设置上仍然会出现不同的情况。</p>
+<div class="admonition note">
+<p class="admonition-title">Pod 支持</p>
+<p>Podman 的名字来源于 <a href="https://kubernetes.io/docs/concepts/workloads/pods/">Pods</a>，这是一个 k8s 中的概念，代表一个或多个共享某些命名空间（一般共享网络、IPC、UTS）的容器组成的集合。Podman 的 pod 类似于单机、简化了的 k8s pod，其包含一个 "infra" 容器（保留共享的命名空间，一直睡着），以及用户向 pod 添加的容器。</p>
+<p>Podman 支持以 k8s YAML 格式导出 pod（<code>podman generate kube</code>），以及导入这样的 YAML（<code>podman play kube</code>）。</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">配置容器镜像的默认 registry</p>
 <p>在 Docker 中如果没有指定镜像的 <a href="#registry">registry</a>，那么它就会默认以 <code>docker.io</code> 作为 registry。但是 Podman 不会这么做。<a href="https://github.com/containers/shortnames/blob/main/shortnames.conf"><code>/etc/containers/registries.conf.d/shortnames.conf</code></a> 会包含一些常用镜像的短命名与实际命名的映射（例如 <code>"debian" = "docker.io/library/debian"</code>），但是在实际使用时用户可能还是更习惯于 Docker 的行为。</p>
@@ -5215,7 +5220,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月29日 20:17:50 UTC">2026年3月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年3月30日 20:16:48 UTC">2026年3月30日</span>
   </span>
 
     
