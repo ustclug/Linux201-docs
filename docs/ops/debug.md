@@ -880,7 +880,7 @@ perf record -F 499 --call-graph dwarf,64000 -g -p 12345
 
         不少编译器会选择优化掉 frame pointer 寄存器，因为其不是程序执行必需的。在 32 位的 x86 架构上，这种优化是非常有必要的，因为 x86 架构的通用寄存器数量非常少，多出一个寄存器可以有效提高程序性能。但是 x86_64 架构的通用寄存器数量提升了不少，因此一般认为这类优化对性能提升不显著，并且会给问题调试与性能调优带来困难。诸如 [Ubuntu](https://ubuntu.com/blog/ubuntu-performance-engineering-with-frame-pointers-by-default)、[Fedora](https://fedoraproject.org/wiki/Changes/fno-omit-frame-pointer)、[Arch Linux](https://gitlab.archlinux.org/archlinux/rfcs/-/merge_requests/26) 等均已经默认开启 frame pointer。
 
-        在编译时，可以添加 `-fno-omit-frame-pointer` 选项来禁用这种优化。
+        在编译时，可以添加 `-fno-omit-frame-pointer` 选项来禁用这种优化。不过，如果你使用的库优化掉了 frame pointer，那么如果程序调用了库函数，当前的栈在这样的库内部时，用 frame pointer 就无法获取到程序的调用栈情况。
     - `lbr`：使用 Last Branch Record 寄存器来采样，需要 CPU 架构支持。LBR 寄存器会记录最近的分支跳转信息，有权限的程序可以配置让 LBR 寄存器仅记录 `call` 和 `ret` 指令，从而实现函数调用栈的采样。虽然不需要程序调整编译参数，但是硬件寄存器的数量是有限的，因此这种方式无法处理过深的函数调用。
     - `dwarf`：使用 DWARF 调试信息来采样。这种方式需要程序编译时开启 DWARF 调试信息（`gcc -g`），开销相对较高。上文中 `--call-graph dwarf,64000` 的 `64000` 代表每次采样时记录最多 64000 字节的 stack dump。
 
@@ -906,6 +906,14 @@ FlameGraph/flamegraph.pl out.folded > out.svg
 !!! tip "`perf report`"
 
     `perf.data` 文件也可以使用 TUI 的 `perf report` 命令查看。`perf report` 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。
+
+!!! note "Off-CPU"
+
+    以上 `perf record` 的方式会在程序使用 CPU 时（on-CPU）定时获取程序的调用栈信息，但是程序不会总是占着 CPU——在睡眠、等待 IO 等情况下，内核调度器可能会把程序从 CPU 上调度下来，程序不会在 CPU 上运行。但是在一些场合下，这一段 off-CPU 的时间也有做 profiling 的需求。有以下几种方法：
+
+    - 使用 `perf record` 对 `sched:sched_stat_sleep`、`sched:sched_switch`、`sched:sched_process_exit` 等调度事件跟踪。这种方式比较麻烦并且开销较高，可参考 [Linux perf_events Off-CPU Time Flame Graph](https://www.brendangregg.com/blog/2015-02-26/linux-perf-off-cpu-flame-graph.html)。
+    - 使用 [eBPF](#ebpf) 工具，以相对较低的开销采集。bcc 的 `offcputime` 工具通过挂在 `finish_task_switch` 上的 kprobe 可以采集 off-CPU 的调用栈信息，并可选以 folded 格式输出（`-f`）。
+    - 如果以上都觉得很麻烦，那么最简单的获取 off-CPU 指定进程内核栈的方法为定时读取 `/proc/<PID>/stack`。
 
 注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。
 
