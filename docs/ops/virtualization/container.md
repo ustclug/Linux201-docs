@@ -1717,7 +1717,13 @@ Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux
     - 尽管 Docker 后续也提供了 rootless 的支持，但是从实际用户体验上，Podman 在 rootless 场景下仍然更易用一些。
 - 由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。
 
-Podman 提供了与 Docker 兼容的命令行工具，但是在一些细节设置上仍然会出现不同的情况。
+Podman 提供了与 Docker 兼容的命令行工具，包括 compose 在内也有支持（可以使用 [podman-compose](https://github.com/containers/podman-compose) 或 docker-compose），但是在一些细节设置上仍然会出现不同的情况。
+
+!!! note "Pod 支持"
+
+    Podman 的名字来源于 [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)，这是一个 k8s 中的概念，代表一个或多个共享某些命名空间（一般共享网络、IPC、UTS）的容器组成的集合。Podman 的 pod 类似于单机、简化了的 k8s pod，其包含一个 "infra" 容器（保留共享的命名空间，一直睡着），以及用户向 pod 添加的容器。
+
+    Podman 支持以 k8s YAML 格式导出 pod（`podman generate kube`），以及导入这样的 YAML（`podman play kube`）。
 
 !!! tip "配置容器镜像的默认 registry"
 
