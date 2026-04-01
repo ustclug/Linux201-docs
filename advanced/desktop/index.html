@@ -3922,7 +3922,7 @@
 </div>
 <h3 id="wayland-infrastructure">基础架构<a class="headerlink" href="#wayland-infrastructure" title="Permanent link">&para;</a></h3>
 <p>在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出，如下面这张官方架构图所示：</p>
-<p><img alt="Wayland Architecture" src="https://wayland.freedesktop.org/docs/html/images/wayland-architecture.png" /></p>
+<p><img alt="Wayland Architecture" src="https://wayland.freedesktop.org/wayland-architecture.png" /></p>
 <p>只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 <a href="#client-server-window:~:text=%E5%A6%82%E6%9E%9C%E5%B8%8C%E6%9C%9B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%20X%20server%20%E5%B9%B6%E4%B8%94%E8%83%BD%E5%A4%9F%E4%BB%A5%E5%AD%90%E7%AA%97%E5%8F%A3%E7%9A%84%E5%BD%A2%E5%BC%8F%E6%98%BE%E7%A4%BA%E5%87%BA%E6%9D%A5%EF%BC%8C%E9%82%A3%E4%B9%88%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%20Xephyr%20%E6%88%96%E8%80%85%20Xwayland%20%E6%9D%A5%E5%88%9B%E5%BB%BA%E3%80%82">Xephyr</a> 表现类似。</p>
 <div class="admonition note">
 <p class="admonition-title">xwayland-satellite</p>
@@ -3957,7 +3957,8 @@
 <a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="go">[1603407.033] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#7)</span>
 <a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="go">（以下省略）</span>
 </code></pre></div>
-<p>Wayland 协议内容以 XML 定义。最核心的协议（<a href="https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml"><code>wayland.xml</code></a>）随 Wayland 库分发。其他不少协议则在 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols">wayland-protocols 仓库</a> 中。可以注意到，只有少数协议是 stable 的（例如 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads">xdg-shell</a>、<a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads">linux-dmabuf</a> 等），大部分协议都在 staging、unstable 或者 experimental 中。尽管不少协议 stable 化的进展极慢（要让所有人达成共识，是世界上最难的事情之一），不过大量非 stable 状态的协议目前已经被广泛使用，包括：</p>
+<p>Wayland 协议内容以 XML 定义。最核心的协议（<a href="https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml"><code>wayland.xml</code></a>）随 Wayland 库分发。其他不少协议则在 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols">wayland-protocols 仓库</a> 中。可以注意到，只有少数协议是 stable 的（例如 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads">xdg-shell</a>、<a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads">linux-dmabuf</a> 等），大部分协议都在 staging、unstable 或者 experimental 中。其中除了核心的 <code>wayland.xml</code> 之外，其他的协议混成器都可以可选支持，不过如果要运行通常意义下的桌面程序，至少 xdg-shell 是必须支持的——它定义了「窗口」的概念。当然，特殊用途（嵌入式等）的混成器也可以选择不实现 xdg-shell，例如 Weston 就支持用于车载娱乐系统的 <a href="https://gitlab.freedesktop.org/wayland/weston/-/blob/main/ivi-shell/ivi-shell.c">ivi-shell</a> 相关协议（ivi 即 <a href="https://en.wikipedia.org/wiki/In-car_entertainment">in-vehicle infotainment</a>）。</p>
+<p>尽管不少协议 stable 化的进展极慢（要让所有人达成共识，是世界上最难的事情之一），不过大量非 stable 状态的协议目前已经被广泛使用，包括：</p>
 <ul>
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v3.xml?ref_type=heads">text-input-v3</a>：混成器与客户端之间的输入法协议，在除了 Weston 以外的主流混成器中均有支持。</li>
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/fractional-scale/fractional-scale-v1.xml">fractional-scale-v1</a>：分数缩放协议，大部分的主流混成器均有支持。</li>
@@ -3992,6 +3993,17 @@
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52">xdg-dbus-annotation</a>：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。</li>
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-zones/xx-zones-v1.xml">xx-zones-v1</a>：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议，允许应用申请 zone，并在 zone 中组织窗口。于 2026 年 2 月合入，目前仅有 KWin 与 SDL 有实验性实现。</li>
 </ul>
+</div>
+<div class="admonition note">
+<p class="admonition-title">CSD 与 SSD 之争</p>
+<p>CSD（Client-Side Decoration）指让应用程序绘制窗口边框，而 SSD（Server-Side Decoration）指让混成器/窗口管理器绘制窗口边框。这可能是 Wayland 持续多年时间最具火药桶味道的争论之一。</p>
+<p>基础的 xdg-shell 协议是不支持 SSD 的，意味着应用必须自己画窗口边框，但是不是所有应用都乐意这样做。在 2018 年 9 月，xdg-decoration-v1 合并入 wayland-protocol，应用可以通过这个协议告知混成器自己倾向于使用 SSD 或 CSD 作为自己的窗口边框的绘制方式。目前主流的混成器中，除去 <a href="https://github.com/ValveSoftware/gamescope">GameScope</a>、Weston 这类特殊用途的混成器外，只有 mutter（GNOME）不支持 xdg-decoration-v1。尽管支持 xdg-decoration-v1 不代表一定要支持 SSD（协议允许混成器自己做决定），但是不支持则意味着程序如果要在 GNOME Wayland 下有正常的窗口边框，需要想办法自己解决。</p>
+<p>这当然引发了<a href="https://gitlab.gnome.org/GNOME/mutter/-/issues/217">旷</a><a href="https://gitlab.gnome.org/GNOME/mutter/-/issues/1143">日</a><a href="https://gitlab.gnome.org/GNOME/mutter/-/issues/1836">持</a><a href="https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/4386">久</a>的<a href="https://gitlab.gnome.org/GNOME/mutter/-/issues/2052">争</a><a href="https://gitlab.gnome.org/GNOME/mutter/-/issues/2342">论</a>。如果从这些争吵中抽离出来，mutter 对 SSD 的拒绝可以从两个角度来解释：</p>
+<ul>
+<li>如果支持协调的、符合 GNOME 风格的 SSD，那么 mutter 就必须依赖于 gtk 和 libadwaita（否则要自己维护一套和 adwaita 风格一样的绘制、CSS、字体渲染、亮暗色模式切换等等的逻辑，是不太合理的），为 Wayland 混成器添加一个（相对来说）巨大的 toolkit 带来的稳定性风险是无法忽视的。尽管 X 时代是支持 SSD 的，但是如今 mutter 已经把 X 的窗口边框单独拆出了进程，X 边框的进程即使不太稳定，代价也是可以接受的。</li>
+<li>而另一方面，就是对 <a href="https://blogs.gnome.org/tbernard/2018/01/26/csd-initiative/">CSD Initiative</a> 设计上的某种固执，即使要冒边框风格不一致的风险，也要坚持让应用自己画边框、利用好标题栏（headerbar）。</li>
+</ul>
+<p>可能在未来几年内，这个话题仍然可以一直吵下去。不过对应用和 UI 框架的开发者来说，有一个妥协的方案 <a href="https://gitlab.freedesktop.org/libdecor/libdecor">libdecor</a>。在支持 xdg-decoration-v1 并且混成器告知使用 SSD 的场景下，它什么都不会做，否则会帮助应用绘制边框。目前其支持使用 cairo 绘制的（非常简陋）的边框，和使用 gtk 绘制的符合 GNOME 风格的边框。这些边框支持是以插件的形式，在需要绘制的时候 <code>dlopen</code> 的。Qt、Electron、SDL 等框架目前也都完善了 Wayland 下 CSD 的支持。</p>
 </div>
 <details class="note">
 <summary>Wayland 协议细节</summary>
@@ -4403,7 +4415,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月1日 14:07:12 UTC">2026年4月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月1日 20:32:52 UTC">2026年4月1日</span>
   </span>
 
     
