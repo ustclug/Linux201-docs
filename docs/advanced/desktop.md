@@ -647,7 +647,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     - 如果支持协调的、符合 GNOME 风格的 SSD，那么 mutter 就必须依赖于 gtk 和 libadwaita（否则要自己维护一套和 adwaita 风格一样的绘制、CSS、字体渲染、亮暗色模式切换等等的逻辑，是不太合理的），为 Wayland 混成器添加一个（相对来说）巨大的 toolkit 带来的稳定性风险是无法忽视的。尽管 X 时代是支持 SSD 的，但是如今 mutter 已经把 X 的窗口边框单独拆出了进程，X 边框的进程即使不太稳定，代价也是可以接受的。
     - 而另一方面，就是对 [CSD Initiative](https://blogs.gnome.org/tbernard/2018/01/26/csd-initiative/) 设计上的某种固执，即使要冒边框风格不一致的风险，也要坚持让应用自己画边框、利用好标题栏（headerbar）。
 
-    可能在未来几年内，这个话题仍然可以一直吵下去。不过对应用和 UI 框架的开发者来说，有一个妥协的方案 [libdecor](https://gitlab.freedesktop.org/libdecor/libdecor)。在支持 xdg-decoration-v1 并且混成器告知使用 SSD 的场景下，它什么都不会做，否则会帮助应用绘制边框。目前其支持使用 cairo 绘制的（非常简陋）的边框，和使用 gtk 绘制的符合 GNOME 风格的边框。这些边框支持是以插件的形式，在需要绘制的时候 `dlopen` 的。Qt、Electron、SDL 等框架目前也都完善了 Wayland 下 CSD 的支持。
+    可能在未来几年内，这个话题仍然可以一直吵下去。不过对应用和 UI 框架的开发者来说，有一个妥协的方案 [libdecor](https://gitlab.freedesktop.org/libdecor/libdecor)。在支持 xdg-decoration-v1 并且混成器告知使用 SSD 的场景下，它什么都不会做，否则会帮助应用绘制边框。目前其支持使用 cairo 绘制的（非常简陋）的边框，和使用 gtk 绘制的符合 GNOME 风格的边框。这些边框支持是以插件的形式，在需要绘制的时候 `dlopen` 的。Qt、[Electron](https://www.electronjs.org/blog/tech-talk-wayland#understanding-csd-or-when-a-window-isnt-a-window)、SDL 等框架目前也都完善了 Wayland 下 CSD 的支持。
 
 ??? note "Wayland 协议细节"
 
