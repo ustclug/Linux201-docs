@@ -630,7 +630,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     尽管实验性质的协议确实看起来门槛降低了，但是要让大部分混成器/客户端采纳的话，进入 `xdg` 或 `wp` 命名空间仍然是必要的，而这个过程依然很慢。一些用户等了很久的协议包括：
 
     - [xdg-pip](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/132)：画中画协议。
-    - [xdg-session-management](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/18)：会话管理协议（最主要的用途是记住窗口的位置）。
+    - [xdg-session-management](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/staging/xdg-session-management/xdg-session-management-v1.xml)：会话管理协议（最主要的用途是记住窗口的位置）。于 2026 年 3 月合入。
     - [xdg-dbus-annotation](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52)：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。
     - [xx-zones-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-zones/xx-zones-v1.xml)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议，允许应用申请 zone，并在 zone 中组织窗口。于 2026 年 2 月合入，目前仅有 KWin 与 SDL 有实验性实现。
 
