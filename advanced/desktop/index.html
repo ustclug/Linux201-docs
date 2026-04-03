@@ -3523,6 +3523,23 @@
 <li>Xorg：由 X.Org 基金会维护的 X11 实现，是目前最主流的 X server 实现</li>
 </ul>
 </div>
+<div class="admonition comment">
+<p class="admonition-title">@taoky：关于 XLibre</p>
+<p>如果关注 Linux 桌面相关新闻的话，你可能会听说过 <a href="https://github.com/X11Libre/xserver">XLibre</a>——一个 Xorg 的 fork。随着开发重心从 Xorg 到 Wayland 的转移，Xorg 除去 Xwayland 以外的部分版本发布的频次大幅下降（事实上，尽管仓库仍然一直在更新，Xorg 已经多年没有发布新的大版本了，可以认为除了安全漏洞修复以外，Xorg 很可能不会再有新的大型变更了）。XLibre 的<a href="https://github.com/metux">主开发者 metux</a> 在给 Xorg 提交代码时，由于代码质量与兼容性问题与 Xorg 的维护者产生了矛盾，之后在 freedesktop 的 GitLab 上 fork 了 Xorg，修改 README 发表了<a href="https://github.com/X11Libre/xserver/commit/5387f9d7f1a1c2bb401e077a8b080e564ad79b5d">辱骂 Xorg 开发者的言论</a>而被 freedesktop 封禁。</p>
+<p>相比于最新的 Xorg 的稳定版本，XLibre 主要的变化有添加了用于隔离的 Xnamespace 扩展（但是目前没有相关的软件生态）、默认启用防撕裂（TearFree）等，并且版本发布也比 Xorg 快得多。不过围绕 XLibre 的争议也非常多，除了政治与观点相关的争议以外，其代码质量也受到怀疑，一个名场面是 <a href="https://github.com/X11Libre/xserver/pull/56#issuecomment-2962432327">2^16</a>：</p>
+<blockquote>
+<p>PR: 2^16 is 2 xor 16 which equals 18, not 2 to the power of 16 which is 65536</p>
+<p>metux: Why is <code>2^16</code> wrong ? Shouldn't it result in exactly the same ?</p>
+</blockquote>
+<p>相信有 C 基础知识的人都能发现问题在哪里。</p>
+<p>我个人也同样不看好 XLibre：</p>
+<ul>
+<li>如果 Xorg 仍然有着巨大的技术优势，仅仅只是 freedesktop 不想继续维护的话，那么类似的 fork 应该很早就出现了。</li>
+<li>metux 本人极端的观点在创建了支持自己的「同温层」的同时，也同时影响了其他人的参与——包括观点中立的个人，以及希望继续使用活跃维护的 X 实现的公司。当然，XLibre 目前的 README，以及 issue 和 discussion 已经收敛很多了，基本回归了正常的技术交流。不过恐怕像 NVIDIA 这样的 "BigTech" 批斗对象，大概率是不会协作做 XLibre 的驱动开发的。</li>
+<li>X 的很多问题不是在服务端做修改就能完善解决的。</li>
+</ul>
+<p>不过，XLibre 是会实际替代 Xorg，或是平分秋色，还是只会成为很小一部分人的选择，只有时间才能告诉我们答案。</p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">部分内容在主章节中有介绍</p>
 <p>如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考<a href="../../ops/virtualization/container/#docker-gui">容器章节中的相关内容</a>。</p>
@@ -4415,7 +4432,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月1日 20:33:57 UTC">2026年4月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月3日 21:43:12 UTC">2026年4月3日</span>
   </span>
 
     
