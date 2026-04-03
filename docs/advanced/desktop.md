@@ -32,6 +32,26 @@ icon: octicons/device-desktop-16
     - X11：指 X 窗口系统的第 11 个版本（X Version 11），是目前仍在使用的版本，也极大概率是最后一个版本了
     - Xorg：由 X.Org 基金会维护的 X11 实现，是目前最主流的 X server 实现
 
+!!! comment "@taoky：关于 XLibre"
+
+    如果关注 Linux 桌面相关新闻的话，你可能会听说过 [XLibre](https://github.com/X11Libre/xserver)——一个 Xorg 的 fork。随着开发重心从 Xorg 到 Wayland 的转移，Xorg 除去 Xwayland 以外的部分版本发布的频次大幅下降（事实上，尽管仓库仍然一直在更新，Xorg 已经多年没有发布新的大版本了，可以认为除了安全漏洞修复以外，Xorg 很可能不会再有新的大型变更了）。XLibre 的[主开发者 metux](https://github.com/metux) 在给 Xorg 提交代码时，由于代码质量与兼容性问题与 Xorg 的维护者产生了矛盾，之后在 freedesktop 的 GitLab 上 fork 了 Xorg，修改 README 发表了[辱骂 Xorg 开发者的言论](https://github.com/X11Libre/xserver/commit/5387f9d7f1a1c2bb401e077a8b080e564ad79b5d)而被 freedesktop 封禁。
+
+    相比于最新的 Xorg 的稳定版本，XLibre 主要的变化有添加了用于隔离的 Xnamespace 扩展（但是目前没有相关的软件生态）、默认启用防撕裂（TearFree）等，并且版本发布也比 Xorg 快得多。不过围绕 XLibre 的争议也非常多，除了政治与观点相关的争议以外，其代码质量也受到怀疑，一个名场面是 [2^16](https://github.com/X11Libre/xserver/pull/56#issuecomment-2962432327)：
+
+    > PR: 2^16 is 2 xor 16 which equals 18, not 2 to the power of 16 which is 65536
+    >
+    > metux: Why is `2^16` wrong ? Shouldn't it result in exactly the same ?
+
+    相信有 C 基础知识的人都能发现问题在哪里。
+
+    我个人也同样不看好 XLibre：
+
+    - 如果 Xorg 仍然有着巨大的技术优势，仅仅只是 freedesktop 不想继续维护的话，那么类似的 fork 应该很早就出现了。
+    - metux 本人极端的观点在创建了支持自己的「同温层」的同时，也同时影响了其他人的参与——包括观点中立的个人，以及希望继续使用活跃维护的 X 实现的公司。当然，XLibre 目前的 README，以及 issue 和 discussion 已经收敛很多了，基本回归了正常的技术交流。不过恐怕像 NVIDIA 这样的 "BigTech" 批斗对象，大概率是不会协作做 XLibre 的驱动开发的。
+    - X 的很多问题不是在服务端做修改就能完善解决的。
+
+    不过，XLibre 是会实际替代 Xorg，或是平分秋色，还是只会成为很小一部分人的选择，只有时间才能告诉我们答案。
+
 !!! tip "部分内容在主章节中有介绍"
 
     如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考[容器章节中的相关内容](../ops/virtualization/container.md#docker-gui)。
