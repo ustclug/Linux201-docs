@@ -4490,7 +4490,7 @@
 <p>操作系统的安装包被篡改，编译器会在编译时插入恶意代码，或者你使用的软件自动更新的时候没有检查软件包是否被篡改，攻击者通过中间人攻击给你提供了恶意的软件包……诸如此类攻击被称为供应链攻击。</p>
 <p>国内最知名的供应链攻击案例之一是 <a href="https://en.wikipedia.org/wiki/XcodeGhost">XcodeGhost</a>。由于 Xcode 特别大，国内下载 Xcode 缓慢，有人在百度网盘上传了一个 Xcode 安装包「加速」下载，并且四处散播网盘下载链接，但是这个安装包被篡改，插入了恶意代码，再加上许多人关闭了 Gatekeeper 签名检查，导致了国内包括微信、网易云音乐在内的大量的 iOS 应用被感染。</p>
 <div class="admonition comment">
-<p class="admonition-title">@tiankaima 关于 XcodeGhost</p>
+<p class="admonition-title">@tiankaima: 关于 XcodeGhost</p>
 <p>上述问题 Apple 已经通过分发 <code>.xip</code> 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 <code>.xip</code> 文件能被正确解压。但供应链攻击仍然时有发生，参考：</p>
 <ul>
 <li><a href="#lessons">新闻选摘：SSH 软件与后门</a></li>
@@ -4507,6 +4507,21 @@
 <li><strong>密切关注安全新闻</strong>，例如在上面 polyfill.io 的例子中，Cloudflare 注意到了域名出售等问题，并及时通知了<a href="https://blog.cloudflare.com/polyfill-io-now-available-on-cdnjs-reduce-your-supply-chain-risk">供应链风险</a>，以及<a href="https://blog.cloudflare.com/automatically-replacing-polyfill-io-links-with-cloudflares-mirror-for-a-safer-internet">后续措施</a>。</li>
 </ul>
 </div>
+<div class="admonition tip">
+<p class="admonition-title">包管理器的供应链攻击缓解方式</p>
+<p>2026 年 3 月，<a href="https://github.com/BerriAI/litellm/issues/24512">LiteLLM</a> 和 <a href="https://github.com/axios/axios/issues/10636">axios</a> 等被大量使用的库接连爆出供应链攻击问题——攻击者通过某种方式（在这里分别是通过<a href="https://www.aquasec.com/blog/trivy-supply-chain-attack-what-you-need-to-know/">会被 CI 执行的漏洞扫描器</a>和社会工程学方法）发布了这些库的、带有攻击者代码的新版本，如果开发者没有使用 lock 类文件锁定版本，或者在更新新版本依赖，那么就会中招。</p>
+<p>一些语言的设计会让相关的问题变得更严重。例如在 Python 中，依赖可以安装<a href="https://docs.python.org/3/library/site.html">可执行的 pth 文件，在 Python 启动时会自动执行</a>（即使没有 <code>import</code> 相关的包！）。在 JavaScript 生态中，一些依赖在安装后可以自动执行自己的脚本来做配置。</p>
+<p>一种缓解方式是让相关工具避免下载太新的依赖，例如流行的 Python 包管理器 uv 就支持 <a href="https://docs.astral.sh/uv/reference/settings/#exclude-newer">exclude-newer</a> 选项：</p>
+<div class="highlight"><span class="filename">uv.toml</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">exclude-newer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;7 days&quot;</span>
+</code></pre></div>
+<p>Node 的 npm 和 pnpm 等也提供了相关的支持：</p>
+<div class="highlight"><span class="filename">.npmrc</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># days
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>min-release-age=7
+</code></pre></div>
+<div class="highlight"><span class="filename">pnpm-workspace.yaml</span><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">minimumReleaseAge</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10080</span><span class="w">  </span><span class="c1"># minutes</span>
+</code></pre></div>
+<p>而对语言特定的问题，包管理器也可能提供解决方案，例如对 JavaScript 生态依赖执行脚本的问题，npm 可以启用 <code>ignore-scripts</code> 选项，只在需要的时候手动安装，pnpm 则默认不执行任何依赖的脚本，用户可以在配置中设置允许执行脚本的依赖。</p>
+</div>
 <h4 id="close-access-penetration">近源渗透<a class="headerlink" href="#close-access-penetration" title="Permanent link">&para;</a></h4>
 <p>网络攻击不一定必须要远程进行，对于重要的高价值目标，攻击者可能会选择近源渗透。例如，一些机构的管理可能不严格，攻击者可以本人光明正大的进入，把网线插到自己电脑上，然后直接开始攻击内网（当然，这样容易被抓住）。攻击者也可能会尝试破解机构内网的 Wi-Fi 密码等。此外，如果能够物理接触到计算机，攻击者可以使用感染病毒的 U 盘，或是能够模拟键盘/鼠标等行为的 <a href="https://en.wikipedia.org/wiki/BadUSB">BadUSB</a> 入侵设备，或者添加<a href="https://en.wikipedia.org/wiki/Hardware_keylogger">硬件形式的键盘记录器</a>，以便为后续行动做好准备。</p>
 <h3 id="attacker-example">举例：攻击者视角下的攻击<a class="headerlink" href="#attacker-example" title="Permanent link">&para;</a></h3>
@@ -4517,7 +4532,7 @@
 <li>漏洞扫描，使用自动化工具扫描目标网站是否存在常见的漏洞，例如 SQL 注入、XSS 等。如果是二次开发的服务，那么可能有能够利用的 1-day/n-day 漏洞还没有被修复。</li>
 </ul>
 <p>假设攻击者获取到了目标网站某个用户的权限，由于一般网站登录后会提供更多功能，攻击者可能会尝试利用复杂的功能来获取更多的权限，例如上传文件得到 Webshell。最常见的 PHP Webshell 代码如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="cp">&lt;?php</span> <span class="k">eval</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;cmd&#39;</span><span class="p">]);</span> <span class="cp">?&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="cp">&lt;?php</span> <span class="k">eval</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;cmd&#39;</span><span class="p">]);</span> <span class="cp">?&gt;</span>
 </code></pre></div>
 <p>如果上传文件的目标目录没有限制，Web 服务器就可能将攻击者上传的文件当作 PHP 脚本执行，攻击者就可以通过 POST 请求执行任意代码。这一类可以让攻击者在远程服务器上执行任意代码的漏洞，也被称为 RCE（Remote Code Execution，远程代码执行）。</p>
 <p>在成功上传之后，攻击者可以使用相当成熟的图形界面工具「登录」Webshell，就像用 VS Code Remote SSH 连接服务器一样顺畅地执行命令、上传下载文件等。此时攻击者就有了和 Web 服务器进程对应用户相同的权限，之后可以利用同样成熟的工具（例如 Metasploit）进一步提权、扫描内网、横向移动。此时这台机器就沦陷了，并且同一内网中的其他机器也面临着同样的风险。</p>
@@ -4535,11 +4550,11 @@
 <li><a href="https://github.com/skeeto/endlessh/">https://github.com/skeeto/endlessh/</a></li>
 </ul>
 <p>作为参考，以下是在 2022 端口公开一个 sshesame 蜜罐容器的命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">2022</span>:2022<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span>-v<span class="w"> </span>sshesame-data:/data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/sshesame.yaml:/config.yaml<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span>ghcr.io/jaksi/sshesame
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">2022</span>:2022<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span>-v<span class="w"> </span>sshesame-data:/data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/sshesame.yaml:/config.yaml<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span>ghcr.io/jaksi/sshesame
 </code></pre></div>
 <p>sshesame 会将所有记录的行为打印到 stdout, 可以使用 <code>docker logs</code> 查看。</p>
 </div>
@@ -4710,7 +4725,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition example">
 <p class="admonition-title">Flask <code>render_template()</code></p>
 <p>Flask 是一个 Python 的网站框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;index.jinja2&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;index.jinja2&quot;</span><span class="p">)</span>
 </code></pre></div>
 <p>上线一段时间后，TA 感觉页面的渲染不对劲，再一测试，结果发现 Flask 居然没有帮他转义用户输入的特殊字符！原来在 <a href="https://flask.palletsprojects.com/en/3.0.x/templating/">Flask 文档中关于模板</a>的部分是这么写的：</p>
 <blockquote>
@@ -4723,22 +4738,22 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p class="admonition-title">思考题：代码问题分析</p>
 <p>以下的 Python <a href="https://fastapi.tiangolo.com/">FastAPI</a> 代码修改自互联网上某篇博客的教程。</p>
 <p>提示：<strong>在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！</strong>对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码<sup id="fnref:prompt"><a class="footnote-ref" href="#fn:prompt">1</a></sup>。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResponse</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">():</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="k">return</span> <span class="s2">&quot;Hello, world!&quot;</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/{whatever:path}&quot;</span><span class="p">)</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_static_files_or_404</span><span class="p">(</span><span class="n">whatever</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">,</span> <span class="n">whatever</span><span class="p">)</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>        <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>    <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="s2">&quot;dist/404.html&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResponse</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="n">app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">()</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">():</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>    <span class="k">return</span> <span class="s2">&quot;Hello, world!&quot;</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/{whatever:path}&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_static_files_or_404</span><span class="p">(</span><span class="n">whatever</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;dist&quot;</span><span class="p">,</span> <span class="n">whatever</span><span class="p">)</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>        <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>    <span class="k">return</span> <span class="n">FileResponse</span><span class="p">(</span><span class="s2">&quot;dist/404.html&quot;</span><span class="p">)</span>
 </code></pre></div>
 <ol>
 <li>请分析该程序存在的安全问题，并复现（提示：你可能会对 <a href="https://en.wikipedia.org/wiki/Percent-encoding">URL encoding</a> 感兴趣）。</li>
@@ -4749,76 +4764,76 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition example">
 <p class="admonition-title">使用 ASAN 运行时检查 C 代码的内存安全问题</p>
 <p>对于下面这个例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">input</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Enter a string: &quot;</span><span class="p">);</span>
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%32s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Echo: %s (%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">input</span><span class="p">));</span>
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string.h&gt;</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">input</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Enter a string: &quot;</span><span class="p">);</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">    </span><span class="n">scanf</span><span class="p">(</span><span class="s">&quot;%32s&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Echo: %s (%d)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">,</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">input</span><span class="p">));</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="p">}</span>
 </code></pre></div>
 <p>由于 C 语言的字符串以 <code>\0</code> 结尾，<code>scanf</code> 会多写入 0 到 <code>input</code> 以外的地址，并且当代码规模庞大的时候，这样的问题不容易直接被发现。
 不过，如果加入 ASAN 并编译：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>gcc<span class="w"> </span>test.c<span class="w"> </span>-g<span class="w"> </span>-fsanitize<span class="o">=</span>address
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>gcc<span class="w"> </span>test.c<span class="w"> </span>-g<span class="w"> </span>-fsanitize<span class="o">=</span>address
 </code></pre></div>
 <p>之后运行时就会直接报错：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>./a.out
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">Enter a string: a</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">=================================================================</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">==2987262==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x72bfab309040 at pc 0x72bfada6b934 bp 0x7ffceee9d380 sp 0x7ffceee9cb08</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">WRITE of size 33 at 0x72bfab309040 thread T0</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x72bfada6b933<span class="w"> </span><span class="k">in</span><span class="w"> </span>scanf_common<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="gp">    #</span><span class="m">1</span><span class="w"> </span>0x72bfada859ba<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_vscanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1489
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="gp">    #</span><span class="m">2</span><span class="w"> </span>0x72bfada864d3<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_scanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1520
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="gp">    #</span><span class="m">3</span><span class="w"> </span>0x56cd690a1270<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:8
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">    #</span><span class="m">4</span><span class="w"> </span>0x72bfad834e07<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_call_main<span class="w"> </span>../sysdeps/nptl/libc_start_call_main.h:58
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="gp">    #</span><span class="m">5</span><span class="w"> </span>0x72bfad834ecb<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_main_impl<span class="w"> </span>../csu/libc-start.c:360
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="gp">    #</span><span class="m">6</span><span class="w"> </span>0x56cd690a10e4<span class="w"> </span><span class="k">in</span><span class="w"> </span>_start<span class="w"> </span><span class="o">(</span>/example/a.out+0x10e4<span class="o">)</span><span class="w"> </span><span class="o">(</span>BuildId:<span class="w"> </span>1b5d9db6c98221b5cb99988ed43d50ecc2a732c8<span class="o">)</span>
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="go">Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame</span>
-<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x56cd690a11c8<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:4
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a>
-<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="go">This frame has 1 object(s):</span>
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="go">    [32, 64) &#39;input&#39; (line 5) &lt;== Memory access at offset 64 overflows this variable</span>
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="go">HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork</span>
-<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="go">    (longjmp and C++ exceptions *are* supported)</span>
-<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="go">SUMMARY: AddressSanitizer: stack-buffer-overflow /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342 in scanf_common</span>
-<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="go">Shadow bytes around the buggy address:</span>
-<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="go">0x72bfab308d80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="go">0x72bfab308e00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="go">0x72bfab308e80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="go">0x72bfab308f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="go">0x72bfab308f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="go">=&gt;0x72bfab309000: f1 f1 f1 f1 00 00 00 00[f3]f3 f3 f3 00 00 00 00</span>
-<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="go">0x72bfab309080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="go">0x72bfab309100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="go">0x72bfab309180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="go">0x72bfab309200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="go">0x72bfab309280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
-<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="go">Shadow byte legend (one shadow byte represents 8 application bytes):</span>
-<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="go">Addressable:           00</span>
-<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="go">Partially addressable: 01 02 03 04 05 06 07</span>
-<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="go">Heap left redzone:       fa</span>
-<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="go">Freed heap region:       fd</span>
-<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a><span class="go">Stack left redzone:      f1</span>
-<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a><span class="go">Stack mid redzone:       f2</span>
-<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a><span class="go">Stack right redzone:     f3</span>
-<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="go">Stack after return:      f5</span>
-<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="go">Stack use after scope:   f8</span>
-<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="go">Global redzone:          f9</span>
-<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="go">Global init order:       f6</span>
-<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="go">Poisoned by user:        f7</span>
-<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="go">Container overflow:      fc</span>
-<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a><span class="go">Array cookie:            ac</span>
-<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a><span class="go">Intra object redzone:    bb</span>
-<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a><span class="go">ASan internal:           fe</span>
-<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a><span class="go">Left alloca redzone:     ca</span>
-<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a><span class="go">Right alloca redzone:    cb</span>
-<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a><span class="go">==2987262==ABORTING</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>./a.out
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">Enter a string: a</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">=================================================================</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">==2987262==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x72bfab309040 at pc 0x72bfada6b934 bp 0x7ffceee9d380 sp 0x7ffceee9cb08</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">WRITE of size 33 at 0x72bfab309040 thread T0</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x72bfada6b933<span class="w"> </span><span class="k">in</span><span class="w"> </span>scanf_common<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="gp">    #</span><span class="m">1</span><span class="w"> </span>0x72bfada859ba<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_vscanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1489
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="gp">    #</span><span class="m">2</span><span class="w"> </span>0x72bfada864d3<span class="w"> </span><span class="k">in</span><span class="w"> </span>__isoc99_scanf<span class="w"> </span>/usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:1520
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="gp">    #</span><span class="m">3</span><span class="w"> </span>0x56cd690a1270<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:8
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="gp">    #</span><span class="m">4</span><span class="w"> </span>0x72bfad834e07<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_call_main<span class="w"> </span>../sysdeps/nptl/libc_start_call_main.h:58
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="gp">    #</span><span class="m">5</span><span class="w"> </span>0x72bfad834ecb<span class="w"> </span><span class="k">in</span><span class="w"> </span>__libc_start_main_impl<span class="w"> </span>../csu/libc-start.c:360
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="gp">    #</span><span class="m">6</span><span class="w"> </span>0x56cd690a10e4<span class="w"> </span><span class="k">in</span><span class="w"> </span>_start<span class="w"> </span><span class="o">(</span>/example/a.out+0x10e4<span class="o">)</span><span class="w"> </span><span class="o">(</span>BuildId:<span class="w"> </span>1b5d9db6c98221b5cb99988ed43d50ecc2a732c8<span class="o">)</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="go">Address 0x72bfab309040 is located in stack of thread T0 at offset 64 in frame</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="gp">    #</span><span class="m">0</span><span class="w"> </span>0x56cd690a11c8<span class="w"> </span><span class="k">in</span><span class="w"> </span>main<span class="w"> </span>/example/test.c:4
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="go">This frame has 1 object(s):</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="go">    [32, 64) &#39;input&#39; (line 5) &lt;== Memory access at offset 64 overflows this variable</span>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="go">HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="go">    (longjmp and C++ exceptions *are* supported)</span>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a><span class="go">SUMMARY: AddressSanitizer: stack-buffer-overflow /usr/src/debug/gcc/gcc/libsanitizer/sanitizer_common/sanitizer_common_interceptors_format.inc:342 in scanf_common</span>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="go">Shadow bytes around the buggy address:</span>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a><span class="go">0x72bfab308d80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a><span class="go">0x72bfab308e00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="go">0x72bfab308e80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="go">0x72bfab308f00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a><span class="go">0x72bfab308f80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a><span class="go">=&gt;0x72bfab309000: f1 f1 f1 f1 00 00 00 00[f3]f3 f3 f3 00 00 00 00</span>
+<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="go">0x72bfab309080: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a><span class="go">0x72bfab309100: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a><span class="go">0x72bfab309180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a><span class="go">0x72bfab309200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a><span class="go">0x72bfab309280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</span>
+<a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a><span class="go">Shadow byte legend (one shadow byte represents 8 application bytes):</span>
+<a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a><span class="go">Addressable:           00</span>
+<a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a><span class="go">Partially addressable: 01 02 03 04 05 06 07</span>
+<a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a><span class="go">Heap left redzone:       fa</span>
+<a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a><span class="go">Freed heap region:       fd</span>
+<a id="__codelineno-17-39" name="__codelineno-17-39" href="#__codelineno-17-39"></a><span class="go">Stack left redzone:      f1</span>
+<a id="__codelineno-17-40" name="__codelineno-17-40" href="#__codelineno-17-40"></a><span class="go">Stack mid redzone:       f2</span>
+<a id="__codelineno-17-41" name="__codelineno-17-41" href="#__codelineno-17-41"></a><span class="go">Stack right redzone:     f3</span>
+<a id="__codelineno-17-42" name="__codelineno-17-42" href="#__codelineno-17-42"></a><span class="go">Stack after return:      f5</span>
+<a id="__codelineno-17-43" name="__codelineno-17-43" href="#__codelineno-17-43"></a><span class="go">Stack use after scope:   f8</span>
+<a id="__codelineno-17-44" name="__codelineno-17-44" href="#__codelineno-17-44"></a><span class="go">Global redzone:          f9</span>
+<a id="__codelineno-17-45" name="__codelineno-17-45" href="#__codelineno-17-45"></a><span class="go">Global init order:       f6</span>
+<a id="__codelineno-17-46" name="__codelineno-17-46" href="#__codelineno-17-46"></a><span class="go">Poisoned by user:        f7</span>
+<a id="__codelineno-17-47" name="__codelineno-17-47" href="#__codelineno-17-47"></a><span class="go">Container overflow:      fc</span>
+<a id="__codelineno-17-48" name="__codelineno-17-48" href="#__codelineno-17-48"></a><span class="go">Array cookie:            ac</span>
+<a id="__codelineno-17-49" name="__codelineno-17-49" href="#__codelineno-17-49"></a><span class="go">Intra object redzone:    bb</span>
+<a id="__codelineno-17-50" name="__codelineno-17-50" href="#__codelineno-17-50"></a><span class="go">ASan internal:           fe</span>
+<a id="__codelineno-17-51" name="__codelineno-17-51" href="#__codelineno-17-51"></a><span class="go">Left alloca redzone:     ca</span>
+<a id="__codelineno-17-52" name="__codelineno-17-52" href="#__codelineno-17-52"></a><span class="go">Right alloca redzone:    cb</span>
+<a id="__codelineno-17-53" name="__codelineno-17-53" href="#__codelineno-17-53"></a><span class="go">==2987262==ABORTING</span>
 </code></pre></div>
 <p>由于相比于 Valgrind，ASAN 的开销低很多，因此在不需要极致性能的场景下，甚至可以直接将开启 ASAN 编译后的程序上线到生产环境中，以减轻未知的内存安全问题带来的影响。</p>
 </div>
@@ -4838,15 +4853,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>有些时候，有问题的依赖库会给程序带来安全问题，因此保障依赖库的安全性也非常重要。最常见的 GitHub 的 Dependabot 就可以自动检查 GitHub 上你的仓库的依赖库是否有安全更新。例如 <a href="https://github.com/google/osv-scanner">Google 的 osv-scanner</a> 可以本地扫描依赖项，确定是否存在已知的漏洞。</p>
 <div class="admonition example">
 <p class="admonition-title">使用 osv-scanner 检查 Rust 项目依赖</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">Scanning dir .</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">Starting filesystem walk for root: /</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">Scanned /path/to/Cargo.lock file and found 252 packages</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">End status: 7 dirs visited, 14 inodes visited, 1 Extract calls, 8.604171ms elapsed, 8.604293ms wall time</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">╭───────────────────────────────────┬──────┬───────────┬─────────┬─────────┬────────────╮</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">│ OSV URL                           │ CVSS │ ECOSYSTEM │ PACKAGE │ VERSION │ SOURCE     │</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">├───────────────────────────────────┼──────┼───────────┼─────────┼─────────┼────────────┤</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">│ https://osv.dev/RUSTSEC-2024-0384 │      │ crates.io │ instant │ 0.1.13  │ Cargo.lock │</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">╰───────────────────────────────────┴──────┴───────────┴─────────┴─────────┴────────────╯</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">Scanning dir .</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">Starting filesystem walk for root: /</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">Scanned /path/to/Cargo.lock file and found 252 packages</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">End status: 7 dirs visited, 14 inodes visited, 1 Extract calls, 8.604171ms elapsed, 8.604293ms wall time</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">╭───────────────────────────────────┬──────┬───────────┬─────────┬─────────┬────────────╮</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">│ OSV URL                           │ CVSS │ ECOSYSTEM │ PACKAGE │ VERSION │ SOURCE     │</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">├───────────────────────────────────┼──────┼───────────┼─────────┼─────────┼────────────┤</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">│ https://osv.dev/RUSTSEC-2024-0384 │      │ crates.io │ instant │ 0.1.13  │ Cargo.lock │</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">╰───────────────────────────────────┴──────┴───────────┴─────────┴─────────┴────────────╯</span>
 </code></pre></div>
 <p>OSV URL 中提供了对应依赖的具体信息，帮助判断问题的严重性。</p>
 </div>
@@ -4865,20 +4880,20 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <li>jail：定义了监控的日志文件、封禁的次数阈值、时间、使用的 filter 以及 action 等。</li>
 </ul>
 <p>Debian 安装的 fail2ban 默认会启用 sshd 的 jail，其他的 jail 需要用户自行配置。可以使用以下命令查看 jail 的状态：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fail2ban-client<span class="w"> </span>status
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">Status</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">|- Number of jail:      1</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">`- Jail list:   sshd</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>fail2ban-client<span class="w"> </span>status<span class="w"> </span>sshd
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">Status for the jail: sshd</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">|- Filter</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">|  |- Currently failed: 0</span>
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="go">|  |- Total failed:     13</span>
-<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="go">|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd</span>
-<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="go">`- Actions</span>
-<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="go">   |- Currently banned: 1</span>
-<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">   |- Total banned:     2</span>
-<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="go">   `- Banned IP list:   192.168.123.123</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fail2ban-client<span class="w"> </span>status
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">Status</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="go">|- Number of jail:      1</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="go">`- Jail list:   sshd</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>fail2ban-client<span class="w"> </span>status<span class="w"> </span>sshd
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="go">Status for the jail: sshd</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="go">|- Filter</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="go">|  |- Currently failed: 0</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="go">|  |- Total failed:     13</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="go">|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="go">`- Actions</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="go">   |- Currently banned: 1</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="go">   |- Total banned:     2</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="go">   `- Banned IP list:   192.168.123.123</span>
 </code></pre></div>
 </div>
 <div class="admonition tip">
@@ -4889,30 +4904,30 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition warning">
 <p class="admonition-title">SSH 与中间人攻击</p>
 <p>在首次登录某台机器时，你会看到 SSH 这样的输出：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="go">The authenticity of host &#39;localhost (127.0.0.1)&#39; can&#39;t be established.</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">ECDSA key fingerprint is SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U.</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">Are you sure you want to continue connecting (yes/no/[fingerprint])?</span>
 </code></pre></div>
 <p>如果之前连接过的服务器发生了变化，或者有中间人在网络攻击，那么会看到下面的内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">Please contact your system administrator.</span>
-<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
-<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
-<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
-<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="go">Host key verification failed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">Someone could be eavesdropping on you right now (man-in-the-middle attack)!</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">It is also possible that a host key has just been changed.</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="go">The fingerprint for the RSA key sent by the remote host is</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="go">12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89.</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="go">Please contact your system administrator.</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="go">Add correct host key in /home/ustc/.ssh/known_hosts to get rid of this message.</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="go">Offending RSA key in /home/ustc/.ssh/known_hosts:12</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="go">RSA host key for 127.0.0.1 has changed and you have requested strict checking.</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="go">Host key verification failed.</span>
 </code></pre></div>
 <p>不要忽略相关的提示与警告。如果可行，请验证 fingerprint 与远程服务器的 fingerprint 是切实相符的：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">3072 SHA256:czt1KYx+RIkFTpSPQOLq+GqLbLRLZcD1Ffkq4Z3ZR2U root@example.com</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp">$ </span>ssh-keygen<span class="w"> </span>-lf<span class="w"> </span>/etc/ssh/ssh_host_rsa_key.pub<span class="w"> </span>-E<span class="w"> </span>md5
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">3072 MD5:12:34:56:78:90:ab:cd:ef:12:23:34:45:56:67:78:89 root@example.com</span>
 </code></pre></div>
 </div>
 <h4 id="security-bullet">关注安全通告<a class="headerlink" href="#security-bullet" title="Permanent link">&para;</a></h4>
@@ -4946,50 +4961,50 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。</p>
 </div>
 <p>以下是多年前使用 nuclei 扫描一个长时间未升级的 Grafana 实例的结果：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">                     __     _</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>
-<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="go">  projectdiscovery.io</span>
-<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>
-<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
-<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
-<a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
-<a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
-<a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
-<a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
-<a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
-<a id="__codelineno-20-18" name="__codelineno-20-18" href="#__codelineno-20-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
-<a id="__codelineno-20-19" name="__codelineno-20-19" href="#__codelineno-20-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
-<a id="__codelineno-20-20" name="__codelineno-20-20" href="#__codelineno-20-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>nuclei<span class="w"> </span>-u<span class="w"> </span>https://grafana.example.com<span class="w"> </span>-tags<span class="w"> </span>grafana
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="go">                     __     _</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">   ____  __  _______/ /__  (_)</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="go">  / __ \/ / / / ___/ / _ \/ /</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go"> / / / / /_/ / /__/ /  __/ /</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="go">/_/ /_/\__,_/\___/_/\___/_/   2.5.4</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  projectdiscovery.io</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="go">[WRN] Use with caution. You are responsible for your actions.</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="go">[WRN] Developers assume no liability and are not responsible for any misuse or damage.</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="go">[INF] Using Nuclei Engine 2.5.4 (latest)</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="go">[INF] Using Nuclei Templates 8.7.0 (latest)</span>
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="go">[INF] Using Interactsh Server https://interactsh.com</span>
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="go">[INF] Templates added in last update: 2681</span>
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="go">[INF] Templates loaded for scan: 7</span>
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a><span class="go">[2021-12-07 22:19:00] [CVE-2020-11110] [http] [medium] https://grafana.example.com/api/snapshots</span>
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="go">[2021-12-07 22:19:01] [CVE-2021-39226] [http] [critical] https://grafana.example.com/api/snapshots/:key</span>
+<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="go">[2021-12-07 22:19:01] [CVE-2019-15043] [http] [high] https://grafana.example.com/api/snapshots</span>
 </code></pre></div>
 <p>可以发现扫描器轻松地发现了已有的三个漏洞。相关系统管理员在得到扫描结果后，迅速升级了该 Grafana 的版本，解决了此安全问题。</p>
 <h2 id="security-event-example">安全事件处理示例<a class="headerlink" href="#security-event-example" title="Permanent link">&para;</a></h2>
 <p>以下，我们介绍一些真实的安全事件紧急处理的例子，部分细节做模糊化修改处理。</p>
 <h3 id="password-leak-rce-example">从泄漏密码到 RCE<a class="headerlink" href="#password-leak-rce-example" title="Permanent link">&para;</a></h3>
 <p>2023 年年底的某日，管理员 C 发现维护的 WordPress 网站无法打开，返回 502 错误。该 WordPress 网站运行在一个容器中。使用 <code>docker top</code> 检查发现容器里出现了奇怪的进程，如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="go">/bin/sh -c cd /tmp/f;./cc -c a.ini;echo 17fbf238b;pwd;echo 222d091e</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">./out -a 192.168.0.0/24 -nobr -np -nopoc -o /tmp/oo.log</span>
 </code></pre></div>
 <p>检查容器文件系统，发现 <code>/tmp</code> 下面多了很多文件，一些 log 文件似乎是内网扫描器的输出。因此管理员 C 立刻关闭了容器，并且导出了容器文件系统以及数据库（在另一个容器中）以进一步检查。</p>
 <p>由于配置问题，容器外的 Nginx 日志记录的 IP 均为 CDN 的 IP，没有记录到真实 IP 地址。不过，观察访问的 URL，发现存在可疑的访问主题编辑器的 <code>POST</code> 请求，根据相关的 User agent 记录，发现攻击者似乎在尝试登录网站后台。</p>
 <p>检查 WordPress 本地文件的修改日期，发现某个主题文件的修改日期不正常，开头插入了以下的 PHP：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="cp">&lt;?php</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
-<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
-<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
-<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
-<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
-<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="cp">&lt;?php</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="nv">$la</span><span class="o">=</span><span class="s2">&quot;&lt;redacted&gt;&quot;</span><span class="p">;</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="nv">$lb</span><span class="o">=</span><span class="s2">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/&quot;</span><span class="p">;</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="k">foreach</span><span class="p">(</span><span class="nv">$_POST</span> <span class="k">as</span><span class="nv">$k</span><span class="o">=&gt;</span><span class="nv">$v</span><span class="p">){</span><span class="nv">$_POST</span><span class="p">[</span><span class="nv">$k</span><span class="p">]</span><span class="o">=</span><span class="nb">base64_decode</span><span class="p">(</span><span class="nb">strtr</span><span class="p">(</span><span class="nv">$v</span><span class="p">,</span><span class="nv">$la</span><span class="p">,</span><span class="nv">$lb</span><span class="p">));}</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="k">function</span> <span class="nf">downloadFile</span><span class="p">(</span><span class="nv">$url</span><span class="p">,</span><span class="nv">$x</span><span class="p">){</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>  <span class="nv">$ary</span><span class="o">=</span><span class="nb">parse_url</span><span class="p">(</span><span class="nv">$url</span><span class="p">);</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>  <span class="nv">$ext</span> <span class="o">=</span> <span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="nv">$file</span><span class="p">);</span>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>  <span class="nv">$file1</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>  <span class="nv">$file2</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>  <span class="nv">$file3</span><span class="o">=</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$ext</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>  <span class="k">return</span> <span class="nv">$ary</span><span class="p">;</span>
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="p">}</span>
 </code></pre></div>
 <p>可以推测，攻击者在修改了主题之后，就可以利用主题的 PHP 文件执行任意命令了。</p>
 <p>管理员 C 之前配置了 WordPress 本体与插件的自动升级，因此大概率是某个管理员用户的密码泄漏导致的。由于该网站重要性不高，因此可以花一些时间仔细检查后再考虑重新上线。几日后，攻击者向另一名管理员发送邮件致歉，并且提供了入侵手段：从某个俄罗斯 botnet 中获取了泄漏的用户名与密码（攻击者认为是安装了有问题的破解程序导致的），之后登录入侵后尝试做了内网扫描，并且该密码同样也可以登录此人在该组织的 GitLab 账号。在第一时间封禁了该 GitLab 账号后，检查 Nginx 日志获取了所有攻击者访问的仓库，万幸的是，这些仓库中不包含敏感信息。</p>
@@ -5017,15 +5032,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>在 @iBug 和 @taoky 两位同学的帮助下，我们终于揭开了攻击者隐藏进程的神秘面纱。攻击者通过将 <code>/tmp</code> 目录绑定挂载到挖矿进程的 <code>/proc/PID</code> 目录，使得各种系统工具（如 <code>nvidia-smi</code>、<code>ps</code> 和 <code>htop</code>）无法读取到这个目录内原本的内容，从而达到了隐藏进程的效果。</p>
 <h5 id="lab-server-intrusion-hidden-processes">寻找隐藏进程<a class="headerlink" href="#lab-server-intrusion-hidden-processes" title="Permanent link">&para;</a></h5>
 <p>我们以一台受影响的服务器为例，查看 <code>/proc/$$/mountinfo</code>，可以发现了如下异常条目：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp"># </span>grep<span class="w"> </span>-wF<span class="w"> </span>proc<span class="w"> </span>/proc/<span class="nv">$$</span>/mountinfo
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp"># </span>grep<span class="w"> </span>-wF<span class="w"> </span>proc<span class="w"> </span>/proc/<span class="nv">$$</span>/mountinfo
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">392 26 0:28 /tmp /proc/18790 rw,relatime shared:1 - zfs pool0/ROOT/ubuntu rw,xattr,posixacl,casesensitive</span>
 </code></pre></div>
 <p>其中，<code>18790</code> 是攻击者隐藏的进程 ID，攻击者通过将 <code>/tmp</code> 目录 bind mount 到 <code>/proc/18790</code> 实现了进程隐藏的操作。为了查看该进程，我们需要卸载该挂载点：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>umount<span class="w"> </span>/proc/18790
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>umount<span class="w"> </span>/proc/18790
 </code></pre></div>
 <p>卸载后，隐藏的进程便显现出来。由于 <code>/proc/&lt;PID&gt;/exe</code> 是一个指向进程可执行文件的软链接，我们可以通过它查看恶意进程的实际可执行文件路径：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp"># </span>ls<span class="w"> </span>-l<span class="w"> </span>/proc/18790/exe
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -&gt; /var/tmp/Xorgs*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp"># </span>ls<span class="w"> </span>-l<span class="w"> </span>/proc/18790/exe
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="go">lrwxrwxrwx   1 root root   0 Oct 23 20:27 exe -&gt; /var/tmp/Xorgs*</span>
 </code></pre></div>
 <p>通过如上方式，我们在所有服务器上发现了如下三种不同的隐藏恶意进程：</p>
 <ul>
@@ -5055,15 +5070,15 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>我们使用 <code>ss -tpn</code> 命令查看服务器的 TCP 连接情况，重点关注与挖矿进程相关的网络活动。在输出中我们发现了 PID 为 18790 的挖矿进程的两个 TCP 链接：</p>
 <!-- `ss` 命令是用于查看网络连接的工具，`-t` 参数表示只显示 TCP 连接，`-p` 参数显示进程相关信息，`-n` 参数显示 IP 地址和端口号，而不是尝试解析域名。 -->
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># ss -tpn</span>
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>State<span class="w">  </span>Recv-Q<span class="w">  </span>Send-Q<span class="w">  </span>Local<span class="w"> </span>Address:Port<span class="w">   </span>Peer<span class="w"> </span>Address:Port<span class="w">  </span>Process
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:35126<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">101</span><span class="o">))</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:56578<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">102</span><span class="o">))</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># ss -tpn</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>State<span class="w">  </span>Recv-Q<span class="w">  </span>Send-Q<span class="w">  </span>Local<span class="w"> </span>Address:Port<span class="w">   </span>Peer<span class="w"> </span>Address:Port<span class="w">  </span>Process
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:35126<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">101</span><span class="o">))</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>ESTAB<span class="w">  </span><span class="m">0</span><span class="w">       </span><span class="m">0</span><span class="w">       </span>xxx.xx.xx.xx:56578<span class="w">   </span>yyy.yy.yy.yy:8010<span class="w">  </span>users:<span class="o">((</span><span class="s2">&quot;Xorgs&quot;</span>,pid<span class="o">=</span><span class="m">18790</span>,fd<span class="o">=</span><span class="m">102</span><span class="o">))</span>
 </code></pre></div>
 <p>其中实验室服务器的 IP 是 <code>xxx.xx.xx.xx</code>，而远程主机的是 <code>yyy.yy.yy.yy</code>（另一个校内地址）。</p>
 <p>我们也可以通过 <code>/proc</code> 查看该进程的命令行参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">root@lab-server:~# </span>tr<span class="w"> </span><span class="se">\\</span><span class="m">0</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span>&lt;<span class="w"> </span>/proc/18790/cmdline
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">./Xorgs -a kawpow --proxy yyy.yy.yy.yy:8010 -s 51.89.99.172:6060 -u RBgUjdBAXMSNtDgSHbCAvVdLk5vZNz9nNG.lab-server -w 0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">root@lab-server:~# </span>tr<span class="w"> </span><span class="se">\\</span><span class="m">0</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span>&lt;<span class="w"> </span>/proc/18790/cmdline
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="go">./Xorgs -a kawpow --proxy yyy.yy.yy.yy:8010 -s 51.89.99.172:6060 -u RBgUjdBAXMSNtDgSHbCAvVdLk5vZNz9nNG.lab-server -w 0</span>
 </code></pre></div>
 <p>从命令行上可以看出，这个名为 <code>Xorgs</code> 的挖矿程序正在使用 <code>yyy.yy.yy.yy:8010</code> 作为 SOCKS5 代理连接位于 <code>51.89.99.172:6060</code> 矿池。攻击者通过这种方式使机器可以正常访问到矿池，即使机器本身并没有开通出校访问权限。</p>
 <p>在确认了 <code>yyy</code> 主机被用作连接矿池的代理以后，我们立即联系了网络中心的老师，并提供了相关证据。网络中心的老师表示，这是校内其他学院的服务器，并已经通知了相关人员进行处理。</p>
@@ -5079,7 +5094,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p><strong>时间线索</strong>：<code>stat</code> 该文件后，我们发现 A 同学的公钥文件的 <a href="#forensics">ctime</a> 为 <strong>10 月 17 日 23:54:11</strong>，而 root 用户的公钥文件 ctime 为 <strong>10 月 18 日 00:00:53</strong>。</p>
 <p><strong>登录方式</strong>：我们试图通过 <code>/var/log/auth.log</code> 查看攻击者的登录记录，但发现该日志已被删除，且 rsyslog 服务被关闭。幸运的是，<code>auth.log</code> 每天 0 点会自动 rotate 成为 <code>auth.log.1</code>，其中保留了 10 月 18 日前的日志。检查发现，<strong>10 月 17 日晚 23:53:13</strong>，A 同学的账户从先研院某 IP 登录，且使用了 A 同学自己的公钥。A 同学表示，该公钥对应的私钥同时存放在他的电脑和学校的瀚海超算中。17 日晚 22 点后，他回宿舍休息，电脑则留在高新区实验室中未锁屏。此外，瀚海超算在 17 日之前已被黑客入侵。结合这些信息，如果排除掉攻击者进入实验室来拷走 A 同学私钥这种可能性较小的方式，我们推测攻击者很可能是通过瀚海超算获得的 A 同学的私钥。</p>
 <p><strong>journal 日志</strong>：攻击者每次登录后都会删除 journal 日志，导致我们无法追踪其具体操作。查看 dmesg 可以发现，18 日、22 日、23 日有多次 journal 被删除的记录，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.journal: Journal file has been deleted, rotating.
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.journal: Journal file has been deleted, rotating.
 </code></pre></div>
 <p>但由于这些信息与 GPU 满载无关，且不是报错，因此初次排查时被我忽略掉了。</p>
 <h5 id="lab-server-intrusion-compute-nodes">其它计算节点的入侵<a class="headerlink" href="#lab-server-intrusion-compute-nodes" title="Permanent link">&para;</a></h5>
@@ -5211,7 +5226,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月23日 20:25:41 UTC">2025年12月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月4日 17:44:31 UTC">2026年4月4日</span>
   </span>
 
     
