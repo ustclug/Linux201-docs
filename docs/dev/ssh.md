@@ -280,7 +280,7 @@ scp /path/to/local/file username@remotehost:/path/to/remote/directory
 scp username@remotehost:/path/to/remote/file /path/to/local/directory
 ```
 
-这个命令会提示您输入远程主机上用户的密码，除非您已经设置了 SSH 密钥认证。
+这个命令会提示你输入远程主机上用户的密码，除非你已经设置了 SSH 密钥认证。
 
 !!! tip
 

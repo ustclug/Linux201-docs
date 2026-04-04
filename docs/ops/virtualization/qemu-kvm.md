@@ -73,7 +73,7 @@ qemu-system-x86_64 \
 - `-drive file=example.img,format=raw,if=virtio`: 使用 `example.img` 作为磁盘镜像，格式为 `raw`，使用 `virtio` 设备模型。
 - `-nic user,model=virtio`: 使用用户态网络设备，使用 `virtio` 设备模型。
 
-这只是创建虚拟机的一个基本示例，QEMU 提供了很多其他选项，可以让您定制网络、图形输出、设备等。
+这只是创建虚拟机的一个基本示例，QEMU 提供了很多其他选项，可以让你定制网络、图形输出、设备等。
 
 ## 详细配置
 
