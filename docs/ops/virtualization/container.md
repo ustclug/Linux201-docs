@@ -720,8 +720,9 @@ sudo docker push registry.example.com/username/example:latest
 
 ### Volume
 
-Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。
-上面介绍了使用 `-v HOST_PATH:CONTAINER_PATH` 的方式挂载宿主机的目录（这种方式也被称为 bind mount），不过如果将参数写成 `-v VOLUME_NAME:CONTAINER_PATH` 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。
+Volume 是 Docker 提供的一种持久化存储的方式，可以用于保存数据、配置等。相比 bind mount（使用 `-v HOST_PATH:CONTAINER_PATH` 的方式挂载宿主机的目录），Docker 的 volume 可以避免类似容器内部与外部 UID 不一致等权限问题。
+
+将参数写成 `-v VOLUME_NAME:CONTAINER_PATH` 的形式，那么 Docker 就会自动创建一个以此命名的 volume，并且将其挂载到容器中。
 
 ```console
 $ sudo docker run -it --rm -v myvolume:/myvolume ustclug/debian:12
@@ -763,8 +764,7 @@ $ sudo docker inspect myvolume
 ]
 ```
 
-此外，在上面列出的 volume 里面，有一些没有名字，显示为哈希值的 volume。这些被称为「匿名 volume」。
-例如，如果在创建容器的时候不指定 volume 名字，那么 Docker 就会自动创建一个匿名 volume：
+此外，在上面列出的 volume 里面，有一些没有名字，显示为哈希值的 volume。这些被称为「匿名 volume」。例如，如果在创建容器的时候不指定 volume 名字，那么 Docker 就会自动创建一个匿名 volume：
 
 ```console
 $ sudo docker run -it --rm --name test -v /myvolume ustclug/debian:12
@@ -785,11 +785,9 @@ $ sudo docker inspect test
         ],
 ```
 
-如果在 `docker run` 时添加了 `--rm` 参数，那么匿名 volume 会在容器销毁时被删除。
-反之，手动 `docker rm` 一个容器时，它对应的匿名 volume 不会被删除。
+如果在 `docker run` 时添加了 `--rm` 参数，那么匿名 volume 会在容器销毁时被删除。反之，手动 `docker rm` 一个容器时，它对应的匿名 volume 不会被删除。
 
-同时，Dockerfile 中也可以使用 `VOLUME` 指令声明 volume。如果用户在运行容器的时候没有指定 volume，那么 Docker 就会自动创建一个匿名 volume。
-一个例子是 [`mariadb` 容器镜像](https://hub.docker.com/layers/library/mariadb/lts/images/sha256-e0a092f10ea8a4c33e88b790606b68dab3d00e6b1ef417f6f5d8e825574e1fa6?context=explore)：
+同时，Dockerfile 中也可以使用 `VOLUME` 指令声明 volume。如果用户在运行容器的时候没有指定 volume，那么 Docker 就会自动创建一个匿名 volume。一个例子是 [`mariadb` 容器镜像](https://hub.docker.com/layers/library/mariadb/lts/images/sha256-e0a092f10ea8a4c33e88b790606b68dab3d00e6b1ef417f6f5d8e825574e1fa6?context=explore)：
 
 ```dockerfile
 VOLUME [/var/lib/mysql]  # Layer 18
