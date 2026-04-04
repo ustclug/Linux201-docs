@@ -32,7 +32,7 @@ icon: octicons/device-desktop-16
     - X11：指 X 窗口系统的第 11 个版本（X Version 11），是目前仍在使用的版本，也极大概率是最后一个版本了
     - Xorg：由 X.Org 基金会维护的 X11 实现，是目前最主流的 X server 实现
 
-!!! comment "@taoky：关于 XLibre"
+!!! comment "@taoky: 关于 XLibre"
 
     如果关注 Linux 桌面相关新闻的话，你可能会听说过 [XLibre](https://github.com/X11Libre/xserver)——一个 Xorg 的 fork。随着开发重心从 Xorg 到 Wayland 的转移，Xorg 除去 Xwayland 以外的部分版本发布的频次大幅下降（事实上，尽管仓库仍然一直在更新，Xorg 已经多年没有发布新的大版本了，可以认为除了安全漏洞修复以外，Xorg 很可能不会再有新的大型变更了）。XLibre 的[主开发者 metux](https://github.com/metux) 在给 Xorg 提交代码时，由于代码质量与兼容性问题与 Xorg 的维护者产生了矛盾，之后在 freedesktop 的 GitLab 上 fork 了 Xorg，修改 README 发表了[辱骂 Xorg 开发者的言论](https://github.com/X11Libre/xserver/commit/5387f9d7f1a1c2bb401e077a8b080e564ad79b5d)而被 freedesktop 封禁。
 
@@ -348,7 +348,7 @@ $ xrdb -merge ~/.Xresources
 
 从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。
 
-!!! comment "@taoky：吐槽"
+!!! comment "@taoky: 吐槽"
 
     我不止一次看到过在笔记本上用 Linux X 桌面的人在需要做报告的时候，HDMI 线接上，然后发现大屏幕上只能显示一部分被截断的内容，或者内容太大/太小，而且还要花大半天才能调好。如果你经常需要拿着笔记本接投影做展示，Wayland 会是好得多的选择。
 

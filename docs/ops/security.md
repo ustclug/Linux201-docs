@@ -205,7 +205,7 @@ int main() {
 
 国内最知名的供应链攻击案例之一是 [XcodeGhost](https://en.wikipedia.org/wiki/XcodeGhost)。由于 Xcode 特别大，国内下载 Xcode 缓慢，有人在百度网盘上传了一个 Xcode 安装包「加速」下载，并且四处散播网盘下载链接，但是这个安装包被篡改，插入了恶意代码，再加上许多人关闭了 Gatekeeper 签名检查，导致了国内包括微信、网易云音乐在内的大量的 iOS 应用被感染。
 
-!!! comment "@tiankaima 关于 XcodeGhost"
+!!! comment "@tiankaima: 关于 XcodeGhost"
 
     上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考：
 
