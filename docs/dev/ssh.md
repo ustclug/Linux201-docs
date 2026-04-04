@@ -485,7 +485,7 @@ OpenSSH 支持使用证书作为客户端和服务端的身份验证方式，即
 
 总的来说，对于中小规模的社团和实验室服务器管理场景，（对管理员）使用 SSH 证书认证是个较为方便易用的方式。
 
-与 X.509 证书类似，客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA。
+与 X.509 证书类似，**客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA**。以下分别以「服务端 CA」和「客户端 CA」指代为服务端/客户端签发证书的 CA。
 
 ### 创建 SSH CA {#ssh-ca}
 
@@ -503,17 +503,17 @@ ssh-keygen -f my_ca [-t ed25519] [-C 'My CA'] [-N 'my-ca-p@ssw0rd']
 
 ### 服务端证书 {#server-certificates}
 
-首先，客户端需要信任 CA 签发的证书，方法是在 `known_hosts` 文件中加入 CA 的公钥，并在公钥前添加选项 `@cert-authority *`，例如；
+首先，客户端需要信任服务端 CA 签发的证书，方法是在 `known_hosts` 文件中加入服务端 CA 的公钥，并在公钥前添加选项 `@cert-authority *`，例如；
 
 ```text title="~/.ssh/known_hosts"
 @cert-authority * ssh-ed25519 AAAAC3N... My CA
 ```
 
-对于实验室等公用机器的场景，也可以将 CA 条目配置在 `/etc/ssh/ssh_known_hosts` 文件中，其会对所有用户生效，而无需再为每个用户单独配置。
+对于实验室等公用机器的场景，也可以将服务端 CA 条目配置在 `/etc/ssh/ssh_known_hosts` 文件中，其会对所有用户生效，而无需再为每个用户单独配置。
 
 #### 配置服务端证书 {#create-server-certificates}
 
-签发服务端证书需要使用 CA 私钥和对应服务端的**公钥**：
+签发服务端证书需要使用服务端 CA 私钥和对应服务端的**公钥**：
 
 ```shell
 ssh-keygen -s my_ca -I myserver.example.com -h -n myserver.example.com [-V validity] [-z serial] ssh_host_ed25519_key.pub
@@ -538,11 +538,11 @@ HostKey /etc/ssh/ssh_host_ed25519_key
 HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub
 ```
 
-在 reload 或重启 sshd 服务后，服务端就会在握手时发送证书给客户端。若客户端也正确配置了 CA 信任，则无需将服务端的公钥预先加入 `known_hosts` 文件即可完成验证。
+在 reload 或重启 sshd 服务后，服务端就会在握手时发送证书给客户端。若客户端也正确配置了服务端 CA 信任，则无需将服务端的公钥预先加入 `known_hosts` 文件即可完成验证。
 
 ### 客户端证书 {#client-certificates}
 
-首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 `authorized_keys` 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 `/etc/ssh/ssh_user_ca`：
+首先为服务端配置客户端 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 `authorized_keys` 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 `/etc/ssh/ssh_user_ca`：
 
 ```text title="/etc/ssh/ssh_user_ca"
 ssh-ed25519 AAAAC3N... My org CA
@@ -556,7 +556,7 @@ TrustedUserCAKeys /etc/ssh/ssh_user_ca
 
 #### 签发客户端证书 {#sign-client-certificates}
 
-与服务端证书类似，签发客户端证书需要使用 CA 私钥和对应客户端的**公钥**：
+与服务端证书类似，签发客户端证书需要使用客户端 CA 私钥和对应客户端的**公钥**：
 
 ```shell
 ssh-keygen -s my_ca -I 'User 1' -n user1 [-V validity] [-z serial] [-O options] ~/.ssh/id_ed25519.pub
