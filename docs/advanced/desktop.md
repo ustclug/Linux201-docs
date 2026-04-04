@@ -457,7 +457,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
         Session 的错误输出位于 `~/.xsession-errors` 文件中，可以查看该文件来调试 session 启动失败的问题。
 
-    之后 SSH 连接时，可以[使用 `-L` 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上](../dev/ssh.md#local-port-forwarding-local-port-forwarding)：
+    之后 SSH 连接时，可以[使用 `-L` 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上](../dev/ssh.md#local-port-forwarding)：
 
     ```shell
     ssh user@host -L 5900:/home/user/.vncsock
