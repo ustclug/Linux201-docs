@@ -222,6 +222,31 @@ int main() {
     - 适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本
     - **密切关注安全新闻**，例如在上面 polyfill\.io 的例子中，Cloudflare 注意到了域名出售等问题，并及时通知了[供应链风险](https://blog.cloudflare.com/polyfill-io-now-available-on-cdnjs-reduce-your-supply-chain-risk)，以及[后续措施](https://blog.cloudflare.com/automatically-replacing-polyfill-io-links-with-cloudflares-mirror-for-a-safer-internet)。
 
+!!! tip "包管理器的供应链攻击缓解方式"
+
+    2026 年 3 月，[LiteLLM](https://github.com/BerriAI/litellm/issues/24512) 和 [axios](https://github.com/axios/axios/issues/10636) 等被大量使用的库接连爆出供应链攻击问题——攻击者通过某种方式（在这里分别是通过[会被 CI 执行的漏洞扫描器](https://www.aquasec.com/blog/trivy-supply-chain-attack-what-you-need-to-know/)和社会工程学方法）发布了这些库的、带有攻击者代码的新版本，如果开发者没有使用 lock 类文件锁定版本，或者在更新新版本依赖，那么就会中招。
+
+    一些语言的设计会让相关的问题变得更严重。例如在 Python 中，依赖可以安装[可执行的 pth 文件，在 Python 启动时会自动执行](https://docs.python.org/3/library/site.html)（即使没有 `import` 相关的包！）。在 JavaScript 生态中，一些依赖在安装后可以自动执行自己的脚本来做配置。
+
+    一种缓解方式是让相关工具避免下载太新的依赖，例如流行的 Python 包管理器 uv 就支持 [exclude-newer](https://docs.astral.sh/uv/reference/settings/#exclude-newer) 选项：
+
+    ```toml title="uv.toml"
+    exclude-newer = "7 days"
+    ```
+
+    Node 的 npm 和 pnpm 等也提供了相关的支持：
+
+    ```config title=".npmrc"
+    # days
+    min-release-age=7
+    ```
+
+    ```yaml title="pnpm-workspace.yaml"
+    minimumReleaseAge: 10080  # minutes
+    ```
+
+    而对语言特定的问题，包管理器也可能提供解决方案，例如对 JavaScript 生态依赖执行脚本的问题，npm 可以启用 `ignore-scripts` 选项，只在需要的时候手动安装，pnpm 则默认不执行任何依赖的脚本，用户可以在配置中设置允许执行脚本的依赖。
+
 #### 近源渗透 {#close-access-penetration}
 
 网络攻击不一定必须要远程进行，对于重要的高价值目标，攻击者可能会选择近源渗透。例如，一些机构的管理可能不严格，攻击者可以本人光明正大的进入，把网线插到自己电脑上，然后直接开始攻击内网（当然，这样容易被抓住）。攻击者也可能会尝试破解机构内网的 Wi-Fi 密码等。此外，如果能够物理接触到计算机，攻击者可以使用感染病毒的 U 盘，或是能够模拟键盘/鼠标等行为的 [BadUSB](https://en.wikipedia.org/wiki/BadUSB) 入侵设备，或者添加[硬件形式的键盘记录器](https://en.wikipedia.org/wiki/Hardware_keylogger)，以便为后续行动做好准备。
