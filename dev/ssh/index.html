@@ -4044,7 +4044,7 @@
 </li>
 </ul>
 <p>总的来说，对于中小规模的社团和实验室服务器管理场景，（对管理员）使用 SSH 证书认证是个较为方便易用的方式。</p>
-<p>与 X.509 证书类似，客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA。</p>
+<p>与 X.509 证书类似，<strong>客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA</strong>。以下分别以「服务端 CA」和「客户端 CA」指代为服务端/客户端签发证书的 CA。</p>
 <h3 id="ssh-ca">创建 SSH CA<a class="headerlink" href="#ssh-ca" title="Permanent link">&para;</a></h3>
 <p>前文提到，SSH CA 的身份由<strong>公钥</strong>唯一确定，因此一对普通的 SSH 密钥对就是一个 SSH CA 所需的全部内容，不像 X.509 需要再进一步为根 CA 产生一个自签名证书。此处引用创建 SSH 密钥对的命令：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>my_ca<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>ed25519<span class="o">]</span><span class="w"> </span><span class="o">[</span>-C<span class="w"> </span><span class="s1">&#39;My CA&#39;</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>-N<span class="w"> </span><span class="s1">&#39;my-ca-p@ssw0rd&#39;</span><span class="o">]</span>
@@ -4052,12 +4052,12 @@
 <p>注意到尽管 <code>-t</code>、<code>-C</code> 和 <code>-N</code> 参数都是可选的<sup id="fnref:filename-is-optional"><a class="footnote-ref" href="#fn:filename-is-optional">2</a></sup>，为了便于辨认 CA 和提高安全性，我们强烈建议采用先进的密码学算法（Ed25519）、指定可读的备注文字和为私钥设置密码。</p>
 <p>生成密钥对后，请保管好 <code>my_ca</code> 私钥文件，然后即可将 <code>my_ca.pub</code> 公钥文件复制或公开传播了。</p>
 <h3 id="server-certificates">服务端证书<a class="headerlink" href="#server-certificates" title="Permanent link">&para;</a></h3>
-<p>首先，客户端需要信任 CA 签发的证书，方法是在 <code>known_hosts</code> 文件中加入 CA 的公钥，并在公钥前添加选项 <code>@cert-authority *</code>，例如；</p>
+<p>首先，客户端需要信任服务端 CA 签发的证书，方法是在 <code>known_hosts</code> 文件中加入服务端 CA 的公钥，并在公钥前添加选项 <code>@cert-authority *</code>，例如；</p>
 <div class="highlight"><span class="filename">~/.ssh/known_hosts</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>@cert-authority * ssh-ed25519 AAAAC3N... My CA
 </code></pre></div>
-<p>对于实验室等公用机器的场景，也可以将 CA 条目配置在 <code>/etc/ssh/ssh_known_hosts</code> 文件中，其会对所有用户生效，而无需再为每个用户单独配置。</p>
+<p>对于实验室等公用机器的场景，也可以将服务端 CA 条目配置在 <code>/etc/ssh/ssh_known_hosts</code> 文件中，其会对所有用户生效，而无需再为每个用户单独配置。</p>
 <h4 id="create-server-certificates">配置服务端证书<a class="headerlink" href="#create-server-certificates" title="Permanent link">&para;</a></h4>
-<p>签发服务端证书需要使用 CA 私钥和对应服务端的<strong>公钥</strong>：</p>
+<p>签发服务端证书需要使用服务端 CA 私钥和对应服务端的<strong>公钥</strong>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>ssh-keygen<span class="w"> </span>-s<span class="w"> </span>my_ca<span class="w"> </span>-I<span class="w"> </span>myserver.example.com<span class="w"> </span>-h<span class="w"> </span>-n<span class="w"> </span>myserver.example.com<span class="w"> </span><span class="o">[</span>-V<span class="w"> </span>validity<span class="o">]</span><span class="w"> </span><span class="o">[</span>-z<span class="w"> </span>serial<span class="o">]</span><span class="w"> </span>ssh_host_ed25519_key.pub
 </code></pre></div>
 <p>其中各参数的含义如下：</p>
@@ -4080,16 +4080,16 @@
 <div class="highlight"><span class="filename">/etc/ssh/sshd_config.d/ca.conf</span><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>HostKey<span class="w"> </span>/etc/ssh/ssh_host_ed25519_key
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>HostCertificate<span class="w"> </span>/etc/ssh/ssh_host_ed25519_key-cert.pub
 </code></pre></div>
-<p>在 reload 或重启 sshd 服务后，服务端就会在握手时发送证书给客户端。若客户端也正确配置了 CA 信任，则无需将服务端的公钥预先加入 <code>known_hosts</code> 文件即可完成验证。</p>
+<p>在 reload 或重启 sshd 服务后，服务端就会在握手时发送证书给客户端。若客户端也正确配置了服务端 CA 信任，则无需将服务端的公钥预先加入 <code>known_hosts</code> 文件即可完成验证。</p>
 <h3 id="client-certificates">客户端证书<a class="headerlink" href="#client-certificates" title="Permanent link">&para;</a></h3>
-<p>首先为服务端配置 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 <code>authorized_keys</code> 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 <code>/etc/ssh/ssh_user_ca</code>：</p>
+<p>首先为服务端配置客户端 CA 信任，需要在服务端建立一个“信任 CA 列表”文件。其采用通常的 <code>authorized_keys</code> 格式，即每行一个公钥。我们建议使用一个约定俗成、易于辨认的路径 <code>/etc/ssh/ssh_user_ca</code>：</p>
 <div class="highlight"><span class="filename">/etc/ssh/ssh_user_ca</span><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>ssh-ed25519 AAAAC3N... My org CA
 </code></pre></div>
 <p>然后在 <code>sshd_config</code> 中指定该文件：</p>
 <div class="highlight"><span class="filename">/etc/ssh/sshd_config.d/ca.conf</span><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>TrustedUserCAKeys<span class="w"> </span>/etc/ssh/ssh_user_ca
 </code></pre></div>
 <h4 id="sign-client-certificates">签发客户端证书<a class="headerlink" href="#sign-client-certificates" title="Permanent link">&para;</a></h4>
-<p>与服务端证书类似，签发客户端证书需要使用 CA 私钥和对应客户端的<strong>公钥</strong>：</p>
+<p>与服务端证书类似，签发客户端证书需要使用客户端 CA 私钥和对应客户端的<strong>公钥</strong>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>ssh-keygen<span class="w"> </span>-s<span class="w"> </span>my_ca<span class="w"> </span>-I<span class="w"> </span><span class="s1">&#39;User 1&#39;</span><span class="w"> </span>-n<span class="w"> </span>user1<span class="w"> </span><span class="o">[</span>-V<span class="w"> </span>validity<span class="o">]</span><span class="w"> </span><span class="o">[</span>-z<span class="w"> </span>serial<span class="o">]</span><span class="w"> </span><span class="o">[</span>-O<span class="w"> </span>options<span class="o">]</span><span class="w"> </span>~/.ssh/id_ed25519.pub
 </code></pre></div>
 <p>签发客户端证书时使用的命令行参数基本相同，仅有少许区别：</p>
@@ -4277,7 +4277,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月4日 07:27:53 UTC">2026年4月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月4日 22:01:10 UTC">2026年4月4日</span>
   </span>
 
     
