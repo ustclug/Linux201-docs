@@ -435,6 +435,17 @@ systemd-run --unit=my-sleep sleep 600
 
 Journald 是 systemd 套件中负责管理日志的部分。与传统的 `/var/log/*.log` 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（`less`、`vim` 等）查看，需要通过 `journalctl` 管理。
 
+!!! note "为什么 journald 选择使用二进制格式？"
+
+    传统上，Unix 系统的日志都以文本格式存储，并定时压缩、删除过期的日志。但作为中心化的日志管理服务，journald 选择了二进制格式存储日志，打破 Unix 传统，主要基于下面几点考虑：
+
+    - 更好支持结构化日志，避免解析文本的麻烦（可以添加 `-o verbose` 参数查看结构化信息）
+    - 二进制中可以添加索引，快速搜索指定时间、指定服务的日志，而不需要从头到尾遍历一遍文本
+    - 允许更方便存储非文本（二进制）日志数据
+    - 二进制中可以添加哈希校验，甚至签名，防止日志被恶意篡改
+
+    当然代价是用户无法再直接使用文本编辑器，或者 `grep` 等工具直接操作分析 journald 的日志文件，需要使用 `journalctl` 工具处理。有关其设计考虑的更多细节，可以参考其[最初的设计文档](https://docs.google.com/document/u/0/d/1IC9yOXj7j6cdLLxWEBAGRL6wl97tFxgjLUEHIX3MSTs/pub)。
+
 一些常用的选项和参数：
 
 |    选项     | 说明                                         |
@@ -468,9 +479,28 @@ Journald 的配置文件位于 `/etc/systemd/journald.conf`，可以通过 [`jou
 
 如果你需要手动清理日志，释放磁盘空间的话，可以使用 `journalctl --vacuum-size=100M` 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 `--vacuum-time=` 和 `--vacuum-files=10` 也可参考。
 
+!!! note "用户程序视角：如何记录日志？"
+
+    C 库提供了传统的 [`syslog()`][syslog.3] 函数，用来连接到 `/dev/log` 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：
+
+    ```console
+    $ ls -l /dev/log
+    lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -> /run/systemd/journal/dev-log=
+    ```
+
+    而在容器场景中，容器运行时一般不会对 `/dev/log` 作特殊处理，因此如果容器内执行的程序使用了 `syslog()` 记录日志，那么就需要将 `/dev/log` 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。
+
+    对脚本程序，可以使用 `logger` 记录日志：
+
+    ```shell
+    logger "hello, world!"
+    ```
+
+    libsystemd 也提供了 `sd_journal` 系列函数，允许记录结构化日志等操作。
+
 ### logrotate
 
-按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责日志的“滚动”（rotate），即重命名、压缩、删除等操作。
+按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责非 journald 日志的“滚动”（rotate），即重命名、压缩、删除等操作。
 
 logrotate 的全局配置文件位于 `/etc/logrotate.conf`，而每个服务的配置文件则位于 `/etc/logrotate.d/` 目录下。以 Telegraf 为例，其配置文件如下：
 
@@ -547,6 +577,42 @@ prerotate / postrotate
 修改了 logrotate 的配置文件之后，可以使用 `logrotate -d /etc/logrotate.conf` 来测试配置文件的正确性，而不会真正执行任何操作。
 
 同时由于 logrotate 不存在守护进程，而是通过 systemd timer 来定期执行的，因此修改配置文件之后不需要重启任何服务。
+
+### rsyslog
+
+rsyslog 和 syslog-ng 是传统的日志管理方案，尽管 journald 已经取代了它们不少功能，但是在一些场景下仍然有着重要的作用。以下介绍 rsyslog 的相关内容。
+
+#### 与 journald 协作 {#rsyslog-with-journald}
+
+在 Debian 12 之前，rsyslog 默认预装，用于将文本格式的日志输出到 `/var/log` 下。在 Debian 12 之后，由于 systemd-journald 会将日志存储为二进制格式（`/var/log/journal/` 下），因此 rsyslog 不再预装，避免同时写两份内容一样的东西到磁盘上。不过，Debian 12 之后的 journald 配置仍然会将日志转发到 `/run/systemd/journal/syslog`：
+
+```ini title="/usr/lib/systemd/journald.conf.d/syslog.conf"
+# Undo upstream commit 46b131574fdd7d77 for now. For details see
+#  http://lists.freedesktop.org/archives/systemd-devel/2014-November/025550.html
+
+[Journal]
+ForwardToSyslog=yes
+```
+
+`/run/systemd/journal/syslog` 由 `syslog.socket` 控制，被激活时会启动 `syslog.service`。安装 rsyslog 后，`/etc/systemd/system/syslog.service` 会变成指向 `rsyslog.service` 的软链接。在激活后，rsyslog 的 [imuxsock 插件](https://docs.rsyslog.com/doc/configuration/modules/imuxsock.html#coexistence-with-systemd) 会从 systemd 获取到对应的 socket 的描述符。
+
+在配置后，如果不希望 journald 继续记录日志（只做转发日志到 rsyslog 的中间人），直接删除 `/var/log/journal` 目录即可。这项设置由 `journald.conf` 的 `Storage=auto` 控制，在目录不存在时不会执行存储日志到磁盘的操作。
+
+此外，rsyslog 也提供了 [`imjournal` 插件](https://docs.rsyslog.com/doc/configuration/modules/imjournal.html)，用来直接从 journald 文件获取日志，但是性能相比前述方案较差，除非需要让 rsyslog 也存储结构化日志，否则不建议使用。
+
+#### 转发日志到其他服务器 {#rsyslog-forward-log}
+
+虽然 journald 提供了转发到 socket 的功能（`ForwardToSocket` 配置），但是 journald 自带的转发是同步的——这意味着应用在输出日志时，需要等待 journald 转发完成，才能继续操作。如果网络环境不是非常好，对应用性能会有比较大的影响。
+
+!!! note "systemd-journal-{upload,remote,gatewayd}"
+
+    事实上，systemd-journal 也提供了远程通过网络传输日志的独立服务（由 `systemd-journal-remote` 包提供），其中 systemd-journal-gatewayd 提供了访问日志的 HTTP API 服务，systemd-journal-remote 运行在日志接收端，systemd-journal-upload 运行在发送端。
+    
+    但是在 Debian 下存在一个严重的问题：由于 systemd 与 TLS 相关的代码从 GnuTLS 迁移到了 OpenSSL，并且 Debian 不希望同时使用多个 TLS 库构建 systemd，因此在构建时关闭了 GnuTLS 的支持。但是 systemd-journal-remote 依赖于 [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)，其依赖于 GnuTLS。这导致了 Debian 构建的 systemd-journal-remote 不支持 HTTPS 加密传输日志，带来了安全风险。
+
+    详情可参考 [Debian bug #1100729](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1100729)。
+
+
 
 ## 登录管理器 {#logind}
 
