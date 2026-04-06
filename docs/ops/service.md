@@ -656,7 +656,7 @@ if ($inputname == "imtcp") then {
 
 客户端：
 
-```conf
+```conf title="/etc/rsyslog.d/client.conf"
 global(DefaultNetstreamDriverCAFile="/path/to/ca.crt")
 
 action(
