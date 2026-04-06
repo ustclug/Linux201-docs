@@ -27,10 +27,9 @@ NFS 在 Linux 上的服务端和客户端实现均有内核态与用户态的选
 
 ### 服务端配置 {#nfs-server}
 
-服务端需要安装 `nfs-kernel-server` 包。除此之外，NFSv3 支持还需要安装 `rpcbind` 包（对应 NFSv3 协议的 111 端口），该包在目前的 Debian 中以 `rpcbind.socket` 的形式对外提供服务。
+服务端需要安装 `nfs-kernel-server` 包。除此之外，NFSv3 支持还需要安装 `rpcbind` 包（对应 NFSv3 协议的 111 端口），该包在目前的 Debian 中以 `rpcbind.socket` 的[形式](../service.md#socket)对外提供服务。
 
 <!-- TODO: nfs-ganesha (userspace) -->
-<!-- TODO: a link to systemd socket -->
 
 NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 

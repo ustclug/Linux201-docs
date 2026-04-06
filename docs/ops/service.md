@@ -331,6 +331,28 @@ notify 和 dbus
 
   [xz-backdoor]: https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8 "维基百科：XZ 实用程序后门"
 
+#### Socket
+
+如果你安装比较新的 Debian 或者 Ubuntu，可能会发现 ssh 服务默认启用的是 `ssh.socket`，而不是 `ssh.service`。此时 SSH 开放的 socket 由 systemd 接管，在有连接的时候才会启动同名的 `ssh.service`（如果没有启动），并且将对应 socket 的文件描述符转交给 sshd。这被称为 socket activation。
+
+传统的 inetd（和 xinetd）做的事情和 systemd 的 socket activation 有一些相似：监听指定的端口，如果有连接进入，就启动对应的程序，并把 socket 丢给它。不过 systemd 的功能相比其强大得多。例如，相比较于 inetd 每个连接都要 fork 进程处理的方式，systemd 支持仅在第一个连接到来的时候按需启动程序，后续新连接仍然由传输的 socket 处理，而不用每次都启动新的进程（`Accept=no`）。Systemd 在服务启动后，仍然持有 socket，会定时 poll 对应的 socket，在服务退出或崩溃后重新开启服务。
+
+Socket activation 帮助实现了服务的惰性加载，可以在不必要的情况下减小资源占用，并且提升系统启动速度。例如对 Docker，`docker.service` 如果 enable，它可能会在系统启动的关键路径上面占用几秒的时间，而如果不 enable `docker.service`，改为 enable `docker.socket`，那么就能够减小启动时间，让对应服务延迟到首次使用时开启。同时，socket activation 机制允许 systemd 预先绑定低权限用户无法绑定的低端口（小于 1024），然后在有用户访问时把 socket 交给低权限的服务进程。
+
+!!! note "应用是如何获取到自己的 socket 的？"
+
+    Systemd 提供了两种方法：应用可以用 libsystemd 的 [sd_listen_fds(3)][sd_listen_fds.3] 函数获取到 socket 对应的文件描述符，然后直接 `accept` 或者 `recv`（根据 `Accept` 选项的不同）。
+
+    而旧的 inetd 应用会直接从 stdin 读取 socket，向 stdout 写入 socket，此时需要在配置 `Accept=yes` 的同时，配置 `StandardInput=socket` 等参数。
+
+!!! note "`Accept=yes` 与拒绝服务攻击"
+
+    配置 `Accept=yes` 时，systemd 默认只会接受最多 64 个连接（由 `MaxConnections` 选项控制），如果服务暴露在互联网等不可信环境的话，这一项连接数限制可能会导致正常用户无法使用服务。
+
+    早期的 `ssh.socket` 对应配置为 `Accept=yes`，就导致用户无法正常连接到 SSH 的问题（可参考 [Arch Linux FS#62248](https://bugs.archlinux.org/task/62248)、[Arch Linux 移除 ssh.socket 的 commit](https://gitlab.archlinux.org/archlinux/packaging/packages/openssh/-/commit/b5ee8a935e7f3869efb16c11d2dc6356870c91da)、[Debian 切换到 `Accept=no` 的 commit](https://salsa.debian.org/ssh-team/openssh/-/commit/0dc73888bbfc17fae04b891ac0c80f35f9c44f48)）。
+
+    如果无法切换到 `Accept=no`，那么可能需要增大最大连接数，或者利用 [fail2ban](./security.md#public-service-and-login) 与[防火墙](./network/firewall.md)等方式来阻止恶意的扫描影响正常服务。
+
 ### 定时任务 {#timers}
 
 Systemd 提供了 timer 类型的 unit，用于定时执行任务。一个 timer unit 通常会对应一个 service unit，即在指定的时间点或者时间间隔触发 service 的启动。
