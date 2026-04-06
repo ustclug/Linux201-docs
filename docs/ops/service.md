@@ -612,7 +612,65 @@ ForwardToSyslog=yes
 
     详情可参考 [Debian bug #1100729](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1100729)。
 
+以下介绍使用 rsyslog TLS 加密传输日志的相关设置，下面给出的例子中服务端有证书，客户端没有（客户端会校验服务端，但是服务端不会校验客户端），在需要高安全性的场合下，建议为客户端也生成证书。生成 CA 证书与服务端（接收端）证书的部分可参考 [nginx 一章中我们的相关介绍](./network-service/nginx.md#getting-certificates)。
 
+TLS 传输日志一般使用 TCP 6514 端口（传统非加密的 syslog 传输使用 TCP 或 UDP 的 514 端口）。两端都需要运行 rsyslog。这里使用 GnuTLS 模块（需要安装 `rsyslog-gnutls` 包）。
+
+服务端：
+
+```conf title="/etc/rsyslog.d/server.conf"
+global(
+    DefaultNetstreamDriver="gtls"
+    DefaultNetstreamDriverCAFile="/path/to/ca.crt"
+    DefaultNetstreamDriverCertFile="/path/to/server.crt"
+    DefaultNetstreamDriverKeyFile="/path/to/server.key"
+)
+
+module(
+    load="imtcp"
+    StreamDriver.Name="gtls"
+    StreamDriver.Mode="1"
+    # anon -- 不校验客户端
+    StreamDriver.Authmode="anon"
+)
+
+input(
+    type="imtcp"
+    port="6514"
+)
+
+# 设置按照主机名分开的模板
+template(name="PerHost" type="string"
+    string="/var/log/remote/%hostname%.log"
+)
+
+if ($inputname == "imtcp") then {
+    action(
+        type="omfile"
+        dynaFile="PerHost"
+    )
+    # 防止远程日志再被写入本地默认的日志文件
+    stop
+}
+```
+
+客户端：
+
+```conf
+global(DefaultNetstreamDriverCAFile="/path/to/ca.crt")
+
+action(
+    type="omfwd"
+    protocol="tcp"
+    target="logserver.example.com"  # 或者 IP 地址
+    port="6514"
+    StreamDriver="gtls"
+    StreamDriverMode="1"
+    # 验证远程证书的名称
+    StreamDriverAuthMode="x509/name"
+    StreamDriverPermittedPeers="logserver.example.com"
+)
+```
 
 ## 登录管理器 {#logind}
 
