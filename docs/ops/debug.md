@@ -131,7 +131,7 @@ icon: material/bug
 
     如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
 
-    诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。
+    诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。或者编辑启动项，添加 `init=/bin/bash` 也可以。
 
 ## 服务状态与日志 {#status-and-logs}
 
