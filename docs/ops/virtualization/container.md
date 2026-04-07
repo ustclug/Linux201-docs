@@ -485,6 +485,16 @@ Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（
 
     对比 Docker 的 C-S 架构，红帽主推的 [Podman](https://podman.io/) 则不再依赖于 daemon 进行容器管理。
 
+!!! tip "重启 Docker 后保持容器继续运行"
+
+    默认情况下，重启 Docker（`docker.service`）会让所有容器停止，在生产环境很多时候是非预期的。可以为 Docker 开启 `live-restore` 让容器即使在 Docker 的 daemon 退出之后仍然继续运行：
+
+    ```json title="/etc/docker/daemon.json"
+    {
+      "live-restore": true
+    }
+    ```
+
 最简单的创建容器的方法是：
 
 ```console
@@ -904,7 +914,7 @@ a490cc0dc175   host                   host      local
 默认情况下，Docker 创建的网络会[分配很大的 IP 段](https://github.com/moby/moby/blob/b7c059886c0898436db90b4615a27cfb4d93ce34/libnetwork/ipamutils/utils.go#L18-L26)。
 在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 `/etc/docker/daemon.json`，将 `default-address-pools` 设置为一个较小的 IP 段：
 
-```json
+```json title="/etc/docker/daemon.json"
 {
 	"default-address-pools": [
 		{
@@ -1028,7 +1038,7 @@ Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
 
 不过好消息是，目前 Docker 添加了对 IPv6 NAT 的实验性支持，尽管默认的 bridge 网络的 IPv6 支持（基于 ip6tables）[在 27.0 版本后才默认打开](https://docs.docker.com/engine/release-notes/27/#ipv6)。如果正在使用 27.0 之前的版本，参考[对应的文档](https://docs.docker.com/config/daemon/ipv6/)[^ipv6-docaddr]，一个配置 daemon.json 的例子如下：
 
-```json
+```json title="/etc/docker/daemon.json"
 {
     "ipv6": true,
     "fixed-cidr-v6": "fd00::/80",
