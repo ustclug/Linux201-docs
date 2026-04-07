@@ -419,6 +419,15 @@ sftp -P 2233 username@remotehost
 
 sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 `ssh.service` 中指定的 `ExecStartPre=` 命令和第一条 `ExecReload=` 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。
 
+!!! note "systemd 与 sshd"
+
+    在使用 systemd 的较新的系统下，服务端可能会有以下变化：
+
+    - 默认使用 `ssh.socket` 而不是 `ssh.service` 对外提供服务。
+    - `systemd-ssh-generator` 会在 Unix socket 和 vsock 上开启额外的端口。
+
+    其中的一些设置可能会以非预期的方式影响系统的安全性，阅读[服务与日志管理](../ops/service.md#socket)的相关内容以了解更多相关信息。
+
 ### authorized_keys 文件 {#authorized-keys}
 
 `~/.ssh/authorized_keys` 文件是 SSH 服务端用于验证客户端公钥的文件，每行一个公钥，空行或者以 `#` 开头的行会被当作注释忽略。

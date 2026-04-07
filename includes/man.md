@@ -18,6 +18,7 @@
 [scrun.1]: https://slurm.schedmd.com/scrun.html
 [ssh-keygen.1]: https://man7.org/linux/man-pages/man1/ssh-keygen.1.html
 [systemd-run.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html
+[systemd-ssh-proxy.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-proxy.html
 [tigervncserver.1]: https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html
 [vncconfig.1]: https://linux.die.net/man/1/vncconfig
 [xserver.1]: https://linux.die.net/man/1/xserver
@@ -68,6 +69,7 @@
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
 [systemd.exec.5#Environment]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Environment
 [systemd.exec.5#Sandboxing]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing
+[systemd.generator.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.generator
 [systemd.kill.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html
 [systemd.resource-control.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
@@ -114,6 +116,7 @@ Do not link to a "generic" man page for these commands -->
 [slurmrestd.8]: https://slurm.schedmd.com/slurmrestd.html
 <!-- end slurm daemons -->
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
+[systemd-ssh-generator.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-generator.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
 [userdel.8]: https://manpages.debian.org/stable/passwd/userdel.8.en.html
 [xfs_growfs.8]: https://linux.die.net/man/8/xfs_growfs
