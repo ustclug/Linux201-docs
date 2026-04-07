@@ -648,6 +648,20 @@ server {
 
     在 TLS 握手阶段，绝大多数客户端都会发送 SNI（Server Name Indication，服务器名称指示）信息，告诉服务器它想要连接的域名。**SNI 是明文的**，因此服务器可以根据 SNI 信息来选择对应的 `server` 块和证书。
 
+!!! tip "使用 `curl` 调试指定 IP 地址上的 HTTPS 站点"
+
+    假设你希望 `curl` 能够命中某个服务器（以 127.0.0.1 为例子）上的 example.com `server` 块，但是 example.com 的 DNS 解析不指向这个服务器。对 HTTP 网站可以直接这么做：
+
+    ```shell
+    curl -H "Host: example.com" http://127.0.0.1
+    ```
+
+    但是对 HTTPS 网站是不行的，因为 nginx 会先使用 SNI 匹配，而 `https://127.0.0.1` 会导致 SNI 为 127.0.0.1，无法匹配到 example.com。解决方法为：
+
+    ```shell
+    curl --resolve example.com:443:127.0.0.1 https://example.com
+    ```
+
 在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
 HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 `Strict-Transport-Security` 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
