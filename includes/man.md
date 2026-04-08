@@ -26,6 +26,7 @@
 <!-- man 2 -->
 
 [mlock.2]: https://man7.org/linux/man-pages/man2/mlock.2.html
+[select.2]: https://man7.org/linux/man-pages/man2/select.2.html
 [pivot_root.2]: https://man7.org/linux/man-pages/man2/pivot_root.2.html
 
 <!-- man 3 -->

@@ -155,6 +155,46 @@ Nginx 是模块化的服务器，其中 [`ngx_http_core_module`](https://nginx.o
 
 其中每个 directive 和变量都包含了详细的说明。
 
+## 基本设置 {#basic-configuration}
+
+本节介绍后续内容未涉及的重要设置。
+
+### 工作进程设置与优化 {#worker-process}
+
+在 `nginx.conf` 中，Debian 打包的 nginx 对工作进程的默认设置如下：
+
+```nginx
+worker_processes auto;
+worker_cpu_affinity auto;
+# 省略其他指令
+
+events {
+        worker_connections 768;
+        # multi_accept on;
+}
+```
+
+这表示：
+
+- 开启和当前 CPU 核心数相同的工作进程（[`worker_processes`](https://nginx.org/en/docs/ngx_core_module.html#worker_processes)），并且将每个进程绑定在不同的核心上（[`worker_cpu_affinity`](https://nginx.org/en/docs/ngx_core_module.html#worker_cpu_affinity)）。
+- 每个工作进程最多同时处理 768 个连接（[`worker_connections`](https://nginx.org/en/docs/ngx_core_module.html#worker_connections)）。
+
+对生产环境来说，以上的参数设置可能是不够的。例如对一台分配了 4 核心的虚拟机，按照上述设置，其最多只能同时处理 3072 个连接，对很多业务来说在高峰期都是不够用的，因此需要根据对同时连接数的估计、系统核心数量等来设置 `worker_connections`。作为参考，科大镜像站的 `worker_connections` 设置为 32767，并有 80 个 CPU 核心，每个核心一个工作进程。
+
+!!! note "那 `multi_accept` 呢？"
+
+    在 Linux 下，nginx 默认使用 epoll。[`multi_accept`](https://nginx.org/en/docs/ngx_core_module.html#multi_accept) 开启后，每次 nginx epoll 都会尽可能多地 accept 新连接，而不是一个一个来。在一部分场景下可能有效果，但是这也会让某个 worker 一次性抢到太多的连接，导致负载不均等问题。
+
+    相比之下，更推荐的优化是在 `server` 块（下文介绍）的 `listen` 指令添加 [`reuseport` 参数](https://nginx.org/en/docs/http/ngx_http_core_module.html#reuseport)，让内核将新连接均衡到不同的工作进程上（而不是每个工作进程在有新连接时一起被唤醒抢夺连接——这也被称为[「惊群」（Thundering herd）问题](https://en.wikipedia.org/wiki/Thundering_herd_problem)）。
+
+!!! warning "调整文件描述符数量限制"
+
+    每个进程能够打开的文件数量是有限制的。对 Shell，可以使用 `ulimit -S -n` 和 `ulimit -H -n` 分别查看 soft limit 和 hard limit；对已有的进程也可以查看 `/proc/<PID>/limits` 文件。
+
+    其中 soft limit 直接限制了文件数量，但是这个值是允许动态调节的，只要比 hard limit 小即可。默认情况下，为了保证使用 [select(2)][select.2] 的应用的兼容性，进程的文件描述符 soft limit 都是 1024（详见 [systemd issue #25478](https://github.com/systemd/systemd/issues/25478)）。由于每个 TCP socket 在 nginx 中都会至少使用一个文件描述符，因此如果调大了 `worker_connections`，那么基本上也必须调整这一项 soft limit 设置。Nginx 中对应的设置为 [`worker_rlimit_nofile`](https://nginx.org/en/docs/ngx_core_module.html#worker_rlimit_nofile)，因为反向代理、提供本地文件等还需要开启额外的文件，一般建议至少设置为 `worker_connections` 的两倍。
+
+    如果使用 systemd，也可以调整 `nginx.service`，添加 `LimitNOFILE` 参数。
+
 ## `server` 块与 `location` 块 {#server-location-blocks}
 
 Nginx 配置的 [`http` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#http)中可以有多个 [`server` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#server)，每个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。Nginx 正是通过 `server` 块来实现多站点配置的。
