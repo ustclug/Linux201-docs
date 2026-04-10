@@ -14,15 +14,6 @@ icon: material/room-service
 
 早期（2014 年以前）还有 SysVinit 和 Upstart 等，但现在已经很少见了。SysVinit 还有一个现代化的替代品，叫做 OpenRC。
 
-## Init
-
-Init 进程是 Linux 启动时运行的第一个进程，负责启动系统的各种服务并最终启动 shell。传统的 init 程序位于 `/sbin/init`，而现代发行版中它一般是指向 `/lib/systemd/systemd` 的软链接，即由 systemd 作为 PID 1 运行。
-
-PID 1 在 Linux 中有一些特殊的地位：
-
-- 不受 `SIGKILL` 或 `SIGSTOP` 信号影响，不能被杀死或暂停。类似地，即使收到了其他未注册的信号，默认行为也是忽略，而不是结束进程或挂起。
-- 当其他进程退出时，这些进程的子进程会由 PID 1 接管，因此 PID 1 需要负责回收（`wait(2)`）这些僵尸进程。
-
 ## Systemd 与服务 {#systemd-and-service}
 
 Systemd 是一大坨软件，包括服务管理（PID 1）、日志管理（systemd-journald）、网络管理（systemd-networkd）、本地 DNS 缓存（systemd-resolved）、时间同步（systemd-timesyncd）等，本文主要关心服务管理和日志管理。
@@ -113,7 +104,7 @@ WantedBy=multi-user.target
 !!! tip "查询手册"
 
     Unit 配置中不同的字段分布在 systemd 不同的手册页中。其中 `[Unit]` 和 `[Install]` 部分的字段可以在 [`systemd.unit(5)`][systemd.unit.5] 中找到。
-    
+
     对于服务，`[Service]` 中的字段大部分在 [`systemd.service(5)`][systemd.service.5] 中，但其中与运行环境有关的会在 [`systemd.exec(5)`][systemd.exec.5] 中，与程序资源限制相关的会在 [`systemd.resource-control(5)`][systemd.resource-control.5] 中，与退出/杀死服务相关的会在 [`systemd.kill(5)`][systemd.kill.5] 中。
 
     对于定时器，`[Timer]` 部分的字段可以在 [`systemd.timer(5)`][systemd.timer.5] 中找到。
@@ -276,7 +267,7 @@ Service 也就是我们最常见的服务，它的配置文件中有一个 `[Ser
 - `[Unit]` 部分指定的 `After=remote-fs.target nss-user-lookup.target` 表示 cron 会在系统达到这两个 target 之后才启动，即远程文件系统挂载完成和用户信息服务（`getent passwd` 等命令可用）都已经启动。
 - `EnvironmentFile=-/etc/default/cron` 表示会读取 `/etc/default/cron` 文件中的环境变量。开头的 `-` 表示如果这个文件不存在，则直接忽略。
 - `ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS` 指定了服务的启动命令，其中 `$EXTRA_OPTS` 是从上面的文件中读取的环境变量。
-  
+
     !!! tip
 
         通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 `$PATH` 环境变量，而是使用一个硬编码的列表。
@@ -689,7 +680,7 @@ ForwardToSyslog=yes
 !!! note "systemd-journal-{upload,remote,gatewayd}"
 
     事实上，systemd-journal 也提供了远程通过网络传输日志的独立服务（由 `systemd-journal-remote` 包提供），其中 systemd-journal-gatewayd 提供了访问日志的 HTTP API 服务，systemd-journal-remote 运行在日志接收端，systemd-journal-upload 运行在发送端。
-    
+
     但是在 Debian 下存在一个严重的问题：由于 systemd 与 TLS 相关的代码从 GnuTLS 迁移到了 OpenSSL，并且 Debian 不希望同时使用多个 TLS 库构建 systemd，因此在构建时关闭了 GnuTLS 的支持。但是 systemd-journal-remote 依赖于 [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)，其依赖于 GnuTLS。这导致了 Debian 构建的 systemd-journal-remote 不支持 HTTPS 加密传输日志，带来了安全风险。
 
     详情可参考 [Debian bug #1100729](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1100729)。
@@ -779,7 +770,7 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用
     `systemctl`、`journalctl` 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 `/run/user/<用户 PID>/bus`）。
 
     在命令行下需要切换用户的场合中，如果需要使用用户级别的 systemd，推荐的做法是使用以下命令：
-    
+
     - `machinectl shell username@`
     - `run0`（需要很新的发行版，如 Debian 13）
 
