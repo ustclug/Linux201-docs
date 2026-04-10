@@ -32,7 +32,7 @@ icon: octicons/checklist-16
     - `earlyoom` 或 `systemd-oomd`：用户态监测内存使用，在内存不足时自动杀死占用内存过多的进程
     - `systemd-coredump`：收集崩溃进程的 coredump 文件
     - `chrony` 或 `systemd-timesyncd`：[自动时钟同步](network-service/ntp.md#ntp-tools)
-    - `bcc-tools`：一系列基于 BPF 的调试工具
+    - `bpfcc-tools`：一系列基于 BPF 的调试工具
     - `bpftrace`：快速编写跟踪内核或用户态程序的 BPF 的脚本
     - `rasdaemon`：收集系统硬件（CPU、内存等）的错误信息
     - 性能监测工具，包括 `htop`、`iotop`、`iftop`、`bmon` 等
