@@ -534,7 +534,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
         这一点在 [xserver(1)][xserver.1] 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 `SIG_IGN`（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。
 
-        这里的 shell 脚本用了相对粗糙的 `sleep 2` 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。
+        这里的 shell 脚本用了相对粗糙的 `sleep 2` 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。不过，这里的 shell 脚本没有办法用 `trap func SIGUSR1` 的方式来指定 `SIGUSR1` 的 handler（可以阅读 [POSIX 标准的相关介绍](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_28)，然后想一下为什么），因此如果需要修改，则需要考虑换成 Python、Perl 之类的方案。
 
     ```shell title="/usr/local/bin/vncserver-greeter-setup.sh"
     #!/bin/sh
