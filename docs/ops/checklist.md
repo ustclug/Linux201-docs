@@ -35,7 +35,7 @@ icon: octicons/checklist-16
     - `bpfcc-tools`：一系列基于 BPF 的调试工具
     - `bpftrace`：快速编写跟踪内核或用户态程序的 BPF 的脚本
     - `rasdaemon`：收集系统硬件（CPU、内存等）的错误信息
-    - 性能监测工具，包括 `htop`、`iotop`、`iftop`、`bmon` 等
+    - 性能监测工具，包括 `htop`、`iotop`、`iftop`、`bmon`、`sysstat` 等
     - `ncdu`：快速检查谁吃了大量磁盘空间
 
 ## 远程管理
