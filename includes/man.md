@@ -94,6 +94,7 @@
 <!-- Note: Debian man pages for useradd(8)/userdel(8) mentions the "low-level" feature and recommends adduser(8)/deluser(8) instead. 
 Do not link to a "generic" man page for these commands -->
 [adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
+[btrfs-convert.8]: https://man7.org/linux/man-pages/man8/btrfs-convert.8.html
 <!-- None of Debian, man7.org or linux.die.net provides conntrack(8), weird -->
 [conntrack.8]: https://man.archlinux.org/man/conntrack.8.en
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
