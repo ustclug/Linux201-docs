@@ -145,6 +145,7 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
 - `~i` 为已经安装的包（`?installed`）。
 - `~U` 可以升级的包（`?upgradable`）。
 - `~o` 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（`?obsolete`，在 `apt list` 的输出中显示为 `[installed,local]`）。
+- `~M` 被标记为自动安装的包（`?automatic`）。
 
 !!! question "搜索模式练习"
 
@@ -152,7 +153,9 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
 
     - 输出（提示：`apt list`）所有未完全删除以及远程仓库不再提供的包（虽然 `apt purge` 也支持搜索模式，小心执行，因为所有配置都会被删除！）
     - 输出本地安装的名字里有 `top` 的所有包
-        - 提示：可以像这样要求同时满足多个 pattern: `apt list 'P1 P2 P3'`
+        - 提示：可以像这样要求同时满足多个 pattern: `apt list 'P1 P2 P3'`，也可以 pattern 之间不加空格连接起来
+    - 输出本地安装的所有标记为手动安装的包
+        - 提示：`!PATTERN`
 
 #### 文件搜索：`apt-file` {#apt-file}
 
