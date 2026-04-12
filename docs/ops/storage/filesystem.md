@@ -777,7 +777,7 @@ $ sudo btrfs subvolume get-default /media/btrfs
 ID 259 gen 11 top level 256 path subvol1/nestedvol1
 $ sudo umount /media/btrfs
 $ # 重新挂载文件系统，可以看到挂载的 subvolume 已经改变
-$ sudo mount btrfs.img /media/btrfs  
+$ sudo mount btrfs.img /media/btrfs
 $ sudo btrfs subvolume show /media/btrfs
 subvol1/nestedvol1
 	Name: 			nestedvol1
@@ -840,6 +840,22 @@ $ sudo umount /media/btrfs
     虽然嵌套 subvolume 在目录树中看上去是上级 subvolume 的一部分，但它并不是上级 subvolume 的文件，因此不会被包括在快照中，只会保留作为挂载点的空目录。
 
 我们可以定时执行快照，以便在文件被误操作时能够恢复。例如 snapper 等软件可以在后台自动执行快照任务。
+
+!!! tip "使用快照将 top-level subvolume 的文件迁移到 `@` 或其他 subvolume"
+
+    如果你在配置系统时直接在 top-level subvolume 下安装了系统，或者需要处理使用 [`btrfs-convert`](#btrfs-convert) 转换得到的 Btrfs，那么根据上面所描述的快照的原理，可以比较方便地迁移，而不需要再手动复制或移动：
+
+    ```shell
+    # 假设 top-level subvolume 在 /mnt
+    mount -o subvolid=5 /dev/your-device /mnt
+    btrfs subvolume snapshot /mnt /mnt/@
+    # 如果有其他的 subvolume，删除空目录
+    rmdir /mnt/@/@example
+    # 删除 top-level subvolume 的文件
+    rm -rf /mnt/example_file /mnt/example_dir
+    ```
+
+    当然，如果是根分区要这么处理，那么可能无法在线处理（不能现场更换某个挂载点对应的 subvolume），需要引导到其他环境再挂载操作。
 
 #### 传输 {#btrfs-send}
 
