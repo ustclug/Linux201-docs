@@ -3447,7 +3447,21 @@
 <h2 id="_1">组件介绍<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <h3 id="qemu">QEMU<a class="headerlink" href="#qemu" title="Permanent link">&para;</a></h3>
 <p>QEMU（Quick Emulator）是一个开源的虚拟化软件，它通过动态二进制翻译来模拟 CPU，并提供一系列的硬件模型，可以模拟多种外设硬件。QEMU 可以在没有硬件加速的情况下独立运行，但这样其中的 CPU 部分是模拟指令的执行，性能低下。</p>
+<div class="admonition note">
+<p class="admonition-title">QEMU TCG</p>
+<p>QEMU 内部使用 TCG（Tiny Code Generator）作为其模拟器，TCG 会将原始指令转换为 TCG 内部的 op，经过简单的优化后转换为主机指令并执行。TCG 不是专门为性能优化的，因此使用 TCG 运行程序或操作系统会有较大的性能损失。</p>
+<p>对于跨架构系统级模拟（例如 x86 下运行 aarch64 的操作系统），目前 QEMU 基本上是唯一的通用方案。而如果需求只是运行用户态程序（例如在其他指令集下运行 x86 的游戏），那么目前有一些更快的方案：</p>
+<ul>
+<li><a href="https://github.com/ptitseb/box86">Box86</a> 和 <a href="https://github.com/ptitseb/box64">Box64</a>：在 ARM 上运行 x86（和 AMD64）的应用程序。</li>
+<li><a href="https://github.com/FEX-Emu/FEX">FEX</a>：同样也是在 ARM 上运行 x86 的程序。</li>
+</ul>
+</div>
 <p>此外 QEMU 也可以仅用于 CPU 指令和系统调用的翻译，不模拟硬件模型，这种模式称为 User Mode。主要用于运行不同于宿主系统 CPU 指令集的用户态二进制程序。</p>
+<div class="admonition note">
+<p class="admonition-title">binfmt_misc</p>
+<p><a href="https://docs.kernel.org/admin-guide/binfmt-misc.html">binfmt_misc</a> 是内核提供的运行非原生程序的方案——程序使用 binfmt_misc 注册自己能够处理的程序特征（例如开头是 <code>MZ</code> 的话，那么就是 Windows PE 程序），内核在遇到自己无法运行的程序的时候，就会查询 binfmt_misc。该功能对应的挂载点是 <code>/proc/sys/fs/binfmt_misc/</code>。</p>
+<p>安装 <code>qemu-user-binfmt</code> 即可在 binfmt_misc 注册所有 QEMU 用户模式支持的架构。<code>systemd-binfmt.service</code> 会在启动时检查 <a href="https://man7.org/linux/man-pages/man5/binfmt.d.5.html">binfmt.d.5</a> 中的目录，并进行信息注册。</p>
+</div>
 <h3 id="kvm">KVM<a class="headerlink" href="#kvm" title="Permanent link">&para;</a></h3>
 <p>KVM（Kernel-based Virtual Machine）是一种基于 Linux 内核的开源虚拟化解决方案。KVM 将 Linux 转变成一个虚拟机监视器（Hypervisor）。它利用了现代处理器中的硬件虚拟化支持（例如 Intel VT-x 或 AMD-V），以实现高性能的虚拟化。它专注于以最小的开销在 Linux 上提供安全和隔离的虚拟环境，同时维持接近原生的性能。它向用户空间提供了虚拟 CPU 和内存子系统的配置和执行控制相关接口，但 KVM 不包含硬件模型，不能独立构成虚拟机。</p>
 <h3 id="qemukvm_1">QEMU/KVM<a class="headerlink" href="#qemukvm_1" title="Permanent link">&para;</a></h3>
@@ -3636,7 +3650,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月4日 07:27:53 UTC">2026年4月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月12日 18:56:57 UTC">2026年4月12日</span>
   </span>
 
     
