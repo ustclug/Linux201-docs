@@ -4,6 +4,10 @@ icon: material/power
 
 # 启动程序
 
+!!! note "主要作者"
+
+    [@Vertsineu][Vertsineu]
+
 !!! warning "本文编写中"
 
 ## 一般启动过程 {#general-booting-process}
