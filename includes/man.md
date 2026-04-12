@@ -46,6 +46,7 @@
 [adduser.conf.5]: https://manpages.debian.org/stable/adduser/adduser.conf.5.en.html
 [apt.conf.5]: https://manpages.debian.org/unstable/apt/apt.conf.5.en.html
 [apt_preferences.5]: https://manpages.debian.org/unstable/apt/apt_preferences.5.en.html
+[binfmt.d.5]: https://man7.org/linux/man-pages/man5/binfmt.d.5.html
 [deluser.conf.5]: https://manpages.debian.org/stable/adduser/deluser.conf.5.en.html
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [gai.conf.5]: https://man7.org/linux/man-pages/man5/gai.conf.5.html
