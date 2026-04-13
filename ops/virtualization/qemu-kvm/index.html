@@ -3489,14 +3489,15 @@
 <p>如果发行版不提供相关包，也可以从 <a href="https://www.qemu.org/download/">QEMU 官网</a> 下载源码编译安装。</p>
 </details>
 <h3 id="_3">第一台虚拟机<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
-<p>以下实例命令用于启动一个使用 KVM, 带有双核 CPU，1GB 内存，使用一个名为 <code>example.img</code> 的磁盘镜像文件和用户态网络的虚拟机。</p>
+<p>以下实例命令用于启动一个使用 KVM，带有双核 CPU、1GB 内存，使用一个名为 <code>example.img</code> 的磁盘镜像文件，挂载了 <code>livecd.iso</code> 作为光盘文件，和用户态网络的虚拟机。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>qemu-system-x86_64<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span>-enable-kvm<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span>-m<span class="w"> </span><span class="m">1024</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span>-cpu<span class="w"> </span>host<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span>-smp<span class="w"> </span><span class="nv">cores</span><span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span>-drive<span class="w"> </span><span class="nv">file</span><span class="o">=</span>example.img,format<span class="o">=</span>raw,if<span class="o">=</span>virtio<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span>-nic<span class="w"> </span>user,model<span class="o">=</span>virtio
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span>-cdrom<span class="w"> </span>./livecd.iso<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span>-nic<span class="w"> </span>user,model<span class="o">=</span>virtio
 </code></pre></div>
 <p>这个命令的各个参数意义如下：</p>
 <ul>
@@ -3505,7 +3506,10 @@
 <li><code>-m 1024</code>: 分配 1024MB 内存。</li>
 <li><code>-cpu host</code>: 使用宿主机 CPU 模型。</li>
 <li><code>-smp cores=2</code>: 使用 2 个 CPU 核心。</li>
-<li><code>-drive file=example.img,format=raw,if=virtio</code>: 使用 <code>example.img</code> 作为磁盘镜像，格式为 <code>raw</code>，使用 <code>virtio</code> 设备模型。</li>
+<li><code>-drive file=example.img,format=raw,if=virtio</code>: 使用 <code>example.img</code> 作为磁盘镜像，格式为 <code>raw</code>，使用 <code>virtio</code> 设备模型。<ul>
+<li>可以使用 <code>truncate -s 2G example.img</code> 或 <code>fallocate -l 2G example.img</code> 创建文件。</li>
+</ul>
+</li>
 <li><code>-nic user,model=virtio</code>: 使用用户态网络设备，使用 <code>virtio</code> 设备模型。</li>
 </ul>
 <p>这只是创建虚拟机的一个基本示例，QEMU 提供了很多其他选项，可以让你定制网络、图形输出、设备等。</p>
@@ -3650,7 +3654,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月12日 18:56:57 UTC">2026年4月12日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月13日 19:02:23 UTC">2026年4月13日</span>
   </span>
 
     
