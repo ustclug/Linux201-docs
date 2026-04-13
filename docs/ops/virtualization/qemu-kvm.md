@@ -88,6 +88,7 @@ qemu-system-x86_64 \
 - `-smp cores=2`: 使用 2 个 CPU 核心。
 - `-drive file=example.img,format=raw,if=virtio`: 使用 `example.img` 作为磁盘镜像，格式为 `raw`，使用 `virtio` 设备模型。
     - 可以使用 `truncate -s 2G example.img` 或 `fallocate -l 2G example.img` 创建文件。
+- `-cdrom ./livecd.iso`: 添加光盘设备，光盘内容为 `./livecd.iso`。
 - `-nic user,model=virtio`: 使用用户态网络设备，使用 `virtio` 设备模型。
 
 这只是创建虚拟机的一个基本示例，QEMU 提供了很多其他选项，可以让你定制网络、图形输出、设备等。
