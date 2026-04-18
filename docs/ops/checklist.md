@@ -35,16 +35,16 @@ icon: octicons/checklist-16
     - `bpfcc-tools`：一系列基于 BPF 的调试工具
     - `bpftrace`：快速编写跟踪内核或用户态程序的 BPF 的脚本
     - `rasdaemon`：收集系统硬件（CPU、内存等）的错误信息
-    - 性能监测工具，包括 `htop`、`iotop`、`iftop`、`bmon`、`sysstat` 等
-    - `ncdu`：快速检查谁吃了大量磁盘空间
+    - 性能监测工具，包括 `htop`、`iotop-c`、`iftop`、`bmon`、`sysstat` 等
+    - `ncdu` 或 `gdu`：快速检查谁吃了大量磁盘空间
 
 ## 远程管理
 
-- 对于带有 IPMI 等带外管理功能的服务器，将其启用，并配置固定 IP 地址和安全的密码后接入网络
+- 对于带有 IPMI 等带外管理功能的服务器，将其启用，并配置固定 IP 地址和安全的密码后接入网络。`ipmitool` 软件也可以用于从主机操作系统中访问和配置 IPMI 模块。
 
     > 正确配置的 IPMI 功能将为服务器崩溃等无法正常登录进入服务器的情况下的重启操作提供方便，可提升如假期等情况下的服务器可靠性。
-  
-- 正确[设置 SSH 服务](../dev/ssh.md#sshd-config)，并作为远程管理的主要手段
+
+- 正确[设置 SSH 服务](../dev/ssh.md#sshd-config)，并作为远程管理的主要手段。
 
     > TODO: add ref to ssh & explain
 

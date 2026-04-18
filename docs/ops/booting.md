@@ -17,7 +17,7 @@ icon: material/power
 - Firmware（固件）：计算机上电后最先执行的程序，负责硬件自检和初始化，并将控制权移交给 Bootloader。
 - Bootloader（引导加载程序）：负责加载操作系统内核到内存，并将控制权移交给 Kernel。
 - Kernel（内核）：负责内核空间（Kernel Space）的初始化，比如初始化中断例程、加载驱动、挂载根文件系统等，并最终启动 `init` 进程。
-- Init（初始程序）：负责用户空间（User Space）的初始化，启动各种系统服务，比如 getty（tty 终端服务）、sshd（SSH 服务）等。
+- Init（初始程序）：负责用户空间（User Space）的初始化，启动各种系统服务，比如 getty（tty 终端服务）、sshd（SSH 服务）乃至图形界面等。
 
 其中，Kernel 和 Init 阶段都属于 OS（操作系统）的启动过程，而 Firmware 和 Bootloader 阶段则独立于 OS 之外，属于计算机平台的启动过程。
 
@@ -25,7 +25,7 @@ icon: material/power
 
 ## Firmware {#firmware}
 
-固件（Firmware）是计算机上电后最先执行的程序，存储在主板上的只读存储器（ROM/Flash/EEPROM 等）中，负责硬件自检和硬件初始化，并最终将控制权移交给 Bootloader。常见的 PC 和服务器上的固件主要有两种实现：传统的 BIOS 和现代的 UEFI。
+固件（Firmware）是计算机上电后最先执行的程序，存储在主板上的只读存储器（ROM / Flash / EEPROM 等）中，负责硬件自检和硬件初始化，并最终将控制权移交给 Bootloader。常见的 PC 和服务器上的固件主要有两种实现：传统的 BIOS 和现代的 UEFI。
 
 ### BIOS {#bios}
 
@@ -37,11 +37,30 @@ BIOS（Basic Input/Output System，基本输入/输出系统）最初是 IBM PC 
 
     本文中所指的 BIOS 均指传统的 IBM PC 兼容机上的 BIOS 实现。
 
+BIOS 固件会根据设置，加载启动盘上的 MBR（Master Boot Record，即磁盘的第一个扇区），并执行存储在 MBR 中的启动代码。
+通常来说，MBR 中存储的 446（或 434）字节代码会扫描盘上的分区，找到唯一一个被标记为「活动」（active）的分区，并执行该分区中存储的启动代码（Partition Boot Record，PBR）。
+在 BIOS 启动模式下，MBR 和 PBR 即是下一节所述的 Bootloader。
+
 ### UEFI {#uefi}
 
 UEFI（Unified Extensible Firmware Interface，统一可扩展固件接口）严格来说并不是一个固件实现，而是一套**固件接口规范**，由 UEFI Forum 负责维护（前身是 Intel 于 1998 年发布的 EFI 规范）。
 
 UEFI 规范定义了固件与上层程序（Bootloader、OS 等）之间的标准接口，使得 Bootloader 和操作系统无需关心底层的具体硬件架构，从而实现跨平台的可移植性。
+
+与 BIOS 固件的启动方式不同，UEFI 固件不再从磁盘的开始位置寻找启动代码，而是从指定的磁盘和分区中寻找指定的文件作为 Bootloader 加载。
+
+对于已经以 UEFI 方式启动的系统，使用 `efibootmgr` 命令可以查看当前的 EFI 配置：
+
+```console
+$ sudo efibootmgr
+BootCurrent: 0000
+Timeout: 1 seconds
+BootOrder: 0000,0002
+Boot0000* debian	HD(1,GPT,7c003990-9d67-48fb-b6c9-f44a4577cd5f,0x800,0x100000)/File(\EFI\DEBIAN\GRUBX64.EFI)
+Boot0002  UEFI: Built-in EFI Shell	VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f
+```
+
+在以上示例中，UEFI 固件会从分区 GUID 为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
 
 ## Bootloader {#bootloader}
 
