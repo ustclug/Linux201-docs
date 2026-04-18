@@ -3230,12 +3230,12 @@
 <li>Firmware（固件）：计算机上电后最先执行的程序，负责硬件自检和初始化，并将控制权移交给 Bootloader。</li>
 <li>Bootloader（引导加载程序）：负责加载操作系统内核到内存，并将控制权移交给 Kernel。</li>
 <li>Kernel（内核）：负责内核空间（Kernel Space）的初始化，比如初始化中断例程、加载驱动、挂载根文件系统等，并最终启动 <code>init</code> 进程。</li>
-<li>Init（初始程序）：负责用户空间（User Space）的初始化，启动各种系统服务，比如 getty（tty 终端服务）、sshd（SSH 服务）等。</li>
+<li>Init（初始程序）：负责用户空间（User Space）的初始化，启动各种系统服务，比如 getty（tty 终端服务）、sshd（SSH 服务）乃至图形界面等。</li>
 </ul>
 <p>其中，Kernel 和 Init 阶段都属于 OS（操作系统）的启动过程，而 Firmware 和 Bootloader 阶段则独立于 OS 之外，属于计算机平台的启动过程。</p>
 <p>其他平台（如 ARM、RISC-V）或其他系统（如 BSD、Windows）虽然在细节上有所不同，但整体的启动流程大体类似。</p>
 <h2 id="firmware">Firmware<a class="headerlink" href="#firmware" title="Permanent link">&para;</a></h2>
-<p>固件（Firmware）是计算机上电后最先执行的程序，存储在主板上的只读存储器（ROM/Flash/EEPROM 等）中，负责硬件自检和硬件初始化，并最终将控制权移交给 Bootloader。常见的 PC 和服务器上的固件主要有两种实现：传统的 BIOS 和现代的 UEFI。</p>
+<p>固件（Firmware）是计算机上电后最先执行的程序，存储在主板上的只读存储器（ROM / Flash / EEPROM 等）中，负责硬件自检和硬件初始化，并最终将控制权移交给 Bootloader。常见的 PC 和服务器上的固件主要有两种实现：传统的 BIOS 和现代的 UEFI。</p>
 <h3 id="bios">BIOS<a class="headerlink" href="#bios" title="Permanent link">&para;</a></h3>
 <p>BIOS（Basic Input/Output System，基本输入/输出系统）最初是 IBM PC 的专有固件，但是由一些公司（如 Compag、Phoenix、AMI 等）进行逆向工程，创建了兼容 BIOS 的 IBM PC 兼容机。此后，BIOS 接口成为 PC 兼容机的事实标准，被广泛采用并沿用至今。</p>
 <div class="admonition tip">
@@ -3243,9 +3243,22 @@
 <p>需要注意的是，我们日常口头上说的 BIOS 其实大部分情况下指的是广义上的 BIOS，不仅包括传统的 IBM PC 兼容机上的 BIOS 实现，还包括基于 UEFI 规范实现的 UEFI BIOS 。真正意义上的传统 BIOS 已经逐渐被淘汰，现代计算机上更多使用的是基于 UEFI 规范的 BIOS 实现。</p>
 <p>本文中所指的 BIOS 均指传统的 IBM PC 兼容机上的 BIOS 实现。</p>
 </div>
+<p>BIOS 固件会根据设置，加载启动盘上的 MBR（Master Boot Record，即磁盘的第一个扇区），并执行存储在 MBR 中的启动代码。
+通常来说，MBR 中存储的 446（或 434）字节代码会扫描盘上的分区，找到唯一一个被标记为「活动」（active）的分区，并执行该分区中存储的启动代码（Partition Boot Record，PBR）。
+在 BIOS 启动模式下，MBR 和 PBR 即是下一节所述的 Bootloader。</p>
 <h3 id="uefi">UEFI<a class="headerlink" href="#uefi" title="Permanent link">&para;</a></h3>
 <p>UEFI（Unified Extensible Firmware Interface，统一可扩展固件接口）严格来说并不是一个固件实现，而是一套<strong>固件接口规范</strong>，由 UEFI Forum 负责维护（前身是 Intel 于 1998 年发布的 EFI 规范）。</p>
 <p>UEFI 规范定义了固件与上层程序（Bootloader、OS 等）之间的标准接口，使得 Bootloader 和操作系统无需关心底层的具体硬件架构，从而实现跨平台的可移植性。</p>
+<p>与 BIOS 固件的启动方式不同，UEFI 固件不再从磁盘的开始位置寻找启动代码，而是从指定的磁盘和分区中寻找指定的文件作为 Bootloader 加载。</p>
+<p>对于已经以 UEFI 方式启动的系统，使用 <code>efibootmgr</code> 命令可以查看当前的 EFI 配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>efibootmgr
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">BootCurrent: 0000</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">Timeout: 1 seconds</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">BootOrder: 0000,0002</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="go">Boot0000* debian    HD(1,GPT,7c003990-9d67-48fb-b6c9-f44a4577cd5f,0x800,0x100000)/File(\EFI\DEBIAN\GRUBX64.EFI)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">Boot0002  UEFI: Built-in EFI Shell  VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f</span>
+</code></pre></div>
+<p>在以上示例中，UEFI 固件会从分区 GUID 为 <code>7c003990-9d67-48fb-b6c9-f44a4577cd5f</code> 的分区中加载 <code>\EFI\DEBIAN\GRUBX64.EFI</code> 文件作为 Bootloader。你可以观察 <code>blkid</code> 命令的输出，寻找 <code>PARTUUID=</code> 匹配的分区。</p>
 <h2 id="bootloader">Bootloader<a class="headerlink" href="#bootloader" title="Permanent link">&para;</a></h2>
 <p>Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U 盘、光盘等）的特定位置（如 MBR、GPT 分区表中的 EFI System Partition 等）中，负责加载操作系统内核到内存，并将控制权移交给 Kernel。</p>
 <p>通常，对于 Linux 系统来说，Bootloader 还需要将 initrd/initramfs（初始内存盘）加载到内存，并将相关信息（如内核命令行参数、initramfs 的位置等）传递给 Kernel，里面包含了内核启动所需的各种驱动和工具，帮助内核完成系统的初始化过程。</p>
@@ -3324,7 +3337,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月13日 06:52:18 UTC">2026年4月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月18日 16:50:53 UTC">2026年4月18日</span>
   </span>
 
     
@@ -3343,6 +3356,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
@@ -3351,11 +3369,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
