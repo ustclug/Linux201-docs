@@ -791,6 +791,20 @@ http {
 
     在 HTTP 标准中，[`Connection`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection) 头是 hop-by-hop 的，这意味着这个头[不应该按照原样转发](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#hop-by-hop_headers)。直接转发会存在非预期的副作用。
 
+!!! tip "替换响应中的字符串"
+
+    有些时候我们会不得不需要修改上游返回的内容，特别是在没有办法修改上游（一般是网站后端）代码和配置的时候。例如，上游可能在返回的 HTML 里面写死了路径 `/static/`，但是你希望放在 `/app/static/`。此时可以使用 [`ngx_http_sub_module`](https://nginx.org/en/docs/http/ngx_http_sub_module.html) 模块提供的 [`sub_filter`](https://nginx.org/en/docs/http/ngx_http_sub_module.html#sub_filter) 相关的指令：
+
+    ```nginx
+    location /app {
+        # 省略其他设置
+        sub_filter '/static/' '/app/static/';
+        sub_filter_once off;  # 全部替换，而不是只换一次
+        sub_filter_last_modified on;  # 不清除 Last-Modified 头
+        sub_filter_types *;  # 默认只替换 HTML 中的内容。* 扩展到了所有类型的响应
+    }
+    ```
+
 ### 反代缓存 {#reverse-proxy-caching}
 
 Nginx 可以作为反向代理缓存服务器，缓存后端的响应内容，从而减少后端的负载，提升性能。常用于缓存局域网外部的静态资源（将外部的网站作为反向代理的「后端」），提供给局域网内的用户访问。
