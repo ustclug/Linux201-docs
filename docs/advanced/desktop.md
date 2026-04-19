@@ -314,6 +314,57 @@ QT_IM_MODULE="fcitx"
 
 最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动（也称为 Device Dependent X，DDX）来获得显示加速。
 
+#### 硬件加速简介 {#hardware-acceleration}
+
+实际上，Linux 的图形栈要比上面介绍的还要复杂很多，本文不是开发手册，因此无法涵盖每个细节。这里只能做简单的介绍。
+
+现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。
+
+对 OpenGL 来说，这个任务由 [libglvnd](https://gitlab.freedesktop.org/glvnd/libglvnd)（the GL Vendor-Neutral Dispatch library）完成。其包含了 GLX 和 EGL 的接口。GLX 是和 X 绑定的 OpenGL 实现，而 EGL 提供了不和具体的某种窗口系统绑定的统一的 OpenGL 接口。libglvnd 会根据当前的情况调用 Mesa 或者 GPU 开发商私有的 OpenGL（GLX/EGL）实现。
+
+!!! note "libglvnd 提供的库"
+
+    在 Debian 中，libglvnd 源码包被分成了多个包，包括：
+    
+    - [libglvnd0](https://packages.debian.org/trixie/libglvnd0)：实际执行分发（dispatch）操作的 `libGLdispatch.so`
+    - [libgl1](https://packages.debian.org/trixie/libgl1)：提供分发 + GLX 功能的老的 `libGL.so`，目前已经不推荐使用
+    - [libegl1](https://packages.debian.org/trixie/libegl1)：提供了 `libEGL.so`
+    - [libgles1](https://packages.debian.org/trixie/libgles1)、[libgles2](https://packages.debian.org/trixie/libgles2)：提供 OpenGL ES（精简的 OpenGL API）的相关库，实际是分发库移除了一部分符号的包装
+    - [libglx0](https://packages.debian.org/trixie/libglx0)：提供了 `libGLX.so`
+    - [libopengl0](https://packages.debian.org/trixie/libopengl0)：提供了 `libOpenGL.so`，实际是分发库移除了一部分符号的包装
+
+而 Vulkan 在设计时就考虑到了这个问题：它的核心库 `libvulkan.so` 实际是一个加载器，负责检查指定路径（如 `/usr/share/vulkan/`）加载 ICD（Installable Client Driver）。例如 AMD 显卡 Vulkan 驱动的 ICD 配置如下：
+
+```json title="/usr/share/vulkan/icd.d/radeon_icd.json"
+{
+    "ICD": {
+        "api_version": "1.4.305",
+        "library_path": "libvulkan_radeon.so"
+    },
+    "file_format_version": "1.0.0"
+}
+```
+
+!!! note "Vulkan layer"
+
+    除了 ICD 以外，Vulkan 加载器还会加载被称为 layer 的库。这些 layer 会根据条件注入，提供诸如校验（例如 Vulkan 的 validation layer）、帧率显示（例如 Mesa 自带的 overlay，以及更常见的 [MangoHud](https://github.com/flightlessmango/Mangohud) 等）。可以在 `/usr/share/vulkan/explicit_layer.d/` 和 `/usr/share/vulkan/implicit_layer.d/` 查看系统中安装的 layer。
+
+    例如在安装了 Mesa overlay layer 的系统上，可以用 `VK_INSTANCE_LAYERS=VK_LAYER_MESA_overlay` 在 Vulkan 程序中显示帧率信息。
+
+!!! tip "齿轮样例程序"
+
+    对 GLX、EGL 和 Vulkan，`mesa-utils` 都提供了对应的 demo 程序：
+
+    - `glxgears`
+    - `eglgears_x11` 或 `eglgears_wayland`
+    - `vkgears`
+
+    另外 `vulkan-tools` 提供了 `vkcube`，对 Vulkan 测试来说可能更常见一些。
+
+!!! note "多 GPU 场景"
+
+    如果系统中有多个 GPU，那么 libglvnd 和 Vulkan 加载器会怎么选择合适的驱动实现呢？(TODO)
+
 #### HiDPI {#x-hidpi}
 
 随着高分屏的推广，如果在使用高分屏时仍然采用和非高分屏一样的策略，那么桌面元素就会变得非常小，因此需要对桌面进行缩放。在介绍下面的内容之前，首先需要了解 DPI（Dots Per Inch，点每英寸）的概念。显示器型号中的「英寸」一般指显示器对角线的长度，因此要计算 DPI，首先可以先从最佳分辨率的长和宽计算出对角线的像素数，然后用对角线的像素数除以对角线的英寸数，就可以得到 DPI 了。例如对一个 27 英寸的 2K（2560x1440）显示器来说：
