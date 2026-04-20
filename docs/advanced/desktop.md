@@ -361,9 +361,37 @@ QT_IM_MODULE="fcitx"
 
     另外 `vulkan-tools` 提供了 `vkcube`，对 Vulkan 测试来说可能更常见一些。
 
-!!! note "多 GPU 场景"
+!!! note "多 GPU 与多驱动实现的场景"
 
-    如果系统中有多个 GPU，那么 libglvnd 和 Vulkan 加载器会怎么选择合适的驱动实现呢？(TODO)
+    如果系统中有多个 GPU，那么 libglvnd 和 Vulkan 加载器会怎么选择合适的驱动实现呢？对 GLX、EGL 和 Vulkan，具体的实现有着一些差异。
+
+    GLX 场景下，libglvnd 会使用 `GLX_EXT_libglvnd` 扩展请求 X server（例如当前的 X screen 应该使用什么 GlxVendor），根据返回的信息选择实现。如果返回的信息无效，那么就回退到加载 `libGLX_indirect.so`，一般是指向实际实现的软链接：
+
+    ```console
+    $ ls -lha /usr/lib/x86_64-linux-gnu/libGLX_indirect.so.0
+    lrwxrwxrwx 1 root root 16 Jun 17  2025 /usr/lib/x86_64-linux-gnu/libGLX_indirect.so.0 -> libGLX_mesa.so.0
+    ```
+
+    可以设置 `__GLX_VENDOR_LIBRARY_NAME` 环境变量来修改 libglvnd 对 GLX 实现的选择。而 EGL 中，libglvnd 实现了类似于 Vulkan ICD 的逻辑：
+
+    ```json title="/usr/share/glvnd/egl_vendor.d/50_mesa.json"
+    {
+        "file_format_version" : "1.0.0",
+        "ICD" : {
+            "library_path" : "libEGL_mesa.so.0"
+        }
+    }
+    ```
+
+    EGL 会按顺序依次确认每个库，第一个能处理请求的库获胜。可以用 `__EGL_VENDOR_LIBRARY_FILENAMES` 等环境变量指定 libglvnd 选择的 EGL ICD JSON 文件。
+
+    上述 libglvnd 对 GLX/EGL 的分发选择的是实现，而不是 GPU 设备。如果两块显卡的驱动都是开源的 Mesa（例如核显是 Intel，独显是 AMD），那么就还需要 Mesa 来决定使用的设备。常见的包括使用 [`MESA_LOADER_DRIVER_OVERRIDE`](https://docs.mesa3d.org/envvars.html#envvar-MESA_LOADER_DRIVER_OVERRIDE) 选择 Mesa 内部实现的驱动、[`DRI_PRIME`](https://docs.mesa3d.org/envvars.html#envvar-DRI_PRIME) 选择用独显还是集显（不适用于 Mesa 以外驱动的 GPU）等。
+
+    而 Vulkan API 则不会帮你选择 GPU，而是会将所有的 GPU 信息都提供给应用程序，让应用自己选。但是不少应用就会直接选择列表中的第一块 GPU（不一定是用户想要的）。Vulkan 加载器同样也支持用环境变量（例如 `VK_LOADER_DEVICE_SELECT` 或者 `VK_LOADER_DRIVERS_DISABLE`）限制选择的设备或驱动，更多信息可参考[官方文档](https://github.com/KhronosGroup/Vulkan-Loader/blob/1bf213b2a90181553fff35aeb6fa5c468dcfd35d/docs/LoaderInterfaceArchitecture.md#active-environment-variables)。同样，如果选择了 Mesa 实现，也有一些额外的环境变量可以做额外配置，例如 `VK_LAYER_MESA_device_select` layer 接受 [`MESA_VK_DEVICE_SELECT`](https://docs.mesa3d.org/envvars.html#envvar-MESA_VK_DEVICE_SELECT) 环境变量用于设备选择。
+
+!!! note "我没有 GPU 呢？"
+
+    总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。(TODO)
 
 #### HiDPI {#x-hidpi}
 
