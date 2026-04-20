@@ -96,8 +96,7 @@
 Do not link to a "generic" man page for these commands -->
 [adduser.8]: https://manpages.debian.org/stable/adduser/adduser.8.en.html
 [btrfs-convert.8]: https://man7.org/linux/man-pages/man8/btrfs-convert.8.html
-<!-- None of Debian, man7.org or linux.die.net provides conntrack(8), weird -->
-[conntrack.8]: https://man.archlinux.org/man/conntrack.8.en
+[conntrack.8]: https://manpages.debian.org/stable/conntrack/conntrack.8.en.html
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
 [ipset.8]: https://linux.die.net/man/8/ipset
 [iptables.8]: https://www.man7.org/linux/man-pages/man8/iptables.8.html
