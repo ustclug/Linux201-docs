@@ -3540,7 +3540,7 @@
 </ul>
 <p>对于经过 NAT 的连接，Linux 要求属于该连接的所有数据包都由相同的网卡发出（区分正反方向），否则会停止记录连接信息并丢掉即将发往不同网卡的数据包<sup id="fnref:nf_nat_oif_changed"><a class="footnote-ref" href="#fn:nf_nat_oif_changed">10</a></sup>。</p>
 <h4 id="conntrack-command">conntrack 命令<a class="headerlink" href="#conntrack-command" title="Permanent link">&para;</a></h4>
-<p><a href="https://man.archlinux.org/man/conntrack.8.en"><code>conntrack(8)</code></a> 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。</p>
+<p><a href="https://manpages.debian.org/stable/conntrack/conntrack.8.en.html"><code>conntrack(8)</code></a> 可以查看和管理内核中的 conntrack 表，其记录了所有经过主机的数据包的连接状态信息。</p>
 <p>最常用的命令是列出当前的连接跟踪条目：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>conntrack<span class="w"> </span>-L
 </code></pre></div>
@@ -3566,7 +3566,7 @@
 <p><code>conntrack</code> 命令支持一些与 iptables 语法相同的匹配条件，可以用来过滤输出的连接条目，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>conntrack<span class="w"> </span>-L<span class="w"> </span>-p<span class="w"> </span>udp<span class="w"> </span>--dport<span class="w"> </span><span class="m">53</span>
 </code></pre></div>
-<p><code>conntrack</code> 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 <a href="https://man.archlinux.org/man/conntrack.8.en">conntrack(8)</a>。</p>
+<p><code>conntrack</code> 命令也可以对 conntrack 表进行修改操作，但相比于查询类操作较为不常用，因此具体用法可以参考 <a href="https://manpages.debian.org/stable/conntrack/conntrack.8.en.html">conntrack(8)</a>。</p>
 <p>另外，<code>conntrack -E</code> 命令可以实时监控 conntrack 表的变化，适合用于调试和分析网络连接的动向。<code>-E</code> 操作同样支持匹配条件，可以过滤出特定的连接事件，方便查找和分析。</p>
 <h3 id="ipset">IPset<a class="headerlink" href="#ipset" title="Permanent link">&para;</a></h3>
 <p>IPset 是 Netfilter 的一个扩展模块，用于管理 IP 地址集合（set），可以高效地匹配大量的 IP 地址或网络段。</p>
@@ -3867,7 +3867,6 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 
 <!-- Note: Debian man pages for useradd(8)/userdel(8) mentions the "low-level" feature and recommends adduser(8)/deluser(8) instead. 
 Do not link to a "generic" man page for these commands -->
-<!-- None of Debian, man7.org or linux.die.net provides conntrack(8), weird -->
 <!-- begin slurm daemons -->
 <!-- end slurm daemons -->
 <!--
