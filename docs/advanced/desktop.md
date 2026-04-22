@@ -318,7 +318,7 @@ QT_IM_MODULE="fcitx"
 
 实际上，Linux 的图形栈要比上面介绍的还要复杂很多，本文不是开发手册，因此无法涵盖每个细节。这里只能做简单的介绍。
 
-现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。
+现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。否则就会遇到类似这样尴尬的局面：系统安装的时候，libGL.so 等库是 Mesa 提供的，之后安装了某些 GPU 自己的驱动之后，安装器直接覆盖了 libGL.so 等文件，看起来能用，然后系统一升级，libGL.so 又被覆盖回来了，图形渲染于是全挂了，而且这种模式也无法共存多种实现。
 
 对 OpenGL 来说，这个任务由 [libglvnd](https://gitlab.freedesktop.org/glvnd/libglvnd)（the GL Vendor-Neutral Dispatch library）完成。其包含了 GLX 和 EGL 的接口。GLX 是和 X 绑定的 OpenGL 实现，而 EGL 提供了不和具体的某种窗口系统绑定的统一的 OpenGL 接口。libglvnd 会根据当前的情况调用 Mesa 或者 GPU 开发商私有的 OpenGL（GLX/EGL）实现。
 
@@ -347,7 +347,7 @@ QT_IM_MODULE="fcitx"
 
 !!! note "Vulkan layer"
 
-    除了 ICD 以外，Vulkan 加载器还会加载被称为 layer 的库。这些 layer 会根据条件注入，提供诸如校验（例如 Vulkan 的 validation layer）、帧率显示（例如 Mesa 自带的 overlay，以及更常见的 [MangoHud](https://github.com/flightlessmango/Mangohud) 等）。可以在 `/usr/share/vulkan/explicit_layer.d/` 和 `/usr/share/vulkan/implicit_layer.d/` 查看系统中安装的 layer。
+    除了 ICD 以外，Vulkan 加载器还会加载被称为 layer 的库。这些 layer 会根据条件注入，提供诸如校验（例如 Vulkan 的 validation layer）、帧率显示（例如 Mesa 自带的 overlay，以及更常见的 [MangoHud](https://github.com/flightlessmango/Mangohud) 等）之类的功能。可以在 `/usr/share/vulkan/explicit_layer.d/` 和 `/usr/share/vulkan/implicit_layer.d/` 查看系统中安装的 layer。
 
     例如在安装了 Mesa overlay layer 的系统上，可以用 `VK_INSTANCE_LAYERS=VK_LAYER_MESA_overlay` 在 Vulkan 程序中显示帧率信息。
 
