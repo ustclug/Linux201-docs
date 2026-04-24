@@ -3475,7 +3475,7 @@ U --&gt; F(scope)</code></pre>
 <p>很多通过 <code>systemctl</code> 命令改变的配置都会被保存到 <code>/etc/systemd/system</code> 目录下，例如：</p>
 <ul>
 <li>
-<p><code>systemctl enable [some-unit]</code> 可以“启用”一个 unit，即激活该 unit 在 <code>[Install]</code> 部分声明的自动启动条件，如 <code>WantedBy=</code> 和 <code>RequiredBy=</code> 等。该命令的本质是在 <code>/etc/systemd/system</code> 目录下创建软链接。</p>
+<p><code>systemctl enable [some-unit]</code> 可以“启用”一个 unit，即激活该 unit 在 <code>[Install]</code> 部分声明的自动启动条件，如 <code>WantedBy=</code> 和 <code>RequiredBy=</code> 等，以及 <code>Alias=</code>。该命令的本质是在 <code>/etc/systemd/system</code> 目录下创建软链接。</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p><code>systemctl enable --now [some-unit]</code> 可以在 enable 一个 unit 的同时立即启动它。</p>
@@ -3802,9 +3802,43 @@ U --&gt; F(scope)</code></pre>
 <p>Systemd 提供了两种方法：应用可以用 libsystemd 的 <a href="https://www.freedesktop.org/software/systemd/man/latest/sd_listen_fds.html">sd_listen_fds(3)</a> 函数获取到 socket 对应的文件描述符，然后直接 <code>accept</code> 或者 <code>recv</code>（根据 <code>Accept</code> 选项的不同）。</p>
 <p>而旧的 inetd 应用会直接从 stdin 读取 socket，向 stdout 写入 socket，此时需要在配置 <code>Accept=yes</code> 的同时，配置 <code>StandardInput=socket</code> 等参数。</p>
 </div>
+<details class="example">
+<summary>使用 systemd socket 将 rsync 服务监听在 Unix domain socket 上</summary>
+<p>分别创建 systemd 需要的 socket unit 和模板化 service unit：</p>
+<div class="highlight"><span class="filename">/etc/systemd/system/rsync.socket</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">systemd socket activation for rsync</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="k">[Socket]</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">/run/rsyncd.sock</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="na">Accept</span><span class="o">=</span><span class="s">yes</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="k">[Install]</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">sockets.target</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">/etc/systemd/system/rsync@.service</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Rsync Service</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="na">CollectMode</span><span class="o">=</span><span class="s">inactive-or-failed</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="k">[Service]</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="na">Type</span><span class="o">=</span><span class="s">exec</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/rsync --daemon --no-detach --config=/etc/rsyncd.conf</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="na">StandardInput</span><span class="o">=</span><span class="s">socket</span>
+</code></pre></div>
+<p>启用并启动其中的 socket unit：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">systemctl enable --now rsync.socket</span>
+</code></pre></div>
+<p>此时 rsync 服务就会监听在 <code>/run/rsyncd.sock</code> 上了。</p>
+<p>由于 rsync 本身并没有 UDS 的支持，如果你需要进行测试的话，可以使用 socat 转发一下：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>socat<span class="w"> </span>TCP-LISTEN:873,fork<span class="w"> </span>UNIX-CONNECT:/run/rsyncd.sock<span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>rsync<span class="w"> </span>rsync://localhost:873/
+</code></pre></div>
+<p>将 rsync 服务监听在 UDS 的好处是可以通过文件权限来控制访问，且本地访问时不会经过防火墙等网络协议栈组件，性能会更好一些。
+例如，USTC 镜像站的 <a href="https://github.com/ustclug/rsync-proxy">rsync-proxy</a> 就支持通过 UDS 和后端 rsync 服务通信。</p>
+</details>
 <div class="admonition note">
 <p class="admonition-title"><code>Accept=yes</code> 与拒绝服务攻击</p>
-<p>配置 <code>Accept=yes</code> 时，systemd 默认只会接受最多 64 个连接（由 <code>MaxConnections</code> 选项控制），如果服务暴露在互联网等不可信环境的话，这一项连接数限制可能会导致正常用户无法使用服务。</p>
+<p>配置 <code>Accept=yes</code> 时，systemd 接受的并发连接数由 <code>MaxConnections=</code> 选项控制（默认为 64）。
+如果服务暴露在互联网等不可信环境的话，默认的连接数限制可能会导致正常用户无法使用服务。</p>
 <p>早期的 <code>ssh.socket</code> 对应配置为 <code>Accept=yes</code>，就导致用户无法正常连接到 SSH 的问题（可参考 <a href="https://bugs.archlinux.org/task/62248">Arch Linux FS#62248</a>、<a href="https://gitlab.archlinux.org/archlinux/packaging/packages/openssh/-/commit/b5ee8a935e7f3869efb16c11d2dc6356870c91da">Arch Linux 移除 ssh.socket 的 commit</a>、<a href="https://salsa.debian.org/ssh-team/openssh/-/commit/0dc73888bbfc17fae04b891ac0c80f35f9c44f48">Debian 切换到 <code>Accept=no</code> 的 commit</a>）。</p>
 <p>如果无法切换到 <code>Accept=no</code>，那么可能需要增大最大连接数，或者利用 <a href="../security/#public-service-and-login">fail2ban</a> 与<a href="../network/firewall/">防火墙</a>等方式来阻止恶意的扫描影响正常服务。</p>
 </div>
@@ -3819,17 +3853,17 @@ U --&gt; F(scope)</code></pre>
 <p>这些操作是 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-generator.html">systemd-ssh-generator.8</a> 完成的。相关的引入原因可以参考 <a href="https://mastodon.social/@pid_eins/112411218075942131">Lennart Poettering 的 mastodon</a>。</p>
 <p>需要特别注意的是，<strong><a href="../virtualization/container/#namespace">命名空间机制</a>在 Linux 的 7.0 内核之前，无法隔离 <code>AF_VSOCK</code></strong>。这也就意味着，如果没有设置其他的保护措施，所有虚拟机里开启的容器都可以访问到虚拟机的 SSH，同时因为有虚拟机的主机上也有 vsock 的另一端，因此主机里的容器也可以访问虚拟机的 SSH。如果虚拟机上的用户采用了弱密码，并且 SSH 允许密码登录（或者其他脆弱的场景下），恶意程序就可能会从虚拟机或者主机里的容器逃逸到虚拟机中。不过好消息是，不少容器运行时都使用 seccomp 阻止了容器内部对 vsock 的访问（例如 <a href="https://github.com/moby/moby/pull/44562">moby</a>）。</p>
 <p>可以使用以下命令检查机器上有没有在 vsock 上监听的服务：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>ss<span class="w"> </span>--vsock<span class="w"> </span>--all
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">Netid      State       Recv-Q       Send-Q             Local Address:Port             Peer Address:Port      </span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">v_str      LISTEN      0            0                              *:22                          *:*</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>ss<span class="w"> </span>--vsock<span class="w"> </span>--all
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">Netid      State       Recv-Q       Send-Q             Local Address:Port             Peer Address:Port      </span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">v_str      LISTEN      0            0                              *:22                          *:*</span>
 </code></pre></div>
 <p>不过从另一方面来说，这也给管理虚拟机带来了方便。Systemd 提供了 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-proxy.html">systemd-ssh-proxy.1</a> 工具，用来作为 <a href="../../dev/ssh/#proxy"><code>ProxyCommand</code></a> 方便连接由 Unix socket 和 <code>AF_VSOCK</code> 暴露的 SSH 服务。Debian 的 <code>systemd</code> 包会写入 <code>/etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf</code>，允许直接使用 <code>.host</code> 或 <code>machine/.host</code> 连接到本机的 SSH，使用 <code>unix/*</code>、<code>vsock/*</code>、<code>machine/*</code> 连接到 Unix socket、<code>AF_VSOCK</code> 和使用 systemd-machined（systemd 的虚拟机和容器管理器）管理的虚拟机。于是可以这样连接到启用了 vsock 功能的虚拟机上：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># 可以 open /dev/vsock 后使用 ioctl IOCTL_VM_SOCKETS_GET_LOCAL_CID 获取虚拟机自己的 CID</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># 详情可阅读手册 vsock.7</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>ssh<span class="w"> </span>user@vsock/3
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 可以 open /dev/vsock 后使用 ioctl IOCTL_VM_SOCKETS_GET_LOCAL_CID 获取虚拟机自己的 CID</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="c1"># 详情可阅读手册 vsock.7</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>ssh<span class="w"> </span>user@vsock/3
 </code></pre></div>
 <p>当然也可以用 <code>socat</code> 来做：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ssh<span class="w"> </span>-o<span class="w"> </span><span class="nv">ProxyCommand</span><span class="o">=</span><span class="s2">&quot;socat - VSOCK-CONNECT:3:22&quot;</span><span class="w"> </span>user@anythingyoulike
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ssh<span class="w"> </span>-o<span class="w"> </span><span class="nv">ProxyCommand</span><span class="o">=</span><span class="s2">&quot;socat - VSOCK-CONNECT:3:22&quot;</span><span class="w"> </span>user@anythingyoulike
 </code></pre></div>
 </div>
 <h3 id="timers">定时任务<a class="headerlink" href="#timers" title="Permanent link">&para;</a></h3>
@@ -3841,9 +3875,9 @@ U --&gt; F(scope)</code></pre>
 <ul>
 <li>
 <p>例如，<code>systemd-tmpfiles-clean.timer</code> 就是在系统启动后 15 分钟触发一次 <code>systemd-tmpfiles-clean.service</code>，然后每天触发一次，用于清理临时文件。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/systemd-tmpfiles-clean.timer</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">[Timer]</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="na">OnBootSec</span><span class="o">=</span><span class="s">15min</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="na">OnUnitActiveSec</span><span class="o">=</span><span class="s">1d</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/systemd-tmpfiles-clean.timer</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">[Timer]</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">OnBootSec</span><span class="o">=</span><span class="s">15min</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="na">OnUnitActiveSec</span><span class="o">=</span><span class="s">1d</span>
 </code></pre></div>
 </li>
 <li>
@@ -3875,34 +3909,34 @@ U --&gt; F(scope)</code></pre>
 <h4 id="create-timer">创建一个定时任务<a class="headerlink" href="#create-timer" title="Permanent link">&para;</a></h4>
 <p>如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。</p>
 <p>首先创建一个 service，需要注意的是 <code>Type=oneshot</code>，并且<strong>不能</strong>使用 <code>RemainAfterExit=yes</code>（一般将其忽略即可，它的默认值是 no）。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Certbot</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">file:///usr/share/doc/python-certbot-doc/html/index.html</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">https://certbot.eff.org/docs</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="k">[Service]</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/certbot -q renew</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.service</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Certbot</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">file:///usr/share/doc/python-certbot-doc/html/index.html</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="na">Documentation</span><span class="o">=</span><span class="s">https://certbot.eff.org/docs</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/certbot -q renew</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
 </code></pre></div>
 <p>接下来创建一个 timer，指定触发时间，并按需启用 <code>Persistent=</code>。</p>
-<div class="highlight"><span class="filename">/lib/systemd/system/certbot.timer</span><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run certbot twice daily</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="k">[Timer]</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 00,12:00:00</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">43200</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="k">[Install]</span>
-<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+<div class="highlight"><span class="filename">/lib/systemd/system/certbot.timer</span><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run certbot twice daily</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="k">[Timer]</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">*-*-* 00,12:00:00</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">43200</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
 </code></pre></div>
 <p>此时 <code>certbot.timer</code> 会自动触发同名的 service，也就是 <code>certbot.service</code>。</p>
 <p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
 <h3 id="transient-service">临时服务<a class="headerlink" href="#transient-service" title="Permanent link">&para;</a></h3>
 <p>systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 <code>.service</code> 文件，这对于一些临时任务或一次性操作非常有用。</p>
 <p><code>systemd-run</code> 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
 </code></pre></div>
 <p>此后，你就可以通过 <code>systemctl status my-sleep</code> 查看临时服务的状态，或者使用诸如 <code>systemctl stop</code> / <code>systemctl restart</code> 等命令管理其状态了。同时，你也可以使用 <code>journalctl</code> 命令查看进程的输出（<a href="#log">见下</a>）。</p>
 <p>默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 <code>systemctl status my-sleep</code> 将会显示 service not found。此时你仍然可以使用 <code>journalctl</code> 命令查看日志，回收服务并不会清除其运行日志。<code>systemd-run</code> 有两个参数可以改变此默认行为：</p>
@@ -3986,36 +4020,36 @@ U --&gt; F(scope)</code></pre>
 <p class="admonition-title">避免覆盖由包管理器管理的文件</p>
 <p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
 <p>例如，要限制磁盘占用（<code>/var/log/journal</code>）为 1G，可以创建如下文件，然后重启 <code>systemd-journald</code> 服务：</p>
-<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">[Journal]</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
+<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">[Journal]</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
 </code></pre></div>
 </div>
 <p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <div class="admonition note">
 <p class="admonition-title">用户程序视角：如何记录日志？</p>
 <p>C 库提供了传统的 <a href="https://man7.org/linux/man-pages/man3/syslog.3.html"><code>syslog()</code></a> 函数，用来连接到 <code>/dev/log</code> 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/log
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="go">lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -&gt; /run/systemd/journal/dev-log=</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/log
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -&gt; /run/systemd/journal/dev-log=</span>
 </code></pre></div>
 <p>而在容器场景中，容器运行时一般不会对 <code>/dev/log</code> 作特殊处理，因此如果容器内执行的程序使用了 <code>syslog()</code> 记录日志，那么就需要将 <code>/dev/log</code> 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。</p>
 <p>对脚本程序，可以使用 <code>logger</code> 记录日志：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>logger<span class="w"> </span><span class="s2">&quot;hello, world!&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>logger<span class="w"> </span><span class="s2">&quot;hello, world!&quot;</span>
 </code></pre></div>
 <p>libsystemd 也提供了 <code>sd_journal</code> 系列函数，允许记录结构化日志等操作。</p>
 </div>
 <h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
 <p>按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责非 journald 日志的“滚动”（rotate），即重命名、压缩、删除等操作。</p>
 <p>logrotate 的全局配置文件位于 <code>/etc/logrotate.conf</code>，而每个服务的配置文件则位于 <code>/etc/logrotate.d/</code> 目录下。以 Telegraf 为例，其配置文件如下：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>/var/log/telegraf/telegraf.log
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="o">{</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span>daily
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span>missingok
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span>dateext
-<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">    </span>copytruncate
-<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">    </span>notifempty
-<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">    </span>compress
-<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="o">}</span>
+<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>/var/log/telegraf/telegraf.log
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="o">{</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span>daily
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">    </span>missingok
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">    </span>dateext
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">    </span>copytruncate
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span>notifempty
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">    </span>compress
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="o">}</span>
 </code></pre></div>
 <p>配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：</p>
 <dl>
@@ -4048,10 +4082,10 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>压缩旧的日志文件，以及压缩参数（默认使用 <code>gzip</code> / <code>gunzip</code> / <code>.gz</code> / <code>-9</code>）。其中 <code>compress</code> 是开关，默认行为是 <code>nocompress</code>。</p>
 <p>例如，如果使用 Zstd 压缩，可以使用以下配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
-<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>compressext<span class="w"> </span>.zst
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>compressext<span class="w"> </span>.zst
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
 </code></pre></div>
 </dd>
 <dt>delaycompress</dt>
@@ -4062,9 +4096,9 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>在 rotate 之前/之后执行的命令，命令块需要以 <code>endscript</code> 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 <code>if</code> 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。</p>
 <p>例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>postrotate
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>endscript
+<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>postrotate
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>endscript
 </code></pre></div>
 </dd>
 </dl>
@@ -4074,11 +4108,11 @@ U --&gt; F(scope)</code></pre>
 <p>rsyslog 和 syslog-ng 是传统的日志管理方案，尽管 journald 已经取代了它们不少功能，但是在一些场景下仍然有着重要的作用。以下介绍 rsyslog 的相关内容。</p>
 <h4 id="rsyslog-with-journald">与 journald 协作<a class="headerlink" href="#rsyslog-with-journald" title="Permanent link">&para;</a></h4>
 <p>在 Debian 12 之前，rsyslog 默认预装，用于将文本格式的日志输出到 <code>/var/log</code> 下。在 Debian 12 之后，由于 systemd-journald 会将日志存储为二进制格式（<code>/var/log/journal/</code> 下），因此 rsyslog 不再预装，避免同时写两份内容一样的东西到磁盘上。不过，Debian 12 之后的 journald 配置仍然会将日志转发到 <code>/run/systemd/journal/syslog</code>：</p>
-<div class="highlight"><span class="filename">/usr/lib/systemd/journald.conf.d/syslog.conf</span><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># Undo upstream commit 46b131574fdd7d77 for now. For details see</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1">#  http://lists.freedesktop.org/archives/systemd-devel/2014-November/025550.html</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="k">[Journal]</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="na">ForwardToSyslog</span><span class="o">=</span><span class="s">yes</span>
+<div class="highlight"><span class="filename">/usr/lib/systemd/journald.conf.d/syslog.conf</span><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># Undo upstream commit 46b131574fdd7d77 for now. For details see</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="c1">#  http://lists.freedesktop.org/archives/systemd-devel/2014-November/025550.html</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="k">[Journal]</span>
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="na">ForwardToSyslog</span><span class="o">=</span><span class="s">yes</span>
 </code></pre></div>
 <p><code>/run/systemd/journal/syslog</code> 由 <code>syslog.socket</code> 控制，被激活时会启动 <code>syslog.service</code>。安装 rsyslog 后，<code>/etc/systemd/system/syslog.service</code> 会变成指向 <code>rsyslog.service</code> 的软链接。在激活后，rsyslog 的 <a href="https://docs.rsyslog.com/doc/configuration/modules/imuxsock.html#coexistence-with-systemd">imuxsock 插件</a> 会从 systemd 获取到对应的 socket 的描述符。</p>
 <p>在配置后，如果不希望 journald 继续记录日志（只做转发日志到 rsyslog 的中间人），直接删除 <code>/var/log/journal</code> 目录即可。这项设置由 <code>journald.conf</code> 的 <code>Storage=auto</code> 控制，在目录不存在时不会执行存储日志到磁盘的操作。</p>
@@ -4094,64 +4128,64 @@ U --&gt; F(scope)</code></pre>
 <p>以下介绍使用 rsyslog TLS 加密传输日志的相关设置，下面给出的例子中服务端有证书，客户端没有（客户端会校验服务端，但是服务端不会校验客户端），在需要高安全性的场合下，建议为客户端也生成证书。生成 CA 证书与服务端（接收端）证书的部分可参考 <a href="../network-service/nginx/#getting-certificates">nginx 一章中我们的相关介绍</a>。</p>
 <p>TLS 传输日志一般使用 TCP 6514 端口（传统非加密的 syslog 传输使用 TCP 或 UDP 的 514 端口）。两端都需要运行 rsyslog。这里使用 GnuTLS 模块（需要安装 <code>rsyslog-gnutls</code> 包）。</p>
 <p>服务端：</p>
-<div class="highlight"><span class="filename">/etc/rsyslog.d/server.conf</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>global(
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>    DefaultNetstreamDriver=&quot;gtls&quot;
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>    DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    DefaultNetstreamDriverCertFile=&quot;/path/to/server.crt&quot;
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    DefaultNetstreamDriverKeyFile=&quot;/path/to/server.key&quot;
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>)
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>module(
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>    load=&quot;imtcp&quot;
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>    StreamDriver.Name=&quot;gtls&quot;
-<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>    StreamDriver.Mode=&quot;1&quot;
-<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>    # anon -- 不校验客户端
-<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>    StreamDriver.Authmode=&quot;anon&quot;
-<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>)
-<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a>
-<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>input(
-<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a>    type=&quot;imtcp&quot;
-<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>    port=&quot;6514&quot;
-<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>)
-<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>
-<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a># 设置按照主机名分开的模板
-<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a>template(name=&quot;PerHost&quot; type=&quot;string&quot;
-<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>    string=&quot;/var/log/remote/%hostname%.log&quot;
-<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>)
-<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a>
-<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>if ($inputname == &quot;imtcp&quot;) then {
-<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a>    action(
-<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a>        type=&quot;omfile&quot;
-<a id="__codelineno-25-29" name="__codelineno-25-29" href="#__codelineno-25-29"></a>        dynaFile=&quot;PerHost&quot;
-<a id="__codelineno-25-30" name="__codelineno-25-30" href="#__codelineno-25-30"></a>    )
-<a id="__codelineno-25-31" name="__codelineno-25-31" href="#__codelineno-25-31"></a>    # 防止远程日志再被写入本地默认的日志文件
-<a id="__codelineno-25-32" name="__codelineno-25-32" href="#__codelineno-25-32"></a>    stop
-<a id="__codelineno-25-33" name="__codelineno-25-33" href="#__codelineno-25-33"></a>}
+<div class="highlight"><span class="filename">/etc/rsyslog.d/server.conf</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>global(
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    DefaultNetstreamDriver=&quot;gtls&quot;
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    DefaultNetstreamDriverCertFile=&quot;/path/to/server.crt&quot;
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>    DefaultNetstreamDriverKeyFile=&quot;/path/to/server.key&quot;
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>)
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>module(
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>    load=&quot;imtcp&quot;
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>    StreamDriver.Name=&quot;gtls&quot;
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>    StreamDriver.Mode=&quot;1&quot;
+<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>    # anon -- 不校验客户端
+<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>    StreamDriver.Authmode=&quot;anon&quot;
+<a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>)
+<a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>
+<a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a>input(
+<a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a>    type=&quot;imtcp&quot;
+<a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a>    port=&quot;6514&quot;
+<a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a>)
+<a id="__codelineno-29-20" name="__codelineno-29-20" href="#__codelineno-29-20"></a>
+<a id="__codelineno-29-21" name="__codelineno-29-21" href="#__codelineno-29-21"></a># 设置按照主机名分开的模板
+<a id="__codelineno-29-22" name="__codelineno-29-22" href="#__codelineno-29-22"></a>template(name=&quot;PerHost&quot; type=&quot;string&quot;
+<a id="__codelineno-29-23" name="__codelineno-29-23" href="#__codelineno-29-23"></a>    string=&quot;/var/log/remote/%hostname%.log&quot;
+<a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a>)
+<a id="__codelineno-29-25" name="__codelineno-29-25" href="#__codelineno-29-25"></a>
+<a id="__codelineno-29-26" name="__codelineno-29-26" href="#__codelineno-29-26"></a>if ($inputname == &quot;imtcp&quot;) then {
+<a id="__codelineno-29-27" name="__codelineno-29-27" href="#__codelineno-29-27"></a>    action(
+<a id="__codelineno-29-28" name="__codelineno-29-28" href="#__codelineno-29-28"></a>        type=&quot;omfile&quot;
+<a id="__codelineno-29-29" name="__codelineno-29-29" href="#__codelineno-29-29"></a>        dynaFile=&quot;PerHost&quot;
+<a id="__codelineno-29-30" name="__codelineno-29-30" href="#__codelineno-29-30"></a>    )
+<a id="__codelineno-29-31" name="__codelineno-29-31" href="#__codelineno-29-31"></a>    # 防止远程日志再被写入本地默认的日志文件
+<a id="__codelineno-29-32" name="__codelineno-29-32" href="#__codelineno-29-32"></a>    stop
+<a id="__codelineno-29-33" name="__codelineno-29-33" href="#__codelineno-29-33"></a>}
 </code></pre></div>
 <p>客户端：</p>
-<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>global(DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;)
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>action(
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    type=&quot;omfwd&quot;
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>    protocol=&quot;tcp&quot;
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>    target=&quot;logserver.example.com&quot;  # 或者 IP 地址
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>    port=&quot;6514&quot;
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>    StreamDriver=&quot;gtls&quot;
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>    StreamDriverMode=&quot;1&quot;
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>    # 验证远程证书的名称
-<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>    StreamDriverAuthMode=&quot;x509/name&quot;
-<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>    StreamDriverPermittedPeers=&quot;logserver.example.com&quot;
-<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>)
+<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>global(DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;)
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>action(
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    type=&quot;omfwd&quot;
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>    protocol=&quot;tcp&quot;
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>    target=&quot;logserver.example.com&quot;  # 或者 IP 地址
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>    port=&quot;6514&quot;
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>    StreamDriver=&quot;gtls&quot;
+<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>    StreamDriverMode=&quot;1&quot;
+<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>    # 验证远程证书的名称
+<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>    StreamDriverAuthMode=&quot;x509/name&quot;
+<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a>    StreamDriverPermittedPeers=&quot;logserver.example.com&quot;
+<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a>)
 </code></pre></div>
 <h2 id="logind">登录管理器<a class="headerlink" href="#logind" title="Permanent link">&para;</a></h2>
 <p>systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html">systemd-logind(8)</a>。本部分主要关注在日常运维中可能会用到的一部分特性。</p>
 <p>在登录系统时，PAM 的 <code>pam_systemd.so</code> 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。</p>
 <p><code>loginctl list-sessions</code> 可以显示当前的所有用户 session：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">      2 1000 user  seat0</span>
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="go">1 sessions listed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">      2 1000 user  seat0</span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
+<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="go">1 sessions listed.</span>
 </code></pre></div>
 <p><code>loginctl</code> 支持锁定（<code>lock-session</code>）、解锁（<code>unlock-session</code>）、注销（<code>terminate-session</code>）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 <code>loginctl</code> 的功能来实现。</p>
 <p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
@@ -4228,7 +4262,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月10日 10:04:12 UTC">2026年4月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月24日 18:44:02 UTC">2026年4月24日</span>
   </span>
 
     
