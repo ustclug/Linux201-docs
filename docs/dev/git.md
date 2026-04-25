@@ -243,7 +243,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 !!! tip "部分别名介绍"
 
-    `git commit --amend` 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。如果添加了 `--no-edit`，就会跳过消息编辑。
+    `git commit --amend` 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。详情可阅读 [Amend](#git-commit-amend)。
 
     `git push --force-with-lease` 在 force push 之前先检查 remote 的状态，如果 remote 有本地不存在的新提交，该命令就会阻止此次 force push 操作。
 
