@@ -346,7 +346,7 @@ notify 和 dbus
 
   [xz-backdoor]: https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8 "维基百科：XZ 实用程序后门"
 
-#### Socket
+#### Socket activation {#systemd-socket}
 
 如果你安装比较新的 Debian 或者 Ubuntu，可能会发现 ssh 服务默认启用的是 `ssh.socket`，而不是 `ssh.service`。此时 SSH 开放的 socket 由 systemd 接管，在有连接的时候才会启动同名的 `ssh.service`（如果没有启动），并且将对应 socket 的文件描述符转交给 sshd。这被称为 socket activation。
 
