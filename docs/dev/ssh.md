@@ -426,7 +426,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
     - 默认使用 `ssh.socket` 而不是 `ssh.service` 对外提供服务。
     - `systemd-ssh-generator` 会在 Unix socket 和 vsock 上开启额外的端口。
 
-    其中的一些设置可能会以非预期的方式影响系统的安全性，阅读[服务与日志管理](../ops/service.md#socket)的相关内容以了解更多相关信息。
+    其中的一些设置可能会以非预期的方式影响系统的安全性，阅读[服务与日志管理](../ops/service.md#systemd-socket)的相关内容以了解更多相关信息。
 
 ### authorized_keys 文件 {#authorized-keys}
 
