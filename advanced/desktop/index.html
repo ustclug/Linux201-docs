@@ -3895,12 +3895,12 @@
 <p>尝试搜索资料，写一个程序，打开 <code>/dev/fb0</code>，并使用 <code>ioctl</code> 读取必要的信息，然后 <code>mmap</code> 映射帧缓冲区后，将你想显示的图片数据写入对应的内存区域。</p>
 </div>
 <p>但是之后，显示加速的需求越来越大，显卡厂商之间设计的差异也越来越大，<code>fbdev</code> 已经不够用了。之后出现的一种解决方案是：编写 X 的输出驱动，直接操作 <code>/dev/mem</code>，通过物理地址访问显存，从而实现对显卡的控制。但是这种设计有很多问题：X 需要用 root 权限运行；如果 X 崩溃了，那么显卡的状态很可能也会坏掉；X 与 OpenGL 之间的协作也有不少问题。</p>
-<p>因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。你可以在 <code>/dev/dri</code> 中看到你的显卡的设备文件，一般分为主设备（<code>card0</code>）和渲染设备（<code>renderD128</code>），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。</p>
+<p>因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。此时，应用程序如果需要 GPU 加速渲染，就直接和 GPU 设备通信，而不是和 X 通信，这个架构被称为 DRI（Direct Rendering Infrastructure）。你可以在 <code>/dev/dri</code> 中看到你的显卡的设备文件，一般分为主设备（<code>card0</code>）和渲染设备（<code>renderD128</code>），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。</p>
 <p>此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。</p>
 <p>最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动（也称为 Device Dependent X，DDX）来获得显示加速。</p>
 <h4 id="hardware-acceleration">硬件加速简介<a class="headerlink" href="#hardware-acceleration" title="Permanent link">&para;</a></h4>
 <p>实际上，Linux 的图形栈要比上面介绍的还要复杂很多，本文不是开发手册，因此无法涵盖每个细节。这里只能做简单的介绍。</p>
-<p>现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。否则就会遇到类似这样尴尬的局面：系统安装的时候，libGL.so 等库是 Mesa 提供的，之后安装了某些 GPU 自己的驱动之后，安装器直接覆盖了 libGL.so 等文件，看起来能用，然后系统一升级，libGL.so 又被覆盖回来了，图形渲染于是全挂了，而且这种模式也无法共存多种实现。</p>
+<p>现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。否则就会遇到类似这样尴尬的局面：系统安装的时候，libGL.so 等库是 Mesa 提供的，之后安装了某些 GPU 自己的驱动之后，安装器直接覆盖了 libGL.so 等文件，看起来能用，然后系统一升级，libGL.so 又被覆盖回来了，图形渲染于是全挂了，而且这种模式也无法共存多种实现（例如同时有多块不同产商显卡的时候）。</p>
 <p>对 OpenGL 来说，这个任务由 <a href="https://gitlab.freedesktop.org/glvnd/libglvnd">libglvnd</a>（the GL Vendor-Neutral Dispatch library）完成。其包含了 GLX 和 EGL 的接口。GLX 是和 X 绑定的 OpenGL 实现，而 EGL 提供了不和具体的某种窗口系统绑定的统一的 OpenGL 接口。libglvnd 会根据当前的情况调用 Mesa 或者 GPU 开发商私有的 OpenGL（GLX/EGL）实现。</p>
 <div class="admonition note">
 <p class="admonition-title">libglvnd 提供的库</p>
@@ -3923,6 +3923,7 @@
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="nt">&quot;file_format_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0.0&quot;</span>
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="p">}</span>
 </code></pre></div>
+<p>如果正在使用 Mesa 开源驱动，<a href="https://mesamatrix.net/">Mesamatrix</a> 提供了 Mesa 实现的各个驱动对 Vulkan、OpenGL 等标准的支持情况，可以作为参考。</p>
 <div class="admonition note">
 <p class="admonition-title">Vulkan layer</p>
 <p>除了 ICD 以外，Vulkan 加载器还会加载被称为 layer 的库。这些 layer 会根据条件注入，提供诸如校验（例如 Vulkan 的 validation layer）、帧率显示（例如 Mesa 自带的 overlay，以及更常见的 <a href="https://github.com/flightlessmango/Mangohud">MangoHud</a> 等）之类的功能。可以在 <code>/usr/share/vulkan/explicit_layer.d/</code> 和 <code>/usr/share/vulkan/implicit_layer.d/</code> 查看系统中安装的 layer。</p>
@@ -3959,8 +3960,27 @@
 </div>
 <div class="admonition note">
 <p class="admonition-title">我没有 GPU 呢？</p>
-<p>总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。(TODO)</p>
+<p>总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。目前，Mesa 的 LLVMpipe 实现了完整的软件渲染 OpenGL 的支持，其会将 OpenGL 的 shader 翻译为 LLVM 的 IR，然后由 LLVM JIT 优化后在 CPU 上运行。对应 Vulkan 则是 Lavapipe（lvp）。</p>
+<p>此外，Mesa 的 Zink 驱动可以将 OpenGL 转换为 Vulkan，使得 OpenGL 应用可以在只支持 Vulkan 的 GPU 上运行。</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">视频编解码加速</p>
+<p>GPU 除了加速 OpenGL 与 Vulkan shader 以外，也可以加速视频的编解码，减少 CPU 的压力，降低能耗。目前最主流的接口为 Intel 推出的 <a href="https://en.wikipedia.org/wiki/Video_Acceleration_API">VA-API</a>，Intel 与 AMD 的 GPU 驱动对 VA-API 有着不错的支持（NVIDIA 的 VA-API，如果使用官方驱动的话，只有第三方的 <a href="https://github.com/elFarto/nvidia-vaapi-driver/">nvidia-vaapi-driver</a> 兼容层，并且只支持 Firefox）。NVIDIA 则传统上使用其推出的 <a href="https://en.wikipedia.org/wiki/VDPAU">VDPAU</a> 接口用于解码加速。应用也可以使用 NVIDIA 专用的 NVENC/NVDEC 接口实现编解码加速。Vulkan 也提供了视频编解码的扩展（<code>VK_KHR_video_*</code>），各个产商较新的显卡和驱动都对其提供了支持。</p>
+<p>大部分用户应该都更关心解码的性能。可以使用 mpv 的 <a href="https://mpv.io/manual/stable/#options-hwdec">hwdec 参数</a>测试相关视频的解码接口是否正常工作：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>mpv<span class="w"> </span>--no-config<span class="w"> </span>--hwdec<span class="o">=</span>vaapi<span class="w"> </span>example.webm
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>mpv<span class="w"> </span>--no-config<span class="w"> </span>--hwdec<span class="o">=</span>vdpau<span class="w"> </span>example.webm
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>mpv<span class="w"> </span>--no-config<span class="w"> </span>--hwdec<span class="o">=</span>nvdec<span class="w"> </span>example.webm
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>mpv<span class="w"> </span>--no-config<span class="w"> </span>--hwdec<span class="o">=</span>vulkan<span class="w"> </span>example.webm
+</code></pre></div>
+<p>打开视频后，按下 i 键（或者 Shift + i 来保持信息一直显示）可以让 mpv 显示详细信息，从中可以看出是否正在使用硬件加速：</p>
+<figure>
+<p><img alt="An example of mpv with vulkan" src="../../images/mpv-vulkan-accel-example.png" /></p>
+<figcaption>
+<p>如果成功使用对应的硬件加速接口，在 Video 一行的结尾可以看到。截图中使用的是 <code>--hwdec=vulkan</code>。</p>
+</figcaption>
+</figure>
+</div>
+<p>在 GPU 渲染完成之后，结果怎么让用户看到呢？对全屏、独占显示的应用来说，直通显示（direct scanout），让显卡直接画到屏幕上是性能最好的选择，但是更多的时候，窗口之间会互相遮挡，还有更加复杂的窗口特效等等需要<a href="#x-compositor">混成</a>，直接让 GPU 往屏幕上画画就不太合适了。(TODO)</p>
 <h4 id="x-hidpi">HiDPI<a class="headerlink" href="#x-hidpi" title="Permanent link">&para;</a></h4>
 <p>随着高分屏的推广，如果在使用高分屏时仍然采用和非高分屏一样的策略，那么桌面元素就会变得非常小，因此需要对桌面进行缩放。在介绍下面的内容之前，首先需要了解 DPI（Dots Per Inch，点每英寸）的概念。显示器型号中的「英寸」一般指显示器对角线的长度，因此要计算 DPI，首先可以先从最佳分辨率的长和宽计算出对角线的像素数，然后用对角线的像素数除以对角线的英寸数，就可以得到 DPI 了。例如对一个 27 英寸的 2K（2560x1440）显示器来说：</p>
 <ol>
@@ -3970,16 +3990,16 @@
 <p>一般来讲，在 Apple 以外的生态中，默认（1 倍）的 DPI 是 96。因此对上面的显示器，可能需要稍微放大一些，才能获得比较合适的显示效果。如果 DPI 是 144（1.5 倍）或者 192（2 倍）的话，默认缩放的不适感就会更明显。这些显示器也被称为 HiDPI 显示器。</p>
 <p>X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出当前 screen 的 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。并且目前绝大多数情况下，X server 只会有一个 "screen"（即使连接了多个显示器），具体的显示器设置由 RandR 扩展管理，因此 X server 也无法为每个显示器提供不同的 DPI 信息。</p>
 <p>因为 X server 提供的 DPI 的不可靠性，有一些应用就转而参考 X resources 中的 <code>Xft.dpi</code> 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 <code>xrdb</code> 工具来查看和修改：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-query
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="go">Xft.dpi:    96</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">Xft.antialias:  1</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">Xft.hinting:    1</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="go">Xft.hintstyle:  hintslight</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="go">Xft.rgba:   none</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="go">Xcursor.size:   24</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="go">Xcursor.theme:  Adwaita</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="gp">$ </span><span class="c1"># 从约定俗成的配置文件位置读取并与当前 X resources 合并</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-merge<span class="w"> </span>~/.Xresources
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-query
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">Xft.dpi:    96</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">Xft.antialias:  1</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">Xft.hinting:    1</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">Xft.hintstyle:  hintslight</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">Xft.rgba:   none</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">Xcursor.size:   24</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">Xcursor.theme:  Adwaita</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="gp">$ </span><span class="c1"># 从约定俗成的配置文件位置读取并与当前 X resources 合并</span>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-merge<span class="w"> </span>~/.Xresources
 </code></pre></div>
 <p>但是在语义上，这么做是存在问题的，因为 Xft 是字体相关的设置，因此它的 DPI 照理来说只是字体渲染时使用的 DPI，而不应该影响包括图片等在内的其他内容（尽管很多时候这个值就被拿来做整体 UI 的缩放了）；并且这种机制完全无法处理不同显示器不同 DPI 的情况。因此，各类 UI 库又引入了自己的 DPI 设置方式，例如 GTK 使用 <code>GDK_SCALE</code> 和 <code>GDK_DPI_SCALE</code> 环境变量，Qt 则使用 <code>QT_SCALE_FACTOR</code> 和 <code>QT_AUTO_SCREEN_SCALE_FACTOR</code> 等环境变量让用户调整 DPI。</p>
 <p>此外，由于 X resources 的修改无法通知到客户端，因此出现了 <a href="https://www.freedesktop.org/wiki/Specifications/xsettings-spec/">Xsettings</a> 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 <code>Xft.dpi</code> 在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。</p>
@@ -4009,14 +4029,14 @@
 <div class="admonition tip">
 <p class="admonition-title">我的 X 服务器开启了哪些扩展？</p>
 <p>可以使用 <code>xdpyinfo</code> 来查看当前 X 服务器开启了哪些扩展：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>xdpyinfo
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">number of extensions:    25</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">    BIG-REQUESTS</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">    Composite</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">    DAMAGE</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="go">    DOUBLE-BUFFER</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">（省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>xdpyinfo
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">number of extensions:    25</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">    BIG-REQUESTS</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">    Composite</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="go">    DAMAGE</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="go">    DOUBLE-BUFFER</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="go">（省略）</span>
 </code></pre></div>
 </div>
 <p>最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 kwin 也都集成了混成器的功能。</p>
@@ -4041,22 +4061,22 @@
 <p class="admonition-title">SSH + VNC 的远程桌面访问方案</p>
 <p>以下介绍一种常见的远程桌面访问需求的解决方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。</p>
 <p><a href="https://github.com/TigerVNC/tigervnc">TigerVNC</a> 实现了 Xvnc，安装 <code>tigervnc-standalone-server</code> 包即可。Xvnc 是一个集成了 VNC 服务器功能的 X server，可以像启动 X 一样启动 Xvnc。这里为了安全起见，我们将启动的 Xvnc 绑定到家目录下的一个 Unix socket 上，由 Unix 的文件权限管理来保证用户之间的隔离（因此不需要设置额外的 VNC 密码），并且避免将 VNC 端口暴露到网络上。启动的脚本如下（使用 <a href="https://manpages.debian.org/unstable/tigervnc-standalone-server/tigervncserver.1.en.html">tigervncserver(1)</a>）：</p>
-<div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="c1"># vncserver -&gt; tigervncserver</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/vncserver<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span>-rfbport<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span>-rfbunixpath<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.vncsock&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
+<div class="highlight"><span class="filename">/usr/local/bin/startvnc</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="c1"># vncserver -&gt; tigervncserver</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/vncserver<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span>-rfbport<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span>-rfbunixpath<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$HOME</span><span class="s2">/.vncsock&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">  </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
 </code></pre></div>
 <p>之后我们需要指定 VNC 服务器使用的 session。Debian 下，tigervncserver 会查看 <code>/etc/tigervnc/vncserver-config-defaults</code> 中 <code>$session</code> 变量的值，如果没有定义，就会启动 <code>/usr/bin/x-session-manager</code>。作为例子，我们安装 LXQt。LXQt 是一个非常轻量级的桌面环境：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>lxqt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>lxqt
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">使用其他桌面环境</p>
 <p>也可以安装其他的桌面环境，例如 GNOME、KDE。在安装完成后，可以使用 <a href="../../ops/package/#alternatives">Alternatives</a> 来设置默认的 <code>x-session-manager</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>x-session-manager
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>sudo<span class="w"> </span>update-alternatives<span class="w"> </span>--config<span class="w"> </span>x-session-manager
 </code></pre></div>
 <p>注意，一些桌面环境可能需要完整的 systemd 支持才能正常工作，例如 GNOME。如果你的环境是没有 systemd 的容器，那么可能需要选择其他桌面环境。</p>
 </div>
@@ -4065,16 +4085,16 @@
 <p>Session 的错误输出位于 <code>~/.xsession-errors</code> 文件中，可以查看该文件来调试 session 启动失败的问题。</p>
 </div>
 <p>之后 SSH 连接时，可以<a href="../../dev/ssh/#local-port-forwarding">使用 <code>-L</code> 参数将本地的 5900（默认 VNC 端口）转发到远程主机的 Unix socket 上</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>ssh<span class="w"> </span>user@host<span class="w"> </span>-L<span class="w"> </span><span class="m">5900</span>:/home/user/.vncsock
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>ssh<span class="w"> </span>user@host<span class="w"> </span>-L<span class="w"> </span><span class="m">5900</span>:/home/user/.vncsock
 </code></pre></div>
 <p>或者直接修改 SSH 配置文件，添加以下内容：</p>
-<div class="highlight"><span class="filename">~/.ssh/config</span><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Host<span class="w"> </span>myvncserver
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">    </span>HostName<span class="w"> </span>host
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span>User<span class="w"> </span>user
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span>LocalForward<span class="w"> </span><span class="m">5900</span><span class="w"> </span>/home/user/.vncsock
+<div class="highlight"><span class="filename">~/.ssh/config</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Host<span class="w"> </span>myvncserver
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span>HostName<span class="w"> </span>host
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span>User<span class="w"> </span>user
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span>LocalForward<span class="w"> </span><span class="m">5900</span><span class="w"> </span>/home/user/.vncsock
 </code></pre></div>
 <p>SSH 登录，并且运行我们编写的 <code>startvnc</code> 脚本启动 VNC 服务器后，本地即可通过 VNC 客户端连接到 <code>localhost:5900</code> 来访问远程的 X 桌面环境。TigerVNC 也提供了 <code>vncviewer</code> 命令行客户端：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>vncviewer<span class="w"> </span>localhost:5900
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>vncviewer<span class="w"> </span>localhost:5900
 </code></pre></div>
 <p>如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 <code>startvnc</code> 即可。</p>
 </div>
@@ -4082,39 +4102,39 @@
 <p class="admonition-title">VNC 与 LightDM 集成</p>
 <p>以下介绍 USTC Vlab 项目在客户容器中<a href="https://github.com/USTC-vlab/deb/tree/master/vlab-vnc">集成 VNC 服务器与 LightDM 的方案</a>。集成的好处是：用户在连接到 VNC 后，就能看到熟悉的 LightDM 的登录界面，可以在界面中输入密码、选择桌面环境等，而不需要预先配置好 VNC session。</p>
 <p>在 <a href="https://github.com/canonical/lightdm/blob/5f14752419fc7f0fd763013c8195dcb0099c940a/data/lightdm.conf">lightdm.conf</a> 中，我们可以设置让 LightDM 使用的 X 服务器，以及 LightDM 启动 greeter（实际给用户展示的图形界面）之前要运行的程序：</p>
-<div class="highlight"><span class="filename">/etc/lightdm/lightdm.conf</span><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="k">[Seat:*]</span>
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="na">xserver-command</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-lightdm</span>
-<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="na">greeter-hide-users</span><span class="o">=</span><span class="s">false</span>
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="na">greeter-setup-script</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-greeter-setup.sh</span>
+<div class="highlight"><span class="filename">/etc/lightdm/lightdm.conf</span><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">[Seat:*]</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="na">xserver-command</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-lightdm</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="na">greeter-hide-users</span><span class="o">=</span><span class="s">false</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="na">greeter-setup-script</span><span class="o">=</span><span class="s">/usr/local/bin/vncserver-greeter-setup.sh</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">/usr/local/bin/vncserver-lightdm</span><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="ch">#!/bin/bash</span>
-<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1"># Need Bash for $PPID</span>
-<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;:0&quot;</span>
-<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="nv">LIGHTDM_PID</span><span class="o">=</span><span class="nv">$PPID</span>
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="m">0</span>
-<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>
-<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>kill_vnc<span class="o">()</span><span class="w"> </span><span class="o">{</span>
-<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">  </span><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGTERM<span class="w"> </span><span class="nv">$XVNC_PID</span>
-<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">  </span><span class="nb">wait</span>
-<a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="o">}</span>
-<a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a>
-<a id="__codelineno-24-13" name="__codelineno-24-13" href="#__codelineno-24-13"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-24-14" name="__codelineno-24-14" href="#__codelineno-24-14"></a><span class="w">  </span><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
-<a id="__codelineno-24-15" name="__codelineno-24-15" href="#__codelineno-24-15"></a><span class="k">fi</span>
-<a id="__codelineno-24-16" name="__codelineno-24-16" href="#__codelineno-24-16"></a>
-<a id="__codelineno-24-17" name="__codelineno-24-17" href="#__codelineno-24-17"></a><span class="nv">AUTHORITY</span><span class="o">=</span><span class="s2">&quot;/var/run/lightdm/root/</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span>
-<a id="__codelineno-24-18" name="__codelineno-24-18" href="#__codelineno-24-18"></a>
-<a id="__codelineno-24-19" name="__codelineno-24-19" href="#__codelineno-24-19"></a>Xvnc<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span>-rfbport<span class="w"> </span><span class="m">5900</span><span class="w"> </span>-seat<span class="w"> </span>seat0<span class="w"> </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span>-auth<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span>-SendPrimary<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
-<a id="__codelineno-24-20" name="__codelineno-24-20" href="#__codelineno-24-20"></a>
-<a id="__codelineno-24-21" name="__codelineno-24-21" href="#__codelineno-24-21"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="nv">$!</span>
-<a id="__codelineno-24-22" name="__codelineno-24-22" href="#__codelineno-24-22"></a><span class="nb">trap</span><span class="w"> </span>kill_vnc<span class="w"> </span>SIGTERM
-<a id="__codelineno-24-23" name="__codelineno-24-23" href="#__codelineno-24-23"></a>
-<a id="__codelineno-24-24" name="__codelineno-24-24" href="#__codelineno-24-24"></a>sleep<span class="w"> </span><span class="m">2</span>
-<a id="__codelineno-24-25" name="__codelineno-24-25" href="#__codelineno-24-25"></a><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGUSR1<span class="w"> </span><span class="nv">$LIGHTDM_PID</span>
-<a id="__codelineno-24-26" name="__codelineno-24-26" href="#__codelineno-24-26"></a>
-<a id="__codelineno-24-27" name="__codelineno-24-27" href="#__codelineno-24-27"></a><span class="nb">wait</span>
-<a id="__codelineno-24-28" name="__codelineno-24-28" href="#__codelineno-24-28"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-lightdm</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="ch">#!/bin/bash</span>
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="c1"># Need Bash for $PPID</span>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;:0&quot;</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="nv">LIGHTDM_PID</span><span class="o">=</span><span class="nv">$PPID</span>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="m">0</span>
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>kill_vnc<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">  </span><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGTERM<span class="w"> </span><span class="nv">$XVNC_PID</span>
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="w">  </span><span class="nb">wait</span>
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="o">}</span>
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="nv">$#</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="w">  </span><span class="nv">DISPLAY</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span>
+<a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a><span class="k">fi</span>
+<a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a>
+<a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a><span class="nv">AUTHORITY</span><span class="o">=</span><span class="s2">&quot;/var/run/lightdm/root/</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span>
+<a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a>
+<a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a>Xvnc<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span>-rfbport<span class="w"> </span><span class="m">5900</span><span class="w"> </span>-seat<span class="w"> </span>seat0<span class="w"> </span>-SecurityTypes<span class="w"> </span>None<span class="w"> </span>-auth<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span>-SendPrimary<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
+<a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a>
+<a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a><span class="nv">XVNC_PID</span><span class="o">=</span><span class="nv">$!</span>
+<a id="__codelineno-25-22" name="__codelineno-25-22" href="#__codelineno-25-22"></a><span class="nb">trap</span><span class="w"> </span>kill_vnc<span class="w"> </span>SIGTERM
+<a id="__codelineno-25-23" name="__codelineno-25-23" href="#__codelineno-25-23"></a>
+<a id="__codelineno-25-24" name="__codelineno-25-24" href="#__codelineno-25-24"></a>sleep<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-25-25" name="__codelineno-25-25" href="#__codelineno-25-25"></a><span class="nb">kill</span><span class="w"> </span>-s<span class="w"> </span>SIGUSR1<span class="w"> </span><span class="nv">$LIGHTDM_PID</span>
+<a id="__codelineno-25-26" name="__codelineno-25-26" href="#__codelineno-25-26"></a>
+<a id="__codelineno-25-27" name="__codelineno-25-27" href="#__codelineno-25-27"></a><span class="nb">wait</span>
+<a id="__codelineno-25-28" name="__codelineno-25-28" href="#__codelineno-25-28"></a><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <div class="admonition danger">
 <p class="admonition-title">安全性注意事项</p>
@@ -4126,8 +4146,8 @@
 <p>这一点在 <a href="https://linux.die.net/man/1/xserver">xserver(1)</a> 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 <code>SIG_IGN</code>（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。</p>
 <p>这里的 shell 脚本用了相对粗糙的 <code>sleep 2</code> 来等待 X 服务器启动完成，然后以 X 服务器的这一套信号协议来通知 LightDM。不过，这里的 shell 脚本没有办法用 <code>trap func SIGUSR1</code> 的方式来指定 <code>SIGUSR1</code> 的 handler（可以阅读 <a href="https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_28">POSIX 标准的相关介绍</a>，然后想一下为什么），因此如果需要修改，则需要考虑换成 Python、Perl 之类的方案。</p>
 </div>
-<div class="highlight"><span class="filename">/usr/local/bin/vncserver-greeter-setup.sh</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="ch">#!/bin/sh</span>
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>vncconfig<span class="w"> </span>-nowin<span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight"><span class="filename">/usr/local/bin/vncserver-greeter-setup.sh</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>vncconfig<span class="w"> </span>-nowin<span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">vncconfig 的作用</p>
@@ -4182,18 +4202,18 @@
 </ul>
 <p>在与内核特性交互时，混成器一般也不会直接调用内核接口，而是使用一些包装库来简化开发。例如使用 <a href="https://cgit.freedesktop.org/drm/libdrm/">libdrm</a> 调用 DRM 接口操作显卡，使用 libinput 调用 evdev 接口处理输入设备等等。</p>
 <p>Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 <code>$XDG_RUNTIME_DIR/wayland-&lt;N&gt;</code>（<code>XDG_RUNTIME_DIR</code> 默认为 <code>/run/user/&lt;UID&gt;</code>）上监听 Unix socket，客户端通过 <code>WAYLAND_DISPLAY</code> 环境变量指定要连接的 Unix socket（一般为 <code>wayland-0</code>）。相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 <code>WAYLAND_DEBUG=1</code> 环境变量即可，相关信息会输出到 stderr：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span><span class="nv">WAYLAND_DEBUG</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>gtk4-demo
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="go">[1603406.936] {Default Queue}  -&gt; wl_display#1.get_registry(new id wl_registry#2)</span>
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">[1603406.945] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#3)</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">[1603406.991] {Display Queue} wl_display#1.delete_id(3)</span>
-<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="go">[1603406.997] {Default Queue} wl_registry#2.global(1, &quot;wl_compositor&quot;, 6)</span>
-<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="gp">[1603406.999] {Default Queue}  -&gt; wl_registry#2.bind(1, &quot;wl_compositor&quot;, 6, new id [unknown]#</span><span class="m">4</span><span class="o">)</span>
-<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="go">[1603407.001] {Default Queue} wl_registry#2.global(2, &quot;wl_shm&quot;, 2)</span>
-<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="gp">[1603407.003] {Default Queue}  -&gt; wl_registry#2.bind(2, &quot;wl_shm&quot;, 1, new id [unknown]#</span><span class="m">5</span><span class="o">)</span>
-<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="go">[1603407.004] {Default Queue} wl_registry#2.global(3, &quot;wl_output&quot;, 4)</span>
-<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="gp">[1603407.005] {Default Queue}  -&gt; wl_registry#2.bind(3, &quot;wl_output&quot;, 4, new id [unknown]#</span><span class="m">6</span><span class="o">)</span>
-<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="go">[1603407.033] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#7)</span>
-<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span><span class="nv">WAYLAND_DEBUG</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>gtk4-demo
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">[1603406.936] {Default Queue}  -&gt; wl_display#1.get_registry(new id wl_registry#2)</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">[1603406.945] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#3)</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">[1603406.991] {Display Queue} wl_display#1.delete_id(3)</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="go">[1603406.997] {Default Queue} wl_registry#2.global(1, &quot;wl_compositor&quot;, 6)</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="gp">[1603406.999] {Default Queue}  -&gt; wl_registry#2.bind(1, &quot;wl_compositor&quot;, 6, new id [unknown]#</span><span class="m">4</span><span class="o">)</span>
+<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="go">[1603407.001] {Default Queue} wl_registry#2.global(2, &quot;wl_shm&quot;, 2)</span>
+<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="gp">[1603407.003] {Default Queue}  -&gt; wl_registry#2.bind(2, &quot;wl_shm&quot;, 1, new id [unknown]#</span><span class="m">5</span><span class="o">)</span>
+<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="go">[1603407.004] {Default Queue} wl_registry#2.global(3, &quot;wl_output&quot;, 4)</span>
+<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="gp">[1603407.005] {Default Queue}  -&gt; wl_registry#2.bind(3, &quot;wl_output&quot;, 4, new id [unknown]#</span><span class="m">6</span><span class="o">)</span>
+<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="go">[1603407.033] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#7)</span>
+<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 <p>Wayland 协议内容以 XML 定义。最核心的协议（<a href="https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml"><code>wayland.xml</code></a>）随 Wayland 库分发。其他不少协议则在 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols">wayland-protocols 仓库</a> 中。可以注意到，只有少数协议是 stable 的（例如 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads">xdg-shell</a>、<a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads">linux-dmabuf</a> 等），大部分协议都在 staging、unstable 或者 experimental 中。其中除了核心的 <code>wayland.xml</code> 之外，其他的协议混成器都可以可选支持，不过如果要运行通常意义下的桌面程序，至少 xdg-shell 是必须支持的——它定义了「窗口」的概念。当然，特殊用途（嵌入式等）的混成器也可以选择不实现 xdg-shell，例如 Weston 就支持用于车载娱乐系统的 <a href="https://gitlab.freedesktop.org/wayland/weston/-/blob/main/ivi-shell/ivi-shell.c">ivi-shell</a> 相关协议（ivi 即 <a href="https://en.wikipedia.org/wiki/In-car_entertainment">in-vehicle infotainment</a>）。</p>
 <p>尽管不少协议 stable 化的进展极慢（要让所有人达成共识，是世界上最难的事情之一），不过大量非 stable 状态的协议目前已经被广泛使用，包括：</p>
@@ -4246,29 +4266,29 @@
 <details class="note">
 <summary>Wayland 协议细节</summary>
 <p>Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="nt">&lt;interface</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;wp_fractional_scale_v1&quot;</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;fractional scale interface to a wl_surface&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">    </span>An<span class="w"> </span>additional<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>a<span class="w"> </span>wl_surface<span class="w"> </span>object<span class="w"> </span>which<span class="w"> </span>allows<span class="w"> </span>the<span class="w"> </span>compositor
-<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">    </span>to<span class="w"> </span>inform<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>preferred<span class="w"> </span>scale.
-<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">  </span><span class="nt">&lt;/description&gt;</span>
-<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>
-<a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="w">  </span><span class="nt">&lt;request</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;destroy&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;destructor&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;remove surface scale information for surface&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="w">      </span>Destroy<span class="w"> </span>the<span class="w"> </span>fractional<span class="w"> </span>scale<span class="w"> </span>object.<span class="w"> </span>When<span class="w"> </span>this<span class="w"> </span>object<span class="w"> </span>is<span class="w"> </span>destroyed,
-<a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="w">      </span>preferred_scale<span class="w"> </span>events<span class="w"> </span>will<span class="w"> </span>no<span class="w"> </span>longer<span class="w"> </span>be<span class="w"> </span>sent.
-<a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
-<a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">  </span><span class="nt">&lt;/request&gt;</span>
-<a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a>
-<a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="w">  </span><span class="nt">&lt;event</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;preferred_scale&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-15" name="__codelineno-27-15" href="#__codelineno-27-15"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;notify of new preferred scale&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-27-16" name="__codelineno-27-16" href="#__codelineno-27-16"></a><span class="w">      </span>Notification<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>new<span class="w"> </span>preferred<span class="w"> </span>scale<span class="w"> </span>for<span class="w"> </span>this<span class="w"> </span>surface<span class="w"> </span>that<span class="w"> </span>the
-<a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a><span class="w">      </span>compositor<span class="w"> </span>suggests<span class="w"> </span>that<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>should<span class="w"> </span>use.
-<a id="__codelineno-27-18" name="__codelineno-27-18" href="#__codelineno-27-18"></a>
-<a id="__codelineno-27-19" name="__codelineno-27-19" href="#__codelineno-27-19"></a><span class="w">      </span>The<span class="w"> </span>sent<span class="w"> </span>scale<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>numerator<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>fraction<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>denominator<span class="w"> </span>of<span class="w"> </span>120.
-<a id="__codelineno-27-20" name="__codelineno-27-20" href="#__codelineno-27-20"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
-<a id="__codelineno-27-21" name="__codelineno-27-21" href="#__codelineno-27-21"></a><span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;scale&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;uint&quot;</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;the new preferred scale&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-27-22" name="__codelineno-27-22" href="#__codelineno-27-22"></a><span class="w">  </span><span class="nt">&lt;/event&gt;</span>
-<a id="__codelineno-27-23" name="__codelineno-27-23" href="#__codelineno-27-23"></a><span class="nt">&lt;/interface&gt;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="nt">&lt;interface</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;wp_fractional_scale_v1&quot;</span><span class="w"> </span><span class="na">version=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;fractional scale interface to a wl_surface&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">    </span>An<span class="w"> </span>additional<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>a<span class="w"> </span>wl_surface<span class="w"> </span>object<span class="w"> </span>which<span class="w"> </span>allows<span class="w"> </span>the<span class="w"> </span>compositor
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">    </span>to<span class="w"> </span>inform<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>preferred<span class="w"> </span>scale.
+<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">  </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>
+<a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="w">  </span><span class="nt">&lt;request</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;destroy&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;destructor&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;remove surface scale information for surface&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="w">      </span>Destroy<span class="w"> </span>the<span class="w"> </span>fractional<span class="w"> </span>scale<span class="w"> </span>object.<span class="w"> </span>When<span class="w"> </span>this<span class="w"> </span>object<span class="w"> </span>is<span class="w"> </span>destroyed,
+<a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="w">      </span>preferred_scale<span class="w"> </span>events<span class="w"> </span>will<span class="w"> </span>no<span class="w"> </span>longer<span class="w"> </span>be<span class="w"> </span>sent.
+<a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="w">  </span><span class="nt">&lt;/request&gt;</span>
+<a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>
+<a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="w">  </span><span class="nt">&lt;event</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;preferred_scale&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="w">    </span><span class="nt">&lt;description</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;notify of new preferred scale&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a><span class="w">      </span>Notification<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>new<span class="w"> </span>preferred<span class="w"> </span>scale<span class="w"> </span>for<span class="w"> </span>this<span class="w"> </span>surface<span class="w"> </span>that<span class="w"> </span>the
+<a id="__codelineno-28-17" name="__codelineno-28-17" href="#__codelineno-28-17"></a><span class="w">      </span>compositor<span class="w"> </span>suggests<span class="w"> </span>that<span class="w"> </span>the<span class="w"> </span>client<span class="w"> </span>should<span class="w"> </span>use.
+<a id="__codelineno-28-18" name="__codelineno-28-18" href="#__codelineno-28-18"></a>
+<a id="__codelineno-28-19" name="__codelineno-28-19" href="#__codelineno-28-19"></a><span class="w">      </span>The<span class="w"> </span>sent<span class="w"> </span>scale<span class="w"> </span>is<span class="w"> </span>the<span class="w"> </span>numerator<span class="w"> </span>of<span class="w"> </span>a<span class="w"> </span>fraction<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>denominator<span class="w"> </span>of<span class="w"> </span>120.
+<a id="__codelineno-28-20" name="__codelineno-28-20" href="#__codelineno-28-20"></a><span class="w">    </span><span class="nt">&lt;/description&gt;</span>
+<a id="__codelineno-28-21" name="__codelineno-28-21" href="#__codelineno-28-21"></a><span class="w">    </span><span class="nt">&lt;arg</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;scale&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;uint&quot;</span><span class="w"> </span><span class="na">summary=</span><span class="s">&quot;the new preferred scale&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-28-22" name="__codelineno-28-22" href="#__codelineno-28-22"></a><span class="w">  </span><span class="nt">&lt;/event&gt;</span>
+<a id="__codelineno-28-23" name="__codelineno-28-23" href="#__codelineno-28-23"></a><span class="nt">&lt;/interface&gt;</span>
 </code></pre></div>
 <p>接口（interface）是对象的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 <code>wp_fractional_scale_v1</code> 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。</p>
 <p>另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。</p>
@@ -4295,8 +4315,8 @@
 <p class="admonition-title">逃离浮点数</p>
 <p>我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。</p>
 <p>在客户端和服务器计算 viewport 的时候，也需要尽量使用整数运算来避免误差。一个<a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/309">参考的公式</a>是：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_width</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_height</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_width</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="kt">int32_t</span><span class="w"> </span><span class="n">buffer_height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">surface_height</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">preferred_scale</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">120</span><span class="p">;</span>
 </code></pre></div>
 <p>通过添加 0.5 的偏移量，加上整数除法的向下取整，就能实现四舍五入的效果。否则如果直接用 naive 的浮点除法的话，就有可能会出现浮点误差导致的 off-by-one 问题。基于 MR 的例子，假设后者使用 32-bit 浮点数存储，如果 preferred_scale 是 126，surface_width 是 30，那么两种计算方式的结果分别是：</p>
 <ul>
@@ -4332,28 +4352,28 @@
 <p>该包未被包含在 Debian 目前的 stable 版本（trixie）中。当然也可以不安装 LXQt，而是自行组装基于 labwc 的 Wayland 桌面环境（和基于 OpenBox 的 X 桌面环境类似）。</p>
 </div>
 <p>在安装了 <code>lxqt</code>、<code>lxqt-wayland-session</code>、<code>labwc</code> 和 <code>wayvnc</code> 之后，编辑 LXQt session 配置：</p>
-<div class="highlight"><span class="filename">~/.config/lxqt/session.conf</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="k">[General]</span>
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="na">compositor</span><span class="o">=</span><span class="s">labwc</span>
+<div class="highlight"><span class="filename">~/.config/lxqt/session.conf</span><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">[General]</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="na">compositor</span><span class="o">=</span><span class="s">labwc</span>
 </code></pre></div>
 <p>将 LXQt 的 labwc 配置复制到用户目录：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/usr/share/lxqt/wayland/labwc<span class="w"> </span>~/.config/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>cp<span class="w"> </span>-a<span class="w"> </span>/usr/share/lxqt/wayland/labwc<span class="w"> </span>~/.config/
 </code></pre></div>
 <p>修改 <code>~/.config/labwc/autostart</code>，添加 wayvnc 启动命令：</p>
-<div class="highlight"><span class="filename">~/.config/labwc/autostart</span><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># 省略已有内容</span>
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="c1"># -u -&gt; Unix socket</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>wayvnc<span class="w"> </span>-u<span class="w"> </span>~/.vncsock
+<div class="highlight"><span class="filename">~/.config/labwc/autostart</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># 省略已有内容</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="c1"># -u -&gt; Unix socket</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>wayvnc<span class="w"> </span>-u<span class="w"> </span>~/.vncsock
 </code></pre></div>
 <p>然后配置类似的启动脚本：</p>
-<div class="highlight"><span class="filename">/usr/local/bin/startvnc-wayland</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="ch">#!/bin/sh -e</span>
-<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$XDG_RUNTIME_DIR</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;XDG_RUNTIME_DIR is not set&quot;</span>
-<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
-<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="k">fi</span>
-<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>
-<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="c1"># Start LXQt Wayland session</span>
-<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a><span class="nv">WLR_BACKENDS</span><span class="o">=</span>headless<span class="w"> </span>startlxqtwayland<span class="w"> </span>&gt;<span class="w"> </span>~/startlxqtwayland.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">&amp;</span>
+<div class="highlight"><span class="filename">/usr/local/bin/startvnc-wayland</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="ch">#!/bin/sh -e</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$XDG_RUNTIME_DIR</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;XDG_RUNTIME_DIR is not set&quot;</span>
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="k">fi</span>
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a><span class="c1"># Start LXQt Wayland session</span>
+<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a><span class="nv">WLR_BACKENDS</span><span class="o">=</span>headless<span class="w"> </span>startlxqtwayland<span class="w"> </span>&gt;<span class="w"> </span>~/startlxqtwayland.log<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title"><code>XDG_RUNTIME_DIR</code> 环境变量</p>
@@ -4395,16 +4415,16 @@
 <div class="admonition note">
 <p class="admonition-title"><code>DBUS_SESSION_BUS_ADDRESS</code> 是谁设置的？</p>
 <p>在现代的 systemd 环境下，当用户登录时 systemd 的 PAM 模块会启动用户级别的 systemd 实例，而默认 <code>dbus.socket</code> 是启用的：</p>
-<div class="highlight"><span class="filename">/usr/lib/systemd/user/dbus.socket</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">D-Bus User Message Bus Socket</span>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="k">[Socket]</span>
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">%t/bus</span>
-<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="na">ExecStartPost</span><span class="o">=</span><span class="s">-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus</span>
+<div class="highlight"><span class="filename">/usr/lib/systemd/user/dbus.socket</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">D-Bus User Message Bus Socket</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="k">[Socket]</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="na">ListenStream</span><span class="o">=</span><span class="s">%t/bus</span>
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="na">ExecStartPost</span><span class="o">=</span><span class="s">-/bin/systemctl --user set-environment DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus</span>
 </code></pre></div>
 <p>在 <code>dbus.socket</code> 启动后，其就会给这个 systemd 实例设置上 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，并且开始监听 <code>/run/user/&lt;UID&gt;/bus</code>，在有程序根据这个环境变量访问这个 Unix socket 的时候，systemd 就会自动启动 <code>dbus.service</code>，从而启动用户级别的 DBus 守护进程。</p>
 <p>如果你在 systemd 流行之前就是 Linux 桌面用户的话，那么你可能会对类似这样的配置有印象：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>dbus-run-session<span class="w"> </span>--exit-with-session<span class="w"> </span>your-desktop-environment
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>dbus-run-session<span class="w"> </span>--exit-with-session<span class="w"> </span>your-desktop-environment
 </code></pre></div>
 <p>这里 <code>dbus-run-session</code> 就会创建一个新的 DBus 会话总线，设置 <code>DBUS_SESSION_BUS_ADDRESS</code> 环境变量，然后运行你给出的命令，从而完成桌面环境必须的 DBus 会话总线的配置。</p>
 </div>
@@ -4429,22 +4449,22 @@
 <div class="admonition note">
 <p class="admonition-title">VARIANT 类型</p>
 <p>DBus 中还有一种特殊的类型 VARIANT（在类型字符串中表示为 <code>v</code>），表示任意类型的值。这个类型对开发者来说是很方便的：不需要事先定义好类型（有些情况下也不好做），就可以传递任意类型的数据。但是在文档不佳的情况下，这对使用者来说是比较折磨的。以 <code>org.freedesktop.systemd1</code> 中 <code>/org/freedesktop/systemd1</code> 下的 <code>org.freedesktop.systemd1.Manager</code> 接口的 <code>StartTransientUnit</code> 方法为例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>busctl<span class="w"> </span>introspect<span class="w"> </span>org.freedesktop.systemd1<span class="w"> </span>/org/freedesktop/systemd1<span class="w"> </span>--xml
-<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="go">  &lt;method name=&quot;StartTransientUnit&quot;&gt;</span>
-<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;name&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;mode&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="go">   &lt;arg type=&quot;a(sv)&quot; name=&quot;properties&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="go">   &lt;arg type=&quot;a(sa(sv))&quot; name=&quot;aux&quot; direction=&quot;in&quot;/&gt;</span>
-<a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="go">   &lt;arg type=&quot;o&quot; name=&quot;job&quot; direction=&quot;out&quot;/&gt;</span>
-<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a><span class="go">  &lt;/method&gt;</span>
-<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="go">（省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>busctl<span class="w"> </span>introspect<span class="w"> </span>org.freedesktop.systemd1<span class="w"> </span>/org/freedesktop/systemd1<span class="w"> </span>--xml
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="go">  &lt;method name=&quot;StartTransientUnit&quot;&gt;</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;name&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="go">   &lt;arg type=&quot;s&quot; name=&quot;mode&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="go">   &lt;arg type=&quot;a(sv)&quot; name=&quot;properties&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="go">   &lt;arg type=&quot;a(sa(sv))&quot; name=&quot;aux&quot; direction=&quot;in&quot;/&gt;</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="go">   &lt;arg type=&quot;o&quot; name=&quot;job&quot; direction=&quot;out&quot;/&gt;</span>
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">  &lt;/method&gt;</span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="go">（省略）</span>
 </code></pre></div>
 <p>可以看到，这里的 <code>properties</code> 参数类型是 <code>a(sv)</code>，表示这是一个数组，数组元素是一个包含字符串和 VARIANT 的结构体。但是这个 VARIANT 究竟能接受哪些类型的数据呢？<a href="https://www.freedesktop.org/wiki/Software/systemd/dbus/#Manager-SetUnitProperties">Systemd 的文档</a> 对此的介绍并不是很具体。在较早期版本的 systemd 中，它可能甚至不会告诉你是 VARIANT 出了问题：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="go">System.Error.ENXIO: No such device or address</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="go">System.Error.ENXIO: No such device or address</span>
 </code></pre></div>
 <p>而现在的报错或许稍微好一些（虽然也没好到哪里去）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="go">System.Error.ENXIO: Failed to set unit properties: Unexpected message contents</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="go">System.Error.ENXIO: Failed to set unit properties: Unexpected message contents</span>
 </code></pre></div>
 <p>遇到这种情况，只能自己看源代码，别无他法。</p>
 </div>
@@ -4454,31 +4474,31 @@
 <p>DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。</p>
 </div>
 <p>此外，在图中我们可以看到每个 Bus Name 都有是否可以激活（Activatable）的标记。在使用 systemd 的系统上，DBus 会调用 systemd 的激活机制来启动对应的服务单元（service unit）。例如图中的 <code>org.bluez</code>：</p>
-<div class="highlight"><span class="filename">/usr/share/dbus-1/system-services/org.bluez.service</span><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="k">[D-BUS Service]</span>
-<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="na">Name</span><span class="o">=</span><span class="s">org.bluez</span>
-<a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="na">Exec</span><span class="o">=</span><span class="s">/bin/false</span>
-<a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="na">User</span><span class="o">=</span><span class="s">root</span>
-<a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="na">SystemdService</span><span class="o">=</span><span class="s">dbus-org.bluez.service</span>
+<div class="highlight"><span class="filename">/usr/share/dbus-1/system-services/org.bluez.service</span><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="k">[D-BUS Service]</span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="na">Name</span><span class="o">=</span><span class="s">org.bluez</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="na">Exec</span><span class="o">=</span><span class="s">/bin/false</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="na">User</span><span class="o">=</span><span class="s">root</span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="na">SystemdService</span><span class="o">=</span><span class="s">dbus-org.bluez.service</span>
 </code></pre></div>
 <p>如果某个进程尝试连接 <code>org.bluez</code>，但是该服务还没有运行，那么 DBus 会调用 systemd 来启动 <code>dbus-org.bluez.service</code> 单元，从而启动蓝牙服务。如果不和某个 systemd 服务绑定，如果需要让某个程序能在系统总线上拥有对应的 well-known name，也需要编写类似上述的 <code>.service</code> 文件，并配置 <code>Name</code> 和 <code>Exec</code>。</p>
 <p>此外如果在系统总线列表里多点点，可以注意到有些 Bus Name 不允许普通用户请求——这同样也是在 DBus 的配置中定义的，例如下面是 <code>fi.w1.wpa_supplicant1</code> 的配置：</p>
-<div class="highlight"><span class="filename">/usr/share/dbus-1/system.d/wpa_supplicant.conf</span><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="cp">&lt;!DOCTYPE busconfig PUBLIC</span>
-<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="cp"> &quot;-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN&quot;</span>
-<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="cp"> &quot;http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd&quot;&gt;</span>
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="nt">&lt;busconfig&gt;</span>
-<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">user=</span><span class="s">&quot;root&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a>
-<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_interface=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
-<a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">context=</span><span class="s">&quot;default&quot;</span><span class="nt">&gt;</span>
-<a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
-<a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
-<a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a><span class="nt">&lt;/busconfig&gt;</span>
+<div class="highlight"><span class="filename">/usr/share/dbus-1/system.d/wpa_supplicant.conf</span><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="cp">&lt;!DOCTYPE busconfig PUBLIC</span>
+<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="cp"> &quot;-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN&quot;</span>
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="cp"> &quot;http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd&quot;&gt;</span>
+<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="nt">&lt;busconfig&gt;</span>
+<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">user=</span><span class="s">&quot;root&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>
+<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">send_interface=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-10" name="__codelineno-40-10" href="#__codelineno-40-10"></a><span class="w">                </span><span class="nt">&lt;allow</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-11" name="__codelineno-40-11" href="#__codelineno-40-11"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
+<a id="__codelineno-40-12" name="__codelineno-40-12" href="#__codelineno-40-12"></a><span class="w">        </span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">context=</span><span class="s">&quot;default&quot;</span><span class="nt">&gt;</span>
+<a id="__codelineno-40-13" name="__codelineno-40-13" href="#__codelineno-40-13"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">own=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-14" name="__codelineno-40-14" href="#__codelineno-40-14"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">send_destination=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-15" name="__codelineno-40-15" href="#__codelineno-40-15"></a><span class="w">                </span><span class="nt">&lt;deny</span><span class="w"> </span><span class="na">receive_sender=</span><span class="s">&quot;fi.w1.wpa_supplicant1&quot;</span><span class="w"> </span><span class="na">receive_type=</span><span class="s">&quot;signal&quot;</span><span class="nt">/&gt;</span>
+<a id="__codelineno-40-16" name="__codelineno-40-16" href="#__codelineno-40-16"></a><span class="w">        </span><span class="nt">&lt;/policy&gt;</span>
+<a id="__codelineno-40-17" name="__codelineno-40-17" href="#__codelineno-40-17"></a><span class="nt">&lt;/busconfig&gt;</span>
 </code></pre></div>
 <p>这个配置阻止了 root 以外的用户与 <code>fi.w1.wpa_supplicant1</code> 的交互。</p>
 <h3 id="dbus-interaction-debugging">交互与调试<a class="headerlink" href="#dbus-interaction-debugging" title="Permanent link">&para;</a></h3>
@@ -4486,21 +4506,21 @@
 <div class="admonition example">
 <p class="admonition-title">发送通知</p>
 <p><code>notify-send</code> 命令行工具可以发送桌面通知。其实际上会与会话总线的 <code>org.freedesktop.Notifications</code> 接口交互。相关标准文档可参考 <a href="https://specifications.freedesktop.org/notification/latest/">Desktop Notifications Specification</a>。其核心是 <a href="https://specifications.freedesktop.org/notification/latest/protocol.html#command-notify"><code>org.freedesktop.Notifications.Notify</code> 方法</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>UINT32 org.freedesktop.Notifications.Notify ( STRING app_name,
-<a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>                                              UINT32 replaces_id,
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a>                                              STRING app_icon,
-<a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>                                              STRING summary,
-<a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a>                                              STRING body,
-<a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a>                                              as actions,
-<a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a>                                              a{sv} hints,
-<a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a>                                              INT32 expire_timeout );
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>UINT32 org.freedesktop.Notifications.Notify ( STRING app_name,
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a>                                              UINT32 replaces_id,
+<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a>                                              STRING app_icon,
+<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>                                              STRING summary,
+<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>                                              STRING body,
+<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a>                                              as actions,
+<a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a>                                              a{sv} hints,
+<a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a>                                              INT32 expire_timeout );
 </code></pre></div>
 <p>我们也可以来试一下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>gdbus<span class="w"> </span>call<span class="w"> </span>--session<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="w">  </span>--dest<span class="w"> </span>org.freedesktop.Notifications<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">  </span>--object-path<span class="w"> </span>/org/freedesktop/Notifications<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="w">  </span>--method<span class="w"> </span>org.freedesktop.Notifications.Notify<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="w">  </span><span class="s2">&quot;testapp&quot;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="s2">&quot;This is summary&quot;</span><span class="w"> </span><span class="s2">&quot;This is body text&quot;</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="m">0</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>gdbus<span class="w"> </span>call<span class="w"> </span>--session<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">  </span>--dest<span class="w"> </span>org.freedesktop.Notifications<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">  </span>--object-path<span class="w"> </span>/org/freedesktop/Notifications<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">  </span>--method<span class="w"> </span>org.freedesktop.Notifications.Notify<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="w">  </span><span class="s2">&quot;testapp&quot;</span><span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="s2">&quot;This is summary&quot;</span><span class="w"> </span><span class="s2">&quot;This is body text&quot;</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <p>运行就可以发现桌面上弹出了我们的通知。</p>
 </div>
@@ -4510,7 +4530,7 @@
 <p>尝试使用你最喜欢的编程语言的 DBus 库，编写一个小程序，获取当前正在播放的音乐信息。</p>
 </div>
 <p>DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总线需要 root 权限）。<code>dbus-monitor</code>、<code>busctl monitor</code>，以及图形界面的 <a href="https://apps.gnome.org/zh-CN/Bustle/">Bustle</a> 都可以做到这一点。例如，如果希望实时显示会话总线的所有消息，可以运行：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
+<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Varlink</p>
@@ -4523,32 +4543,32 @@
 </ul>
 <p>Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。</p>
 <p>以下是调用 systemd-resolved 解析域名的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>introspect<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve
-<a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="go">interface io.systemd.Resolve</span>
-<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="go">（省略）</span>
-<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="gp"># </span>Resolves<span class="w"> </span>a<span class="w"> </span>hostname<span class="w"> </span>to<span class="w"> </span>one<span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>IP<span class="w"> </span>addresses.
-<a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a><span class="go">method ResolveHostname(</span>
-<a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="gp">        # </span>The<span class="w"> </span>Linux<span class="w"> </span>interface<span class="w"> </span>index<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>network<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on.<span class="w"> </span>Typically<span class="w"> </span>left<span class="w"> </span>unspecified,<span class="w"> </span><span class="k">in</span>
-<a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a><span class="gp">        # </span>order<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on<span class="w"> </span>all<span class="w"> </span>interfaces.
-<a id="__codelineno-43-9" name="__codelineno-43-9" href="#__codelineno-43-9"></a><span class="go">        ifindex: ?int,</span>
-<a id="__codelineno-43-10" name="__codelineno-43-10" href="#__codelineno-43-10"></a><span class="gp">        # </span>The<span class="w"> </span>host<span class="w"> </span>name<span class="w"> </span>to<span class="w"> </span>resolve.
-<a id="__codelineno-43-11" name="__codelineno-43-11" href="#__codelineno-43-11"></a><span class="go">        name: string,</span>
-<a id="__codelineno-43-12" name="__codelineno-43-12" href="#__codelineno-43-12"></a><span class="gp">        # </span>The<span class="w"> </span>address<span class="w"> </span>family<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span><span class="k">for</span>,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>AF_INET<span class="w"> </span>or<span class="w"> </span>AF_INET6.
-<a id="__codelineno-43-13" name="__codelineno-43-13" href="#__codelineno-43-13"></a><span class="go">        family: ?int,</span>
-<a id="__codelineno-43-14" name="__codelineno-43-14" href="#__codelineno-43-14"></a><span class="gp">        # </span>Various<span class="w"> </span>search<span class="w"> </span>flags.
-<a id="__codelineno-43-15" name="__codelineno-43-15" href="#__codelineno-43-15"></a><span class="go">        flags: ?int</span>
-<a id="__codelineno-43-16" name="__codelineno-43-16" href="#__codelineno-43-16"></a><span class="go">) -&gt; (</span>
-<a id="__codelineno-43-17" name="__codelineno-43-17" href="#__codelineno-43-17"></a><span class="gp">        # </span>Array<span class="w"> </span>of<span class="w"> </span>resolved<span class="w"> </span>IP<span class="w"> </span>addresses
-<a id="__codelineno-43-18" name="__codelineno-43-18" href="#__codelineno-43-18"></a><span class="go">        addresses: []ResolvedAddress,</span>
-<a id="__codelineno-43-19" name="__codelineno-43-19" href="#__codelineno-43-19"></a><span class="gp">        # </span>Canonical<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>host.
-<a id="__codelineno-43-20" name="__codelineno-43-20" href="#__codelineno-43-20"></a><span class="go">        name: string,</span>
-<a id="__codelineno-43-21" name="__codelineno-43-21" href="#__codelineno-43-21"></a><span class="gp">        # </span>Various<span class="w"> </span>flags<span class="w"> </span>indicating<span class="w"> </span>details<span class="w"> </span>on<span class="w"> </span>discovered<span class="w"> </span>data.
-<a id="__codelineno-43-22" name="__codelineno-43-22" href="#__codelineno-43-22"></a><span class="go">        flags: int</span>
-<a id="__codelineno-43-23" name="__codelineno-43-23" href="#__codelineno-43-23"></a><span class="go">)</span>
-<a id="__codelineno-43-24" name="__codelineno-43-24" href="#__codelineno-43-24"></a><span class="go">（省略）</span>
-<a id="__codelineno-43-25" name="__codelineno-43-25" href="#__codelineno-43-25"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>call<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve<span class="w"> </span>io.systemd.Resolve.ResolveHostname<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;www.example.com&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span>.
-<a id="__codelineno-43-26" name="__codelineno-43-26" href="#__codelineno-43-26"></a><span class="go">{&quot;addresses&quot;:[{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,26,120]}],&quot;name&quot;:&quot;www.example.com&quot;,&quot;flags&quot;:1048577}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>introspect<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve
+<a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="go">interface io.systemd.Resolve</span>
+<a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-44-5" name="__codelineno-44-5" href="#__codelineno-44-5"></a><span class="gp"># </span>Resolves<span class="w"> </span>a<span class="w"> </span>hostname<span class="w"> </span>to<span class="w"> </span>one<span class="w"> </span>or<span class="w"> </span>more<span class="w"> </span>IP<span class="w"> </span>addresses.
+<a id="__codelineno-44-6" name="__codelineno-44-6" href="#__codelineno-44-6"></a><span class="go">method ResolveHostname(</span>
+<a id="__codelineno-44-7" name="__codelineno-44-7" href="#__codelineno-44-7"></a><span class="gp">        # </span>The<span class="w"> </span>Linux<span class="w"> </span>interface<span class="w"> </span>index<span class="w"> </span><span class="k">for</span><span class="w"> </span>the<span class="w"> </span>network<span class="w"> </span>interface<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on.<span class="w"> </span>Typically<span class="w"> </span>left<span class="w"> </span>unspecified,<span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-44-8" name="__codelineno-44-8" href="#__codelineno-44-8"></a><span class="gp">        # </span>order<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span>on<span class="w"> </span>all<span class="w"> </span>interfaces.
+<a id="__codelineno-44-9" name="__codelineno-44-9" href="#__codelineno-44-9"></a><span class="go">        ifindex: ?int,</span>
+<a id="__codelineno-44-10" name="__codelineno-44-10" href="#__codelineno-44-10"></a><span class="gp">        # </span>The<span class="w"> </span>host<span class="w"> </span>name<span class="w"> </span>to<span class="w"> </span>resolve.
+<a id="__codelineno-44-11" name="__codelineno-44-11" href="#__codelineno-44-11"></a><span class="go">        name: string,</span>
+<a id="__codelineno-44-12" name="__codelineno-44-12" href="#__codelineno-44-12"></a><span class="gp">        # </span>The<span class="w"> </span>address<span class="w"> </span>family<span class="w"> </span>to<span class="w"> </span>search<span class="w"> </span><span class="k">for</span>,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span>AF_INET<span class="w"> </span>or<span class="w"> </span>AF_INET6.
+<a id="__codelineno-44-13" name="__codelineno-44-13" href="#__codelineno-44-13"></a><span class="go">        family: ?int,</span>
+<a id="__codelineno-44-14" name="__codelineno-44-14" href="#__codelineno-44-14"></a><span class="gp">        # </span>Various<span class="w"> </span>search<span class="w"> </span>flags.
+<a id="__codelineno-44-15" name="__codelineno-44-15" href="#__codelineno-44-15"></a><span class="go">        flags: ?int</span>
+<a id="__codelineno-44-16" name="__codelineno-44-16" href="#__codelineno-44-16"></a><span class="go">) -&gt; (</span>
+<a id="__codelineno-44-17" name="__codelineno-44-17" href="#__codelineno-44-17"></a><span class="gp">        # </span>Array<span class="w"> </span>of<span class="w"> </span>resolved<span class="w"> </span>IP<span class="w"> </span>addresses
+<a id="__codelineno-44-18" name="__codelineno-44-18" href="#__codelineno-44-18"></a><span class="go">        addresses: []ResolvedAddress,</span>
+<a id="__codelineno-44-19" name="__codelineno-44-19" href="#__codelineno-44-19"></a><span class="gp">        # </span>Canonical<span class="w"> </span>name<span class="w"> </span>of<span class="w"> </span>the<span class="w"> </span>host.
+<a id="__codelineno-44-20" name="__codelineno-44-20" href="#__codelineno-44-20"></a><span class="go">        name: string,</span>
+<a id="__codelineno-44-21" name="__codelineno-44-21" href="#__codelineno-44-21"></a><span class="gp">        # </span>Various<span class="w"> </span>flags<span class="w"> </span>indicating<span class="w"> </span>details<span class="w"> </span>on<span class="w"> </span>discovered<span class="w"> </span>data.
+<a id="__codelineno-44-22" name="__codelineno-44-22" href="#__codelineno-44-22"></a><span class="go">        flags: int</span>
+<a id="__codelineno-44-23" name="__codelineno-44-23" href="#__codelineno-44-23"></a><span class="go">)</span>
+<a id="__codelineno-44-24" name="__codelineno-44-24" href="#__codelineno-44-24"></a><span class="go">（省略）</span>
+<a id="__codelineno-44-25" name="__codelineno-44-25" href="#__codelineno-44-25"></a><span class="gp">$ </span>varlinkctl<span class="w"> </span>call<span class="w"> </span>/run/systemd/resolve/io.systemd.Resolve<span class="w"> </span>io.systemd.Resolve.ResolveHostname<span class="w"> </span><span class="s1">&#39;{&quot;name&quot;: &quot;www.example.com&quot;}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>-c<span class="w"> </span>.
+<a id="__codelineno-44-26" name="__codelineno-44-26" href="#__codelineno-44-26"></a><span class="go">{&quot;addresses&quot;:[{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:10,&quot;address&quot;:[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,27,120]},{&quot;ifindex&quot;:2,&quot;family&quot;:2,&quot;address&quot;:[104,18,26,120]}],&quot;name&quot;:&quot;www.example.com&quot;,&quot;flags&quot;:1048577}</span>
 </code></pre></div>
 </div>
 <h2 id="portal">Portal<a class="headerlink" href="#portal" title="Permanent link">&para;</a></h2>
@@ -4571,7 +4591,7 @@
 </ul>
 <p>同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如<a href="https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/">基于 cgroup 扩展属性</a>的方案。</p>
 <p>而对非沙盒化应用，portal 会尝试从<a href="https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754">进程所属 cgroup 的名称</a>来获取到应用名称（例如 <code>app-com.example.test-12345.scope</code> -&gt; <code>com.example.test</code>）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在合适的 cgroup（systemd scope）下。而非沙盒化的应用可以轻松用 <code>systemd-run</code> 来实现这一点：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--scope<span class="w"> </span>-u<span class="w"> </span>app-com.example.test-12345.scope<span class="w"> </span>path/to/app
+<div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--scope<span class="w"> </span>-u<span class="w"> </span>app-com.example.test-12345.scope<span class="w"> </span>path/to/app
 </code></pre></div>
 <p>非沙盒化应用也可以用 <a href="https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.host.portal.Registry.html">org.freedesktop.host.portal.Registry</a> 来注册自己的名称。</p>
 <p>可以注意到：这里事实上假设了<strong>非沙盒化的应用是可信</strong>的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下<strong>没有可靠的方法来验证非沙盒化应用的身份</strong>（在安全场景下，<code>/proc/&lt;PID&gt;/exe</code> <strong>不可靠</strong>，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 <a href="https://nvd.nist.gov/vuln/detail/CVE-2018-19358">CVE-2018-19358</a> 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 <a href="https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html">Secret portal</a> 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。</p>
@@ -4652,7 +4672,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月22日 06:18:02 UTC">2026年4月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月27日 14:44:12 UTC">2026年4月27日</span>
   </span>
 
     
