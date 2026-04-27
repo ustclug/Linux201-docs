@@ -91,7 +91,7 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
     corresponding filesystem socket.
     ```
 
-    所以事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会会优先连接 `@/tmp/.X11-unix/X0`。
+    所以事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会优先连接 `@/tmp/.X11-unix/X0`。
 
     抽象套接字在如今带来了一些安全性的挑战，因为和文件系统上的 `/tmp/.X11-unix/X0` 可以依靠文件级别的权限控制不同，抽象套接字只能通过网络命名空间实现隔离。但是如果直接关闭 X server 的抽象套接字，攻击者可以创建虚假的名为 `@/tmp/.X11-unix/X0` 的套接字，欺骗 X 客户端连接。不过连接到 X server 还需要经过一层认证机制（XAuthority），因此如果不去 `xhost +` 的话，攻击者必须要能够获取 XAuthority 信息，才能够连接到对应的 X server。
 
@@ -518,7 +518,7 @@ $ xrdb -merge ~/.Xresources
     （省略）
     ```
 
-最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 kwin 也都集成了混成器的功能。
+最著名的例子是 compiz，它实现了很多诸如 3D 立方体桌面切换等等的效果，是 2010 年前后 Linux 桌面炫酷效果的代名词，在当时也吸引了很多用户来使用 Linux 桌面。各个桌面环境的窗口管理器，例如 GNOME 的 mutter、KDE 的 KWin 也都集成了混成器的功能。
 
 ![Compiz Cube](../images/Compiz-fusion_effects_Cube.jpg)
 
@@ -772,7 +772,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     wayland-protocols 的流程最为人诟病的地方是：整个流程实在是太慢了。一个协议要被采纳至少得好几个月，而且有很多过了好几年才有一点点进展。Valve 的工程师在 2024 年曾经尝试用 [frog-protocols](https://github.com/misyltoad/frog-protocols) 绕过流程来实现需要的功能。各个混成器（KWin、wlroots、Hyprland 等）也有不少私有协议，以支持自己需要的功能。
 
-    从 2026 初的角度来说，wayland-protocols 有一些改善，不过仍然说不上快。目前大致的[流程](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/main/GOVERNANCE.md?ref_type=heads)是：
+    从 2026 年初的角度来说，wayland-protocols 有一些改善，不过仍然说不上快。目前大致的[流程](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/main/GOVERNANCE.md?ref_type=heads)是：
 
     - review 两周内没有 NACK（反对）的提案会被合并到 experimental（在 `xx` 命名空间）。
     - 要合并到 staging 至少要 30 天 review
@@ -790,7 +790,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     CSD（Client-Side Decoration）指让应用程序绘制窗口边框，而 SSD（Server-Side Decoration）指让混成器/窗口管理器绘制窗口边框。这可能是 Wayland 持续多年时间最具火药桶味道的争论之一。
 
-    基础的 xdg-shell 协议是不支持 SSD 的，意味着应用必须自己画窗口边框，但是不是所有应用都乐意这样做。在 2018 年 9 月，xdg-decoration-v1 合并入 wayland-protocol，应用可以通过这个协议告知混成器自己倾向于使用 SSD 或 CSD 作为自己的窗口边框的绘制方式。目前主流的混成器中，除去 [GameScope](https://github.com/ValveSoftware/gamescope)、Weston 这类特殊用途的混成器外，只有 mutter（GNOME）不支持 xdg-decoration-v1。尽管支持 xdg-decoration-v1 不代表一定要支持 SSD（协议允许混成器自己做决定），但是不支持则意味着程序如果要在 GNOME Wayland 下有正常的窗口边框，需要想办法自己解决。
+    基础的 xdg-shell 协议是不支持 SSD 的，意味着应用必须自己画窗口边框，但是不是所有应用都乐意这样做。在 2018 年 9 月，xdg-decoration-v1 合并入 wayland-protocols，应用可以通过这个协议告知混成器自己倾向于使用 SSD 或 CSD 作为自己的窗口边框的绘制方式。目前主流的混成器中，除去 [GameScope](https://github.com/ValveSoftware/gamescope)、Weston 这类特殊用途的混成器外，只有 mutter（GNOME）不支持 xdg-decoration-v1。尽管支持 xdg-decoration-v1 不代表一定要支持 SSD（协议允许混成器自己做决定），但是不支持则意味着程序如果要在 GNOME Wayland 下有正常的窗口边框，需要想办法自己解决。
 
     这当然引发了[旷](https://gitlab.gnome.org/GNOME/mutter/-/issues/217)[日](https://gitlab.gnome.org/GNOME/mutter/-/issues/1143)[持](https://gitlab.gnome.org/GNOME/mutter/-/issues/1836)[久](https://gitlab.gnome.org/GNOME/gnome-shell/-/issues/4386)的[争](https://gitlab.gnome.org/GNOME/mutter/-/issues/2052)[论](https://gitlab.gnome.org/GNOME/mutter/-/issues/2342)。如果从这些争吵中抽离出来，mutter 对 SSD 的拒绝可以从两个角度来解释：
 
@@ -829,7 +829,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     </interface>
     ```
 
-    接口（interface）是对象的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 `wp_fractional_scale_v1` 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。
+    每个对象都是某个接口（interface）的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 `wp_fractional_scale_v1` 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。
     
     另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
 
@@ -844,7 +844,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 - GNOME 下由于设计上输入法候选词等由 gnome-shell 直接绘制（而不是由输入法绘制窗口），shell 需要获取具体的候选词列表等信息，因此 GNOME 不支持 `input-method` 相关协议，而是由 DBus 协议与 iBus 输入法框架通信。Fcitx 亦兼容了这个 DBus 协议（如果需要在 GNOME 下正常使用 Fcitx，还需要安装 [gnome-shell-extension-kimpanel](https://github.com/wengxt/gnome-shell-extension-kimpanel)）。
 - Weston 仅支持 `input-method-unstable-v1` 和 `text-input-unstable-v1` 协议。其他大部分混成器至少支持了 `xx-input-method-v2` 和 `xx-text-input-v3` 协议。
-- 在很长一段时间内，Chromium 仅支持 `text-input-unstable-v1` 协议，导致在除了 Weston 与 Kwin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 `xx-text-input-v3` 协议。
+- 在很长一段时间内，Chromium 仅支持 `text-input-unstable-v1` 协议，导致在除了 Weston 与 KWin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 `xx-text-input-v3` 协议。
 - Qt 同样在很长一段时间内仅支持 [`text-input-unstable-v2`](https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml)（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 `xx-text-input-v3` 协议。
 
 目前来讲，从应用开发者的角度，只支持 `xx-text-input-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
