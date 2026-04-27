@@ -308,7 +308,7 @@ QT_IM_MODULE="fcitx"
 
 但是之后，显示加速的需求越来越大，显卡厂商之间设计的差异也越来越大，`fbdev` 已经不够用了。之后出现的一种解决方案是：编写 X 的输出驱动，直接操作 `/dev/mem`，通过物理地址访问显存，从而实现对显卡的控制。但是这种设计有很多问题：X 需要用 root 权限运行；如果 X 崩溃了，那么显卡的状态很可能也会坏掉；X 与 OpenGL 之间的协作也有不少问题。
 
-因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。你可以在 `/dev/dri` 中看到你的显卡的设备文件，一般分为主设备（`card0`）和渲染设备（`renderD128`），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。
+因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。此时，应用程序如果需要 GPU 加速渲染，就直接和 GPU 设备通信，而不是和 X 通信，这个架构被称为 DRI（Direct Rendering Infrastructure）。你可以在 `/dev/dri` 中看到你的显卡的设备文件，一般分为主设备（`card0`）和渲染设备（`renderD128`），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。
 
 此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。
 
@@ -318,7 +318,7 @@ QT_IM_MODULE="fcitx"
 
 实际上，Linux 的图形栈要比上面介绍的还要复杂很多，本文不是开发手册，因此无法涵盖每个细节。这里只能做简单的介绍。
 
-现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。否则就会遇到类似这样尴尬的局面：系统安装的时候，libGL.so 等库是 Mesa 提供的，之后安装了某些 GPU 自己的驱动之后，安装器直接覆盖了 libGL.so 等文件，看起来能用，然后系统一升级，libGL.so 又被覆盖回来了，图形渲染于是全挂了，而且这种模式也无法共存多种实现。
+现代桌面应用程序一般都需要 GPU 的 3D 加速功能。在 Linux 上，使用的 3D 图形 API 为 OpenGL 或者 Vulkan。但是不管用什么 API，最终的主要实现都是 GPU 开发商来做的，要应用程序一个一个对接 GPU 开发商不太现实，因此需要一个负责分发的「中间商」。否则就会遇到类似这样尴尬的局面：系统安装的时候，libGL.so 等库是 Mesa 提供的，之后安装了某些 GPU 自己的驱动之后，安装器直接覆盖了 libGL.so 等文件，看起来能用，然后系统一升级，libGL.so 又被覆盖回来了，图形渲染于是全挂了，而且这种模式也无法共存多种实现（例如同时有多块不同产商显卡的时候）。
 
 对 OpenGL 来说，这个任务由 [libglvnd](https://gitlab.freedesktop.org/glvnd/libglvnd)（the GL Vendor-Neutral Dispatch library）完成。其包含了 GLX 和 EGL 的接口。GLX 是和 X 绑定的 OpenGL 实现，而 EGL 提供了不和具体的某种窗口系统绑定的统一的 OpenGL 接口。libglvnd 会根据当前的情况调用 Mesa 或者 GPU 开发商私有的 OpenGL（GLX/EGL）实现。
 
@@ -344,6 +344,8 @@ QT_IM_MODULE="fcitx"
     "file_format_version": "1.0.0"
 }
 ```
+
+如果正在使用 Mesa 开源驱动，[Mesamatrix](https://mesamatrix.net/) 提供了 Mesa 实现的各个驱动对 Vulkan、OpenGL 等标准的支持情况，可以作为参考。
 
 !!! note "Vulkan layer"
 
@@ -391,7 +393,32 @@ QT_IM_MODULE="fcitx"
 
 !!! note "我没有 GPU 呢？"
 
-    总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。(TODO)
+    总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。目前，Mesa 的 LLVMpipe 实现了完整的软件渲染 OpenGL 的支持，其会将 OpenGL 的 shader 翻译为 LLVM 的 IR，然后由 LLVM JIT 优化后在 CPU 上运行。对应 Vulkan 则是 Lavapipe（lvp）。
+
+    此外，Mesa 的 Zink 驱动可以将 OpenGL 转换为 Vulkan，使得 OpenGL 应用可以在只支持 Vulkan 的 GPU 上运行。
+
+!!! note "视频编解码加速"
+
+    GPU 除了加速 OpenGL 与 Vulkan shader 以外，也可以加速视频的编解码，减少 CPU 的压力，降低能耗。目前最主流的接口为 Intel 推出的 [VA-API](https://en.wikipedia.org/wiki/Video_Acceleration_API)，Intel 与 AMD 的 GPU 驱动对 VA-API 有着不错的支持（NVIDIA 的 VA-API，如果使用官方驱动的话，只有第三方的 [nvidia-vaapi-driver](https://github.com/elFarto/nvidia-vaapi-driver/) 兼容层，并且只支持 Firefox）。NVIDIA 则传统上使用其推出的 [VDPAU](https://en.wikipedia.org/wiki/VDPAU) 接口用于解码加速。应用也可以使用 NVIDIA 专用的 NVENC/NVDEC 接口实现编解码加速。Vulkan 也提供了视频编解码的扩展（`VK_KHR_video_*`），各个产商较新的显卡和驱动都对其提供了支持。
+
+    大部分用户应该都更关心解码的性能。可以使用 mpv 的 [hwdec 参数](https://mpv.io/manual/stable/#options-hwdec)测试相关视频的解码接口是否正常工作：
+
+    ```shell
+    mpv --no-config --hwdec=vaapi example.webm
+    mpv --no-config --hwdec=vdpau example.webm
+    mpv --no-config --hwdec=nvdec example.webm
+    mpv --no-config --hwdec=vulkan example.webm
+    ```
+
+    打开视频后，按下 i 键（或者 Shift + i 来保持信息一直显示）可以让 mpv 显示详细信息，从中可以看出是否正在使用硬件加速：
+
+    ![An example of mpv with vulkan](../images/mpv-vulkan-accel-example.png)
+
+    /// caption
+    如果成功使用对应的硬件加速接口，在 Video 一行的结尾可以看到。截图中使用的是 `--hwdec=vulkan`。
+    ///
+
+在 GPU 渲染完成之后，结果怎么让用户看到呢？对全屏、独占显示的应用来说，直通显示（direct scanout），让显卡直接画到屏幕上是性能最好的选择，但是更多的时候，窗口之间会互相遮挡，还有更加复杂的窗口特效等等需要[混成](#x-compositor)，直接让 GPU 往屏幕上画画就不太合适了。(TODO)
 
 #### HiDPI {#x-hidpi}
 
