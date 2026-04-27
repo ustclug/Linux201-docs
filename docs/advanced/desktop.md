@@ -310,6 +310,26 @@ QT_IM_MODULE="fcitx"
 
 因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。此时，应用程序如果需要 GPU 加速渲染，就直接和 GPU 设备通信，而不是和 X 通信，这个架构被称为 DRI（Direct Rendering Infrastructure）。你可以在 `/dev/dri` 中看到你的显卡的设备文件，一般分为主设备（`card0`）和渲染设备（`renderD128`），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。
 
+!!! tip "获取 DRI 设备对应的名称"
+
+    ```console
+    $ udevadm info /sys/class/drm/card1/device
+    P: /devices/pci0000:00/0000:00:01.1/0000:01:00.0/0000:02:00.0/0000:03:00.0
+    M: 0000:03:00.0
+    R: 0
+    J: +pci:0000:03:00.0
+    U: pci
+    V: amdgpu
+    （省略）
+    E: ID_PCI_CLASS_FROM_DATABASE=Display controller
+    E: ID_PCI_SUBCLASS_FROM_DATABASE=VGA compatible controller
+    E: ID_PCI_INTERFACE_FROM_DATABASE=VGA controller
+    E: ID_VENDOR_FROM_DATABASE=Advanced Micro Devices, Inc. [AMD/ATI]
+    E: ID_MODEL_FROM_DATABASE=Navi 48 [Radeon RX 9070/9070 XT/9070 GRE]
+    ```
+
+    可以从 udev 在其硬件数据库提取的输出看出 `card1` 设备对应一块 AMD Radeon RX 9070 显卡。
+
 此外，你可能还会经常看到 KMS（Kernel Mode Setting）这个词。KMS 是 DRM 的子模块，负责设置显示模式，这也将 X 从设置显示模式的负担上解放出来，并且帮助实现更平滑的显示切换（例如从 TTY 切换到 X）。
 
 最后回到显示加速上。目前开源驱动一般的做法是：KMS 来设置显示模式，由开源的 Mesa UMD 来具体实现 OpenGL、Vulkan 等图形 API 的功能。X server 就使用 modesetting（xf86-video-modesetting）驱动，不再需要关心显卡的具体实现细节了。但是如果你是 NVIDIA 官方驱动（或者其他小众显卡厂商的闭源驱动）的用户，那么很不幸，你还是需要使用对应厂商提供的专有 X 驱动（也称为 Device Dependent X，DDX）来获得显示加速。
@@ -418,7 +438,11 @@ QT_IM_MODULE="fcitx"
     如果成功使用对应的硬件加速接口，在 Video 一行的结尾可以看到。截图中使用的是 `--hwdec=vulkan`。
     ///
 
-在 GPU 渲染完成之后，结果怎么让用户看到呢？对全屏、独占显示的应用来说，直通显示（direct scanout），让显卡直接画到屏幕上是性能最好的选择，但是更多的时候，窗口之间会互相遮挡，还有更加复杂的窗口特效等等需要[混成](#x-compositor)，直接让 GPU 往屏幕上画画就不太合适了。(TODO)
+    如果想尝试硬件加速视频编码（例如视频转换），可以参考 [ffmpeg 的手册信息](https://trac.ffmpeg.org/wiki/HWAccelIntro)。
+
+在 GPU 渲染完成之后，结果怎么让用户看到呢？对全屏、独占显示的应用来说，直通显示（direct scanout），让显卡直接画到屏幕上是性能最好的选择，但是更多的时候，窗口之间会互相遮挡，还有更加复杂的窗口特效等等需要[混成](#x-compositor)，直接让 GPU 往屏幕上画画就不太合适了。不管是与 X 交互的 GLX，还是支持多种窗口系统后端的 EGL、Vulkan WSI（Window System Integration），它们都需要和窗口系统交互，来知道自己应该渲染到哪里。
+
+这里的渲染目标内核底层一般是 [dma-buf](https://docs.kernel.org/driver-api/dma-buf.html)，允许在不同的设备间传递同一块 buffer 空间对应的文件描述符，避免复制的开销。如果使用 EGL 的话，那么操作 DRM 的程序一般会使用 [GBM](https://gitlab.freedesktop.org/mesa/mesa/-/tree/acba4c9fd84ecf7de7e59c3463b9ac71ba812ccd/src/gbm/main) 创建 GPU 可以使用的 buffer，并导出为 dma-buf 的文件描述符。NVIDIA 曾经使用的 EGLStream 与 GBM 功能类似，但是不使用 dma-buf。dma-buf 同时提供了同步相关的设施（用来帮助确保不会把画了一半的 buffer 以非预期的方式消费掉），相关的具体实现则超出了本文的范畴。
 
 #### HiDPI {#x-hidpi}
 
