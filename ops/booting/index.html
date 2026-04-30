@@ -646,6 +646,25 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="BIOS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bios-setup-utility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Setup Utility
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -658,6 +677,25 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="UEFI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uefi-setup-utility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Setup Utility
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3080,6 +3118,25 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="BIOS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bios-setup-utility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Setup Utility
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -3092,6 +3149,25 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="UEFI">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uefi-setup-utility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Setup Utility
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3347,11 +3423,29 @@
 通常来说，MBR 中存储的 446（或低至 434）字节代码会扫描盘上的分区，找到唯一一个被标记为「活动」（active）的分区，并执行该分区中存储的启动代码（Partition Boot Record，PBR）。
 在 BIOS 启动模式下，MBR 和 PBR 即是下一节所述的 Bootloader。
 因此，BIOS 启动模式也经常被称作「MBR 启动模式」。</p>
+<h4 id="bios-setup-utility">Setup Utility<a class="headerlink" href="#bios-setup-utility" title="Permanent link">&para;</a></h4>
+<p>原始的 IBM PC 的 BIOS 固件没有交互式用户界面，BIOS 设置选项是通过主板上的开关和跳线设置的。
+而从 1990 年代中期开始，BIOS 固件通常会包含一个 BIOS 设置实用程序（BIOS Setup Utility），通过系统启动时按下特定的按键（如 F2、Del 等）进入。
+用户可以在其中通过键盘设置系统配置选项，比如启动优先级，CPU 频率，内存时序等。</p>
+<p>以下是一个典型的 BIOS 设置实用程序的界面截图：</p>
+<p><img alt="BIOS 设置实用程序" src="https://upload.wikimedia.org/wikipedia/commons/0/05/Award_BIOS_setup_utility.png" /></p>
+<p class="caption">BIOS 设置实用程序</p>
 <h3 id="uefi">UEFI<a class="headerlink" href="#uefi" title="Permanent link">&para;</a></h3>
 <p>UEFI（Unified Extensible Firmware Interface，统一可扩展固件接口）严格来说并不是一个固件实现，而是一套<strong>固件接口规范</strong>，由 UEFI Forum 负责维护（前身是 Intel 于 1998 年发布的 EFI 规范）。</p>
 <p>UEFI 规范定义了固件与上层程序（Bootloader、OS 等）之间的标准接口，使得 Bootloader 和操作系统无需关心底层的具体硬件架构，从而实现跨平台的可移植性。</p>
-<p>与 BIOS 固件的启动方式不同，UEFI 固件不再从磁盘的开始位置寻找启动代码，而是从指定的磁盘和分区中寻找指定的文件作为 Bootloader 加载。</p>
-<p>对于已经以 UEFI 方式启动的系统，使用 <code>efibootmgr</code> 命令可以查看当前的 EFI 配置：</p>
+<p>UEFI 规范下的计算机启动过程分为以下几个阶段：</p>
+<ul>
+<li>SEC (Security Phase)：主要功能有充当系统软件信任根（Root of Trust）、利用 CPU 缓存初始化临时内存等</li>
+<li>Pre-EFI Initialization (PEI)：主要功能有初始化永久内存（DRAM）、提供最小硬件初始化等</li>
+<li>Driver Execution Environment (DXE)：主要功能有初始化剩余硬件、实现完整的 UEFI Services 等</li>
+<li>Boot Device Selection (BDS)：主要功能有选择启动设备、选择是否进入 Setup Utility 等</li>
+<li>Transient System Load (TSL)：对应于 Bootloader 阶段，提供 Boot Services 和 Runtime Services 两类服务</li>
+<li>Runtime (RT)：对应于 OS 运行阶段，Boot Services 被销毁，只保留 Runtime Services 供操作系统调用（比如 NVRAM 的访问和设置等）</li>
+</ul>
+<p>其中，前四个阶段，即 SEC、PEI、DXE 和 BDS 阶段被统称为 Platform Initialization（PI），即平台初始化，由 UEFI Platform Initialization 规范文件<sup id="fnref:uefi-pi"><a class="footnote-ref" href="#fn:uefi-pi">1</a></sup>定义；而 UEFI 为 TSL 和 RT 阶段提供的 Service 和 Protocol 等接口标准则在 UEFI 规范文件<sup id="fnref:uefi-spec"><a class="footnote-ref" href="#fn:uefi-spec">2</a></sup>中定义。</p>
+<p>与 BIOS 通过 MBR 和 PBR 来加载 Bootloader 的方式不同，UEFI 固件会在 BDS 阶段运行一个 Boot Manager 程序，用于加载和执行 UEFI Image、UEFI Application、UEFI OS Loader（Bootloader）、UEFI Drivers 等 UEFI 规定的可加载文件类型。</p>
+<p>Boot Manager 通过读取 NVRAM（Non-Volatile Random Access Memory）中的 Boot Option（启动项）来确定要加载哪个文件（通常以 .efi 结尾）作为 Bootloader。</p>
+<p>对于已经以 UEFI 方式启动的 Linux 系统，使用 <code>efibootmgr</code> 命令可以查看 NVRAM 中所有的 Boot Option 的信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>efibootmgr
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">BootCurrent: 0000</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">Timeout: 1 seconds</span>
@@ -3360,6 +3454,12 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">Boot0002  UEFI: Built-in EFI Shell  VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f</span>
 </code></pre></div>
 <p>在以上示例中，UEFI 固件会从分区 GUID 为 <code>7c003990-9d67-48fb-b6c9-f44a4577cd5f</code> 的分区中加载 <code>\EFI\DEBIAN\GRUBX64.EFI</code> 文件作为 Bootloader。你可以观察 <code>blkid</code> 命令的输出，寻找 <code>PARTUUID=</code> 匹配的分区。</p>
+<h4 id="uefi-setup-utility">Setup Utility<a class="headerlink" href="#uefi-setup-utility" title="Permanent link">&para;</a></h4>
+<p>UEFI 固件通常也包含设置实用程序（Setup Utility），用户可以在其中设置系统配置选项，比如启动优先级，CPU 频率，内存时序等。UEFI 设置实用程序的界面通常比 BIOS 设置实用程序更加现代化和友好，支持鼠标操作和图形界面。</p>
+<p>UEFI 设置实用程序通常是在 DXE 阶段被加载，而在 BDS 阶段通过判断用户是否按下特定的按键（如 F2、Del 等）来决定是否进入设置实用程序。</p>
+<p>以下是一个看上去有点老旧的 UEFI 设置实用程序的界面截图：</p>
+<p><img alt="UEFI 设置实用程序" src="../../images/uefi-bios.jpg" /></p>
+<p class="caption">UEFI 设置实用程序</p>
 <h2 id="bootloader">Bootloader<a class="headerlink" href="#bootloader" title="Permanent link">&para;</a></h2>
 <p>Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U 盘、光盘等）的特定位置（如 MBR、GPT 分区表中的 EFI System Partition 等）中，负责加载操作系统内核到内存，并将控制权移交给 Kernel。</p>
 <p>通常，对于 Linux 系统来说，Bootloader 还需要将 initrd / initramfs（初始内存盘）加载到内存，并将相关信息（如内核命令行参数、initramfs 的位置等）传递给 Kernel，里面包含了内核启动所需的各种驱动和工具，帮助内核完成系统的初始化过程。</p>
@@ -3437,6 +3537,18 @@ Do not link to a "generic" man page for these commands -->
 
 <!-- markdownlint-disable-file MD041 MD053 -->
 
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:uefi-pi">
+<p><a href="https://uefi.org/sites/default/files/resources/UEFI_PI_Spec_Final_Draft_1.9.pdf">https://uefi.org/sites/default/files/resources/UEFI_PI_Spec_Final_Draft_1.9.pdf</a>&#160;<a class="footnote-backref" href="#fnref:uefi-pi" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:uefi-spec">
+<p><a href="https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf">https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf</a>&#160;<a class="footnote-backref" href="#fnref:uefi-spec" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+
 
 
 
@@ -3456,7 +3568,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月20日 09:29:27 UTC">2026年4月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月30日 20:11:44 UTC">2026年4月30日</span>
   </span>
 
     
@@ -3475,11 +3587,6 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
@@ -3488,6 +3595,11 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
