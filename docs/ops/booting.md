@@ -164,7 +164,7 @@ GRUB 在 BIOS 启动模式下的分区布局示例[^grub-bios-partition-layout]
 
 在 UEFI 启动模式下，GRUB 通常位于 EFI 系统分区的 `\EFI\debian\grubx64.efi` 位置。其他发行版也可能为中间一层目录使用其他名称，例如 `\EFI\ubuntu\grubx64.efi`。
 
-如下图的 Example 1 所示，GRUB 不再使用 `boot.img` 和 `core.img` 分阶段加载的方式，而是直接通过 `/EFI/Boot/grubx64.efi` 这个单一的文件被 UEFI 加载执行。
+如下图的 Example 1 所示，GRUB 不再使用 `boot.img` 和 `core.img` 分阶段加载的方式，而是直接通过 `/EFI/arch/grubx64.efi` 这个单一的文件被 UEFI 加载执行。
 
 ![GRUB 在 UEFI 启动模式下的分区布局示例](../images/grub-uefi-partition-layout.jpg)
 
