@@ -417,6 +417,14 @@ QT_IM_MODULE="fcitx"
 
     此外，Mesa 的 Zink 驱动可以将 OpenGL 转换为 Vulkan，使得 OpenGL 应用可以在只支持 Vulkan 的 GPU 上运行。
 
+!!! note "什么是 shader？"
+
+    Shader 是给 GPU 看的程序，用来控制 GPU 渲染图像和计算。开发者用 GLSL（或者其他的 shader 语言）编写相关的程序，通过编译器编译到中间代码（例如 SPIR-V）后，再由显卡驱动转换为 GPU 可以理解的机器指令。如果对 GPU 编程感兴趣的话，可以在 [Shadertoy](https://www.shadertoy.com/) 使用 GLSL 编写 shader，并通过 WebGL 实时查看效果，也可以欣赏社区其他人写的有趣 shader。
+
+    我们平时玩游戏时，加载界面可能会显示「正在编译着色器」，这里编译的东西就是 shader。Shader 需要使用 CPU 编译。如果 shader 比较复杂，就需要更长的时间编译，如果游戏或应用不提前编译好的话，就可能出现进入一个新场景之后会卡顿一小会才能继续玩的情况，影响体验。对游戏主机来说，由于硬件是固定的，游戏开发商可以提前编译好，但在桌面场景下就需要更多的优化策略来缓解相关的问题。在 Linux 上，Steam 会在游戏启动前尝试编译 Vulkan shader，并将编译结果在相同硬件配置玩家之间共享。
+
+    Mesa 会将编译好的 shader 缓存到 `~/.cache/mesa_shader_cache`。
+
 !!! note "视频编解码加速"
 
     GPU 除了加速 OpenGL 与 Vulkan shader 以外，也可以加速视频的编解码，减少 CPU 的压力，降低能耗。目前最主流的接口为 Intel 推出的 [VA-API](https://en.wikipedia.org/wiki/Video_Acceleration_API)，Intel 与 AMD 的 GPU 驱动对 VA-API 有着不错的支持（NVIDIA 的 VA-API，如果使用官方驱动的话，只有第三方的 [nvidia-vaapi-driver](https://github.com/elFarto/nvidia-vaapi-driver/) 兼容层，并且只支持 Firefox）。NVIDIA 则传统上使用其推出的 [VDPAU](https://en.wikipedia.org/wiki/VDPAU) 接口用于解码加速。应用也可以使用 NVIDIA 专用的 NVENC/NVDEC 接口实现编解码加速。Vulkan 也提供了视频编解码的扩展（`VK_KHR_video_*`），各个产商较新的显卡和驱动都对其提供了支持。
