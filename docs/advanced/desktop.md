@@ -857,6 +857,13 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 目前来讲，从应用开发者的角度，只支持 `xx-text-input-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
 
+!!! note "输入法模块还能用吗？"
+
+    在 X 时代的 GTK/QT 的[输入法模块](#x-input-method) 在 Wayland 下根据输入法实现的不同，可能仍然可以使用来绕过 Wayland 的输入法协议。以 [Fcitx 5](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Popup_candidate_window) 为例：
+
+    - Fcitx 5 的输入法模块能够拿到相对被输入窗口的相对位置。由于输入法模块和被输入窗口在同一个进程里面，输入法模块可以开启一个 `xdg_popup` 的输入法窗口。但是有可能会出现输入法窗口闪烁的情况。
+    - 如果用户使用了 GNOME 的 kimpanel 扩展，那么 Fcitx 5 的输入法模块会给 kimpanel 报告自己的相对位置，由 kimpanel 把 Shell 风格的候选词窗口计算后放在合适的位置。
+
 ### HiDPI 支持 {#wayland-hidpi}
 
 #### Wayland 与分数缩放
