@@ -3472,6 +3472,9 @@
 <h3 id="grub">GRUB<a class="headerlink" href="#grub" title="Permanent link">&para;</a></h3>
 <p>GRUB（GRand Unified Bootloader）是目前应用最广泛的 Linux bootloader，同时支持 BIOS 启动模式和 UEFI 启动模式，并且以 BIOS 模式启动时 GRUB 可以被安装在 GPT 分区表中。</p>
 <p>GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分区及 RAID 配置形式，或者通过 TFTP 或 HTTP 从网络中加载文件，甚至还能提供图形化的启动界面（例如 <a href="https://github.com/Lxtharia/minegrub-theme">Minecraft 风格的自定义 GRUB 主题</a>）。这些模块通常存储在 <code>/usr/lib/grub</code> 下，并会在安装 GRUB 时被复制到 <code>/boot</code> 下。</p>
+<p>以下是一个 GRUB 启动界面的示例：</p>
+<p><img alt="GRUB 启动界面" src="../../images/grub-interface.jpg" /></p>
+<p class="caption">一个装有 Debian GNU/Linux 系统的 GRUB 启动界面示例</p>
 <div class="admonition bug">
 <p class="admonition-title">GRUB 的模块是独立的实现</p>
 <p>需要注意的是，GRUB 的模块一般不依赖上游软件，也没有采用上游软件的实现方式，而是将各种功能重新独立地实现了一遍。
@@ -3482,11 +3485,18 @@
 </div>
 <p>在 BIOS 启动模式下，磁盘的第一个分区通常从 1 MiB 的位置开始，此时磁盘开头的前 1 MiB 空间就可以用于写入 GRUB 的启动代码。
 这部分代码通常包含了 FAT 和 ext4 分区格式的支持，因此 GRUB 可以继续从这些格式的分区中读取配置文件、Linux 内核或更多的 GRUB 模块。</p>
+<p>如下图 Example 1 所示，在 sda1 前预留的 1 MiB 空间存放着 GRUB 的 <code>boot.img</code> 和 <code>core.img</code> 两个文件，其中 <code>boot.img</code> 存放在 MBR 中，<code>core.img</code> 存放在 MBR 后的 512 字节到 1 MiB 的空间中。</p>
 <p>Debian 官方构建的 cdimage 情况相似，只不过从 1 MiB 的位置开始的分区是一个类型为 BIOS boot 的分区，大小为 3 MiB。
 该分区的作用与「在第一个分区前留出 1 MiB 的空间」相同，即用于存储 GRUB 代码。
 由于「预留 1 MiB 空间」是一项现代的约定俗成的做法，显式的 BIOS boot 分区的一个优势就是避免这部分预留空间被不遵守这一项约定俗成的软件给误操作破坏掉，导致系统无法启动。
 例如，许多较旧的分区软件会将第一个分区的开始位置设置为 LBA 32（16 KiB），甚至 LBA 1（紧跟 MBR 后）。</p>
+<p>如下图 Example 2 所示，因为 GPT 分区表占据了 MBR 后的空间，约定俗成的「预留 1 MiB 空间」的规定被打破了，因此 GRUB 的 <code>core.img</code> 就被存放在一个单独的名为 BIOS_grub 的 1 MiB 的分区中。</p>
+<p><img alt="GRUB 在 BIOS 启动模式下的分区布局示例" src="../../images/grub-bios-partition-layout.jpg" /></p>
+<p class="caption">GRUB 在 BIOS 启动模式下的分区布局示例<sup id="fnref:grub-bios-partition-layout"><a class="footnote-ref" href="#fn:grub-bios-partition-layout">3</a></sup></p>
 <p>在 UEFI 启动模式下，GRUB 通常位于 EFI 系统分区的 <code>\EFI\debian\grubx64.efi</code> 位置。其他发行版也可能为中间一层目录使用其他名称，例如 <code>\EFI\ubuntu\grubx64.efi</code>。</p>
+<p>如下图的 Example 1 所示，GRUB 不再使用 <code>boot.img</code> 和 <code>core.img</code> 分阶段加载的方式，而是直接通过 <code>/EFI/Boot/grubx64.efi</code> 这个单一的文件被 UEFI 加载执行。</p>
+<p><img alt="GRUB 在 UEFI 启动模式下的分区布局示例" src="../../images/grub-uefi-partition-layout.jpg" /></p>
+<p class="caption">GRUB 在 UEFI 启动模式下的分区布局示例</p>
 <h3 id="systemd-boot">systemd-boot<a class="headerlink" href="#systemd-boot" title="Permanent link">&para;</a></h3>
 <h2 id="initramfs">initramfs<a class="headerlink" href="#initramfs" title="Permanent link">&para;</a></h2>
 <h3 id="initramfs-tools">initramfs-tools<a class="headerlink" href="#initramfs-tools" title="Permanent link">&para;</a></h3>
@@ -3546,6 +3556,9 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:uefi-spec">
 <p><a href="https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf">https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf</a>&#160;<a class="footnote-backref" href="#fnref:uefi-spec" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
+<li id="fn:grub-bios-partition-layout">
+<p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
 </ol>
 </div>
 
@@ -3568,7 +3581,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月30日 20:11:44 UTC">2026年4月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月1日 12:20:07 UTC">2026年5月1日</span>
   </span>
 
     
