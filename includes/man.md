@@ -99,6 +99,7 @@ Do not link to a "generic" man page for these commands -->
 [btrfs-convert.8]: https://man7.org/linux/man-pages/man8/btrfs-convert.8.html
 [conntrack.8]: https://manpages.debian.org/stable/conntrack/conntrack.8.en.html
 [deluser.8]: https://manpages.debian.org/stable/adduser/deluser.8.en.html
+[im-config.8]: https://manpages.debian.org/unstable/im-config/im-config.8.en.html
 [ipset.8]: https://linux.die.net/man/8/ipset
 [iptables.8]: https://www.man7.org/linux/man-pages/man8/iptables.8.html
 [iptables-extensions.8]: https://www.man7.org/linux/man-pages/man8/iptables-extensions.8.html

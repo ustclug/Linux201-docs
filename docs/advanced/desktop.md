@@ -296,6 +296,24 @@ QT_IM_MODULE="fcitx"
 
 如果应用程序不使用 GTK 或 Qt，那么一般来讲考虑到输入法需求的应用会基于 XIM 方案实现支持，即 `XMODIFIERS` 环境变量指定的输入法。
 
+!!! note "Debian 的 im-config 工具"
+
+    Debian 提供了 [`im-config`][im-config.8] 交互式工具，用于在 X 环境下自动配置输入法相关的环境变量。
+
+    ![im-config](../images/im-config.png)
+
+    `im-config` 会写入 `~/.xinputrc` 或 `/etc/X11/xinit/xinputrc` 文件：
+
+    ```conf
+    # im-config(8) generated on Sat, 02 May 2026 16:22:08 +0000
+    run_im fcitx5
+    # im-config signature: 10c4f170d207fa51e0e4fad7fff83b2d  -
+    ```
+
+    当[显示管理器](#x-display-manager)启动 X session 的时候，`/etc/X11/Xsession.d/70im-config_launch` 这个 shell 脚本会在输入法相关环境变量都没有配置的情况下加载 `/usr/share/im-config/xinputrc.common` 中的函数，加载 xinputrc 配置（执行 `run_im` 函数），并导出设置的环境变量。这个脚本也同时会用 `im-launch` 来启动输入法。
+
+    im-config 也尝试兼容了 Wayland 桌面环境，但是[不推荐使用](#wayland-ime)。
+
 ### 输出 {#x-output}
 
 #### 显示支持与显卡 {#x-gpu}
@@ -863,6 +881,8 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     - Fcitx 5 的输入法模块能够拿到相对被输入窗口的相对位置。由于输入法模块和被输入窗口在同一个进程里面，输入法模块可以开启一个 `xdg_popup` 的输入法窗口。但是有可能会出现输入法窗口闪烁的情况。
     - 如果用户使用了 GNOME 的 kimpanel 扩展，那么 Fcitx 5 的输入法模块会给 kimpanel 报告自己的相对位置，由 kimpanel 把 Shell 风格的候选词窗口计算后放在合适的位置。
+
+    如果你正在使用 Debian 及其衍生发行版，并且发现在 Wayland 下被莫名其妙设置了输入法模块的环境变量，可以参考 [X 中输入法的介绍](#x-input-method)调整 `im-config` 配置（设置为 `none`），并使用混成器提供的配置方式启动输入法。
 
 ### HiDPI 支持 {#wayland-hidpi}
 
