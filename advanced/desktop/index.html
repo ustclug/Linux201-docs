@@ -2791,7 +2791,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#wayland_1" class="md-nav__link">
+  <a href="#wayland-fractional-scale" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -2898,7 +2898,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#sound" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -3465,7 +3465,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#wayland_1" class="md-nav__link">
+  <a href="#wayland-fractional-scale" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -3572,7 +3572,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#sound" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -4342,7 +4342,7 @@
 </ul>
 </div>
 <h3 id="wayland-hidpi">HiDPI 支持<a class="headerlink" href="#wayland-hidpi" title="Permanent link">&para;</a></h3>
-<h4 id="wayland_1">Wayland 与分数缩放<a class="headerlink" href="#wayland_1" title="Permanent link">&para;</a></h4>
+<h4 id="wayland-fractional-scale">Wayland 与分数缩放<a class="headerlink" href="#wayland-fractional-scale" title="Permanent link">&para;</a></h4>
 <p>在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 <code>wl_output</code> 的 event 拿到显示器的 <code>scale</code>，可以使用 <code>wl_surface</code> 的 <code>set_buffer_scale</code> request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，<a href="https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation">macOS 现在仍然是采用这种策略来实现分数缩放的</a>）。</p>
 <p>fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 <code>preferred_scale</code> event 通知客户端推荐的缩放比例。由于 <code>wl_surface</code> 在核心稳定协议中，已有的类型不能随意修改，因此 <code>set_buffer_scale</code>（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml">viewporter</a> 提供。viewporter 允许为 <code>wl_surface</code> 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为按照分数缩放后的大小。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。</p>
 <div class="admonition note">
@@ -4649,8 +4649,44 @@
 <p>如果你需要一个好用的与 portal 交互的库，可以考虑使用 <a href="https://github.com/enigo-rs/enigo">enigo</a>（Rust）。（题外话：<a href="https://grell.dev/blog/ai_rejection">这个库被 Claude Desktop 使用了，但是作者去 Anthropic 面试被拒绝了</a>）。</p>
 <p>另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。<a href="https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96">在 writeup 附录</a>中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。</p>
 </div>
-<h2 id="_1">音频服务<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
-<p>(TODO)</p>
+<h2 id="sound">音频服务<a class="headerlink" href="#sound" title="Permanent link">&para;</a></h2>
+<p>ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件，分为内核态和用户态两部分。内核态 ALSA 实现声卡驱动，并向用户态以 <code>/dev/snd</code> 的形式暴露音频设备（字符设备）。这些设备文件都属于 <code>audio</code> 组，意味着只要用户在这个组里面，就可以对声卡进行任意音频操作。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a><span class="gp">$ </span>ls<span class="w"> </span>/dev/snd/
+<a id="__codelineno-47-2" name="__codelineno-47-2" href="#__codelineno-47-2"></a><span class="go">by-path/   hwC0D0  pcmC0D0c  pcmC0D31p  pcmC0D4p  pcmC0D6c  seq</span>
+<a id="__codelineno-47-3" name="__codelineno-47-3" href="#__codelineno-47-3"></a><span class="go">controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">我不在 audio 组里面，为什么我可以放歌？</p>
+<p><code>systemd</code> 包携带的 <code>/usr/lib/udev/rules.d/70-uaccess.rules</code> 文件会给用户需要的设备在 udev 中打上 <code>uaccess</code> 的标签，例如这里的音频设备：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a># Sound devices
+<a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a>SUBSYSTEM==&quot;sound&quot;, TAG+=&quot;uaccess&quot;, \
+<a id="__codelineno-48-3" name="__codelineno-48-3" href="#__codelineno-48-3"></a>  OPTIONS+=&quot;static_node=snd/timer&quot;, OPTIONS+=&quot;static_node=snd/seq&quot;
+</code></pre></div>
+<p><a href="https://www.freedesktop.org/software/systemd/man/latest/sd-login.html">sd-login.3</a> 文档中这么描述 <code>uaccess</code> 标签的用途：</p>
+<blockquote>
+<p>When set, access to this device is tied to an active seat. As the session on the seat becomes active or inactive, access to the device is updated accordingly.</p>
+</blockquote>
+<p>当 <a href="../../ops/service/#logind">systemd-logind</a> 看到标签之后，就会在开启 session 的时候通过 <a href="../dac-mac/#acl">ACL</a> 给设备添加对应用户的访问权限：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="gp">$ </span>getfacl<span class="w"> </span>/dev/snd/controlC0
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="go">getfacl: Removing leading &#39;/&#39; from absolute path names</span>
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="gp"># </span>file:<span class="w"> </span>dev/snd/controlC0
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="gp"># </span>owner:<span class="w"> </span>root
+<a id="__codelineno-49-5" name="__codelineno-49-5" href="#__codelineno-49-5"></a><span class="gp"># </span>group:<span class="w"> </span>audio
+<a id="__codelineno-49-6" name="__codelineno-49-6" href="#__codelineno-49-6"></a><span class="go">user::rw-</span>
+<a id="__codelineno-49-7" name="__codelineno-49-7" href="#__codelineno-49-7"></a><span class="go">user:username:rw-</span>
+<a id="__codelineno-49-8" name="__codelineno-49-8" href="#__codelineno-49-8"></a><span class="go">group::rw-</span>
+<a id="__codelineno-49-9" name="__codelineno-49-9" href="#__codelineno-49-9"></a><span class="go">mask::rw-</span>
+<a id="__codelineno-49-10" name="__codelineno-49-10" href="#__codelineno-49-10"></a><span class="go">other::---</span>
+</code></pre></div>
+</div>
+<p>同时 <code>/proc/asound</code> 和 <code>/sys/class/sound</code> 也提供了用于调试、管理等的信息。不过绝大多数应用程序都不会直接操作它们——如果程序使用 ALSA 的话，几乎都是通过用户态的 libasound（<a href="https://packages.debian.org/trixie/libasound2t64"><code>libasound2t64</code></a>）库提供的接口来播放、录制音频。</p>
+<p>但是在现代桌面环境下，ALSA 已经无法满足用户的需求：</p>
+<ul>
+<li>较老的 ALSA 默认不支持软件混音（mix），这意味着在不支持硬件混音的声卡上，<strong>同时只能有一个程序播放音频</strong>，需要使用 <code>dmix</code> ALSA 插件添加支持。新的 ALSA 会自动加载 <code>dmix</code>，但是这个插件也仍然不支持给每个应用程序不同的音量，只负责把多个音频流打包发给声卡。</li>
+<li>ALSA 无法灵活切换输出设备：不支持热插拔切换（比如说插上使用不同声卡的有线耳机的时候自动从外放改成耳机输出），切换时，当前的程序也不会自动跟着切换。</li>
+<li>ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。</li>
+</ul>
+<p>因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。(TODO)</p>
 <!--
   Links to man pages
 
@@ -4706,7 +4742,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月1日 13:11:17 UTC">2026年5月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月2日 15:34:49 UTC">2026年5月2日</span>
   </span>
 
     
