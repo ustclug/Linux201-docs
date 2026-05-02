@@ -4229,7 +4229,9 @@
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>git<span class="w"> </span>checkout<span class="w"> </span>master
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>--allow-empty<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: bbbbbb&quot;</span>
 <a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>git<span class="w"> </span>checkout<span class="w"> </span>feature
-<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>git<span class="w"> </span>rebase<span class="w"> </span>master
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="c1"># 以下的 rebase 操作以 master 为 base，重放一遍当前分支（feature）多出的 commit</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1"># 因此完成之后 feature 和 master 之间不会再有分叉</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>git<span class="w"> </span>rebase<span class="w"> </span>master
 </code></pre></div>
 <p>如果你或者你的团队对线性历史有需求，通过如下设置，可以使得 <code>rebase</code> 成为 <code>git pull</code> 时候的默认行为。这样可以防止与其他人在同一分支合作时，出现大量的 merge commit：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">[pull]</span>
@@ -4317,6 +4319,15 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># 需要包含 fixup 的目标 commit</span>
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>--autosquash<span class="w"> </span>&lt;base&gt;
 </code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title"><code>git history</code></p>
+<p>Git 2.54（2026/4/20 发布）添加了两个新命令，旨在简化修改历史 commit 的操作：</p>
+<ul>
+<li><code>git history reword &lt;commit&gt;</code> 允许重写指定 commit 的 message。</li>
+<li><code>git history split &lt;commit&gt;</code> 允许将指定的 commit 分成两个。</li>
+</ul>
+<p>可参考 <a href="https://github.blog/open-source/git/highlights-from-git-2-54/">GitHub</a> 与 <a href="https://about.gitlab.com/blog/whats-new-in-git-2-54-0/">GitLab</a> 对 Git 2.54 的介绍了解详情。</p>
 </div>
 <h3 id="git-bisect">Bisect<a class="headerlink" href="#git-bisect" title="Permanent link">&para;</a></h3>
 <p>在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 <code>git bisect</code> 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：</p>
@@ -4716,7 +4727,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月25日 10:29:26 UTC">2026年4月25日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月2日 15:53:01 UTC">2026年5月2日</span>
   </span>
 
     
