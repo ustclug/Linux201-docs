@@ -415,6 +415,8 @@ git commit -a --allow-empty -m "feat: aaaaaa"
 git checkout master
 git commit -a --allow-empty -m "feat: bbbbbb"
 git checkout feature
+# 以下的 rebase 操作以 master 为 base，重放一遍当前分支（feature）多出的 commit
+# 因此完成之后 feature 和 master 之间不会再有分叉
 git rebase master
 ```
 
@@ -525,6 +527,15 @@ git rebase master
     # 需要包含 fixup 的目标 commit
     git rebase -i --autosquash <base>
     ```
+
+!!! tip "`git history`"
+
+    Git 2.54（2026/4/20 发布）添加了两个新命令，旨在简化修改历史 commit 的操作：
+
+    - `git history reword <commit>` 允许重写指定 commit 的 message。
+    - `git history split <commit>` 允许将指定的 commit 分成两个。
+
+    可参考 [GitHub](https://github.blog/open-source/git/highlights-from-git-2-54/) 与 [GitLab](https://about.gitlab.com/blog/whats-new-in-git-2-54-0/) 对 Git 2.54 的介绍了解详情。
 
 ### Bisect {#git-bisect}
 
