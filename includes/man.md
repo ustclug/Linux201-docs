@@ -35,6 +35,7 @@
 [gethostbyname.3]: https://man7.org/linux/man-pages/man3/gethostbyname.3.html
 [getnameinfo.3]: https://man7.org/linux/man-pages/man3/getnameinfo.3.html
 [resolver.3]: https://man7.org/linux/man-pages/man3/resolver.3.html
+[sd-login.3]: https://www.freedesktop.org/software/systemd/man/latest/sd-login.html
 [syslog.3]: https://man7.org/linux/man-pages/man3/syslog.3.html
 
 <!-- man 4 -->

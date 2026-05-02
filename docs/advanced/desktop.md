@@ -866,7 +866,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 ### HiDPI 支持 {#wayland-hidpi}
 
-#### Wayland 与分数缩放
+#### Wayland 与分数缩放 {#wayland-fractional-scale}
 
 在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 `wl_output` 的 event 拿到显示器的 `scale`，可以使用 `wl_surface` 的 `set_buffer_scale` request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，[macOS 现在仍然是采用这种策略来实现分数缩放的](https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation)）。
 
@@ -890,7 +890,7 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 
     如果多了/少了一个像素，混成器就需要手动缩放，就会导致画面模糊。
 
-#### XWayland 下的 HiDPI 支持
+#### XWayland 下的 HiDPI 支持 {#xwayland-hidpi}
 
 由于仍然还有一些应用程序只支持 X，或在 Wayland 下表现暂时不佳，因此 XWayland 仍然是 Wayland 桌面环境中不可或缺的一部分——也就意味着混成器也需要考虑到 XWayland 下的 HiDPI 支持问题。
 
@@ -1261,6 +1261,51 @@ busctl monitor --user
 
     另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。[在 writeup 附录](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96)中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。
 
-## 音频服务
+## 音频服务 {#sound}
 
-(TODO)
+ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件，分为内核态和用户态两部分。内核态 ALSA 实现声卡驱动，并向用户态以 `/dev/snd` 的形式暴露音频设备（字符设备）。这些设备文件都属于 `audio` 组，意味着只要用户在这个组里面，就可以对声卡进行任意音频操作。
+
+```console
+$ ls /dev/snd/
+by-path/   hwC0D0  pcmC0D0c  pcmC0D31p  pcmC0D4p  pcmC0D6c  seq
+controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
+```
+
+!!! note "我不在 audio 组里面，为什么我可以放歌？"
+
+    `systemd` 包携带的 `/usr/lib/udev/rules.d/70-uaccess.rules` 文件会给用户需要的设备在 udev 中打上 `uaccess` 的标签，例如这里的音频设备：
+
+    ```conf
+    # Sound devices
+    SUBSYSTEM=="sound", TAG+="uaccess", \
+      OPTIONS+="static_node=snd/timer", OPTIONS+="static_node=snd/seq"
+    ```
+
+    [sd-login.3][sd-login.3] 文档中这么描述 `uaccess` 标签的用途：
+
+    > When set, access to this device is tied to an active seat. As the session on the seat becomes active or inactive, access to the device is updated accordingly.
+
+    当 [systemd-logind](../ops/service.md#logind) 看到标签之后，就会在开启 session 的时候通过 [ACL](./dac-mac.md#acl) 给设备添加对应用户的访问权限：
+
+    ```console
+    $ getfacl /dev/snd/controlC0
+    getfacl: Removing leading '/' from absolute path names
+    # file: dev/snd/controlC0
+    # owner: root
+    # group: audio
+    user::rw-
+    user:username:rw-
+    group::rw-
+    mask::rw-
+    other::---
+    ```
+
+同时 `/proc/asound` 和 `/sys/class/sound` 也提供了用于调试、管理等的信息。不过绝大多数应用程序都不会直接操作它们——如果程序使用 ALSA 的话，几乎都是通过用户态的 libasound（[`libasound2t64`](https://packages.debian.org/trixie/libasound2t64)）库提供的接口来播放、录制音频。
+
+但是在现代桌面环境下，ALSA 已经无法满足用户的需求：
+
+- 较老的 ALSA 默认不支持软件混音（mix），这意味着在不支持硬件混音的声卡上，**同时只能有一个程序播放音频**，需要使用 `dmix` ALSA 插件添加支持。新的 ALSA 会自动加载 `dmix`，但是这个插件也仍然不支持给每个应用程序不同的音量，只负责把多个音频流打包发给声卡。
+- ALSA 无法灵活切换输出设备：不支持热插拔切换（比如说插上使用不同声卡的有线耳机的时候自动从外放改成耳机输出），切换时，当前的程序也不会自动跟着切换。
+- ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。
+
+因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。(TODO)
