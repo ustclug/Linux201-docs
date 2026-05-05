@@ -18,7 +18,7 @@ icon: material/file-code-outline
 
 ## Netplan
 
-Netplan 是 Canonical（Ubuntu 母公司）开发的一个网络配置抽象渲染器，常见于 Ubuntu 系统中。该程序可以将复杂的网络配置集中于一个或若干个 YAML 格式的文件（通常位于 `/etc/netplan/` ）中，在系统启动时生成不同网络配置后端配置（目前有 NetworkManager 与 Systemd-networkd），起到简化网络配置的用途。其工作原理如下图所示：
+Netplan 是 Canonical（Ubuntu 母公司）开发的一个网络配置抽象渲染器，常见于 Ubuntu 系统中。该程序可以将复杂的网络配置集中于一个或若干个 YAML 格式的文件（通常位于 `/etc/netplan/`）中，在系统启动时生成不同网络配置后端配置（目前有 NetworkManager 与 Systemd-networkd），起到简化网络配置的用途。其工作原理如下图所示：
 
 ![Netplan 原理](../../images/netplan_design_overview.svg)
 
@@ -51,7 +51,7 @@ netplan try # 应用配置并等待用户确认，用户未确认则回滚
 netplan apply # 应用配置
 ```
 
-大多数情况下（尤其是使用 ssh 远程修改网络配置时）建议使用 `netplan try` ，避免因为错误的网络配置导致 ssh 断开后失去远程访问。
+大多数情况下（尤其是使用 ssh 远程修改网络配置时）建议使用 `netplan try`，避免因为错误的网络配置导致 ssh 断开后失去远程访问。
 
 ### 改用 NetworkManager 管理网络 {#netplan-using-networkmanager}
 
@@ -100,7 +100,7 @@ network:
 
 !!! note "DNS 服务器的选择"
 
-    一般来说，DNS 服务器应选择网络提供商分配的即可。出于备份或是隐私的考虑可以使用公共 DNS，可参见 [DNS章节](../network-service/dns.md#client)。
+    一般来说，DNS 服务器应选择网络提供商分配的即可。出于备份或是隐私的考虑可以使用公共 DNS，可参见[网络服务实践的 DNS 章节](../network-service/dns.md#client)。
 
 ### 连接到无线网络 {#netplan-wlan}
 
@@ -151,7 +151,7 @@ network:
 
 #### 内核参数检查 {#netplan-ipv6-check}
 
-默认情况下，操作系统都默认启用了 IPv6 支持，可以通过 `sysctl -a | grep disable_ipv6` 命令查看当前系统内核参数，如果出现例如 `net.ipv6.conf.all.disable_ipv6 = 0` 或者 `net.ipv6.conf.eth0.disable_ipv6 = 0` （这里 eth0 是网络接口名称）则已经启用。如果值为 1，则需要在目录 `/etc/sysctl.d/` 中的 `.conf` 文件修改或追加上述参数为 0，随后重启系统应用参数。
+默认情况下，操作系统都默认启用了 IPv6 支持，可以通过 `sysctl -a | grep disable_ipv6` 命令查看当前系统内核参数，如果出现例如 `net.ipv6.conf.all.disable_ipv6 = 0` 或者 `net.ipv6.conf.eth0.disable_ipv6 = 0`（这里 eth0 是网络接口名称）则已经启用。如果值为 1，则需要在目录 `/etc/sysctl.d/` 中的 `.conf` 文件修改或追加上述参数为 0，随后重启系统应用参数。
 
 #### 使用 SLAAC（无状态地址自动配置）自动配置地址 {#netplan-ipv6-slaac}
 
@@ -181,7 +181,7 @@ network:
 
 !!! note "IPv6 下的 DNS 服务器"
 
-    在使用了 SLAAC 或 DHCPv6 分配地址的网络下，一般也会通过 Router Advertisement 报文或 DHCP 报文下发 IPv6地址的 DNS 服务器。在双栈网络中，IPv6 地址的 DNS 服务器不是必须的，通过 IPv4 的 DNS 服务器也可以解析出域名的 IPv6 地址。
+    在使用了 SLAAC 或 DHCPv6 分配地址的网络下，一般也会通过 Router Advertisement 报文或 DHCP 报文下发 IPv6 地址的 DNS 服务器。在双栈网络中，IPv6 地址的 DNS 服务器不是必须的，通过 IPv4 的 DNS 服务器也可以解析出域名的 IPv6 地址。
 
 #### 使用 DHCPv6 获取 IPv6 地址 {#netplan-ipv6-dhcpv6}
 
