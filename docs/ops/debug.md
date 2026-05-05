@@ -696,6 +696,8 @@ curl: (6) Could not resolve host: www.example.com
 
 这里系统默认的 DNS 服务器指 `/etc/resolv.conf` 中的配置的 `nameserver`，在一部分系统上，`nameserver` 会是 127.0.0.53，代表其启用了 `systemd-resolved` 作为本地的 DNS 服务器，此时需要使用 `resolvectl` 命令查看实际的 DNS 配置。
 
+可以阅读[网络服务实践的 DNS 部分](./network-service/dns.md)了解更多信息。
+
 !!! tip "C 运行时库与 DNS 解析"
 
     许多程序会直接使用系统 C 运行时库的 [`getaddrinfo()`][getaddrinfo.3] 等函数获取 DNS 解析的结果。但是 `dig` 不会。这可能导致 `dig` 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。
