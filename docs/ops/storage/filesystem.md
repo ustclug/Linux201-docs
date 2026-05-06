@@ -913,7 +913,7 @@ $ # 将 snap2 发送到新的文件系统
 $ sudo btrfs send /media/btrfs/snap2 | sudo btrfs receive /media/btrfs-alt/subvol1
 At subvol /media/btrfs/snap2
 At subvol subvol1
-$ sudo btrfs subvolume ls /media/btrfs-alt
+$ sudo btrfs subvolume list /media/btrfs-alt
 ID 256 gen 11 top level 5 path subvol1
 $ sudo umount /media/btrfs
 $ sudo umount /media/btrfs-alt
