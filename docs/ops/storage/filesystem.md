@@ -935,7 +935,7 @@ At subvol snap3
 ```console title="通过 SSH 压缩传输到另一台服务器，需要安装 lz4"
 $ sudo btrfs send /media/btrfs/snap3 | lz4 | ssh another-server "lz4 -d | sudo btrfs receive /media/btrfs/"
 At subvol /media/btrfs/snap3
-At subvol snap1
+At subvol snap3
 ```
 
 ```console title="通过 TCP 传输数据，并用 pv 查看传输带宽"
@@ -966,7 +966,7 @@ At subvol snap4
 之后修改内容，创建新快照，并为 `btrfs send` 添加 `-p` 参数指定双方进行增量传输的基础快照：
 
 ```console
-$ echo "test5" > /media/btrfs/subvol1  # 修改 subvol1
+$ touch /media/btrfs/subvol1/test5  # 修改 subvol1
 $ sudo btrfs subvolume snapshot -r /media/btrfs/subvol1 /media/btrfs/snap5  # 创建新的只读快照
 $ # 查看 snap5 相对于 snap4 的变化
 $ sudo btrfs send /media/btrfs/snap5 -p /media/btrfs/snap4 | sudo btrfs receive --dump
@@ -1112,7 +1112,7 @@ Check
 
 关闭 CoW
 
-:   对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对新创建的文件使用 `chattr +C` 命令关闭 CoW 特性。如果对目录使用 `chattr +C`，那么其内部创建的新文件则会关闭 CoW。
+:   对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对未写入数据的文件使用 `chattr +C` 命令关闭 CoW 特性。如果对目录使用 `chattr +C`，那么其内部创建的新文件则会关闭 CoW。
 
 ### ZFS
 
