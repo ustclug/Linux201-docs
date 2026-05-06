@@ -1047,7 +1047,7 @@ btrfs-convert /path/to/device
 duperemove --hashfile=example.hashfile -dhr /path/to/btrfs
 ```
 
-即可扫描 `/path/to/btrfs` 下的文件，搜索重复的块并压缩，并将相关文件的哈希存储到 `example.hashfile` 中，在下次去重的时候加速。
+即可扫描 `/path/to/btrfs` 下的文件，搜索重复的块并去重，并将相关文件的哈希存储到 `example.hashfile` 中，在下次去重的时候加速。
 
 !!! note "其他文件系统的去重"
 
@@ -1108,7 +1108,7 @@ Check
 
 关闭 CoW
 
-:   对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对文件使用 `chattr +C` 命令关闭 CoW 特性。
+:   对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对新创建的文件使用 `chattr +C` 命令关闭 CoW 特性。如果对目录使用 `chattr +C`，那么其内部创建的新文件则会关闭 CoW。
 
 ### ZFS
 
