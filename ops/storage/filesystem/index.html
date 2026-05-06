@@ -4413,6 +4413,10 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">224 /media/btrfs/subvol2/</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">226 /media/btrfs/subvol3/</span>
 </code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">想改名/修改 subvolume 父节点？</p>
+<p>直接 <code>mv</code> subvolume 对应目录即可！</p>
+</div>
 <p>挂载时添加 <code>subvol=&lt;path&gt;</code> 或 <code>subvolid=&lt;id&gt;</code> 参数可以挂载指定的 subvolume。如果两个参数都不指定，则会挂载默认 subvolume。多个 subvolume 可以同时挂载到不同的挂载点。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvol</span><span class="o">=</span>subvol1<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs1<span class="w">  </span><span class="c1"># 挂载 subvol1</span>
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvolid</span><span class="o">=</span><span class="m">257</span><span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs2<span class="w">  </span><span class="c1"># 挂载 subvol2（ID 257）</span>
@@ -4487,7 +4491,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>snapshot<span class="w"> </span>/media/btrfs/snapshots/subvol1<span class="w"> </span>/media/btrfs/recovered<span class="w">  </span><span class="c1"># 还原快照</span>
 <a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="go">Create a snapshot of &#39;/media/btrfs/snapshots/subvol1&#39; in &#39;/media/btrfs/recovered/subvol1&#39;</span>
 <a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>property<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/media/btrfs/recovered/subvol1<span class="w"> </span>ro<span class="w"> </span><span class="nb">false</span><span class="w">  </span><span class="c1"># 将还原的 subvolume 设置为可写</span>
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test4&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/recovered/subvol1<span class="w">  </span><span class="c1"># 修改还原的 subvol1</span>
+<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="gp">$ </span>touch<span class="w"> </span>/media/btrfs/recovered/subvol1/test<span class="w">  </span><span class="c1"># 向还原的 subvol1 添加文件</span>
 <a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 </code></pre></div>
 <div class="admonition note">
@@ -4519,25 +4523,25 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-31-7" name="__codelineno-31-7" href="#__codelineno-31-7"></a><span class="go">（输出省略）</span>
 <a id="__codelineno-31-8" name="__codelineno-31-8" href="#__codelineno-31-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs-alt.img<span class="w"> </span>/media/btrfs-alt
 <a id="__codelineno-31-9" name="__codelineno-31-9" href="#__codelineno-31-9"></a><span class="gp">$ </span><span class="c1"># 将 snap2 发送到新的文件系统</span>
-<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs-alt/subvol1
+<a id="__codelineno-31-10" name="__codelineno-31-10" href="#__codelineno-31-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap2<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs-alt/
 <a id="__codelineno-31-11" name="__codelineno-31-11" href="#__codelineno-31-11"></a><span class="go">At subvol /media/btrfs/snap2</span>
-<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="go">At subvol subvol1</span>
-<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>ls<span class="w"> </span>/media/btrfs-alt
-<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="go">ID 256 gen 11 top level 5 path subvol1</span>
+<a id="__codelineno-31-12" name="__codelineno-31-12" href="#__codelineno-31-12"></a><span class="go">At subvol snap2</span>
+<a id="__codelineno-31-13" name="__codelineno-31-13" href="#__codelineno-31-13"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>list<span class="w"> </span>/media/btrfs-alt
+<a id="__codelineno-31-14" name="__codelineno-31-14" href="#__codelineno-31-14"></a><span class="go">ID 256 gen 10 top level 5 path snap2</span>
 <a id="__codelineno-31-15" name="__codelineno-31-15" href="#__codelineno-31-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 <a id="__codelineno-31-16" name="__codelineno-31-16" href="#__codelineno-31-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs-alt
 </code></pre></div>
-<p>通过管道传输，Btrfs 的流式传输功能大大简化了不同磁盘、文件系统甚至服务器之间的文件系统备份和迁移。假设发送端的只读 subvolume 为 <code>/media/btrfs/snap3</code>，接收端希望接受（并创建）<code>/media/btrfs/snap1</code> 这个 subvolume。</p>
+<p>通过管道传输，Btrfs 的流式传输功能大大简化了不同磁盘、文件系统甚至服务器之间的文件系统备份和迁移。假设发送端的只读 subvolume 为 <code>/media/btrfs/snap3</code>，接收端希望在 <code>/media/btrfs/</code> 里面接收（send/receive 时会保持 subvolume 的名字不变，可以在 <code>btrfs receive</code> 完成后改名）。</p>
 <div class="highlight"><span class="filename">导出到文件，通过 NFS 跨服务器传输数据</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap3<span class="w"> </span>-f<span class="w"> </span>/mnt/nfs/btrfs/subvol1<span class="w">  </span><span class="c1"># 将快照导出为文件</span>
 <a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">At subvol /media/btrfs/snap3</span>
-<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs/snap1<span class="w"> </span>-f<span class="w"> </span>/mnt/nfs/btrfs/subvol1<span class="w">  </span><span class="c1"># 在另一台共享存储的服务器上还原</span>
-<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">At subvol snap1</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs/<span class="w"> </span>-f<span class="w"> </span>/mnt/nfs/btrfs/subvol1<span class="w">  </span><span class="c1"># 在另一台共享存储的服务器上还原</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="go">At subvol snap3</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">通过 SSH 压缩传输到另一台服务器，需要安装 lz4</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap3<span class="w"> </span><span class="p">|</span><span class="w"> </span>lz4<span class="w"> </span><span class="p">|</span><span class="w"> </span>ssh<span class="w"> </span>another-server<span class="w"> </span><span class="s2">&quot;lz4 -d | sudo btrfs receive /media/btrfs/snap1&quot;</span>
+<div class="highlight"><span class="filename">通过 SSH 压缩传输到另一台服务器，需要安装 lz4</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap3<span class="w"> </span><span class="p">|</span><span class="w"> </span>lz4<span class="w"> </span><span class="p">|</span><span class="w"> </span>ssh<span class="w"> </span>another-server<span class="w"> </span><span class="s2">&quot;lz4 -d | sudo btrfs receive /media/btrfs/&quot;</span>
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="go">At subvol /media/btrfs/snap3</span>
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="go">At subvol snap1</span>
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="go">At subvol snap3</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">通过 TCP 传输数据，并用 pv 查看传输带宽</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp gp-VirtualEnv">(receiver)</span> <span class="gp">$ </span>nc<span class="w"> </span>-l<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs/snap1
+<div class="highlight"><span class="filename">通过 TCP 传输数据，并用 pv 查看传输带宽</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp gp-VirtualEnv">(receiver)</span> <span class="gp">$ </span>nc<span class="w"> </span>-l<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs/
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="gp gp-VirtualEnv">(sender)</span> <span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap3<span class="w"> </span><span class="p">|</span><span class="w"> </span>pv<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/receiver/12345
 </code></pre></div>
 <div class="admonition note">
@@ -4548,7 +4552,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <p class="admonition-title">传输压缩后的数据</p>
 <p>默认情况下，与 <code>zfs send</code> 类似，<code>btrfs send</code> 会解压本地透明压缩过的数据再传输，很多时候这是在浪费带宽与 CPU。因此建议如果开启了透明压缩，<code>btrfs send</code> 总是添加 <code>--compressed-data</code> 参数，除非发送方或接收方的内核版本过低。</p>
 </div>
-<p>Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在与源文件系统上同名且内容完全一致的快照，Btrfs 可以自动计算并传输两个快照的差异部分。这里依然以本地为示例，首先进行第一次传输：</p>
+<p>Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在此前收到，且内容未被修改的快照，Btrfs 可以自动计算并传输两个快照的差异部分。这里依然以本地为示例，首先进行第一次传输：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvolid</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 挂载整个文件系统</span>
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs-alt.img<span class="w"> </span>/media/btrfs-alt<span class="w">  </span><span class="c1"># 挂载另一个文件系统</span>
 <a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>snapshot<span class="w"> </span>-r<span class="w"> </span>/media/btrfs/subvol1<span class="w"> </span>/media/btrfs/snap4<span class="w">  </span><span class="c1"># 创建只读快照</span>
@@ -4558,7 +4562,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a><span class="go">At subvol snap4</span>
 </code></pre></div>
 <p>之后修改内容，创建新快照，并为 <code>btrfs send</code> 添加 <code>-p</code> 参数指定双方进行增量传输的基础快照：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test5&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/media/btrfs/subvol1<span class="w">  </span><span class="c1"># 修改 subvol1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="gp">$ </span>touch<span class="w"> </span>/media/btrfs/subvol1/test5<span class="w">  </span><span class="c1"># 修改 subvol1</span>
 <a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>snapshot<span class="w"> </span>-r<span class="w"> </span>/media/btrfs/subvol1<span class="w"> </span>/media/btrfs/snap5<span class="w">  </span><span class="c1"># 创建新的只读快照</span>
 <a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="gp">$ </span><span class="c1"># 查看 snap5 相对于 snap4 的变化</span>
 <a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap5<span class="w"> </span>-p<span class="w"> </span>/media/btrfs/snap4<span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>--dump
@@ -4618,7 +4622,7 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <p>相比于 <a href="../zfs/">ZFS</a> 的去重，Btrfs 需要依赖第三方工具扫描重复项，并将相关信息提交到内核处理。最常用的工具是 <a href="https://github.com/markfasheh/duperemove">duperemove</a> 和 <a href="https://github.com/Zygo/bees">bees</a>。前者适用于定时或者手动对 Btrfs（也支持 XFS）执行，而后者是专为 Btrfs 编写的 daemon，会在后台执行自动去重。可以根据实际工作负载的需求选择合适的方案。以 duperemove 为例：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>duperemove<span class="w"> </span>--hashfile<span class="o">=</span>example.hashfile<span class="w"> </span>-dhr<span class="w"> </span>/path/to/btrfs
 </code></pre></div>
-<p>即可扫描 <code>/path/to/btrfs</code> 下的文件，搜索重复的块并压缩，并将相关文件的哈希存储到 <code>example.hashfile</code> 中，在下次去重的时候加速。</p>
+<p>即可扫描 <code>/path/to/btrfs</code> 下的文件，搜索重复的块并去重，并将相关文件的哈希存储到 <code>example.hashfile</code> 中，在下次去重的时候加速。</p>
 <div class="admonition note">
 <p class="admonition-title">其他文件系统的去重</p>
 <p>除了 ZFS 自带去重功能，duperemove 支持 XFS 文件系统（因为 XFS 也提供了 <code>FIDEDUPRANGE</code> 的内核接口）以外，其他文件系统可以使用 <a href="https://codeberg.org/jbruchon/jdupes">jdupes</a>，搜索相同的文件，并且做 reflink 或者 hardlink。</p>
@@ -4671,7 +4675,7 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 </dd>
 <dt>关闭 CoW</dt>
 <dd>
-<p>对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对文件使用 <code>chattr +C</code> 命令关闭 CoW 特性。</p>
+<p>对于部分应用场景（例如数据库、虚拟机镜像），Btrfs 的 CoW 特性可能会带来性能问题。可以对未写入数据的文件使用 <code>chattr +C</code> 命令关闭 CoW 特性。如果对目录使用 <code>chattr +C</code>，那么其内部创建的新文件则会关闭 CoW。</p>
 </dd>
 </dl>
 <h3 id="zfs">ZFS<a class="headerlink" href="#zfs" title="Permanent link">&para;</a></h3>
@@ -4935,7 +4939,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月6日 20:10:43 UTC">2026年5月6日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月6日 20:33:48 UTC">2026年5月6日</span>
   </span>
 
     
