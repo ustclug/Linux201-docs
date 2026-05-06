@@ -774,6 +774,10 @@ $ stat -c '%d %n' /media/btrfs/ /media/btrfs/subvol1/ /media/btrfs/subvol2/ /med
 226 /media/btrfs/subvol3/
 ```
 
+!!! tip "想改名/修改 subvolume 父节点？"
+
+    直接 `mv` subvolume 对应目录即可！
+
 挂载时添加 `subvol=<path>` 或 `subvolid=<id>` 参数可以挂载指定的 subvolume。如果两个参数都不指定，则会挂载默认 subvolume。多个 subvolume 可以同时挂载到不同的挂载点。
 
 ```console
@@ -910,32 +914,32 @@ $ mkfs.btrfs btrfs-alt.img
 （输出省略）
 $ sudo mount btrfs-alt.img /media/btrfs-alt
 $ # 将 snap2 发送到新的文件系统
-$ sudo btrfs send /media/btrfs/snap2 | sudo btrfs receive /media/btrfs-alt/subvol1
+$ sudo btrfs send /media/btrfs/snap2 | sudo btrfs receive /media/btrfs-alt/
 At subvol /media/btrfs/snap2
-At subvol subvol1
+At subvol snap2
 $ sudo btrfs subvolume list /media/btrfs-alt
-ID 256 gen 11 top level 5 path subvol1
+ID 256 gen 10 top level 5 path snap2
 $ sudo umount /media/btrfs
 $ sudo umount /media/btrfs-alt
 ```
 
-通过管道传输，Btrfs 的流式传输功能大大简化了不同磁盘、文件系统甚至服务器之间的文件系统备份和迁移。假设发送端的只读 subvolume 为 `/media/btrfs/snap3`，接收端希望接受（并创建）`/media/btrfs/snap1` 这个 subvolume。
+通过管道传输，Btrfs 的流式传输功能大大简化了不同磁盘、文件系统甚至服务器之间的文件系统备份和迁移。假设发送端的只读 subvolume 为 `/media/btrfs/snap3`，接收端希望在 `/media/btrfs/` 里面接收（send/receive 时会保持 subvolume 的名字不变，可以在 `btrfs receive` 完成后改名）。
 
 ```console title="导出到文件，通过 NFS 跨服务器传输数据"
 $ sudo btrfs send /media/btrfs/snap3 -f /mnt/nfs/btrfs/subvol1  # 将快照导出为文件
 At subvol /media/btrfs/snap3
-$ sudo btrfs receive /media/btrfs/snap1 -f /mnt/nfs/btrfs/subvol1  # 在另一台共享存储的服务器上还原
-At subvol snap1
+$ sudo btrfs receive /media/btrfs/ -f /mnt/nfs/btrfs/subvol1  # 在另一台共享存储的服务器上还原
+At subvol snap3
 ```
 
 ```console title="通过 SSH 压缩传输到另一台服务器，需要安装 lz4"
-$ sudo btrfs send /media/btrfs/snap3 | lz4 | ssh another-server "lz4 -d | sudo btrfs receive /media/btrfs/snap1"
+$ sudo btrfs send /media/btrfs/snap3 | lz4 | ssh another-server "lz4 -d | sudo btrfs receive /media/btrfs/"
 At subvol /media/btrfs/snap3
 At subvol snap1
 ```
 
 ```console title="通过 TCP 传输数据，并用 pv 查看传输带宽"
-(receiver) $ nc -l -p 12345 | sudo btrfs receive /media/btrfs/snap1
+(receiver) $ nc -l -p 12345 | sudo btrfs receive /media/btrfs/
 (sender) $ sudo btrfs send /media/btrfs/snap3 | pv > /dev/tcp/receiver/12345
 ```
 
@@ -947,7 +951,7 @@ At subvol snap1
 
     默认情况下，与 `zfs send` 类似，`btrfs send` 会解压本地透明压缩过的数据再传输，很多时候这是在浪费带宽与 CPU。因此建议如果开启了透明压缩，`btrfs send` 总是添加 `--compressed-data` 参数，除非发送方或接收方的内核版本过低。
 
-Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在与源文件系统上同名且内容完全一致的快照，Btrfs 可以自动计算并传输两个快照的差异部分。这里依然以本地为示例，首先进行第一次传输：
+Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在此前收到，且内容未被修改的快照，Btrfs 可以自动计算并传输两个快照的差异部分。这里依然以本地为示例，首先进行第一次传输：
 
 ```console
 $ sudo mount -o subvolid=5 btrfs.img /media/btrfs  # 挂载整个文件系统
