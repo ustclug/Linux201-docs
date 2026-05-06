@@ -870,7 +870,7 @@ $ sudo mkdir /media/btrfs/recovered
 $ sudo btrfs subvolume snapshot /media/btrfs/snapshots/subvol1 /media/btrfs/recovered  # 还原快照
 Create a snapshot of '/media/btrfs/snapshots/subvol1' in '/media/btrfs/recovered/subvol1'
 $ sudo btrfs property set /media/btrfs/recovered/subvol1 ro false  # 将还原的 subvolume 设置为可写
-$ echo "test4" > /media/btrfs/recovered/subvol1  # 修改还原的 subvol1
+$ touch /media/btrfs/recovered/subvol1/test  # 向还原的 subvol1 添加文件
 $ sudo umount /media/btrfs
 ```
 
