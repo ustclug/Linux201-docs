@@ -10,7 +10,7 @@ icon: simple/caddy
 
 !!! success "本文已完成"
 
-Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。
+Caddy 是一个用 Go 编写的现代的 HTTP Web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。
 
 与 Nginx 相比，Caddy 确实更像是个玩具，但是更像是那种自带电池的玩具，更利于人类使用，可以快速搭建 Prototype 而不用花费太多时间在配置上。
 
@@ -22,6 +22,8 @@ Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+sudo chmod o+r /etc/apt/sources.list.d/caddy-stable.list
 sudo apt update
 sudo apt install caddy
 ```
@@ -36,13 +38,27 @@ sudo systemctl restart caddy
 
 默认的 `Caddyfile` 的目录在 `/etc/caddy/Caddyfile`，可以通过修改 `Caddyfile` 来配置 Caddy 的行为。修改 Caddyfile 之后，可以使用 `sudo systemctl reload caddy` 让 Caddy 重新加载配置，而无须重启服务。
 
-!!! note "Validate"
+!!! note "Caddyfile 验证与格式化"
 
     在修改配置文件后，可以通过如下命令检查 Caddyfile 格式（类似 `nginx -t`）：
 
     ```bash
     caddy validate --config /etc/caddy/Caddyfile
     ```
+
+    同时 Caddy 也支持格式化 Caddyfile：
+
+    ```bash
+    caddy fmt --overwrite --config /etc/caddy/Caddyfile
+    ```
+
+!!! note "Caddyfile 与 Caddy 配置"
+
+    在 Caddy v1 时，Caddyfile 是唯一配置 Caddy 的方法。但是目前的 Caddy v2 相比于 v1 发生了非常大的变化，其中尽管 Caddyfile 仍然是标准的配置方式（一部分语法有变化，参考[升级指南](https://caddyserver.com/docs/v2-upgrade)），但是 Caddy 实际识别的是 [JSON 格式](https://caddyserver.com/docs/json)的配置，对 Caddyfile（以及其他类型的配置）的支持则由 [config adapter](https://caddyserver.com/docs/config-adapters) 实现。
+
+    考虑目前的使用情况，以下配置均只考虑 Caddy v2。
+
+    同时，Caddy v2 默认还会在本地监听 2019 端口用来实时接收管理配置修改，详情可参考 [API](https://caddyserver.com/docs/api)。
 
 ## 常用配置 {#common-configuration}
 
@@ -53,9 +69,11 @@ sudo systemctl restart caddy
 ```caddy
 example.com {
     root /var/www
-    gzip
-    log /var/log/access.log
-    errors /var/log/error.log
+    file_server
+    encode zstd gzip
+    log {
+		output file /var/log/access.log
+	}
 }
 ```
 
@@ -63,7 +81,7 @@ example.com {
 
 ```caddy
 example.com {
-    proxy / localhost:8080
+    reverse_proxy localhost:8080
 }
 ```
 
@@ -73,8 +91,8 @@ example.com {
 
     ```caddy
     example.com {
-        proxy / localhost:8080 localhost:8081 {
-            policy round_robin
+        reverse_proxy localhost:8080 localhost:8081 {
+            lb_policy round_robin
         }
     }
     ```
