@@ -173,7 +173,7 @@ GRUB 在 UEFI 启动模式下的分区布局示例
 
 !!! tip "使用 GRUB Console 启动"
 
-    通常，GRUB 会通过 `/boot/grub/grub.cfg` 中配置好的 memuentry 生成一个可供用户选择的启动菜单，用户可以通过键盘上下方向键选择要启动的 menuentry，并按下回车键来启动。
+    通常，GRUB 会通过 `/boot/grub/grub.cfg` 中配置好的 menuentry 生成一个可供用户选择的启动菜单，用户可以通过键盘上下方向键选择要启动的 menuentry，并按下回车键来启动。
 
     但是，`grub.cfg` 文件通常是在系统安装过程中由 `grub-mkconfig` 生成的，而不是 GRUB 启动时动态生成的。因此，如果 `grub.cfg` 出现损坏，或者在修改了分区布局或者添加了新的内核版本后忘记/无法重新执行 `grub-mkconfig`，就可能因为错误/过时的 `grub.cfg` 文件而无法正常启动。这时候，你就需要在 GRUB Console 中手动输入命令来启动系统了。
 
