@@ -258,9 +258,9 @@ GRUB 在 UEFI 启动模式下的分区布局示例
     - `root=UUID=bfa1b11e-bcbb-4864-8752-b3718fc5b6e5` 参数指定了根文件系统所在的分区，这个 UUID 不是 GPT 分区的 UUID，而是文件系统自己的 UUID，因此无论是 MBR 还是 GPT 分区表，一般都可以通过 UUID 来指定根分区的位置。在上面的示例中，我们想要挂载的根分区是 `(hd1,gpt3)`，因此我们从 `ls -l` 的输出中找到了它的 UUID，并将它作为 `root` 参数的值传递给内核。
     - `rw` 参数则指定了根文件系统以读写模式挂载（如果系统是因为崩溃而退出的，并可能造成了文件系统的损坏，则可以修改为 `ro` 以只读模式挂载根文件系统，从而避免对文件系统造成进一步的损坏）。
 
-    你也可以加上 `loglevel=5 nowatchdoy` 等常见参数，就像在 `/etc/default/grub` 中的 `GRUB_CMDLINE_LINUX_DEFAULT` 变量中所设置的那样。
+    你也可以加上 `loglevel=5 nowatchdog` 等常见参数，就像在 `/etc/default/grub` 中的 `GRUB_CMDLINE_LINUX_DEFAULT` 变量中所设置的那样。
 
-    然后，你需要挂载 initramfs 文件：
+    然后，你需要加载 initramfs 文件：
 
     ```bash
     grub> initrd /initramfs-linux-cachyos.img
