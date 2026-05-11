@@ -3584,8 +3584,8 @@
 <li><code>root=UUID=bfa1b11e-bcbb-4864-8752-b3718fc5b6e5</code> 参数指定了根文件系统所在的分区，这个 UUID 不是 GPT 分区的 UUID，而是文件系统自己的 UUID，因此无论是 MBR 还是 GPT 分区表，一般都可以通过 UUID 来指定根分区的位置。在上面的示例中，我们想要挂载的根分区是 <code>(hd1,gpt3)</code>，因此我们从 <code>ls -l</code> 的输出中找到了它的 UUID，并将它作为 <code>root</code> 参数的值传递给内核。</li>
 <li><code>rw</code> 参数则指定了根文件系统以读写模式挂载（如果系统是因为崩溃而退出的，并可能造成了文件系统的损坏，则可以修改为 <code>ro</code> 以只读模式挂载根文件系统，从而避免对文件系统造成进一步的损坏）。</li>
 </ul>
-<p>你也可以加上 <code>loglevel=5 nowatchdoy</code> 等常见参数，就像在 <code>/etc/default/grub</code> 中的 <code>GRUB_CMDLINE_LINUX_DEFAULT</code> 变量中所设置的那样。</p>
-<p>然后，你需要挂载 initramfs 文件：</p>
+<p>你也可以加上 <code>loglevel=5 nowatchdog</code> 等常见参数，就像在 <code>/etc/default/grub</code> 中的 <code>GRUB_CMDLINE_LINUX_DEFAULT</code> 变量中所设置的那样。</p>
+<p>然后，你需要加载 initramfs 文件：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
 </code></pre></div>
 <p>其中，<code>/initramfs-linux-cachyos.img</code> 是 initramfs 文件在 <code>(hd1,gpt1)</code> 中的路径。</p>
@@ -3685,7 +3685,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月11日 14:09:57 UTC">2026年5月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月11日 18:21:51 UTC">2026年5月11日</span>
   </span>
 
     
@@ -3704,6 +3704,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
@@ -3712,11 +3717,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
