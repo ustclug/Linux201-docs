@@ -3086,15 +3086,17 @@
 <div class="admonition success">
 <p class="admonition-title">本文已完成</p>
 </div>
-<p>Caddy 是一个用 Go 编写的 HTTP/2 web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。</p>
+<p>Caddy 是一个用 Go 编写的现代的 HTTP Web 服务器，具有自动 HTTPS 功能。它的设计目标是简单、易于使用。</p>
 <p>与 Nginx 相比，Caddy 确实更像是个玩具，但是更像是那种自带电池的玩具，更利于人类使用，可以快速搭建 Prototype 而不用花费太多时间在配置上。</p>
 <h2 id="installation">安装<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <p>以 Debian 为例：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>debian-keyring<span class="w"> </span>debian-archive-keyring<span class="w"> </span>apt-transport-https<span class="w"> </span>curl
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>-1sLf<span class="w"> </span><span class="s1">&#39;https://dl.cloudsmith.io/public/caddy/stable/gpg.key&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>gpg<span class="w"> </span>--dearmor<span class="w"> </span>-o<span class="w"> </span>/usr/share/keyrings/caddy-stable-archive-keyring.gpg
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>curl<span class="w"> </span>-1sLf<span class="w"> </span><span class="s1">&#39;https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>/etc/apt/sources.list.d/caddy-stable.list
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>caddy
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>sudo<span class="w"> </span>chmod<span class="w"> </span>o+r<span class="w"> </span>/usr/share/keyrings/caddy-stable-archive-keyring.gpg
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>sudo<span class="w"> </span>chmod<span class="w"> </span>o+r<span class="w"> </span>/etc/apt/sources.list.d/caddy-stable.list
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>sudo<span class="w"> </span>apt<span class="w"> </span>update
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>caddy
 </code></pre></div>
 <p>通过以上方法安装的 Caddy 会默认配置 systemd 服务，可以通过 <code>systemctl</code> 来管理：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>start<span class="w"> </span>caddy
@@ -3103,42 +3105,53 @@
 </code></pre></div>
 <p>默认的 <code>Caddyfile</code> 的目录在 <code>/etc/caddy/Caddyfile</code>，可以通过修改 <code>Caddyfile</code> 来配置 Caddy 的行为。修改 Caddyfile 之后，可以使用 <code>sudo systemctl reload caddy</code> 让 Caddy 重新加载配置，而无须重启服务。</p>
 <div class="admonition note">
-<p class="admonition-title">Validate</p>
+<p class="admonition-title">Caddyfile 验证与格式化</p>
 <p>在修改配置文件后，可以通过如下命令检查 Caddyfile 格式（类似 <code>nginx -t</code>）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>caddy<span class="w"> </span>validate<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
 </code></pre></div>
+<p>同时 Caddy 也支持格式化 Caddyfile：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>caddy<span class="w"> </span>fmt<span class="w"> </span>--overwrite<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
+</code></pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Caddyfile 与 Caddy 配置</p>
+<p>在 Caddy v1 时，Caddyfile 是唯一配置 Caddy 的方法。但是目前的 Caddy v2 相比于 v1 发生了非常大的变化，其中尽管 Caddyfile 仍然是标准的配置方式（一部分语法有变化，参考<a href="https://caddyserver.com/docs/v2-upgrade">升级指南</a>），但是 Caddy 实际识别的是 <a href="https://caddyserver.com/docs/json">JSON 格式</a>的配置，对 Caddyfile（以及其他类型的配置）的支持则由 <a href="https://caddyserver.com/docs/config-adapters">config adapter</a> 实现。</p>
+<p>考虑目前的使用情况，以下配置均只考虑 Caddy v2。</p>
+<p>同时，Caddy v2 默认还会在本地监听 2019 端口用来实时接收管理配置修改，详情可参考 <a href="https://caddyserver.com/docs/api">API</a>。</p>
 </div>
 <h2 id="common-configuration">常用配置<a class="headerlink" href="#common-configuration" title="Permanent link">&para;</a></h2>
 <p>以下是一些常用的 Caddyfile 配置示例：</p>
 <h3 id="static-file-server">静态文件服务器<a class="headerlink" href="#static-file-server" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>example.com {
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    root /var/www
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    gzip
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    log /var/log/access.log
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    errors /var/log/error.log
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>example.com {
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    root /var/www
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    file_server
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    encode zstd gzip
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    log {
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        output file /var/log/access.log
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    }
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>}
 </code></pre></div>
 <h3 id="reverse-proxy">反向代理<a class="headerlink" href="#reverse-proxy" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>example.com {
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    proxy / localhost:8080
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>example.com {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    reverse_proxy localhost:8080
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>}
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Simple LB</p>
 <p>使用如下配置可做简单的 Load Balance：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>example.com {
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    proxy / localhost:8080 localhost:8081 {
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>        policy round_robin
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    }
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>example.com {
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    reverse_proxy localhost:8080 localhost:8081 {
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>        lb_policy round_robin
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    }
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>}
 </code></pre></div>
 </div>
 <h3 id="abort-unconfigured-domains">阻止 Caddy 对未配置的域名进行 HTTPS 跳转<a class="headerlink" href="#abort-unconfigured-domains" title="Permanent link">&para;</a></h3>
 <p>Caddy 默认情况下会对所有的域名进行 HTTPS 跳转（HTTP 308），即使对应的域名在 Caddyfile 中不存在。一些特定地区或环境的监管要求 HTTP 服务器对未备案登记的域名的请求拒绝响应，这时可以使用这种配置。</p>
 <p>可以在配置中添加以下内容：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>http:// {
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    abort
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>}
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>http:// {
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    abort
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>}
 </code></pre></div>
 <p>使得 Caddy 拒绝在 80 端口对所有未配置的域名提供服务。</p>
 <!--
@@ -3196,7 +3209,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年11月30日 11:05:32 UTC">2025年11月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月11日 18:59:21 UTC">2026年5月11日</span>
   </span>
 
     
@@ -3215,14 +3228,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
         <a href="https://github.com/tiankaima" class="md-author" title="@tiankaima">
