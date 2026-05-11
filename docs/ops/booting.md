@@ -171,6 +171,122 @@ GRUB 在 BIOS 启动模式下的分区布局示例[^grub-bios-partition-layout]
 GRUB 在 UEFI 启动模式下的分区布局示例
 {: .caption }
 
+!!! tip "使用 GRUB Console 启动"
+
+    通常，GRUB 会通过 `/boot/grub/grub.cfg` 中配置好的 memuentry 生成一个可供用户选择的启动菜单，用户可以通过键盘上下方向键选择要启动的 menuentry，并按下回车键来启动。
+
+    但是，`grub.cfg` 文件通常是在系统安装过程中由 `grub-mkconfig` 生成的，而不是 GRUB 启动时动态生成的。因此，如果 `grub.cfg` 出现损坏，或者在修改了分区布局或者添加了新的内核版本后忘记/无法重新执行 `grub-mkconfig`，就可能因为错误/过时的 `grub.cfg` 文件而无法正常启动。这时候，你就需要在 GRUB Console 中手动输入命令来启动系统了。
+
+    GRUB Console 是 GRUB 提供的交互式命令行界面，类似于 Linux 中的 Shell，提供了一些基本的命令用于手动加载和引导内核。需要注意的是，GRUB Console 本身并不是严格意义上的 Unix Shell，一些常见的功能，比如管道（`|`）和重定向（`>`）等是无法使用的。
+    
+    进入 GRUB Console 的方法是在 GRUB 启动界面按下 `c` 键，或者在 GRUB 启动界面按下 `e` 键进入编辑模式后按下 `Ctrl + c` 键。
+
+    进入 GRUB Console 后，你可以使用 `ls` 命令来查看 GRUB 可以访问的设备和分区：
+
+    ```bash
+    grub> ls 
+    (proc) (hd0) (hd0,gpt1) (hd0,gpt2) (hd0,gpt3) (hd1) (hd1,gpt1) (hd1,gpt2) (hd1,gpt3)
+    ```
+
+    而使用 `ls -l` 或者 `ls` 某一项来详细查看每个设备和分区的具体信息：
+
+    ```bash
+    grub> ls -l
+    Device proc: Filesystem type procfs - Sector size 512B - Total size 0KiB
+    Device hd0: No known filesystem detected - Sector size 512B - Total size 488386584KiB
+        Partition hd0,gpt3: No known filesystem detected - Partition start at 470631811.5KiB - Total size 17754739.5KiB
+        Partition hd0,gpt2: Filesystem type ext* - Label 'root' - Last modification time 2026-03-21 12:46:39 Saturday, UUID 093a7ce2-f355-409c-b8a9-00301Bdc75ce - Partition start at 1058624KiB - Total size 469581187.5KiB
+        Partition hd0,gpt1: Filesystem type fat, UUID 2703-3208 - Partition start at 2048KiB - Total size 1048576KiB
+    Device hd1: No known filesystem detected - Sector size 512B - Total size 976762584KiB
+        Partition hd1,gpt3: Filesystem type ext* - Last modification time 2026-05-11 12:06:19 Monday, UUID bfa1b11e-bcbb-4864-8752-b3718fc5b6e5 - Partition start at 9430200KiB - Total size 967323640KiB
+        Partition hd1,gpt2: No known filesystem detected - Partition start at 1049600KiB - Total size 8388608KiB
+        Partition hd1,gpt1: Filesystem type fat, UUID FB74-5D11 - Partition start at 1024KiB - Total size 1048576KiB
+    ```
+
+    ```bash
+    grub> ls (hd1,gpt3)
+        Partition hd1,gpt3: Filesystem type ext* - Last modification time 2026-05-11 12:06:19 Monday, UUID bfa1b11e-bcbb-4864-8752-b3718fc5b6e5 - Partition start at 9430200KiB - Total size 967323640KiB
+    ```
+
+    从输出可以看出，这台机器上有两块磁盘（hd0 和 hd1），每块磁盘上都有一个 EFI 系统分区（hd0,gpt1 和 hd1,gpt1），一个 swap 分区（hd0,gpt3 和 hd1,gpt2，因为没有文件系统所以是未知文件系统），以及一个 ext4 分区（hd0,gpt2 和 hd1,gpt3，作为各自的根分区）。
+
+    你还可以通过 `ls` 查看每个分区内的文件，比如：
+
+    ```bash
+    grub> ls (hd1,gpt1)/
+    intel-ucode.img vmlinuz-linux-cachyos grub/ efi/ initramfs-linux-cachyos.img
+    ```
+
+    ```bash
+    grub> ls (hd1,gpt1)/efi
+    arch/
+    ```
+
+    ```bash
+    grub> ls (hd1,gpt3)/
+    lost+found/ boot/ var/ dev/ run/ etc/ tmp/ sys/ proc/ usr/ bin home/ lib lib64 mnt/ opt/ root/ sbin srv/
+    ```
+
+    就像在 Linux 中一样，这样可以方便你找到内核文件和根分区所在的位置，从而方便接下来的手动引导。
+
+    为了引导内核，首先你需要找到你要启动的内核文件和 initramfs 文件所在的分区，比如，在上面的示例中，我想要加载 `vmlinuz-linux-cachyos` 这个内核文件和 `initramfs-linux-cachyos.img` 这个 initramfs 文件，那么它们所在的分区就是 `(hd1,gpt1)`。
+
+    此时，你需要设置 `root` 环境变量为该分区：
+
+    ```bash
+    grub> set root=(hd1,gpt1)
+    ```
+
+    这样，文件路径的默认分区就会变成 `(hd1,gpt1)`，比如：
+
+    ```bash
+    grub> ls /
+    intel-ucode.img vmlinuz-linux-cachyos grub/ efi/ initramfs-linux-cachyos.img
+    ```
+
+    之后指定内核文件的时候也不需要加上指定分区的前缀。
+
+    接着，你需要加载内核文件，并提供内核参数：
+
+    ```bash
+    grub> linux /vmlinuz-linux-cachyos root=UUID=bfa1b11e-bcbb-4864-8752-b3718fc5b6e5 rw
+    ```
+
+    其中：
+
+    - `/vmlinuz-linux-cachyos` 是内核文件在 `(hd1,gpt1)` 中的路径
+    - `root=UUID=bfa1b11e-bcbb-4864-8752-b3718fc5b6e5` 参数指定了根文件系统所在的分区，这个 UUID 不是 GPT 分区的 UUID，而是文件系统自己的 UUID，因此无论是 MBR 还是 GPT 分区表，一般都可以通过 UUID 来指定根分区的位置。在上面的示例中，我们想要挂载的根分区是 `(hd1,gpt3)`，因此我们从 `ls -l` 的输出中找到了它的 UUID，并将它作为 `root` 参数的值传递给内核。
+    - `rw` 参数则指定了根文件系统以读写模式挂载（如果系统是因为崩溃而退出的，并可能造成了文件系统的损坏，则可以修改为 `ro` 以只读模式挂载根文件系统，从而避免对文件系统造成进一步的损坏）。
+
+    你也可以加上 `loglevel=5 nowatchdoy` 等常见参数，就像在 `/etc/default/grub` 中的 `GRUB_CMDLINE_LINUX_DEFAULT` 变量中所设置的那样。
+
+    然后，你需要挂载 initramfs 文件：
+
+    ```bash
+    grub> initrd /initramfs-linux-cachyos.img
+    ```
+
+    其中，`/initramfs-linux-cachyos.img` 是 initramfs 文件在 `(hd1,gpt1)` 中的路径。
+
+    最后，你就可以通过 `boot` 命令来启动内核了：
+
+    ```bash
+    grub> boot
+    ```
+
+    做个总结，完整的通过 GRUB Console 启动内核的命令如下所示：
+
+    ```bash
+    grub> set root=(hd1,gpt1)
+    grub> linux /vmlinuz-linux-cachyos root=UUID=bfa1b11e-bcbb-4864-8752-b3718fc5b6e5 rw
+    grub> initrd /initramfs-linux-cachyos.img
+    grub> boot
+    ```
+
+    而为了能够填写正确的信息，则需要善用 `ls` 命令来进行查询。
+
+    除此之外，GRUB Console 还提供了其他许多实用命令，比如，`search` 命令可以用来搜索指定文件或者分区，`insmod` 命令可以用来加载 GRUB 模块，`configfile` 命令可以用来加载一个新的 `grub.cfg` 文件等等。更多命令的使用方法可以参考 [GRUB Manual](https://www.gnu.org/software/grub/manual/grub/grub.html)。
+
 ### systemd-boot
 
 ## initramfs
