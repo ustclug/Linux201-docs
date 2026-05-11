@@ -330,12 +330,12 @@ musl 追求简洁、可移植（一大好处是：静态链接变得极其方便
 
 ```sh
 # 程序 1 在 eth0 接口上注册 DNS 服务器
-echo <<EOF | resolvconf -a eth0
+cat <<EOF | resolvconf -a eth0
 nameserver 192.168.1.1
 EOF
 
 # 程序 2 在 vpn0 接口上注册 DNS 服务器
-echo <<EOF | resolvconf -a vpn0
+cat <<EOF | resolvconf -a vpn0
 nameserver 10.1.1.1
 EOF
 
