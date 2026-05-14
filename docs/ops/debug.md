@@ -1019,7 +1019,9 @@ bpftrace 中包含了几种内核态的「探针」（probe）：
 - kprobe：默认在函数入口处插入 probe，也可以指定偏移量，从而在函数的任意位置插入 probe
 - kretprobe：在函数返回时插入 probe，可以获取函数的返回值，不能获取函数的参数
 - tracepoint：在内核预先定义的 tracepoint 处插入 probe
-- kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以获取到类型信息，kretfunc 也可以获取函数的参数
+- kfunc/kretfunc：在函数调用/返回时插入 probe，相比于 kprobe/kretprobe，不能在任意位置插入，但是性能更好，并且可以结合 BTF 获取到类型信息；kretfunc 也可以获取函数的参数。
+
+    kfunc / kretfunc 在 bpftrace 中通常被记作 fentry / fexit。
 
 使用 `bpftrace -l` 可以获取到当前系统支持的所有 probe。一般来说，内核版本越新，支持越好。
 

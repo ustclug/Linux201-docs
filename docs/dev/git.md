@@ -789,9 +789,9 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
     - 这样的链接可以在 Issue 中直接粘贴，会被以代码框的形式渲染到 Issue 中，方便其他人迅速了解问题。
     - 点击后也可以直接复制地址栏中的 URL，这样的链接总是指向某个 branch 或者 tag 的，而不是特定 commit，但这样的作法可能会导致链接失效。
 
-#### GitHub Flavor Markdown {#github-gfm}
+#### GitHub Flavored Markdown {#github-gfm}
 
-正如其他编辑器对 Markdown 的支持一样，GitHub 支持一个 Markdown 方言（超集）的写法，称为 [GitHub Flavor Markdown](https://github.github.com/gfm/)。
+正如其他编辑器对 Markdown 的支持一样，GitHub 支持一个 Markdown 方言（超集）的写法，称为 [GitHub Flavored Markdown](https://github.github.com/gfm/)。
 
 我们在这里介绍一些你可能感兴趣的 feature：
 
@@ -799,7 +799,7 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 
     Mermaid 是一种简单且强大的关系图/流程图语法，例如可以通过如下方式创建一个简单的关系图：
 
-    ````txt
+    ````markdown
     ```mermaid
     graph LR;
         A-->B;
@@ -837,9 +837,9 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 
 #### Issue 模板 {#github-issue-template}
 
-对于大型项目，使用 Issue template 可以使得 Issue 更加规范化，例如，可以在 `.github/ISSUE_TEMPLATE/bug_report.yml` 中添加如下内容：
+对于大型项目，使用 Issue template 可以使得 Issue 更加规范化。例如，你可以在仓库的 `.github/ISSUE_TEMPLATE/bug_report.yml` 文件中添加如下内容：
 
-```yaml
+```yaml title=".github/ISSUE_TEMPLATE/bug_report.yml"
 name: Bug Report
 about: Create a report to help us improve
 labels:

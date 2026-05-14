@@ -179,7 +179,7 @@ GRUB 在 UEFI 启动模式下的分区布局示例
 
     GRUB Console 是 GRUB 提供的交互式命令行界面，类似于 Linux 中的 Shell，提供了一些基本的命令用于手动加载和引导内核。需要注意的是，GRUB Console 本身并不是严格意义上的 Unix Shell，一些常见的功能，比如管道（`|`）和重定向（`>`）等是无法使用的。
     
-    进入 GRUB Console 的方法是在 GRUB 启动界面按下 `c` 键，或者在 GRUB 启动界面按下 `e` 键进入编辑模式后按下 `Ctrl + c` 键。
+    进入 GRUB Console 的方法是在 GRUB 启动界面按下 `c` 键，或者在 GRUB 启动界面按下 `c` 键进入编辑模式后按下 `Ctrl + C` 键。
 
     进入 GRUB Console 后，你可以使用 `ls` 命令来查看 GRUB 可以访问的设备和分区：
 
@@ -188,7 +188,7 @@ GRUB 在 UEFI 启动模式下的分区布局示例
     (proc) (hd0) (hd0,gpt1) (hd0,gpt2) (hd0,gpt3) (hd1) (hd1,gpt1) (hd1,gpt2) (hd1,gpt3)
     ```
 
-    而使用 `ls -l` 或者 `ls` 某一项来详细查看每个设备和分区的具体信息：
+    而使用 `ls -l` 或者 `ls` 某一项来详细查看每个磁盘和分区的具体信息：
 
     ```bash
     grub> ls -l
