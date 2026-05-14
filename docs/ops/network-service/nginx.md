@@ -1114,7 +1114,7 @@ rewrite ^/flathub/(.*)$ $scheme://dl.flathub.org/repo/$1 redirect;
 rewrite ^/fedora/linux/(.*?)$ /fedora/$1 permanent;
 ```
 
-可以看到，`rewrite` 指令的第一个参数是一个正则表达式，用于匹配请求的 URI。第二个参数是改写后的 URI，可以使用正则表达式中的捕获组（例如 `$1`、`$2` 等）来引用匹配到的内容。第三个参数是可选的 flag：
+可以看到，`rewrite` 指令的第一个参数是一个正则表达式，用于匹配请求的 URI。第二个参数是改写后的 URI，可以使用正则表达式中的捕获组（例如 `$1`、`$2` 等，也支持 `(?<name>pattern)` 格式的命名捕获组）来引用匹配到的内容。第三个参数是可选的 flag：
 
 - `last`：不再执行当前块中后续 rewrite 模块的指令，并重新进行 `location` 匹配。
 - `break`：不再执行当前块中后续 rewrite 模块的指令，但不会重新进行 `location` 匹配。
