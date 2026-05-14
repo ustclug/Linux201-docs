@@ -3534,12 +3534,12 @@
 <p>通常，GRUB 会通过 <code>/boot/grub/grub.cfg</code> 中配置好的 menuentry 生成一个可供用户选择的启动菜单，用户可以通过键盘上下方向键选择要启动的 menuentry，并按下回车键来启动。</p>
 <p>但是，<code>grub.cfg</code> 文件通常是在系统安装过程中由 <code>grub-mkconfig</code> 生成的，而不是 GRUB 启动时动态生成的。因此，如果 <code>grub.cfg</code> 出现损坏，或者在修改了分区布局或者添加了新的内核版本后忘记/无法重新执行 <code>grub-mkconfig</code>，就可能因为错误/过时的 <code>grub.cfg</code> 文件而无法正常启动。这时候，你就需要在 GRUB Console 中手动输入命令来启动系统了。</p>
 <p>GRUB Console 是 GRUB 提供的交互式命令行界面，类似于 Linux 中的 Shell，提供了一些基本的命令用于手动加载和引导内核。需要注意的是，GRUB Console 本身并不是严格意义上的 Unix Shell，一些常见的功能，比如管道（<code>|</code>）和重定向（<code>&gt;</code>）等是无法使用的。</p>
-<p>进入 GRUB Console 的方法是在 GRUB 启动界面按下 <code>c</code> 键，或者在 GRUB 启动界面按下 <code>e</code> 键进入编辑模式后按下 <code>Ctrl + c</code> 键。</p>
+<p>进入 GRUB Console 的方法是在 GRUB 启动界面按下 <code>c</code> 键，或者在 GRUB 启动界面按下 <code>c</code> 键进入编辑模式后按下 <code>Ctrl + C</code> 键。</p>
 <p>进入 GRUB Console 后，你可以使用 <code>ls</code> 命令来查看 GRUB 可以访问的设备和分区：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="o">(</span>proc<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt3<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
 </code></pre></div>
-<p>而使用 <code>ls -l</code> 或者 <code>ls</code> 某一项来详细查看每个设备和分区的具体信息：</p>
+<p>而使用 <code>ls -l</code> 或者 <code>ls</code> 某一项来详细查看每个磁盘和分区的具体信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>-l
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Device<span class="w"> </span>proc:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>procfs<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>0KiB
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Device<span class="w"> </span>hd0:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>488386584KiB
@@ -3685,7 +3685,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月11日 18:21:51 UTC">2026年5月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月14日 18:25:00 UTC">2026年5月14日</span>
   </span>
 
     
