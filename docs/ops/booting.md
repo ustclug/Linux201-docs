@@ -123,14 +123,16 @@ Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U
 
     内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置[^special-command-line-options]。
 
-    除此之外，对于内核不认识的内核参数，比如 Systemd 的 `systemd.unit=...`、LILO/GRUB 传递的 `BOOT_IMAGE=...` 等自定义参数，内核会按照以下规则进行处理：
+    对于内核不认识的内核参数，比如 Systemd 的 `systemd.unit=...` 和 LILO/GRUB 传递的 `BOOT_IMAGE=...` 等自定义参数，内核会按照以下规则进行处理：
 
     - 如果参数起始字符为 `BOOT_IMAGE=` 或 `kexec`：认为是 Bootloader 传过来的参数，忽略
     - 如果参数里带有 `.`：认为是暂未被使用的内核模块参数，忽略
     - 如果参数里不带有 `.` 且带有 `=`：作为环境变量传给 init 进程
     - 如果参数里不带有 `.` 且不带有 `=`：作为命令行参数传给 init 进程
 
-    具体执行的代码逻辑位于 `init/main.c` 的 [`unknown_bootoption`](https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L546) 函数。
+    具体执行的代码逻辑位于 `init/main.c` 的 [`unknown_bootoption`](https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L544) 函数。
+
+    除此之外，`--` 之后的所有命令行参数都会作为命令行参数传给 init 进程。
 
     不论内核如何处理命令行参数，在进入系统后，所有程序都可以通过查看 `/proc/cmdline` 文件来获取当前内核的所有命令行参数，例如：
 
