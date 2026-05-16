@@ -3783,13 +3783,7 @@
 </li>
 </ul>
 <p>如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 <code>e</code> 键，编辑对应的启动项，删除 <code>linux</code> 这一行的 <code>quiet</code> 和 <code>splash</code> 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。</p>
-<p>此外一些较为常见的与显示与内核模块的调试用参数包括：</p>
-<ul>
-<li><code>&lt;显卡模块名&gt;.modeset=0</code>：不允许对应的显卡驱动设置 <a href="../../advanced/desktop/#x-gpu">KMS 显示模式</a>，例如 <code>nouveau.modeset=0</code>、<code>amdgpu.modeset=0</code> 等。</li>
-<li><code>nomodeset</code>：完全关闭 KMS 显示模式设置。对一部分显卡配置来说，在进入 LiveCD 安装系统时会需要添加相关参数，完全禁用 GPU 相关驱动以避免出现黑屏等显示异常的情况。</li>
-<li><code>initcall_blacklist=&lt;模块初始化函数&gt;</code>：不允许某个被编译到内核中（built-in）的模块在开机时加载。例如在 <code>algif_aead</code> 模块<strong>内置</strong>在内核中时，缓解 <a href="https://copy.fail">Copy Fail 漏洞（CVE-2026-31431）</a>的内核启动参数 <code>initcall_blacklist=algif_aead_init</code>，即会禁用 <a href="https://elixir.bootlin.com/linux/v6.19/source/crypto/af_alg.c#L1300"><code>algif_aead_init</code></a> 函数运行。</li>
-<li><code>module_blacklist=&lt;模块名&gt;</code>：不允许加载指定的外部模块。</li>
-</ul>
+<p>此外一些常见的调试用参数可以参考<a href="../booting/#bootloader">系统启动程序</a>中对于常见内核命令行参数的介绍。</p>
 <p>诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。或者编辑启动项，添加 <code>init=/bin/bash</code> 也可以。</p>
 </div>
 <h2 id="status-and-logs">服务状态与日志<a class="headerlink" href="#status-and-logs" title="Permanent link">&para;</a></h2>
@@ -4768,7 +4762,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月15日 21:21:56 UTC">2026年5月15日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月16日 13:43:48 UTC">2026年5月16日</span>
   </span>
 
     
@@ -4787,6 +4781,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
+          
+          <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
+        </a>
+      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
@@ -4802,16 +4801,11 @@ Do not link to a "generic" man page for these commands -->
           <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
         </a>
       
-        <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">
-          
-          <img src="https://avatars.githubusercontent.com/in/15368?v=4&size=72" alt="github-actions[bot]">
-        </a>
-      
       
       
         
           <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/ops/debug.md" class="md-author md-author--more">
-            +2
+            +3
           </a>
         
       

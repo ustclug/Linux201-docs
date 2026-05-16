@@ -3504,14 +3504,15 @@
 <div class="admonition note">
 <p class="admonition-title">常见内核命令行参数</p>
 <p>内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置<sup id="fnref:special-command-line-options"><a class="footnote-ref" href="#fn:special-command-line-options">3</a></sup>。</p>
-<p>除此之外，对于内核不认识的内核参数，比如 Systemd 的 <code>systemd.unit=...</code>、LILO/GRUB 传递的 <code>BOOT_IMAGE=...</code> 等自定义参数，内核会按照以下规则进行处理：</p>
+<p>对于内核不认识的内核参数，比如 Systemd 的 <code>systemd.unit=...</code> 和 LILO/GRUB 传递的 <code>BOOT_IMAGE=...</code> 等自定义参数，内核会按照以下规则进行处理：</p>
 <ul>
 <li>如果参数起始字符为 <code>BOOT_IMAGE=</code> 或 <code>kexec</code>：认为是 Bootloader 传过来的参数，忽略</li>
 <li>如果参数里带有 <code>.</code>：认为是暂未被使用的内核模块参数，忽略</li>
 <li>如果参数里不带有 <code>.</code> 且带有 <code>=</code>：作为环境变量传给 init 进程</li>
 <li>如果参数里不带有 <code>.</code> 且不带有 <code>=</code>：作为命令行参数传给 init 进程</li>
 </ul>
-<p>具体执行的代码逻辑位于 <code>init/main.c</code> 的 <a href="https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L546"><code>unknown_bootoption</code></a> 函数。</p>
+<p>具体执行的代码逻辑位于 <code>init/main.c</code> 的 <a href="https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L544"><code>unknown_bootoption</code></a> 函数。</p>
+<p>除此之外，<code>--</code> 之后的所有命令行参数都会作为命令行参数传给 init 进程。</p>
 <p>不论内核如何处理命令行参数，在进入系统后，所有程序都可以通过查看 <code>/proc/cmdline</code> 文件来获取当前内核的所有命令行参数，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span>cat<span class="w"> </span>/proc/cmdline<span class="w"> </span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nv">BOOT_IMAGE</span><span class="o">=</span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>eea8de7e-b37f-4b3b-b530-1003eeab9746<span class="w"> </span>rw<span class="w"> </span><span class="nv">rootflags</span><span class="o">=</span><span class="nv">subvol</span><span class="o">=</span>@<span class="w"> </span><span class="nv">loglevel</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>nowatchdog<span class="w"> </span><span class="nv">intel_iommu</span><span class="o">=</span>on<span class="w"> </span><span class="nv">iommu</span><span class="o">=</span>pt
@@ -3712,7 +3713,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月16日 13:24:53 UTC">2026年5月16日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月16日 13:46:01 UTC">2026年5月16日</span>
   </span>
 
     
