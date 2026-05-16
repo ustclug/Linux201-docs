@@ -3501,6 +3501,30 @@
 <p>这是因为，Firmware 的设计目标只是去初始化硬件并提供一个基本的运行环境，它需要尽可能不去关心上层运行的程序是什么样的，不论是一个 Linux 系统，还是一个 Windows 系统，又或者只是一个运行在裸机上的打印 Hello World 到屏幕上的简单程序。</p>
 <p>而 Bootloader 的设计目标则是去负责初始化操作系统所需要的<strong>初始状态</strong>，比如对于 Linux 系统来说，Kernel 和 initramfs 需要被加载进内存，需要在指定位置填写好内核参数从而指定某些内核功能的启用等等。这些都需要一个单独的程序来完成，靠 Firmware 是无法胜任的。</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">常见内核命令行参数</p>
+<p>内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置<sup id="fnref:special-command-line-options"><a class="footnote-ref" href="#fn:special-command-line-options">3</a></sup>。</p>
+<p>除此之外，对于内核不认识的内核参数，比如 Systemd 的 <code>systemd.unit=...</code>、LILO/GRUB 传递的 <code>BOOT_IMAGE=...</code> 等自定义参数，内核会按照以下规则进行处理：</p>
+<ul>
+<li>如果参数起始字符为 <code>BOOT_IMAGE=</code> 或 <code>kexec</code>：认为是 Bootloader 传过来的参数，忽略</li>
+<li>如果参数里带有 <code>.</code>：认为是暂未被使用的内核模块参数，忽略</li>
+<li>如果参数里不带有 <code>.</code> 且带有 <code>=</code>：作为环境变量传给 init 进程</li>
+<li>如果参数里不带有 <code>.</code> 且不带有 <code>=</code>：作为命令行参数传给 init 进程</li>
+</ul>
+<p>具体执行的代码逻辑位于 <code>init/main.c</code> 的 <a href="https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L546"><code>unknown_bootoption</code></a> 函数。</p>
+<p>不论内核如何处理命令行参数，在进入系统后，所有程序都可以通过查看 <code>/proc/cmdline</code> 文件来获取当前内核的所有命令行参数，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span>cat<span class="w"> </span>/proc/cmdline<span class="w"> </span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nv">BOOT_IMAGE</span><span class="o">=</span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>eea8de7e-b37f-4b3b-b530-1003eeab9746<span class="w"> </span>rw<span class="w"> </span><span class="nv">rootflags</span><span class="o">=</span><span class="nv">subvol</span><span class="o">=</span>@<span class="w"> </span><span class="nv">loglevel</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>nowatchdog<span class="w"> </span><span class="nv">intel_iommu</span><span class="o">=</span>on<span class="w"> </span><span class="nv">iommu</span><span class="o">=</span>pt
+</code></pre></div>
+<p>一些常见的内核命令行参数如下所示：</p>
+<ul>
+<li><code>&lt;显卡模块名&gt;.modeset=0</code>：不允许对应的显卡驱动设置 <a href="../../advanced/desktop/#x-gpu">KMS 显示模式</a>，例如 <code>nouveau.modeset=0</code>、<code>amdgpu.modeset=0</code> 等。</li>
+<li><code>nomodeset</code>：完全关闭 KMS 显示模式设置。对一部分显卡配置来说，在进入 LiveCD 安装系统时会需要添加相关参数，完全禁用 GPU 相关驱动以避免出现黑屏等显示异常的情况。</li>
+<li><code>initcall_blacklist=&lt;模块初始化函数&gt;</code>：不允许某个被编译到内核中（built-in）的模块在开机时加载。例如在 <code>algif_aead</code> 模块<strong>内置</strong>在内核中时，缓解 <a href="https://copy.fail">Copy Fail 漏洞（CVE-2026-31431）</a>的内核启动参数 <code>initcall_blacklist=algif_aead_init</code>，即会禁用 <a href="https://elixir.bootlin.com/linux/v6.19/source/crypto/af_alg.c#L1300"><code>algif_aead_init</code></a> 函数运行。</li>
+<li><code>module_blacklist=&lt;模块名&gt;</code>：不允许加载指定的外部模块。</li>
+</ul>
+<p>更多内核命令行参数见 <a href="https://docs.kernel.org/admin-guide/kernel-parameters.html">Linux 内核文档</a>。</p>
+</div>
 <h3 id="grub">GRUB<a class="headerlink" href="#grub" title="Permanent link">&para;</a></h3>
 <p>GRUB（GRand Unified Bootloader）是目前应用最广泛的 Linux bootloader，同时支持 BIOS 启动模式和 UEFI 启动模式，并且以 BIOS 模式启动时 GRUB 可以被安装在 GPT 分区表中。</p>
 <p>GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分区及 RAID 配置形式，或者通过 TFTP 或 HTTP 从网络中加载文件，甚至还能提供图形化的启动界面（例如 <a href="https://github.com/Lxtharia/minegrub-theme">Minecraft 风格的自定义 GRUB 主题</a>）。这些模块通常存储在 <code>/usr/lib/grub</code> 下，并会在安装 GRUB 时被复制到 <code>/boot</code> 下。</p>
@@ -3524,7 +3548,7 @@
 例如，许多较旧的分区软件会将第一个分区的开始位置设置为 LBA 32（16 KiB），甚至 LBA 1（紧跟 MBR 后）。</p>
 <p>如下图 Example 2 所示，因为 GPT 分区表占据了 MBR 后的空间，约定俗成的「预留 1 MiB 空间」的规定被打破了，因此 GRUB 的 <code>core.img</code> 就被存放在一个单独的名为 BIOS_grub 的 1 MiB 的分区中。</p>
 <p><img alt="GRUB 在 BIOS 启动模式下的分区布局示例" src="../../images/grub-bios-partition-layout.jpg" /></p>
-<p class="caption">GRUB 在 BIOS 启动模式下的分区布局示例<sup id="fnref:grub-bios-partition-layout"><a class="footnote-ref" href="#fn:grub-bios-partition-layout">3</a></sup></p>
+<p class="caption">GRUB 在 BIOS 启动模式下的分区布局示例<sup id="fnref:grub-bios-partition-layout"><a class="footnote-ref" href="#fn:grub-bios-partition-layout">4</a></sup></p>
 <p>在 UEFI 启动模式下，GRUB 通常位于 EFI 系统分区的 <code>\EFI\debian\grubx64.efi</code> 位置。其他发行版也可能为中间一层目录使用其他名称，例如 <code>\EFI\ubuntu\grubx64.efi</code>。</p>
 <p>如下图的 Example 1 所示，GRUB 不再使用 <code>boot.img</code> 和 <code>core.img</code> 分阶段加载的方式，而是直接通过 <code>/EFI/arch/grubx64.efi</code> 这个单一的文件被 UEFI 加载执行。</p>
 <p><img alt="GRUB 在 UEFI 启动模式下的分区布局示例" src="../../images/grub-uefi-partition-layout.jpg" /></p>
@@ -3536,47 +3560,47 @@
 <p>GRUB Console 是 GRUB 提供的交互式命令行界面，类似于 Linux 中的 Shell，提供了一些基本的命令用于手动加载和引导内核。需要注意的是，GRUB Console 本身并不是严格意义上的 Unix Shell，一些常见的功能，比如管道（<code>|</code>）和重定向（<code>&gt;</code>）等是无法使用的。</p>
 <p>进入 GRUB Console 的方法是在 GRUB 启动界面按下 <code>c</code> 键，或者在 GRUB 启动界面按下 <code>c</code> 键进入编辑模式后按下 <code>Ctrl + C</code> 键。</p>
 <p>进入 GRUB Console 后，你可以使用 <code>ls</code> 命令来查看 GRUB 可以访问的设备和分区：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="o">(</span>proc<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt3<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="o">(</span>proc<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt3<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
 </code></pre></div>
 <p>而使用 <code>ls -l</code> 或者 <code>ls</code> 某一项来详细查看每个磁盘和分区的具体信息：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>-l
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Device<span class="w"> </span>proc:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>procfs<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>0KiB
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Device<span class="w"> </span>hd0:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>488386584KiB
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt3:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span><span class="m">470631811</span>.5KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">17754739</span>.5KiB
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt2:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Label<span class="w"> </span><span class="s1">&#39;root&#39;</span><span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-03-21<span class="w"> </span><span class="m">12</span>:46:39<span class="w"> </span>Saturday,<span class="w"> </span>UUID<span class="w"> </span>093a7ce2-f355-409c-b8a9-00301Bdc75ce<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1058624KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">469581187</span>.5KiB
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span><span class="m">2703</span>-3208<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>2048KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Device<span class="w"> </span>hd1:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>976762584KiB
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt2:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1049600KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>8388608KiB
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span>FB74-5D11<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1024KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>-l
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Device<span class="w"> </span>proc:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>procfs<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>0KiB
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>Device<span class="w"> </span>hd0:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>488386584KiB
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt3:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span><span class="m">470631811</span>.5KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">17754739</span>.5KiB
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt2:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Label<span class="w"> </span><span class="s1">&#39;root&#39;</span><span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-03-21<span class="w"> </span><span class="m">12</span>:46:39<span class="w"> </span>Saturday,<span class="w"> </span>UUID<span class="w"> </span>093a7ce2-f355-409c-b8a9-00301Bdc75ce<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1058624KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">469581187</span>.5KiB
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span><span class="m">2703</span>-3208<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>2048KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>Device<span class="w"> </span>hd1:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>976762584KiB
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt2:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1049600KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>8388608KiB
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span>FB74-5D11<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1024KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
 </code></pre></div>
 <p>从输出可以看出，这台机器上有两块磁盘（hd0 和 hd1），每块磁盘上都有一个 EFI 系统分区（hd0,gpt1 和 hd1,gpt1），一个 swap 分区（hd0,gpt3 和 hd1,gpt2，因为没有文件系统所以是未知文件系统），以及一个 ext4 分区（hd0,gpt2 和 hd1,gpt3，作为各自的根分区）。</p>
 <p>你还可以通过 <code>ls</code> 查看每个分区内的文件，比如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/efi
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>arch/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/efi
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>arch/
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>/
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>lost+found/<span class="w"> </span>boot/<span class="w"> </span>var/<span class="w"> </span>dev/<span class="w"> </span>run/<span class="w"> </span>etc/<span class="w"> </span>tmp/<span class="w"> </span>sys/<span class="w"> </span>proc/<span class="w"> </span>usr/<span class="w"> </span>bin<span class="w"> </span>home/<span class="w"> </span>lib<span class="w"> </span>lib64<span class="w"> </span>mnt/<span class="w"> </span>opt/<span class="w"> </span>root/<span class="w"> </span>sbin<span class="w"> </span>srv/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>/
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>lost+found/<span class="w"> </span>boot/<span class="w"> </span>var/<span class="w"> </span>dev/<span class="w"> </span>run/<span class="w"> </span>etc/<span class="w"> </span>tmp/<span class="w"> </span>sys/<span class="w"> </span>proc/<span class="w"> </span>usr/<span class="w"> </span>bin<span class="w"> </span>home/<span class="w"> </span>lib<span class="w"> </span>lib64<span class="w"> </span>mnt/<span class="w"> </span>opt/<span class="w"> </span>root/<span class="w"> </span>sbin<span class="w"> </span>srv/
 </code></pre></div>
 <p>就像在 Linux 中一样，这样可以方便你找到内核文件和根分区所在的位置，从而方便接下来的手动引导。</p>
 <p>为了引导内核，首先你需要找到你要启动的内核文件和 initramfs 文件所在的分区，比如，在上面的示例中，我想要加载 <code>vmlinuz-linux-cachyos</code> 这个内核文件和 <code>initramfs-linux-cachyos.img</code> 这个 initramfs 文件，那么它们所在的分区就是 <code>(hd1,gpt1)</code>。</p>
 <p>此时，你需要设置 <code>root</code> 环境变量为该分区：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
 </code></pre></div>
 <p>这样，文件路径的默认分区就会变成 <code>(hd1,gpt1)</code>，比如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>/
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>/
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
 </code></pre></div>
 <p>之后指定内核文件的时候也不需要加上指定分区的前缀。</p>
 <p>接着，你需要加载内核文件，并提供内核参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
 </code></pre></div>
 <p>其中：</p>
 <ul>
@@ -3586,17 +3610,17 @@
 </ul>
 <p>你也可以加上 <code>loglevel=5 nowatchdog</code> 等常见参数，就像在 <code>/etc/default/grub</code> 中的 <code>GRUB_CMDLINE_LINUX_DEFAULT</code> 变量中所设置的那样。</p>
 <p>然后，你需要加载 initramfs 文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
 </code></pre></div>
 <p>其中，<code>/initramfs-linux-cachyos.img</code> 是 initramfs 文件在 <code>(hd1,gpt1)</code> 中的路径。</p>
 <p>最后，你就可以通过 <code>boot</code> 命令来启动内核了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>grub&gt;<span class="w"> </span>boot
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>grub&gt;<span class="w"> </span>boot
 </code></pre></div>
 <p>做个总结，完整的通过 GRUB Console 启动内核的命令如下所示：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>grub&gt;<span class="w"> </span>boot
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>grub&gt;<span class="w"> </span>boot
 </code></pre></div>
 <p>而为了能够填写正确的信息，则需要善用 <code>ls</code> 命令来进行查询。</p>
 <p>除此之外，GRUB Console 还提供了其他许多实用命令，比如，<code>search</code> 命令可以用来搜索指定文件或者分区，<code>insmod</code> 命令可以用来加载 GRUB 模块，<code>configfile</code> 命令可以用来加载一个新的 <code>grub.cfg</code> 文件等等。更多命令的使用方法可以参考 <a href="https://www.gnu.org/software/grub/manual/grub/grub.html">GRUB Manual</a>。</p>
@@ -3660,8 +3684,11 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:uefi-spec">
 <p><a href="https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf">https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf</a>&#160;<a class="footnote-backref" href="#fnref:uefi-spec" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
+<li id="fn:special-command-line-options">
+<p><a href="https://docs.kernel.org/arch/x86/boot.html#special-command-line-options">https://docs.kernel.org/arch/x86/boot.html#special-command-line-options</a>&#160;<a class="footnote-backref" href="#fnref:special-command-line-options" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
 <li id="fn:grub-bios-partition-layout">
-<p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 4 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -3685,7 +3712,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月14日 18:25:00 UTC">2026年5月14日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月16日 13:24:53 UTC">2026年5月16日</span>
   </span>
 
     
@@ -3704,14 +3731,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
