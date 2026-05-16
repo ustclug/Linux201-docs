@@ -119,6 +119,37 @@ Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U
 
     而 Bootloader 的设计目标则是去负责初始化操作系统所需要的**初始状态**，比如对于 Linux 系统来说，Kernel 和 initramfs 需要被加载进内存，需要在指定位置填写好内核参数从而指定某些内核功能的启用等等。这些都需要一个单独的程序来完成，靠 Firmware 是无法胜任的。
 
+!!! note "常见内核命令行参数"
+
+    内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置[^special-command-line-options]。
+
+    除此之外，对于内核不认识的内核参数，比如 Systemd 的 `systemd.unit=...`、LILO/GRUB 传递的 `BOOT_IMAGE=...` 等自定义参数，内核会按照以下规则进行处理：
+
+    - 如果参数起始字符为 `BOOT_IMAGE=` 或 `kexec`：认为是 Bootloader 传过来的参数，忽略
+    - 如果参数里带有 `.`：认为是暂未被使用的内核模块参数，忽略
+    - 如果参数里不带有 `.` 且带有 `=`：作为环境变量传给 init 进程
+    - 如果参数里不带有 `.` 且不带有 `=`：作为命令行参数传给 init 进程
+
+    具体执行的代码逻辑位于 `init/main.c` 的 [`unknown_bootoption`](https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L546) 函数。
+
+    不论内核如何处理命令行参数，在进入系统后，所有程序都可以通过查看 `/proc/cmdline` 文件来获取当前内核的所有命令行参数，例如：
+
+    ```bash
+    $ cat /proc/cmdline 
+    BOOT_IMAGE=/vmlinuz-linux-cachyos root=UUID=eea8de7e-b37f-4b3b-b530-1003eeab9746 rw rootflags=subvol=@ loglevel=5 nowatchdog intel_iommu=on iommu=pt
+    ```
+
+    一些常见的内核命令行参数如下所示：
+    
+    - `<显卡模块名>.modeset=0`：不允许对应的显卡驱动设置 [KMS 显示模式](../advanced/desktop.md#x-gpu)，例如 `nouveau.modeset=0`、`amdgpu.modeset=0` 等。
+    - `nomodeset`：完全关闭 KMS 显示模式设置。对一部分显卡配置来说，在进入 LiveCD 安装系统时会需要添加相关参数，完全禁用 GPU 相关驱动以避免出现黑屏等显示异常的情况。
+    - `initcall_blacklist=<模块初始化函数>`：不允许某个被编译到内核中（built-in）的模块在开机时加载。例如在 `algif_aead` 模块**内置**在内核中时，缓解 [Copy Fail 漏洞（CVE-2026-31431）](https://copy.fail)的内核启动参数 `initcall_blacklist=algif_aead_init`，即会禁用 [`algif_aead_init`](https://elixir.bootlin.com/linux/v6.19/source/crypto/af_alg.c#L1300) 函数运行。
+    - `module_blacklist=<模块名>`：不允许加载指定的外部模块。
+    
+    更多内核命令行参数见 [Linux 内核文档](https://docs.kernel.org/admin-guide/kernel-parameters.html)。
+
+[^special-command-line-options]: <https://docs.kernel.org/arch/x86/boot.html#special-command-line-options>
+
 ### GRUB
 
 GRUB（GRand Unified Bootloader）是目前应用最广泛的 Linux bootloader，同时支持 BIOS 启动模式和 UEFI 启动模式，并且以 BIOS 模式启动时 GRUB 可以被安装在 GPT 分区表中。
