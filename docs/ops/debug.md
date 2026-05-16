@@ -133,12 +133,7 @@ icon: material/bug
 
     如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
 
-    此外一些较为常见的与显示与内核模块的调试用参数包括：
-
-    - `<显卡模块名>.modeset=0`：不允许对应的显卡驱动设置 [KMS 显示模式](../advanced/desktop.md#x-gpu)，例如 `nouveau.modeset=0`、`amdgpu.modeset=0` 等。
-    - `nomodeset`：完全关闭 KMS 显示模式设置。对一部分显卡配置来说，在进入 LiveCD 安装系统时会需要添加相关参数，完全禁用 GPU 相关驱动以避免出现黑屏等显示异常的情况。
-    - `initcall_blacklist=<模块初始化函数>`：不允许某个被编译到内核中（built-in）的模块在开机时加载。例如在 `algif_aead` 模块**内置**在内核中时，缓解 [Copy Fail 漏洞（CVE-2026-31431）](https://copy.fail)的内核启动参数 `initcall_blacklist=algif_aead_init`，即会禁用 [`algif_aead_init`](https://elixir.bootlin.com/linux/v6.19/source/crypto/af_alg.c#L1300) 函数运行。
-    - `module_blacklist=<模块名>`：不允许加载指定的外部模块。
+    此外一些常见的调试用参数可以参考[系统启动程序](booting.md#bootloader)中对于常见内核命令行参数的介绍。
 
     诸如 Debian 等发行版会额外生成 recovery 的启动项，会配置进入单用户模式（single user mode），可以尝试使用这个选项进入系统。或者编辑启动项，添加 `init=/bin/bash` 也可以。
 
