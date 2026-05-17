@@ -25,8 +25,12 @@ icon: fontawesome/brands/git
 
 ## 搭建服务 {#setup-service}
 
-Git over HTTP(S) 的核心组件是 [git-http-backend][git-http-backend.1]，这是一个 CGI 程序，可以与 FastCGI 等实现对接。
+Git over HTTP(S) 有两种传输协议：Dumb protocol 和 Smart protocol，前者不需要运行专门的服务，而后者需要。Smart protocol 处理用户请求的组件是 [git-http-backend][git-http-backend.1]，这是一个 CGI 程序。
 
 !!! note "CGI"
 
-    (TODO)
+    CGI（Common Gateway Interface）是一种传统的 Web 服务器与用户程序交互的接口：对需要给程序处理的每个 HTTP 连接，Web 服务器读取用户请求的头之后，启动用户程序，将请求头信息（例如请求方法 `REQUEST_METHOD`、请求路径 `PATH_INFO`）放在环境变量中，请求的 body 通过标准输入提供给用户程序，而程序的标准输出则会在 Web 服务器处理后作为返回给用户的响应。可参考 [RFC 3875](https://www.rfc-editor.org/rfc/rfc3875) 了解相关标准。
+
+    由于 CGI 程序每个请求都有创建与销毁进程的开销，因此如今大部分网络应用都会直接处理 HTTP 请求，Web 服务器通过反代（`proxy_pass`）的方式将请求转发给对应的网络应用。
+
+Nginx 支持使用 [FastCGI](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html) 或 [SCGI](https://nginx.org/en/docs/http/ngx_http_scgi_module.html) 模块，它们在 CGI 的基础上自定义了优化的协议。为了运行我们的 CGI 程序，这里安装 `fcgiwrap` 包。[fcgiwrap](https://github.com/gnosek/fcgiwrap) 可以将 CGI 程序包装为 FastCGI 接口，以此对接 Nginx 的 `ngx_http_fastcgi_module` 模块。
