@@ -3020,6 +3020,38 @@
 <p>由于 CGI 程序每个请求都有创建与销毁进程的开销，因此如今大部分网络应用都会直接处理 HTTP 请求，Web 服务器通过反代（<code>proxy_pass</code>）的方式将请求转发给对应的网络应用。</p>
 </div>
 <p>Nginx 支持使用 <a href="https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html">FastCGI</a> 或 <a href="https://nginx.org/en/docs/http/ngx_http_scgi_module.html">SCGI</a> 模块，它们在 CGI 的基础上自定义了优化的协议。为了运行我们的 CGI 程序，这里安装 <code>fcgiwrap</code> 包。<a href="https://github.com/gnosek/fcgiwrap">fcgiwrap</a> 可以将 CGI 程序包装为 FastCGI 接口，以此对接 Nginx 的 <code>ngx_http_fastcgi_module</code> 模块。</p>
+<p>在启动 <code>fcgiwrap.socket</code> 或 <code>fcgiwrap.service</code> 后，对应的 Nginx 配置类似如下：</p>
+<div class="highlight"><span class="filename">/etc/nginx/snippets/git-http</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">fastcgi_read_timeout</span><span class="w"> </span><span class="mi">5m</span><span class="p">;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">fastcgi_pass</span><span class="w"> </span><span class="s">unix:/var/run/fcgiwrap.socket</span><span class="p">;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">fastcgi_buffering</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">SCRIPT_FILENAME</span><span class="w"> </span><span class="s">/usr/lib/git-core/git-http-backend</span><span class="p">;</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">PATH_INFO</span><span class="w"> </span><span class="nv">$uri</span><span class="p">;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">NO_BUFFERING</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">GIT_PROJECT_ROOT</span><span class="w"> </span><span class="s">/srv/git</span><span class="p">;</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">GIT_HTTP_EXPORT_ALL</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">;</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="k">fastcgi_param</span><span class="w"> </span><span class="s">GIT_PROTOCOL</span><span class="w"> </span><span class="nv">$http_git_protocol</span><span class="p">;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">include</span><span class="w"> </span><span class="n">fastcgi_params</span>;
+</code></pre></div>
+<p>其中的一些重要参数：</p>
+<ul>
+<li>配置 <a href="https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_buffering"><code>fastcgi_buffering</code></a> 与 <code>NO_BUFFERING</code> 参数，分别关闭 Nginx fastcgi 模块 和 fcgiwrap 的缓冲区，使得客户端可以更快看到 Git 操作的进度。<ul>
+<li>需要注意的是，<code>NO_BUFFERING</code> 需要特殊的<a href="https://salsa.debian.org/debian/fcgiwrap/-/blob/9ac876a935362e8f8fe28c5e69ceb298cf058bc6/debian/patches/add-environment-variable-NO_BUFFERING-to-disable-output-buffering.patch">补丁</a>。Debian 打包的版本包含这个修改。</li>
+</ul>
+</li>
+<li>fcgiwrap 会接受 <code>SCRIPT_FILENAME</code> 参数决定需要启动的 CGI 程序（优先级高于 <code>DOCUMENT_ROOT</code> 和 <code>SCRIPT_NAME</code>）。</li>
+<li><code>git-http-backend</code> 会根据 <code>PATH_INFO</code> 和 <code>GIT_PROJECT_ROOT</code> 选择合适的仓库。这里假设所有的仓库都在 <code>/srv/git</code> 下方（仓库目录可以是指向其他目录的软链接）。</li>
+<li>默认情况下，<code>git-http-backend</code> 会检查仓库 <code>.git</code> 下是否包含 <code>git-daemon-export-ok</code> 这个文件。<code>GIT_HTTP_EXPORT_ALL</code> 参数可以解除这个限制。</li>
+<li>Smart protocol 有 v1 和 v2 两个版本。<code>GIT_PROTOCOL</code> 参数可以传递 HTTP 头中客户端传递的版本信息，在允许的情况下升级到 v2 协议。</li>
+<li><code>/etc/nginx/fastcgi_params</code> 为 Nginx 打包自带提供的文件，设置了诸如 <code>REQUEST_METHOD</code> 等必要的参数，直接 <code>include</code> 即可。</li>
+</ul>
+<p>之后对需要提供服务的仓库，对应的 location 中 <code>include snippets/git-http</code> 即可：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 假设仓库在 `/srv/git/xxx.git`</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">location</span><span class="w"> </span><span class="p">~</span><span class="w"> </span><span class="sr">^/.+?\.git/(info/refs|git-upload-pack)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="kn">include</span><span class="w"> </span><span class="s">snippets/git-http</span><span class="p">;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="p">}</span>
+</code></pre></div>
 <!--
   Links to man pages
 
@@ -3075,7 +3107,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月17日 19:52:00 UTC">2026年5月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月18日 20:44:58 UTC">2026年5月18日</span>
   </span>
 
     
@@ -3093,6 +3125,16 @@ Do not link to a "generic" man page for these commands -->
 
     
     <nav>
+      
+        <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
+        </a>
+      
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
+          
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
