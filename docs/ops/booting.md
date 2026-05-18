@@ -322,6 +322,16 @@ GRUB 在 UEFI 启动模式下的分区布局示例
 
 ### systemd-boot
 
+systemd-boot 是 systemd 项目的一部分，是一个目前正在逐渐流行的轻量化 Linux bootloader。
+
+如果说，GRUB 是一个高度模块化，功能强大，兼容性不错的大而全的 Bootloader 实现，可以在几乎任何平台上正确运行，那么 systemd-boot 则是位于 GRUB 的反面：
+
+- 不支持 BIOS 固件，只支持 UEFI 固件
+- 不自己实现文件系统驱动，只能读取同一块磁盘下的 ESP 分区和 XBOOTLDR 分区中的文件
+- 原生不支持网络启动和从另一块磁盘启动，必须通过链式加载其他 efi 文件来实现
+
+不同于 GRUB 通过自己编写模块来实现各种功能，systemd-boot 则是充分利用了 UEFI 固件已有功能来实现，比如从 UEFI 固件继承对文件系统的支持、内核加载依赖于内核的 EFI stub 等等，从而保证了 systemd-boot 足够轻量。
+
 ## initramfs
 
 ### initramfs-tools
