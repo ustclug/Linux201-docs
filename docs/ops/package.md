@@ -75,6 +75,10 @@ The following packages will be REMOVED:
 - `apt-mark showauto` 与 `apt-mark showmanual` 可以显示系统中被标记为自动安装与手动安装的包。
 - `apt-mark auto <package>` 与 `apt-mark manual <package>` 可以修改包的标记。
 
+!!! note "自动/手动安装的信息记录在哪里？"
+
+    某个包是否为自动安装是 APT 维护的信息，存储在 `/var/lib/apt/extended_states`。事实上，APT 只会把自动安装的包放进这个文件，于是不在这个文件里面的就是手动安装的——所以如果用 dpkg 安装了某个包（尽管不推荐这么做），那么这个包就会被 APT 视为手动安装的，因为 dpkg 不会修改 `extended_states` 文件的内容。
+
 ### 推荐与建议 {#recommends-suggests}
 
 安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。建议（Suggested）的包会显示在安装界面，但是不会自动被安装。例如在 Debian 12 中，[docker.io 包](https://packages.debian.org/bookworm/docker.io)的推荐有 apparmor、ca-certificates 等，建议包有 btrfs-progs、debootstrap 等。那么在安装 `docker.io` 时，包括 apparmor、ca-certificates 等包就会默认被安装，并且用户也可以看到这些包建议，并且可以在当前包安装完成后自行安装。
