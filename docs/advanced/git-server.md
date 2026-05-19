@@ -70,3 +70,19 @@ location ~ ^/.+?\.git/(info/refs|git-upload-pack) {
     include snippets/git-http;
 }
 ```
+
+!!! note "并发数量注意事项"
+
+    服务器可以同时处理的 Git 操作的硬上限由 fcgiwrap 的进程数量决定。在服务启动时，fcgiwrap 会根据 `-c` 参数的值，预先 fork 出对应的进程数。由于 `fcgiwrap.service` 设置了 `/etc/default/fcgiwrap` 作为环境变量文件：
+
+    ```ini
+    Environment=DAEMON_OPTS=-f
+    EnvironmentFile=-/etc/default/fcgiwrap
+    ```
+
+    因此可以修改此文件来设置最大总并发数：
+
+    ```bash
+    # 预先 fork 128 个 fcgiwrap 进程
+    DAEMON_OPTS="-f -c 128"
+    ```
