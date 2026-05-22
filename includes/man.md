@@ -8,6 +8,7 @@
 
 <!-- man 1 -->
 
+[git.1]: https://git-scm.com/docs/git
 [git-bisect.1]: https://git-scm.com/docs/git-bisect
 [git-fetch.1]: https://git-scm.com/docs/git-fetch
 [git-http-backend.1]: https://git-scm.com/docs/git-http-backend

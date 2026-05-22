@@ -82,7 +82,25 @@ location ~ ^/.+?\.git/(info/refs|git-upload-pack) {
 
     因此可以修改此文件来设置最大总并发数：
 
-    ```bash
+    ```bash title="/etc/default/fcgiwrap"
     # 预先 fork 128 个 fcgiwrap 进程
     DAEMON_OPTS="-f -c 128"
     ```
+
+!!! tip "调试 `git-http-backend`"
+
+    如果遇到请求缓慢、出现错误，甚至 git 崩溃的情况，你可能会希望能够调试 git 在接受请求时的行为。可以用类似 CGI 的形式调用 `git-http-backend`。在抓包后，将对应需要排查的请求的 HTTP body 存储在文件中，然后根据 HTTP 头的信息，设置对应的环境变量，调用即可，例如：
+
+    ```sh
+    GIT_PROTOCOL=version=2 CONTENT_TYPE=application/x-git-upload-pack-request GIT_HTTP_EXPORT_ALL="" GIT_PROJECT_ROOT=/srv/git/ PATH_INFO=/crates.io-index/git-upload-pack REQUEST_METHOD=POST git http-backend < input.txt > output.txt
+    ```
+
+    同时 git 也提供了一些用于调试的环境变量，例如设置 `GIT_TRACE2=1` 后，git 会将其 trace 信息输出到标准错误，有关调试环境变量的信息，可参考 [git][git.1]。
+
+## Git over HTTP(S) 协议介绍 {#git-over-http-intro}
+
+### Dumb Protocol
+
+### Smart Protocol
+
+## Git 服务的优化 {#git-service-optimization}
