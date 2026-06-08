@@ -352,6 +352,24 @@ Git 支持三种部分 clone 的方式：
 
 有关更多内容，可阅读 [Get up to speed with partial clone and shallow clone](https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/)。
 
+!!! tip "将部分 clone 的仓库恢复为完整 clone"
+
+    对使用 `--filter` 参数进行的部分 clone，git 会设置 `remote.origin.partialclonefilter`：
+
+    ```console
+    $ git config remote.origin.partialclonefilter
+    tree:0
+    ```
+
+    这一项设置会在从远程获取内容时生效，因此需要先 unset，再使用 `--refetch` 参数强制重新获取所有内容（忽略协商环节）：
+
+    ```shell
+    git config --unset remote.origin.partialclonefilter
+    git fetch --refetch
+    ```
+
+    而如果是 shallow clone 的仓库，则需要使用 `git fetch --unshallow` 来恢复。
+
 ### Git Submodule {#git-submodule}
 
 Submodule 可以用来添加外部项目，例如向一个 C++ 项目中添加 Eigen：
