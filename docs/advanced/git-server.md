@@ -95,9 +95,19 @@ location ~ ^/.+?\.git/(info/refs|git-upload-pack) {
     GIT_PROTOCOL=version=2 CONTENT_TYPE=application/x-git-upload-pack-request GIT_HTTP_EXPORT_ALL="" GIT_PROJECT_ROOT=/srv/git/ PATH_INFO=/crates.io-index/git-upload-pack REQUEST_METHOD=POST git http-backend < input.txt > output.txt
     ```
 
-    同时 git 也提供了一些用于调试的环境变量，例如设置 `GIT_TRACE2=1` 后，git 会将其 trace 信息输出到标准错误，有关调试环境变量的信息，可参考 [git][git.1]。
+    同时 git 也提供了一些用于调试的环境变量，例如设置 `GIT_TRACE2=1` 后，git 会将其 trace 信息输出到标准错误，有关调试环境变量的信息，可参考 [git.1][git.1]。
 
 ## Git over HTTP(S) 协议介绍 {#git-over-http-intro}
+
+以下简单介绍 Git over HTTP(S) 的 dumb 和 smart protocol 的流程。有关更多 Git 协议的信息，可以参考以下的文档：
+
+- [gitprotocol-capabilities.5][gitprotocol-capabilities.5]
+- [gitprotocol-common.5][gitprotocol-common.5]
+- [gitprotocol-http.5][gitprotocol-http.5]
+- [gitprotocol-pack.5][gitprotocol-pack.5]
+- [gitprotocol-v2.5][gitprotocol-v2.5]
+
+### Git 目录结构 {#git-dir}
 
 ### Dumb Protocol
 

@@ -53,6 +53,11 @@
 [deluser.conf.5]: https://manpages.debian.org/stable/adduser/deluser.conf.5.en.html
 [fstab.5]: https://man7.org/linux/man-pages/man5/fstab.5.html
 [gai.conf.5]: https://man7.org/linux/man-pages/man5/gai.conf.5.html
+[gitprotocol-capabilities.5]: https://git-scm.com/docs/gitprotocol-capabilities
+[gitprotocol-common.5]: https://git-scm.com/docs/gitprotocol-common
+[gitprotocol-http.5]: https://git-scm.com/docs/gitprotocol-http
+[gitprotocol-pack.5]: https://git-scm.com/docs/gitprotocol-pack
+[gitprotocol-v2.5]: https://git-scm.com/docs/gitprotocol-v2
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
 [nsswitch.conf.5]: https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html
 [podman-systemd.unit.5]: https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
