@@ -492,7 +492,7 @@ Timers 的主要缺点是：
 
 如上所述，一个定时任务包含两个文件，一个是 timer unit，一个是对应的 service unit。下面以 certbot 的配置文件为例，说明如何创建一个定时任务。
 
-首先创建一个 service，需要注意的是 `Type=oneshot`，并且**不能**使用 `RemainAfterExit=yes`（一般将其忽略即可，它的默认值是 no）。
+首先创建一个 service，需要注意的是 `Type=oneshot`，并且**不能**使用 `RemainAfterExit=yes`，否则在第一次执行之后，service 就会一直处于 active 状态，后续就不会再被激活（一般将其忽略即可，它的默认值是 no）。
 
 ```ini title="/lib/systemd/system/certbot.service"
 [Unit]
