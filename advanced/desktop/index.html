@@ -3772,7 +3772,7 @@
 </div>
 <h3 id="client-server-window">客户端、服务端与窗口<a class="headerlink" href="#client-server-window" title="Permanent link">&para;</a></h3>
 <p>X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的效果，相比之下，性能与资源占用重要得多。并且当时个人计算机还是一个新兴的概念，用户更多的时候需要使用终端机连接到服务器上运行任务。因此，X 的设计上包含了当时那个年代设计的局限性，并且有着独特的「网络透明性」的设计：需要显示窗口的程序（客户端）和可以给用户显示窗口的程序（服务端）是可以分离的，通过网络去连接。对于单机场景，这里的「网络」大部分时候是 UNIX socket，而在诸如 SSH X Forwarding 这种通过网络连接的场合则是 TCP socket。</p>
-<p>默认情况下，如果你正在使用 Linux 桌面，那么默认连接到的 socket 则为 <code>/tmp/.X11-unix/X0</code>（对应环境变量 <code>DISPLAY=:0</code>）。</p>
+<p>默认情况下，如果你正在使用 Linux 桌面，假设环境变量 <code>DISPLAY=:0</code>，那么客户端默认连接到的 socket <a href="https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_util.c?ref_type=heads#L250">按 libxcb 的顺序</a>则为 <code>@/tmp/.X11-unix/X0</code>（最新代码移除了支持，见下文）、<code>/tmp/.X11-unix/X0</code> 和 TCP <code>localhost:6000</code>。Xlib 库也会调用 libxcb 来选择、打开 socket。</p>
 <div class="admonition warning">
 <p class="admonition-title">X 的抽象套接字支持</p>
 <p>Linux 支持「抽象套接字」（abstract socket），即允许 Unix socket 绑定到一个不在文件系统中的地址（正常的 Unix socket 需要将地址设置为一个文件路径）。在编写代码时，将 <code>bind()</code> 路径（<code>sun_path</code>）的开头设置为 <code>NULL</code> 就表示抽象套接字。可以查看 <code>/proc/net/unix</code> 文件，其中以 <code>@</code> 开头的条目则是抽象套接字。</p>
@@ -3791,8 +3791,8 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>will attempt to connect to the abstract socket before connecting to the
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>corresponding filesystem socket.
 </code></pre></div>
-<p>所以事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会优先连接 <code>@/tmp/.X11-unix/X0</code>。</p>
 <p>抽象套接字在如今带来了一些安全性的挑战，因为和文件系统上的 <code>/tmp/.X11-unix/X0</code> 可以依靠文件级别的权限控制不同，抽象套接字只能通过网络命名空间实现隔离。但是如果直接关闭 X server 的抽象套接字，攻击者可以创建虚假的名为 <code>@/tmp/.X11-unix/X0</code> 的套接字，欺骗 X 客户端连接。不过连接到 X server 还需要经过一层认证机制（XAuthority），因此如果不去 <code>xhost +</code> 的话，攻击者必须要能够获取 XAuthority 信息，才能够连接到对应的 X server。</p>
+<p>目前最新 libxcb 的代码已经<a href="https://gitlab.freedesktop.org/xorg/lib/libxcb/-/commit/e81b999a727d3c8ee9b83adb7c1c822f67378687">移除了抽象套接字的支持</a>。</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">启动一个新的 X Server</p>
@@ -4819,7 +4819,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月2日 16:35:52 UTC">2026年5月2日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月9日 17:10:05 UTC">2026年6月9日</span>
   </span>
 
     
