@@ -64,7 +64,7 @@ icon: octicons/device-desktop-16
 
 X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的效果，相比之下，性能与资源占用重要得多。并且当时个人计算机还是一个新兴的概念，用户更多的时候需要使用终端机连接到服务器上运行任务。因此，X 的设计上包含了当时那个年代设计的局限性，并且有着独特的「网络透明性」的设计：需要显示窗口的程序（客户端）和可以给用户显示窗口的程序（服务端）是可以分离的，通过网络去连接。对于单机场景，这里的「网络」大部分时候是 UNIX socket，而在诸如 SSH X Forwarding 这种通过网络连接的场合则是 TCP socket。
 
-默认情况下，如果你正在使用 Linux 桌面，那么默认连接到的 socket 则为 `/tmp/.X11-unix/X0`（对应环境变量 `DISPLAY=:0`）。
+默认情况下，如果你正在使用 Linux 桌面，假设环境变量 `DISPLAY=:0`，那么客户端默认连接到的 socket [按 libxcb 的顺序](https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_util.c?ref_type=heads#L250)则为 `@/tmp/.X11-unix/X0`（最新代码移除了支持，见下文）、`/tmp/.X11-unix/X0` 和 TCP `localhost:6000`。Xlib 库也会调用 libxcb 来选择、打开 socket。
 
 !!! warning "X 的抽象套接字支持"
 
@@ -91,9 +91,9 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
     corresponding filesystem socket.
     ```
 
-    所以事实上，上文的描述是有一些偏差的——目前 X 客户端仍然会优先连接 `@/tmp/.X11-unix/X0`。
-
     抽象套接字在如今带来了一些安全性的挑战，因为和文件系统上的 `/tmp/.X11-unix/X0` 可以依靠文件级别的权限控制不同，抽象套接字只能通过网络命名空间实现隔离。但是如果直接关闭 X server 的抽象套接字，攻击者可以创建虚假的名为 `@/tmp/.X11-unix/X0` 的套接字，欺骗 X 客户端连接。不过连接到 X server 还需要经过一层认证机制（XAuthority），因此如果不去 `xhost +` 的话，攻击者必须要能够获取 XAuthority 信息，才能够连接到对应的 X server。
+
+    目前最新 libxcb 的代码已经[移除了抽象套接字的支持](https://gitlab.freedesktop.org/xorg/lib/libxcb/-/commit/e81b999a727d3c8ee9b83adb7c1c822f67378687)。
 
 !!! tip "启动一个新的 X Server"
 
