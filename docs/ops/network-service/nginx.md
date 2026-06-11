@@ -195,6 +195,18 @@ events {
 
     如果使用 systemd，也可以调整 `nginx.service`，添加 `LimitNOFILE` 参数。
 
+!!! tip "使用 `aio` 避免工作进程阻塞"
+
+    默认配置下，Nginx 的工作进程会打开、读取需要的文件，但是 POSIX 默认的文件 API（`open()`、`read()` 等）是同步的——这意味着，如果 IO 处理的速度较慢（例如在机械硬盘上），那么对应的工作进程在调用文件 API 时就无法处理其他的请求，导致响应的延迟增大。
+
+    尽管 Linux 提供了内核级别的 AIO（异步 IO）的支持（可参考 [libaio](https://pagure.io/libaio)），但是条件较为苛刻：AIO 请求需要使用 `O_DIRECT` 绕过内核的 page cache（对非常快速的 NVMe 设备来说，这么做可能是必要的，但是对慢速设备来说是弊大于利的），并且 `O_DIRECT` 访问要求对齐，否则可能会阻塞住。因此除非存储设备非常快，否则不建议使用。在此类场景下，一种常见的解决方式是创建专用的线程池，将 IO 请求 offload 给这个线程池，避免阻塞其他的任务，包括 POSIX AIO（由 glibc 在用户态实现）和 Nginx 都支持这种方式。
+
+    [`aio`](https://nginx.org/en/docs/http/ngx_http_core_module.html#aio) 指令支持基于 Linux 内核 AIO 和线程池这两种实现。添加 `aio threads;` 即可。默认线程池为 32 线程，最多排队 65536 个请求，可以使用 [`thread_pool`](https://nginx.org/en/docs/ngx_core_module.html#thread_pool) 指令调整。以下是科大镜像站在开启 `aio threads` 前后的请求主页的 HTTP 延迟情况，可以看到效果十分显著：
+
+    ![Mirrors HTTP latency with/without AIO](../../images/mirrors-nginx-aio.png)
+
+    此外，Linux 内核目前推荐的异步 IO（包括文件、网络 socket）方式为 io_uring。不过 Nginx 尚未提供对其的支持。
+
 ## `server` 块与 `location` 块 {#server-location-blocks}
 
 Nginx 配置的 [`http` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#http)中可以有多个 [`server` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#server)，每个 `server` 块定义了一个站点（虚拟主机），Nginx 会根据请求的域名和端口号来匹配对应的 `server` 块。Nginx 正是通过 `server` 块来实现多站点配置的。
