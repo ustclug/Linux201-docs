@@ -1668,6 +1668,8 @@
           
   
   
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 16 7.36-5.73L21 9l-9-7-9 7 1.63 1.27M12 18.54l-7.38-5.73L3 14.07l9 7 9-7-1.63-1.27z"/></svg>
+  
   <span class="md-ellipsis">
     
   
@@ -1685,6 +1687,8 @@
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 16 7.36-5.73L21 9l-9-7-9 7 1.63 1.27M12 18.54l-7.38-5.73L3 14.07l9 7 9-7-1.63-1.27z"/></svg>
   
   <span class="md-ellipsis">
     
@@ -2198,6 +2202,8 @@
       <a href="../qemu-kvm/" class="md-nav__link">
         
   
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 2c-1.11 0-2 .89-2 2v8c0 1.11.89 2 2 2h12c1.11 0 2-.89 2-2V4c0-1.11-.89-2-2-2zm0 2h12v8H6zM4 15c-1.11 0-2 .89-2 2v3c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2v-3c0-1.11-.89-2-2-2zm4 2h12v3H8zm1 .75v1.5h4v-1.5zm6 0v1.5h4v-1.5z"/></svg>
   
   <span class="md-ellipsis">
     
@@ -4132,7 +4138,7 @@
 Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/fs/cgroup/</code>。
 相比于传统的 <code>setrlimit</code> 等系统调用，cgroups 能够有效地管理一组进程（以及它们新建的子进程）的资源使用。</p>
 <p>在使用 systemd 的系统中，cgroups 由 systemd 负责管理。
-仔细观察 <code>systemctl status</code> 的输出，可以发现其就展示了一颗 cgroup 树（注意看 <code>init.scope</code> 上一行）：</p>
+仔细观察 <code>systemctl status</code> 的输出，可以发现其就展示了一棵 cgroup 树（注意看 <code>init.scope</code> 上一行）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>status
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="go">● example</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="go">    State: running</span>
@@ -4158,8 +4164,8 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/
 <a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="go">（省略）</span>
 </code></pre></div>
 <p>也可以使用 <code>systemd-cgtop</code> 实时查看 cgroup 的使用情况。</p>
-<p>Cgroups 有 v1 与 v2 两个版本。
-较新的发行版默认仅支持 cgroups v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroups v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroups v2，因此下文讨论 cgroups 时，默认为 v2。</p>
+<p>Cgroup 有 v1 与 v2 两个版本。
+较新的发行版默认仅支持 cgroup v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroup v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroup v2，因此下文讨论 cgroup 时，默认为 v2。</p>
 <p>可以手工通过读写文件控制 cgroups：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="gp">$ </span>sleep<span class="w"> </span>1d<span class="w"> </span><span class="p">&amp;</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="go">[1] 1910225</span>
@@ -4676,8 +4682,9 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <a id="__codelineno-44-10" name="__codelineno-44-10" href="#__codelineno-44-10"></a><span class="go">    inet6 fe80::d0b8:23ff:fe74:492a/64 scope link </span>
 <a id="__codelineno-44-11" name="__codelineno-44-11" href="#__codelineno-44-11"></a><span class="go">        valid_lft forever preferred_lft forever</span>
 </code></pre></div>
-<p><code>veth</code> 设备可以看作是一根虚拟的网线，一端连接到容器内部（容器内部安装 <code>iproute2</code> 之后可以 <code>ip a</code> 看到 eth0 这个设备），另一端连接到 <code>docker0</code> 网桥。
-但是仅仅有设备是不够的，Docker 还需要配置主机的 iptables 规则，否则尽管容器与主机之间能够正常通信，容器无法通过主机访问外部网络。
+<p><code>veth</code> 设备可以看作是一根虚拟的网线，一端连接到容器内部，另一端连接到 <code>docker0</code> 网桥。
+主机上的 <code>veth5669cd1</code> 设备后面的 <code>@if6</code> 表示该 veth 设备的对端序号为 6，在容器内部安装 <code>iproute2</code> 之后可以 <code>ip a</code> 看到 eth0 这个设备，且 eth0 的序号正是 6。</p>
+<p>但是仅仅有设备是不够的，Docker 还需要配置主机的 iptables 规则，否则尽管容器与主机之间能够正常通信，容器无法通过主机访问外部网络。
 换句话讲，我们需要主机为容器扮演「路由器」的角色进行 NAT。</p>
 <p>查看 iptables 的 <code>nat</code> 表：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>iptables<span class="w"> </span>-t<span class="w"> </span>nat<span class="w"> </span>-S
@@ -4716,7 +4723,7 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 </div>
 <p>可以通过 <code>docker network create</code> 创建自己的网络。对于新的 bridge 类型的网络，在主机上也会创建新的以 <code>br-</code> 开头的网桥设备。如果使用 docker compose 管理容器服务，那么其也会为对应的服务自动创建 bridge 类型的网络。有关用户创建的 bridge 网络相比于默认网络的优势（例如同网络容器间自动的 DNS 解析支持），可参考官方文档：<a href="https://docs.docker.com/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge">Bridge network driver</a>。</p>
 <p>默认情况下，Docker 创建的网络会<a href="https://github.com/moby/moby/blob/b7c059886c0898436db90b4615a27cfb4d93ce34/libnetwork/ipamutils/utils.go#L18-L26">分配很大的 IP 段</a>。
-在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 <code>/etc/docker/daemon.json</code>，将 <code>default-address-pools</code> 设置为一个较小的 IP 段：</p>
+在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 <code>/etc/docker/daemon.json</code>，将 <code>default-address-pools</code> 设置为一些较小的 IP 段：</p>
 <div class="highlight"><span class="filename">/etc/docker/daemon.json</span><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a><span class="p">{</span>
 <a id="__codelineno-48-2" name="__codelineno-48-2" href="#__codelineno-48-2"></a><span class="w">    </span><span class="nt">&quot;default-address-pools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-48-3" name="__codelineno-48-3" href="#__codelineno-48-3"></a><span class="w">        </span><span class="p">{</span>
@@ -4941,30 +4948,29 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h3 id="docker-compose">Docker Compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h3>
 <p>Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工具：用户编写 YAML 描述如何启动容器，然后使用 <code>docker-compose</code> 命令启动、停止、删除服务。</p>
 <p>作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="go">docker run -it --rm \</span>
-<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="go">  -e &quot;DISPLAY=$DISPLAY&quot; \</span>
-<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="go">  -e &quot;XAUTHORITY=$XAUTHORITY&quot; \</span>
-<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="go">  -v /tmp/.X11-unix:/tmp/.X11-unix \</span>
-<a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a><span class="go">  -v &quot;$XAUTHORITY:$XAUTHORITY&quot; \</span>
-<a id="__codelineno-67-6" name="__codelineno-67-6" href="#__codelineno-67-6"></a><span class="go">  -v /dev/dri/renderD128:/dev/dri/renderD128 \</span>
-<a id="__codelineno-67-7" name="__codelineno-67-7" href="#__codelineno-67-7"></a><span class="go">  -v /run/user/1000/pipewire-0:/run/pipewire/pipewire-0 \</span>
-<a id="__codelineno-67-8" name="__codelineno-67-8" href="#__codelineno-67-8"></a><span class="go">  -v /run/user/1000/pulse:/run/pulse/native \</span>
-<a id="__codelineno-67-9" name="__codelineno-67-9" href="#__codelineno-67-9"></a><span class="go">  local/example-desktop-1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">&quot;DISPLAY=</span><span class="nv">$DISPLAY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">&quot;XAUTHORITY=</span><span class="nv">$XAUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="w">  </span>-v<span class="w"> </span>/tmp/.X11-unix:/tmp/.X11-unix<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$XAUTHORITY</span><span class="s2">:</span><span class="nv">$XAUTHORITY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-6" name="__codelineno-67-6" href="#__codelineno-67-6"></a><span class="w">  </span>-v<span class="w"> </span>/dev/dri/renderD128:/dev/dri/renderD128<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-7" name="__codelineno-67-7" href="#__codelineno-67-7"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pipewire-0:/run/pipewire/pipewire-0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-8" name="__codelineno-67-8" href="#__codelineno-67-8"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pulse:/run/pulse/native<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-67-9" name="__codelineno-67-9" href="#__codelineno-67-9"></a><span class="w">  </span>local/example-desktop-1
 </code></pre></div>
 <p>可以发现这样写不直观，并且容易出错（对于这里的例子，把 <code>-e</code> 和 <code>-v</code> 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 <code>docker-compose.yml</code> 文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2&quot;</span>
-<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a><span class="w">  </span><span class="nt">desktop</span><span class="p">:</span>
-<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local/example-desktop-1</span>
-<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-68-6" name="__codelineno-68-6" href="#__codelineno-68-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISPLAY=$DISPLAY</span>
-<a id="__codelineno-68-7" name="__codelineno-68-7" href="#__codelineno-68-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">XAUTHORITY=$XAUTHORITY</span>
-<a id="__codelineno-68-8" name="__codelineno-68-8" href="#__codelineno-68-8"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-68-9" name="__codelineno-68-9" href="#__codelineno-68-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/.X11-unix:/tmp/.X11-unix</span>
-<a id="__codelineno-68-10" name="__codelineno-68-10" href="#__codelineno-68-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$XAUTHORITY:$XAUTHORITY</span>
-<a id="__codelineno-68-11" name="__codelineno-68-11" href="#__codelineno-68-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/dev/dri/renderD128:/dev/dri/renderD128</span>
-<a id="__codelineno-68-12" name="__codelineno-68-12" href="#__codelineno-68-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
-<a id="__codelineno-68-13" name="__codelineno-68-13" href="#__codelineno-68-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
+<div class="highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a><span class="w">  </span><span class="nt">desktop</span><span class="p">:</span>
+<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local/example-desktop-1</span>
+<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISPLAY=$DISPLAY</span>
+<a id="__codelineno-68-6" name="__codelineno-68-6" href="#__codelineno-68-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">XAUTHORITY=$XAUTHORITY</span>
+<a id="__codelineno-68-7" name="__codelineno-68-7" href="#__codelineno-68-7"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-68-8" name="__codelineno-68-8" href="#__codelineno-68-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/.X11-unix:/tmp/.X11-unix</span>
+<a id="__codelineno-68-9" name="__codelineno-68-9" href="#__codelineno-68-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$XAUTHORITY:$XAUTHORITY</span>
+<a id="__codelineno-68-10" name="__codelineno-68-10" href="#__codelineno-68-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/dev/dri/renderD128:/dev/dri/renderD128</span>
+<a id="__codelineno-68-11" name="__codelineno-68-11" href="#__codelineno-68-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
+<a id="__codelineno-68-12" name="__codelineno-68-12" href="#__codelineno-68-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
 </code></pre></div>
 <p>然后跑一下 <code>docker compose up</code>，容器就可以启动。相比于上述的命令来讲直观得多了。</p>
 <h4 id="compose-version">版本<a class="headerlink" href="#compose-version" title="Permanent link">&para;</a></h4>
@@ -5007,14 +5013,14 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </div>
 <p>考虑到 Docker compose v1 已经不再维护，并且 Compose Specification 保持了对旧版 compose 文件的兼容性，因此下文仅考虑最新的 compose v2 与 Compose Specification 文件格式。</p>
 <h4 id="compose-format-and-usage">配置文件与基本使用<a class="headerlink" href="#compose-format-and-usage" title="Permanent link">&para;</a></h4>
-<p>Compose Specification 规定了以下这些 "top-level" 元素：</p>
+<p>Compose Specification 规定了这些 "top-level" 元素：</p>
 <ul>
-<li>Version 和 name</li>
-<li>Services</li>
-<li>Network</li>
-<li>Volumes</li>
-<li>Configs</li>
-<li>Secrets</li>
+<li><code>version</code> 和 <code>name</code></li>
+<li><code>services</code></li>
+<li><code>networks</code></li>
+<li><code>volumes</code></li>
+<li><code>configs</code></li>
+<li><code>secrets</code></li>
 </ul>
 <p>其中前四项是最常见的。同时 Compose Specification 已经不再需要写版本号（已有的会被忽略），而项目名称也是可选的（默认为当前目录名），所以一个最简单的 compose 文件可以只有 <code>services</code> 一项：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="nt">services</span><span class="p">:</span>
@@ -5545,7 +5551,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月26日 10:42:17 UTC">2026年4月26日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月12日 18:16:24 UTC">2026年6月12日</span>
   </span>
 
     
@@ -5564,14 +5570,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
       
