@@ -336,6 +336,8 @@
         
   
   
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c-.34.34-.67.67-.68 1-.03.32.31.65.63.96.48.5.95.95.93 1.44s-.53 1-1.04 1.5l-4.13 4.14L15 14.66l4.25-4.24-.96-.96-1.42 1.41-3.75-3.75 3.84-3.83c.39-.39 1.04-.39 1.41 0l2.34 2.34c.39.37.39 1.02 0 1.41M3 17.25l9.56-9.57 3.75 3.75L6.75 21H3z"/></svg>
+  
   <span class="md-ellipsis">
     
   
@@ -2560,6 +2562,19 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#git-skip-worktree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          忽略已经被跟踪的文件
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3420,6 +3435,19 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#git-skip-worktree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          忽略已经被跟踪的文件
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3900,16 +3928,32 @@
 </div>
 <h3 id="git-global-gitignore">Global gitignore<a class="headerlink" href="#git-global-gitignore" title="Permanent link">&para;</a></h3>
 <p>对于一些常见的文件类型，可以在全局配置文件中指定：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[core]</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="na">excludesfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitignore_global</span>
+<div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[core]</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span><span class="na">excludesFile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">~/.gitignore_global</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># ~/.gitignore_global
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>*~
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>.DS_Store # for macOS
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>.idea
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>*.cache
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>.vscode
+<div class="highlight"><span class="filename">~/.gitignore_global</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>*~
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>.DS_Store # for macOS
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>.idea
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>*.cache
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>.vscode
 </code></pre></div>
+<h3 id="git-skip-worktree">忽略已经被跟踪的文件<a class="headerlink" href="#git-skip-worktree" title="Permanent link">&para;</a></h3>
+<p>在一些情况下，我们可能需要忽略已经被加入 index 的文件所发生的本地修改，例如配置文件等。
+这时可以使用 <code>git update-index --skip-worktree &lt;file&gt;</code> 来告诉 Git 忽略这个文件在工作目录中的<strong>所有</strong>修改，即 Git 在任何时候都不会尝试比较这个文件在工作目录中的状态与 index 中的状态。
+特别地，<code>git reset --hard</code> 和 <code>git checkout HEAD -- &lt;file&gt;</code> 也不会重置这个文件在工作目录中的版本。
+此时你可以使用 <code>git show</code> 来查看这个文件在 index 中的版本，并结合文件重定向来将其恢复到工作目录中。</p>
+<p>如果需要取消 Git 对这个文件的无条件忽略，可以使用 <code>git update-index --no-skip-worktree &lt;file&gt;</code>。
+文件的“忽略本地修改”状态可以通过 <code>git ls-files -v</code> 来查看，此类文件的状态字母为 S（被标记为 skip-worktree）。</p>
+<div class="admonition tip">
+<p class="admonition-title">Sparse checkout</p>
+<p>截至 Git 2.52 仍然处在实验阶段的 sparse checkout 使用了相同的底层实现，即将 sparse checkout 目录以外的所有文件都标记为 skip-worktree，因此 sparse checkout 也会受到 skip-worktree 的影响。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Assume unchanged</p>
+<p><code>git update-index --assume-unchanged &lt;file&gt;</code> 与 <code>--skip-worktree</code> 的作用类似，但它告诉 Git 假设这个文件在本地没有被修改，因此 Git 会在 index 发生更新的时候（例如上游发生修改或 <code>git reset --hard</code> 等操作）重置这个文件在工作目录中的版本，并同时重置 <code>assume-unchanged</code> 标志。
+因此，将文件标记为 <code>assume-unchanged</code> 的主要目的是为了提升性能，让 Git 跳过不必要的文件状态检查，而不是为了忽略本地修改。</p>
+<p>一种简单的理解方式是，<code>skip-worktree</code> 要求 Git 向你承诺不会修改工作目录中的版本，而 <code>assume-unchanged</code> 则是你向 Git 承诺相同的事情。</p>
+</div>
 <h2 id="git-commit-amend">Amend<a class="headerlink" href="#git-commit-amend" title="Permanent link">&para;</a></h2>
 <p>有的时候，我们可能会在 commit 之后发现一些问题，例如 commit message 写错了，或者忘记添加某些修改了。这个时候可以使用 <code>git commit --amend</code> 来修改当前 HEAD 指向的 commit。
 此时 Git 会使用当前 commit 的元信息进行一次新的 commit 操作，并且以当前的 staging area 的状态作为新的 commit 内容，允许你重写 commit message。
@@ -3917,21 +3961,20 @@
 <p>默认情况下，Git 会使用当前 commit 的作者（author）信息和时间，以当前的提交者信息进行新的 commit 操作，如果需要修改作者信息，可以使用 <code>--author</code> 和 <code>--date</code> 参数来指定新的作者和作者时间，但提交者信息和时间只能通过环境变量 <code>GIT_COMMITTER_NAME</code>、<code>GIT_COMMITTER_EMAIL</code> 和 <code>GIT_COMMITTER_DATE</code> 来修改。</p>
 <h2 id="git-hooks">Git Hook<a class="headerlink" href="#git-hooks" title="Permanent link">&para;</a></h2>
 <p>对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 Git Hook 来自动化。</p>
-<p>一个叫较为成熟的框架是 <a href="https://pre-commit.com/">pre-commit</a>，它支持多种语言和工具，例如 <code>black</code>、<code>flake8</code>、<code>eslint</code> 等，<a href="https://github.com/pre-commit/pre-commit-hooks">这里</a> 提供了一些常用的 hook.</p>
+<p>一个较为成熟的框架是 <a href="https://pre-commit.com/">pre-commit</a>，它支持多种语言和工具，例如 <code>black</code>、<code>flake8</code>、<code>eslint</code> 等，<a href="https://github.com/pre-commit/pre-commit-hooks">这里</a> 提供了一些常用的 hook.</p>
 <div class="admonition note">
 <p class="admonition-title">如果只需要在 commit 后运行一段脚本</p>
-<p>可以按照如下方法进行配置：
+<p>可以按照如下方法进行配置：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># 在项目根目录下创建 .git/hooks/post-commit</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>touch<span class="w"> </span>.git/hooks/__hook_name__
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>chmod<span class="w"> </span>+x<span class="w"> </span>.git/hooks/__hook_name__
-</code></pre></div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># .git/hooks/post-commit</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">#!/bin/bash</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># 在这里写入你的脚本</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--cached<span class="w"> </span>--name-only<span class="w"> </span>--diff-filter<span class="o">=</span>ACM<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;\.py$&#39;</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">    </span>black<span class="w"> </span><span class="nv">$file</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="k">done</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">.git/hooks/post-commit</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="ch">#!/bin/bash</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># 在这里写入你的脚本</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="k">for</span><span class="w"> </span>file<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--cached<span class="w"> </span>--name-only<span class="w"> </span>--diff-filter<span class="o">=</span>ACM<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;\.py$&#39;</span><span class="k">)</span><span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">    </span>black<span class="w"> </span><span class="nv">$file</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="k">done</span>
 </code></pre></div>
 </div>
 <h2 id="partial-clone">部分 clone<a class="headerlink" href="#partial-clone" title="Permanent link">&para;</a></h2>
@@ -4232,7 +4275,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月8日 18:30:30 UTC">2026年6月8日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月12日 19:54:11 UTC">2026年6月12日</span>
   </span>
 
     
