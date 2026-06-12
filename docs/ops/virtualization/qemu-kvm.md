@@ -1,3 +1,7 @@
+---
+icon: material/desktop-classic
+---
+
 # QEMU/KVM
 
 !!! note "主要作者"

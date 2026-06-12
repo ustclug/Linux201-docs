@@ -1,3 +1,7 @@
+---
+icon: material/layers
+---
+
 # 容器
 
 !!! note "主要作者"
@@ -155,7 +159,7 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 `/sys/fs/cg
 相比于传统的 `setrlimit` 等系统调用，cgroups 能够有效地管理一组进程（以及它们新建的子进程）的资源使用。
 
 在使用 systemd 的系统中，cgroups 由 systemd 负责管理。
-仔细观察 `systemctl status` 的输出，可以发现其就展示了一颗 cgroup 树（注意看 `init.scope` 上一行）：
+仔细观察 `systemctl status` 的输出，可以发现其就展示了一棵 cgroup 树（注意看 `init.scope` 上一行）：
 
 ```console
 $ systemctl status
@@ -185,8 +189,8 @@ $ systemctl status
 
 也可以使用 `systemd-cgtop` 实时查看 cgroup 的使用情况。
 
-Cgroups 有 v1 与 v2 两个版本。
-较新的发行版默认仅支持 cgroups v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroups v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroups v2，因此下文讨论 cgroups 时，默认为 v2。
+Cgroup 有 v1 与 v2 两个版本。
+较新的发行版默认仅支持 cgroup v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroup v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroup v2，因此下文讨论 cgroup 时，默认为 v2。
 
 可以手工通过读写文件控制 cgroups：
 
@@ -859,7 +863,9 @@ a490cc0dc175   host                   host      local
             valid_lft forever preferred_lft forever
     ```
 
-    `veth` 设备可以看作是一根虚拟的网线，一端连接到容器内部（容器内部安装 `iproute2` 之后可以 `ip a` 看到 eth0 这个设备），另一端连接到 `docker0` 网桥。
+    `veth` 设备可以看作是一根虚拟的网线，一端连接到容器内部，另一端连接到 `docker0` 网桥。
+    主机上的 `veth5669cd1` 设备后面的 `@if6` 表示该 veth 设备的对端序号为 6，在容器内部安装 `iproute2` 之后可以 `ip a` 看到 eth0 这个设备，且 eth0 的序号正是 6。
+
     但是仅仅有设备是不够的，Docker 还需要配置主机的 iptables 规则，否则尽管容器与主机之间能够正常通信，容器无法通过主机访问外部网络。
     换句话讲，我们需要主机为容器扮演「路由器」的角色进行 NAT。
 
@@ -912,7 +918,7 @@ a490cc0dc175   host                   host      local
 可以通过 `docker network create` 创建自己的网络。对于新的 bridge 类型的网络，在主机上也会创建新的以 `br-` 开头的网桥设备。如果使用 docker compose 管理容器服务，那么其也会为对应的服务自动创建 bridge 类型的网络。有关用户创建的 bridge 网络相比于默认网络的优势（例如同网络容器间自动的 DNS 解析支持），可参考官方文档：[Bridge network driver](https://docs.docker.com/network/drivers/bridge/#differences-between-user-defined-bridges-and-the-default-bridge)。
 
 默认情况下，Docker 创建的网络会[分配很大的 IP 段](https://github.com/moby/moby/blob/b7c059886c0898436db90b4615a27cfb4d93ce34/libnetwork/ipamutils/utils.go#L18-L26)。
-在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 `/etc/docker/daemon.json`，将 `default-address-pools` 设置为一个较小的 IP 段：
+在创建了很多网络之后，可能会发现内网 IP 地址都被 Docker 占用了。我们建议修改 `/etc/docker/daemon.json`，将 `default-address-pools` 设置为一些较小的 IP 段：
 
 ```json title="/etc/docker/daemon.json"
 {
@@ -1212,7 +1218,7 @@ Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工
 
 作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：
 
-```console
+```shell
 docker run -it --rm \
   -e "DISPLAY=$DISPLAY" \
   -e "XAUTHORITY=$XAUTHORITY" \
@@ -1226,8 +1232,7 @@ docker run -it --rm \
 
 可以发现这样写不直观，并且容易出错（对于这里的例子，把 `-e` 和 `-v` 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 `docker-compose.yml` 文件：
 
-```yaml
-version: "2"
+```yaml title="docker-compose.yml"
 services:
   desktop:
     image: local/example-desktop-1
@@ -1299,14 +1304,14 @@ Docker Compose version v2.24.5
 
 #### 配置文件与基本使用 {#compose-format-and-usage}
 
-Compose Specification 规定了以下这些 "top-level" 元素：
+Compose Specification 规定了这些 "top-level" 元素：
 
-- Version 和 name
-- Services
-- Network
-- Volumes
-- Configs
-- Secrets
+- `version` 和 `name`
+- `services`
+- `networks`
+- `volumes`
+- `configs`
+- `secrets`
 
 其中前四项是最常见的。同时 Compose Specification 已经不再需要写版本号（已有的会被忽略），而项目名称也是可选的（默认为当前目录名），所以一个最简单的 compose 文件可以只有 `services` 一项：
 

@@ -1015,7 +1015,23 @@ btrfs filesystem defrag -v -r -czstd -L3 /path/to/btrfs
 btrfs filesystem defrag -v -r -czstd /path/to/btrfs
 ```
 
-注意 defrag 会破坏 reflink 关系——可能会导致占用空间提升。
+注意 defrag 会破坏 reflink 关系——这可能会导致占用空间提升。
+
+除了在挂载时添加 `compress` 参数以启用透明压缩之外，Btrfs 还允许为特定的 subvolume 或目录指定压缩算法：
+
+```shell
+btrfs property set /path/to/btrfs/dir compression zstd:3
+```
+
+以这种方式设置的压缩算法的优先级低于挂载参数，并且会被继承到该目录下的子目录和文件中。
+
+!!! question "Rsync 对于 btrfs property 的影响"
+
+    如果你使用 `btrfs property set` 为一个新目录设置了压缩算法，然后以 root 使用 `rsync -aHAXx` 将外部文件复制进这个目录，那么复制后的文件会使用指定的压缩算法吗？
+
+    动手实验及查阅资料，尝试找出答案并解释原因。
+
+    <!-- Answer: `rsync -x` overwrites `btrfs.compression` -->
 
 #### 引用复制 {#btrfs-reflink}
 
