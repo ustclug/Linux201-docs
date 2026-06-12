@@ -267,7 +267,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
     sort = version:refname
 ```
 
-我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
+我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
 
 ```bash
 curl -sS https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig

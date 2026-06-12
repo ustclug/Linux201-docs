@@ -17,7 +17,7 @@ icon: fontawesome/brands/git
 - Git 与用户认证
 - 需要用户向服务器推送（push）变更的场景
 
-建议在阅读[网络服务实践的 Nginx 服务器](../ops/network-service/nginx.md)与[版本管理与合作](../dev/git.md)后再阅读本部分。
+建议在阅读[网络服务实践的 Nginx 服务器](../ops/network-service/nginx.md)与[版本管理与合作](../dev/vcs/git.md)后再阅读本部分。
 
 !!! note "其他实现：JGit"
 
