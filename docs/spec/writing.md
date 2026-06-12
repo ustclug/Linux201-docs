@@ -1,3 +1,7 @@
+---
+icon: material/pen
+---
+
 # 章节编写指导
 
 本部分参考自 [Linux 101 章节编写指导](https://101.lug.ustc.edu.cn/Spec/writing/)，有较大幅度的调整。以下将从两个方面：格式和内容，介绍如何编写章节。

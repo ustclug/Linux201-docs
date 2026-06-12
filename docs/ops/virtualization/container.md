@@ -979,7 +979,7 @@ a490cc0dc175   host                   host      local
     ip rule add from 172.17.4.0/24 table bridge1 pref 5
     ```
 
-    之后启动容器时，指定使用这个网络即可。以上 `ip` 的配置测试无误后，需要在你所使用的网络配置管理工具中持久化。此外，用户自定义的 bridge 网络默认使用的 DNS 为 Docker 内置的 DNS 服务器（`127.0.0.11`），会将 DNS 请求转发到主机设置的 DNS 服务器。如果有自定义 DNS 的需求，需要在创建容器时指定。
+    之后启动容器时，指定使用这个网络即可。以上 `ip` 的配置测试无误后，需要在你所使用的[网络配置管理工具](../network/config.md)中持久化。此外，用户自定义的 bridge 网络默认使用的 DNS 为 Docker 内置的 DNS 服务器（`127.0.0.11`），会将 DNS 请求转发到主机设置的 DNS 服务器。如果有自定义 DNS 的需求，需要在创建容器时指定。
 
 #### 防火墙配置 {#docker-firewall}
 
@@ -1032,7 +1032,7 @@ Docker 会在 filter 表的 `FORWARD` 链中添加这样的规则：
 - 自行维护 `DOCKER-USER` 链。可参考官方文档中 [Restrict external connections to containers](https://docs.docker.com/engine/network/packet-filtering-firewalls/#restrict-external-connections-to-containers) 的部分。
 - 使用 Docker 的 `--network host` 选项，不做网络隔离，直接使用主机的网络。
 - 设置端口映射只向 `127.0.0.1` 开放，然后使用其他的程序（例如 Nginx）来对外提供服务（如果希望设置为默认选项，可以参考文档中 [Setting the default bind address for containers](https://docs.docker.com/network/packet-filtering-firewalls/#setting-the-default-bind-address-for-containers) 一节）。
-- 不让 Docker 维护 iptables。这会导致一些与容器网络有关的问题，例如容器网络之间的隔离失效、容器内部无法正常访问外部网络等等。
+- 不让 Docker 操作 iptables。这会导致一些与容器网络有关的问题，例如容器网络之间的隔离失效、容器内部无法正常访问外部网络等等。对于高级用户，这些问题可以通过自行维护 iptables 规则解决。
 
 #### IPv6
 
