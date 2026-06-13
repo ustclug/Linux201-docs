@@ -718,6 +718,12 @@ server {
 
 在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
+!!! note "`ssl_dhparam`"
+
+    由于非对称加密的性能不及对称加密，因此 TLS 在握手阶段需要非对称交换对称加密的密钥。在最早期的时候，SSL 使用 RSA 算法进行密钥交换——客户端生成对称加密密钥，使用服务端证书的公钥加密之后，服务端用自己的私钥解密。但是一旦私钥泄露，那么以往的加密流量也就能够轻松解密出来。而使用 Diffie-Hellman 算法的 DHE（Ephemeral DH）会在每次都生成新的 DH 私钥（算法的具体细节这里不展开），即使未来私钥泄露，以往的流量也无法轻松解密。这种性质也被称为**前向安全性（forward secrecy）**。
+
+    DHE 需要 DH 参数，早期 Nginx 等服务都会自带一个固定的 DH 参数，但是后来证明这样会[削弱安全性](https://weakdh.org/)，因此 Nginx 目前 [`ssl_dhparam`](https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_dhparam) 参数默认为空。不过目前，DHE 因为性能问题已经被弃用，和 RSA 密钥交换一起在 TLS 1.3 中被移除。目前 TLS 的主流密钥交换为基于椭圆曲线算法的 ECDHE，因此这一项参数也可以不用再设置了。
+
 HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 `Strict-Transport-Security` 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
 
 !!! tip "购买域名之前注意一下 HSTS 预加载列表哦！"
