@@ -647,7 +647,7 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
 有关具体各个字段的含义，可参考 [Debian Policy Manual](https://www.debian.org/doc/debian-policy/index.html) 的[第五章 Control files and their fields](https://www.debian.org/doc/debian-policy/ch-controlfields.html) 与[第七章 Declaring relationships between packages](https://www.debian.org/doc/debian-policy/ch-relationships.html)。
 
-#### 其他文件
+#### 其他文件 {#deb-package-files}
 
 此外，`control.tar.xz` 可以包含一些 hook 脚本，在安装与删除前后进行操作，包括 `preinst`, `prerm`, `postinst`, `postrm`。还可以包含以下文件：
 
@@ -657,6 +657,27 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 - `triggers`，定义了软件包感兴趣（interest）的触发器，以及软件包状态变化时会触发（activate）的触发器。
 
 这些 hook 脚本与额外的信息文件在软件包安装后会保存在 `/var/lib/dpkg/info` 目录下，以便在维护软件包时参考，如卸载软件包或进行完整性校验（`dpkg -V`）等。
+
+!!! note "Hook 脚本与 init 系统的交互"
+
+    传统上，Debian 软件包安装后，其 `postinst` 脚本会以默认安全的配置启动对应的服务，删除软件包时 `prerm` 和 `postrm` 也会做服务的关闭与删除操作。不过，直接在 hook 脚本里面运行 `systemctl` 是不太恰当的，因为运行所处的环境可能根本没有 systemd（例如容器或 chroot 等）。
+
+    Debian 的 [init-system-helpers](https://packages.debian.org/trixie/init-system-helpers) 包提供了 `invoke-rc.d` 脚本，hook 脚本中可以以类似传统 SysVinit service 的方式调用（`invoke-rc.d start`），在现代 Debian 系统中会转换为 systemd 操作。其在启动时会运行 [`/usr/sbin/policy-rc.d`](http://people.debian.org/~hmh/invokerc.d-policyrc.d-specification.txt)，如果 `policy-rc.d` 返回 101，那么 `invoke-rc.d` 就不会去尝试做服务操作。Docker 的 `library/debian` 就做了相关的操作：
+
+    ```sh title="/usr/sbin/policy-rc.d"
+    #!/bin/sh
+
+    # For most Docker users, "apt-get install" only happens during "docker build",
+    # where starting services doesn't work and often fails in humorous ways. This
+    # prevents those failures by stopping the services from attempting to start.
+
+    exit 101
+    ```
+
+    需要注意的是，`invoke-rc.d` 不止会在软件安装或卸载的时候被调用，因此在 init 正常的系统上不建议配置 `policy-rc.d`，否则可能会遇到出乎意料的问题（例如我们调试过的 [ZFS 相关问题](./storage/zfs.md#debugging)）。
+
+    另外，由于 Debian 已经全面使用 systemd，因此在 hook 脚本中更常见的其实是 `deb-systemd-helper` 和 `deb-systemd-invoke`，这两个命令也由 init-system-helpers 包提供。
+
 
 ### 获取软件包源码 {#apt-source}
 
