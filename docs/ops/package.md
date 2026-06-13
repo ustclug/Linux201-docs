@@ -678,7 +678,6 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
     另外，由于 Debian 已经全面使用 systemd，因此在 hook 脚本中更常见的其实是 `deb-systemd-helper` 和 `deb-systemd-invoke`，这两个命令也由 init-system-helpers 包提供。
 
-
 ### 获取软件包源码 {#apt-source}
 
 Debian 目前大多数的包的源代码都可以在 Debian Salsa GitLab 上找到，可以在 [Debian Package Tracker](https://tracker.debian.org/) 上找到相关信息。
