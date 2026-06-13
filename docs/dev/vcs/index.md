@@ -1,5 +1,5 @@
 ---
-icon: material/source_branch
+icon: material/source-branch
 ---
 
 # 版本管理
