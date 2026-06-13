@@ -664,6 +664,14 @@ $ nc <地址> 22
 SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
 ```
 
+如果要在脚本中使用 `nc`，可以添加 `-z` 参数让 `nc` 只进行端口连通性测试，而不尝试传输数据：
+
+```console
+$ nc -z www.example.com 80
+$ echo $?
+0
+```
+
 #### mtr
 
 对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。`mtr` 命令可以看作是 `ping` 和 `traceroute` 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。
@@ -678,7 +686,7 @@ SSH-2.0-OpenSSH_9.2p1 Debian-2+deb12u5
 mtr -c 10 -r www.example.com
 ```
 
-`mtr` 默认使用 ICMP Echo 包执行 trace 操作，可以使用 `--tcp` 和 `--udp` 参数切换为 TCP 或 UDP 包，此时使用 `--port` 参数可以指定访问的 TCP/UDP 端口号。
+`mtr` 默认使用 ICMP Echo 包执行 trace 操作，可以使用 `--tcp` 和 `--udp` 参数切换为 TCP 或 UDP 包，此时使用 `--port` 参数可以指定访问的 TCP/UDP 目标端口号。
 
 #### dig 与 DNS {#dig}
 
