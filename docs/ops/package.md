@@ -678,6 +678,33 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
     另外，由于 Debian 已经全面使用 systemd，因此在 hook 脚本中更常见的其实是 `deb-systemd-helper` 和 `deb-systemd-invoke`，这两个命令也由 init-system-helpers 包提供。
 
+!!! note "debconf"
+
+    一些软件包在安装时会需要用户提供额外的信息，例如 `tzdata` 包安装时会咨询用户所属的时区。这类交互式功能是由 debconf 实现的。需要 debconf 集成的软件包会包含 `templates` 文件，里面是需要询问用户的信息，类似这样：
+
+    ```debconf title="templates"
+    Template: tzdata/Areas
+    Type: select
+    Choices: Africa, America, Antarctica, Arctic, Asia, Atlantic, Australia, Europe, Indian, Pacific, Etc
+
+    Template: tzdata/Zones/Etc
+    Type: select
+    Choices: GMT, GMT0, GMT+0, GMT+1, GMT+2, GMT+3, GMT+4, GMT+5, GMT+6, GMT+7, GMT+8, GMT+9, GMT+10, GMT+11, GMT+12, GMT-0, GMT-1, GMT-2, GMT-3, GMT-4, GMT-5, GMT-6, GMT-7, GMT-8, GMT-9, GMT-10, GMT-11, GMT-12, GMT-13, GMT-14, Greenwich, UCT, UTC, Universal, Zulu
+    ```
+
+    使用 debconf 的软件包还会包含 `config` 文件，这是一个 shell 脚本，里面会实际使用 debconf 的接口向用户提问，类似这样：
+
+    ```sh title="config"
+    # 发起交互
+    db_input high tzdata/Areas
+    db_go
+
+    # 获取结果
+    db_get tzdata/Areas || RET=Etc
+    ```
+
+    有一些时候，我们不希望做软件包操作的时候出现交互行为，例如在打包容器或虚拟机镜像时。此时可以使用 `DEBIAN_FRONTEND=noninteractive` 限制 debconf 的前端为 `noninteractive`（不提问任何问题）。
+
 ### 获取软件包源码 {#apt-source}
 
 Debian 目前大多数的包的源代码都可以在 Debian Salsa GitLab 上找到，可以在 [Debian Package Tracker](https://tracker.debian.org/) 上找到相关信息。
