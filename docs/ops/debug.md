@@ -60,65 +60,67 @@ icon: material/bug
 
         Debian 的 `kdump-tools` 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 `kdump-tools`，并使用 SysRq 触发内核崩溃，验证配置的有效性。
 
-!!! tip "用户态 OOM Killer"
+/// tip | 用户态 OOM Killer
+    attrs: {id: userspace-oom-killer}
 
-    Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。
+Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。
 
-    用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：
+用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：
 
-    - systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
+- systemd-oomd。在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
 
-        由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
+    由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
-        oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
+    oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-        除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
-        
-        在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的进程，而不是占用内存最多的进程，因此可能会出现占用了最多的内存的进程并没有被 kill，而是占用比较少内存的进程被 kill 了。
-
-        ??? example "Debian 12 中的 systemd-oomd 配置"
-
-            Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。
-
-            ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
-            [Slice]
-            ManagedOOMSwap=kill
-            ```
-
-            ```ini title="/usr/lib/systemd/system/user@.service.d/10-oomd-user-service-defaults.conf"
-            [Service]
-            ManagedOOMMemoryPressure=kill
-            ManagedOOMMemoryPressureLimit=50%
-            ```
-
-        ??? example "Fedora 42 中的 systemd-oomd 配置"
-
-            Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
-
-            ```ini title="/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf"
-            [Slice]
-            ManagedOOMMemoryPressure=kill
-            ManagedOOMMemoryPressureLimit=80%
-            ```
-
-            ```ini title="/usr/lib/systemd/user/slice.d/10-oomd-per-slice-defaults.conf"
-            [Slice]
-            ManagedOOMMemoryPressure=kill
-            ManagedOOMMemoryPressureLimit=80%
-            ```
-    - [earlyoom](https://github.com/rfjakob/earlyoom)。earlyoom 使用 [mlock(2)][mlock.2] 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。
-
-        earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
-
-        ![earlyoom in Vlab](../images/vlab-earlyoom.png)
-
-    !!! question "tmpfs?"
-
-        思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
+    除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
     
-    还有很多其他的实现，在 [nohang 的 README](https://github.com/hakavlad/nohang?tab=readme-ov-file#solution) 中有相关整理，可以作为参考。
-    
-    此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，可参考[分区与文件系统](./storage/filesystem.md#:~:text=%E4%BB%80%E4%B9%88%E6%98%AF%20swap)的有关部分。
+    在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的进程，而不是占用内存最多的进程，因此可能会出现占用了最多的内存的进程并没有被 kill，而是占用比较少内存的进程被 kill 了。
+
+    ??? example "Debian 12 中的 systemd-oomd 配置"
+
+        Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。
+
+        ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
+        [Slice]
+        ManagedOOMSwap=kill
+        ```
+
+        ```ini title="/usr/lib/systemd/system/user@.service.d/10-oomd-user-service-defaults.conf"
+        [Service]
+        ManagedOOMMemoryPressure=kill
+        ManagedOOMMemoryPressureLimit=50%
+        ```
+
+    ??? example "Fedora 42 中的 systemd-oomd 配置"
+
+        Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
+
+        ```ini title="/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf"
+        [Slice]
+        ManagedOOMMemoryPressure=kill
+        ManagedOOMMemoryPressureLimit=80%
+        ```
+
+        ```ini title="/usr/lib/systemd/user/slice.d/10-oomd-per-slice-defaults.conf"
+        [Slice]
+        ManagedOOMMemoryPressure=kill
+        ManagedOOMMemoryPressureLimit=80%
+        ```
+- [earlyoom](https://github.com/rfjakob/earlyoom)。earlyoom 使用 [mlock(2)][mlock.2] 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。
+
+    earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：
+
+    ![earlyoom in Vlab](../images/vlab-earlyoom.png)
+
+!!! question "tmpfs?"
+
+    思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
+
+还有很多其他的实现，在 [nohang 的 README](https://github.com/hakavlad/nohang?tab=readme-ov-file#solution) 中有相关整理，可以作为参考。
+
+此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，可参考[分区与文件系统](./storage/filesystem.md#swap)的有关部分。
+///
 
 !!! note "系统无法启动"
 

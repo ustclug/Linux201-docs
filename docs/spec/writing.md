@@ -102,6 +102,18 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
 - lab: 教程不会详细说明，需要读者自己尝试的实验。
 
+此外，有些时候我们需要给提示框添加 `id` 信息以便使用 `#id` 的方式引用，此时需要使用 [pythonmdown 的扩展语法](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/)：
+
+```markdown
+/// tip | 一个例子
+    attrs: {id: example}
+
+一些文本，不需要缩进。
+
+另一段文本。
+///
+```
+
 ### 为标题和小标题添加 ID {#heading-ids}
 
 由于文章篇目较长，使用时会经常遇到需要链接到文章某一段的情况。受限于 MkDocs 自动生成 Anchor ID 的功能（只支持英文字符），纯中文的标题会导致生成 `_1`, `_2` 这样的 ID。一方面这样的 ID 看起来不直观，另一方面每当标题发生增减时这些 ID 都会变，因此请为每个**除了 h1 以外的标题**手动添加一个有意义的 ID，方法如下：

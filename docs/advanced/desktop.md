@@ -95,28 +95,32 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
 
     目前最新 libxcb 的代码已经[移除了抽象套接字的支持](https://gitlab.freedesktop.org/xorg/lib/libxcb/-/commit/e81b999a727d3c8ee9b83adb7c1c822f67378687)。
 
-!!! tip "启动一个新的 X Server"
+<!-- !!! tip "启动一个新的 X Server" -->
 
-    存在这样一种场景：你需要启动一个独立的 X server 来测试，而不希望对应的程序使用当前的 X server。其中一个便利的工具是 `xvfb-run`：Xvfb 是一个无头（无显示）的 X server，对自动化测试场景来说很方便。安装 `xvfb` 包后，即可使用：
+/// tip | 启动一个新的 X Server
+    attrs: {id: new-x-server}
 
-    ```shell
-    xvfb-run -f xvfb-auth -n 99 xeyes
-    ```
+存在这样一种场景：你需要启动一个独立的 X server 来测试，而不希望对应的程序使用当前的 X server。其中一个便利的工具是 `xvfb-run`：Xvfb 是一个无头（无显示）的 X server，对自动化测试场景来说很方便。安装 `xvfb` 包后，即可使用：
 
-    这里我们设置 `XAUTHORITY` 文件为 `xvfb-auth`，并且 `DISPLAY` 为 `:99`。关于 `XAUTHORITY`，请参考[容器部分的介绍](../ops/virtualization/container.md#docker-gui)。然后可以通过以下命令确认：
+```shell
+xvfb-run -f xvfb-auth -n 99 xeyes
+```
 
-    ```console
-    $ DISPLAY=:99 XAUTHORITY=./xvfb-auth xlsclients 
-    examplehost  xeyes
-    ```
+这里我们设置 `XAUTHORITY` 文件为 `xvfb-auth`，并且 `DISPLAY` 为 `:99`。关于 `XAUTHORITY`，请参考[容器部分的介绍](../ops/virtualization/container.md#docker-gui)。然后可以通过以下命令确认：
 
-    如果希望创建一个 X server 并且能够以子窗口的形式显示出来，那么可以考虑使用 Xephyr 或者 Xwayland 来创建。以 Xephyr 为例，以下命令可以创建一个 800x600 的 X server，并且以窗口的形式显示：
+```console
+$ DISPLAY=:99 XAUTHORITY=./xvfb-auth xlsclients 
+examplehost  xeyes
+```
 
-    ```shell
-    Xephyr :123 -ac -screen 800x600
-    ```
+如果希望创建一个 X server 并且能够以子窗口的形式显示出来，那么可以考虑使用 Xephyr 或者 Xwayland 来创建。以 Xephyr 为例，以下命令可以创建一个 800x600 的 X server，并且以窗口的形式显示：
 
-    其他应用可以直接用 `DISPLAY=:123` 环境变量连接到这个 server。在 Wayland 环境下，也可以使用 `xwayland-run`，以 Xwayland 的 "rootful" 模式运行一个新的 X server。
+```shell
+Xephyr :123 -ac -screen 800x600
+```
+
+其他应用可以直接用 `DISPLAY=:123` 环境变量连接到这个 server。在 Wayland 环境下，也可以使用 `xwayland-run`，以 Xwayland 的 "rootful" 模式运行一个新的 X server。
+///
 
 可以运行 `xlsclients` 获取连接到当前 X 服务器的客户端列表：
 
@@ -733,7 +737,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 ![Wayland Architecture](https://wayland.freedesktop.org/wayland-architecture.png)
 
-只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 [Xephyr](#client-server-window:~:text=%E5%A6%82%E6%9E%9C%E5%B8%8C%E6%9C%9B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%20X%20server%20%E5%B9%B6%E4%B8%94%E8%83%BD%E5%A4%9F%E4%BB%A5%E5%AD%90%E7%AA%97%E5%8F%A3%E7%9A%84%E5%BD%A2%E5%BC%8F%E6%98%BE%E7%A4%BA%E5%87%BA%E6%9D%A5%EF%BC%8C%E9%82%A3%E4%B9%88%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%20Xephyr%20%E6%88%96%E8%80%85%20Xwayland%20%E6%9D%A5%E5%88%9B%E5%BB%BA%E3%80%82) 表现类似。
+只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 [Xephyr](#new-x-server) 表现类似。
 
 !!! note "xwayland-satellite"
 
@@ -1184,48 +1188,50 @@ DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总
 busctl monitor --user
 ```
 
-!!! note "Varlink"
+/// note | Varlink
+    attrs: {id: varlink}
 
-    看到 DBus 这一节的结尾，你可能会觉得 DBus 的设计太复杂了，对很多不需要总线的点对点的场景来说显得过于笨重。并且对 systemd 的场景来说，DBus 在系统启动早期也是不可用的（要等到 DBus 服务启动之后才行）。相关团队曾经尝试过将 DBus 引入 Linux 内核（[kdbus](https://lwn.net/Articles/580194/)），但结果以不被采纳告终。
+看到 DBus 这一节的结尾，你可能会觉得 DBus 的设计太复杂了，对很多不需要总线的点对点的场景来说显得过于笨重。并且对 systemd 的场景来说，DBus 在系统启动早期也是不可用的（要等到 DBus 服务启动之后才行）。相关团队曾经尝试过将 DBus 引入 Linux 内核（[kdbus](https://lwn.net/Articles/580194/)），但结果以不被采纳告终。
 
-    因此，[Varlink](https://lwn.net/Articles/742675/) 诞生了。这是一个非常轻量级的 IPC 协议，简单来说：
+因此，[Varlink](https://lwn.net/Articles/742675/) 诞生了。这是一个非常轻量级的 IPC 协议，简单来说：
 
-    - 服务端监听一个 Unix socket（不再有「总线」的概念）。
-    - 客户端与服务端之间数据通信使用 JSON 格式（简单胜过执行效率）。
-    - 使用 varlink 格式描述接口（比 XML 简单得多，并且描述中包含了给人类阅读的文档，更容易使用）。
+- 服务端监听一个 Unix socket（不再有「总线」的概念）。
+- 客户端与服务端之间数据通信使用 JSON 格式（简单胜过执行效率）。
+- 使用 varlink 格式描述接口（比 XML 简单得多，并且描述中包含了给人类阅读的文档，更容易使用）。
 
-    Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。
+Varlink 不能完全替代 DBus——在桌面场景下，DBus 仍然是主流选择。
 
-    以下是调用 systemd-resolved 解析域名的例子：
+以下是调用 systemd-resolved 解析域名的例子：
 
-    ```console
-    $ varlinkctl introspect /run/systemd/resolve/io.systemd.Resolve
-    （省略）
-    interface io.systemd.Resolve
-    （省略）
-    # Resolves a hostname to one or more IP addresses.
-    method ResolveHostname(
-            # The Linux interface index for the network interface to search on. Typically left unspecified, in
-            # order to search on all interfaces.
-            ifindex: ?int,
-            # The host name to resolve.
-            name: string,
-            # The address family to search for, one of AF_INET or AF_INET6.
-            family: ?int,
-            # Various search flags.
-            flags: ?int
-    ) -> (
-            # Array of resolved IP addresses
-            addresses: []ResolvedAddress,
-            # Canonical name of the host.
-            name: string,
-            # Various flags indicating details on discovered data.
-            flags: int
-    )
-    （省略）
-    $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.ResolveHostname '{"name": "www.example.com"}' | jq -c .
-    {"addresses":[{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{"ifindex":2,"family":2,"address":[104,18,27,120]},{"ifindex":2,"family":2,"address":[104,18,26,120]}],"name":"www.example.com","flags":1048577}
-    ```
+```console
+$ varlinkctl introspect /run/systemd/resolve/io.systemd.Resolve
+（省略）
+interface io.systemd.Resolve
+（省略）
+# Resolves a hostname to one or more IP addresses.
+method ResolveHostname(
+        # The Linux interface index for the network interface to search on. Typically left unspecified, in
+        # order to search on all interfaces.
+        ifindex: ?int,
+        # The host name to resolve.
+        name: string,
+        # The address family to search for, one of AF_INET or AF_INET6.
+        family: ?int,
+        # Various search flags.
+        flags: ?int
+) -> (
+        # Array of resolved IP addresses
+        addresses: []ResolvedAddress,
+        # Canonical name of the host.
+        name: string,
+        # Various flags indicating details on discovered data.
+        flags: int
+)
+（省略）
+$ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.ResolveHostname '{"name": "www.example.com"}' | jq -c .
+{"addresses":[{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,27,120]},{"ifindex":2,"family":10,"address":[38,6,71,0,0,0,0,0,0,0,0,0,104,18,26,120]},{"ifindex":2,"family":2,"address":[104,18,27,120]},{"ifindex":2,"family":2,"address":[104,18,26,120]}],"name":"www.example.com","flags":1048577}
+```
+///
 
 ## Portal
 
