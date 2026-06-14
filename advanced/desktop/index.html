@@ -3908,7 +3908,7 @@
 <p>抽象套接字在如今带来了一些安全性的挑战，因为和文件系统上的 <code>/tmp/.X11-unix/X0</code> 可以依靠文件级别的权限控制不同，抽象套接字只能通过网络命名空间实现隔离。但是如果直接关闭 X server 的抽象套接字，攻击者可以创建虚假的名为 <code>@/tmp/.X11-unix/X0</code> 的套接字，欺骗 X 客户端连接。不过连接到 X server 还需要经过一层认证机制（XAuthority），因此如果不去 <code>xhost +</code> 的话，攻击者必须要能够获取 XAuthority 信息，才能够连接到对应的 X server。</p>
 <p>目前最新 libxcb 的代码已经<a href="https://gitlab.freedesktop.org/xorg/lib/libxcb/-/commit/e81b999a727d3c8ee9b83adb7c1c822f67378687">移除了抽象套接字的支持</a>。</p>
 </div>
-<div class="admonition tip">
+<div class="admonition tip" id="new-x-server">
 <p class="admonition-title">启动一个新的 X Server</p>
 <p>存在这样一种场景：你需要启动一个独立的 X server 来测试，而不希望对应的程序使用当前的 X server。其中一个便利的工具是 <code>xvfb-run</code>：Xvfb 是一个无头（无显示）的 X server，对自动化测试场景来说很方便。安装 <code>xvfb</code> 包后，即可使用：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>xvfb-run<span class="w"> </span>-f<span class="w"> </span>xvfb-auth<span class="w"> </span>-n<span class="w"> </span><span class="m">99</span><span class="w"> </span>xeyes
@@ -4397,7 +4397,7 @@
 <h3 id="wayland-infrastructure">基础架构<a class="headerlink" href="#wayland-infrastructure" title="Permanent link">&para;</a></h3>
 <p>在 Wayland 架构中，原先的 X server 与混成器合二为一，仍然称为混成器。混成器需要与客户端使用 Wayland 协议通信，与内核使用 KMS、evdev 等接口通信处理输入输出，如下面这张官方架构图所示：</p>
 <p><img alt="Wayland Architecture" src="https://wayland.freedesktop.org/wayland-architecture.png" /></p>
-<p>只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 <a href="#client-server-window:~:text=%E5%A6%82%E6%9E%9C%E5%B8%8C%E6%9C%9B%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%20X%20server%20%E5%B9%B6%E4%B8%94%E8%83%BD%E5%A4%9F%E4%BB%A5%E5%AD%90%E7%AA%97%E5%8F%A3%E7%9A%84%E5%BD%A2%E5%BC%8F%E6%98%BE%E7%A4%BA%E5%87%BA%E6%9D%A5%EF%BC%8C%E9%82%A3%E4%B9%88%E5%8F%AF%E4%BB%A5%E8%80%83%E8%99%91%E4%BD%BF%E7%94%A8%20Xephyr%20%E6%88%96%E8%80%85%20Xwayland%20%E6%9D%A5%E5%88%9B%E5%BB%BA%E3%80%82">Xephyr</a> 表现类似。</p>
+<p>只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 <a href="#new-x-server">Xephyr</a> 表现类似。</p>
 <div class="admonition note">
 <p class="admonition-title">xwayland-satellite</p>
 <p>对混成器来说，实现 XWayland rootless 的支持并不算很容易。如果 XWayland 没有那么特殊会怎么样？<a href="https://github.com/Supreeeme/xwayland-satellite">xwayland-satellite</a> 作为普通的 Wayland 客户端实现了类似于 XWayland rootless 的功能，是一些轻量级混成器的选择。</p>
@@ -4757,7 +4757,7 @@
 <p>DBus 也允许我们抓取总线上的所有消息以供调试（抓取系统总线需要 root 权限）。<code>dbus-monitor</code>、<code>busctl monitor</code>，以及图形界面的 <a href="https://apps.gnome.org/zh-CN/Bustle/">Bustle</a> 都可以做到这一点。例如，如果希望实时显示会话总线的所有消息，可以运行：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a>busctl<span class="w"> </span>monitor<span class="w"> </span>--user
 </code></pre></div>
-<div class="admonition note">
+<div class="admonition note" id="varlink">
 <p class="admonition-title">Varlink</p>
 <p>看到 DBus 这一节的结尾，你可能会觉得 DBus 的设计太复杂了，对很多不需要总线的点对点的场景来说显得过于笨重。并且对 systemd 的场景来说，DBus 在系统启动早期也是不可用的（要等到 DBus 服务启动之后才行）。相关团队曾经尝试过将 DBus 引入 Linux 内核（<a href="https://lwn.net/Articles/580194/">kdbus</a>），但结果以不被采纳告终。</p>
 <p>因此，<a href="https://lwn.net/Articles/742675/">Varlink</a> 诞生了。这是一个非常轻量级的 IPC 协议，简单来说：</p>
@@ -4933,7 +4933,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月9日 17:10:05 UTC">2026年6月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月14日 17:58:33 UTC">2026年6月14日</span>
   </span>
 
     
@@ -4951,6 +4951,16 @@ Do not link to a "generic" man page for these commands -->
 
     
     <nav>
+      
+        <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
+        </a>
+      
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
+          
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           

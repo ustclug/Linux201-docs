@@ -3868,7 +3868,7 @@
 <p>Debian 的 <code>kdump-tools</code> 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 <code>kdump-tools</code>，并使用 SysRq 触发内核崩溃，验证配置的有效性。</p>
 </div>
 </div>
-<div class="admonition tip">
+<div class="admonition tip" id="userspace-oom-killer">
 <p class="admonition-title">用户态 OOM Killer</p>
 <p>Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。</p>
 <p>用户态 OOM Killer 可以很大程度缓解这个问题，最常用的两个实现如下：</p>
@@ -3902,9 +3902,9 @@
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">ManagedOOMMemoryPressureLimit</span><span class="o">=</span><span class="s">80%</span>
 </code></pre></div>
 </details>
-</li>
-<li>
-<p><a href="https://github.com/rfjakob/earlyoom">earlyoom</a>。earlyoom 使用 <a href="https://man7.org/linux/man-pages/man2/mlock.2.html">mlock(2)</a> 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。</p>
+<ul>
+<li><a href="https://github.com/rfjakob/earlyoom">earlyoom</a>。earlyoom 使用 <a href="https://man7.org/linux/man-pages/man2/mlock.2.html">mlock(2)</a> 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。</li>
+</ul>
 <p>earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：</p>
 <p><img alt="earlyoom in Vlab" src="../../images/vlab-earlyoom.png" /></p>
 </li>
@@ -3914,7 +3914,7 @@
 <p>思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？</p>
 </div>
 <p>还有很多其他的实现，在 <a href="https://github.com/hakavlad/nohang?tab=readme-ov-file#solution">nohang 的 README</a> 中有相关整理，可以作为参考。</p>
-<p>此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，可参考<a href="../storage/filesystem/#:~:text=%E4%BB%80%E4%B9%88%E6%98%AF%20swap">分区与文件系统</a>的有关部分。</p>
+<p>此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，可参考<a href="../storage/filesystem/#swap">分区与文件系统</a>的有关部分。</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">系统无法启动</p>
@@ -4913,7 +4913,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月13日 10:48:40 UTC">2026年6月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月14日 17:58:33 UTC">2026年6月14日</span>
   </span>
 
     
@@ -4932,14 +4932,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+        <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
           
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
         </a>
       
-        <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
-          <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
         </a>
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
@@ -4947,16 +4947,16 @@ Do not link to a "generic" man page for these commands -->
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
-        <a href="https://github.com/zeyugao" class="md-author" title="@zeyugao">
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
-          <img src="https://avatars.githubusercontent.com/u/6374697?v=4&size=72" alt="zeyugao">
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       
       
         
           <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/ops/debug.md" class="md-author md-author--more">
-            +3
+            +4
           </a>
         
       
