@@ -203,6 +203,59 @@ Host realhost
 
     SSH 跳板机和前文所述的“**本地**端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。
 
+### SSH Agent {#ssh-agent}
+
+SSH agent 是一个在后台运行的程序，用于持有私钥供 SSH 客户端在认证时使用。SSH agent 自身持有私钥，只对外提供签名操作。SSH agent 通常由桌面环境或 shell 自动启动。使用 SSH agent 通常有以下好处：
+
+- 私钥只需解密一次，之后 Agent 在后台保持密钥可用，无需反复输入密码。
+- 私钥只存放在本地主机，不需要复制到远程服务器上。
+
+`ssh-agent -s` 命令可以启动一个 SSH agent，生成相关 Bourne shell 命令并输出到 stdout，例如：
+
+```
+$ ssh-agent -s
+SSH_AUTH_SOCK=/tmp/ssh-uRRuiB8l0C76/agent.3173586; export SSH_AUTH_SOCK;
+SSH_AGENT_PID=3173587; export SSH_AGENT_PID;
+echo Agent pid 3173587;
+```
+
+其中 `SSH_AUTH_SOCK` 环境变量用于控制所使用的 SSH agent。通常使用以下命令启动并在当前环境中使用该 SSH agent：
+
+```shell
+eval "$(ssh-agent -s)"
+```
+
+可以通过 `ssh-add` 管理密钥：
+
+```shell
+ssh-add ~/.ssh/id_ed25519    # 将私钥加入 agent
+ssh-add -l                   # 列出已加载的密钥指纹
+ssh-add -L                   # 列出已加载的公钥
+ssh-add -d ~/.ssh/id_ed25519 # 移除指定密钥
+ssh-add -D                   # 移除所有密钥
+```
+
+`-A` 参数可以将本地的 SSH agent 转发到远程主机，使远程主机能使用你本地的 SSH 私钥向第三方认证。这对于在主力机上统一维护密钥、不在远程机器上留存私钥的场景非常适用。
+
+```shell
+ssh -A user@remote.example.com
+```
+
+也可以在配置文件中指定：
+
+```shell
+Host remote
+  ForwardAgent yes
+```
+
+!!! tip "SSH agent 转发的机制"
+
+    转发 SSH agent 会在远程主机上创建一个 Unix domain socket，并设置 `SSH_AUTH_SOCK` 环境变量指向该 socket。该 socket 上的通信通过 SSH 连接内的 `auth-agent@openssh.com` channel 发送给本地 SSH 客户端，再由本地 SSH 客户端与 SSH Agent 进行通信。
+
+!!! warning "安全提示"
+
+    从上述机制中不难看出，SSH agent 转发期间，远程主机上拥有足够权限（例如 root）的用户可以使用你转发的 SSH agent socket，并可以使用其间接使用你的 SSH agent。建议仅在信任的远程主机上开启 `-A` 或 `ForwardAgent`，**切勿**在 `Host *` 块中全局启用。
+
 ### 高级功能：连接复用 {#connection-reuse}
 
 SSH 协议允许在一条连接内运行多个 channel，其中每个 channel 可以是一个 shell session、端口转发、scp 命令等。OpenSSH 支持连接复用，即一个 SSH 进程在后台保持连接（称为 master 进程），其他客户端在连接同一个主机时可以复用这个连接，而不需要重新握手认证等，可以显著减少连接时间。这在频繁连接同一个主机时非常有用，尤其是当主机的延迟较大、常用操作所需的 RTT 较多时（例如从 GitHub 拉取仓库，或者前文所述的跳板机使用方式）。
