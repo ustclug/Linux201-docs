@@ -130,6 +130,19 @@ rsync -avPz /path/to/source user@remote:/path/to/destination
 rsync -avPz -e "ssh -p 2222" user@remote:/path/to/source /path/to/destination
 ```
 
+!!! note "rsync 的 sender、generator 和 receiver"
+
+    通过网络传输数据时，rsync 在接收端会有 generator 和 receiver 两个进程，在发送端有 sender 进程。大致的流程如下：
+
+    1. 接收端的 generator 进程与发送端 sender 进程握手，sender 遍历本地文件，发送文件列表。
+    2. Generator 收到文件列表后，对比本地文件。在不添加 `--checksum` 选项的情况下，generator 只会检查文件的修改时间（mtime）和大小是否与文件列表的一致。对不一致的文件，generator 会将本地文件分块，计算强校验和（慢、可靠）和弱校验和（快速、容易冲突），发送给远端。这里 generator 相当于是**生成**文件传输请求的程序。
+    3. Sender 进程收到分块校验和信息后，与本地比较，然后传输差异部分。
+    4. Receiver 进程根据 sender 的指令更新本地文件。
+
+    这种结构实现了简单的流水线，可以一边让 generator 计算哈希，一边 sender 发送数据，一边 receiver 处理接收的数据。
+
+    有关 rsync 算法细节，也可以阅读 [rsync 的技术报告](https://github.com/RsyncProject/rsync/blob/master/tech_report.tex)。
+
 ### 镜像同步 {#rsync-mirror}
 
 Rsync 同时也可以作为服务端（daemon 模式）对外提供 rsync 服务，默认端口为 TCP 873。
