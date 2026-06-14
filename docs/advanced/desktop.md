@@ -95,8 +95,6 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
 
     目前最新 libxcb 的代码已经[移除了抽象套接字的支持](https://gitlab.freedesktop.org/xorg/lib/libxcb/-/commit/e81b999a727d3c8ee9b83adb7c1c822f67378687)。
 
-<!-- !!! tip "启动一个新的 X Server" -->
-
 /// tip | 启动一个新的 X Server
     attrs: {id: new-x-server}
 
