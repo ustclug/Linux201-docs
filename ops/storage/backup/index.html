@@ -3613,6 +3613,18 @@
 <p>如果远程服务器需要特殊的 <code>ssh</code> 参数（例如端口），并且不想修改 <code>~/.ssh/config</code>，可以使用 <code>-e</code> 参数：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;ssh -p 2222&quot;</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">rsync 的 sender、generator 和 receiver</p>
+<p>通过网络传输数据时，rsync 在接收端会有 generator 和 receiver 两个进程，在发送端有 sender 进程。大致的流程如下：</p>
+<ol>
+<li>接收端的 generator 进程与发送端 sender 进程握手，sender 遍历本地文件，发送文件列表。</li>
+<li>Generator 收到文件列表后，对比本地文件。在不添加 <code>--checksum</code> 选项的情况下，generator 只会检查文件的修改时间（mtime）和大小是否与文件列表的一致。对不一致的文件，generator 会将本地文件分块，计算强校验和（慢、可靠）和弱校验和（快速、容易冲突），发送给远端。这里 generator 相当于是<strong>生成</strong>文件传输请求的程序。</li>
+<li>Sender 进程收到分块校验和信息后，与本地比较，然后传输差异部分。</li>
+<li>Receiver 进程根据 sender 的指令更新本地文件。</li>
+</ol>
+<p>这种结构实现了简单的流水线，可以一边让 generator 计算哈希，一边 sender 发送数据，一边 receiver 处理接收的数据。</p>
+<p>有关 rsync 算法细节，也可以阅读 <a href="https://github.com/RsyncProject/rsync/blob/master/tech_report.tex">rsync 的技术报告</a>。</p>
+</div>
 <h3 id="rsync-mirror">镜像同步<a class="headerlink" href="#rsync-mirror" title="Permanent link">&para;</a></h3>
 <p>Rsync 同时也可以作为服务端（daemon 模式）对外提供 rsync 服务，默认端口为 TCP 873。</p>
 <div class="admonition tip">
@@ -3948,7 +3960,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年1月14日 21:10:41 UTC">2026年1月14日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月14日 19:45:37 UTC">2026年6月14日</span>
   </span>
 
     
