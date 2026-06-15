@@ -39,8 +39,8 @@ Host example
 
 ```shell
 Host example
-  IdentityFile ~/.ssh/id_rsa
-  #CertificateFile ~/.ssh/id_rsa-cert.pub
+  IdentityFile ~/.ssh/id_ed25519
+  #CertificateFile ~/.ssh/id_ed25519-cert.pub
 ```
 
 一般来说，除非为了兼容一些非常古老（如 10 年前的）或非常简单的（如嵌入式）系统而不得不使用较短的 RSA 密钥对的时候，我们推荐使用 Ed25519 密钥对，或者 ECDSA 密钥对。这两种基于椭圆曲线的密码学算法比 RSA 更安全，而且性能也更好。如果不得不使用 RSA 的话，请尽可能使用 3072 位或更长的密钥长度。密钥长度可以在使用 `ssh-keygen` 生成密钥对时指定（`-b`），其中不同算法支持与推荐的长度也是不同的：
@@ -167,7 +167,7 @@ Host example
 
 !!! question "让服务器的 `git` 使用本机作为代理"
 
-    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
+    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_ed25519" git ...` 就可以让 `git` 使用指定的路径的密钥。
 
     而在访问 HTTP(S) remote 时，`git` 会使用 libcurl，因此会读取 `http_proxy`、`https_proxy` 和 `all_proxy` 环境变量指定的代理。也可以使用 `http.proxy` 这个 `git config` 选项来指定。
 
