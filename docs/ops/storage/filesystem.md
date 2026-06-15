@@ -1025,7 +1025,9 @@ btrfs filesystem defrag -v -r -czstd /path/to/btrfs
 btrfs property set /path/to/btrfs/dir compression zstd
 ```
 
-以这种方式设置的压缩算法优先级高于挂载参数，并且会被继承到该目录下的子目录和文件中，但这种方式不能够指定压缩等级（使用算法对应的默认等级或挂载参数中的等级）。
+以这种方式设置的压缩算法优先级高于挂载参数，并且会被继承到该目录下的子目录和文件中，但这种方式不能够指定压缩等级（使用算法对应的默认等级或挂载参数中的等级）[^btrfs:compress_file_range]。
+
+  [^btrfs:compress_file_range]: `fs/btrfs/inode.c`: [`compress_file_range`](https://elixir.bootlin.com/linux/v7.1/source/fs/btrfs/inode.c#L896-L969)
 
 !!! question "Rsync 对于 btrfs property 的影响"
 
