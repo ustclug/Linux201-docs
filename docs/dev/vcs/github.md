@@ -131,6 +131,16 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 
 之后就可以像普通的仓库一样，正常进行 `git` 操作了。
 
+!!! tip
+
+    Git 会在当前项目的「根目录」中执行 `ssh` 命令，这也是 `sshCommand` 中 `-i` 参数的相对路径的参照路径。
+
+    本地 Git 仓库的「根目录」是指包含 `.git` 目录的目录，可以用以下命令查看：
+
+    ```shell
+    git rev-parse --show-toplevel
+    ```
+
 ## Issue {#github-issue}
 
 下面关于 Markdown 的特性并不限于 Issue，也适用于 Pull Request 等。
@@ -143,13 +153,13 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 - 可以通过 `user/repo#issue_number` 的方式引用其他仓库的 Issue / PR，例如 `tuna/issues#341`
     - 当一个 PR 包含如下关键字，并且按照上述方法连接到一个 Issue 时，合并这个 PR 会关闭对应的 issue：
 
-        ```txt
-        close(s,d) #123
-        fix(es, ed) #123
-        resolve(s, d) #123
+        ```text
+        close[s,d] #123
+        fix[es, ed] #123
+        resolve[s, d] #123
         ```
 
-- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开 [ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得诸如 <https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
+- 可以通过 GitHub Web 上 Copy permalink 的方式获取代码的链接，例如打开 [ustclug/mirrorrequest/README.md](https://github.com/ustclug/mirrorrequest/blob/master/README.md?plain=1) 后，可以选择某一行，点击左侧的菜单，选择 Copy permalink, 即可获得形如 <https://github.com/ustclug/mirrorrequest/blob/f23dd1f1cbe81f01e4f878ac11ee064b6c7d70ec/README.md?plain=1#L1> 这样的链接。
     - 这样的链接可以在 Issue 中直接粘贴，会被以代码框的形式渲染到 Issue 中，方便其他人迅速了解问题。
     - 点击后也可以直接复制地址栏中的 URL，这样的链接总是指向某个 branch 或者 tag 的，而不是特定 commit，但这样的作法可能会导致链接失效。
 

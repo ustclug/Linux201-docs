@@ -12,7 +12,7 @@ icon: fontawesome/brands/git
 
 本文讨论在镜像站场景下，为不特定用户提供基于 HTTP(S) 协议的 Git 拉取服务（Git over HTTP(S)）相关的知识与优化技巧。本文**不**涉及以下主题：
 
-- 交互式的 Git 服务，例如 [GitWeb](https://git-scm.com/book/en/v2/Git-on-the-Server-GitWeb)、[GitLab](https://gitlab.com/opensource/gitlab-ce)、[Forgojo](https://forgejo.org/)
+- 交互式的 Git 服务，例如 [GitWeb](https://git-scm.com/book/en/v2/Git-on-the-Server-GitWeb)、[GitLab](https://gitlab.com/opensource/gitlab-ce)、[Forgejo](https://forgejo.org/)
 - 通过 Git 协议（TCP 9418）或 SSH 协议拉取数据
 - Git 与用户认证
 - 需要用户向服务器推送（push）变更的场景
