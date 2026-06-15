@@ -229,7 +229,7 @@ eval "$(ssh-agent -s)"
 
 ```shell
 Host example
-  IdentityAgent /tmp/ssh-uRRuiB8l0C76/agent.3173586
+  IdentityAgent ~/example-agent.sock
 ```
 
 !!! tip "指定 SSH agent 中特定密钥"
