@@ -219,11 +219,13 @@ SSH_AGENT_PID=3173587; export SSH_AGENT_PID;
 echo Agent pid 3173587;
 ```
 
-其中 `SSH_AUTH_SOCK` 环境变量用于控制所使用的 SSH agent。通常使用以下命令启动并在当前环境中使用该 SSH agent：
+其中 `SSH_AUTH_SOCK` 环境变量表示 SSH agent 监听的 Unix domain socket，可以用于控制所使用的 SSH agent。通常使用以下命令启动并在当前环境中使用该 SSH agent：
 
 ```shell
 eval "$(ssh-agent -s)"
 ```
+
+在配置文件中可以使用 `IdentityAgent` 选项来指定使用特定 UNIX domain socket 与 SSH agent 通信，其优先级高于 `SSH_AUTH_SOCK` 环境变量。
 
 可以通过 `ssh-add` 管理密钥：
 
