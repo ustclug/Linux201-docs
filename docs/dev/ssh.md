@@ -39,8 +39,8 @@ Host example
 
 ```shell
 Host example
-  IdentityFile ~/.ssh/id_rsa
-  #CertificateFile ~/.ssh/id_rsa-cert.pub
+  IdentityFile ~/.ssh/id_ed25519
+  #CertificateFile ~/.ssh/id_ed25519-cert.pub
 ```
 
 一般来说，除非为了兼容一些非常古老（如 10 年前的）或非常简单的（如嵌入式）系统而不得不使用较短的 RSA 密钥对的时候，我们推荐使用 Ed25519 密钥对，或者 ECDSA 密钥对。这两种基于椭圆曲线的密码学算法比 RSA 更安全，而且性能也更好。如果不得不使用 RSA 的话，请尽可能使用 3072 位或更长的密钥长度。密钥长度可以在使用 `ssh-keygen` 生成密钥对时指定（`-b`），其中不同算法支持与推荐的长度也是不同的：
@@ -167,7 +167,7 @@ Host example
 
 !!! question "让服务器的 `git` 使用本机作为代理"
 
-    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_rsa" git ...` 就可以让 `git` 使用指定的路径的密钥。
+    在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_ed25519" git ...` 就可以让 `git` 使用指定的路径的密钥。
 
     而在访问 HTTP(S) remote 时，`git` 会使用 libcurl，因此会读取 `http_proxy`、`https_proxy` 和 `all_proxy` 环境变量指定的代理。也可以使用 `http.proxy` 这个 `git config` 选项来指定。
 
@@ -202,6 +202,75 @@ Host realhost
 !!! note "跳板机需要支持 TCP 端口转发"
 
     SSH 跳板机和前文所述的“**本地**端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。
+
+### SSH Agent {#ssh-agent}
+
+SSH agent 是一个在后台运行的程序，用于持有私钥供 SSH 客户端在认证时使用。SSH agent 自身持有私钥，只对外提供签名操作。SSH agent 通常由桌面环境或 shell 自动启动。使用 SSH agent 通常有以下好处：
+
+- 私钥只需解密一次，之后 Agent 在后台保持密钥可用，无需反复输入密码。
+- 私钥只存放在本地主机，不需要复制到远程服务器上。
+
+`ssh-agent -s` 命令可以启动一个 SSH agent，生成相关 Bourne shell 命令并输出到 stdout，例如：
+
+```console
+$ ssh-agent -s
+SSH_AUTH_SOCK=/tmp/ssh-uRRuiB8l0C76/agent.3173586; export SSH_AUTH_SOCK;
+SSH_AGENT_PID=3173587; export SSH_AGENT_PID;
+echo Agent pid 3173587;
+```
+
+其中 `SSH_AUTH_SOCK` 环境变量表示 SSH agent 监听的 Unix domain socket，可以用于控制所使用的 SSH agent。通常使用以下命令启动并在当前环境中使用该 SSH agent：
+
+```shell
+eval "$(ssh-agent -s)"
+```
+
+在配置文件中可以使用 `IdentityAgent` 选项来指定使用特定 Unix domain socket 与 SSH agent 通信，其优先级高于 `SSH_AUTH_SOCK` 环境变量，例如：
+
+```shell
+Host example
+  IdentityAgent ~/example-agent.sock
+```
+
+!!! tip "指定 SSH agent 中特定密钥"
+    默认情况下，SSH 客户端会依次尝试 SSH agent 中的所有密钥（如果有 SSH agent）、`IdentityFile` 指定的所有密钥（如果配置 `IdentityFile`）和默认密钥（如果没有配置 `IdentityFile`）。当 SSH agent 中管理的密钥较多时，多次错误尝试容易导致 `Too many authentication failures` 错误。可以使用 `IdentityFile` 与 `IdentitiesOnly` 来使用特定密钥，从而避免相关错误。考虑到部分场景（例如使用密码管理器提供的 SSH agent）下，本地环境中不会存储私钥，可以在本地存储公钥并在 `IdentityFile` 选项中指定相应公钥来使用对应身份凭证。例如：
+    ```shell
+    Host example
+      IdentityFile ~/.ssh/id_ed25519
+      # IdentityFile ~/.ssh/id_ed25519.pub # 本地不存储私钥时指定相应公钥
+      IdentitiesOnly yes
+    ```
+
+可以通过 `ssh-add` 管理密钥：
+
+```shell
+ssh-add ~/.ssh/id_ed25519    # 将私钥加入 agent
+ssh-add -l                   # 列出已加载的密钥指纹
+ssh-add -L                   # 列出已加载的公钥
+ssh-add -d ~/.ssh/id_ed25519 # 移除指定密钥
+ssh-add -D                   # 移除所有密钥
+```
+
+`-A` 参数可以将本地的 SSH agent 转发到远程主机，使远程主机能使用你本地的 SSH 私钥向第三方认证。这对于在主力机上统一维护密钥、不在远程机器上留存私钥的场景非常适用。
+
+```shell
+ssh -A user@remote.example.com
+```
+
+也可以在配置文件中指定：
+
+```shell
+Host remote
+  ForwardAgent yes
+```
+
+!!! tip "SSH agent 转发的机制"
+
+    转发 SSH agent 会在远程主机上创建一个 Unix domain socket，并设置 `SSH_AUTH_SOCK` 环境变量指向该 socket。该 socket 上的通信通过 SSH 连接内的 `auth-agent@openssh.com` channel 发送给本地 SSH 客户端，再由本地 SSH 客户端与 SSH Agent 进行通信。
+
+!!! warning "安全提示"
+
+    从上述机制中不难看出，SSH agent 转发期间，远程主机上拥有足够权限（例如 root）的用户可以使用你转发的 SSH agent socket，并可以使用其间接使用你的 SSH agent。建议仅在信任的远程主机上开启 `-A` 或 `ForwardAgent`，**切勿**在 `Host *` 块中全局启用。
 
 ### 高级功能：连接复用 {#connection-reuse}
 
