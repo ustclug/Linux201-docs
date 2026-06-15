@@ -225,7 +225,7 @@ echo Agent pid 3173587;
 eval "$(ssh-agent -s)"
 ```
 
-在配置文件中可以使用 `IdentityAgent` 选项来指定使用特定 UNIX domain socket 与 SSH agent 通信，其优先级高于 `SSH_AUTH_SOCK` 环境变量。
+在配置文件中可以使用 `IdentityAgent` 选项来指定使用特定 Unix domain socket 与 SSH agent 通信，其优先级高于 `SSH_AUTH_SOCK` 环境变量。
 
 !!! tip "指定 SSH agent 中特定密钥"
     默认情况下，SSH 客户端会依次尝试 SSH agent 中的所有密钥（如果有 SSH agent）、`IdentityFile` 指定的所有密钥（如果配置 `IdentityFile`）和默认密钥（如果没有配置 `IdentityFile`）。当 SSH agent 中管理的密钥较多时，多次错误尝试容易导致 `Too many authentication failures` 错误。可以使用 `IdentityFile` 与 `IdentitiesOnly` 来使用特定密钥，从而避免相关错误。考虑到部分场景（例如使用密码管理器提供的 SSH agent）下，本地环境中不会存储私钥，可以在本地存储公钥并在 `IdentityFile` 选项中指定相应公钥来使用对应身份凭证。例如：
