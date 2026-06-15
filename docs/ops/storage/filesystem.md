@@ -1022,11 +1022,10 @@ btrfs filesystem defrag -v -r -czstd /path/to/btrfs
 除了在挂载时添加 `compress` 参数以启用透明压缩之外，Btrfs 还允许为特定的 subvolume 或目录指定压缩算法：
 
 ```shell
-btrfs property set /path/to/btrfs/dir compression zstd:3
+btrfs property set /path/to/btrfs/dir compression zstd
 ```
 
-以这种方式设置的压缩算法会被继承到该目录下的子目录和文件中，但优先级低于挂载参数。
-例如，当以 `mount -o compress=zstd:6` 挂载 `/path/to/btrfs` 时，上述目录的所有文件和子目录都会继承 `zstd:3` 的 Btrfs 压缩属性，但内容仍然以 zstd-6 压缩。
+以这种方式设置的压缩算法优先级高于挂载参数，并且会被继承到该目录下的子目录和文件中，但这种方式不能够指定压缩等级（使用算法对应的默认等级或挂载参数中的等级）。
 
 !!! question "Rsync 对于 btrfs property 的影响"
 
