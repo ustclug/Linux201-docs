@@ -1025,7 +1025,8 @@ btrfs filesystem defrag -v -r -czstd /path/to/btrfs
 btrfs property set /path/to/btrfs/dir compression zstd:3
 ```
 
-以这种方式设置的压缩算法的优先级低于挂载参数，并且会被继承到该目录下的子目录和文件中。
+以这种方式设置的压缩算法会被继承到该目录下的子目录和文件中，但优先级低于挂载参数。
+例如，当以 `mount -o compress=zstd:6` 挂载 `/path/to/btrfs` 时，上述目录的所有文件和子目录都会继承 `zstd:3` 的 Btrfs 压缩属性，但内容仍然以 zstd-6 压缩。
 
 !!! question "Rsync 对于 btrfs property 的影响"
 
