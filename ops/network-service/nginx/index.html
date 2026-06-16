@@ -4355,7 +4355,7 @@
 <p class="admonition-title">使用 <code>aio</code> 避免工作进程阻塞</p>
 <p>默认配置下，Nginx 的工作进程会打开、读取需要的文件，但是 POSIX 默认的文件 API（<code>open()</code>、<code>read()</code> 等）是同步的——这意味着，如果 IO 处理的速度较慢（例如在机械硬盘上），那么对应的工作进程在调用文件 API 时就无法处理其他的请求，导致响应的延迟增大。</p>
 <p>尽管 Linux 提供了内核级别的 AIO（异步 IO）的支持（可参考 <a href="https://pagure.io/libaio">libaio</a>），但是条件较为苛刻：AIO 请求需要使用 <code>O_DIRECT</code> 绕过内核的 page cache（对非常快速的 NVMe 设备来说，这么做可能是必要的，但是对慢速设备来说是弊大于利的），并且 <code>O_DIRECT</code> 访问要求对齐，否则可能会阻塞住。因此除非存储设备非常快，否则不建议使用。在此类场景下，一种常见的解决方式是创建专用的线程池，将 IO 请求 offload 给这个线程池，避免阻塞其他的任务，包括 POSIX AIO（由 glibc 在用户态实现）和 Nginx 都支持这种方式。</p>
-<p><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#aio"><code>aio</code></a> 指令支持基于 Linux 内核 AIO 和线程池这两种实现。添加 <code>aio threads;</code> 即可。默认线程池为 32 线程，最多排队 65536 个请求，可以使用 <a href="https://nginx.org/en/docs/ngx_core_module.html#thread_pool"><code>thread_pool</code></a> 指令调整。以下是科大镜像站在开启 <code>aio threads</code> 前后的请求主页的 HTTP 延迟情况，可以看到效果十分显著：</p>
+<p><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#aio"><code>aio</code></a> 指令支持基于 Linux 内核 AIO 和线程池这两种实现。添加 <code>aio threads;</code> 即可。默认<strong>每个工作进程的</strong>线程池为 32 线程，最多排队 65536 个请求，可以使用 <a href="https://nginx.org/en/docs/ngx_core_module.html#thread_pool"><code>thread_pool</code></a> 指令调整。以下是科大镜像站在开启 <code>aio threads</code> 前后的请求主页的 HTTP 延迟情况，可以看到效果十分显著：</p>
 <p><img alt="Mirrors HTTP latency with/without AIO" src="../../../images/mirrors-nginx-aio.png" /></p>
 <p>此外，Linux 内核目前推荐的异步 IO（包括文件、网络 socket）方式为 io_uring。不过 Nginx 尚未提供对其的支持。</p>
 </div>
@@ -5577,7 +5577,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月13日 10:51:23 UTC">2026年6月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月16日 14:53:28 UTC">2026年6月16日</span>
   </span>
 
     
