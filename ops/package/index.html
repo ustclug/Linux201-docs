@@ -4939,6 +4939,31 @@
 <li><code>Release</code>：该架构的元数据。</li>
 <li><code>by-hash/</code>：同上。</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">使用 rsync 同步 Debian 软件源</p>
+<p>使用 rsync 同步 Debian 软件源（以及其他软件仓库）的一个常见问题是：index（索引）文件和包数据文件的一致性。如果发生了不一致，用户在更新的时候就会遇到错误，影响体验。尽管 <a href="../storage/backup/#rsync-client">rsync 支持推迟更新与删除文件</a>，但是仍然可能有问题：</p>
+<ul>
+<li>如果在同步的时候上游内容发生变化，那么 rsync 得到的数据就可能会不一致（虽然 rsync 能够检测到这种情况并返回错误，但是对应文件的更新与覆盖已经发生了）</li>
+<li>rsync 没有办法知道上游是否正在同步文件</li>
+</ul>
+<p>Debian 官方提供了 <a href="https://salsa.debian.org/mirror-team/archvsync/-/blob/master/bin/ftpsync">archvsync (ftpsync) 脚本</a>，尝试缓解这一问题。它将同步分为 stage 1 和 stage 2 两个阶段：</p>
+<ul>
+<li>Stage 1 会同步除了 index 以外的数据（包括 <code>pool</code>、<code>by-hash</code> 目录等），同步这些文件不会修改已有的 index，也不会删除已有的 index 引用的数据包。</li>
+<li>Stage 2 开始前会检测符合 <code>Archive-Update-in-Progress-*</code> 形式的文件，如果存在，那么说明上游正在同步（这个文件被 stage 1 同步了进来），那么就从头开始重试。否则做一遍完整的 rsync 同步（由于 stage 1 已经同步了非 index 数据，这一步只会同步 index 数据）。</li>
+</ul>
+<details class="note">
+<summary>Stage 1 和 2 的 rsync 参数</summary>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$RSYNC_PROTOCOL</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">31</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">&quot;-prltvHSB8192 --safe-links --chmod=D755,F644 --timeout 120 --stats --no-human-readable --no-inc-recursive&quot;</span><span class="si">}</span>
+<a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="k">else</span>
+<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a><span class="w">    </span><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">&quot;-prltvHSB8192 --safe-links --timeout 120 --stats --no-human-readable --no-inc-recursive&quot;</span><span class="si">}</span>
+<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a><span class="k">fi</span>
+<a id="__codelineno-70-6" name="__codelineno-70-6" href="#__codelineno-70-6"></a><span class="nv">RSYNC_OPTIONS1</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS1</span><span class="k">:-</span><span class="s2">&quot;--include=*.diff/ --include=by-hash/ --exclude=*.diff/Index --exclude=Contents* --exclude=Packages* --exclude=Sources* --exclude=Release* --exclude=InRelease --exclude=i18n/* --exclude=dep11/* --exclude=installer-*/current --exclude=ls-lR*&quot;</span><span class="si">}</span>
+<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a><span class="nv">RSYNC_OPTIONS2</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS2</span><span class="k">:-</span><span class="s2">&quot;--max-delete=40000 --delay-updates --delete --delete-delay --delete-excluded&quot;</span><span class="si">}</span>
+</code></pre></div>
+</details>
+<p>同时从 Debian 直接同步软件源的官方镜像站会设置允许 SSH 在上游更新后触发同步，触发同步后需要先本地创建 <code>Archive-Update-Required-$MIRROR_NAME</code> 文件（<code>$MIRROR_NAME</code> 为镜像站名），然后执行同步。因此如果在比较耗时的 stage 1 执行的过程中，上游又出现了变化，那么 stage 1 内部也会再次重试（表明上游有新的变化，通知到了镜像站），防止出现在 stage 1 执行过程中，上游出现了更新，但是到 stage 1 执行结束之前更新完成，导致 stage 2 继续执行，出现不一致的情况。</p>
+</div>
 <!-- markdownlint-disable MD053 -->
 
 <!--
@@ -5005,7 +5030,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月13日 18:48:03 UTC">2026年6月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月28日 21:11:01 UTC">2026年6月28日</span>
   </span>
 
     
