@@ -1271,6 +1271,32 @@ Trusted: yes
 - `Release`：该架构的元数据。
 - `by-hash/`：同上。
 
+!!! note "使用 rsync 同步 Debian 软件源"
+
+    使用 rsync 同步 Debian 软件源（以及其他软件仓库）的一个常见问题是：index（索引）文件和包数据文件的一致性。如果发生了不一致，用户在更新的时候就会遇到错误，影响体验。尽管 [rsync 支持推迟更新与删除文件](./storage/backup.md#rsync-client)，但是仍然可能有问题：
+
+    - 如果在同步的时候上游内容发生变化，那么 rsync 得到的数据就可能会不一致（虽然 rsync 能够检测到这种情况并返回错误，但是对应文件的更新与覆盖已经发生了）
+    - rsync 没有办法知道上游是否正在同步文件
+
+    Debian 官方提供了 [archvsync (ftpsync) 脚本](https://salsa.debian.org/mirror-team/archvsync/-/blob/master/bin/ftpsync)，尝试缓解这一问题。它将同步分为 stage 1 和 stage 2 两个阶段：
+
+    - Stage 1 会同步除了 index 以外的数据（包括 `pool`、`by-hash` 目录等），同步这些文件不会修改已有的 index，也不会删除已有的 index 引用的数据包。
+    - Stage 2 开始前会检测符合 `Archive-Update-in-Progress-*` 形式的文件，如果存在，那么说明上游正在同步（这个文件被 stage 1 同步了进来），那么就从头开始重试。否则做一遍完整的 rsync 同步（由于 stage 1 已经同步了非 index 数据，这一步只会同步 index 数据）。
+
+    ??? note "Stage 1 和 2 的 rsync 参数"
+
+        ```sh
+        if [[ $RSYNC_PROTOCOL -ge 31 ]]; then
+        RSYNC_OPTIONS=${RSYNC_OPTIONS:-"-prltvHSB8192 --safe-links --chmod=D755,F644 --timeout 120 --stats --no-human-readable --no-inc-recursive"}
+        else
+            RSYNC_OPTIONS=${RSYNC_OPTIONS:-"-prltvHSB8192 --safe-links --timeout 120 --stats --no-human-readable --no-inc-recursive"}
+        fi
+        RSYNC_OPTIONS1=${RSYNC_OPTIONS1:-"--include=*.diff/ --include=by-hash/ --exclude=*.diff/Index --exclude=Contents* --exclude=Packages* --exclude=Sources* --exclude=Release* --exclude=InRelease --exclude=i18n/* --exclude=dep11/* --exclude=installer-*/current --exclude=ls-lR*"}
+        RSYNC_OPTIONS2=${RSYNC_OPTIONS2:-"--max-delete=40000 --delay-updates --delete --delete-delay --delete-excluded"}
+        ```
+    
+    同时从 Debian 直接同步软件源的官方镜像站会设置允许 SSH 在上游更新后触发同步，触发同步后需要先本地创建 `Archive-Update-Required-$MIRROR_NAME` 文件（`$MIRROR_NAME` 为镜像站名），然后执行同步。因此如果在比较耗时的 stage 1 执行的过程中，上游又出现了变化，那么 stage 1 内部也会再次重试（表明上游有新的变化，通知到了镜像站），防止出现在 stage 1 执行过程中，上游出现了更新，但是到 stage 1 执行结束之前更新完成，导致 stage 2 继续执行，出现不一致的情况。
+
 <!-- markdownlint-disable MD053 -->
 
 [^debian-system]: <https://askubuntu.com/a/1138405>，引用自 *The Debian System: Concepts and Techniques* 一书。
