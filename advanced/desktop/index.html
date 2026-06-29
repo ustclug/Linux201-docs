@@ -4204,8 +4204,18 @@
 <li>计算 DPI：2937.2 / 27 ≈ 109 DPI</li>
 </ol>
 <p>一般来讲，在 Apple 以外的生态中，默认（1 倍）的 DPI 是 96。因此对上面的显示器，可能需要稍微放大一些，才能获得比较合适的显示效果。如果 DPI 是 144（1.5 倍）或者 192（2 倍）的话，默认缩放的不适感就会更明显。这些显示器也被称为 HiDPI 显示器。</p>
-<p>X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出当前 screen 的 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。并且目前绝大多数情况下，X server 只会有一个 "screen"（即使连接了多个显示器），具体的显示器设置由 RandR 扩展管理，因此 X server 也无法为每个显示器提供不同的 DPI 信息。</p>
-<p>因为 X server 提供的 DPI 的不可靠性，有一些应用就转而参考 X resources 中的 <code>Xft.dpi</code> 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 <code>xrdb</code> 工具来查看和修改：</p>
+<p>X 本身没有逻辑分辨率的概念，并且一般只有一个全局的坐标系（一个 screen），<strong>缩放策略如何全由应用程序自己决定</strong>，这也导致了以下记录的各类方法的混乱。</p>
+<div class="admonition note">
+<p class="admonition-title">不能不管应用实现，直接让应用以一个更大（或者更小）的分辨率渲染，再把应用渲染出来的内容缩放到正确的分辨率吗？</p>
+<p>如果要正确实现 HiDPI，应用程序本身必须知道物理像素与逻辑像素之间的关系（DPI）。例如对一个 12pt（1pt = 1/72 英寸）的字，在 96 DPI 下的物理像素应该为 12 * 96 / 72 = 16px，在 192 DPI 下为 12 * 192 / 72 = 32px，它们的逻辑像素是一样的，但是物理像素则有差异。图标等其他的资源也类似。假如窗口系统不告知应用 DPI 信息，只将应用窗口当成位图缩放，那么最终获得的窗口要么里面的内容会小到无法阅读，要么变成一团模糊。</p>
+<p>而对只支持整数缩放的应用来说，一种需要更多渲染资源但是可行的策略是：告知一个足够大（当前分数缩放比例向上取整）的缩放比例（对应 DPI），然后再将渲染出来的内容缩小到正确的分辨率。在这种情况下，窗口内容内部的大小是正确的，并且缩小位图比放大位图来说，更不容易模糊。</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">在倍数不大的情况下，调整字体大小是更合适的方案</p>
+<p>对于只需要不到 1.5x 缩放的情况下，最简单的方式是把字体稍微调大一些——这可以避免下面所说的所有问题，特别是如果你的工作环境仍然依赖于 X 的话。</p>
+</div>
+<p>X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出当前 screen 的 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。并且目前绝大多数情况下，即使连接了多个显示器，X server 的 screen 仍然是唯一的（因为窗口等无法在不同 screen 之间顺畅移动），具体的显示器设置由 RandR 扩展管理，因此 X server 也无法为每个显示器提供不同的 DPI 信息。</p>
+<p>因为 X server 提供的 DPI 的不可靠性，大部分应用就转而参考 X resources 中的 <code>Xft.dpi</code> 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 <code>xrdb</code> 工具来查看和修改：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-query
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">Xft.dpi:    96</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">Xft.antialias:  1</span>
@@ -4217,9 +4227,13 @@
 <a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="gp">$ </span><span class="c1"># 从约定俗成的配置文件位置读取并与当前 X resources 合并</span>
 <a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-merge<span class="w"> </span>~/.Xresources
 </code></pre></div>
-<p>但是在语义上，这么做是存在问题的，因为 Xft 是字体相关的设置，因此它的 DPI 照理来说只是字体渲染时使用的 DPI，而不应该影响包括图片等在内的其他内容（尽管很多时候这个值就被拿来做整体 UI 的缩放了）；并且这种机制完全无法处理不同显示器不同 DPI 的情况。因此，各类 UI 库又引入了自己的 DPI 设置方式，例如 GTK 使用 <code>GDK_SCALE</code> 和 <code>GDK_DPI_SCALE</code> 环境变量，Qt 则使用 <code>QT_SCALE_FACTOR</code> 和 <code>QT_AUTO_SCREEN_SCALE_FACTOR</code> 等环境变量让用户调整 DPI。</p>
-<p>此外，由于 X resources 的修改无法通知到客户端，因此出现了 <a href="https://www.freedesktop.org/wiki/Specifications/xsettings-spec/">Xsettings</a> 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 <code>Xft.dpi</code> 在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。</p>
-<p>另一条不同的思路是使用 <code>xrandr</code> 的 DPI（<code>--dpi</code>，修改 X server 中整个 screen 的 DPI）和每个显示器的缩放（<code>--scale</code>）参数来整体缩放显示内容，不少桌面环境的显示器设置的缩放都是这么做的。但是在复杂情况下，完全做对而不模糊仍然非常困难，很多时候需要手动调整多个参数才能获得比较合适的显示效果。</p>
+<p>但是在语义上，这么做是存在问题的，因为 libXft 控制的是 X 下字体的渲染，因此它的 DPI 照理来说只是字体渲染时使用的 DPI，而不应该影响包括图片等在内的其他内容（尽管很多时候这个值就被拿来做整体 UI 的缩放了，但 GTK 仍然只用这个值控制字体的缩放）；并且这种机制完全无法处理不同显示器不同 DPI 的情况。因此，各类 UI 库又引入了自己的 DPI 设置方式，例如 GTK 使用 <code>GDK_SCALE</code> 和 <code>GDK_DPI_SCALE</code> 环境变量，Qt 则使用 <code>QT_SCALE_FACTOR</code> 和 <code>QT_AUTO_SCREEN_SCALE_FACTOR</code> 等环境变量让用户调整 DPI。可以参考 <a href="https://wiki.archlinux.org/title/HiDPI">ArchWiki 的 HiDPI</a> 来了解如何配置各个框架的缩放。</p>
+<p>此外，由于 X resources 的修改无法通知到客户端，因此出现了 <a href="https://www.freedesktop.org/wiki/Specifications/xsettings-spec/">Xsettings</a> 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 <code>Xft/DPI</code> 和 <code>Gdk/WindowScalingFactor</code>（用于 GTK 程序整数缩放）在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。</p>
+<div class="admonition tip">
+<p class="admonition-title">获取 Xsettings 提供的属性</p>
+<p><a href="https://codeberg.org/derat/xsettingsd"><code>xsettingsd</code></a> 是一个 Xsettings 的轻量级实现，其提供了 <code>dump_xsettings</code> 命令可以输出当前 Xsettings 窗口包含的所有属性。</p>
+</div>
+<p>对于多显示器不同 DPI 的情况，也同样没有统一的告知应用不同显示器 DPI 的方式。一种思路是全局设置一个高 DPI，然后使用 <code>xrandr</code> 的 <code>--scale</code> 参数调整低 DPI 显示器的缩放（<code>--scale</code>）参数来让低 DPI 显示器上的应用得到合适的大小，一些桌面环境的显示器设置的缩放就是控制的 <code>scale</code>。但是在复杂情况下，完全做对而不模糊仍然非常困难，很多时候费时费力也无法获得合适的显示效果。</p>
 <p>从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。</p>
 <div class="admonition comment">
 <p class="admonition-title">@taoky: 吐槽</p>
@@ -4933,7 +4947,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月28日 10:21:02 UTC">2026年6月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月29日 20:49:08 UTC">2026年6月29日</span>
   </span>
 
     
