@@ -584,6 +584,12 @@ git rebase master
 
     可参考 [GitHub](https://github.blog/open-source/git/highlights-from-git-2-54/) 与 [GitLab](https://about.gitlab.com/blog/whats-new-in-git-2-54-0/) 对 Git 2.54 的介绍了解详情。
 
+    Git 2.55（2026/6/29 发布）添加了：
+
+    - `git history fixup <commit>` 允许将当前的修改添加到指定的 commit 里。
+
+    可参考 [GitHub](https://github.blog/open-source/git/highlights-from-git-2-55/) 与 [GitLab](https://about.gitlab.com/blog/whats-new-in-git-2-55-0/) 对 Git 2.55 的介绍了解详情。
+
 ## Bisect {#git-bisect}
 
 在调试问题时，有时会出现这样的情况：某个 bug 在旧版本没有出现，但是在新版本出现了，或者某个问题在旧版本存在，新版本不存在，同时需要搞清楚具体是哪一个 commit 导致/修复了对应的问题。一个一个 commit 编译测试显然工作量实在太大，此时 `git bisect` 就可以起到很大的帮助。在使用 bisect 时，需要提供一个 "good"（旧版本）commit 和一个 "bad"（新版本）commit：
