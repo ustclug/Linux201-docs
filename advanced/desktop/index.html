@@ -4569,10 +4569,19 @@
 <p>目前主流的混成器一般有以下三种策略：</p>
 <ol>
 <li>应用按 1x 渲染，由混成器按比例缩放——窗口的大小是正确的，但是内容模糊。</li>
-<li>尝试通过 <a href="#x-hidpi">Xsettings、X resources 等机制</a>通知应用以需要的最大整数倍缩放（例如，如果显示器配置为 1.5x，那么通知应用以 2x 渲染）。如果是分数缩放，或者在缩放比例不同的显示器切换时，由混成器按比例缩放——对支持的应用来说，窗口大小是正确的，但是在分数缩放场景下游戏等应用渲染的计算量会超过实际需要的量。如果应用不支持相关机制，那么窗口会变得很小。</li>
-<li>与 2 类似，但是尝试将分数缩放信息传递给应用，混成器不会再做缩放——对游戏类应用适配较好，但是由于有些程序对分数缩放支持不好，可能会导致仅支持整数缩放的应用窗口大小不正确。</li>
+<li>混成器与相关工具（例如在 GNOME 下的 <code>gsd-xsettings</code>）尝试通过 <a href="#x-hidpi">Xsettings、X resources 等机制</a>通知应用以特定倍数缩放。混成器知晓使用的 X 缩放比例信息。对 X 应用的缩放与显示器设置不一致的情况下，由混成器按比例缩放。</li>
+<li>混成器对 X 应用不做缩放处理，由用户或相关工具自行配置。</li>
 </ol>
-<p>其中 GNOME、Sway 等默认使用第一种策略；在<a href="https://release.gnome.org/47/#:~:text=GNOME%2047%20includes%20an%20enhanced%20fractional%20display%20scaling%20feature%2C%20which%20provides%20better%20support%20for%20legacy%20X11%20apps%2E">开启 <code>scale-monitor-framebuffer</code> 和 <code>xwayland-native-scaling</code> 实验选项</a>后，GNOME 会使用第二种策略；KDE 下用户可选择使用第一种或者第三种策略。</p>
+<p>其中 GNOME（49 及以下版本）、Sway 等默认使用第一种策略；GNOME 50 <a href="https://gitlab.gnome.org/GNOME/mutter/-/merge_requests/4877">默认使用第二种策略</a>；KDE 下用户可选择使用第一种或者第三种策略。</p>
+<div class="admonition note">
+<p class="admonition-title">GTK、XWayland 与分数缩放的问题</p>
+<p>GTK 应用在 X 上的分数缩放存在历史悠久的设计上的问题：</p>
+<ul>
+<li>GTK3 时代的坐标系统采用的都是整数，并且 GTK 的开发者希望文本和边框可以跟物理像素完美对齐，拒绝使用可能导致模糊的抗锯齿方法处理「分数像素」的情况。</li>
+<li>GTK4 时代的设计架构有了很大变化，坐标系统不再是问题，而<a href="https://blog.gtk.org/2024/01/28/new-renderers-for-gtk/">新的基于 GPU 渲染的渲染器</a>也使得在分数缩放下实现<a href="https://blogs.gnome.org/gtk/2024/03/07/on-fractional-scales-fonts-and-hinting/">锐利的字体缩放成为可能</a>。在 Wayland 的分数缩放协议合入 wayland-protocols 后，终于<a href="https://release.gnome.org/45/developers/#:~:text=Experimental%20support%20has%20been%20added%20for%20fractional%20scaling%20on%20Wayland%2E%20You%20can%20try%20it%20out%20with%20GDK%5FDEBUG%3Dgl%2Dfractional%2E">从 GTK 4.12 开始实现了分数缩放功能</a>，并在后续完善。不过由于 X 被视作过时的平台，并且没有统一的分数缩放配置方案（如果直接像其他框架一样用 Xft 配置，会 break 现有的配置），因此 X 上的 GTK4 和 GTK3 一样仍然没有分数缩放支持。</li>
+</ul>
+<p>由于仍然有少量的 GTK 应用（特别是 GTK3）依赖于 X，因此为了让 X 应用窗口的大小尽量一致，一种妥协方案就是在 Xsettings 和 X resources 中设置整数缩放，然后混成器总是进行缩放。这带来的问题就是，运行的全屏应用（特别是游戏）渲染的内容量会大于实际值，造成了性能上的浪费。</p>
+</div>
 <h3 id="wayland-remote-desktop">远程桌面访问<a class="headerlink" href="#wayland-remote-desktop" title="Permanent link">&para;</a></h3>
 <p>Wayland 设计上不支持类似 X 的网络透明性，因为 Wayland 协议需要传递文件描述符，而文件描述符无法直接通过网络传递。不过，<a href="https://gitlab.freedesktop.org/mstoeckl/waypipe/">waypipe</a> 项目实现了类似的功能（需要本地和远程都安装 waypipe），允许通过 SSH 连接启动远程的 Wayland 客户端程序，并将其显示在本地的 Wayland 桌面中。</p>
 <p>而如果要通过 VNC 或 RDP 等方式访问整个图形界面，那么相比于 X 就复杂一些。在 Wayland 下，实现远程桌面有两种方式：与混成器合作或者与内核合作。</p>
@@ -4947,7 +4956,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月29日 20:49:08 UTC">2026年6月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月29日 21:40:47 UTC">2026年6月29日</span>
   </span>
 
     
