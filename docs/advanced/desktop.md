@@ -935,10 +935,19 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 目前主流的混成器一般有以下三种策略：
 
 1. 应用按 1x 渲染，由混成器按比例缩放——窗口的大小是正确的，但是内容模糊。
-2. 尝试通过 [Xsettings、X resources 等机制](#x-hidpi)通知应用以需要的最大整数倍缩放（例如，如果显示器配置为 1.5x，那么通知应用以 2x 渲染）。如果是分数缩放，或者在缩放比例不同的显示器切换时，由混成器按比例缩放——对支持的应用来说，窗口大小是正确的，但是在分数缩放场景下游戏等应用渲染的计算量会超过实际需要的量。如果应用不支持相关机制，那么窗口会变得很小。
-3. 与 2 类似，但是尝试将分数缩放信息传递给应用，混成器不会再做缩放——对游戏类应用适配较好，但是由于有些程序对分数缩放支持不好，可能会导致仅支持整数缩放的应用窗口大小不正确。
+2. 混成器与相关工具（例如在 GNOME 下的 `gsd-xsettings`）尝试通过 [Xsettings、X resources 等机制](#x-hidpi)通知应用以特定倍数缩放。混成器知晓使用的 X 缩放比例信息。对 X 应用的缩放与显示器设置不一致的情况下，由混成器按比例缩放。
+3. 混成器对 X 应用不做缩放处理，由用户或相关工具自行配置。
 
-其中 GNOME、Sway 等默认使用第一种策略；在[开启 `scale-monitor-framebuffer` 和 `xwayland-native-scaling` 实验选项](https://release.gnome.org/47/#:~:text=GNOME%2047%20includes%20an%20enhanced%20fractional%20display%20scaling%20feature%2C%20which%20provides%20better%20support%20for%20legacy%20X11%20apps%2E)后，GNOME 会使用第二种策略；KDE 下用户可选择使用第一种或者第三种策略。
+其中 GNOME（49 及以下版本）、Sway 等默认使用第一种策略；GNOME 50 [默认使用第二种策略](https://gitlab.gnome.org/GNOME/mutter/-/merge_requests/4877)；KDE 下用户可选择使用第一种或者第三种策略。
+
+!!! note "GTK、XWayland 与分数缩放的问题"
+
+    GTK 应用在 X 上的分数缩放存在历史悠久的设计上的问题：
+
+    - GTK3 时代的坐标系统采用的都是整数，并且 GTK 的开发者希望文本和边框可以跟物理像素完美对齐，拒绝使用可能导致模糊的抗锯齿方法处理「分数像素」的情况。
+    - GTK4 时代的设计架构有了很大变化，坐标系统不再是问题，而[新的基于 GPU 渲染的渲染器](https://blog.gtk.org/2024/01/28/new-renderers-for-gtk/)也使得在分数缩放下实现[锐利的字体缩放成为可能](https://blogs.gnome.org/gtk/2024/03/07/on-fractional-scales-fonts-and-hinting/)。在 Wayland 的分数缩放协议合入 wayland-protocols 后，终于[从 GTK 4.12 开始实现了分数缩放功能](https://release.gnome.org/45/developers/#:~:text=Experimental%20support%20has%20been%20added%20for%20fractional%20scaling%20on%20Wayland%2E%20You%20can%20try%20it%20out%20with%20GDK%5FDEBUG%3Dgl%2Dfractional%2E)，并在后续完善。不过由于 X 被视作过时的平台，并且没有统一的分数缩放配置方案（如果直接像其他框架一样用 Xft 配置，会 break 现有的配置），因此 X 上的 GTK4 和 GTK3 一样仍然没有分数缩放支持。
+
+    由于仍然有少量的 GTK 应用（特别是 GTK3）依赖于 X，因此为了让 X 应用窗口的大小尽量一致，一种妥协方案就是在 Xsettings 和 X resources 中设置整数缩放，然后混成器总是进行缩放。这带来的问题就是，运行的全屏应用（特别是游戏）渲染的内容量会大于实际值，造成了性能上的浪费。
 
 ### 远程桌面访问 {#wayland-remote-desktop}
 
