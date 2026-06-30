@@ -100,6 +100,8 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
         比如说……
 
+    **如果你需要使用第一人称（例如「我」「作者」）表达个人经历或观点，除非你是当前正在编辑页面的唯一作者，否则请将相应的段落使用 comment 提示框包裹**。如果你不是唯一主要作者，请不要使用「作者」自称。
+
 - lab: 教程不会详细说明，需要读者自己尝试的实验。
 
 此外，有些时候我们需要给提示框添加 `id` 信息以便使用 `#id` 的方式引用，此时需要使用 [pythonmdown 的扩展语法](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/)：
