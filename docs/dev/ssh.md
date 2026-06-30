@@ -541,6 +541,35 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
     restrict,from="192.0.2.2",command="/usr/bin/rrsync -ro /mnt/lugftp" ssh-rsa ...
     ```
 
+### 从命令获取 Authorized Keys {#authorized-keys-from-command}
+
+Linux 平台上的 OpenSSH Server 支持在 `sshd_config` 文件中使用 `AuthorizedKeysCommand` 配置项。通过这一配置，SSH 服务器可以从指定命令的输出中读取用于认证的公钥，而不是从 `authorized_keys` 文件中读取。配置方式如下：
+
+```plain
+AuthorizedKeysCommand <some program>
+AuthorizedKeysCommandUser nobody
+```
+
+其中，`<some program>` 会以 `nobody` 用户身份运行，并接收待认证的用户名作为唯一参数。程序需要输出一组候选公钥，其格式与 `authorized_keys` 文件完全一致。下面是一个 `<some program>` 的示例：
+
+```sh
+#!/bin/sh
+
+USERNAME="$1" # 用户名从命令行参数传入
+
+exec /usr/bin/curl \
+    --silent \
+    --fail \
+    --show-error \
+    "SOME_SOURCES/${USERNAME}"
+```
+
+借助这一功能，可以从统一的数据源获取公钥，从而确保所有服务器上的公钥保持同步。启用该功能后，可以将 `AuthorizedKeysFile` 设置为 `none`，以禁用基于 `authorized_keys` 文件的公钥认证——**请务必阅读下面的注意事项**。
+
+!!! warning "确保 Authorized Keys 提供程序正常工作"
+
+    务必确保提供公钥的程序（即上文中的 `<some program>`）始终能够正常运行。作者曾遇到过这样的问题：由于网络架构调整，`curl` 请求的 URL 发生变化，导致原有地址失效。此时，`curl` 无法获取并输出有效的公钥，SSH 服务器也就无法完成公钥认证，最终只能通过线下方式登录服务器进行修复。
+
 ## SSH 证书 {#certificates}
 
 OpenSSH 支持使用证书作为客户端和服务端的身份验证方式，即在正确配置了证书的情况下，客户端无需预先记录服务器的公钥（即加入 `known_hosts` 文件）即可信任 SSH 服务端，而服务端也无需预先记录客户端的公钥（即写入对应用户的 `authorized_keys` 文件）即可确认登录者的身份。使用证书进行 SSH 身份验证有以下好处：
