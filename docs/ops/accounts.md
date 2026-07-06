@@ -90,8 +90,73 @@ info: Adding user `test' to group `users' ...
 
 LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol），是一种用于访问和维护分布式目录信息服务的开放标准协议。
 
-在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。
-服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。
+在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。
 
-常用的 LDAP 服务器有 OpenLDAP 和 [389 Directory Server](https://www.port389.org/) 等。
-在 Debian 中，OpenLDAP 的软件名为 `slapd`，可以通过 `apt install slapd` 安装。
+常用的 LDAP 服务器有 OpenLDAP 和 [389 Directory Server](https://www.port389.org/) 等。在 Debian 中，OpenLDAP 的软件名为 `slapd`。由于 LDAP 的复杂性，可以使用成熟的客户端查看 LDAP 的信息，以便理解与修改数据，例如 [Apache Directory Studio](https://directory.apache.org/studio/)。
+
+### 基础概念 {#ldap-basic}
+
+LDAP 的数据组成一颗树，被称为 Directory Information Tree（DIT）。树中每个项（Entry）都有一个唯一表示它的名字，被称为 Distinguished Name（代表名，**dn**）。例如一个用户项的 `dn` 可能为如下：
+
+```
+cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
+```
+
+其中 **cn** 为 Common Name（通用名称），**ou** 为 Organization Unit（组织单元），**dc** 为 Domain Component（域组件）。一般来讲，域组件习惯上按照 DNS 域名的顺序来写。而上述用户项所在的 LDAP 树可能长这样：
+
+```
+dc=bangdream,dc=example,dc=org
+    ou=people
+        cn=Toyama Kasumi
+        cn=Ichigaya Arisa
+        ...
+        cn=Takamatsu Tomori
+        ...
+    ou=groups
+        cn=Poppin'Party
+        cn=Roselia
+        cn=Hello\, Happy World!
+        ...
+        cn=MyGO!!!!!
+        ...
+    ou=sudoers
+        cn=SPACE
+        cn=CiRCLE
+        cn=RiNG
+        ...
+```
+
+!!! note "字符转义"
+
+    可以看到上述 LDAP 树的 `ou=groups` 里面有一些项的 `cn` 有特殊的字符。`cn` 里面确实可以存储任意 UTF-8 字符串，但是根据 [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4) 的要求，有一些字符需要转义，例如 `cn=Hello\, Happy World!` 中的 `,` 就需要在前面添加 `\`，避免在写成 `dn` 的时候产生混淆：
+
+    ```
+    cn=Hello\, Happy World!,ou=groups,dc=bangdream,dc=example,dc=org
+    ```
+
+    因此尽管可以，但是不建议在 `cn` 中使用需要转义的字符，避免麻烦。
+
+项是属性（Attribute）的集合。属性是一对 key 和 value。例如上面 `cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的属性可能是这样：
+
+```
+dn: cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: top
+cn: Takamatsu Tomori
+gidNumber: 2008
+homeDirectory: /home/tomori
+sn: Takamatsu
+uid: tomori
+uidNumber: 2036
+gecos: Takamatsu Tomori
+givenName: Tomori
+loginShell: /bin/fish
+shadowLastChange: 12345
+userPassword: {SSHA}(redacted)
+createTimestamp: 20220429000000Z
+modifyTimestamp: 20260112000000Z
+```
