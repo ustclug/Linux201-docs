@@ -90,9 +90,13 @@ info: Adding user `test' to group `users' ...
 
 LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol），是一种用于访问和维护分布式目录信息服务的开放标准协议。
 
-在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。
+在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。LDAP 一般用于多名用户以统一的身份访问多台服务器或服务。
 
 常用的 LDAP 服务器有 OpenLDAP 和 [389 Directory Server](https://www.port389.org/) 等。在 Debian 中，OpenLDAP 的软件名为 `slapd`。由于 LDAP 的复杂性，可以使用成熟的客户端查看 LDAP 的信息，以便理解与修改数据，例如 [Apache Directory Studio](https://directory.apache.org/studio/)。
+
+!!! comment "@taoky: LDAP 的都市传说"
+
+    根据来自 [TUNA](https://tuna.moe/) 的都市传说：折腾过 LDAP 的人，都会在某种意义上延毕。因此这一部分是由已经毕业的同学编写的（大概吧）。
 
 ### 基础概念 {#ldap-basic}
 
@@ -164,6 +168,21 @@ modifyTimestamp: 20260112000000Z
 ```
 
 属性不是想怎么填就可以怎么填的，可以使用的属性和 `objectClass` 的定义受到 LDAP schema 的限制。`objectClass` 规定了当前项中必选或可选哪些属性，例如 `inetOrgPerson` 要求当前项必须有 `cn` 或 `commonName`、`objectClass` 属性和 `sn` 或 `surname` 属性，可选诸如 `carLicense`、`photo`、`manager` 等属性。属性的语法以及匹配规则也由 schema 限制。
+
+!!! note "`objectClass` 的继承"
+
+    可以注意到上面有一个特殊的 `objectClass`：`top`。这个类是所有其他 `objectClass` 的根。`cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的例子里出现的 `objectClass` 的继承关系如下：
+
+    ```txt
+    top
+        person
+            organizationalPerson
+                inetOrgPerson
+        posixAccount
+        shadowAccount
+    ```
+
+    尽管只要写 `inetOrgPerson`，就包含了 `organizationalPerson`、`person` 和 `top` 的约束关系，但是在实践中在这个继承链条上的 `objectClass` 很多时候仍然是完整写出的。
 
 此外有一些特殊的属性，不能被用户设置，只能由服务器生成，例如 `createTimestamp` 和 `modifyTimestamp`。这些被称为操作属性（Operational Attribute）。
 
