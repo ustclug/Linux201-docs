@@ -86,6 +86,8 @@ info: Adding user `test' to group `users' ...
 
 ### PAM
 
+(TODO)
+
 ## LDAP
 
 LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol），是一种用于访问和维护分布式目录信息服务的开放标准协议。
@@ -108,7 +110,9 @@ cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
 
 其中 **cn** 为 Common Name（通用名称），**ou** 为 Organization Unit（组织单元），**dc** 为 Domain Component（域组件）。其对应的相对识别名（Relative Distinguished Name，RDN）则是 `dn` 最左边的 `cn=Takamatsu Tomori`。
 
-一般来讲，域组件习惯上按照 DNS 域名的顺序来写。而上述用户项所在的 LDAP 树可能长这样：
+此外，树中的项也被称为 DSE（Directory Service Entry）。RootDSE 存储了 LDAP 服务器本身的信息。一个 LDAP 服务器可以有多个 `namingContexts`，每个 `namingContexts` 对应一颗目录树。每颗目录树的树根也被称为 Base DN。
+
+一般来讲，域组件习惯上按照 DNS 域名的顺序来写。而上述用户项所在的目录树可能长这样：
 
 ```txt
 dc=bangdream,dc=example,dc=org
@@ -195,4 +199,52 @@ changetype: delete
 
 ### 服务端配置 {#ldap-server}
 
-以下以 OpenLDAP 为例讲解相关配置。(TODO)
+以下以 OpenLDAP 为例讲解相关配置。在安装 `slapd` 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 `/var/lib/ldap`。
+
+!!! note "mdb 格式"
+
+    OpenLDAP 会保存两个 mdb 文件：`data.mdb` 和 `lock.mdb`，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 [LMDB](https://www.symas.com/mdb)，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。
+
+    尽管 `lmdb-utils` 包提供了 `mdb_stat`、`mdb_dump` 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 `slapcat` 工具：
+
+    ```sh title="读取配置（如果 LDAP 配置存储在 LDAP 数据库中）"
+    slapcat -n 0
+    ```
+
+    ```sh title="读取第一个数据库"
+    slapcat -n 1
+    ```
+
+安装 `slapd` 后对应的服务为 `slapd.service`，默认配置下监听未加密的 LDAP 协议端口 TCP 389。如果后续配置了 LDAPS，则默认是 TCP 636 端口。
+
+默认情况下，`slapd` 安装时会尝试根据 `hostname -d` 的输出配置 base DN，如果输出为空，那么就会变成 `dc=nodomain`。在几乎所有的情况下，都不是我们想要的，可以用下面的命令从 rootDSE 获取 `namingContexts` 验证：
+
+```console
+$ ldapsearch -x -H ldap://localhost -b "" -s base namingContexts
+# extended LDIF
+#
+# LDAPv3
+# base <> with scope baseObject
+# filter: (objectclass=*)
+# requesting: namingContexts
+#
+
+#
+dn:
+namingContexts: dc=nodomain
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1
+```
+
+这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可。
+
+(TODO)
+
+## 参考资料 {#references}
+
+- [使用 OpenLDAP 在 Linux 上进行中心化用户管理](https://harrychen.xyz/2021/01/17/openldap-linux-auth/)
