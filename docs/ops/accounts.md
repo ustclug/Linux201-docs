@@ -142,9 +142,9 @@ dc=bangdream,dc=example,dc=org
 
     因此尽管可以，但是不建议在 `cn` 中使用需要转义的字符，避免麻烦。
 
-项是属性（Attribute）的集合。属性是一对 key（被称为 Attribute Type）和 value。例如上面 `cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的属性可能是这样：
+项是属性（Attribute）的集合。属性是一对 key（被称为 Attribute Type）和 value。例如上面 `cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的属性以 LDIF 格式表示可能是这样：
 
-```txt
+```ldif
 dn: cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
 objectClass: inetOrgPerson
 objectClass: organizationalPerson
@@ -185,6 +185,13 @@ modifyTimestamp: 20260112000000Z
     尽管只要写 `inetOrgPerson`，就包含了 `organizationalPerson`、`person` 和 `top` 的约束关系，但是在实践中在这个继承链条上的 `objectClass` 很多时候仍然是完整写出的。
 
 此外有一些特殊的属性，不能被用户设置，只能由服务器生成，例如 `createTimestamp` 和 `modifyTimestamp`。这些被称为操作属性（Operational Attribute）。
+
+LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如删除一项：
+
+```ldif
+dn: cn=CRYCHIC,ou=groups,dc=bangdream,dc=example,dc=org
+changetype: delete
+```
 
 ### 服务端配置 {#ldap-server}
 
