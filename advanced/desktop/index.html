@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -4527,16 +4527,16 @@
 <p>在 Wayland 架构下，输入法需要作为一种特殊的 Wayland 客户端来获取用户的输入、在其他程序中显示候选词列表等。其中重要的协议为：</p>
 <ul>
 <li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-input-method/xx-input-method-v2.xml"><code>xx-input-method-v2</code></a> 或 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/input-method/input-method-unstable-v1.xml"><code>input-method-unstable-v1</code></a>：混成器与输入法之间的协议，负责传递输入相关数据，以及将输入法指定的特殊窗口（候选词列表等）显示在正确的位置。</li>
-<li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v1.xml"><code>text-input-unstable-v1</code></a> 或 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-text-input/xx-text-input-v3.xml"><code>xx-text-input-v3</code></a>：混成器与客户端（非输入法程序）之间的协议。</li>
+<li><a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v1.xml"><code>text-input-unstable-v1</code></a> 或 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v3.xml"><code>text-input-unstable-v3</code></a>：混成器与客户端（非输入法程序）之间的协议。</li>
 </ul>
 <p>由于设计等历史遗留原因，目前 Wayland 下的输入法支持仍然存在一定的混乱。具体来说：</p>
 <ul>
 <li>GNOME 下由于设计上输入法候选词等由 gnome-shell 直接绘制（而不是由输入法绘制窗口），shell 需要获取具体的候选词列表等信息，因此 GNOME 不支持 <code>input-method</code> 相关协议，而是由 DBus 协议与 iBus 输入法框架通信。Fcitx 亦兼容了这个 DBus 协议（如果需要在 GNOME 下正常使用 Fcitx，还需要安装 <a href="https://github.com/wengxt/gnome-shell-extension-kimpanel">gnome-shell-extension-kimpanel</a>）。</li>
-<li>Weston 仅支持 <code>input-method-unstable-v1</code> 和 <code>text-input-unstable-v1</code> 协议。其他大部分混成器至少支持了 <code>xx-input-method-v2</code> 和 <code>xx-text-input-v3</code> 协议。</li>
-<li>在很长一段时间内，Chromium 仅支持 <code>text-input-unstable-v1</code> 协议，导致在除了 Weston 与 KWin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 <code>xx-text-input-v3</code> 协议。</li>
-<li>Qt 同样在很长一段时间内仅支持 <a href="https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml"><code>text-input-unstable-v2</code></a>（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 <code>xx-text-input-v3</code> 协议。</li>
+<li>Weston 仅支持 <code>input-method-unstable-v1</code> 和 <code>text-input-unstable-v1</code> 协议。其他大部分混成器至少支持了 <code>xx-input-method-v2</code> 和 <code>text-input-unstable-v3</code> 协议。</li>
+<li>在很长一段时间内，Chromium 仅支持 <code>text-input-unstable-v1</code> 协议，导致在除了 Weston 与 KWin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 <code>text-input-unstable-v3</code> 协议。</li>
+<li>Qt 同样在很长一段时间内仅支持 <a href="https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml"><code>text-input-unstable-v2</code></a>（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 <code>text-input-unstable-v3</code> 协议。</li>
 </ul>
-<p>目前来讲，从应用开发者的角度，只支持 <code>xx-text-input-v3</code> 协议就已经足够（除非有特殊需求需要兼容 Weston）。</p>
+<p>目前来讲，从应用开发者的角度，只支持 <code>text-input-unstable-v3</code> 协议就已经足够（除非有特殊需求需要兼容 Weston）。</p>
 <div class="admonition note">
 <p class="admonition-title">输入法模块还能用吗？</p>
 <p>在 X 时代的 GTK/QT 的<a href="#x-input-method">输入法模块</a>在 Wayland 下根据输入法实现的不同，可能仍然可以使用来绕过 Wayland 的输入法协议。以 <a href="https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Popup_candidate_window">Fcitx 5</a> 为例：</p>
@@ -4956,7 +4956,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月30日 14:40:52 UTC">2026年6月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月20日 18:36:34 UTC">2026年7月20日</span>
   </span>
 
     
@@ -5083,7 +5083,7 @@ Do not link to a "generic" man page for these commands -->
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
