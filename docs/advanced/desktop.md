@@ -908,7 +908,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 `wl_output` 的 event 拿到显示器的 `scale`，可以使用 `wl_surface` 的 `set_buffer_scale` request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，[macOS 现在仍然是采用这种策略来实现分数缩放的](https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation)）。
 
-fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为按照分数缩放后的大小。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。
+fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为逻辑大小（即应用缩放之前的大小）。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。
 
 !!! note "逃离浮点数"
 
