@@ -882,16 +882,16 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 在 Wayland 架构下，输入法需要作为一种特殊的 Wayland 客户端来获取用户的输入、在其他程序中显示候选词列表等。其中重要的协议为：
 
 - [`xx-input-method-v2`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-input-method/xx-input-method-v2.xml) 或 [`input-method-unstable-v1`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/input-method/input-method-unstable-v1.xml)：混成器与输入法之间的协议，负责传递输入相关数据，以及将输入法指定的特殊窗口（候选词列表等）显示在正确的位置。
-- [`text-input-unstable-v1`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v1.xml) 或 [`xx-text-input-v3`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-text-input/xx-text-input-v3.xml)：混成器与客户端（非输入法程序）之间的协议。
+- [`text-input-unstable-v1`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v1.xml) 或 [`text-input-unstable-v3`](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v3.xml)：混成器与客户端（非输入法程序）之间的协议。
 
 由于设计等历史遗留原因，目前 Wayland 下的输入法支持仍然存在一定的混乱。具体来说：
 
 - GNOME 下由于设计上输入法候选词等由 gnome-shell 直接绘制（而不是由输入法绘制窗口），shell 需要获取具体的候选词列表等信息，因此 GNOME 不支持 `input-method` 相关协议，而是由 DBus 协议与 iBus 输入法框架通信。Fcitx 亦兼容了这个 DBus 协议（如果需要在 GNOME 下正常使用 Fcitx，还需要安装 [gnome-shell-extension-kimpanel](https://github.com/wengxt/gnome-shell-extension-kimpanel)）。
-- Weston 仅支持 `input-method-unstable-v1` 和 `text-input-unstable-v1` 协议。其他大部分混成器至少支持了 `xx-input-method-v2` 和 `xx-text-input-v3` 协议。
-- 在很长一段时间内，Chromium 仅支持 `text-input-unstable-v1` 协议，导致在除了 Weston 与 KWin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 `xx-text-input-v3` 协议。
-- Qt 同样在很长一段时间内仅支持 [`text-input-unstable-v2`](https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml)（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 `xx-text-input-v3` 协议。
+- Weston 仅支持 `input-method-unstable-v1` 和 `text-input-unstable-v1` 协议。其他大部分混成器至少支持了 `xx-input-method-v2` 和 `text-input-unstable-v3` 协议。
+- 在很长一段时间内，Chromium 仅支持 `text-input-unstable-v1` 协议，导致在除了 Weston 与 KWin 以外的混成器下无法使用输入法，直到 2024 年 Chromium 129 发布后才支持 `text-input-unstable-v3` 协议。
+- Qt 同样在很长一段时间内仅支持 [`text-input-unstable-v2`](https://invent.kde.org/libraries/plasma-wayland-protocols/-/blob/master/src/protocols/text-input-unstable-v2.xml)（未被 wayland-protocols 合并），直到 Qt 6.7 才支持 `text-input-unstable-v3` 协议。
 
-目前来讲，从应用开发者的角度，只支持 `xx-text-input-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
+目前来讲，从应用开发者的角度，只支持 `text-input-unstable-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
 
 !!! note "输入法模块还能用吗？"
 
