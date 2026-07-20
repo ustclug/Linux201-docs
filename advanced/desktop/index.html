@@ -4549,7 +4549,7 @@
 <h3 id="wayland-hidpi">HiDPI 支持<a class="headerlink" href="#wayland-hidpi" title="Permanent link">&para;</a></h3>
 <h4 id="wayland-fractional-scale">Wayland 与分数缩放<a class="headerlink" href="#wayland-fractional-scale" title="Permanent link">&para;</a></h4>
 <p>在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 <code>wl_output</code> 的 event 拿到显示器的 <code>scale</code>，可以使用 <code>wl_surface</code> 的 <code>set_buffer_scale</code> request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，<a href="https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation">macOS 现在仍然是采用这种策略来实现分数缩放的</a>）。</p>
-<p>fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 <code>preferred_scale</code> event 通知客户端推荐的缩放比例。由于 <code>wl_surface</code> 在核心稳定协议中，已有的类型不能随意修改，因此 <code>set_buffer_scale</code>（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml">viewporter</a> 提供。viewporter 允许为 <code>wl_surface</code> 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为按照分数缩放后的大小。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。</p>
+<p>fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 <code>preferred_scale</code> event 通知客户端推荐的缩放比例。由于 <code>wl_surface</code> 在核心稳定协议中，已有的类型不能随意修改，因此 <code>set_buffer_scale</code>（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 <a href="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml">viewporter</a> 提供。viewporter 允许为 <code>wl_surface</code> 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为逻辑大小（即应用缩放之前的大小）。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。</p>
 <div class="admonition note">
 <p class="admonition-title">逃离浮点数</p>
 <p>我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。</p>
@@ -4956,7 +4956,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月20日 18:48:54 UTC">2026年7月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月20日 20:06:02 UTC">2026年7月20日</span>
   </span>
 
     
