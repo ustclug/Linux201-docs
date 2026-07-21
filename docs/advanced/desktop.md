@@ -486,6 +486,8 @@ X 本身没有逻辑分辨率的概念，并且一般只有一个全局的坐标
 !!! note "不能不管应用实现，直接让应用以一个更大（或者更小）的分辨率渲染，再把应用渲染出来的内容缩放到正确的分辨率吗？"
 
     如果要正确实现 HiDPI，应用程序本身必须知道物理像素与逻辑像素之间的关系（DPI）。例如对一个 12pt（1pt = 1/72 英寸）的字，在 96 DPI 下的物理像素应该为 12 * 96 / 72 = 16px，在 192 DPI 下为 12 * 192 / 72 = 32px，它们的逻辑像素是一样的，但是物理像素则有差异。图标等其他的资源也类似。假如窗口系统不告知应用 DPI 信息，只将应用窗口当成位图缩放，那么最终获得的窗口要么里面的内容会小到无法阅读，要么变成一团模糊。
+    
+    所以，为了正确实现缩放，应用程序必须至少了解逻辑分辨率、物理分辨率与缩放比（DPI）中的两项。需要注意的是在下文 Wayland 的介绍中，其协议内没有 DPI 的概念，不过在已有的讨论中有时仍然会看到以 DPI / 96 作为缩放比来描述。
 
     而对只支持整数缩放的应用来说，一种需要更多渲染资源但是可行的策略是：告知一个足够大（当前分数缩放比例向上取整）的缩放比例（对应 DPI），然后再将渲染出来的内容缩小到正确的分辨率。在这种情况下，窗口内容内部的大小是正确的，并且缩小位图比放大位图来说，更不容易模糊。
 
@@ -792,6 +794,62 @@ $ WAYLAND_DEBUG=1 gtk4-demo
 
 Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml)）随 Wayland 库分发。其他不少协议则在 [wayland-protocols 仓库](https://gitlab.freedesktop.org/wayland/wayland-protocols) 中。可以注意到，只有少数协议是 stable 的（例如 [xdg-shell](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads)、[linux-dmabuf](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads) 等），大部分协议都在 staging、unstable 或者 experimental 中。其中除了核心的 `wayland.xml` 之外，其他的协议混成器都可以可选支持，不过如果要运行通常意义下的桌面程序，至少 xdg-shell 是必须支持的——它定义了「窗口」的概念。当然，特殊用途（嵌入式等）的混成器也可以选择不实现 xdg-shell，例如 Weston 就支持用于车载娱乐系统的 [ivi-shell](https://gitlab.freedesktop.org/wayland/weston/-/blob/main/ivi-shell/ivi-shell.c) 相关协议（ivi 即 [in-vehicle infotainment](https://en.wikipedia.org/wiki/In-car_entertainment)）。
 
+??? note "Wayland 协议细节"
+
+    Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：
+
+    ```xml
+    <interface name="wp_fractional_scale_v1" version="1">
+      <description summary="fractional scale interface to a wl_surface">
+        An additional interface to a wl_surface object which allows the compositor
+        to inform the client of the preferred scale.
+      </description>
+
+      <request name="destroy" type="destructor">
+        <description summary="remove surface scale information for surface">
+          Destroy the fractional scale object. When this object is destroyed,
+          preferred_scale events will no longer be sent.
+        </description>
+      </request>
+
+      <event name="preferred_scale">
+        <description summary="notify of new preferred scale">
+          Notification of a new preferred scale for this surface that the
+          compositor suggests that the client should use.
+
+          The sent scale is the numerator of a fraction with a denominator of 120.
+        </description>
+        <arg name="scale" type="uint" summary="the new preferred scale"/>
+      </event>
+    </interface>
+    ```
+
+    每个对象都是某个接口（interface）的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 `wp_fractional_scale_v1` 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。
+    
+    另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
+
+!!! note "`wl_surface` 与 `xdg_surface`"
+
+    Wayland 核心协议的 `wl_surface` interface 定义了一个矩形的平面。客户端可以在 `wl_surface` 上面 attach 在内存或者 GPU 显存中的 `wl_buffer`（存储实际的像素信息），指定接收输入的区域（`set_input_region`），通知混成器有哪些区域发生了变化（damage）等等。不过 `wl_surface` 并不是我们所认识的窗口。可以认为它只是一个单纯的画板，它有可能是鼠标光标、拖动内容时显示的图标，当然也有可能是窗口。
+
+    真正能让 `wl_surface` 成为窗口的是 `xdg_surface` interface。在 xdg-shell 协议中，`xdg_wm_base::get_xdg_surface` 能够基于 `wl_surface` 创建出 `xdg_surface`。之后再由 `xdg_surface::get_toplevel` 或者 `xdg_surface::get_popup` 创建普通的窗口（`xdg_toplevel`）或者菜单（`xdg_popup`）。进而实现窗口的移动、大小变化、全屏/最大化/最小化等，以及配置菜单相对于其父 `xdg_surface` 显示的位置。
+
+!!! note "`wl_shell`？"
+
+    在很早期的时候，Wayland 核心协议中也是有「窗口」相关的概念的。对应的 interface 为 `wl_shell` 和 `wl_shell_surface`。但是目前这两个 interface 尽管仍然在核心协议中，但是已经被废弃——不管是混成器还是应用都不应该使用它们。相比于 xdg-shell 协议，这两个 interface 缺失了很多功能，而窗口管理的需求更多、更灵活，因此从核心协议中拆出来单独维护是更恰当的选择。
+
+??? note "Wayland 下的坐标系"
+
+    如果需要详细讨论有关窗口位置、缩放等话题的细节，那么坐标系概念是必不可少的。相比 X 只有一种全局的坐标系的设计来说，Wayland 有多个不同的坐标系，让实现合理的缩放等功能成为可能。
+
+    Wayland 下的坐标系一般来讲都是左上角为原点，X 轴向右，Y 轴向下。主要的坐标系有三种：
+
+    - 在 `wl_buffer` 上的 buffer pixel 坐标系（物理坐标，即实际会在显示器上画出来的内容）
+    - 在 `wl_surface` 上的 surface-local 坐标系（逻辑坐标）
+    - 混成器自己的全局坐标系（使用逻辑坐标）
+
+    Wayland 应用程序无法知道自己在全局坐标系中的位置，也无法指定把自己放到全局坐标的某个位置。
+
 尽管不少协议 stable 化的进展极慢（要让所有人达成共识，是世界上最难的事情之一），不过大量非 stable 状态的协议目前已经被广泛使用，包括：
 
 - [text-input-v3](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/text-input/text-input-unstable-v3.xml?ref_type=heads)：混成器与客户端之间的输入法协议，在除了 Weston 以外的主流混成器中均有支持。
@@ -843,40 +901,6 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     可能在未来几年内，这个话题仍然可以一直吵下去。不过对应用和 UI 框架的开发者来说，有一个妥协的方案 [libdecor](https://gitlab.freedesktop.org/libdecor/libdecor)。在支持 xdg-decoration-v1 并且混成器告知使用 SSD 的场景下，它什么都不会做，否则会帮助应用绘制边框。目前其支持使用 cairo 绘制的（非常简陋）的边框，和使用 gtk 绘制的符合 GNOME 风格的边框。这些边框支持是以插件的形式，在需要绘制的时候 `dlopen` 的。Qt、[Electron](https://www.electronjs.org/blog/tech-talk-wayland#understanding-csd-or-when-a-window-isnt-a-window)、SDL 等框架目前也都完善了 Wayland 下 CSD 的支持。
 
-??? note "Wayland 协议细节"
-
-    Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：
-
-    ```xml
-    <interface name="wp_fractional_scale_v1" version="1">
-      <description summary="fractional scale interface to a wl_surface">
-        An additional interface to a wl_surface object which allows the compositor
-        to inform the client of the preferred scale.
-      </description>
-
-      <request name="destroy" type="destructor">
-        <description summary="remove surface scale information for surface">
-          Destroy the fractional scale object. When this object is destroyed,
-          preferred_scale events will no longer be sent.
-        </description>
-      </request>
-
-      <event name="preferred_scale">
-        <description summary="notify of new preferred scale">
-          Notification of a new preferred scale for this surface that the
-          compositor suggests that the client should use.
-
-          The sent scale is the numerator of a fraction with a denominator of 120.
-        </description>
-        <arg name="scale" type="uint" summary="the new preferred scale"/>
-      </event>
-    </interface>
-    ```
-
-    每个对象都是某个接口（interface）的一个实例（每个 object 都实现了一个 interface），interface 中的请求（request）是客户端可以调用混成器的方法，事件（event）是混成器通知客户端的方法。这里定义了一个名为 `wp_fractional_scale_v1` 的接口，其中包含的 request 和 event 分别表示客户端可以销毁掉这个对象，以及混成器可以通知客户端推荐的缩放比例。
-    
-    另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
-
 ### 输入法 {#wayland-ime}
 
 在 Wayland 架构下，输入法需要作为一种特殊的 Wayland 客户端来获取用户的输入、在其他程序中显示候选词列表等。其中重要的协议为：
@@ -908,13 +932,13 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 在 Wayland 最开始设计的时候，就已经考虑到了 HiDPI 的支持问题——应用可以从 `wl_output` 的 event 拿到显示器的 `scale`，可以使用 `wl_surface` 的 `set_buffer_scale` request 来设置自己的缓冲区的缩放比例，从而实现 HiDPI 支持。但是，在 Wayland 设计时，分数缩放的显示器还不普遍，因此 Wayland 最初并没有支持分数缩放。当之后分数缩放的需求越来越多时，混成器只能够使用先整数放大，再缩小的策略来实现分数缩放，对 GPU 性能的消耗较大（题外话，[macOS 现在仍然是采用这种策略来实现分数缩放的](https://github.com/waydabber/BetterDisplay/wiki/MacOS-scaling,-HiDPI,-LoDPI-explanation)）。
 
-fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为 buffer 的大小，将目标矩形设置为逻辑大小（即应用缩放之前的大小）。混成器收到这个 surface 之后，就能知道这个 surface 应该如何显示。
+fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为计算得到的 buffer 的大小，将目标矩形设置为逻辑大小（即应用缩放之前的大小）。混成器收到这个 surface 之后，就能知道它的缩放比例，进而决定是否要做额外的缩放操作。
 
 !!! note "逃离浮点数"
 
     我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。
 
-    在客户端和服务器计算 viewport 的时候，也需要尽量使用整数运算来避免误差。一个[参考的公式](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/309)是：
+    在客户端和服务器计算 viewport 的时候，也需要尽量使用整数运算来避免误差，否则如果客户端从逻辑大小和缩放比计算得到的 buffer 大小不准确的话，就会坏事。一个[参考的公式](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/309)是：
 
     ```c
     int32_t buffer_width = (surface_width * preferred_scale + 60) / 120;
@@ -926,7 +950,7 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
     - 参考公式：`(30 * 126 + 60) / 120 = 32`
     - 浮点计算：`round(126 / 120 * 30) = round(31.499998) = 31`
 
-    如果多了/少了一个像素，混成器就需要手动缩放，就会导致画面模糊。
+    如果多了/少了一个像素，就可能会出现渲染出的窗口横竖多了/少了 1px 的情况，影响用户体验。
 
 #### XWayland 下的 HiDPI 支持 {#xwayland-hidpi}
 
@@ -948,6 +972,27 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
     - GTK4 时代的设计架构有了很大变化，坐标系统不再是问题，而[新的基于 GPU 渲染的渲染器](https://blog.gtk.org/2024/01/28/new-renderers-for-gtk/)也使得在分数缩放下实现[锐利的字体缩放成为可能](https://blogs.gnome.org/gtk/2024/03/07/on-fractional-scales-fonts-and-hinting/)。在 Wayland 的分数缩放协议合入 wayland-protocols 后，终于[从 GTK 4.12 开始实现了分数缩放功能](https://release.gnome.org/45/developers/#:~:text=Experimental%20support%20has%20been%20added%20for%20fractional%20scaling%20on%20Wayland%2E%20You%20can%20try%20it%20out%20with%20GDK%5FDEBUG%3Dgl%2Dfractional%2E)，并在后续完善。不过由于 X 被视作过时的平台，并且没有统一的分数缩放配置方案（如果直接像其他框架一样用 Xft 配置，会 break 现有的配置），因此 X 上的 GTK4 和 GTK3 一样仍然没有分数缩放支持。
 
     由于仍然有少量的 GTK 应用（特别是 GTK3）依赖于 X，因此为了让 X 应用窗口的大小尽量一致，一种妥协方案就是在 Xsettings 和 X resources 中设置整数缩放，然后混成器总是进行缩放。这带来的问题就是，运行的全屏应用（特别是游戏）渲染的内容量会大于实际值，造成了性能上的浪费。
+
+!!! note "坐标系视角"
+
+    从坐标系的视角考虑，X 自己的物理坐标系是一套单独的坐标系。上面的三种策略大致对应三种不同的映射思路：
+
+    1. X 坐标系与全局的逻辑坐标系一一映射。
+    2. X 坐标系与全局的逻辑坐标系之间按照某个已知的比例映射。
+    3. X 坐标系与全局的物理坐标系一一映射。
+
+    不过在实践中，混成器的具体实现有可能不会完全按照上述描述机械性地来做。
+
+!!! example "关于 mutter 的 XWayland HiDPI 实现"
+
+    Mutter 内部与之相关定义了两个坐标系：Protocol（X 坐标系）和 Stage 坐标系（全局逻辑坐标系）。它们的映射关系为 Protocol 坐标 = Stage 坐标 * xwayland_scale。xwayland_scale 为所有显示器中最大缩放比向上取整。对 Gtk 等应用，这样可以保证窗口和元素的大小是正确的，但是对 X 下的游戏来说，Protocol 坐标系就可能太大了（因为 xwayland_scale >= 实际的分数缩放比）。
+
+    不过在最新的 Xwayland 中（写作时尚未发布）包含了一个与缩放和分辨率相关的[补丁](https://gitlab.freedesktop.org/xorg/xserver/-/merge_requests/2095)：Xwayland 能够额外获取有关物理分辨率的信息，并在 X 程序使用 RandR 请求屏幕分辨率的时候，将物理分辨率作为 "preferred mode" 提供给应用。在这种情况下，全屏游戏如果使用 RandR 提供的这项信息，就能自动选择合适的分辨率，避免不必要的渲染。而如果游戏不听这个值，就还是只能手动在游戏内变更分辨率（如果游戏提供了选项），或者使用 gamescope 嵌套来让游戏读取到正确的分辨率：
+
+    ```sh
+    # 让 game 以 1920x1080 分辨率全屏（-f）运行
+    gamescope -f -W 1920 -H 1080 -- ./game
+    ```
 
 ### 远程桌面访问 {#wayland-remote-desktop}
 
