@@ -64,6 +64,8 @@ icon: material/bug
 
 #### 缓解内存压力 {#memory-pressure}
 
+通过配置用户态 OOM Killer，以及配置好 swap 与内存压缩，可以有效缓解内存满时系统卡顿、几乎无法操作的问题。
+
 ##### 用户态 OOM Killer {#userspace-oom-killer}
 
 Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer 会给程序打分，选择分数最高的进程杀死。但是，在 OOM Killer 介入之前，内核会尽可能尝试通过回收缓存等方式满足内存需求，而如果缓存数据是非常频繁使用的，那么就会频繁出现在回收缓存之后又读取回来的情况，会极大地占用 IO 资源，导致系统变得几乎不可用，但是又由于回收操作确实释放了内存，所以 OOM Killer 不会介入。
@@ -131,9 +133,45 @@ systemd-oomd
 
 此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，有关 swap 的简单介绍可参考[分区与文件系统](./storage/filesystem.md#swap)的有关部分。
 
-传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 [In defense of swap: common misconceptions](https://chrisdown.name/2018/01/02/in-defence-of-swap.html)（中文版：[替 swap 辩护：常见的误解](https://farseerfc.me/zhs/in-defence-of-swap.html)）。有关如何设置用户态 OOM Killer 的内容，可参考[问题调试中的「用户态 OOM Killer」部分](../debug.md#userspace-oom-killer)。
+传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 [In defense of swap: common misconceptions](https://chrisdown.name/2018/01/02/in-defence-of-swap.html)（中文版：[替 swap 辩护：常见的误解](https://farseerfc.me/zhs/in-defence-of-swap.html)）。
 
-此外，内核的 zram 与 zswap 功能以不同的方式在 swap 系统基础上实现了内存压缩的功能，在内存紧缺的情况下很有帮助。在配置前，请先阅读 [Debunking zswap and zram myths](https://chrisdown.name/2026/03/24/zswap-vs-zram-when-to-use-what.html) 了解适合自己的环境的方案。
+!!! note "tl;dr：为什么 swap 是有必要的？"
+
+    上述文章中一个重要的观点是：swap 对高效的内存管理来说是有必要的。
+
+    系统中的内存可以大致分成两种：文件页内存（丢了还可以从磁盘再读取）和匿名内存（磁盘上没有对应的文件，不能直接丢掉）。在 swap 存在的情况下，内核可以将很少被访问的匿名内存换页到磁盘上：
+
+    - 在内存没什么压力的情况下，空闲的内存可以更多存储诸如文件缓存等内容。
+    - 如果内存压力增大，在有 swap 的情况下，文件页内存和匿名内存都可以被回收，这允许系统将访问最不频繁的内存页回收掉，留出更多的内存空间给新增的需求；而在没有 swap 的情况下，只有文件页内存可以被回收——很多时候丢掉的文件页很快就要再读回来，导致频繁的磁盘 I/O 读写（换句话说，内存的速度在这种情况下，就更容易退化成磁盘的速度）。
+
+此外，内核的 zram 与 zswap 功能以不同的方式在 swap 系统基础上实现了内存压缩的功能，在内存紧缺的情况下很有帮助。其中 zram 是一个虚拟的可以当作 swap 使用的设备（`/dev/zramX`），而 zswap 是 Linux 内存管理子系统的一部分，在磁盘 swap 前面作为一层压缩缓存。两者都是在系统尝试将内存页换页到 swap 的过程中介入，压缩并存储到物理内存上。
+
+在配置前，请先阅读 [Debunking zswap and zram myths](https://chrisdown.name/2026/03/24/zswap-vs-zram-when-to-use-what.html) 了解适合自己的环境的方案。简单来说：
+
+- 如果已经有在磁盘上的 swap 了，那么除非你很熟悉 zram，否则**不要使用 zram**，总是使用 zswap。可以查看 `/sys/module/zswap/parameters/enabled` 确认是否开启了 zswap（写入 1 可以开启，0 可以关闭）。对没有默认启用 zswap 的内核，需要在内核命令行参数中添加 `zswap.enabled=1` 等参数配置。
+    - zswap 能够压缩的内存受到磁盘 swap 大小和物理内存大小限制。前者决定了能够处理多少压缩前的内存大小，后者决定了 zswap 的 pool 的大小，即多少压缩后的内容可以存储在内存里面（默认 20%）。针对前者的限制，内核社区有设计出[「虚拟 swap 空间」](https://lwn.net/Articles/1059201/)的想法，但是距离进入主线内核仍然有距离。
+- 如果真的不想在磁盘上开 swap（例如嵌入式环境，或者由于隐私考虑不希望内存数据落盘的场景），那么使用 zram 的同时，需要设置好用户态 OOM Killer，根据 PSI 压力来避免系统锁死。可以使用 `systemd-zram-generator` 包帮助配置 zram。
+
+!!! note "为什么 zram + swap 不是合理的选择？"
+
+    如果配置过 zram 的话，会注意到系统使用的 swap 有优先级的顺序：
+
+    ```console
+    $ swapon --show
+    NAME           TYPE        SIZE USED PRIO
+    /dev/nvme0n1p2 partition   4.1G   0B   -1
+    /dev/zram0     partition 984.5M 3.5M  100
+    ```
+
+    看起来一切都很合理，但是其下隐藏着致命的问题：如果 `/dev/zram0` 满了之后会怎么样？此时所有的换页请求都会涌入磁盘的 swap，**即使 zram 中可能有很多页已经冷了**，这些冷页也不会被主动换出到磁盘，让出空间出来！因为对内核的内存管理子系统来说，zram 和磁盘 swap 唯一的区别就是优先级不同，它没有在不同优先级的 swap 之间维护好冷热页的义务。而 zswap 不同的地方在于，作为内存管理子系统的一部分，它内部维护好了 LRU，当 zswap 满了的时候，它能将冷掉的页放在实际的磁盘 swap 上面，把空间让给更热、更值得被压缩的内容。
+
+    Zram 虽然支持设置 writeback 设备，允许写回长时间没有访问的页面到指定的块设备文件，但是与 zswap 不同，zram 的 writeback 不会自动触发。作为 zram 最著名的用户，[AOSP 的内存管理 daemon 会定时进行 zram writeback](https://source.android.com/docs/core/perf/mmd#zram-writeback-policy)。但是 Android 移动设备和桌面、服务器的 workload 有很大差异，因此在这种情况下，仍然建议选择 zswap 方案，除非你愿意花时间自己写 daemon 定时触发 writeback，并且花上更多的时间调优。
+
+!!! note "查看内存压缩情况"
+
+    针对系统全局来说，zram 可以用 `zramctl` 查看每个 zram 设备压缩了多少内容，zswap 则可以在 `/sys/kernel/debug/zswap/` 查看整体的指标。不过它们都查看不了某个进程的情况——进程显示的 swap 占用空间是压缩之前的空间。
+
+    zram 没有方式查看非全局的内存压缩信息。而 cgroup 提供了对 zswap 的支持，`memory.zswap.current` 记录了对应 cgroup 在 zswap 的 pool 里面使用了多少压缩后的内存。
 
 #### 系统无法启动 {#unbootable-system}
 
@@ -146,7 +184,7 @@ systemd-oomd
 - `arch-chroot` 工具可以方便地 chroot 到安装的系统中，以便执行操作
     - 如果不使用 `arch-chroot`，在 chroot 进入系统前就需要手动挂载 `/proc`、`/sys`、`/dev` 等文件系统、配置 `/etc/resolv.conf` 等等，比较麻烦。
 
-如果 archiso 还是太大（例如在某些 IPMI 环境下，无法使用太大的 ISO 文件），在有有线网络的情况下可以考虑使用 PXE 环境（iPXE，或是集成的诸如 [netboot.xyz](https://netboot.xyz/) 等服务）。科大亦提供了公开的 PXE 启动服务，可参考 <https://pxe.ustc.edu.cn>。
+如果 archiso 还是太大（例如在某些 IPMI 环境下，无法使用太大的 ISO 文件），在有有线网络的情况下可以考虑使用 PXE 环境（直接使用 iPXE 的 ISO，或是集成的诸如 [netboot.xyz](https://netboot.xyz/) 等服务）。[科大亦提供了公开的 PXE 启动服务](https://pxe.ustc.edu.cn)。
 
 如果可以看到 GRUB 界面，但是发现进入系统时卡死且没有详细的错误信息，那么需要在 GRUB 界面中按下 `e` 键，编辑对应的启动项，删除 `linux` 这一行的 `quiet` 和 `splash` 选项。发行版可能会默认包含这些选项，以减小启动时的输出信息，以及显示漂亮的启动动画（如果有），但是这会影响到问题调试。
 
