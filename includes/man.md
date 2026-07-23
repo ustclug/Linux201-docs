@@ -76,14 +76,17 @@
 [snapper-configs.5]: https://manpages.debian.org/unstable/snapper/snapper-configs.5.en.html
 [ssh_config.5]: https://man.openbsd.org/ssh_config
 [sshd_config.5]: https://man.openbsd.org/sshd_config
+[systemd.automount.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.automount.html
 [systemd.exec.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html
 [systemd.exec.5#Environment]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Environment
 [systemd.exec.5#Sandboxing]: https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing
 [systemd.generator.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.generator
 [systemd.kill.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html
+[systemd.mount.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html
 [systemd.resource-control.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
+[systemd.swap.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.swap.html
 [systemd.timer.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html
 [user@.service.5]: https://www.freedesktop.org/software/systemd/man/latest/user@.service.html
@@ -127,6 +130,7 @@ Do not link to a "generic" man page for these commands -->
 [slurmrestd.8]: https://slurm.schedmd.com/slurmrestd.html
 <!-- end slurm daemons -->
 [systemd-logind.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html
+[systemd-fstab-generator.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-fstab-generator.html
 [systemd-ssh-generator.8]: https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-generator.html
 [useradd.8]: https://manpages.debian.org/stable/passwd/useradd.8.en.html
 [userdel.8]: https://manpages.debian.org/stable/passwd/userdel.8.en.html
