@@ -109,29 +109,31 @@ WantedBy=multi-user.target
 
     对于定时器，`[Timer]` 部分的字段可以在 [`systemd.timer(5)`][systemd.timer.5] 中找到。
 
-!!! note "Generator"
+/// note | Generator
+    attrs: {id: generator}
 
-    或许你会注意到，有一些 unit 文件存储在 `/run/systemd/generator/` 下：
+或许你会注意到，有一些 unit 文件存储在 `/run/systemd/generator/` 下：
 
-    ```console
-    $ systemctl status home.mount
-    ● home.mount - /home
-        Loaded: loaded (/etc/fstab; generated)
-        Active: active (mounted) since Mon 2026-04-06 09:27:46 UTC; 1 day 8h ago
-    Invocation: 513aed29e7f049babe06455dbbc90087
-        Where: /home
-        What: /dev/vda1
-        Docs: man:fstab(5)
-                man:systemd-fstab-generator(8)
-        Tasks: 0 (limit: 2318)
-        Memory: 84K (peak: 1.7M)
-            CPU: 4ms
-        CGroup: /system.slice/home.mount
-    $ ls /run/systemd/generator/home.mount
-    /run/systemd/generator/home.mount
-    ```
+```console
+$ systemctl status home.mount
+● home.mount - /home
+    Loaded: loaded (/etc/fstab; generated)
+    Active: active (mounted) since Mon 2026-04-06 09:27:46 UTC; 1 day 8h ago
+Invocation: 513aed29e7f049babe06455dbbc90087
+    Where: /home
+    What: /dev/vda1
+    Docs: man:fstab(5)
+            man:systemd-fstab-generator(8)
+    Tasks: 0 (limit: 2318)
+    Memory: 84K (peak: 1.7M)
+        CPU: 4ms
+    CGroup: /system.slice/home.mount
+$ ls /run/systemd/generator/home.mount
+/run/systemd/generator/home.mount
+```
 
-    这些临时生成出来的 unit 是由 [systemd.generator.5][systemd.generator.5] 生成的。Generator 程序（大部分都在 `/usr/lib/systemd/system-generators/`）会在系统启动最开始，以及重新加载配置的时候执行，生成对应的 unit。
+这些临时生成出来的 unit 是由 [systemd.generator.5][systemd.generator.5] 生成的。Generator 程序（大部分都在 `/usr/lib/systemd/system-generators/`）会在系统启动最开始，以及重新加载配置的时候执行，生成对应的 unit。
+///
 
 #### 顺序与依赖 {#unit-dependency}
 
@@ -273,6 +275,13 @@ Service 也就是我们最常见的服务，它的配置文件中有一个 `[Ser
         通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 `$PATH` 环境变量，而是使用一个硬编码的列表。
 
 - `Restart=on-failure` 表示服务在失败时会自动重启。`Restart=` 的取值和含义可以在 [systemd.service][systemd.service.5#Restart=] 文档中找到。
+
+    !!! warning "Systemd 的重试限流机制"
+
+        实际部署过服务的话，可能会注意到：即使设置了 `Restart=always`，有的时候服务也会挂掉，systemd 不会重启。这是因为 systemd 会限制 unit 的重试频率，由 `StartLimitIntervalSec=` 和 `StartLimitBurst=` 两项参数控制，默认 10s 内最多允许启动 5 次。如果触发到了这个频率，那么 systemd 就不会再尝试重启对应的服务了。
+
+        如果真的希望 systemd 不停重试服务，可以将 `StartLimitIntervalSec=` 设置为 0。
+
 - 最后的 `[Install]` 部分指定了服务的启动级别，即 `WantedBy=multi-user.target` 表示在多用户模式下启动。
 
 其他常用的配置还有：
