@@ -3714,7 +3714,7 @@ U --&gt; F(scope)</code></pre>
 <p>对于服务，<code>[Service]</code> 中的字段大部分在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html"><code>systemd.service(5)</code></a> 中，但其中与运行环境有关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html"><code>systemd.exec(5)</code></a> 中，与程序资源限制相关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html"><code>systemd.resource-control(5)</code></a> 中，与退出/杀死服务相关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html"><code>systemd.kill(5)</code></a> 中。</p>
 <p>对于定时器，<code>[Timer]</code> 部分的字段可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html"><code>systemd.timer(5)</code></a> 中找到。</p>
 </div>
-<div class="admonition note">
+<div class="admonition note" id="generator">
 <p class="admonition-title">Generator</p>
 <p>或许你会注意到，有一些 unit 文件存储在 <code>/run/systemd/generator/</code> 下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>status<span class="w"> </span>home.mount
@@ -3896,8 +3896,15 @@ U --&gt; F(scope)</code></pre>
 </li>
 <li>
 <p><code>Restart=on-failure</code> 表示服务在失败时会自动重启。<code>Restart=</code> 的取值和含义可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=">systemd.service</a> 文档中找到。</p>
+<div class="admonition warning">
+<p class="admonition-title">Systemd 的重试限流机制</p>
+<p>实际部署过服务的话，可能会注意到：即使设置了 <code>Restart=always</code>，有的时候服务也会挂掉，systemd 不会重启。这是因为 systemd 会限制 unit 的重试频率，由 <code>StartLimitIntervalSec=</code> 和 <code>StartLimitBurst=</code> 两项参数控制，默认 10s 内最多允许启动 5 次。如果触发到了这个频率，那么 systemd 就不会再尝试重启对应的服务了。</p>
+<p>如果真的希望 systemd 不停重试服务，可以将 <code>StartLimitIntervalSec=</code> 设置为 0。</p>
+</div>
 </li>
-<li>最后的 <code>[Install]</code> 部分指定了服务的启动级别，即 <code>WantedBy=multi-user.target</code> 表示在多用户模式下启动。</li>
+<li>
+<p>最后的 <code>[Install]</code> 部分指定了服务的启动级别，即 <code>WantedBy=multi-user.target</code> 表示在多用户模式下启动。</p>
+</li>
 </ul>
 <p>其他常用的配置还有：</p>
 <dl>
@@ -4440,7 +4447,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月9日 16:39:11 UTC">2026年6月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月23日 20:12:38 UTC">2026年7月23日</span>
   </span>
 
     
