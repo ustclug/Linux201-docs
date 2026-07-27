@@ -1407,6 +1407,8 @@ controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
 
 PulseAudio 是一个中心化的音频服务器。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
 
-相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的缓冲区，每隔一小段时间，声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。
+相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。
+
+基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
 
 (TODO)
