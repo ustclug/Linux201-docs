@@ -1405,6 +1405,8 @@ controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
 
 因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异。
 
-PulseAudio 是一个中心化的音频服务器。
+PulseAudio 是一个中心化的音频服务器。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
+
+相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的缓冲区，每隔一小段时间，声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。
 
 (TODO)
