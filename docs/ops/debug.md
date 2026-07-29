@@ -157,6 +157,7 @@ systemd-oomd
 - 如果已经有在磁盘上的 swap 了，那么除非你很熟悉 zram，否则**不要使用 zram**，总是使用 zswap。可以查看 `/sys/module/zswap/parameters/enabled` 确认是否开启了 zswap（写入 1 可以开启，0 可以关闭）。对没有默认启用 zswap 的内核，需要在内核命令行参数中添加 `zswap.enabled=1` 等参数配置。
     - zswap 能够压缩的内存受到磁盘 swap 大小和物理内存大小限制。前者决定了能够处理多少压缩前的内存大小，后者决定了 zswap 的 pool 的大小，即多少压缩后的内容可以存储在内存里面（默认 20%）。针对前者的限制，内核社区有设计出[「虚拟 swap 空间」](https://lwn.net/Articles/1059201/)的想法，但是距离进入主线内核仍然有距离。
 - 如果真的不想在磁盘上开 swap（例如嵌入式环境，或者由于隐私考虑不希望内存数据落盘的场景），那么使用 zram 的同时，需要设置好用户态 OOM Killer，根据 PSI 压力来避免系统锁死。可以使用 `systemd-zram-generator` 包帮助配置 zram。
+    - 和 zswap 不同，zram 的空间可以说是「虚空」创建出来的，并且内存管理子系统对此不知情。如果压缩率不达预期，或者 zram 大得离谱，有可能会出现在内存紧张时内核以为 swap 还有很多空间，结果一直在尝试塞数据到实际已经满了的 zram 里面的场景。作为参考，Fedora 默认配置下限制 zram size 为 min(ram / 2, 4096) MB，并且启用了 systemd-oomd。在 zram 大小限制和用户态 OOM Killer 两道防线下，即使内存数据完全无法压缩，也不至于出现灾难性的卡死。
 
 !!! note "为什么 zram + swap 不是合理的选择？"
 
