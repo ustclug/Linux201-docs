@@ -43,6 +43,7 @@
 <!-- man 4 -->
 
 [md.4]: https://man7.org/linux/man-pages/man4/md.4.html
+[zfs.4]: https://openzfs.github.io/openzfs-docs/man/master/4/zfs.4.html
 
 <!-- man 5 -->
 

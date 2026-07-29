@@ -192,7 +192,7 @@ zfs set xattr=sa compression=zstd tank/data
 
     如果你的使用场景不需要扩展属性（如镜像站），可以使用 `xattr=off` 关闭扩展属性功能，进一步减少磁盘 I/O。
 
-    该选项的默认值为 `xattr=on`，即扩展属性存储在额外的数据块中。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 `xattr=sa` 或 `xattr=off`。
+    该选项的默认值为 `xattr=on`，即将每个文件的扩展属性存储为一个额外的 ZFS 对象。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 `xattr=sa` 或 `xattr=off`。
 
 - `relatime=on`：启用相对时间戳。默认情况下，Linux 会在**每次**访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 `relatime` 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。
 
@@ -227,6 +227,8 @@ zfs set xattr=sa compression=zstd tank/data
         - 即使是归档存储已压缩过的数据，我们仍然推荐设置 `compression=zle`[^compression-zle]，以便在数据块之间的 padding 上节省空间。
 
   [^compression-zle]: ZLE 的含义为 Zero-Length Encoding，即仅“压缩”存储连续的零字节。
+
+#### 关于 `ashift` {#ashift}
 
 ### Zvol {#zvol}
 
@@ -538,7 +540,7 @@ ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数
 - **import 时生效**：这类参数可以在运行时通过读写 sysfs 进行调节，但新的值只有在下次导入 pool 时才会生效。如果需要对使用中的 pool 修改这些参数，需要先 `zpool export` 再 `zpool import`。
 - **立即生效**：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。
 
-完整的内核模块参数列表请参阅 `zfs(4)`。
+完整的内核模块参数列表请参阅 [`zfs(4)`][zfs.4]。
 
 最常调节的 ZFS 模块参数其实只有一个，那就是 `zfs_arc_max`，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见[前面的章节](#arc)。
 
