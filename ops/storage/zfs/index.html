@@ -1075,6 +1075,19 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#ashift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          关于 <code>ashift</code>
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2903,6 +2916,8 @@
       
         
       
+        
+      
     
     
     
@@ -3145,6 +3160,36 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../../advanced/clickhouse/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.333 10H24v4h-2.667ZM16 1.335h2.667v21.33H16Zm-5.333 0h2.666v21.33h-2.666ZM0 22.665V1.335h2.667v21.33zm5.333-21.33H8v21.33H5.333Z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    ClickHouse
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
       
@@ -3166,7 +3211,7 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_9" >
         
           
           <div class="md-nav__link md-nav__container">
@@ -3190,14 +3235,14 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_7_8" id="__nav_7_8_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_7_9" id="__nav_7_9_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7_8">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3488,6 +3533,19 @@
       
         <span class="md-typeset">
           关于 <code>recordsize</code>
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ashift" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          关于 <code>ashift</code>
         </span>
       
     </span>
@@ -3965,7 +4023,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 <li>
 <p><code>xattr=sa</code>：将文件的扩展属性（如 POSIX ACL 和 SELinux 标签等）存储在 dnode 中（类似其他文件系统的 inode），而不是独立的“文件”中。对于经常使用扩展属性的应用场景（如 Samba），使用 <code>xattr=sa</code> 可以减少磁盘 I/O，提高性能。</p>
 <p>如果你的使用场景不需要扩展属性（如镜像站），可以使用 <code>xattr=off</code> 关闭扩展属性功能，进一步减少磁盘 I/O。</p>
-<p>该选项的默认值为 <code>xattr=on</code>，即扩展属性存储在额外的数据块中。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 <code>xattr=sa</code> 或 <code>xattr=off</code>。</p>
+<p>该选项的默认值为 <code>xattr=on</code>，即将每个文件的扩展属性存储为一个额外的 ZFS 对象。这是为了保持与 FreeBSD / Solaris 等系统中的 ZFS 实现的兼容性。除非你预计需要将 ZFS pool 搬到这些系统上使用，否则我们推荐使用 <code>xattr=sa</code> 或 <code>xattr=off</code>。</p>
 </li>
 <li>
 <p><code>relatime=on</code>：启用相对时间戳。默认情况下，Linux 会在<strong>每次</strong>访问文件时更新其访问时间戳（atime），对于经常访问但较少修改的文件来说，这会带来额外的磁盘 I/O。启用 <code>relatime</code> 后，Linux 会降低对 atime 的更新频率，从而减少磁盘 I/O。</p>
@@ -4001,6 +4059,7 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 </ul>
 </li>
 </ul>
+<h4 id="ashift">关于 <code>ashift</code><a class="headerlink" href="#ashift" title="Permanent link">&para;</a></h4>
 <h3 id="zvol">Zvol<a class="headerlink" href="#zvol" title="Permanent link">&para;</a></h3>
 <p>ZFS volume（zvol）是 ZFS 提供的块设备接口，可以用于虚拟机等需要块设备的场景。
 每个 zvol 都是一个独立的块设备，可以像硬盘一样分区、格式化并挂载。</p>
@@ -4218,7 +4277,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 </li>
 <li><strong>立即生效</strong>：这类参数可以在运行时通过读写 sysfs 进行调节，且立即生效。</li>
 </ul>
-<p>完整的内核模块参数列表请参阅 <code>zfs(4)</code>。</p>
+<p>完整的内核模块参数列表请参阅 <a href="https://openzfs.github.io/openzfs-docs/man/master/4/zfs.4.html"><code>zfs(4)</code></a>。</p>
 <p>最常调节的 ZFS 模块参数其实只有一个，那就是 <code>zfs_arc_max</code>，即 ZFS 使用系统内存作为 ARC 的最大值，详情请见<a href="#arc">前面的章节</a>。</p>
 <h3 id="tuning-example">案例<a class="headerlink" href="#tuning-example" title="Permanent link">&para;</a></h3>
 <details class="example">
@@ -4574,7 +4633,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月20日 09:51:43 UTC">2026年4月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月29日 12:02:43 UTC">2026年7月29日</span>
   </span>
 
     
