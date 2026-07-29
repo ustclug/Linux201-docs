@@ -3458,6 +3458,11 @@
 <li>LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置</li>
 <li>LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Device mapper</p>
+<p><a href="https://docs.kernel.org/admin-guide/device-mapper/index.html">Device mapper</a> 是 Linux 内核的特性。它可以在已有的块设备上面创建虚拟的块设备，在处理虚拟设备的 IO 时根据其维护的映射表来修改请求、转发到实际的块设备上面。在 device mapper 中实现功能的模块被称为 target，可以叠加。其能实现的功能不仅包括本文介绍的 LVM（RAID 等卷管理功能）、SSD 缓存，还能实现诸如磁盘加密（dm-crypt）、块设备级别压缩与去重（dm-vdo）等功能。</p>
+<p>Device mapper 暴露出的虚拟块设备可以在 <code>/dev/dm-X</code> 文件和 <code>/dev/mapper/</code> 目录下看到。管理系统 device mapper 的用户态工具为 <code>dmsetup</code>。</p>
+</div>
 <p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自<a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper">红帽 RHEL 的 LVM 管理指南</a><sup id="fnref:rhel-version"><a class="footnote-ref" href="#fn:rhel-version">1</a></sup>。</p>
 <div class="admonition warning">
 <p class="admonition-title">本部分无法涵盖全部内容</p>
@@ -4759,7 +4764,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2025年12月26日 15:58:16 UTC">2025年12月26日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月29日 18:14:13 UTC">2026年7月29日</span>
   </span>
 
     
