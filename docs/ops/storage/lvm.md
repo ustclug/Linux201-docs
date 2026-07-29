@@ -15,6 +15,12 @@ LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核
 - LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置
 - LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作
 
+!!! note "Device mapper"
+
+    [Device mapper](https://docs.kernel.org/admin-guide/device-mapper/index.html) 是 Linux 内核的特性。它可以在已有的块设备上面创建虚拟的块设备，在处理虚拟设备的 IO 时根据其维护的映射表来修改请求、转发到实际的块设备上面。在 device mapper 中实现功能的模块被称为 target，可以叠加。其能实现的功能不仅包括本文介绍的 LVM（RAID 等卷管理功能）、SSD 缓存，还能实现诸如磁盘加密（dm-crypt）、块设备级别压缩与去重（dm-vdo）等功能。
+
+    Device mapper 暴露出的虚拟块设备可以在 `/dev/dm-X` 文件和 `/dev/mapper/` 目录下看到。管理系统 device mapper 的用户态工具为 `dmsetup`。
+
 一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自[红帽 RHEL 的 LVM 管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper)[^rhel-version]。
 
 !!! warning "本部分无法涵盖全部内容"
