@@ -1411,4 +1411,6 @@ PulseAudio 是一个中心化的音频服务器。在 PulseAudio 中，输出声
 
 基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
 
+而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 [WirePlumber](https://pipewire.pages.freedesktop.org/wireplumber/)。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。
+
 (TODO)
