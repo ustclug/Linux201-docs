@@ -74,23 +74,31 @@ Linux kernel 包含一个 OOM Killer 机制，当内存不足时，OOM Killer �
 
 systemd-oomd
 
-:   在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 oomd，建议开启 swap，以便为 oomd 提供足够的响应时间处理。
+:   systemd-oomd 的思想源于 Meta 的 [oomd](https://github.com/facebookincubator/oomd)，可以看作是 oomd 的简化版本。其在最近的发行版中一般预装。它以 cgroup 为单位，根据内存的 PSI 信息与物理内存和 swap 占用比例判断，如果 PSI 在一段时间内超过设置的阈值，或者物理内存和 swap 的占用比例都超过阈值，就会将对应的 cgroup 杀死。如果使用 systemd-oomd，建议开启 swap，以便为 systemd-oomd 提供足够的响应时间处理。
 
-    由于 oomd 处理以 cgroup 为单位，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
+    由于 systemd-oomd 以 cgroup 为单位处理，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
-    oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
+    systemd-oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 systemd-oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-    除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。oomd 触发的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。当达到 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当达到 `OOMMemoryPressureLimit` 时，oomd 会优先选择需要让系统回收最多内存（带来的压力最多）的 cgroup。
+    除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 systemd-oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。systemd-oomd **触发**的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。
 
-    在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的进程，而不是占用内存最多的进程，因此可能会出现占用了最多的内存的进程并没有被 kill，而是占用比较少内存的进程被 kill 了。
+    触发后，systemd-oomd 需要**选择**一个 cgroup 来杀死。当触发条件为 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 `pgscan` 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。
 
-    ??? example "Debian 12 中的 systemd-oomd 配置"
+    !!! note "为什么不选择 PSI 最大的 cgroup 杀死？"
 
-        Debian 12 的默认配置为：在用户 slice 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；如果全系统 swap 使用率超过默认值（90%），则杀死占用最大的 cgroup。
+        PSI 是一个很好的衡量压力的参数，但是在整个系统内存极度紧张的情况下，所有 cgroup 的内存 PSI 都会很高，此时 PSI 最大的 cgroup 不一定就是资源占用最大的罪魁祸首。
+
+        `pgscan` 是 cgroup 的 `memory.stat` 中的一个计数器，记录着对该 cgroup，内核回收内存页面时扫描过的页的数量，如果这个值快速增长，那么就代表内核为了给这个 cgroup 找内存空间，进行了大量的扫描操作，把对应的 cgroup 杀掉就能够缓解这一项压力。
+
+    在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的 cgroup，而不是占用内存最多的 cgroup，因此可能会出现占用了最多的内存的 cgroup 并没有被 kill，而是占用比较少内存的 cgroup 被 kill 了。
+
+    ??? example "Debian 13 中的 systemd-oomd 配置"
+
+        Debian 13 的默认配置为：在用户 service 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；默认不监控 swap 使用量（与 Debian 12 的行为不同）。
 
         ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
         [Slice]
-        ManagedOOMSwap=kill
+        ManagedOOMSwap=auto
         ```
 
         ```ini title="/usr/lib/systemd/system/user@.service.d/10-oomd-user-service-defaults.conf"
@@ -99,9 +107,16 @@ systemd-oomd
         ManagedOOMMemoryPressureLimit=50%
         ```
 
-    ??? example "Fedora 42 中的 systemd-oomd 配置"
+        内存压力超过阈值时，采取措施的时间从默认的 30s 降低到了 20s：
 
-        Fedora 42 的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
+        ```ini title="/usr/lib/systemd/oomd.conf.d/10-oomd-defaults.conf"
+        [OOM]
+        DefaultMemoryPressureDurationSec=20s
+        ```
+
+    ??? example "Fedora 44 中的 systemd-oomd 配置"
+
+        Fedora 44 由 `systemd-oomd-defaults` 包提供的的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
 
         ```ini title="/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf"
         [Slice]
@@ -113,6 +128,13 @@ systemd-oomd
         [Slice]
         ManagedOOMMemoryPressure=kill
         ManagedOOMMemoryPressureLimit=80%
+        ```
+
+        内存压力超过阈值时，采取措施的时间也从默认的 30s 降低到了 20s：
+
+        ```ini title="/usr/lib/systemd/oomd.conf.d/10-oomd-defaults.conf"
+        [OOM]
+        DefaultMemoryPressureDurationSec=20s
         ```
 
 [earlyoom](https://github.com/rfjakob/earlyoom)
