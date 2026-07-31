@@ -78,11 +78,11 @@ systemd-oomd
 
     由于 systemd-oomd 以 cgroup 为单位处理，因此在桌面环境下需要确定桌面环境可以正确将每个应用放在独立的 cgroup 中（GNOME、KDE 等现代桌面环境是没有问题的）；在服务器场景下，如果你有使用 tmux 等工具的习惯，那么可能需要配置让它们的每个窗口都在不同的 cgroup 中（例如配置 tmux 的 `default-command` 为 `systemd-run --user --scope bash`），否则在运行了过分占用内存的程序后，oomd 会将整个 tmux cgroup 杀死。
 
-    systemd-oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，oomd 才会处理。可以使用 `oomctl` 命令获取当前 systemd-oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
+    systemd-oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，systemd-oomd 才会处理。可以使用 `oomctl` 命令获取当前 systemd-oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
     除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 systemd-oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。systemd-oomd **触发**的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。
 
-    触发后，systemd-oomd 需要**选择**一个 cgroup 来杀死。当触发条件为 `SwapUsedLimit` 时，oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 `pgscan` 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。
+    触发后，systemd-oomd 需要**选择**一个 cgroup 来杀死。当触发条件为 `SwapUsedLimit` 时，systemd-oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 `pgscan` 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。
 
     !!! note "为什么不选择 PSI 最大的 cgroup 杀死？"
 
