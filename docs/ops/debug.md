@@ -594,6 +594,52 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
     可以结合 `apt source` 获取到的有 Debian 补丁的内核源代码查看。
 
+!!! tip "使用 `crash` 或 `drgn` 调试正在运行的内核"
+
+    Linux 内核将自己的内存信息以 `/proc/kcore` 文件的形式暴露出来，这是一个 ELF 程序文件，应用可以以此获取内核全貌，而不干扰内核运行。[crash](https://github.com/crash-utility/crash/) 和 [drgn](https://github.com/osandov/drgn) 就是此类工具，在安装了内核的调试符号后即可使用。crash 提供了类似 gdb 的调试功能：
+
+    ```console
+    crash> bt 1
+    PID: 1        TASK: ffff8a88c124e000  CPU: 1    COMMAND: "systemd"
+    #0 [ffffcfccc0013b98] __schedule at ffffffff9cb03cd5
+    #1 [ffffcfccc0013c10] schedule at ffffffff9cb04407
+    #2 [ffffcfccc0013c20] schedule_hrtimeout_range_clock at ffffffff9cb0b47a
+    #3 [ffffcfccc0013ca0] do_epoll_wait at ffffffff9c2b3d3c
+    #4 [ffffcfccc0013d68] __x64_sys_epoll_wait at ffffffff9c2b5181
+    #5 [ffffcfccc0013db8] do_syscall_64 at ffffffff9caf8297
+    #6 [ffffcfccc0013f50] entry_SYSCALL_64_after_hwframe at ffffffff9cc0012f
+        RIP: 00007f0c5189b687  RSP: 00007ffec67c0090  RFLAGS: 00000202
+        RAX: ffffffffffffffda  RBX: 00007f0c51e71540  RCX: 00007f0c5189b687
+        RDX: 00000000000000aa  RSI: 00005627c1280690  RDI: 0000000000000004
+        RBP: 00000000000000aa   R8: 0000000000000000   R9: 0000000000000000
+        R10: ffffffffffffffff  R11: 0000000000000202  R12: 00005627c1280690
+        R13: ffffffffffffffff  R14: 0000000000000055  R15: 0000000000000004
+        ORIG_RAX: 00000000000000e8  CS: 0033  SS: 002b
+    ```
+
+    drgn 则是一个 Python 库，同时提供了 Python REPL 用于调试内核：
+
+    ```console
+    >>> task = find_task(1)
+    >>> stack_trace(task)
+    #0  context_switch (kernel/sched/core.c:5351:2)
+    #1  __schedule (kernel/sched/core.c:6731:8)
+    #2  __schedule_loop (kernel/sched/core.c:6806:3)
+    #3  schedule (kernel/sched/core.c:6821:2)
+    #4  schedule_hrtimeout_range_clock (kernel/time/hrtimer.c:2338:3)
+    #5  ep_poll (fs/eventpoll.c:1999:17)
+    #6  do_epoll_wait (fs/eventpoll.c:2419:10)
+    #7  __do_sys_epoll_wait (fs/eventpoll.c:2431:9)
+    #8  __se_sys_epoll_wait (fs/eventpoll.c:2426:1)
+    #9  __x64_sys_epoll_wait (fs/eventpoll.c:2426:1)
+    #10 do_syscall_x64 (arch/x86/entry/common.c:47:14)
+    #11 do_syscall_64 (arch/x86/entry/common.c:78:7)
+    #12 entry_SYSCALL_64+0xaf/0x14c (arch/x86/entry/entry_64.S:121)
+    #13 0x7f0c5189b687
+    ```
+
+    它们也可以用于调试内核的 coredump。
+
 需要注意的是，coredump 只包含了崩溃现场的信息，导致崩溃的原因有可能并不在 coredump 中：
 例如在之前的执行中，程序已经向错误的位置写入数据，只是没有立刻触发问题。
 这就需要考虑使用其他的方法排查问题，例如在运行时使用 `valgrind` 检查内存访问，或者编译时就添加 AddressSanitizer 等工具。
