@@ -4464,7 +4464,23 @@
 <li><a href="https://github.com/YaLTeR/niri">niri</a>：近来流行的卷轴平铺式的混成器</li>
 </ul>
 <p>在与内核特性交互时，混成器一般也不会直接调用内核接口，而是使用一些包装库来简化开发。例如使用 <a href="https://cgit.freedesktop.org/drm/libdrm/">libdrm</a> 调用 DRM 接口操作显卡，使用 libinput 调用 evdev 接口处理输入设备等等。</p>
-<p>Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 <code>$XDG_RUNTIME_DIR/wayland-&lt;N&gt;</code>（<code>XDG_RUNTIME_DIR</code> 默认为 <code>/run/user/&lt;UID&gt;</code>）上监听 Unix socket，客户端通过 <code>WAYLAND_DISPLAY</code> 环境变量指定要连接的 Unix socket（一般为 <code>wayland-0</code>）。相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 <code>WAYLAND_DEBUG=1</code> 环境变量即可，相关信息会输出到 stderr：</p>
+<p>Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 <code>$XDG_RUNTIME_DIR/wayland-&lt;N&gt;</code>（<code>XDG_RUNTIME_DIR</code> 默认为 <code>/run/user/&lt;UID&gt;</code>）上监听 Unix socket，客户端通过 <code>WAYLAND_DISPLAY</code> 环境变量指定要连接的 Unix socket（一般为 <code>wayland-0</code>）。</p>
+<div class="admonition tip">
+<p class="admonition-title">XDG Base Directory 标准</p>
+<p><a href="https://specifications.freedesktop.org/basedir/latest/">XDG Base Directory 标准</a> 规定了一系列目录的定义，符合标准的程序应默认先按照环境变量设置选取目录，在不包含对应环境变量的情况下，再回退到默认值。标准包括：</p>
+<ul>
+<li><code>$XDG_DATA_HOME</code> 存储程序的用户数据，默认在 <code>~/.local/share</code></li>
+<li><code>$XDG_CONFIG_HOME</code> 存储程序的用户配置，默认在 <code>~/.config</code></li>
+<li><code>$XDG_STATE_HOME</code> 存储程序与用户有关的状态，默认在 <code>~/.local/state</code></li>
+<li>（没有对应环境变量）用户自己的程序可以放在 <code>~/.local/bin</code></li>
+<li><code>$XDG_DATA_DIRS</code> 存储程序系统级的数据，默认在 <code>/usr/local/share/:/usr/share/</code></li>
+<li><code>$XDG_CONFIG_DIRS</code> 存储程序系统级的配置，默认在 <code>/etc/xdg</code></li>
+<li><code>$XDG_CACHE_HOME</code> 存储程序的用户缓存，默认在 <code>~/.cache</code></li>
+<li><code>$XDG_RUNTIME_DIR</code> 存储程序用户级别的运行时文件，没有默认值，只要求目录必须唯一被对应用户所有，并且 Unix 权限必须是 0700。一般来说，在使用 systemd 的系统上，这个值是 <code>/run/user/&lt;UID&gt;</code>。实践上如果这个环境变量没有被设置，一些程序（包括但不限于许多 Wayland 混成器和客户端）可能会无法执行。</li>
+</ul>
+<p>尽管 XDG 标准没有规定在 Windows 和 macOS 上这些目录的位置，但是实践上许多跨平台的 XDG 库实现都会尊重 Windows（<a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85)">Known Folders</a>）和 macOS（<a href="https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/Introduction/Introduction.html">File System Programming Guide</a>）特有的设置。</p>
+</div>
+<p>相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 <code>WAYLAND_DEBUG=1</code> 环境变量即可，相关信息会输出到 stderr：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span><span class="nv">WAYLAND_DEBUG</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>gtk4-demo
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="go">[1603406.936] {Default Queue}  -&gt; wl_display#1.get_registry(new id wl_registry#2)</span>
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">[1603406.945] {Default Queue}  -&gt; wl_display#1.sync(new id wl_callback#3)</span>
@@ -5033,7 +5049,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月1日 11:02:48 UTC">2026年8月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月1日 20:37:31 UTC">2026年8月1日</span>
   </span>
 
     
