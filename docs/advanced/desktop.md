@@ -1413,6 +1413,6 @@ PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的
 
 而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 [WirePlumber](https://pipewire.pages.freedesktop.org/wireplumber/)。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。
 
-相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在[具体实现](https://docs.pipewire.org/page_scheduling.html)上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 cycle 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。
+相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在[具体实现](https://docs.pipewire.org/page_scheduling.html)上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 cycle 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。并且在计算的过程中，与 PulseAudio 不同，数据流可以不经过 PipeWire 的 daemon，相关的信息是点对点传递的，并且可以实现零复制（link 两端共用同一块 buffer，一端写入完成后使用 eventfd 通知另外一端可以开始处理了）。
 
 (TODO)
