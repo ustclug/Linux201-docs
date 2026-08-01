@@ -775,7 +775,24 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 在与内核特性交互时，混成器一般也不会直接调用内核接口，而是使用一些包装库来简化开发。例如使用 [libdrm](https://cgit.freedesktop.org/drm/libdrm/) 调用 DRM 接口操作显卡，使用 libinput 调用 evdev 接口处理输入设备等等。
 
-Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 `$XDG_RUNTIME_DIR/wayland-<N>`（`XDG_RUNTIME_DIR` 默认为 `/run/user/<UID>`）上监听 Unix socket，客户端通过 `WAYLAND_DISPLAY` 环境变量指定要连接的 Unix socket（一般为 `wayland-0`）。相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 `WAYLAND_DEBUG=1` 环境变量即可，相关信息会输出到 stderr：
+Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 `$XDG_RUNTIME_DIR/wayland-<N>`（`XDG_RUNTIME_DIR` 默认为 `/run/user/<UID>`）上监听 Unix socket，客户端通过 `WAYLAND_DISPLAY` 环境变量指定要连接的 Unix socket（一般为 `wayland-0`）。
+
+!!! tip "XDG Base Directory 标准"
+
+    [XDG Base Directory 标准](https://specifications.freedesktop.org/basedir/latest/) 规定了一系列目录的定义，符合标准的程序应默认先按照环境变量设置选取目录，在不包含对应环境变量的情况下，再回退到默认值。标准包括：
+
+    - `$XDG_DATA_HOME` 存储程序的用户数据，默认在 `~/.local/share`
+    - `$XDG_CONFIG_HOME` 存储程序的用户配置，默认在 `~/.config`
+    - `$XDG_STATE_HOME` 存储程序与用户有关的状态，默认在 `~/.local/state`
+    - （没有对应环境变量）用户自己的程序可以放在 `~/.local/bin`
+    - `$XDG_DATA_DIRS` 存储程序系统级的数据，默认在 `/usr/local/share/:/usr/share/`
+    - `$XDG_CONFIG_DIRS` 存储程序系统级的配置，默认在 `/etc/xdg`
+    - `$XDG_CACHE_HOME` 存储程序的用户缓存，默认在 `~/.cache`
+    - `$XDG_RUNTIME_DIR` 存储程序用户级别的运行时文件，没有默认值，只要求目录必须唯一被对应用户所有，并且 Unix 权限必须是 0700。一般来说，在使用 systemd 的系统上，这个值是 `/run/user/<UID>`。实践上如果这个环境变量没有被设置，一些程序（包括但不限于许多 Wayland 混成器和客户端）可能会无法执行。
+
+    尽管 XDG 标准没有规定在 Windows 和 macOS 上这些目录的位置，但是实践上许多跨平台的 XDG 库实现都会尊重 Windows（[Known Folders](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85))）和 macOS（[File System Programming Guide](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/Introduction/Introduction.html)）特有的设置。
+
+相比 X，要看到 Wayland 程序在运行时的协议交互要简单很多，只需要添加 `WAYLAND_DEBUG=1` 环境变量即可，相关信息会输出到 stderr：
 
 ```console
 $ WAYLAND_DEBUG=1 gtk4-demo
