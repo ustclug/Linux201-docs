@@ -12,9 +12,9 @@ icon: simple/clickhouse
 
 [ClickHouse](https://clickhouse.com/)（也称作 CH、CK、<s>:material-cursor-default-click::material-home:点击房子</s>）是一个开源的列式数据库，主要用于 OLAP 查询，支持大规模数据集和实时分析。
 
-## 安装
+## 安装 {#install}
 
-### Docker 部署
+### Docker 部署 {#install-docker}
 
 Docker Hub 上有两个 ClickHouse 仓库：
 
@@ -38,7 +38,7 @@ services:
       - "9000:9000"  # TCP 端口
       # "9009:9009"  # 集群内的 TCP 通信端口
     ulimits:
-      nofile:
+      nofile: # (1)
         soft: 262144
         hard: 262144
     environment:
@@ -52,9 +52,49 @@ services:
       # ./config/users.xml:/etc/clickhouse-server/users.d/users.xml:ro
 ```
 
-如果 `/srv/clicikhouse/data` 目录为空的话，ClickHouse 会在首次启动时根据提供的环境变量自动创建默认数据库和用户，该用户具有读写数据库的权限，但没有管理权限（创建其他数据库、创建用户等）。如果需要创建其他数据库或用户，可以在 `docker-compose.yaml` 中挂载初始化 SQL 脚本，或者在容器中使用 `clickhouse-client` 命令行工具执行 SQL 语句。
+1. ClickHouse 在运行过程中会打开大量文件，默认的 `nofile` 限制通常是不够的，因此需要在 Docker Compose 配置中增加 `ulimits` 配置。
 
-### 初始化
+在同级目录下创建 `.env` 文件，根据 Docker Compose 配置指定合适的环境变量，运行 `docker compose up -d` 即可启动 ClickHouse 服务，并进行初始化（见下）。
+
+### 初始化 {#initialization}
+
+如果 `/srv/clickhouse/data` 目录为空的话，ClickHouse 会在首次启动时根据提供的环境变量和挂载的文件自动创建默认数据库和用户。其中：
+
+- `CLICKHOUSE_DB` 用于在初始化时创建对应名称的数据库。
+- `CLICKHOUSE_USER` 和 `CLICKHOUSE_PASSWORD` 这两个环境变量用于合成 ClickHouse 的 XML 配置文件中的 `<users>` 部分。
+    - 这意味着如果你在数据库正常运行后修改了这两个环境变量并重建 ClickHouse 容器，ClickHouse 会使用新的值覆盖原有的用户配置。
+    - 通过环境变量创建的用户具有读写数据库的权限，但没有管理权限（创建数据库和用户等）。
+- 执行 `/docker-entrypoint-initdb.d` 目录下挂载的所有 `.sql` 文件。你可以通过 `docker-compose.yaml` 在此目录中挂载 SQL 脚本进行额外的初始化操作，例如创建其他数据库、表或用户。
+
+在初始化完成后，你也可以在容器中使用 `clickhouse-client` 命令行工具执行 SQL 语句。
+
+## 创建表 {#create-table}
+
+USTC Mirrors 的访问日志采用单行 JSON 格式，示例如下（经过格式化）：
+
+??? example "访问日志示例"
+
+    ```json
+    {
+        "timestamp": 1777114514.777,
+        "clientip": "1.14.5.14",
+        "serverip": "202.38.95.110",
+        "method": "GET",
+        "scheme": "https",
+        "url": "/debian/dists/stable/InRelease",
+        "status": 200,
+        "size": 114514,
+        "resp_time": 0.001,
+        "http_host": "mirrors.ustc.edu.cn",
+        "referer": "",
+        "user_agent": "Debian APT-HTTP/1.3 (2.6.1)",
+        "request_id": "0123456789abcdef0123456789abcdef",
+        "proto": "HTTP/1.1",
+        "proxied": "0"
+    }
+    ```
+
+对应地，创建用于结构化存储日志的 ClickHouse 表的 SQL 语句如下：
 
 ```sql title="01-mirrors.sql"
 CREATE TABLE mirrors.access_log (
@@ -74,7 +114,6 @@ CREATE TABLE mirrors.access_log (
     `request_id` String DEFAULT hex(cityHash64(tuple(event_time, ip))),
     `proto` LowCardinality(String),
     `proxied` LowCardinality(String),
-    `alpn` LowCardinality(String),
     -- `ip` IPv6 MATERIALIZED if(isIPv4String(clientip), IPv4ToIPv6(toIPv4OrDefault(clientip)), toIPv6OrDefault(clientip)),
     `source` LowCardinality(String) DEFAULT '',
     -- `repo` LowCardinality(String) MATERIALIZED extract_repo("url")
@@ -85,6 +124,17 @@ PRIMARY KEY (event_time)
 ORDER BY (event_time, request_id)
 SETTINGS index_granularity = 8192;
 ```
+
+这个表定义有以下几个特点：
+
+- 根据 ClickHouse 的 convention，存储时间序列数据时，将主要的时间戳列命名为 `event_time`，并使用 `DateTime64(3)` 类型存储毫秒级时间戳（或者如果只需要秒级精度时，可以使用 `DateTime`）。原始的浮点数时间戳列 `timestamp` 仍然保留，方便通过 JSON 方式导入数据。
+- 对于 `serverip` 等取值有限的列，使用 `LowCardinality(String)` 类型节省存储空间和提高查询性能。`LowCardinality` 类型会在内部创建一个哈希字典，从而减少重复存储的字符串数据。
+    - 由于哈希字典本身存在一定的开销，因此一般不用于字符串以外的类型，或者取值范围非常大（数千到一万以上）的列。例如，尽管 `status` 列只有十几个可能的取值（HTTP 状态码），由于 UInt16 已经是非常紧凑的存储类型，且具有良好的查询性能，因此不使用 `LowCardinality`。
+- 较旧的日志没有记录 `request_id`，因此该列使用 `DEFAULT` 生成一个哈希作为替代。
+- 使用 ReplacingMergeTree 引擎，允许在导入重复日志时进行去重。
+    - 重复行的判断依据是 `ORDER BY` 语句指定的列组合（即 `event_time`+`request_id`），因此在 ClickHouse 中，**「主键」通常指 `ORDER BY` 的定义**，而非望文生义的 `PRIMARY KEY`。
+    - `PRIMARY KEY` 指定主键的一个前缀序列，作为 ClickHouse 在内存中维护稀疏索引（sparse index）的依据，通过排除不常用或不必要的列来减少内存占用。
+- `PARTITION BY` 指定分区键，ClickHouse 会根据该列的值将数据划分为不同的分区，从而提高查询性能和管理效率。对于时间序列数据，通常根据数据量和查询模式选择合适的时间粒度进行分区。本文示例中使用 `toDate(event_time)` 按天分区。
 
 ## 数据采集
 
