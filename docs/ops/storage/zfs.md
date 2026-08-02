@@ -37,6 +37,10 @@ ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS
 
 - Ubuntu 自 20.04 LTS 起提供预编译好的 `zfs.ko`（软件包 `linux-modules-$(uname -r)`），因此无需再安装 `zfs-dkms`[^uuu1804]。
 
+    - 但是自 Ubuntu 26.04 LTS 起，预编译好的 `zfs.ko` 等 ZFS 模块被拆分到了独立的 `linux-main-modules-zfs-$(uname -r)` 软件包中。但 `linux-image-$(uname -r)` 软件包仍然会依赖该拆分的 ZFS 软件包，因此通常情况下无需手动另行安装。
+
+    - Proxmox VE 采用 Ubuntu 的内核，因此自 Proxmox VE 7 起，ZFS 模块也无需手动安装，由 `proxmox-default-kernel` 软件包自动安装。
+
 不论是 Debian 还是 Ubuntu，都需要安装 `zfsutils-linux` 软件包，以便使用 ZFS 的命令行工具。
 
 ??? tip "root on ZFS"
