@@ -1379,8 +1379,9 @@ ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件
 
 ```console
 $ ls /dev/snd/
-by-path/   hwC0D0  pcmC0D0c  pcmC0D31p  pcmC0D4p  pcmC0D6c  seq
-controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
+by-id/     controlC1  controlC4  hwC1D0    pcmC1D3p  pcmC1D9p  pcmC2D8p  pcmC4D0p  pcmC6D0c  pcmC6D1p  pcmC6D3p
+by-path/   controlC2  controlC5  hwC2D0    pcmC1D7p  pcmC2D3p  pcmC2D9p  pcmC5D0c  pcmC6D0p  pcmC6D2c  seq
+controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0p  pcmC6D1c  pcmC6D2p  timer
 ```
 
 !!! note "我不在 audio 组里面，为什么我可以放歌？"
@@ -1414,6 +1415,120 @@ controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
 
 同时 `/proc/asound` 和 `/sys/class/sound` 也提供了用于调试、管理等的信息。不过绝大多数应用程序都不会直接操作它们——如果程序使用 ALSA 的话，几乎都是通过用户态的 libasound（[`libasound2t64`](https://packages.debian.org/trixie/libasound2t64)）库提供的接口来播放、录制音频。
 
+!!! note "ALSA 中的设备模型"
+
+    ALSA 中的设备有多个层级。首先是声卡（card），可以从 `/proc/asound/cards` 获取 ALSA 内核态得到的所有（硬件）声卡：
+
+    ```txt title="/proc/asound/cards"
+     0 [XXXX1080PCamera]: USB-Audio - XXXX-1080P-Camera-Audio
+                          XXXX-1080P-Camera XXXX-1080P-Camera-Audio at usb-0000:0f:00.0-2, high speed
+     1 [HDMI           ]: HDA-Intel - HDA ATI HDMI
+                          HDA ATI HDMI at 0xf6ca0000 irq 109
+     2 [Generic_1      ]: HDA-Intel - HD-Audio Generic
+                          HD-Audio Generic at 0xf6588000 irq 110
+     3 [Generic        ]: HDA-Intel - HD-Audio Generic
+                          HD-Audio Generic at 0xf6580000 irq 111
+     4 [YYYY           ]: USB-Audio - YYYY YYYY
+                          XXXX Electronics Inc. YYYY YYYY at usb-0000:0f:00.0-3, full speed
+     5 [ZZZZZ          ]: USB-Audio - ZZZZZ 音箱
+                          ZZZZZ 音箱 at usb-0000:0f:00.0-4, full speed
+     6 [Audio          ]: USB-Audio - USB Audio
+                          Generic USB Audio at usb-0000:0f:00.0-12, high speed
+    ```
+
+    一个声卡中有一个或多个设备（device），内核识别到的设备可以从 `/proc/asound/devices` 查看：
+
+    ```txt title="/proc/asound/devices"
+      1:        : sequencer
+      2: [ 3]   : control
+      3: [ 1- 3]: digital audio playback
+      4: [ 1- 7]: digital audio playback
+      5: [ 2- 3]: digital audio playback
+      6: [ 2- 7]: digital audio playback
+      7: [ 1- 8]: digital audio playback
+      8: [ 1- 9]: digital audio playback
+      9: [ 1- 0]: hardware dependent
+     10: [ 2- 8]: digital audio playback
+     11: [ 2- 9]: digital audio playback
+     12: [ 2- 0]: hardware dependent
+     13: [ 2]   : control
+     14: [ 1]   : control
+     15: [ 0- 0]: digital audio capture
+     16: [ 0]   : control
+     17: [ 4- 0]: digital audio playback
+     18: [ 4- 0]: digital audio capture
+     19: [ 4]   : control
+     20: [ 5- 0]: digital audio playback
+     21: [ 5- 0]: digital audio capture
+     22: [ 5]   : control
+     23: [ 6- 0]: digital audio playback
+     24: [ 6- 0]: digital audio capture
+     25: [ 6- 1]: digital audio playback
+     26: [ 6- 1]: digital audio capture
+     27: [ 6- 2]: digital audio playback
+     28: [ 6- 2]: digital audio capture
+     29: [ 6- 3]: digital audio playback
+     30: [ 6]   : control
+     33:        : timer
+    ```
+
+    其中方括号内部的格式为 `[卡号-设备号]`，例如上面的 `ZZZZZ 音箱`，如果要从这个音箱直接用 ALSA 硬件设备播放音频，那么对应的设备标记就是 `hw:5,0`（对应的设备文件为 `/dev/snd/pcmC5D0p`）。此外，设备还可以有子设备（subdevice），用于多个并发流的场景（硬件混音）。支持播放音频的 ALSA 硬件声卡和设备信息也可以用 `aplay -l` 命令查看（`arecord -l` 也对应支持录制音频的设备信息）。
+    
+    如果需要直接连接 ALSA 硬件测试音频播放/录制是否正常（排除中间层的影响），那么**在设备文件未被占用的情况**下，可以使用 `speaker-test`、`aplay` 和 `arecord` 直接输出/获取 PCM 原始音频流测试（ALSA 出于安全起见默认会静音所有设备，因此可能需要先使用 `alsamixer` 调整音量）。可以先播放空 PCM 音频来获取设备信息，以上面的 `hw:5,0` 为例子：
+
+    ```console
+    $ aplay -D hw:5,0 --dump-hw-params /dev/zero
+    Playing raw data '/dev/zero' : Unsigned 8 bit, Rate 8000 Hz, Mono
+    HW Params of device "hw:5,0":
+    --------------------
+    ACCESS: MMAP_INTERLEAVED RW_INTERLEAVED
+    FORMAT: S16_LE
+    SUBFORMAT: STD MSBITS_MAX
+    SAMPLE_BITS: 16
+    FRAME_BITS: 32
+    CHANNELS: 2
+    RATE: [44100 48000]
+    PERIOD_TIME: [1000 1000000]
+    PERIOD_SIZE: [45 48000]
+    PERIOD_BYTES: [180 192000]
+    PERIODS: [2 1024]
+    BUFFER_TIME: [1875 2000000]
+    BUFFER_SIZE: [90 96000]
+    BUFFER_BYTES: [360 384000]
+    TICK_TIME: ALL
+    --------------------
+    aplay: set_params:1393: Sample format non available
+    Available formats:
+    - S16_LE
+    ```
+
+    从上述信息看，`hw:5,0` 支持 S16_LE（有符号 16 位小端序）格式的 PCM、双声道、48000Hz 的采样率，因此 `speaker-test` 的参数可以为：
+
+    ```sh
+    # 播放正弦波，loop (-l) 1 次
+    speaker-test -D hw:5,0 -c 2 -r 48000 -F S16_LE -t sine -l 1
+    ```
+
+    不过，libasound 实现了插件机制，因此应用实际看到的设备会比内核暴露出来的更多，可以使用 `aplay -L`（以及 `arecord -L`）查看：
+
+    ```console
+    $ aplay -L
+    null
+        Discard all samples (playback) or generate zero samples (capture)
+    default
+        Default Audio Device
+    sysdefault
+        Default Audio Device
+    pipewire
+        PipeWire Sound Server
+    hdmi:CARD=HDMI,DEV=0
+        HDA ATI HDMI, HDMI 0
+        HDMI Audio Output
+    （省略）
+    ```
+
+    大部分 ALSA 的应用都会直接使用 `default` 设备。libasound 的插件层也是以下介绍的 PulseAudio 和 PipeWire 实现 ALSA 兼容层的基础。
+
 但是在现代桌面环境下，ALSA 已经无法满足用户的需求：
 
 - 较老的 ALSA 默认不支持软件混音（mix），这意味着在不支持硬件混音的声卡上，**同时只能有一个程序播放音频**，需要使用 `dmix` ALSA 插件添加支持。新的 ALSA 会自动加载 `dmix`，但是这个插件也仍然不支持给每个应用程序不同的音量，只负责把多个音频流打包发给声卡。
@@ -1421,6 +1536,10 @@ controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer
 - ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。
 
 因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异。
+
+!!! note "PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？"
+
+    应用一般使用 libasound 暴露出的 `default` 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。(TODO)
 
 PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering）。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
 
