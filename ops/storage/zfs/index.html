@@ -3901,6 +3901,14 @@ ZFS 在内部采用“日志式文件系统”<sup id="fnref:ostep-lfs"><a class
 </li>
 <li>
 <p>Ubuntu 自 20.04 LTS 起提供预编译好的 <code>zfs.ko</code>（软件包 <code>linux-modules-$(uname -r)</code>），因此无需再安装 <code>zfs-dkms</code><sup id="fnref:uuu1804"><a class="footnote-ref" href="#fn:uuu1804">4</a></sup>。</p>
+<ul>
+<li>
+<p>但是自 Ubuntu 26.04 LTS 起，预编译好的 <code>zfs.ko</code> 等 ZFS 模块被拆分到了独立的 <code>linux-main-modules-zfs-$(uname -r)</code> 软件包中。但 <code>linux-image-$(uname -r)</code> 软件包仍然会依赖该拆分的 ZFS 软件包，因此通常情况下无需手动另行安装。</p>
+</li>
+<li>
+<p>Proxmox VE 采用 Ubuntu 的内核，因此自 Proxmox VE 7 起，ZFS 模块也无需手动安装，由 <code>proxmox-default-kernel</code> 软件包自动安装。</p>
+</li>
+</ul>
 </li>
 </ul>
 <p>不论是 Debian 还是 Ubuntu，都需要安装 <code>zfsutils-linux</code> 软件包，以便使用 ZFS 的命令行工具。</p>
@@ -4633,7 +4641,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月29日 12:02:43 UTC">2026年7月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月2日 09:53:31 UTC">2026年8月2日</span>
   </span>
 
     
