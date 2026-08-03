@@ -114,9 +114,9 @@ CREATE TABLE mirrors.access_log (
     `request_id` String DEFAULT hex(cityHash64(tuple(event_time, ip))),
     `proto` LowCardinality(String),
     `proxied` LowCardinality(String),
-    -- `ip` IPv6 MATERIALIZED if(isIPv4String(clientip), IPv4ToIPv6(toIPv4OrDefault(clientip)), toIPv6OrDefault(clientip)),
     `source` LowCardinality(String) DEFAULT '',
-    -- `repo` LowCardinality(String) MATERIALIZED extract_repo("url")
+    `ip` IPv6 MATERIALIZED if(isIPv4String(clientip), IPv4ToIPv6(toIPv4OrDefault(clientip)), toIPv6OrDefault(clientip)),
+    `repo` LowCardinality(String) MATERIALIZED extract_repo("url")
 )
 ENGINE = ReplacingMergeTree
 PARTITION BY toDate(event_time)
@@ -135,6 +135,49 @@ SETTINGS index_granularity = 8192;
     - 重复行的判断依据是 `ORDER BY` 语句指定的列组合（即 `event_time`+`request_id`），因此在 ClickHouse 中，**「主键」通常指 `ORDER BY` 的定义**，而非望文生义的 `PRIMARY KEY`。
     - `PRIMARY KEY` 指定主键的一个前缀序列，作为 ClickHouse 在内存中维护稀疏索引（sparse index）的依据，通过排除不常用或不必要的列来减少内存占用。
 - `PARTITION BY` 指定分区键，ClickHouse 会根据该列的值将数据划分为不同的分区，从而提高查询性能和管理效率。对于时间序列数据，通常根据数据量和查询模式选择合适的时间粒度进行分区。本文示例中使用 `toDate(event_time)` 按天分区。
+
+### 自定义函数 {#user-defined-functions}
+
+ClickHouse 支持自定义函数（User Defined Functions，简称 UDF），可以将常用的表达式封装成函数，减少编写 SQL 时的重复工作。
+
+例如，为了方便从 URL 中提取镜像仓库名称，USTC Mirrors 定义了一个 `extract_repo` 函数：
+
+```sql
+-- 提取 URL path 中的第一段目录
+CREATE FUNCTION extract_repo_dir AS (path) ->
+if(
+  match(path, '^/*[^/?]+/'),
+  extract(path, '^/*([^/?]+)/'),
+  '/'
+);
+
+CREATE FUNCTION extract_repo AS (path) ->
+multiIf(
+  has([
+    'adoptium', 'alpine', 'anaconda', -- 一大串仓库名
+    'zerotier',
+    '/'
+  ], extract_repo_dir(path)), extract_repo_dir(path),
+  has(['assets', 'static', 'status', '.well-known'], extract_repo_dir(path)), '/',
+  has(['misc'], extract_repo_dir(path)), 'ustclug',
+  '<invalid>'
+);
+```
+
+结合下面介绍的 MATERIALIZED 列，`extract_repo` 函数可以在数据插入时自动计算出 `repo` 列的值，方便后续按仓库归类查询和统计。
+
+### 物化列 {#materialized-columns}
+
+ClickHouse 的物化列（`MATERIALIZED` columns）是指在表中定义的列，其值由其他列的表达式计算得出，并在数据插入时自动计算和存储，是一种以空间换时间的思想。
+
+在以上示例中，开头的 `event_time` 和最后两列 `ip` 和 `repo` 都是 MATERIALIZED 列：
+
+- `event_time` 列通过将原始的浮点数时间戳 `timestamp` 转换为毫秒级时间戳并使用 `fromUnixTimestamp64Milli` 函数生成 `DateTime64(3)` 类型的时间列。
+- `ip` 列将 `clientip` 列存储的字符串转换为 IPv6 地址或 IPv4-mapped IPv6 地址。
+- `repo` 列使用一个自定义函数从 `url` 中提取镜像仓库名称。
+
+默认情况下，MATERIALIZED 列不允许被插入数据，如果尝试插入的数据包含了 MATERIALIZED 的列，ClickHouse 会返回错误。
+开启设置 `insert_allow_materialized_columns` 可以让 ClickHouse 忽略指定给 MATERIALIZED 列的数据（采用计算结果），继续插入其他列的数据。
 
 ## 数据采集
 
