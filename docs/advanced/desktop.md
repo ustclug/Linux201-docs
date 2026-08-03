@@ -1403,6 +1403,8 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
 ## 音频服务 {#sound}
 
+### 音频框架简介 {#sound-intro}
+
 ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件，分为内核态和用户态两部分。内核态 ALSA 实现声卡驱动，并向用户态以 `/dev/snd` 的形式暴露音频设备（字符设备）。这些设备文件都属于 `audio` 组，意味着只要用户在这个组里面，就可以对声卡进行任意音频操作。
 
 ```console
@@ -1611,14 +1613,49 @@ PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的
 
 相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。
 
-基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
+基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区尽可能填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
 
 而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 [WirePlumber](https://pipewire.pages.freedesktop.org/wireplumber/)。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。PipeWire 对应默认 socket 位于 `$XDG_RUNTIME_DIR/pipewire-0`（和用于 session manager 的 `$XDG_RUNTIME_DIR/pipewire-0-manager`）。
 
-相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在[具体实现](https://docs.pipewire.org/page_scheduling.html)上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 cycle 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。并且在计算的过程中，与 PulseAudio 不同，数据流可以不经过 PipeWire 的 daemon，相关的信息是点对点传递的，并且可以实现零复制（link 两端共用同一块 buffer，一端写入完成后使用 eventfd 通知另外一端可以开始处理了）。
+有一些程序可以查看 PipeWire 的多媒体图，例如 [qpwgraph](https://github.com/rncbc/qpwgraph)、[helvum](https://gitlab.freedesktop.org/pipewire/helvum) 可以查看、修改节点之间的连线；[coppwr](https://github.com/dimtpap/coppwr) 可以查看节点的详细信息等等。
 
-!!! note "PipeWire 对 PulseAudio 兼容的实现"
+![helvum](../images/helvum.png)
 
-    (TODO)
+/// caption
+Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实现诸如让 A 程序从蓝牙耳机输出音频，让 B 程序从 USB 音箱输出音频的需求。
+///
+
+相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在[具体实现](https://docs.pipewire.org/page_scheduling.html)上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 quantum 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。并且在计算的过程中，与 PulseAudio 不同，数据流可以不经过 PipeWire 的 daemon，相关的信息是点对点传递的，并且可以实现零复制（link 两端共用同一块 buffer，一端写入完成后使用 eventfd 通知另外一端可以开始处理了）。
+
+使用 `pw-top` 可以实时查看每个节点的信息，包括 quantum、采样率等信息。
+
+!!! example "`pw-top` 输出示例"
+
+    ```console
+    $ pw-top -b  # 使用非交互模式
+    （省略）
+    S   ID  QUANT   RATE    WAIT    BUSY   W/Q   B/Q  ERR FORMAT           NAME
+    S   29      0      0    ---     ---   ---   ---     0                  Dummy-Driver
+    S   30      0      0    ---     ---   ---   ---     0                  Freewheel-Driver
+    S  105      0      0    ---     ---   ---   ---     0                  Midi-Bridge
+    S   50      0      0    ---     ---   ---   ---     0                  bluez_midi.server
+    R   90   2048  48000  25.2us  14.6us  0.00  0.00    0    F32LE 2 48000 bluez_output.12_23_34_45_56_67.1
+    R  175   4320  48000  14.6us   5.3us  0.00  0.00    0    F32LE 2 48000  + Lollypop
+    S   89      0      0    ---     ---   ---   ---     0                  bluez_input.12:23:34:45:56:67
+    S  138      0      0    ---     ---   ---   ---     0                  bluez_capture_internal.12:23:34:45:56:67
+    ```
+
+    这里的 WAIT 和 BUSY 分别代表节点等待调度的时间和处理数据的时间（越小越好），W/Q 和 B/Q 则是它们与一个 quantum 时间的比值（也是越小越好）。ERR 表示出现 xrun 的次数。可以看到，目前的音频处理是非常顺畅的。
+
+!!! note "PipeWire 对 PulseAudio 的兼容"
+
+    作为 PulseAudio 的继承者，PipeWire 当然也需要实现对 PulseAudio 的兼容。`pipewire-pulse` 包提供了这一项兼容层，它会在 PulseAudio 相同的 socket 路径上监听，并且把请求转换、发送到 PipeWire 上。可以从 `pactl info` 的输出判断是不是 PipeWire 提供的服务：
+
+    ```console
+    $ pactl info | grep 'Server Name'
+    Server Name: PulseAudio (on PipeWire 1.6.8)
+    ```
+
+此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)
 
 (TODO)
