@@ -1539,16 +1539,58 @@ controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0
 
 !!! note "PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？"
 
-    应用一般使用 libasound 暴露出的 `default` 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。(TODO)
+    应用一般使用 libasound 暴露出的 `default` 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。`pulseaudio` 包会设置 `pcm` 和 `ctl` 对应的 default interface 为 `pulse`：
 
-PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering）。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
+    ```conf title="/usr/share/alsa/pulse-alsa.conf"
+    # This file is referred to by /usr/share/alsa/pulse.conf to set pulseaudio as
+    # the default output plugin for applications using alsa when PulseAudio is
+    # running.
+
+    pcm.!default {
+        type pulse
+        hint {
+            show on
+            description "Playback/recording through the PulseAudio sound server"
+        }
+    }
+
+    ctl.!default {
+        type pulse
+    }
+    ```
+
+    而 PipeWire 也是类似（`pipewire-alsa` 包）：
+
+    ```conf title="/usr/share/alsa/alsa.conf.d/99-pipewire-default.conf"
+    pcm.!default {
+        type pipewire
+        playback_node "-1"
+        capture_node  "-1"
+        hint {
+            show on
+            description "Default ALSA Output (currently PipeWire Media Server)"
+        }
+    }
+
+    ctl.!default {
+        type pipewire
+    }
+    ```
+
+    不过，如果应用真的要直接访问硬件，不经过 libasound 的话怎么办呢？PulseAudio 和 PipeWire 目前默认配置下都会自动释放未占用的硬件节点：PulseAudio 通过 [`module-suspend-on-idle`](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/#module-suspend-on-idle) 模块，PipeWire 通过节点的 [`session.suspend-timeout-seconds`](https://docs.pipewire.org/page_man_pipewire-props_7.html#node-prop__session_suspend-timeout-seconds) 配置。此外，它们也实现了 `org.freedesktop.ReserveDevice1` 的 DBus 接口，允许应用主动请求来让出设备。
+
+PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering），对应默认 socket 位于 `$XDG_RUNTIME_DIR/pulse/native`。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
 
 相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。
 
 基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
 
-而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 [WirePlumber](https://pipewire.pages.freedesktop.org/wireplumber/)。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。
+而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 [WirePlumber](https://pipewire.pages.freedesktop.org/wireplumber/)。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。PipeWire 对应默认 socket 位于 `$XDG_RUNTIME_DIR/pipewire-0`（和用于 session manager 的 `$XDG_RUNTIME_DIR/pipewire-0-manager`）。
 
 相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在[具体实现](https://docs.pipewire.org/page_scheduling.html)上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 cycle 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。并且在计算的过程中，与 PulseAudio 不同，数据流可以不经过 PipeWire 的 daemon，相关的信息是点对点传递的，并且可以实现零复制（link 两端共用同一块 buffer，一端写入完成后使用 eventfd 通知另外一端可以开始处理了）。
+
+!!! note "PipeWire 对 PulseAudio 兼容的实现"
+
+    (TODO)
 
 (TODO)
