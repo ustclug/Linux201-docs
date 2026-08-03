@@ -1373,6 +1373,34 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。[在 writeup 附录](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96)中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。
 
+!!! note "Portal 与剪贴板文件传输"
+
+    跨沙盒进行文件的拖动或剪贴板复制（DND）时，会有一个关键的问题：程序间使用剪贴板传输文件时，一般不会通过这个机制传输完整的文件，而是直接传输一个 URI 或文件路径（一般在 `text/uri-list` 或者 `text/plain;charset=utf-8` 这两个 mimetype 里面），避免不必要的拷贝：
+
+    ```console
+    $ wl-paste --type text/uri-list
+    file:///home/user/Downloads/example.txt
+    $ wl-paste --type text/plain\;charset=utf-8
+    /home/user/Downloads/example.txt
+    ```
+
+    但是沙盒由于 mount namespace 的隔离，里面的文件路径和外面很可能是不一样的，直接使用文件路径交换就会失败。
+
+    [File Transfer portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileTransfer.html) 实现了跨沙盒的文件传输。发送方调用 File Transfer portal 开始传送、添加需要传送的文件后，就可以以 `application/vnd.portal.filetransfer` 的 mimetype 向对方通过窗口系统的 DND 机制发送 `key`，接收方通过这个 `key` 可以从 File Transfer portal 获取对应的文件的实际路径。File Transfer portal 在需要的时候会把文件放进 Documents portal 里面。
+
+    不过如果从 GTK 程序复制文件，可能还会看到另一个 mimetype `application/vnd.portal.files`：
+
+    ```console
+    $ wl-paste -l
+    application/vnd.portal.files
+    application/vnd.portal.filetransfer
+    text/uri-list
+    text/plain;charset=utf-8
+    x-special/gnome-copied-files
+    ```
+
+    这单纯是因为最开始 GTK 实现的时候，[mimetype 名字写错了](https://gitlab.gnome.org/GNOME/gtk/-/work_items/5182)。
+
 ## 音频服务 {#sound}
 
 ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件，分为内核态和用户态两部分。内核态 ALSA 实现声卡驱动，并向用户态以 `/dev/snd` 的形式暴露音频设备（字符设备）。这些设备文件都属于 `audio` 组，意味着只要用户在这个组里面，就可以对声卡进行任意音频操作。
