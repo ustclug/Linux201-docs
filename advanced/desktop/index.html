@@ -4953,8 +4953,9 @@
 <h2 id="sound">音频服务<a class="headerlink" href="#sound" title="Permanent link">&para;</a></h2>
 <p>ALSA（Advanced Linux Sound Architecture）是 Linux 音频服务的基础组件，分为内核态和用户态两部分。内核态 ALSA 实现声卡驱动，并向用户态以 <code>/dev/snd</code> 的形式暴露音频设备（字符设备）。这些设备文件都属于 <code>audio</code> 组，意味着只要用户在这个组里面，就可以对声卡进行任意音频操作。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="gp">$ </span>ls<span class="w"> </span>/dev/snd/
-<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="go">by-path/   hwC0D0  pcmC0D0c  pcmC0D31p  pcmC0D4p  pcmC0D6c  seq</span>
-<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="go">controlC0  hwC0D2  pcmC0D0p  pcmC0D3p   pcmC0D5p  pcmC0D7c  timer</span>
+<a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="go">by-id/     controlC1  controlC4  hwC1D0    pcmC1D3p  pcmC1D9p  pcmC2D8p  pcmC4D0p  pcmC6D0c  pcmC6D1p  pcmC6D3p</span>
+<a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="go">by-path/   controlC2  controlC5  hwC2D0    pcmC1D7p  pcmC2D3p  pcmC2D9p  pcmC5D0c  pcmC6D0p  pcmC6D2c  seq</span>
+<a id="__codelineno-49-4" name="__codelineno-49-4" href="#__codelineno-49-4"></a><span class="go">controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0p  pcmC6D1c  pcmC6D2p  timer</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">我不在 audio 组里面，为什么我可以放歌？</p>
@@ -4981,6 +4982,104 @@
 </code></pre></div>
 </div>
 <p>同时 <code>/proc/asound</code> 和 <code>/sys/class/sound</code> 也提供了用于调试、管理等的信息。不过绝大多数应用程序都不会直接操作它们——如果程序使用 ALSA 的话，几乎都是通过用户态的 libasound（<a href="https://packages.debian.org/trixie/libasound2t64"><code>libasound2t64</code></a>）库提供的接口来播放、录制音频。</p>
+<div class="admonition note">
+<p class="admonition-title">ALSA 中的设备模型</p>
+<p>ALSA 中的设备有多个层级。首先是声卡（card），可以从 <code>/proc/asound/cards</code> 获取 ALSA 内核态得到的所有（硬件）声卡：</p>
+<div class="highlight"><span class="filename">/proc/asound/cards</span><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a> 0 [XXXX1080PCamera]: USB-Audio - XXXX-1080P-Camera-Audio
+<a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a>                      XXXX-1080P-Camera XXXX-1080P-Camera-Audio at usb-0000:0f:00.0-2, high speed
+<a id="__codelineno-52-3" name="__codelineno-52-3" href="#__codelineno-52-3"></a> 1 [HDMI           ]: HDA-Intel - HDA ATI HDMI
+<a id="__codelineno-52-4" name="__codelineno-52-4" href="#__codelineno-52-4"></a>                      HDA ATI HDMI at 0xf6ca0000 irq 109
+<a id="__codelineno-52-5" name="__codelineno-52-5" href="#__codelineno-52-5"></a> 2 [Generic_1      ]: HDA-Intel - HD-Audio Generic
+<a id="__codelineno-52-6" name="__codelineno-52-6" href="#__codelineno-52-6"></a>                      HD-Audio Generic at 0xf6588000 irq 110
+<a id="__codelineno-52-7" name="__codelineno-52-7" href="#__codelineno-52-7"></a> 3 [Generic        ]: HDA-Intel - HD-Audio Generic
+<a id="__codelineno-52-8" name="__codelineno-52-8" href="#__codelineno-52-8"></a>                      HD-Audio Generic at 0xf6580000 irq 111
+<a id="__codelineno-52-9" name="__codelineno-52-9" href="#__codelineno-52-9"></a> 4 [YYYY           ]: USB-Audio - YYYY YYYY
+<a id="__codelineno-52-10" name="__codelineno-52-10" href="#__codelineno-52-10"></a>                      XXXX Electronics Inc. YYYY YYYY at usb-0000:0f:00.0-3, full speed
+<a id="__codelineno-52-11" name="__codelineno-52-11" href="#__codelineno-52-11"></a> 5 [ZZZZZ          ]: USB-Audio - ZZZZZ 音箱
+<a id="__codelineno-52-12" name="__codelineno-52-12" href="#__codelineno-52-12"></a>                      ZZZZZ 音箱 at usb-0000:0f:00.0-4, full speed
+<a id="__codelineno-52-13" name="__codelineno-52-13" href="#__codelineno-52-13"></a> 6 [Audio          ]: USB-Audio - USB Audio
+<a id="__codelineno-52-14" name="__codelineno-52-14" href="#__codelineno-52-14"></a>                      Generic USB Audio at usb-0000:0f:00.0-12, high speed
+</code></pre></div>
+<p>一个声卡中有一个或多个设备（device），内核识别到的设备可以从 <code>/proc/asound/devices</code> 查看：</p>
+<div class="highlight"><span class="filename">/proc/asound/devices</span><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>  1:        : sequencer
+<a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a>  2: [ 3]   : control
+<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a>  3: [ 1- 3]: digital audio playback
+<a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a>  4: [ 1- 7]: digital audio playback
+<a id="__codelineno-53-5" name="__codelineno-53-5" href="#__codelineno-53-5"></a>  5: [ 2- 3]: digital audio playback
+<a id="__codelineno-53-6" name="__codelineno-53-6" href="#__codelineno-53-6"></a>  6: [ 2- 7]: digital audio playback
+<a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a>  7: [ 1- 8]: digital audio playback
+<a id="__codelineno-53-8" name="__codelineno-53-8" href="#__codelineno-53-8"></a>  8: [ 1- 9]: digital audio playback
+<a id="__codelineno-53-9" name="__codelineno-53-9" href="#__codelineno-53-9"></a>  9: [ 1- 0]: hardware dependent
+<a id="__codelineno-53-10" name="__codelineno-53-10" href="#__codelineno-53-10"></a> 10: [ 2- 8]: digital audio playback
+<a id="__codelineno-53-11" name="__codelineno-53-11" href="#__codelineno-53-11"></a> 11: [ 2- 9]: digital audio playback
+<a id="__codelineno-53-12" name="__codelineno-53-12" href="#__codelineno-53-12"></a> 12: [ 2- 0]: hardware dependent
+<a id="__codelineno-53-13" name="__codelineno-53-13" href="#__codelineno-53-13"></a> 13: [ 2]   : control
+<a id="__codelineno-53-14" name="__codelineno-53-14" href="#__codelineno-53-14"></a> 14: [ 1]   : control
+<a id="__codelineno-53-15" name="__codelineno-53-15" href="#__codelineno-53-15"></a> 15: [ 0- 0]: digital audio capture
+<a id="__codelineno-53-16" name="__codelineno-53-16" href="#__codelineno-53-16"></a> 16: [ 0]   : control
+<a id="__codelineno-53-17" name="__codelineno-53-17" href="#__codelineno-53-17"></a> 17: [ 4- 0]: digital audio playback
+<a id="__codelineno-53-18" name="__codelineno-53-18" href="#__codelineno-53-18"></a> 18: [ 4- 0]: digital audio capture
+<a id="__codelineno-53-19" name="__codelineno-53-19" href="#__codelineno-53-19"></a> 19: [ 4]   : control
+<a id="__codelineno-53-20" name="__codelineno-53-20" href="#__codelineno-53-20"></a> 20: [ 5- 0]: digital audio playback
+<a id="__codelineno-53-21" name="__codelineno-53-21" href="#__codelineno-53-21"></a> 21: [ 5- 0]: digital audio capture
+<a id="__codelineno-53-22" name="__codelineno-53-22" href="#__codelineno-53-22"></a> 22: [ 5]   : control
+<a id="__codelineno-53-23" name="__codelineno-53-23" href="#__codelineno-53-23"></a> 23: [ 6- 0]: digital audio playback
+<a id="__codelineno-53-24" name="__codelineno-53-24" href="#__codelineno-53-24"></a> 24: [ 6- 0]: digital audio capture
+<a id="__codelineno-53-25" name="__codelineno-53-25" href="#__codelineno-53-25"></a> 25: [ 6- 1]: digital audio playback
+<a id="__codelineno-53-26" name="__codelineno-53-26" href="#__codelineno-53-26"></a> 26: [ 6- 1]: digital audio capture
+<a id="__codelineno-53-27" name="__codelineno-53-27" href="#__codelineno-53-27"></a> 27: [ 6- 2]: digital audio playback
+<a id="__codelineno-53-28" name="__codelineno-53-28" href="#__codelineno-53-28"></a> 28: [ 6- 2]: digital audio capture
+<a id="__codelineno-53-29" name="__codelineno-53-29" href="#__codelineno-53-29"></a> 29: [ 6- 3]: digital audio playback
+<a id="__codelineno-53-30" name="__codelineno-53-30" href="#__codelineno-53-30"></a> 30: [ 6]   : control
+<a id="__codelineno-53-31" name="__codelineno-53-31" href="#__codelineno-53-31"></a> 33:        : timer
+</code></pre></div>
+<p>其中方括号内部的格式为 <code>[卡号-设备号]</code>，例如上面的 <code>ZZZZZ 音箱</code>，如果要从这个音箱直接用 ALSA 硬件设备播放音频，那么对应的设备标记就是 <code>hw:5,0</code>（对应的设备文件为 <code>/dev/snd/pcmC5D0p</code>）。此外，设备还可以有子设备（subdevice），用于多个并发流的场景（硬件混音）。支持播放音频的 ALSA 硬件声卡和设备信息也可以用 <code>aplay -l</code> 命令查看（<code>arecord -l</code> 也对应支持录制音频的设备信息）。</p>
+<p>如果需要直接连接 ALSA 硬件测试音频播放/录制是否正常（排除中间层的影响），那么<strong>在设备文件未被占用的情况</strong>下，可以使用 <code>speaker-test</code>、<code>aplay</code> 和 <code>arecord</code> 直接输出/获取 PCM 原始音频流测试（ALSA 出于安全起见默认会静音所有设备，因此可能需要先使用 <code>alsamixer</code> 调整音量）。可以先播放空 PCM 音频来获取设备信息，以上面的 <code>hw:5,0</code> 为例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="gp">$ </span>aplay<span class="w"> </span>-D<span class="w"> </span>hw:5,0<span class="w"> </span>--dump-hw-params<span class="w"> </span>/dev/zero
+<a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="go">Playing raw data &#39;/dev/zero&#39; : Unsigned 8 bit, Rate 8000 Hz, Mono</span>
+<a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a><span class="go">HW Params of device &quot;hw:5,0&quot;:</span>
+<a id="__codelineno-54-4" name="__codelineno-54-4" href="#__codelineno-54-4"></a><span class="go">--------------------</span>
+<a id="__codelineno-54-5" name="__codelineno-54-5" href="#__codelineno-54-5"></a><span class="go">ACCESS: MMAP_INTERLEAVED RW_INTERLEAVED</span>
+<a id="__codelineno-54-6" name="__codelineno-54-6" href="#__codelineno-54-6"></a><span class="go">FORMAT: S16_LE</span>
+<a id="__codelineno-54-7" name="__codelineno-54-7" href="#__codelineno-54-7"></a><span class="go">SUBFORMAT: STD MSBITS_MAX</span>
+<a id="__codelineno-54-8" name="__codelineno-54-8" href="#__codelineno-54-8"></a><span class="go">SAMPLE_BITS: 16</span>
+<a id="__codelineno-54-9" name="__codelineno-54-9" href="#__codelineno-54-9"></a><span class="go">FRAME_BITS: 32</span>
+<a id="__codelineno-54-10" name="__codelineno-54-10" href="#__codelineno-54-10"></a><span class="go">CHANNELS: 2</span>
+<a id="__codelineno-54-11" name="__codelineno-54-11" href="#__codelineno-54-11"></a><span class="go">RATE: [44100 48000]</span>
+<a id="__codelineno-54-12" name="__codelineno-54-12" href="#__codelineno-54-12"></a><span class="go">PERIOD_TIME: [1000 1000000]</span>
+<a id="__codelineno-54-13" name="__codelineno-54-13" href="#__codelineno-54-13"></a><span class="go">PERIOD_SIZE: [45 48000]</span>
+<a id="__codelineno-54-14" name="__codelineno-54-14" href="#__codelineno-54-14"></a><span class="go">PERIOD_BYTES: [180 192000]</span>
+<a id="__codelineno-54-15" name="__codelineno-54-15" href="#__codelineno-54-15"></a><span class="go">PERIODS: [2 1024]</span>
+<a id="__codelineno-54-16" name="__codelineno-54-16" href="#__codelineno-54-16"></a><span class="go">BUFFER_TIME: [1875 2000000]</span>
+<a id="__codelineno-54-17" name="__codelineno-54-17" href="#__codelineno-54-17"></a><span class="go">BUFFER_SIZE: [90 96000]</span>
+<a id="__codelineno-54-18" name="__codelineno-54-18" href="#__codelineno-54-18"></a><span class="go">BUFFER_BYTES: [360 384000]</span>
+<a id="__codelineno-54-19" name="__codelineno-54-19" href="#__codelineno-54-19"></a><span class="go">TICK_TIME: ALL</span>
+<a id="__codelineno-54-20" name="__codelineno-54-20" href="#__codelineno-54-20"></a><span class="go">--------------------</span>
+<a id="__codelineno-54-21" name="__codelineno-54-21" href="#__codelineno-54-21"></a><span class="go">aplay: set_params:1393: Sample format non available</span>
+<a id="__codelineno-54-22" name="__codelineno-54-22" href="#__codelineno-54-22"></a><span class="go">Available formats:</span>
+<a id="__codelineno-54-23" name="__codelineno-54-23" href="#__codelineno-54-23"></a><span class="go">- S16_LE</span>
+</code></pre></div>
+<p>从上述信息看，<code>hw:5,0</code> 支持 S16_LE（有符号 16 位小端序）格式的 PCM、双声道、48000Hz 的采样率，因此 <code>speaker-test</code> 的参数可以为：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a><span class="c1"># 播放正弦波，loop (-l) 1 次</span>
+<a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>speaker-test<span class="w"> </span>-D<span class="w"> </span>hw:5,0<span class="w"> </span>-c<span class="w"> </span><span class="m">2</span><span class="w"> </span>-r<span class="w"> </span><span class="m">48000</span><span class="w"> </span>-F<span class="w"> </span>S16_LE<span class="w"> </span>-t<span class="w"> </span>sine<span class="w"> </span>-l<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p>不过，libasound 实现了插件机制，因此应用实际看到的设备会比内核暴露出来的更多，可以使用 <code>aplay -L</code>（以及 <code>arecord -L</code>）查看：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a><span class="gp">$ </span>aplay<span class="w"> </span>-L
+<a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="go">null</span>
+<a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a><span class="go">    Discard all samples (playback) or generate zero samples (capture)</span>
+<a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a><span class="go">default</span>
+<a id="__codelineno-56-5" name="__codelineno-56-5" href="#__codelineno-56-5"></a><span class="go">    Default Audio Device</span>
+<a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a><span class="go">sysdefault</span>
+<a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a><span class="go">    Default Audio Device</span>
+<a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a><span class="go">pipewire</span>
+<a id="__codelineno-56-9" name="__codelineno-56-9" href="#__codelineno-56-9"></a><span class="go">    PipeWire Sound Server</span>
+<a id="__codelineno-56-10" name="__codelineno-56-10" href="#__codelineno-56-10"></a><span class="go">hdmi:CARD=HDMI,DEV=0</span>
+<a id="__codelineno-56-11" name="__codelineno-56-11" href="#__codelineno-56-11"></a><span class="go">    HDA ATI HDMI, HDMI 0</span>
+<a id="__codelineno-56-12" name="__codelineno-56-12" href="#__codelineno-56-12"></a><span class="go">    HDMI Audio Output</span>
+<a id="__codelineno-56-13" name="__codelineno-56-13" href="#__codelineno-56-13"></a><span class="go">（省略）</span>
+</code></pre></div>
+<p>大部分 ALSA 的应用都会直接使用 <code>default</code> 设备。libasound 的插件层也是以下介绍的 PulseAudio 和 PipeWire 实现 ALSA 兼容层的基础。</p>
+</div>
 <p>但是在现代桌面环境下，ALSA 已经无法满足用户的需求：</p>
 <ul>
 <li>较老的 ALSA 默认不支持软件混音（mix），这意味着在不支持硬件混音的声卡上，<strong>同时只能有一个程序播放音频</strong>，需要使用 <code>dmix</code> ALSA 插件添加支持。新的 ALSA 会自动加载 <code>dmix</code>，但是这个插件也仍然不支持给每个应用程序不同的音量，只负责把多个音频流打包发给声卡。</li>
@@ -4988,11 +5087,51 @@
 <li>ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。</li>
 </ul>
 <p>因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异。</p>
-<p>PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering）。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/">模块</a>来控制其行为。</p>
+<div class="admonition note">
+<p class="admonition-title">PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？</p>
+<p>应用一般使用 libasound 暴露出的 <code>default</code> 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。<code>pulseaudio</code> 包会设置 <code>pcm</code> 和 <code>ctl</code> 对应的 default interface 为 <code>pulse</code>：</p>
+<div class="highlight"><span class="filename">/usr/share/alsa/pulse-alsa.conf</span><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a># This file is referred to by /usr/share/alsa/pulse.conf to set pulseaudio as
+<a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a># the default output plugin for applications using alsa when PulseAudio is
+<a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a># running.
+<a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a>
+<a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a>pcm.!default {
+<a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a>    type pulse
+<a id="__codelineno-57-7" name="__codelineno-57-7" href="#__codelineno-57-7"></a>    hint {
+<a id="__codelineno-57-8" name="__codelineno-57-8" href="#__codelineno-57-8"></a>        show on
+<a id="__codelineno-57-9" name="__codelineno-57-9" href="#__codelineno-57-9"></a>        description &quot;Playback/recording through the PulseAudio sound server&quot;
+<a id="__codelineno-57-10" name="__codelineno-57-10" href="#__codelineno-57-10"></a>    }
+<a id="__codelineno-57-11" name="__codelineno-57-11" href="#__codelineno-57-11"></a>}
+<a id="__codelineno-57-12" name="__codelineno-57-12" href="#__codelineno-57-12"></a>
+<a id="__codelineno-57-13" name="__codelineno-57-13" href="#__codelineno-57-13"></a>ctl.!default {
+<a id="__codelineno-57-14" name="__codelineno-57-14" href="#__codelineno-57-14"></a>    type pulse
+<a id="__codelineno-57-15" name="__codelineno-57-15" href="#__codelineno-57-15"></a>}
+</code></pre></div>
+<p>而 PipeWire 也是类似（<code>pipewire-alsa</code> 包）：</p>
+<div class="highlight"><span class="filename">/usr/share/alsa/alsa.conf.d/99-pipewire-default.conf</span><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a>pcm.!default {
+<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a>    type pipewire
+<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a>    playback_node &quot;-1&quot;
+<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a>    capture_node  &quot;-1&quot;
+<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a>    hint {
+<a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a>        show on
+<a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a>        description &quot;Default ALSA Output (currently PipeWire Media Server)&quot;
+<a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a>    }
+<a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a>}
+<a id="__codelineno-58-10" name="__codelineno-58-10" href="#__codelineno-58-10"></a>
+<a id="__codelineno-58-11" name="__codelineno-58-11" href="#__codelineno-58-11"></a>ctl.!default {
+<a id="__codelineno-58-12" name="__codelineno-58-12" href="#__codelineno-58-12"></a>    type pipewire
+<a id="__codelineno-58-13" name="__codelineno-58-13" href="#__codelineno-58-13"></a>}
+</code></pre></div>
+<p>不过，如果应用真的要直接访问硬件，不经过 libasound 的话怎么办呢？PulseAudio 和 PipeWire 目前默认配置下都会自动释放未占用的硬件节点：PulseAudio 通过 <a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/#module-suspend-on-idle"><code>module-suspend-on-idle</code></a> 模块，PipeWire 通过节点的 <a href="https://docs.pipewire.org/page_man_pipewire-props_7.html#node-prop__session_suspend-timeout-seconds"><code>session.suspend-timeout-seconds</code></a> 配置。此外，它们也实现了 <code>org.freedesktop.ReserveDevice1</code> 的 DBus 接口，允许应用主动请求来让出设备。</p>
+</div>
+<p>PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering），对应默认 socket 位于 <code>$XDG_RUNTIME_DIR/pulse/native</code>。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/">模块</a>来控制其行为。</p>
 <p>相比传统的音频服务器，<a href="https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html">PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）</a>。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（<code>select()</code> 或者 <code>poll()</code>）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。</p>
 <p>基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/">Rewinding</a>），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。</p>
-<p>而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 <a href="https://pipewire.pages.freedesktop.org/wireplumber/">WirePlumber</a>。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。</p>
+<p>而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 <a href="https://pipewire.pages.freedesktop.org/wireplumber/">WirePlumber</a>。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。PipeWire 对应默认 socket 位于 <code>$XDG_RUNTIME_DIR/pipewire-0</code>（和用于 session manager 的 <code>$XDG_RUNTIME_DIR/pipewire-0-manager</code>）。</p>
 <p>相比 PulseAudio，PipeWire 的一大优势就在于延迟。尽管采取了类似于 PulseAudio 的计时器调度的模式，PipeWire 在<a href="https://docs.pipewire.org/page_scheduling.html">具体实现</a>上也有很大的差异。PipeWire 的多媒体图中必须包含设备节点，每次图计算都由设备节点触发。触发的频率则取决于图的采样率和（图最小需要的）quantum 的大小。quantum 是每次计算时要处理的数据的帧数，quantum / 采样率 = 每次计算的时间间隔。例如对 48kHz 的采样率（很多情况下都是默认值），quantum = 256 时，每个 cycle 的时间则为 256 / 48000Hz ~= 5.33ms，PipeWire 就会每经过 5.33ms 计算一次多媒体图。每次计算时，当前正在播放的就是上一次计算的结果，每次计算必须在 5.33ms 内完成，否则就会 xrun。并且在计算的过程中，与 PulseAudio 不同，数据流可以不经过 PipeWire 的 daemon，相关的信息是点对点传递的，并且可以实现零复制（link 两端共用同一块 buffer，一端写入完成后使用 eventfd 通知另外一端可以开始处理了）。</p>
+<div class="admonition note">
+<p class="admonition-title">PipeWire 对 PulseAudio 兼容的实现</p>
+<p>(TODO)</p>
+</div>
 <p>(TODO)</p>
 <!--
   Links to man pages
@@ -5049,7 +5188,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月1日 20:37:31 UTC">2026年8月1日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月3日 03:58:57 UTC">2026年8月3日</span>
   </span>
 
     
