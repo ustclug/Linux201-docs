@@ -1565,7 +1565,7 @@ controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0
 - ALSA 无法灵活切换输出设备：不支持热插拔切换（比如说插上使用不同声卡的有线耳机的时候自动从外放改成耳机输出），切换时，当前的程序也不会自动跟着切换。
 - ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。
 
-因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异。
+因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异，以下以介绍 PipeWire 为主。
 
 !!! note "PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？"
 
@@ -1611,7 +1611,7 @@ controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0
 
 PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering），对应默认 socket 位于 `$XDG_RUNTIME_DIR/pulse/native`。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载[模块](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/)来控制其行为。
 
-相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。
+相比传统的音频服务器，[PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，tsched，也被称为 glitch-free audio）](https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html)。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（`select()` 或者 `poll()`）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。
 
 基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区尽可能填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（[Rewinding](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/)），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。
 
@@ -1655,6 +1655,23 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
     $ pactl info | grep 'Server Name'
     Server Name: PulseAudio (on PipeWire 1.6.8)
     ```
+
+!!! tip "调整延迟"
+
+    PulseAudio 和 PipeWire 都支持应用程序调整延迟，在需要较低延迟的场景，或者出现 xrun 需要提高延迟的情况下都很有用。
+
+    使用 PulseAudio 的应用（链接了 libpulse）可以通过设置环境变量 [`PULSE_LATENCY_MSEC`](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0cc36279ec993680bccad6b907ba15de97b55c4d/src/pulse/stream.c#L1003) 来指定自己希望达到的延迟。在这个环境变量存在的情况下，libpulse 在创建音频流时，会根据 PulseAudio 的[延迟控制方式](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Clients/LatencyControl/)设置相关的 flag 与 buffer 属性（如果应用自行进行延迟控制，相关的设置可能会被覆盖），直接指定希望达到的延迟目标，发送给音频服务器。
+    
+    PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对[写作时最新的 pipewire-pulse](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485)，延迟目标（tlength）需要分给两部分：计算一次图的时间（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 tlength / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (tlength - 2 * minreq) / 2，剩下的部分就留给 buffer。因此对下述例子：
+
+    ```sh
+    # paplay 会连接 PulseAudio 服务端播放音频
+    PULSE_LATENCY_MSEC=25 paplay example.ogg
+    ```
+
+    假设采样率为 48kHz，此时可以使用 `pw-top` 看到 quantum = 300，因为 minreq = 25ms / 4 = 6.25ms，quantum 时间 = (25ms - 2 * 6.25ms) / 2 = 6.25ms，乘以采样率就能得到这个结果。
+
+    (TODO)
 
 此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)
 
