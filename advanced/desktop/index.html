@@ -5145,7 +5145,7 @@
 <li>ALSA 无法灵活切换输出设备：不支持热插拔切换（比如说插上使用不同声卡的有线耳机的时候自动从外放改成耳机输出），切换时，当前的程序也不会自动跟着切换。</li>
 <li>ALSA 处理蓝牙耳机很麻烦，需要使用 BlueZ 自己做很多很多事情。</li>
 </ul>
-<p>因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异。</p>
+<p>因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异，以下以介绍 PipeWire 为主。</p>
 <div class="admonition note">
 <p class="admonition-title">PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？</p>
 <p>应用一般使用 libasound 暴露出的 <code>default</code> 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。<code>pulseaudio</code> 包会设置 <code>pcm</code> 和 <code>ctl</code> 对应的 default interface 为 <code>pulse</code>：</p>
@@ -5183,7 +5183,7 @@
 <p>不过，如果应用真的要直接访问硬件，不经过 libasound 的话怎么办呢？PulseAudio 和 PipeWire 目前默认配置下都会自动释放未占用的硬件节点：PulseAudio 通过 <a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/#module-suspend-on-idle"><code>module-suspend-on-idle</code></a> 模块，PipeWire 通过节点的 <a href="https://docs.pipewire.org/page_man_pipewire-props_7.html#node-prop__session_suspend-timeout-seconds"><code>session.suspend-timeout-seconds</code></a> 配置。此外，它们也实现了 <code>org.freedesktop.ReserveDevice1</code> 的 DBus 接口，允许应用主动请求来让出设备。</p>
 </div>
 <p>PulseAudio 是一个中心化的音频服务器（它的作者也是 systemd 的作者 Lennart Poettering），对应默认 socket 位于 <code>$XDG_RUNTIME_DIR/pulse/native</code>。在 PulseAudio 中，输出声音的设备被称为 sink，输入声音的设备被称为 source，而播放音频和录制音频的数据流则被分别称为 "sink input" 和 "source output"。PulseAudio 会接收多个 sink input 的音频，混音之后发送给 sink；同样 PulseAudio 收到 source 的音频之后，会负责发送给所有的 source output。PulseAudio 允许加载<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/User/Modules/">模块</a>来控制其行为。</p>
-<p>相比传统的音频服务器，<a href="https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html">PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，也被称为 glitch-free audio）</a>。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（<code>select()</code> 或者 <code>poll()</code>）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。</p>
+<p>相比传统的音频服务器，<a href="https://web.archive.org/web/20260702175530/http://0pointer.de/blog/projects/pulse-glitch-free.html">PulseAudio 从 0.9.11 版本（2008 年）开始引入的一项重要改进是「基于计时器的音频调度」（timer-based audio scheduling，tsched，也被称为 glitch-free audio）</a>。传统上，声卡会给应用（音频服务器）分配固定大小的环形缓冲区，每隔一小段时间（fragment），声卡就会通过中断通知 OS 自己需要新的数据，对应的应用需要监听（<code>select()</code> 或者 <code>poll()</code>）声卡的设备文件，写入到对应的缓冲区中。但是，如果应用没有来得及写入数据（比如说 CPU 资源被其他的计算程序抢占），那么播放出来的声音就会出现明显的问题。这种缓冲区没有来得及写入数据的情况也被称为 underrun（在录制音频时，对应的问题是应用没有来得及读取数据，导致录制的音频丢失，被称为 overrun；两者被称为 xrun）。而缓冲区和 fragment 的大小不仅很难确定出最优值，并且它们的大小配置依赖声卡硬件提供的选项进行协商，无法任意调整，一旦设置之后也难以修改，大量的中断在笔记本电脑上也更加耗电。</p>
 <p>基于计时器的音频调度则不依赖于声卡的中断进行调度，而是根据软件计时器来决定什么时候把数据提供给声卡缓冲区。PulseAudio 会尽量让 ALSA 关闭声卡的中断，把声卡硬件的缓冲区配置得很大（可以远大于实际需要的延迟，例如 2s），配置定时器（例如 10ms）来唤醒并向缓冲区尽可能填入数据。如果应用需要更低的延迟，PulseAudio 每次被定时器唤醒的时候填充的数据量也就相应减少。并且 PulseAudio 也会随时修改缓冲区的内容（<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Rewinding/">Rewinding</a>），例如当用户暂停音乐的时候，PulseAudio 就会把缓冲区后面的部分清理掉，而不必等到当前 buffer 里面已经有的音频数据全部放完。</p>
 <p>而 PipeWire 的设计则和 PulseAudio 很不一样。PipeWire 中应用程序、硬件设备等等都是节点（node），节点上有一些输入的 port 和输出的 port，port 之间用 link 连接。PipeWire 则负责管理这个多媒体节点组成的图。多媒体图设计上不和音频强绑定，因此 PipeWire 也可以处理视频数据。PipeWire 本身不负责怎么连接这些节点，只负责实时执行这一张多媒体图。真正负责建立节点、连线的被称为 session manager，在现代系统上一般是 <a href="https://pipewire.pages.freedesktop.org/wireplumber/">WirePlumber</a>。早期的系统可能会使用 pipewire-media-session 作为 session manager，不过目前一般已经不使用了。PipeWire 对应默认 socket 位于 <code>$XDG_RUNTIME_DIR/pipewire-0</code>（和用于 session manager 的 <code>$XDG_RUNTIME_DIR/pipewire-0-manager</code>）。</p>
 <p>有一些程序可以查看 PipeWire 的多媒体图，例如 <a href="https://github.com/rncbc/qpwgraph">qpwgraph</a>、<a href="https://gitlab.freedesktop.org/pipewire/helvum">helvum</a> 可以查看、修改节点之间的连线；<a href="https://github.com/dimtpap/coppwr">coppwr</a> 可以查看节点的详细信息等等。</p>
@@ -5217,6 +5217,17 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="gp">$ </span>pactl<span class="w"> </span>info<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s1">&#39;Server Name&#39;</span>
 <a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a><span class="go">Server Name: PulseAudio (on PipeWire 1.6.8)</span>
 </code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">调整延迟</p>
+<p>PulseAudio 和 PipeWire 都支持应用程序调整延迟，在需要较低延迟的场景，或者出现 xrun 需要提高延迟的情况下都很有用。</p>
+<p>使用 PulseAudio 的应用（链接了 libpulse）可以通过设置环境变量 <a href="https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0cc36279ec993680bccad6b907ba15de97b55c4d/src/pulse/stream.c#L1003"><code>PULSE_LATENCY_MSEC</code></a> 来指定自己希望达到的延迟。在这个环境变量存在的情况下，libpulse 在创建音频流时，会根据 PulseAudio 的<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Clients/LatencyControl/">延迟控制方式</a>设置相关的 flag 与 buffer 属性（如果应用自行进行延迟控制，相关的设置可能会被覆盖），直接指定希望达到的延迟目标，发送给音频服务器。</p>
+<p>PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对<a href="https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485">写作时最新的 pipewire-pulse</a>，延迟目标（tlength）需要分给两部分：计算一次图的时间（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 tlength / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (tlength - 2 * minreq) / 2，剩下的部分就留给 buffer。因此对下述例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="c1"># paplay 会连接 PulseAudio 服务端播放音频</span>
+<a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="nv">PULSE_LATENCY_MSEC</span><span class="o">=</span><span class="m">25</span><span class="w"> </span>paplay<span class="w"> </span>example.ogg
+</code></pre></div>
+<p>假设采样率为 48kHz，此时可以使用 <code>pw-top</code> 看到 quantum = 300，因为 minreq = 25ms / 4 = 6.25ms，quantum 时间 = (25ms - 2 * 6.25ms) / 2 = 6.25ms，乘以采样率就能得到这个结果。</p>
+<p>(TODO)</p>
 </div>
 <p>此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)</p>
 <p>(TODO)</p>
@@ -5275,7 +5286,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月3日 15:39:51 UTC">2026年8月3日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月4日 21:05:22 UTC">2026年8月4日</span>
   </span>
 
     
