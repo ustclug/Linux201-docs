@@ -52,6 +52,8 @@ Nginx 可以直接从 Debian APT 源安装。其许多常用模块被打包在�
     sudo apt install nginx-extras
     ```
 
+`nginx-core` 和 `nginx-full`、`nginx-extras` 的内置模块是一样的，而 `nginx-light` 的内置模块（编译到 `nginx` 二进制中）更少，缺少 `ngx_http_geo_module` 等可能会被用到的模块，并且这些模块没有单独的模块软件包，因此如果需要减小 nginx 安装、加载的模块量，可以安装 `nginx-core`，并自行安装其他需要的模块软件包。
+
 如果有特殊的需求，也有其他的选择：
 
 - [Nginx.org 源](https://nginx.org/en/linux_packages.html#Debian) 提供了最新主线和稳定版本的 Nginx。
