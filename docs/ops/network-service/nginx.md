@@ -52,12 +52,40 @@ Nginx 可以直接从 Debian APT 源安装。其许多常用模块被打包在�
     sudo apt install nginx-extras
     ```
 
-`nginx-core` 和 `nginx-full` 的内置模块是一样的，而 `nginx-light` 的内置模块（编译到 `nginx` 二进制中）更少，缺少 `ngx_http_geo_module` 等可能会被用到的模块，并且这些模块没有单独的模块软件包，因此如果需要减小 nginx 安装、加载的模块量，可以安装 `nginx-core`，并自行安装其他需要的模块软件包。`nginx-extras` 的内置模块显著更多，且通过软件包依赖关系引入了大量的动态模块，适合需要「一键确保所有功能可用」的安装（这种情况非常少见，一般不推荐无脑安装所有模块）。
+`nginx-core` 和 `nginx-full` 的内置模块是一样的，而 `nginx-light` 的内置模块（编译到 `nginx` 二进制中）更少，缺少 `ngx_http_geo_module` 等可能会被用到的模块，并且这些模块没有单独的模块软件包，因此如果需要减小 nginx 安装和加载的模块量，可以安装 `nginx-core`，并自行安装其他需要的模块软件包。
+
+`nginx-extras` 的内置模块显著更多，且通过软件包依赖关系引入了大量的动态模块，适合需要「一键确保所有功能可用」的场景（这种情况非常少见，一般不推荐无脑安装所有模块）。
+
+你可以随时运行 `nginx -V` 查看你当前安装的 Nginx 包含了哪些模块：
+
+```shell title="nginx -V 2>&1 | tr ' ' '\n'（节选）"
+# ...
+--with-http_ssl_module
+--with-http_stub_status_module
+# ...
+--with-http_geoip_module=dynamic
+--with-http_image_filter_module=dynamic
+# ...
+--add-module=/build/nginx/sb-modules/ngx_brotli
+--add-module=/build/nginx/sb-modules/zstd-nginx-module
+# ...
+--add-dynamic-module=/build/nginx/debian/modules/http-lua
+--add-dynamic-module=/build/nginx/debian/modules/http-subs-filter
+# ...
+```
+
+在以上示例中：
+
+- `--with-*` 是 Nginx 官方的模块，编译进 `nginx` 二进制本体；
+- `--without-*` 表示该官方模块没有被编译，从而也无法使用（本例未包含）；
+- `--with-*=dynamic` 表示 Nginx 官方模块被编译成为 `.so` 文件，在运行时动态加载；
+- `--add-module=*` 是编译进 `nginx` 二进制的第三方模块；
+- `--add-dynamic-module=*` 表示编译成动态链接库的第三方模块。
 
 如果有特殊的需求，也有其他的选择：
 
 - [Nginx.org 源](https://nginx.org/en/linux_packages.html#Debian) 提供了最新主线和稳定版本的 Nginx。
-- [n.wtf](https://n.wtf/) 提供了最新版本的 Nginx，并内置了 Brotli、QUIC（HTTP/3）等支持。特别地，n.wtf 版本的 Nginx 采用 Debian 的打包方式，是 Debian 官方包很好的替代。
+- [n.wtf](https://n.wtf/) 提供了最新版本的 Nginx，并内置了 Brotli、QUIC（HTTP/3）等支持。特别地，n.wtf 版本的 Nginx 采用 Debian 的打包方式，是 Debian 官方包很好的替代，也因此在 USTCLUG 内部广泛使用。
 - [OpenResty](https://openresty.org/en/linux-packages.html) 提供了基于 Nginx 的高性能 Web 平台，内置了 LuaJIT 支持。用户可以编写 Lua 脚本来扩展 Nginx 的功能。
 
 [科大镜像站](https://mirrors.ustc.edu.cn/) 提供了以上三种源的镜像，分别位于 [`nginx`](https://mirrors.ustc.edu.cn/nginx/)、[`sb`](https://mirrors.ustc.edu.cn/sb/)（n.wtf）和 [`openresty`](https://mirrors.ustc.edu.cn/openresty/)。
