@@ -2897,7 +2897,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#data-collection" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -2916,6 +2916,38 @@
       
         <span class="md-typeset">
           Vector
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          数据查询
+        </span>
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据查询">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-clause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          <code>WITH</code> 语句
         </span>
       
     </span>
@@ -3259,7 +3291,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#_1" class="md-nav__link">
+  <a href="#data-collection" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -3278,6 +3310,38 @@
       
         <span class="md-typeset">
           Vector
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          数据查询
+        </span>
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据查询">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-clause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          <code>WITH</code> 语句
         </span>
       
     </span>
@@ -3419,7 +3483,7 @@
 </ul>
 <p>在初始化完成后，你也可以在容器中使用 <code>clickhouse-client</code> 命令行工具执行 SQL 语句。</p>
 <h2 id="create-table">创建表<a class="headerlink" href="#create-table" title="Permanent link">&para;</a></h2>
-<p>USTC Mirrors 的访问日志采用单行 JSON 格式，示例如下（经过格式化）：</p>
+<p>USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命名为 <code>ngx_json</code>），配置方式可以在 <a href="../../ops/network-service/nginx/#logging">Nginx</a> 一页中找到，示例如下（经过格式化）：</p>
 <details class="example">
 <summary>访问日志示例</summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
@@ -3441,7 +3505,7 @@
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="p">}</span>
 </code></pre></div>
 </details>
-<p>对应地，创建用于结构化存储日志的 ClickHouse 表的 SQL 语句如下：</p>
+<p>根据我们的 JSON 格式创建用于结构化存储日志的 ClickHouse 表的 SQL 语句如下：</p>
 <div class="highlight"><span class="filename">01-mirrors.sql</span><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">mirrors</span><span class="p">.</span><span class="n">access_log</span><span class="w"> </span><span class="p">(</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="o">`</span><span class="k">timestamp</span><span class="o">`</span><span class="w"> </span><span class="n">Float64</span><span class="p">,</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="o">`</span><span class="n">event_time</span><span class="o">`</span><span class="w"> </span><span class="n">DateTime64</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;UTC&#39;</span><span class="p">)</span><span class="w"> </span><span class="n">MATERIALIZED</span><span class="w"> </span><span class="n">fromUnixTimestamp64Milli</span><span class="p">(</span><span class="n">toInt64</span><span class="p">(</span><span class="k">timestamp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="p">)),</span>
@@ -3460,7 +3524,7 @@
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="o">`</span><span class="n">proto</span><span class="o">`</span><span class="w"> </span><span class="n">LowCardinality</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">    </span><span class="o">`</span><span class="n">proxied</span><span class="o">`</span><span class="w"> </span><span class="n">LowCardinality</span><span class="p">(</span><span class="n">String</span><span class="p">),</span>
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="o">`</span><span class="k">source</span><span class="o">`</span><span class="w"> </span><span class="n">LowCardinality</span><span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="o">`</span><span class="n">ip</span><span class="o">`</span><span class="w"> </span><span class="n">IPv6</span><span class="w"> </span><span class="n">MATERIALIZED</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="n">isIPv4String</span><span class="p">(</span><span class="n">clientip</span><span class="p">),</span><span class="w"> </span><span class="n">IPv4ToIPv6</span><span class="p">(</span><span class="n">toIPv4OrDefault</span><span class="p">(</span><span class="n">clientip</span><span class="p">)),</span><span class="w"> </span><span class="n">toIPv6OrDefault</span><span class="p">(</span><span class="n">clientip</span><span class="p">)),</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="o">`</span><span class="n">ip</span><span class="o">`</span><span class="w"> </span><span class="n">IPv6</span><span class="w"> </span><span class="n">MATERIALIZED</span><span class="w"> </span><span class="n">toIPv6OrDefault</span><span class="p">(</span><span class="n">clientip</span><span class="p">),</span>
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="o">`</span><span class="n">repo</span><span class="o">`</span><span class="w"> </span><span class="n">LowCardinality</span><span class="p">(</span><span class="n">String</span><span class="p">)</span><span class="w"> </span><span class="n">MATERIALIZED</span><span class="w"> </span><span class="n">extract_repo</span><span class="p">(</span><span class="ss">&quot;url&quot;</span><span class="p">)</span>
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="p">)</span>
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="n">ENGINE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ReplacingMergeTree</span>
@@ -3513,15 +3577,18 @@
 <p>在以上示例中，开头的 <code>event_time</code> 和最后两列 <code>ip</code> 和 <code>repo</code> 都是 MATERIALIZED 列：</p>
 <ul>
 <li><code>event_time</code> 列通过将原始的浮点数时间戳 <code>timestamp</code> 转换为毫秒级时间戳并使用 <code>fromUnixTimestamp64Milli</code> 函数生成 <code>DateTime64(3)</code> 类型的时间列。</li>
-<li><code>ip</code> 列将 <code>clientip</code> 列存储的字符串转换为 IPv6 地址或 IPv4-mapped IPv6 地址。</li>
+<li><code>ip</code> 列将 <code>clientip</code> 列存储的字符串转换为 IPv6 地址，其中合法的 IPv4 地址也会被转换成 IPv4-mapped IPv6 地址（例如 <code>::ffff:127.0.0.1</code>）。</li>
 <li><code>repo</code> 列使用一个自定义函数从 <code>url</code> 中提取镜像仓库名称。</li>
 </ul>
 <p>默认情况下，MATERIALIZED 列不允许被插入数据，如果尝试插入的数据包含了 MATERIALIZED 的列，ClickHouse 会返回错误。
-开启设置 <code>insert_allow_materialized_columns</code> 可以让 ClickHouse 忽略指定给 MATERIALIZED 列的数据（采用计算结果），继续插入其他列的数据。</p>
-<h2 id="_1">数据采集<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+开启设置 <code>insert_allow_materialized_columns</code> 可以让 ClickHouse 忽略尝试插入到 MATERIALIZED 列的数据（采用计算结果），继续插入其他列的数据。</p>
+<h2 id="data-collection">数据采集<a class="headerlink" href="#data-collection" title="Permanent link">&para;</a></h2>
+<p>将访问日志导入 ClickHouse 的方式有很多种，本节简单介绍主流的 <a href="https://vector.dev/">Vector.dev</a> 采集器。</p>
+<p>根据使用场景，Fluent Bit 和 Filebeat 也可以作为日志采集器。</p>
 <h3 id="vector">Vector<a class="headerlink" href="#vector" title="Permanent link">&para;</a></h3>
-<p>USTC Mirrors 使用的 Vector 配置参考：</p>
-<div class="highlight"><span class="filename">vector.yaml</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">sources</span><span class="p">:</span>
+<p>Vector 是 Datadog 开源的日志采集器，以 Rust 语言编写（因此非常轻量），支持多种数据源（sources）、转换（transforms）和输出（sinks），可以将日志数据从源头采集、转换后发送到 ClickHouse。Vector 可以<a href="https://vector.dev/docs/setup/installation/">通过多种方式安装</a>，且支持通过 SIGHUP 信号重新加载配置文件。</p>
+<p>Vector 的 <a href="https://vector.dev/docs/reference/configuration/sources/file/"><code>file</code> 数据源</a>能够以类似 <code>tail -F</code> 的方式读取文件内容，并将每一行作为一个事件传递给下游处理器。File 数据源读取的每一行日志都包含一个 <code>message</code> 字段，存储了原始的文本内容，因此我们需要使用 <code>remap</code> 将其解析为 JSON 对象，并根据文件路径注入 <code>source</code> 字段，标记日志来源。</p>
+<div class="highlight"><span class="filename">USTC Mirrors 使用的 Vector 配置参考</span><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">sources</span><span class="p">:</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">mirror_logs</span><span class="p">:</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="nt">include</span><span class="p">:</span>
@@ -3566,6 +3633,56 @@
 <a id="__codelineno-4-43" name="__codelineno-4-43" href="#__codelineno-4-43"></a><span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">disk</span>
 <a id="__codelineno-4-44" name="__codelineno-4-44" href="#__codelineno-4-44"></a><span class="w">      </span><span class="nt">max_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1073741824</span>
 </code></pre></div>
+<p>为 sink 配置磁盘缓冲区可以在 ClickHouse 服务暂时不可用时缓存日志数据，并在 ClickHouse 恢复可用后继续发送。缓冲区的大小决定了 Vector 在开始丢失日志前能够容忍的 ClickHouse 最大停机时间。</p>
+<h2 id="query">数据查询<a class="headerlink" href="#query" title="Permanent link">&para;</a></h2>
+<p><a href="https://clickhouse.com/docs/reference/statements/select">ClickHouse 的查询语言</a>是 SQL 的一个方言，较为接近 PostgreSQL，但有许多 QoL（Quality of Life）特性和高级扩展功能。
+ClickHouse 的 SQL 方言，例如：</p>
+<ul>
+<li>双引号和反引号都可以用作标识符的引用符号，单引号用于字符串字面量。</li>
+<li><code>WHERE</code>、<code>GROUP BY</code> 和 <code>HAVING</code> 子句中可以使用 SELECT 列表中的别名。</li>
+<li>大量的辅助函数。</li>
+</ul>
+<p>例如，要实现与 <a href="https://github.com/taoky/ayano">ayano</a> 类似的输出，可以使用以下 SQL 查询：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">SELECT</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">ip_prefix</span><span class="p">(</span><span class="ss">&quot;ip&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">24</span><span class="p">,</span><span class="w"> </span><span class="mi">48</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;IP&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="k">COUNT</span><span class="p">(</span><span class="k">DISTINCT</span><span class="w"> </span><span class="ss">&quot;ip&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Unique IPs&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Request Count&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="k">sum</span><span class="p">(</span><span class="ss">&quot;size&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Bytes Sent&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">argMax</span><span class="p">(</span><span class="ss">&quot;url&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;event_time&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Last URL&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="k">max</span><span class="p">(</span><span class="ss">&quot;event_time&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Last Seen&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">DISTINCT</span><span class="w"> </span><span class="ss">&quot;user_agent&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Unique UAs&quot;</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">FROM</span><span class="w"> </span><span class="ss">&quot;mirrors&quot;</span><span class="p">.</span><span class="ss">&quot;access_log&quot;</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">WHERE</span><span class="w"> </span><span class="err">$</span><span class="n">__timeFilter</span><span class="p">(</span><span class="ss">&quot;event_time&quot;</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="ss">&quot;source&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;mirrors&#39;</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="ss">&quot;IP&quot;</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="ss">&quot;Bytes Sent&quot;</span><span class="w"> </span><span class="k">DESC</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;IP&quot;</span><span class="w"> </span><span class="k">ASC</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="k">LIMIT</span><span class="w"> </span><span class="mi">50</span><span class="p">;</span>
+</code></pre></div>
+<p>在 Grafana 中使用 ClickHouse 数据源时，Grafana ClickHouse Plugin 会<a href="https://grafana.com/docs/plugins/grafana-clickhouse-datasource/latest/template-variables/">提供一些额外的函数</a>，例如 <code>$__timeFilter("event_time")</code> 会被替换为与 Grafana 界面上的时间选择器匹配的、采用 <code>event_time</code> 列的时间范围过滤条件。Grafana 以表格展示的查询结果类似这样：</p>
+<p><img alt="Grafana ClickHouse 查询结果示例" src="../../images/grafana-ayano-example.png" /></p>
+<details class="example">
+<summary>Grafana ClickHouse SQL 示例</summary>
+<p>恰当地配置 <a href="https://grafana.com/docs/grafana/latest/visualizations/dashboards/variables/">Grafana 的模板变量</a>，可以让用户（或者你自己）更方便地选择过滤条件，例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">SELECT</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">ip_prefix</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span><span class="w"> </span><span class="err">${</span><span class="n">ipv4_prefix</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="err">${</span><span class="n">ipv6_prefix</span><span class="err">}</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">IP</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">COUNT</span><span class="p">(</span><span class="k">DISTINCT</span><span class="w"> </span><span class="n">ip</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Unique IPs&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Request Count&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="k">sum</span><span class="p">(</span><span class="k">size</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Bytes Sent&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="n">argMax</span><span class="p">(</span><span class="n">url</span><span class="p">,</span><span class="w"> </span><span class="n">event_time</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Last URL&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="k">max</span><span class="p">(</span><span class="n">event_time</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">INTERVAL</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">DAY</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Last Seen&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">DISTINCT</span><span class="w"> </span><span class="n">user_agent</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="ss">&quot;Unique UAs&quot;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">FROM</span><span class="w"> </span><span class="err">$</span><span class="n">database_table</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">WHERE</span><span class="w"> </span><span class="err">$</span><span class="n">__timeFilter</span><span class="p">(</span><span class="n">event_time</span><span class="p">)</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="err">$</span><span class="n">__conditionalAll</span><span class="p">(</span><span class="ss">&quot;source&quot;</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="p">(</span><span class="err">${</span><span class="k">source</span><span class="p">:</span><span class="n">singlequote</span><span class="err">}</span><span class="p">),</span><span class="w"> </span><span class="err">$</span><span class="k">source</span><span class="p">)</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="err">$</span><span class="n">__conditionalAll</span><span class="p">(</span><span class="ss">&quot;repo&quot;</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="p">(</span><span class="err">${</span><span class="n">repo</span><span class="p">:</span><span class="n">singlequote</span><span class="err">}</span><span class="p">),</span><span class="w"> </span><span class="err">$</span><span class="n">repo</span><span class="p">)</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="k">AND</span><span class="w"> </span><span class="err">$</span><span class="n">__conditionalAll</span><span class="p">(</span><span class="n">intDivOrZero</span><span class="p">(</span><span class="ss">&quot;status&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">${</span><span class="n">status</span><span class="err">}</span><span class="p">,</span><span class="w"> </span><span class="err">$</span><span class="n">status</span><span class="p">)</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">IP</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="ss">&quot;${order_by}&quot;</span><span class="w"> </span><span class="k">DESC</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;IP&quot;</span><span class="w"> </span><span class="k">ASC</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="k">LIMIT</span><span class="w"> </span><span class="err">${</span><span class="k">limit</span><span class="err">}</span><span class="p">;</span>
+</code></pre></div>
+<p>上面的示例图使用的即是此 SQL 查询语句。</p>
+</details>
+<h3 id="with-clause"><code>WITH</code> 语句<a class="headerlink" href="#with-clause" title="Permanent link">&para;</a></h3>
 <!--
   Links to man pages
 
@@ -3621,7 +3738,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月3日 16:24:15 UTC">2026年8月3日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月7日 16:17:39 UTC">2026年8月7日</span>
   </span>
 
     
@@ -3639,6 +3756,16 @@ Do not link to a "generic" man page for these commands -->
 
     
     <nav>
+      
+        <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
+        </a>
+      
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
+          
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
       
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
