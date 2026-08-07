@@ -105,6 +105,107 @@ UEFI 设置实用程序通常是在 DXE 阶段被加载，而在 BDS 阶段通�
 UEFI 设置实用程序
 {: .caption }
 
+#### Secure Boot
+
+Secure Boot（安全启动）是 UEFI 固件特有的功能，在 DXE 和 BDS 阶段加载和执行，它通过阻止加载未经可接受的数字签名签名的 UEFI 驱动程序或 Bootloader 来保护启动过程。
+
+Secure Boot 的技术基础是一套由 UEFI 2.3.1 规范定义的四层证书/哈希数据库体系：
+
+- PK（Platform Key）：平台密钥，实际上是一个 X.509 证书，通常由 OEM（Original Equipment Manufacturer，原始设备制造商）颁发，也可以自己签发
+- KEK（Key Exchange Key）：密钥交换密钥，实际上是多个 X.509 证书，通常由 OEM 和 Microsoft 颁发，也可以自己签发
+- db：签名数据库，存放被信任的证书或具体二进制文件的 hash 值，凡是被 DB 中证书签名过、或哈希值直接列在 DB 中的程序，才允许在 DXE 或 BDS 阶段被加载
+- dbx：禁止签名数据库，黑名单，存放被撤销或已知存在漏洞的证书或 hash 值，优先级高于 DB
+
+和 Boot Option 类似，这些数据也是存放在主板的 NVRAM 中，但是相比于 Boot Option 可以随意更改，这些字段都必须经过签名认证才能进行修改。
+
+对于已经以 UEFI 方式启动的 Linux 系统，可以使用 `efitools` 包里的 `efi-readvar` 命令查看，以下将以一台联想 Thinkpad E480 笔记本为例，展示 Secure Boot 是如何构建起 Secure Boot 的多级信任链的：
+
+```bash
+$ sudo efi-readvar -v PK
+Variable PK, length 1087
+PK: List 0, type X509
+    Signature 0, size 1059, owner 3cc24e96-22c7-41d8-8863-8e39dcdcc2cf
+        Subject:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=IDC-CDC -KEK, emailAddress=swqagent@lenovo.com
+        Issuer:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=IDC-CDC -KEK, emailAddress=swqagent@lenovo.com
+```
+
+首先可以看到，PK 是一个是由联想（Lenovo）官方，即 OEM 颁发的证书，这是 Secure Boot 的信任根（Root of Trust），如果想要修改这个证书，需要在 Setup Utility 中开启 Setup mode，才能在系统中写入，而且一旦写入就会自动回到 User mode 无法修改。
+
+```bash
+$ sudo efi-readvar -v KEK
+Variable KEK, length 2650
+KEK: List 0, type X509
+    Signature 0, size 1062, owner 7facc7b6-127f-4e9c-9c5d-080f98994345
+        Subject:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=ICD-CDC -KEK, emailAddress=swqagent@lenovo.com
+        Issuer:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=IDC-CDC -KEK, emailAddress=swqagent@lenovo.com
+KEK: List 1, type X509
+    Signature 0, size 1532, owner 77fa9abd-0359-4d32-bd60-28f4e78f784b
+        Subject:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Corporation KEK CA 2011
+        Issuer:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Corporation Third Party Marketplace Root
+```
+
+接着可以看到，KEK 里同时包含了来自 OEM 和 Microsoft 颁发的证书，如果需要写入新证书，需要对使用 PK 的私钥对其签名，才能被固件允许添加。
+
+KEK 的作用是为 KEK 证书的颁发者提供修改 db 和 dbx 的能力，比如 Windows 系统需要远程推送有关驱动或者 Bootloader 相关的更新，涉及到了新证书的颁发或者过时的、存在漏洞的旧证书的撤销，就可以通过由 KEK 的私钥签名的更新包安全地修改 db 和 dbx 来实现。
+
+??? question "两张来自 Microsoft 的 KEK 证书？"
+
+    示例中展示了一张来自 Microsoft 于 2011 年颁发的名为 Microsoft Corporation KEK CA 2011 的证书，但是实际上，这张证书已经于 2026 年 6 月 24 日正式过期了，因此，对于不久之前的新设备，你可能还能看到另一张 Microsoft 于 2023 年颁发的名为 Microsoft Corporation KEK 2K CA 2023 的新证书，如下所示：
+
+    ```bash
+    $ sudo efi-readvar -v KEK
+    ...
+    KEK: List 2, type X509
+    Signature 0, size 1478, owner 77fa9abd-0359-4d32-bd60-28f4e78f784b
+        Subject:
+            C=US, O=Microsoft Corporation, CN=Microsoft Corporation KEK 2K CA 2023
+        Issuer:
+            C=US, O=Microsoft Corporation, CN=Microsoft RSA Devices Root CA 2021
+    ```
+
+```bash
+$ sudo efi-readvar -v db
+Variable db, length 6169
+db: List 0, type X509
+    Signature 0, size 962, owner 7facc7b6-127f-4e9c-9c5d-080f98994345
+        Subject:
+            C=JP, ST=Kanagawa, L=Yokohama, O=Lenovo Ltd., CN=ThinkPad Product CA 2012
+        Issuer:
+            C=JP, ST=Kanagawa, L=Yokohama, O=Lenovo Ltd., CN=Lenovo Ltd. Root CA 2012
+db: List 1, type X509
+    Signature 0, size 1061, owner 7facc7b6-127f-4e9c-9c5d-080f98994345
+        Subject:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=ICD-CDC -DB, emailAddress=swqagent@lenovo.com
+        Issuer:
+            C=CN, ST=Beijing, L=Beijing, O=Lenovo(Beijing) Ltd., OU=IDC-CDC, CN=IDC-CDC -KEK, emailAddress=swqagent@lenovo.com
+db: List 2, type X509
+    Signature 0, size 919, owner 7facc7b6-127f-4e9c-9c5d-080f98994345
+        Subject:
+            C=US, ST=North Carolina, O=Lenovo, CN=Lenovo UEFI CA 2014
+        Issuer:
+            C=US, ST=North Carolina, O=Lenovo, CN=Lenovo UEFI CA 2014
+db: List 3, type X509
+    Signature 0, size 1572, owner 77fa9abd-0359-4d32-bd60-28f4e78f784b
+        Subject:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Corporation UEFI CA 2011
+        Issuer:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Corporation Third Party Marketplace Root
+db: List 4, type X509
+    Signature 0, size 1515, owner 77fa9abd-0359-4d32-bd60-28f4e78f784b
+        Subject:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Windows Production PCA 2011
+        Issuer:
+            C=US, ST=Washington, L=Redmond, O=Microsoft Corporation, CN=Microsoft Root Certificate Authority 2010
+```
+
+最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 `bootmgfw.efi` 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。
+
 ## Bootloader {#bootloader}
 
 Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U 盘、光盘等）的特定位置（如 MBR、GPT 分区表中的 EFI System Partition 等）中，负责加载操作系统内核到内存，并将控制权移交给 Kernel。
