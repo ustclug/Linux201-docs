@@ -70,7 +70,6 @@ services:
 
 ## 创建表 {#create-table}
 
-
 USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命名为 `ngx_json`），配置方式可以在 [Nginx](../ops/network-service/nginx.md#logging) 一页中找到，示例如下（经过格式化）：
 
 ??? example "访问日志示例"
