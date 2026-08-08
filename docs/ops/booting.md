@@ -107,7 +107,7 @@ UEFI 设置实用程序
 
 #### Security {#uefi-security}
 
-##### BG & PSB {#uefi-ibb-psb}
+##### BG & PSB {#uefi-bg-psb}
 
 BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器在固件执行前对固件进行签名验证的具体实现，并不局限于 UEFI 固件（比如 coreboot），但是实践上通常覆盖 UEFI 的 SEC 和 PEI 阶段。
 
