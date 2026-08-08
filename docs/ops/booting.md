@@ -107,6 +107,18 @@ UEFI 设置实用程序
 
 #### Security {#uefi-security}
 
+在计算机发展早期，传统 x86 平台下的 PC 启动体系缺少统一的密码学验证机制，计算机无条件信任 Firmware 和 Bootloader 阶段的所有代码，这就导致恶意代码可以通过恶意篡改 Firmware 和 Bootloader 非常隐蔽地攻击受害者的机器。
+
+1999 年 10 月 11 日，由康柏、惠普、IBM、英特尔和微软等多家科技公司组成的可信计算平台联盟（Trusted Computing Platform Alliance，TCPA）成立，旨在促进个人计算平台的信任和安全。2003 年，TCPA 被 TCG（Trusted Computing Group）取代。
+
+TCG 最广为流传的贡献就是颁布了 TPM 的硬件规范，提出了 PCR 和 Measured Boot 等概念，把计算平台可信变成可度量（measure）、可记录（log）、可证明（prove）的标准。但是 TPM 并不能阻止未经授权的代码执行，这需要额外的机制来实现。
+
+2011 年 4 月，UEFI 2.3.1 规范发布，规范定义了 Secure Boot 机制，使得 UEFI 固件下的计算平台，可以保证在 DXE 和 BDS 阶段加载安全可信的驱动和 Bootloader，从而阻止未经授权的驱动和 Bootloader 执行。但是 Secure Boot 并不能保证在 UEFI 的早期阶段，比如 SEC 和 PEI 阶段执行的固件是可信的。
+
+随着 2013 年 Intel 4th Gen Core 支持 Intel Boot Guard 和 2017 年 AMD EPYC 7001 支持 AMD Platform Secure Boot，x86 平台下的固件以 Intel/AMD silicon Root of Trust 为根，对 OEM（Original Equipment Manufacturer，原始设备制造商）授权的 Firmware 建立硬件根植的认证链，其中通常包含了 UEFI 的 SEC 和 PEI 阶段，补齐了 Secure Boot 的不足。
+
+至此，现代 x86 平台可以由 Intel/AMD 提供的 silicon hardware Root of Trust 验证 OEM 授权的早期平台固件，再由平台固件通过 UEFI Secure Boot 将信任链延伸至 OS Bootloader。与此同时，TPM Measured Boot 可以对启动过程进行度量、记录和证明，从而形成硬件根植的 Verified Boot + Measured Boot 的分层启动安全体系。
+
 ##### BG & PSB {#uefi-bg-psb}
 
 BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器在固件执行前对固件进行签名验证的具体实现，并不局限于 UEFI 固件（比如 coreboot），但是实践上通常覆盖 UEFI 的 SEC 和 PEI 阶段。
@@ -114,7 +126,7 @@ BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器
 在实现上，Intel Boot Guard 运行在 CPU 执行复位向量所在固件代码之前，由 x86 主核心执行：
 
 - 首先，主核心会执行 CPU 微码读取并执行来自主板 ROM 的 ACM（Authenticated Code Module），该微码使用刻蚀在芯片中的 Intel 的公钥 hash 来验证读取的 ACM 的签名是否可信任
-- 然后，ACM 会从主板 ROM 中读取 Key Manifest，获得到来自 OEM（Original Equipment Manufacturer，原始设备制造商）的公钥和签名，并使用主板 FPF（Field Programmable Fuses，一种一次性写存储介质，一旦写入无法更改）中存放的 OEM 的公钥 hash 来验证该 OEM 的公钥是否被篡改
+- 然后，ACM 会从主板 ROM 中读取 Key Manifest，获得到来自 OEM 的公钥和签名，并使用主板 FPF（Field Programmable Fuses，一种一次性写存储介质，一旦写入无法更改）中存放的 OEM 的公钥 hash 来验证该 OEM 的公钥是否被篡改
 - 接着，ACM 又会从主板 ROM 中读取 BPM（Boot Policy Manifest），并使用 OEM 的公钥验证 BPM 是否被篡改，而 BPM 中存放着 IBB（Initial Boot Block，也就是固件本身，比如 UEFI 的 SEC 和 PEI 阶段的代码）的 hash，用于验证固件是否被篡改
 - 最后，对于固件的验证过程结束，PC 跳至复位向量开始执行固件
 
