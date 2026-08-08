@@ -737,7 +737,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#tpm" class="md-nav__link">
+  <a href="#uefi-tpm" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -3475,7 +3475,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#tpm" class="md-nav__link">
+  <a href="#uefi-tpm" class="md-nav__link">
     <span class="md-ellipsis">
       
         <span class="md-typeset">
@@ -3789,10 +3789,10 @@
 <h4 id="uefi-security">Security<a class="headerlink" href="#uefi-security" title="Permanent link">&para;</a></h4>
 <p>在计算机发展早期，传统 x86 平台下的 PC 启动体系缺少统一的密码学验证机制，计算机无条件信任 Firmware 和 Bootloader 阶段的所有代码，这就导致恶意代码可以通过恶意篡改 Firmware 和 Bootloader 非常隐蔽地攻击受害者的机器。</p>
 <p>1999 年 10 月 11 日，由康柏、惠普、IBM、英特尔和微软等多家科技公司组成的可信计算平台联盟（Trusted Computing Platform Alliance，TCPA）成立，旨在促进个人计算平台的信任和安全。2003 年，TCPA 被 TCG（Trusted Computing Group）取代。</p>
-<p>TCG 最广为流传的贡献就是颁布了 TPM 的硬件规范，提出了 PCR 和 Measured Boot 等概念，把计算平台可信变成可度量（measure）、可记录（log）、可证明（prove）的标准。但是 TPM 并不能阻止未经授权的代码执行，这需要额外的机制来实现。</p>
+<p>TCG 最广为流传的贡献就是颁布了 TPM 的硬件规范，提出了 PCR 和 Measured Boot 等概念，把计算平台可信变成可测量（measure）、可记录、可证明的标准。但是 TPM 并不能阻止未经授权的代码执行，这需要额外的机制来实现。</p>
 <p>2011 年 4 月，UEFI 2.3.1 规范发布，规范定义了 Secure Boot 机制，使得 UEFI 固件下的计算平台，可以保证在 DXE 和 BDS 阶段加载安全可信的驱动和 Bootloader，从而阻止未经授权的驱动和 Bootloader 执行。但是 Secure Boot 并不能保证在 UEFI 的早期阶段，比如 SEC 和 PEI 阶段执行的固件是可信的。</p>
 <p>随着 2013 年 Intel 4th Gen Core 支持 Intel Boot Guard 和 2017 年 AMD EPYC 7001 支持 AMD Platform Secure Boot，x86 平台下的固件以 Intel/AMD silicon Root of Trust 为根，对 OEM（Original Equipment Manufacturer，原始设备制造商）授权的 Firmware 建立硬件根植的认证链，其中通常包含了 UEFI 的 SEC 和 PEI 阶段，补齐了 Secure Boot 的不足。</p>
-<p>至此，现代 x86 平台可以由 Intel/AMD 提供的 silicon hardware Root of Trust 验证 OEM 授权的早期平台固件，再由平台固件通过 UEFI Secure Boot 将信任链延伸至 OS Bootloader。与此同时，TPM Measured Boot 可以对启动过程进行度量、记录和证明，从而形成硬件根植的 Verified Boot + Measured Boot 的分层启动安全体系。</p>
+<p>至此，现代 x86 平台可以由 Intel/AMD 提供的 silicon hardware Root of Trust 验证 OEM 授权的早期平台固件，再由平台固件通过 UEFI Secure Boot 将信任链延伸至 OS Bootloader。与此同时，TPM Measured Boot 可以对启动过程进行测量、记录和证明，从而形成硬件根植的 Verified Boot + Measured Boot 的分层启动安全体系。</p>
 <h5 id="uefi-bg-psb">BG &amp; PSB<a class="headerlink" href="#uefi-bg-psb" title="Permanent link">&para;</a></h5>
 <p>BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器在固件执行前对固件进行签名验证的具体实现，并不局限于 UEFI 固件（比如 coreboot），但是实践上通常覆盖 UEFI 的 SEC 和 PEI 阶段。</p>
 <p>在实现上，Intel Boot Guard 运行在 CPU 执行复位向量所在固件代码之前，由 x86 主核心执行：</p>
@@ -3894,7 +3894,103 @@
 <a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">            </span><span class="nv">C</span><span class="o">=</span>US,<span class="w"> </span><span class="nv">ST</span><span class="o">=</span>Washington,<span class="w"> </span><span class="nv">L</span><span class="o">=</span>Redmond,<span class="w"> </span><span class="nv">O</span><span class="o">=</span>Microsoft<span class="w"> </span>Corporation,<span class="w"> </span><span class="nv">CN</span><span class="o">=</span>Microsoft<span class="w"> </span>Root<span class="w"> </span>Certificate<span class="w"> </span>Authority<span class="w"> </span><span class="m">2010</span>
 </code></pre></div>
 <p>最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 <code>bootmgfw.efi</code> 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。</p>
-<h5 id="tpm">TPM<a class="headerlink" href="#tpm" title="Permanent link">&para;</a></h5>
+<h5 id="uefi-tpm">TPM<a class="headerlink" href="#uefi-tpm" title="Permanent link">&para;</a></h5>
+<p>TPM（Trusted Platform Module）是 TCG 发布的一种安全芯片的规范标准<sup id="fnref:tpm-spec"><a class="footnote-ref" href="#fn:tpm-spec">3</a></sup>，不同于 BG &amp; PSB 和 Secure Boot 在计算机启动过程中主要用于验证（verify）固件、驱动和 Bootloader 是否安全可信，TPM 在计算机启动过程中的主要作用是测量（measure）启动过程，即记录并证明系统启动过程中每一阶段都实际执行的逻辑。</p>
+<p>TPM 芯片内置多个 PCR（Platform Configuration Register）寄存器，按照 PC Client Platform TPM Profile (PTP) 规范<sup id="fnref:tpm-pc-client-ptp-spec"><a class="footnote-ref" href="#fn:tpm-pc-client-ptp-spec">4</a></sup>要求至少为 24 个。按照每个 PCR 所能记录的 hash 类型，各个 PCR 又会被划分到一个或多个 bank 中，并根据 hash 的位宽决定 PCR 在该 bank 中的位宽，同一编号的 PCR 在不同 bank 里存放独立副本。</p>
+<p>在 Linux 中，可以使用 <code>tpm2-tools</code> 包里的 <code>tpm2_getcap</code> 命令查看所有 PCR 能记录的 hash 类型和所在的 bank，比如，一个常见的情况是，所有 PCR 都只能记录 sha256 类型的 hash：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>sudo<span class="w"> </span>tpm2_getcap<span class="w"> </span>pcrs
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>selected-pcrs:
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>-<span class="w"> </span>sha1:<span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">]</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>-<span class="w"> </span>sha256:<span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="m">0</span>,<span class="w"> </span><span class="m">1</span>,<span class="w"> </span><span class="m">2</span>,<span class="w"> </span><span class="m">3</span>,<span class="w"> </span><span class="m">4</span>,<span class="w"> </span><span class="m">5</span>,<span class="w"> </span><span class="m">6</span>,<span class="w"> </span><span class="m">7</span>,<span class="w"> </span><span class="m">8</span>,<span class="w"> </span><span class="m">9</span>,<span class="w"> </span><span class="m">10</span>,<span class="w"> </span><span class="m">11</span>,<span class="w"> </span><span class="m">12</span>,<span class="w"> </span><span class="m">13</span>,<span class="w"> </span><span class="m">14</span>,<span class="w"> </span><span class="m">15</span>,<span class="w"> </span><span class="m">16</span>,<span class="w"> </span><span class="m">17</span>,<span class="w"> </span><span class="m">18</span>,<span class="w"> </span><span class="m">19</span>,<span class="w"> </span><span class="m">20</span>,<span class="w"> </span><span class="m">21</span>,<span class="w"> </span><span class="m">22</span>,<span class="w"> </span><span class="m">23</span><span class="w"> </span><span class="o">]</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>-<span class="w"> </span>sha384:<span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">]</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span>-<span class="w"> </span>sm3_256:<span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="o">]</span>
+</code></pre></div>
+<p>使用 <code>tpm2_pcrread</code> 命令查看所有 PCR 在所有 bank 下的 hash，比如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>$<span class="w"> </span>sudo<span class="w"> </span>tpm2_pcrread<span class="w">    </span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span>sha1:
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>sha256:
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="m">0</span><span class="w"> </span>:<span class="w"> </span>0x6EF0C2C29B70A4B1B24DC1FA74B5AC7D7D8CB36CD9D642B96317BAD364A069C7
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="m">1</span><span class="w"> </span>:<span class="w"> </span>0x39296297D67B7F16E53A6D512CA12795730A6BF8ED1AE26143A8A2962F2D4B90
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="m">2</span><span class="w"> </span>:<span class="w"> </span>0x2DE29845CCDA143E9F51897392CDE84B887E1C53081E58A90A317C8E8EFE6A93
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="m">3</span><span class="w"> </span>:<span class="w"> </span>0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="m">4</span><span class="w"> </span>:<span class="w"> </span>0x2C3AF9A67BFAD61BD5A8AA32C9DD8BFE3BD1E601C8BBA4A08C9C577ED0E9FA44
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="m">5</span><span class="w"> </span>:<span class="w"> </span>0x40F2E33152C3E114DD91ED099EDBC0A6AC6F1B2003BDF1E74E88A5B116BFC39E
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="m">6</span><span class="w"> </span>:<span class="w"> </span>0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="m">7</span><span class="w"> </span>:<span class="w"> </span>0xE981F56BA5EBC25D0DD51B6C60F2F08EA5A68CBACBB310DC028718CC4FF1122B
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="m">8</span><span class="w"> </span>:<span class="w"> </span>0xEF01770DBBCC7D64F11A6E9EC115F4B506087787D34988EEEE592B576CB50002
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">    </span><span class="m">9</span><span class="w"> </span>:<span class="w"> </span>0x1DBB88C4B66FEAEB5A3D6227C803540D1FADE64893E3BE83BBDF61A551164F84
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="m">10</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">    </span><span class="m">11</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="m">12</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">    </span><span class="m">13</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="m">14</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">    </span><span class="m">15</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="m">16</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">    </span><span class="m">17</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">    </span><span class="m">18</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">    </span><span class="m">19</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">    </span><span class="m">20</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">    </span><span class="m">21</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">    </span><span class="m">22</span>:<span class="w"> </span>0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">    </span><span class="m">23</span>:<span class="w"> </span>0x0000000000000000000000000000000000000000000000000000000000000000
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="w">  </span>sha384:
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="w">  </span>sm3_256:
+</code></pre></div>
+<p>这些 PCR 的作用就是按阶段证明计算机启动过程。</p>
+<p>除了上电重置和少数专用于动态测量或调试的 PCR 以外，在计算机运行的任何时刻，计算机对于其他每个 PCR 都只能通过一个 Extend 操作来更新值，等价于以下逻辑：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">Extend</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">PCR</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="n">PCR</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">||</span> <span class="n">data</span><span class="p">)</span>
+</code></pre></div>
+<p>即每次 Extend 操作只能将输入和 PCR 里的旧值拼在一起重新做一次 hash 作为新值更新 PCR。</p>
+<p>这样做就会带来一个很好的性质：在经过若干次 Extend 操作后，PCR 最终的值一定能够标识整个 Extend 操作过程，在使用的哈希函数具备抗碰撞性的前提下，计算上无法伪造一个不同的 Extend 操作过程得到同样的最终 PCR 值。</p>
+<p>而在计算机启动过程中，Firmware、Bootloader 和 Kernel 阶段都会在每次执行其内部一个阶段前就调用 Extend，输入和这个阶段相关的信息（比如整个阶段的代码的 hash、相关配置文件的 hash 等等），更新一下 PCR，这样 PCR 的上述性质就保证了 PCR 最终的值一定能够代表从 Firmware 到 Kernel 阶段的整个启动过程 —— 如果在启动过程中某个阶段的代码或配置文件等信息发生变更，就会导致 Extend 输入的相关信息变化，最终导致 PCR 最终的值变化。</p>
+<p>实际上，如果只需要标识整个启动过程是否执行了和之前不一样的逻辑，那么其实只需要一个 PCR 就能实现，但是在某些特殊应用场景下，比如使用了 LUKS 和 BitLocker 全盘加密并配有自动解密的情况下，我们只需要验证到某个阶段时，计算机是否执行了和之前完全相同的逻辑，此时我们就需要多个 PCR 来存放用于标识从上电到某个阶段的启动过程的值。除此之外，多个 PCR 也有助于系统启动后排查具体哪个阶段的启动过程出现变化。</p>
+<p>因此，PC Client Specific Platform Firmware Profile (PFP) 规范<sup id="fnref:tpm-pc-client-pfp-spec"><a class="footnote-ref" href="#fn:tpm-pc-client-pfp-spec">5</a></sup>具体定义了这些 PCR 应当记录的内容：</p>
+<ul>
+<li>PCR0: SRTM, BIOS, Host Platform Extensions, Embedded Option ROMs and PI Drivers</li>
+<li>PCR1: Host Platform Configuration</li>
+<li>...</li>
+<li>PCR7: Secure Boot Policy</li>
+<li>PCR8-15: Defined for use by the Static OS</li>
+</ul>
+<p>其中 PCR0 对应于前文所讨论的 BG &amp; PSB 阶段，而 PCR7 对应于前文所讨论的 Secure Boot 阶段。</p>
+<p>通常，在计算机启动过程中，Firmware、Bootloader 和 Kernel 在更新 PCR 的同时，还会维护一个 Event Log，用于记录每次 Extend 操作时输入的数据到底是如何得到的（这个阶段被测量了什么？）。Event Log 同样是由 PC Client Specific Platform Firmware Profile (PFP) 规范定义的，需要注意的是，Event Log 是明文存储的，不放在 TPM 芯片内，因此有篡改风险。</p>
+<p>在 Linux 中，可以使用 <code>tpm2_eventlog</code> 读取存放在 <code>/sys/kernel/security/tpm0/binary_bios_measurements</code> 中的 Event Log：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>$<span class="w"> </span>sudo<span class="w"> </span>tpm2_eventlog<span class="w"> </span>/sys/kernel/security/tpm0/binary_bios_measurements
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>---
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>version:<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>events:
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>-<span class="w"> </span>EventNum:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span>PCRIndex:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span>EventType:<span class="w"> </span>EV_NO_ACTION
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span>Digest:<span class="w"> </span><span class="s2">&quot;0000000000000000000000000000000000000000&quot;</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span>EventSize:<span class="w"> </span><span class="m">33</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span>SpecID:
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span>-<span class="w"> </span>Signature:<span class="w"> </span>Spec<span class="w"> </span>ID<span class="w"> </span>Event03
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span>platformClass:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span>specVersionMinor:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span>specVersionMajor:<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">    </span>specErrata:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">    </span>uintnSize:<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">    </span>numberOfAlgorithms:<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span>Algorithms:
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span>-<span class="w"> </span>Algorithm<span class="o">[</span><span class="m">0</span><span class="o">]</span>:
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">      </span>algorithmId:<span class="w"> </span>sha256
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">      </span>digestSize:<span class="w"> </span><span class="m">32</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">    </span>vendorInfoSize:<span class="w"> </span><span class="m">0</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>-<span class="w"> </span>...
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>-<span class="w"> </span>EventNum:<span class="w"> </span><span class="m">139</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">  </span>PCRIndex:<span class="w"> </span><span class="m">5</span>
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">  </span>EventType:<span class="w"> </span>EV_EFI_ACTION
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">  </span>DigestCount:<span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="w">  </span>Digests:
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="w">  </span>-<span class="w"> </span>AlgorithmId:<span class="w"> </span>sha256
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="w">    </span>Digest:<span class="w"> </span><span class="s2">&quot;b54f7542cbd872a81a9d9dea839b2b8d747c7ebd5ea6615c40f42f44a6dbeba0&quot;</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">  </span>EventSize:<span class="w"> </span><span class="m">40</span>
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="w">  </span>Event:<span class="w"> </span><span class="p">|</span>-
+<a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="w">    </span>Exit<span class="w"> </span>Boot<span class="w"> </span>Services<span class="w"> </span>Returned<span class="w"> </span>with<span class="w"> </span>Success
+</code></pre></div>
+<p>Event Log 的主要作用是为每一个 Extend 操作提供对应的明文解释，从而让原本不可读的 PCR 数值变得可以被解释和逐项核对。它的核心用途是配合 TPM 签名的 PCR Quote 做重放校验，支撑远程认证（判断启动过程中具体哪个阶段发生了变化）。此外，它也可以直接被本机管理员用于事后审计和故障排查。</p>
 <h2 id="bootloader">Bootloader<a class="headerlink" href="#bootloader" title="Permanent link">&para;</a></h2>
 <p>Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U 盘、光盘等）的特定位置（如 MBR、GPT 分区表中的 EFI System Partition 等）中，负责加载操作系统内核到内存，并将控制权移交给 Kernel。</p>
 <p>通常，对于 Linux 系统来说，Bootloader 还需要将 initrd / initramfs（初始内存盘）加载到内存，并将相关信息（如内核命令行参数、initramfs 的位置等）传递给 Kernel，里面包含了内核启动所需的各种驱动和工具，帮助内核完成系统的初始化过程。</p>
@@ -3906,7 +4002,7 @@
 </div>
 <div class="admonition note">
 <p class="admonition-title">常见内核命令行参数</p>
-<p>内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置<sup id="fnref:special-command-line-options"><a class="footnote-ref" href="#fn:special-command-line-options">3</a></sup>。</p>
+<p>内核命令行参数（Kernel Command-line Parameters）是 Bootloader 和 Kernel 之间通信的重要手段，通常用于控制内核的行为和系统启动过程，比如启用某些内核模块；也有少量特殊参数用于控制 Bootloader 的行为，比如控制内核的内存的结束位置，进而影响 initrd 被放置的位置<sup id="fnref:special-command-line-options"><a class="footnote-ref" href="#fn:special-command-line-options">6</a></sup>。</p>
 <p>对于内核不认识的内核参数，比如 Systemd 的 <code>systemd.unit=...</code> 和 LILO/GRUB 传递的 <code>BOOT_IMAGE=...</code> 等自定义参数，内核会按照以下规则进行处理：</p>
 <ul>
 <li>如果参数起始字符为 <code>BOOT_IMAGE=</code> 或 <code>kexec</code>：认为是 Bootloader 传过来的参数，忽略</li>
@@ -3917,8 +4013,8 @@
 <p>具体执行的代码逻辑位于 <code>init/main.c</code> 的 <a href="https://elixir.bootlin.com/linux/v6.19/source/init/main.c#L544"><code>unknown_bootoption</code></a> 函数。</p>
 <p>除此之外，<code>--</code> 之后的所有命令行参数都会作为命令行参数传给 init 进程。</p>
 <p>不论内核如何处理命令行参数，在进入系统后，所有程序都可以通过查看 <code>/proc/cmdline</code> 文件来获取当前内核的所有命令行参数，例如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>$<span class="w"> </span>cat<span class="w"> </span>/proc/cmdline<span class="w"> </span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nv">BOOT_IMAGE</span><span class="o">=</span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>eea8de7e-b37f-4b3b-b530-1003eeab9746<span class="w"> </span>rw<span class="w"> </span><span class="nv">rootflags</span><span class="o">=</span><span class="nv">subvol</span><span class="o">=</span>@<span class="w"> </span><span class="nv">loglevel</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>nowatchdog<span class="w"> </span><span class="nv">intel_iommu</span><span class="o">=</span>on<span class="w"> </span><span class="nv">iommu</span><span class="o">=</span>pt
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>$<span class="w"> </span>cat<span class="w"> </span>/proc/cmdline<span class="w"> </span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nv">BOOT_IMAGE</span><span class="o">=</span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>eea8de7e-b37f-4b3b-b530-1003eeab9746<span class="w"> </span>rw<span class="w"> </span><span class="nv">rootflags</span><span class="o">=</span><span class="nv">subvol</span><span class="o">=</span>@<span class="w"> </span><span class="nv">loglevel</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>nowatchdog<span class="w"> </span><span class="nv">intel_iommu</span><span class="o">=</span>on<span class="w"> </span><span class="nv">iommu</span><span class="o">=</span>pt
 </code></pre></div>
 <p>一些常见的内核命令行参数如下所示：</p>
 <ul>
@@ -3952,7 +4048,7 @@
 例如，许多较旧的分区软件会将第一个分区的开始位置设置为 LBA 32（16 KiB），甚至 LBA 1（紧跟 MBR 后）。</p>
 <p>如下图 Example 2 所示，因为 GPT 分区表占据了 MBR 后的空间，约定俗成的「预留 1 MiB 空间」的规定被打破了，因此 GRUB 的 <code>core.img</code> 就被存放在一个单独的名为 BIOS_grub 的 1 MiB 的分区中。</p>
 <p><img alt="GRUB 在 BIOS 启动模式下的分区布局示例" src="../../images/grub-bios-partition-layout.jpg" /></p>
-<p class="caption">GRUB 在 BIOS 启动模式下的分区布局示例<sup id="fnref:grub-bios-partition-layout"><a class="footnote-ref" href="#fn:grub-bios-partition-layout">4</a></sup></p>
+<p class="caption">GRUB 在 BIOS 启动模式下的分区布局示例<sup id="fnref:grub-bios-partition-layout"><a class="footnote-ref" href="#fn:grub-bios-partition-layout">7</a></sup></p>
 <p>在 UEFI 启动模式下，GRUB 通常位于 EFI 系统分区的 <code>\EFI\debian\grubx64.efi</code> 位置。其他发行版也可能为中间一层目录使用其他名称，例如 <code>\EFI\ubuntu\grubx64.efi</code>。</p>
 <p>如下图的 Example 1 所示，GRUB 不再使用 <code>boot.img</code> 和 <code>core.img</code> 分阶段加载的方式，而是直接通过 <code>/EFI/arch/grubx64.efi</code> 这个单一的文件被 UEFI 加载执行。</p>
 <p><img alt="GRUB 在 UEFI 启动模式下的分区布局示例" src="../../images/grub-uefi-partition-layout.jpg" /></p>
@@ -3964,47 +4060,47 @@
 <p>GRUB Console 是 GRUB 提供的交互式命令行界面，类似于 Linux 中的 Shell，提供了一些基本的命令用于手动加载和引导内核。需要注意的是，GRUB Console 本身并不是严格意义上的 Unix Shell，一些常见的功能，比如管道（<code>|</code>）和重定向（<code>&gt;</code>）等是无法使用的。</p>
 <p>进入 GRUB Console 的方法是在 GRUB 启动界面按下 <code>c</code> 键，或者在 GRUB 启动界面按下 <code>c</code> 键进入编辑模式后按下 <code>Ctrl + C</code> 键。</p>
 <p>进入 GRUB Console 后，你可以使用 <code>ls</code> 命令来查看 GRUB 可以访问的设备和分区：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="o">(</span>proc<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt3<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="o">(</span>proc<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd0,gpt3<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt2<span class="o">)</span><span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
 </code></pre></div>
 <p>而使用 <code>ls -l</code> 或者 <code>ls</code> 某一项来详细查看每个磁盘和分区的具体信息：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>-l
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Device<span class="w"> </span>proc:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>procfs<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>0KiB
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Device<span class="w"> </span>hd0:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>488386584KiB
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt3:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span><span class="m">470631811</span>.5KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">17754739</span>.5KiB
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt2:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Label<span class="w"> </span><span class="s1">&#39;root&#39;</span><span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-03-21<span class="w"> </span><span class="m">12</span>:46:39<span class="w"> </span>Saturday,<span class="w"> </span>UUID<span class="w"> </span>093a7ce2-f355-409c-b8a9-00301Bdc75ce<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1058624KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">469581187</span>.5KiB
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span><span class="m">2703</span>-3208<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>2048KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>Device<span class="w"> </span>hd1:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>976762584KiB
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt2:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1049600KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>8388608KiB
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span>FB74-5D11<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1024KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>-l
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>Device<span class="w"> </span>proc:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>procfs<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>0KiB
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Device<span class="w"> </span>hd0:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>488386584KiB
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt3:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span><span class="m">470631811</span>.5KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">17754739</span>.5KiB
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt2:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Label<span class="w"> </span><span class="s1">&#39;root&#39;</span><span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-03-21<span class="w"> </span><span class="m">12</span>:46:39<span class="w"> </span>Saturday,<span class="w"> </span>UUID<span class="w"> </span>093a7ce2-f355-409c-b8a9-00301Bdc75ce<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1058624KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span><span class="m">469581187</span>.5KiB
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span>Partition<span class="w"> </span>hd0,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span><span class="m">2703</span>-3208<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>2048KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>Device<span class="w"> </span>hd1:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Sector<span class="w"> </span>size<span class="w"> </span>512B<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>976762584KiB
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt2:<span class="w"> </span>No<span class="w"> </span>known<span class="w"> </span>filesystem<span class="w"> </span>detected<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1049600KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>8388608KiB
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt1:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>fat,<span class="w"> </span>UUID<span class="w"> </span>FB74-5D11<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>1024KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>1048576KiB
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span>Partition<span class="w"> </span>hd1,gpt3:<span class="w"> </span>Filesystem<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ext*<span class="w"> </span>-<span class="w"> </span>Last<span class="w"> </span>modification<span class="w"> </span><span class="nb">time</span><span class="w"> </span><span class="m">2026</span>-05-11<span class="w"> </span><span class="m">12</span>:06:19<span class="w"> </span>Monday,<span class="w"> </span>UUID<span class="w"> </span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>-<span class="w"> </span>Partition<span class="w"> </span>start<span class="w"> </span>at<span class="w"> </span>9430200KiB<span class="w"> </span>-<span class="w"> </span>Total<span class="w"> </span>size<span class="w"> </span>967323640KiB
 </code></pre></div>
 <p>从输出可以看出，这台机器上有两块磁盘（hd0 和 hd1），每块磁盘上都有一个 EFI 系统分区（hd0,gpt1 和 hd1,gpt1），一个 swap 分区（hd0,gpt3 和 hd1,gpt2，因为没有文件系统所以是未知文件系统），以及一个 ext4 分区（hd0,gpt2 和 hd1,gpt3，作为各自的根分区）。</p>
 <p>你还可以通过 <code>ls</code> 查看每个分区内的文件，比如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/efi
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>arch/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt1<span class="o">)</span>/efi
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>arch/
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>/
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>lost+found/<span class="w"> </span>boot/<span class="w"> </span>var/<span class="w"> </span>dev/<span class="w"> </span>run/<span class="w"> </span>etc/<span class="w"> </span>tmp/<span class="w"> </span>sys/<span class="w"> </span>proc/<span class="w"> </span>usr/<span class="w"> </span>bin<span class="w"> </span>home/<span class="w"> </span>lib<span class="w"> </span>lib64<span class="w"> </span>mnt/<span class="w"> </span>opt/<span class="w"> </span>root/<span class="w"> </span>sbin<span class="w"> </span>srv/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span><span class="o">(</span>hd1,gpt3<span class="o">)</span>/
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>lost+found/<span class="w"> </span>boot/<span class="w"> </span>var/<span class="w"> </span>dev/<span class="w"> </span>run/<span class="w"> </span>etc/<span class="w"> </span>tmp/<span class="w"> </span>sys/<span class="w"> </span>proc/<span class="w"> </span>usr/<span class="w"> </span>bin<span class="w"> </span>home/<span class="w"> </span>lib<span class="w"> </span>lib64<span class="w"> </span>mnt/<span class="w"> </span>opt/<span class="w"> </span>root/<span class="w"> </span>sbin<span class="w"> </span>srv/
 </code></pre></div>
 <p>就像在 Linux 中一样，这样可以方便你找到内核文件和根分区所在的位置，从而方便接下来的手动引导。</p>
 <p>为了引导内核，首先你需要找到你要启动的内核文件和 initramfs 文件所在的分区，比如，在上面的示例中，我想要加载 <code>vmlinuz-linux-cachyos</code> 这个内核文件和 <code>initramfs-linux-cachyos.img</code> 这个 initramfs 文件，那么它们所在的分区就是 <code>(hd1,gpt1)</code>。</p>
 <p>此时，你需要设置 <code>root</code> 环境变量为该分区：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
 </code></pre></div>
 <p>这样，文件路径的默认分区就会变成 <code>(hd1,gpt1)</code>，比如：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>/
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>grub&gt;<span class="w"> </span>ls<span class="w"> </span>/
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>intel-ucode.img<span class="w"> </span>vmlinuz-linux-cachyos<span class="w"> </span>grub/<span class="w"> </span>efi/<span class="w"> </span>initramfs-linux-cachyos.img
 </code></pre></div>
 <p>之后指定内核文件的时候也不需要加上指定分区的前缀。</p>
 <p>接着，你需要加载内核文件，并提供内核参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
 </code></pre></div>
 <p>其中：</p>
 <ul>
@@ -4014,17 +4110,17 @@
 </ul>
 <p>你也可以加上 <code>loglevel=5 nowatchdog</code> 等常见参数，就像在 <code>/etc/default/grub</code> 中的 <code>GRUB_CMDLINE_LINUX_DEFAULT</code> 变量中所设置的那样。</p>
 <p>然后，你需要加载 initramfs 文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
 </code></pre></div>
 <p>其中，<code>/initramfs-linux-cachyos.img</code> 是 initramfs 文件在 <code>(hd1,gpt1)</code> 中的路径。</p>
 <p>最后，你就可以通过 <code>boot</code> 命令来启动内核了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>grub&gt;<span class="w"> </span>boot
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>grub&gt;<span class="w"> </span>boot
 </code></pre></div>
 <p>做个总结，完整的通过 GRUB Console 启动内核的命令如下所示：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>grub&gt;<span class="w"> </span>boot
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>grub&gt;<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">root</span><span class="o">=(</span>hd1,gpt1<span class="o">)</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>grub&gt;<span class="w"> </span>linux<span class="w"> </span>/vmlinuz-linux-cachyos<span class="w"> </span><span class="nv">root</span><span class="o">=</span><span class="nv">UUID</span><span class="o">=</span>bfa1b11e-bcbb-4864-8752-b3718fc5b6e5<span class="w"> </span>rw
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>grub&gt;<span class="w"> </span>initrd<span class="w"> </span>/initramfs-linux-cachyos.img
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>grub&gt;<span class="w"> </span>boot
 </code></pre></div>
 <p>而为了能够填写正确的信息，则需要善用 <code>ls</code> 命令来进行查询。</p>
 <p>除此之外，GRUB Console 还提供了其他许多实用命令，比如，<code>search</code> 命令可以用来搜索指定文件或者分区，<code>insmod</code> 命令可以用来加载 GRUB 模块，<code>configfile</code> 命令可以用来加载一个新的 <code>grub.cfg</code> 文件等等。更多命令的使用方法可以参考 <a href="https://www.gnu.org/software/grub/manual/grub/grub.html">GRUB Manual</a>。</p>
@@ -4096,11 +4192,20 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:uefi-spec">
 <p><a href="https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf">https://uefi.org/sites/default/files/resources/UEFI_Spec_Final_2.11.pdf</a>&#160;<a class="footnote-backref" href="#fnref:uefi-spec" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
+<li id="fn:tpm-spec">
+<p><a href="https://trustedcomputinggroup.org/resource/tpm-library-specification/">https://trustedcomputinggroup.org/resource/tpm-library-specification/</a>&#160;<a class="footnote-backref" href="#fnref:tpm-spec" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:tpm-pc-client-ptp-spec">
+<p><a href="https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/">https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/</a>&#160;<a class="footnote-backref" href="#fnref:tpm-pc-client-ptp-spec" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:tpm-pc-client-pfp-spec">
+<p><a href="https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification/">https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification/</a>&#160;<a class="footnote-backref" href="#fnref:tpm-pc-client-pfp-spec" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
 <li id="fn:special-command-line-options">
-<p><a href="https://docs.kernel.org/arch/x86/boot.html#special-command-line-options">https://docs.kernel.org/arch/x86/boot.html#special-command-line-options</a>&#160;<a class="footnote-backref" href="#fnref:special-command-line-options" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+<p><a href="https://docs.kernel.org/arch/x86/boot.html#special-command-line-options">https://docs.kernel.org/arch/x86/boot.html#special-command-line-options</a>&#160;<a class="footnote-backref" href="#fnref:special-command-line-options" title="Jump back to footnote 6 in the text">&#8617;</a></p>
 </li>
 <li id="fn:grub-bios-partition-layout">
-<p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+<p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 7 in the text">&#8617;</a></p>
 </li>
 </ol>
 </div>
@@ -4124,7 +4229,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月8日 12:52:01 UTC">2026年8月8日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月8日 16:23:49 UTC">2026年8月8日</span>
   </span>
 
     
@@ -4143,6 +4248,16 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
+          
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
+        </a>
+      
+        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
+          
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+        </a>
+      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
@@ -4151,11 +4266,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
-          
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
         </a>
       
       
