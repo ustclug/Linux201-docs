@@ -111,13 +111,13 @@ UEFI 设置实用程序
 
 1999 年 10 月 11 日，由康柏、惠普、IBM、英特尔和微软等多家科技公司组成的可信计算平台联盟（Trusted Computing Platform Alliance，TCPA）成立，旨在促进个人计算平台的信任和安全。2003 年，TCPA 被 TCG（Trusted Computing Group）取代。
 
-TCG 最广为流传的贡献就是颁布了 TPM 的硬件规范，提出了 PCR 和 Measured Boot 等概念，把计算平台可信变成可度量（measure）、可记录（log）、可证明（prove）的标准。但是 TPM 并不能阻止未经授权的代码执行，这需要额外的机制来实现。
+TCG 最广为流传的贡献就是颁布了 TPM 的硬件规范，提出了 PCR 和 Measured Boot 等概念，把计算平台可信变成可测量（measure）、可记录、可证明的标准。但是 TPM 并不能阻止未经授权的代码执行，这需要额外的机制来实现。
 
 2011 年 4 月，UEFI 2.3.1 规范发布，规范定义了 Secure Boot 机制，使得 UEFI 固件下的计算平台，可以保证在 DXE 和 BDS 阶段加载安全可信的驱动和 Bootloader，从而阻止未经授权的驱动和 Bootloader 执行。但是 Secure Boot 并不能保证在 UEFI 的早期阶段，比如 SEC 和 PEI 阶段执行的固件是可信的。
 
 随着 2013 年 Intel 4th Gen Core 支持 Intel Boot Guard 和 2017 年 AMD EPYC 7001 支持 AMD Platform Secure Boot，x86 平台下的固件以 Intel/AMD silicon Root of Trust 为根，对 OEM（Original Equipment Manufacturer，原始设备制造商）授权的 Firmware 建立硬件根植的认证链，其中通常包含了 UEFI 的 SEC 和 PEI 阶段，补齐了 Secure Boot 的不足。
 
-至此，现代 x86 平台可以由 Intel/AMD 提供的 silicon hardware Root of Trust 验证 OEM 授权的早期平台固件，再由平台固件通过 UEFI Secure Boot 将信任链延伸至 OS Bootloader。与此同时，TPM Measured Boot 可以对启动过程进行度量、记录和证明，从而形成硬件根植的 Verified Boot + Measured Boot 的分层启动安全体系。
+至此，现代 x86 平台可以由 Intel/AMD 提供的 silicon hardware Root of Trust 验证 OEM 授权的早期平台固件，再由平台固件通过 UEFI Secure Boot 将信任链延伸至 OS Bootloader。与此同时，TPM Measured Boot 可以对启动过程进行测量、记录和证明，从而形成硬件根植的 Verified Boot + Measured Boot 的分层启动安全体系。
 
 ##### BG & PSB {#uefi-bg-psb}
 
@@ -238,7 +238,130 @@ db: List 4, type X509
 
 最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 `bootmgfw.efi` 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。
 
-##### TPM
+##### TPM {#uefi-tpm}
+
+TPM（Trusted Platform Module）是 TCG 发布的一种安全芯片的规范标准[^tpm-spec]，不同于 BG & PSB 和 Secure Boot 在计算机启动过程中主要用于验证（verify）固件、驱动和 Bootloader 是否安全可信，TPM 在计算机启动过程中的主要作用是测量（measure）启动过程，即记录并证明系统启动过程中每一阶段都实际执行的逻辑。
+
+TPM 芯片内置多个 PCR（Platform Configuration Register）寄存器，按照 PC Client Platform TPM Profile (PTP) 规范[^tpm-pc-client-ptp-spec]要求至少为 24 个。按照每个 PCR 所能记录的 hash 类型，各个 PCR 又会被划分到一个或多个 bank 中，并根据 hash 的位宽决定 PCR 在该 bank 中的位宽，同一编号的 PCR 在不同 bank 里存放独立副本。
+
+[^tpm-spec]: <https://trustedcomputinggroup.org/resource/tpm-library-specification/>
+[^tpm-pc-client-ptp-spec]: <https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/>
+
+在 Linux 中，可以使用 `tpm2-tools` 包里的 `tpm2_getcap` 命令查看所有 PCR 能记录的 hash 类型和所在的 bank，比如，一个常见的情况是，所有 PCR 都只能记录 sha256 类型的 hash：
+
+```bash
+$ sudo tpm2_getcap pcrs
+selected-pcrs:
+  - sha1: [ ]
+  - sha256: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 ]
+  - sha384: [ ]
+  - sm3_256: [ ]
+```
+
+使用 `tpm2_pcrread` 命令查看所有 PCR 在所有 bank 下的 hash，比如：
+
+```bash
+$ sudo tpm2_pcrread    
+  sha1:
+  sha256:
+    0 : 0x6EF0C2C29B70A4B1B24DC1FA74B5AC7D7D8CB36CD9D642B96317BAD364A069C7
+    1 : 0x39296297D67B7F16E53A6D512CA12795730A6BF8ED1AE26143A8A2962F2D4B90
+    2 : 0x2DE29845CCDA143E9F51897392CDE84B887E1C53081E58A90A317C8E8EFE6A93
+    3 : 0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+    4 : 0x2C3AF9A67BFAD61BD5A8AA32C9DD8BFE3BD1E601C8BBA4A08C9C577ED0E9FA44
+    5 : 0x40F2E33152C3E114DD91ED099EDBC0A6AC6F1B2003BDF1E74E88A5B116BFC39E
+    6 : 0x3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969
+    7 : 0xE981F56BA5EBC25D0DD51B6C60F2F08EA5A68CBACBB310DC028718CC4FF1122B
+    8 : 0xEF01770DBBCC7D64F11A6E9EC115F4B506087787D34988EEEE592B576CB50002
+    9 : 0x1DBB88C4B66FEAEB5A3D6227C803540D1FADE64893E3BE83BBDF61A551164F84
+    10: 0x0000000000000000000000000000000000000000000000000000000000000000
+    11: 0x0000000000000000000000000000000000000000000000000000000000000000
+    12: 0x0000000000000000000000000000000000000000000000000000000000000000
+    13: 0x0000000000000000000000000000000000000000000000000000000000000000
+    14: 0x0000000000000000000000000000000000000000000000000000000000000000
+    15: 0x0000000000000000000000000000000000000000000000000000000000000000
+    16: 0x0000000000000000000000000000000000000000000000000000000000000000
+    17: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    18: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    19: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    20: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    21: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    22: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    23: 0x0000000000000000000000000000000000000000000000000000000000000000
+  sha384:
+  sm3_256:
+```
+
+这些 PCR 的作用就是按阶段证明计算机启动过程。
+
+除了上电重置和少数专用于动态测量或调试的 PCR 以外，在计算机运行的任何时刻，计算机对于其他每个 PCR 都只能通过一个 Extend 操作来更新值，等价于以下逻辑：
+
+```python
+def Extend(i, data):
+    PCR[i] = hash(PCR[i] || data)
+```
+
+即每次 Extend 操作只能将输入和 PCR 里的旧值拼在一起重新做一次 hash 作为新值更新 PCR。
+
+这样做就会带来一个很好的性质：在经过若干次 Extend 操作后，PCR 最终的值一定能够标识整个 Extend 操作过程，在使用的哈希函数具备抗碰撞性的前提下，计算上无法伪造一个不同的 Extend 操作过程得到同样的最终 PCR 值。
+
+而在计算机启动过程中，Firmware、Bootloader 和 Kernel 阶段都会在每次执行其内部一个阶段前就调用 Extend，输入和这个阶段相关的信息（比如整个阶段的代码的 hash、相关配置文件的 hash 等等），更新一下 PCR，这样 PCR 的上述性质就保证了 PCR 最终的值一定能够代表从 Firmware 到 Kernel 阶段的整个启动过程 —— 如果在启动过程中某个阶段的代码或配置文件等信息发生变更，就会导致 Extend 输入的相关信息变化，最终导致 PCR 最终的值变化。
+
+实际上，如果只需要标识整个启动过程是否执行了和之前不一样的逻辑，那么其实只需要一个 PCR 就能实现，但是在某些特殊应用场景下，比如使用了 LUKS 和 BitLocker 全盘加密并配有自动解密的情况下，我们只需要验证到某个阶段时，计算机是否执行了和之前完全相同的逻辑，此时我们就需要多个 PCR 来存放用于标识从上电到某个阶段的启动过程的值。除此之外，多个 PCR 也有助于系统启动后排查具体哪个阶段的启动过程出现变化。
+
+因此，PC Client Specific Platform Firmware Profile (PFP) 规范[^tpm-pc-client-pfp-spec]具体定义了这些 PCR 应当记录的内容：
+
+[^tpm-pc-client-pfp-spec]: <https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification/>
+
+- PCR0：SRTM, BIOS, Host Platform Extensions, Embedded Option ROMs and PI Drivers
+- PCR1：Host Platform Configuration
+- ...
+- PCR7：Secure Boot Policy
+- PCR8-15：Defined for use by the Static OS
+
+其中 PCR0 对应于前文所讨论的 BG & PSB 阶段，而 PCR7 对应于前文所讨论的 Secure Boot 阶段。
+
+通常，在计算机启动过程中，Firmware、Bootloader 和 Kernel 在更新 PCR 的同时，还会维护一个 Event Log，用于记录每次 Extend 操作时输入的数据到底是如何得到的（这个阶段被测量了什么？）。Event Log 同样是由 PC Client Specific Platform Firmware Profile (PFP) 规范定义的，需要注意的是，Event Log 是明文存储的，不放在 TPM 芯片内，因此有篡改风险。
+
+在 Linux 中，可以使用 `tpm2_eventlog` 读取存放在 `/sys/kernel/security/tpm0/binary_bios_measurements` 中的 Event Log：
+
+```bash
+$ sudo tpm2_eventlog /sys/kernel/security/tpm0/binary_bios_measurements
+---
+version: 1
+events:
+- EventNum: 0
+  PCRIndex: 0
+  EventType: EV_NO_ACTION
+  Digest: "0000000000000000000000000000000000000000"
+  EventSize: 33
+  SpecID:
+  - Signature: Spec ID Event03
+    platformClass: 0
+    specVersionMinor: 0
+    specVersionMajor: 2
+    specErrata: 0
+    uintnSize: 2
+    numberOfAlgorithms: 1
+    Algorithms:
+    - Algorithm[0]:
+      algorithmId: sha256
+      digestSize: 32
+    vendorInfoSize: 0
+- ...
+- EventNum: 139
+  PCRIndex: 5
+  EventType: EV_EFI_ACTION
+  DigestCount: 1
+  Digests:
+  - AlgorithmId: sha256
+    Digest: "b54f7542cbd872a81a9d9dea839b2b8d747c7ebd5ea6615c40f42f44a6dbeba0"
+  EventSize: 40
+  Event: |-
+    Exit Boot Services Returned with Success
+```
+
+Event Log 的主要作用是为每一个 Extend 操作提供对应的明文解释，从而让原本不可读的 PCR 数值变得可以被解释和逐项核对。它的核心用途是配合 TPM 签名的 PCR Quote 做重放校验，支撑远程认证（判断启动过程中具体哪个阶段发生了变化）。此外，它也可以直接被本机管理员用于事后审计和故障排查。
 
 ## Bootloader {#bootloader}
 
