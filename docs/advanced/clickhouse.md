@@ -98,43 +98,53 @@ USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命
 
 ```sql title="01-mirrors.sql"
 CREATE TABLE mirrors.access_log (
-    `timestamp` Float64,
-    `event_time` DateTime64(3, 'UTC') MATERIALIZED fromUnixTimestamp64Milli(toInt64(timestamp * 1000)),
-    `clientip` String,
+    `timestamp` Float64 CODEC(DoubleDelta, Default),
+    `event_time` DateTime64(3, 'UTC') MATERIALIZED fromUnixTimestamp64Milli(toInt64(timestamp * 1000)) CODEC(DoubleDelta, Default),
     `serverip` LowCardinality(String),
     `method` LowCardinality(String),
     `scheme` LowCardinality(String),
-    `url` String,
+    `url` String CODEC(ZSTD(3)),
     `status` UInt16,
     `size` UInt64,
     `resp_time` Float32,
     `http_host` LowCardinality(String),
-    `referer` String,
-    `user_agent` String,
-    `request_id` String DEFAULT hex(cityHash64(tuple(event_time, ip))),
+    `referer` String CODEC(ZSTD(3)),
+    `user_agent` String CODEC(ZSTD(3)),
+    `request_id` String DEFAULT hex(cityHash64(tuple(event_time, clientip))) CODEC(ZSTD(3)),
     `proto` LowCardinality(String),
     `proxied` LowCardinality(String),
+    `alpn` LowCardinality(String),
+    `clientip` IPv6 CODEC(ZSTD(1)),
     `source` LowCardinality(String) DEFAULT '',
-    `ip` IPv6 MATERIALIZED toIPv6OrDefault(clientip),
-    `repo` LowCardinality(String) MATERIALIZED extract_repo("url")
+    `repo` LowCardinality(String) MATERIALIZED extract_repo("url"),
+    `ip` IPv6 ALIAS clientip
 )
 ENGINE = ReplacingMergeTree
 PARTITION BY toDate(event_time)
-PRIMARY KEY (event_time)
+PRIMARY KEY event_time
 ORDER BY (event_time, request_id)
 SETTINGS index_granularity = 8192;
 ```
 
 这个表定义有以下几个特点：
 
+- 对于 `url`、`referer` 和 `request_id` 等长字符串列，指定 [`CODEC(ZSTD(3))`][clickhouse-codec] 压缩算法和等级节省存储空间。
+    - ClickHouse 的默认值是 LZ4，速度较快但压缩率低，所以我们换用压缩率更高的 Zstandard 算法。
 - 根据 ClickHouse 的 convention，存储时间序列数据时，将主要的时间戳列命名为 `event_time`，并使用 `DateTime64(3)` 类型存储毫秒级时间戳（或者如果只需要秒级精度时，可以使用 `DateTime`）。原始的浮点数时间戳列 `timestamp` 仍然保留，方便通过 JSON 方式导入数据。
+    - 这两列的 `CODEC` 设置为 `DoubleDelta`，可以通过记录相邻两行的二阶差值来节省存储空间。
+- `clientip` 列使用 [`IPv6` 类型][clickhouse-ipv6]存储 IP 地址，其中 IPv4 地址会被转换为 IPv4-mapped IPv6 地址（例如 `::ffff:127.0.0.1`）。
+    - 这一列利用了 ClickHouse 接受非常灵活的插入格式的特点，合法的 IPv4/IPv6 字符串在 `INSERT` 时会被自动转换。这在我们后面导入日志时非常方便，因为我们的日志是以 JSON 字符串形式存储的 IP 地址。
 - 对于 `serverip` 等取值有限的列，使用 `LowCardinality(String)` 类型节省存储空间和提高查询性能。`LowCardinality` 类型会在内部创建一个哈希字典，从而减少重复存储的字符串数据。
     - 由于哈希字典本身存在一定的开销，因此一般不用于字符串以外的类型，或者取值范围非常大（数千到一万以上）的列。例如，尽管 `status` 列只有十几个可能的取值（HTTP 状态码），由于 UInt16 已经是非常紧凑的存储类型，且具有良好的查询性能，因此不使用 `LowCardinality`。
 - 较旧的日志没有记录 `request_id`，因此该列使用 `DEFAULT` 生成一个哈希作为替代。
 - 使用 ReplacingMergeTree 引擎，允许在导入重复日志时进行去重。
     - 重复行的判断依据是 `ORDER BY` 语句指定的列组合（即 `event_time`+`request_id`），因此在 ClickHouse 中，**「主键」通常指 `ORDER BY` 的定义**，而非望文生义的 `PRIMARY KEY`。
-    - `PRIMARY KEY` 指定主键的一个前缀序列，作为 ClickHouse 在内存中维护稀疏索引（sparse index）的依据，通过排除不常用或不必要的列来减少内存占用。
+    - `PRIMARY KEY` 指定主键的一个**前缀**，作为 ClickHouse 在内存中维护稀疏索引（sparse index）的依据，通过排除不常用或不必要的列来减少内存占用。
 - `PARTITION BY` 指定分区键，ClickHouse 会根据该列的值将数据划分为不同的分区，从而提高查询性能和管理效率。对于时间序列数据，通常根据数据量和查询模式选择合适的时间粒度进行分区。本文示例中使用 `toDate(event_time)` 按天分区。
+
+  [clickhouse-compression]: https://clickhouse.com/docs/guides/clickhouse/data-modelling/compression/compression-in-clickhouse
+  [clickhouse-codec]: https://clickhouse.com/docs/reference/statements/create/table/codec
+  [clickhouse-ipv6]: https://clickhouse.com/docs/reference/data-types/ipv6
 
 ### 自定义函数 {#user-defined-functions}
 
@@ -165,6 +175,23 @@ multiIf(
 ```
 
 结合下面介绍的 MATERIALIZED 列，`extract_repo` 函数可以在数据插入时自动计算出 `repo` 列的值，方便后续按仓库归类查询和统计。
+
+另外，我们还有一个 `ip_prefix` 函数，用于将 IPv4 或 IPv6 地址转换为指定前缀长度的网络地址（例如 `/24` 或 `/48`），方便按网段统计访问量。
+
+```sql
+CREATE FUNCTION ip_prefix AS (ip, ipv4_length, ipv6_length) ->
+if(
+  isIPAddressInRange(ip, '::ffff:0.0.0.0/96'),
+  if(ipv4_length = 32,
+    replaceOne(toString(tupleElement(IPv6CIDRToRange(ip, toUInt8(96 + ipv4_length)), 1)), '::ffff:', ''),
+    concat(replaceOne(toString(tupleElement(IPv6CIDRToRange(ip, toUInt8(96 + ipv4_length)), 1)), '::ffff:', ''), '/', toString(ipv4_length))
+  ),
+  if(ipv6_length = 128,
+    toString(tupleElement(IPv6CIDRToRange(ip, ipv6_length), 1)),
+    concat(toString(tupleElement(IPv6CIDRToRange(ip, ipv6_length), 1)), '/', toString(ipv6_length))
+  )
+);
+```
 
 ### 物化列 {#materialized-columns}
 
@@ -298,3 +325,35 @@ LIMIT 50;
     上面的示例图使用的即是此 SQL 查询语句。
 
 ### `WITH` 语句 {#with-clause}
+
+ClickHouse 的 [`WITH` 语句][clickhouse-with]允许在查询中定义临时的子查询，减少重复编写相同的嵌套查询。
+
+例如，要在 Grafana 上查询指定时间段内输出流量最大的前 20 个仓库，并将其他仓库归类为 `[Others]`，可以使用以下 SQL 查询：
+
+```sql
+WITH
+  repo_size AS MATERIALIZED (
+    SELECT
+      repo,
+      sum("size") AS "sum_size"
+    FROM "mirrors"."access_log"
+    WHERE $__timeFilter(event_time)
+    GROUP BY "repo"
+  ),
+  top_repos AS MATERIALIZED (
+    SELECT "repo", "sum_size"
+    FROM "repo_size"
+    ORDER BY "sum_size" DESC
+    LIMIT 20
+  )
+SELECT
+  if("repo" IN (SELECT "repo" FROM "top_repos"), "repo", '[Others]') AS "Repository",
+  sum("sum_size") AS "Bytes Sent"
+FROM "repo_size"
+GROUP BY "Repository"
+ORDER BY "Repository" = '[Others]' ASC, "Bytes Sent" DESC;
+```
+
+`MATERIALIZED` 关键字表示 `WITH` 子查询的结果会被物化（即在内存中缓存），避免在每次被引用时重复计算。
+
+  [clickhouse-with]: https://clickhouse.com/docs/reference/statements/select/with
