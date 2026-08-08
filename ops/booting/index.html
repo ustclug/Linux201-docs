@@ -697,6 +697,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#uefi-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Security
+        </span>
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uefi-ibb-psb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          BG &amp; PSB
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#uefi-secure-boot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -706,6 +733,24 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tpm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          TPM
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3390,6 +3435,33 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#uefi-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          Security
+        </span>
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#uefi-ibb-psb" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          BG &amp; PSB
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#uefi-secure-boot" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3399,6 +3471,24 @@
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tpm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          TPM
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -3696,11 +3786,28 @@
 <p>以下是一个看上去有点老旧的 UEFI 设置实用程序的界面截图：</p>
 <p><img alt="UEFI 设置实用程序" src="../../images/uefi-bios.jpg" /></p>
 <p class="caption">UEFI 设置实用程序</p>
-<h4 id="uefi-secure-boot">Secure Boot<a class="headerlink" href="#uefi-secure-boot" title="Permanent link">&para;</a></h4>
+<h4 id="uefi-security">Security<a class="headerlink" href="#uefi-security" title="Permanent link">&para;</a></h4>
+<h5 id="uefi-ibb-psb">BG &amp; PSB<a class="headerlink" href="#uefi-ibb-psb" title="Permanent link">&para;</a></h5>
+<p>BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器在固件执行前对固件进行签名验证的具体实现，并不局限于 UEFI 固件（比如 coreboot），但是实践上通常覆盖 UEFI 的 SEC 和 PEI 阶段。</p>
+<p>在实现上，Intel Boot Guard 运行在 CPU 执行复位向量所在固件代码之前，由 x86 主核心执行：</p>
+<ul>
+<li>首先，主核心会执行 CPU 微码读取并执行来自主板 ROM 的 ACM（Authenticated Code Module），该微码使用刻蚀在芯片中的 Intel 的公钥 hash 来验证读取的 ACM 的签名是否可信任</li>
+<li>然后，ACM 会从主板 ROM 中读取 Key Manifest，获得到来自 OEM（Original Equipment Manufacturer，原始设备制造商）的公钥和签名，并使用主板 FPF（Field Programmable Fuses，一种一次性写存储介质，一旦写入无法更改）中存放的 OEM 的公钥 hash 来验证该 OEM 的公钥是否被篡改</li>
+<li>接着，ACM 又会从主板 ROM 中读取 BPM（Boot Policy Manifest），并使用 OEM 的公钥验证 BPM 是否被篡改，而 BPM 中存放着 IBB（Initial Boot Block，也就是固件本身，比如 UEFI 的 SEC 和 PEI 阶段的代码）的 hash，用于验证固件是否被篡改</li>
+<li>最后，对于固件的验证过程结束，PC 跳至复位向量开始执行固件</li>
+</ul>
+<p>不同于 Intel 使用 x86 主核心验证，AMD PSB 则使用芯片内的一颗独立的 ARM 协处理器（PSP，Platform Security Processor）在 x86 主核心执行前运行验证流程：</p>
+<ul>
+<li>首先，PSP 直接执行芯片内的 Boot ROM，从主板 ROM 中读取 ARK（AMD Root Key），并使用 PSP 中的 OTP fuse（一次性写存储介质，一旦写入无法更改）里的 ARK 的 hash 验证 ARK 是否被篡改</li>
+<li>然后，PSP 会从主板 ROM 中读取 PSP Bootloader，并使用 ARK 验证签名是否可信任，如果可信任，则执行 PSP Bootloader</li>
+<li>接着，PSP 又会从主板 ROM 中读取 OEM 的 BIOS Signing Key，并使用 ARK 验证签名，确保不被篡改，而 BIOS Signing Key 则用于验证固件的签名，确保不被篡改</li>
+<li>最后，对于固件的验证过程结束，PSP 允许 x86 主核心从复位向量开始执行</li>
+</ul>
+<h5 id="uefi-secure-boot">Secure Boot<a class="headerlink" href="#uefi-secure-boot" title="Permanent link">&para;</a></h5>
 <p>Secure Boot（安全启动）是 UEFI 固件特有的功能，在 DXE 和 BDS 阶段加载和执行，它通过阻止加载未经可接受的数字签名签名的 UEFI 驱动程序或 Bootloader 来保护启动过程。</p>
 <p>Secure Boot 的技术基础是一套由 UEFI 2.3.1 规范定义的四层证书/哈希数据库体系：</p>
 <ul>
-<li>PK（Platform Key）：平台密钥，实际上是一个 X.509 证书，通常由 OEM（Original Equipment Manufacturer，原始设备制造商）颁发，也可以自己签发</li>
+<li>PK（Platform Key）：平台密钥，实际上是一个 X.509 证书，通常由 OEM 颁发，也可以自己签发</li>
 <li>KEK（Key Exchange Key）：密钥交换密钥，实际上是多个 X.509 证书，通常由 OEM 和 Microsoft 颁发，也可以自己签发</li>
 <li>db：签名数据库，存放被信任的证书或具体二进制文件的 hash 值，凡是被 DB 中证书签名过、或哈希值直接列在 DB 中的程序，才允许在 DXE 或 BDS 阶段被加载</li>
 <li>dbx：禁止签名数据库，黑名单，存放被撤销或已知存在漏洞的证书或 hash 值，优先级高于 DB</li>
@@ -3781,6 +3888,7 @@
 <a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="w">            </span><span class="nv">C</span><span class="o">=</span>US,<span class="w"> </span><span class="nv">ST</span><span class="o">=</span>Washington,<span class="w"> </span><span class="nv">L</span><span class="o">=</span>Redmond,<span class="w"> </span><span class="nv">O</span><span class="o">=</span>Microsoft<span class="w"> </span>Corporation,<span class="w"> </span><span class="nv">CN</span><span class="o">=</span>Microsoft<span class="w"> </span>Root<span class="w"> </span>Certificate<span class="w"> </span>Authority<span class="w"> </span><span class="m">2010</span>
 </code></pre></div>
 <p>最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 <code>bootmgfw.efi</code> 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。</p>
+<h5 id="tpm">TPM<a class="headerlink" href="#tpm" title="Permanent link">&para;</a></h5>
 <h2 id="bootloader">Bootloader<a class="headerlink" href="#bootloader" title="Permanent link">&para;</a></h2>
 <p>Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U 盘、光盘等）的特定位置（如 MBR、GPT 分区表中的 EFI System Partition 等）中，负责加载操作系统内核到内存，并将控制权移交给 Kernel。</p>
 <p>通常，对于 Linux 系统来说，Bootloader 还需要将 initrd / initramfs（初始内存盘）加载到内存，并将相关信息（如内核命令行参数、initramfs 的位置等）传递给 Kernel，里面包含了内核启动所需的各种驱动和工具，帮助内核完成系统的初始化过程。</p>
@@ -4010,7 +4118,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月8日 04:16:37 UTC">2026年8月8日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月8日 08:00:37 UTC">2026年8月8日</span>
   </span>
 
     
