@@ -313,11 +313,11 @@ def Extend(i, data):
 
 [^tpm-pc-client-pfp-spec]: <https://trustedcomputinggroup.org/resource/pc-client-specific-platform-firmware-profile-specification/>
 
-- PCR0：SRTM, BIOS, Host Platform Extensions, Embedded Option ROMs and PI Drivers
-- PCR1：Host Platform Configuration
+- PCR0: SRTM, BIOS, Host Platform Extensions, Embedded Option ROMs and PI Drivers
+- PCR1: Host Platform Configuration
 - ...
-- PCR7：Secure Boot Policy
-- PCR8-15：Defined for use by the Static OS
+- PCR7: Secure Boot Policy
+- PCR8-15: Defined for use by the Static OS
 
 其中 PCR0 对应于前文所讨论的 BG & PSB 阶段，而 PCR7 对应于前文所讨论的 Secure Boot 阶段。
 
