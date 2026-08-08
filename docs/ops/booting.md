@@ -105,13 +105,33 @@ UEFI 设置实用程序通常是在 DXE 阶段被加载，而在 BDS 阶段通�
 UEFI 设置实用程序
 {: .caption }
 
-#### Secure Boot {#uefi-secure-boot}
+#### Security {#uefi-security}
+
+##### BG & PSB {#uefi-ibb-psb}
+
+BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器在固件执行前对固件进行签名验证的具体实现，并不局限于 UEFI 固件（比如 coreboot），但是实践上通常覆盖 UEFI 的 SEC 和 PEI 阶段。
+
+在实现上，Intel Boot Guard 运行在 CPU 执行复位向量所在固件代码之前，由 x86 主核心执行：
+
+- 首先，主核心会执行 CPU 微码读取并执行来自主板 ROM 的 ACM（Authenticated Code Module），该微码使用刻蚀在芯片中的 Intel 的公钥 hash 来验证读取的 ACM 的签名是否可信任
+- 然后，ACM 会从主板 ROM 中读取 Key Manifest，获得到来自 OEM（Original Equipment Manufacturer，原始设备制造商）的公钥和签名，并使用主板 FPF（Field Programmable Fuses，一种一次性写存储介质，一旦写入无法更改）中存放的 OEM 的公钥 hash 来验证该 OEM 的公钥是否被篡改
+- 接着，ACM 又会从主板 ROM 中读取 BPM（Boot Policy Manifest），并使用 OEM 的公钥验证 BPM 是否被篡改，而 BPM 中存放着 IBB（Initial Boot Block，也就是固件本身，比如 UEFI 的 SEC 和 PEI 阶段的代码）的 hash，用于验证固件是否被篡改
+- 最后，对于固件的验证过程结束，PC 跳至复位向量开始执行固件
+
+不同于 Intel 使用 x86 主核心验证，AMD PSB 则使用芯片内的一颗独立的 ARM 协处理器（PSP，Platform Security Processor）在 x86 主核心执行前运行验证流程：
+
+- 首先，PSP 直接执行芯片内的 Boot ROM，从主板 ROM 中读取 ARK（AMD Root Key），并使用 PSP 中的 OTP fuse（一次性写存储介质，一旦写入无法更改）里的 ARK 的 hash 验证 ARK 是否被篡改
+- 然后，PSP 会从主板 ROM 中读取 PSP Bootloader，并使用 ARK 验证签名是否可信任，如果可信任，则执行 PSP Bootloader
+- 接着，PSP 又会从主板 ROM 中读取 OEM 的 BIOS Signing Key，并使用 ARK 验证签名，确保不被篡改，而 BIOS Signing Key 则用于验证固件的签名，确保不被篡改
+- 最后，对于固件的验证过程结束，PSP 允许 x86 主核心从复位向量开始执行
+
+##### Secure Boot {#uefi-secure-boot}
 
 Secure Boot（安全启动）是 UEFI 固件特有的功能，在 DXE 和 BDS 阶段加载和执行，它通过阻止加载未经可接受的数字签名签名的 UEFI 驱动程序或 Bootloader 来保护启动过程。
 
 Secure Boot 的技术基础是一套由 UEFI 2.3.1 规范定义的四层证书/哈希数据库体系：
 
-- PK（Platform Key）：平台密钥，实际上是一个 X.509 证书，通常由 OEM（Original Equipment Manufacturer，原始设备制造商）颁发，也可以自己签发
+- PK（Platform Key）：平台密钥，实际上是一个 X.509 证书，通常由 OEM 颁发，也可以自己签发
 - KEK（Key Exchange Key）：密钥交换密钥，实际上是多个 X.509 证书，通常由 OEM 和 Microsoft 颁发，也可以自己签发
 - db：签名数据库，存放被信任的证书或具体二进制文件的 hash 值，凡是被 DB 中证书签名过、或哈希值直接列在 DB 中的程序，才允许在 DXE 或 BDS 阶段被加载
 - dbx：禁止签名数据库，黑名单，存放被撤销或已知存在漏洞的证书或 hash 值，优先级高于 DB
@@ -205,6 +225,8 @@ db: List 4, type X509
 ```
 
 最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 `bootmgfw.efi` 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。
+
+##### TPM
 
 ## Bootloader {#bootloader}
 
