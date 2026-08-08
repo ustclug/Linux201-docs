@@ -105,7 +105,7 @@ UEFI 设置实用程序通常是在 DXE 阶段被加载，而在 BDS 阶段通�
 UEFI 设置实用程序
 {: .caption }
 
-#### Secure Boot
+#### Secure Boot {#uefi-secure-boot}
 
 Secure Boot（安全启动）是 UEFI 固件特有的功能，在 DXE 和 BDS 阶段加载和执行，它通过阻止加载未经可接受的数字签名签名的 UEFI 驱动程序或 Bootloader 来保护启动过程。
 
