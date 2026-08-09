@@ -23,4 +23,4 @@
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=ustclug/Linux201-docs&type=Date)](https://star-history.com/#ustclug/Linux201-docs&Date)
+[![Star History Chart](https://api.star-history.com/chart?repos=ustclug/Linux201-docs&type=date&legend=top-left&sealed_token=wtOLkskauQaYVPFkFnJQvZpwqK__ZNFJudTmKJ58-QEPRfF-Hc2vVpv5m2zX8_bKi0tZ0dJyRmGqTGNJPv8RIZdFNmbvdl3tJ4T-bNmPE7hD5LQGQA2RQ1uOzIUzEz01QsWRJ32gKmqSn1jstRDAokleAZqSK8clmKQpN_ylLbld9wbzG6T2aINJn0SW)](https://www.star-history.com/?repos=ustclug%2FLinux201-docs&type=date&legend=top-left)
