@@ -137,6 +137,14 @@ BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器
 - 接着，PSP 又会从主板 ROM 中读取 OEM 的 BIOS Signing Key，并使用 ARK 验证签名，确保不被篡改，而 BIOS Signing Key 则用于验证固件的签名，确保不被篡改
 - 最后，对于固件的验证过程结束，PSP 允许 x86 主核心从复位向量开始执行
 
+!!! note "开启 Boot Guard 和 PSB 导致硬件绑定"
+
+    Intel Boot Guard 将 OEM 的公钥 hash 存放在**主板**（具体来说是 PCH 芯片）的 OTP fuse 中，而 AMD PSB 则将 ARK（本质上也是 OEM 的公钥）存放在 **CPU** 里的 PSP 中的 OTP fuse 中。
+    
+    但是 OTP fuse 只能写一次，因此这种设计上的选择就导致开启了 Intel Boot Guard 的主板的 PCH 芯片可能无法更换到其他开启 Intel Boot Guard 的主板上使用，而开启了 AMD PSB 的主板的 CPU 可能无法更换到其他开启 AMD PSB 的主板上使用，都是因为不同 OEM 给不同主板刷入的 OEM 公钥 hash 可能不一样。
+
+    特别的，Intel Boot Guard 可以由 OEM 设置不去验证 OEM 的公钥 hash 是否正确，仅在 Boot Guard 执行阶段做测量，在这种情况下，即使开启 Intel Boot Guard 也可能正常启动，但在实践上，大部分 OEM 都会开启验证，而不是关闭验证。
+
 ##### Secure Boot {#uefi-secure-boot}
 
 Secure Boot（安全启动）是 UEFI 固件特有的功能，在 DXE 和 BDS 阶段加载和执行，它通过阻止加载未经可接受的数字签名签名的 UEFI 驱动程序或 Bootloader 来保护启动过程。
