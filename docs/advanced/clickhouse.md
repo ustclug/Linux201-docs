@@ -68,29 +68,77 @@ services:
 
 在初始化完成后，你也可以在容器中使用 `clickhouse-client` 命令行工具执行 SQL 语句。
 
+### 配置 {#configuration}
+
+ClickHouse 的配置文件位于 `/etc/clickhouse-server` 目录，采用 XML 格式。其中 ClickHouse 会自动读取 `/etc/clickhouse-server/config.d/*.xml` 和 `/etc/clickhouse-server/users.d/*.xml`，你可以通过向这两个目录中挂载自定义的 XML 文件覆盖默认配置，ClickHouse 会在启动时自动加载并合并这些配置文件，因此每个 XML 文件都具有完整的 XML 结构。
+
+常用的几种配置项包括：
+
+```xml title="为 Grafana 和 Vector 创建只读和读写用户"
+<clickhouse>
+  <users>
+    <grafana>
+      <password>grafana_password</password>
+      <networks>
+        <ip>10.0.0.1</ip>
+      </networks>
+      <profile>default</profile>
+      <quota>default</quota>
+      <readonly>1</readonly>
+    </grafana>
+
+    <mirrors>
+      <password>mirrors_password</password>
+      <networks>
+        <ip>10.0.0.0/24</ip>
+      </networks>
+      <profile>default</profile>
+      <quota>default</quota>
+      <grants>
+        <query>GRANT SELECT ON mirrors.*</query>
+        <query>GRANT INSERT ON mirrors.*</query>
+      </grants>
+    </mirrors>
+  </users>
+</clickhouse>
+```
+
+```xml title="设置全局压缩算法"
+<clickhouse>
+  <compression>
+    <case>
+      <min_part_size>0</min_part_size>
+      <min_part_size_ratio>0</min_part_size_ratio>
+      <method>zstd</method>
+      <level>3</level>
+    </case>
+  </compression>
+</clickhouse>
+```
+
 ## 创建表 {#create-table}
 
-USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命名为 `ngx_json`），配置方式可以在 [Nginx](../ops/network-service/nginx.md#logging) 一页中找到，示例如下（经过格式化）：
+USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命名为 `ngx_json`），配置方式可以在 [Nginx](../ops/network-service/nginx.md#logging) 一页中找到，示例如下：
 
-??? example "访问日志示例"
+??? example "访问日志示例（经过格式化）"
 
     ```json
     {
-        "timestamp": 1777114514.777,
-        "clientip": "1.14.5.14",
-        "serverip": "202.38.95.110",
-        "method": "GET",
-        "scheme": "https",
-        "url": "/debian/dists/stable/InRelease",
-        "status": 200,
-        "size": 114514,
-        "resp_time": 0.001,
-        "http_host": "mirrors.ustc.edu.cn",
-        "referer": "",
-        "user_agent": "Debian APT-HTTP/1.3 (2.6.1)",
-        "request_id": "0123456789abcdef0123456789abcdef",
-        "proto": "HTTP/1.1",
-        "proxied": "0"
+      "timestamp": 1777114514.777,
+      "clientip": "1.14.5.14",
+      "serverip": "202.38.95.110",
+      "method": "GET",
+      "scheme": "https",
+      "url": "/debian/dists/stable/InRelease",
+      "status": 200,
+      "size": 114514,
+      "resp_time": 0.001,
+      "http_host": "mirrors.ustc.edu.cn",
+      "referer": "",
+      "user_agent": "Debian APT-HTTP/1.3 (2.6.1)",
+      "request_id": "0123456789abcdef0123456789abcdef",
+      "proto": "HTTP/1.1",
+      "proxied": "0"
     }
     ```
 
@@ -150,7 +198,7 @@ SETTINGS index_granularity = 8192;
 
 ClickHouse 支持自定义函数（User Defined Functions，简称 UDF），可以将常用的表达式封装成函数，减少编写 SQL 时的重复工作。
 
-例如，为了方便从 URL 中提取镜像仓库名称，USTC Mirrors 定义了一个 `extract_repo` 函数：
+例如，为了方便从 URL 中提取镜像仓库名称，我们定义了一个 `extract_repo` 函数：
 
 ```sql
 -- 提取 URL path 中的第一段目录
@@ -255,8 +303,8 @@ sinks:
     endpoint: http://localhost:8123/
     auth:
       strategy: basic
-      user: xi
-      password: "Xaleid<>scopiX"
+      user: n-buna
+      password: "umiyuri kaiteitan"
     database: mirrors
     table: access_log
     format: json_each_row
@@ -265,7 +313,39 @@ sinks:
       max_size: 1073741824
 ```
 
-为 sink 配置磁盘缓冲区可以在 ClickHouse 服务暂时不可用时缓存日志数据，并在 ClickHouse 恢复可用后继续发送。缓冲区的大小决定了 Vector 在开始丢失日志前能够容忍的 ClickHouse 最大停机时间。
+为 sink 配置磁盘缓冲区可以在 ClickHouse 服务暂时不可用时缓存日志数据，并在 ClickHouse 恢复可用后继续发送。缓冲区的大小决定了 Vector 在开始丢失日志前能够容忍的 ClickHouse 最大停机时间（当然你也可以手动导入缺失部分的日志）。
+
+### 数据导入 {#manual-insert}
+
+对于历史数据，ClickHouse 提供了多种导入方式，例如：
+
+- 使用 `clickhouse-client` 命令行工具执行 `INSERT` 语句，从标准输入读取数据传输给 ClickHouse。例如：
+
+    ```shell
+    clickhouse-client --query 'INSERT INTO "mirrors"."access_log" FORMAT JSONEachRow' < access_json.log
+    ```
+
+- 使用 `INSERT INTO ... FORMAT JSONEachRow` 语句从 JSON 文件中导入数据。例如：
+
+    ```sql
+    INSERT INTO "mirrors"."access_log" FROM INFILE 'access_json.log' FORMAT JSONEachRow
+    ```
+
+两种方式的区别在于，前者是客户端读取文件并发送给 ClickHouse 服务端，而后者是让服务端自己读取文件。
+
+你也可以自己编写程序，以你喜欢的方式将日志数据导入 ClickHouse。
+
+作为参考，USTC Mirrors 导入历史日志的命令如下：
+
+```shell
+for i in mirrors/access_json.log-*.xz; do
+  echo "$i" >&2
+  xzcat "$i" |
+    pv -s $(xz --robot -l "$i" | awk 'NR==2{print $5}') |
+    jq '.source = "mirrors"' |
+    clickhouse-client --query 'INSERT INTO "mirrors"."access_log" FORMAT JSONEachRow'
+done
+```
 
 ## 数据查询 {#query}
 
@@ -324,9 +404,13 @@ LIMIT 50;
 
     上面的示例图使用的即是此 SQL 查询语句。
 
+    另外，Grafana 的 [Filter and Group by 功能](https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/filter-group-by/)可以让用户在 Grafana 界面上自行设置过滤条件，而无需在 SQL 中预先配置变量。
+
 ### `WITH` 语句 {#with-clause}
 
 ClickHouse 的 [`WITH` 语句][clickhouse-with]允许在查询中定义临时的子查询，减少重复编写相同的嵌套查询。
+
+  [clickhouse-with]: https://clickhouse.com/docs/reference/statements/select/with
 
 例如，要在 Grafana 上查询指定时间段内输出流量最大的前 20 个仓库，并将其他仓库归类为 `[Others]`，可以使用以下 SQL 查询：
 
@@ -356,4 +440,10 @@ ORDER BY "Repository" = '[Others]' ASC, "Bytes Sent" DESC;
 
 `MATERIALIZED` 关键字表示 `WITH` 子查询的结果会被物化（即在内存中缓存），避免在每次被引用时重复计算。
 
-  [clickhouse-with]: https://clickhouse.com/docs/reference/statements/select/with
+### 投影 {#projection}
+
+ClickHouse 的投影（`PROJECTION`）是表的一种附加索引结构，可以提高特定查询模式的性能。PROJECTION 是表的一部分，并且在数据插入时自动更新，也由 ClickHouse 根据查询模式自动选择使用（或不使用）。
+
+由于作者经过多次尝试后仍然无法构建出能够加速前文的典型查询模式的 PROJECTION，因此需要读者参考 [ClickHouse 对 PROJECTION 的介绍](https://clickhouse.com/docs/concepts/features/projections/projections) 自行摸索。
+
+### 物化视图 {#materialized-view}
