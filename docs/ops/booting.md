@@ -238,6 +238,19 @@ db: List 4, type X509
 
 最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 `bootmgfw.efi` 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。
 
+!!! tip "Linux 中使用 Secure Boot 的常见方案"
+
+    不同于 Microsoft 的 Windows，可以向 OEM 授权预装自己的 KEK 证书和 db 证书进主板，从而默认允许 Windows 的 Bootloader 能够通过 Secure Boot 的认证，属于开源社区并且种类众多的各大 Linux 发行版并没有一个统一的机构能够提供一个统一的 KEK 证书或 db 证书预装进主板。因此，开源社区逐渐形成了以下两种在 Linux 中使用 Secure Boot 的方案：
+
+    - 使用一个已经被 Microsoft 签名过的 [shim 程序](https://github.com/rhboot/shim)作为跳板先行通过 BDS 阶段对于 Bootloader 的 Secure Boot 认证，而 shim 程序在编译时已经嵌入了发行版厂商自签名的证书，因此发行版厂商可以自己签署自己发行的 Bootloader 和内核，并被 shim 程序认证执行。除此之外，如果安装了第三方签名的模块，也支持通过导入 MOK（Machine Owner Key）信任第三方自签名的证书。
+        - 常见于 Ubuntu、Fedora、Debian、openSUSE 等主流发行版，通常 shim 程序位于 `/boot/efi/EFI/<release>/shimx64.efi`
+        - 优点：安装即用，可导入自定义证书，不会破坏机器内原始的 PK、KEK、db 和 dbx 里的证书
+        - 缺点：依赖 Microsoft 的审核与背书（部分社区认为这与软件自由理念存在张力）
+    - 重新设置本机 Secure Boot 认证体系，将 PK 设置为自签名证书，在 KEK、db 里添加自签名证书，然后在每次安装新 Bootloader 和内核的时候，使用自签名证书的私钥给 Bootloader 和内核签名即可
+        - 常见于 Arch Linux、Gentoo 等发行版，通常搭配 sbctl 软件使用，详情可参见 [Arch Wiki](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Assisted_process_with_sbctl)
+        - 优点：可控性好（如果密钥泄露了，直接 enroll 新的密钥就行），自由度高（可以很方便地给任何程序签名，不需要走 MOK，而且不需要 Microsoft 的签名）
+        - 缺点：安装麻烦，概率变砖（需要手动重置本机内 Secure Boot 相关的所有密钥，所以操作前记得备份），需要自己负责签名（需要配置每次更新 Bootloader 和内核的时候自动签名）
+
 ##### TPM {#uefi-tpm}
 
 TPM（Trusted Platform Module）是 TCG 发布的一种安全芯片的规范标准[^tpm-spec]，不同于 BG & PSB 和 Secure Boot 在计算机启动过程中主要用于验证（verify）固件、驱动和 Bootloader 是否安全可信，TPM 在计算机启动过程中的主要作用是测量（measure）启动过程，即记录并证明系统启动过程中每一阶段都实际执行的逻辑。
