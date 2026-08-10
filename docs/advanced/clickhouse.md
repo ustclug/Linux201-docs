@@ -143,6 +143,10 @@ Grafana ClickHouse Plugin 会根据查询上下文修改 `limit`、`max_executio
 
 这里的 `changeable_in_readonly` 只允许修改对应查询设置，不会赋予用户执行 DDL 或写入数据的权限。
 
+[ClickHouse 会按列压缩数据][clickhouse-compression]。默认的通用压缩算法是 LZ4，特点是压缩和解压速度快；ZSTD 通常能得到更高的压缩率，但会消耗更多 CPU，压缩等级越高，这一取舍通常越明显。对于连续的整数、浮点数和时间戳，还可以先使用 Delta、DoubleDelta、Gorilla 或 T64 等专用编码转换数据，再交给 LZ4 或 ZSTD 压缩。压缩算法既可以由服务器配置为默认值，也可以在建表时通过 [`CODEC`][clickhouse-codec] 为特定列覆盖；应使用自己的数据和查询负载比较压缩率、写入速度与读取速度，而不是只追求最小文件大小。
+
+下面的配置将所有符合条件的 Part 默认改用 ZSTD level 3：
+
 ```xml title="设置全局压缩算法"
 <clickhouse>
   <compression>
@@ -338,7 +342,7 @@ SETTINGS index_granularity = 8192;
     - ClickHouse 的默认值是 LZ4，速度较快但压缩率低，所以我们换用压缩率更高的 Zstandard 算法。
 - 根据 ClickHouse 的 convention，存储时间序列数据时，将主要的时间戳列命名为 `event_time`，并使用 `DateTime64(3)` 类型存储毫秒级时间戳（或者如果只需要秒级精度时，可以使用 `DateTime`）。原始的浮点数时间戳列 `timestamp` 仍然保留，方便通过 JSON 方式导入数据。
     - 这两列的 `CODEC` 设置为 `DoubleDelta`，可以通过记录相邻两行的二阶差值来节省存储空间。
-- `clientip` 列使用 [`IPv6` 类型][clickhouse-ipv6]存储 IP 地址，其中 IPv4 地址会被转换为 IPv4-mapped IPv6 地址（例如 `::ffff:127.0.0.1`）。
+- `clientip` 列使用 [`IPv6` 类型][clickhouse-ipv6] 存储 IP 地址，其中 IPv4 地址会被转换为 IPv4-mapped IPv6 地址（例如 `::ffff:127.0.0.1`）。
     - 这一列利用了 ClickHouse 接受非常灵活的插入格式的特点，合法的 IPv4/IPv6 字符串在 `INSERT` 时会被自动转换。这在我们后面导入日志时非常方便，因为我们的日志是以 JSON 字符串形式存储的 IP 地址。
 - 对于 `serverip` 等取值有限的列，使用 `LowCardinality(String)` 类型节省存储空间和提高查询性能。`LowCardinality` 类型会在内部创建一个哈希字典，从而减少重复存储的字符串数据。
     - 由于哈希字典本身存在一定的开销，因此一般不用于字符串以外的类型，或者取值范围非常大（数千到一万以上）的列。例如，尽管 `status` 列只有十几个可能的取值（HTTP 状态码），由于 UInt16 已经是非常紧凑的存储类型，且具有良好的查询性能，因此不使用 `LowCardinality`。
@@ -350,6 +354,7 @@ SETTINGS index_granularity = 8192;
 
   [clickhouse-compression]: https://clickhouse.com/docs/guides/clickhouse/data-modelling/compression/compression-in-clickhouse
   [clickhouse-codec]: https://clickhouse.com/docs/reference/statements/create/table/codec
+  [clickhouse-dictionaries]: https://clickhouse.com/docs/sql-reference/dictionaries
   [clickhouse-ipv6]: https://clickhouse.com/docs/reference/data-types/ipv6
 
 ### 自定义函数 {#user-defined-functions}
@@ -382,7 +387,7 @@ multiIf(
 
 结合下面介绍的 MATERIALIZED 列，`extract_repo` 函数可以在数据插入时自动计算出 `repo` 列的值，方便后续按仓库归类查询和统计。
 
-仓库数量较多或经常变化时，不建议继续手工扩充 SQL 中的数组。更容易维护的方式是让部署脚本读取镜像站的仓库目录文件，生成确定的 `CREATE OR REPLACE FUNCTION` SQL，再将生成结果与初始化脚本一起版本化。不要让 UDF 在每次查询时访问网络，否则外部服务延迟会直接进入查询链路。
+当分类规则数量较多或经常变化时，不建议继续手工扩充 SQL 中的数组。规则可以来自版本化的 JSON、YAML 或数据库表；如果查询时需要按周期刷新规则，可以使用 [外部字典（External Dictionary）][clickhouse-dictionaries] 加载本地文件、HTTP 服务或数据库中的键值，并通过 `dictGet` 等函数读取。对于仍适合写成 UDF 的规则，可以让部署脚本读取规则文件，生成确定的 `CREATE OR REPLACE FUNCTION` SQL，再将生成结果与初始化脚本一起版本化。本文的镜像仓库目录只是这种分类规则的一个例子。不要让每次查询临时访问网络，否则外部服务延迟和故障会直接进入查询链路。
 
 另外，我们还有一个 `ip_prefix` 函数，用于将 IPv4 或 IPv6 地址转换为指定前缀长度的网络地址（例如 `/24` 或 `/48`），方便按网段统计访问量。
 
@@ -424,7 +429,7 @@ ClickHouse 的物化列（`MATERIALIZED` columns）是指在表中定义的列�
 
 Vector 是 Datadog 开源的日志采集器，以 Rust 语言编写（因此非常轻量），支持多种数据源（sources）、转换（transforms）和输出（sinks），可以将日志数据从源头采集、转换后发送到 ClickHouse。Vector 可以[通过多种方式安装](https://vector.dev/docs/setup/installation/)，且支持通过 SIGHUP 信号重新加载配置文件。
 
-Vector 的 [`file` 数据源](https://vector.dev/docs/reference/configuration/sources/file/)能够以类似 `tail -F` 的方式读取文件内容，并将每一行作为一个事件传递给下游处理器。File 数据源读取的每一行日志都包含一个 `message` 字段，存储了原始的文本内容，因此我们需要使用 `remap` 将其解析为 JSON 对象，并根据文件路径注入 `source` 字段，标记日志来源。
+Vector 的 [`file` 数据源](https://vector.dev/docs/reference/configuration/sources/file/) 能够以类似 `tail -F` 的方式读取文件内容，并将每一行作为一个事件传递给下游处理器。File 数据源读取的每一行日志都包含一个 `message` 字段，存储了原始的文本内容，因此我们需要使用 `remap` 将其解析为 JSON 对象，并根据文件路径注入 `source` 字段，标记日志来源。
 
 ```yaml title="USTC Mirrors 使用的 Vector 配置参考"
 sources:
@@ -473,7 +478,7 @@ sinks:
       max_size: 1073741824
 ```
 
-如果 Nginx 使用 `access_log syslog:server=...` 发送访问日志，Vector 的 `syslog` source 可以在同一端口分别监听 UDP 和 TCP：
+如果 Nginx 使用 `access_log syslog:server=...` 发送访问日志，Vector 的 `syslog` source 可以在同一端口分别监听 UDP 和 TCP。关于 syslog 的传统转发方式、TCP/UDP 端口和 TLS 配置，可以参考 [使用 rsyslog 转发日志](../ops/service.md#rsyslog-forward-log)：
 
 ```yaml title="使用 Vector 接收 Nginx syslog"
 sources:
@@ -536,7 +541,7 @@ done
 
 ## 数据查询 {#query}
 
-[ClickHouse 的查询语言](https://clickhouse.com/docs/reference/statements/select)是 SQL 的一个方言，较为接近 PostgreSQL，但有许多 QoL（Quality of Life）特性和高级扩展功能。
+[ClickHouse 的查询语言](https://clickhouse.com/docs/reference/statements/select) 是 SQL 的一个方言，较为接近 PostgreSQL，但有许多 QoL（Quality of Life）特性和高级扩展功能。
 ClickHouse 的 SQL 方言，例如：
 
 - 双引号和反引号都可以用作标识符的引用符号，单引号用于字符串字面量。
@@ -591,7 +596,7 @@ LIMIT 50;
 
     上面的示例图使用的即是此 SQL 查询语句。
 
-    另外，Grafana 的 [Filter and Group by 功能](https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/filter-group-by/)可以让用户在 Grafana 界面上自行设置过滤条件，而无需在 SQL 中预先配置变量。
+    另外，Grafana 的 [Filter and Group by 功能](https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/filter-group-by/) 可以让用户在 Grafana 界面上自行设置过滤条件，而无需在 SQL 中预先配置变量。
 
 ### `WITH` 语句 {#with-clause}
 
@@ -643,9 +648,18 @@ ClickHouse 支持普通视图、增量物化视图和可刷新物化视图。三
 | Incremental Materialized View | 是，结果写入目标表 | 源表每次 INSERT 时只处理新写入的数据块 | 实时过滤、转换和预聚合 |
 | Refreshable Materialized View | 是 | 按计划重新执行完整查询并替换或追加结果 | 复杂 JOIN、周期快照和允许延迟的报表 |
 
-[ClickHouse 的增量物化视图](https://clickhouse.com/docs/materialized-view/incremental-materialized-view)更接近一个插入触发器：每次有新数据写入源表时，物化视图只处理这批新数据，并把结果写入目标表。它不会定期扫描源表，也不会因为源表发生 mutation、分区删除或后台 merge 而自动重算历史数据。
+[ClickHouse 的增量物化视图](https://clickhouse.com/docs/materialized-view/incremental-materialized-view) 更接近一个插入触发器：每次有新数据写入源表时，物化视图只处理这批新数据，并把结果写入目标表。它不会定期扫描源表，也不会因为源表发生 mutation、分区删除或后台 merge 而自动重算历史数据。
 
 对于 Grafana 经常执行的 PV、UV、流量和平均响应时间查询，可以提前按较小的时间桶和常用低基数维度保存聚合状态。以下示例使用 30 秒时间桶：
+
+这里的目标表使用 [`AggregatingMergeTree`][clickhouse-aggregating-mergetree]，它与前面原始日志表使用的 [`ReplacingMergeTree`][clickhouse-replacing-mergetree] 具有不同的合并语义：
+
+| 表引擎 | 后台合并相同排序键的行时执行的操作 | 适合的用途 | 查询时的注意事项 |
+|---|---|---|---|
+| `ReplacingMergeTree` | 保留一行；指定版本列时保留版本最大的行，否则保留合并选择中的最后一行 | 对重复事件或同一键的多个版本做最终去重 | 合并是异步的，查询需要立即去重结果时可使用 `FINAL`，但会增加查询开销 |
+| `AggregatingMergeTree` | 合并 `AggregateFunction` 或 `SimpleAggregateFunction` 类型列保存的聚合状态 | 保存计数、求和、去重和平均值等预聚合结果 | 写入使用 `-State` 聚合函数，读取使用对应的 `-Merge` 函数；普通维度必须包含在排序键中 |
+
+因此，`ReplacingMergeTree` 解决的是“同一个键最终保留哪一行”，`AggregatingMergeTree` 解决的是“如何继续合并同一个键的聚合状态”。两者的后台合并都不是同步发生的，不能把 `ReplacingMergeTree` 当成聚合表，也不能直接读取 `AggregateFunction` 状态当作最终数值。
 
 ```sql title="02-access-log-30s.sql"
 CREATE TABLE mirrors.access_log_30s
@@ -726,6 +740,9 @@ GROUP BY time
 ORDER BY time;
 ```
 
+  [clickhouse-aggregating-mergetree]: https://clickhouse.com/docs/engines/table-engines/mergetree-family/aggregatingmergetree
+  [clickhouse-replacing-mergetree]: https://clickhouse.com/docs/engines/table-engines/mergetree-family/replacingmergetree
+
 物化视图中保存的维度决定了它能够正确回答哪些查询：
 
 | 数据 | 建议读取的表 | 原因 |
@@ -798,7 +815,7 @@ WHERE event_time >= start AND event_time < stop;
 
 ### 查询缓存 {#query-cache}
 
-[ClickHouse 的查询缓存](https://clickhouse.com/docs/operations/query-cache)默认不替所有 SELECT 自动启用。对于变量和时间边界固定、允许短时间陈旧的 Grafana 汇总查询，可以在语句末尾按需启用：
+[ClickHouse 的查询缓存](https://clickhouse.com/docs/operations/query-cache) 默认不替所有 SELECT 自动启用。对于变量和时间边界固定、允许短时间陈旧的 Grafana 汇总查询，可以在语句末尾按需启用：
 
 ```sql
 SELECT
@@ -1015,7 +1032,7 @@ ORDER BY time WITH FILL;
 
 ## 存储分层与留存 {#storage-tiering}
 
-[自管理 ClickHouse 的 storage policy](https://clickhouse.com/docs/operations/storing-data)可以给 MergeTree 表配置多个 Volume。下面的例子把热、温、冷目录分开；实际部署时可以将它们挂载到不同性能和成本的存储设备：
+[自管理 ClickHouse 的 storage policy](https://clickhouse.com/docs/operations/storing-data) 可以给 MergeTree 表配置多个 Volume。下面的例子把热、温、冷目录分开；实际部署时可以将它们挂载到不同性能和成本的存储设备：
 
 ```xml title="config.d/storage.xml"
 <clickhouse>
@@ -1048,7 +1065,7 @@ ORDER BY time WITH FILL;
 </clickhouse>
 ```
 
-[表的 TTL](https://clickhouse.com/docs/guides/developer/ttl)可以同时负责移动和删除 Part。例如保留 180 天时，各层的职责如下：
+[表的 TTL](https://clickhouse.com/docs/guides/developer/ttl) 可以同时负责移动和删除 Part。例如保留 180 天时，各层的职责如下：
 
 | 数据时间 | Volume | 典型存储 | TTL 动作 |
 |---|---|---|---|
