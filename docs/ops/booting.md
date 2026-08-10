@@ -2,7 +2,7 @@
 icon: material/power
 ---
 
-# 启动程序
+# 系统启动程序
 
 !!! note "主要作者"
 
