@@ -4159,6 +4159,22 @@
 </ul>
 <p>不同于 GRUB 通过自己编写模块来实现各种功能，systemd-boot 则是充分利用了 UEFI 固件已有功能来实现，比如从 UEFI 固件继承对文件系统的支持、内核加载依赖于内核的 EFI stub 等等，从而保证了 systemd-boot 足够轻量。</p>
 <h2 id="initramfs">initramfs<a class="headerlink" href="#initramfs" title="Permanent link">&para;</a></h2>
+<p>早期 Linux 内核采用整体静态编译的方式，把根文件系统驱动、磁盘驱动都编进内核，开机后可以直接挂载根分区。但随着硬件种类爆发式增长，LVM、软 RAID、LUKS 全盘加密等需求出现，内核开始把驱动做成可加载模块，只有需要的时候才会从存储介质中按需加载驱动。但是这又带来一个新的问题，在内核没有存储介质的驱动的时候，内核怎么挂载根文件系统，从存储介质中读取驱动？因此，内核在启动过程中就需要一个临时的、过渡阶段的根文件系统，以便内核从中读取存储介质的驱动，并做好准备工作，再切换到存储介质中的根文件系统，这便是 initrd/initramfs 的作用。</p>
+<p>1996 年 3 月 12 日，Linux 1.3.73 发布，新增了对 initrd（Initial RAM Disk）的支持。</p>
+<p>initrd 本质上是一个块设备镜像（通常是 ext2 等文件系统格式），启动时由 bootloader 连同内核一起加载进内存，并通过 Boot Protocol（x86）、Device Tree（arm/arm64/riscv 等）等机制告知内核。内核在启动过程中会把 initrd 当作块设备挂载为临时根文件系统，并执行位于 <code>/linuxrc</code> 的初始化程序，在做完必要的初始化后，将真正存放根文件系统的设备的设备号写入 <code>/proc/sys/kernel/real-root-dev</code>，然后退出，再由内核挂载真正的根文件系统，最后执行位于 <code>/sbin/init</code><sup id="fnref:what's-the-init"><a class="footnote-ref" href="#fn:what's-the-init">8</a></sup> 的程序作为 init 进程。</p>
+<p>其中，内核执行 <code>/linuxrc</code>，写入设备号，交给内核挂载的整个过程被称之为 change_root。</p>
+<p>2000 年 1 月 28 日，Linux 2.3.41 发布，新增了 <code>pivot_root</code> 系统调用。</p>
+<p><code>pivot_root</code> 系统调用的目的就是替代之前 change_root 必须由内核读取 <code>/proc/sys/kernel/real-root-dev</code>，由内核线程挂载真实根文件目录系统的逻辑，从而将切换根文件系统的逻辑变成由用户态程序主动调用。此后，使用 <code>pivot_root</code> 变成推荐做法，change_root 机制不被推荐使用。</p>
+<p>2003 年 12 月 18 日，Linux 2.6.0 发布，rootfs 的概念和对 initramfs（Initial RAM Filesystem）的支持正式进入稳定版。</p>
+<p>根据 Linux 官方文档所述，rootfs 是 ramfs 或 tmpfs（两种位于内存的文件系统）的一个特殊实例，在内核挂载后无法卸载，只能通过挂载新的根文件系统以覆盖。因此，<code>pivot_root</code> 系统调用无法在 rootfs 上使用（<code>pivot_root</code> 内部有一条专门的检查，一旦发现 rootfs 就返回 <code>EINVAL</code> 拒绝操作），需要用户态改用一个名为 <code>switch_root</code> 的程序，通过 <code>mount</code> 系统调用将新的根文件系统挂载在根上，覆盖 rootfs 来实现切换根文件系统，比如 util-linux 包的 <a href="https://github.com/util-linux/util-linux/blob/master/sys-utils/switch_root.c"><code>switch_root</code></a>。</p>
+<p>而 initramfs 则是把这个 rootfs 要用到的内容，预先打包成一个 cpio 格式的归档文件，内核启动时再把它解包填充进 rootfs 里，取代了之前以 initrd 作为内核最初根文件系统的做法。相比于 initrd 通过块设备抽象作为根文件系统使用，initramfs 直接基于内存搭建根文件系统，除去了块设备抽象，因此性能更好、启动更快，同时也无需 ext2 等驱动支持，减轻了内核附带额外驱动的负担。</p>
+<p>除此之外，initramfs 和 initrd 还有以下关系和区别：</p>
+<ul>
+<li>initramfs 和 initrd 在 bootloader 和内核通信时共用同一套参数，内核会自动检测 bootloader 加载的是旧的 initrd 还是新的 initramfs</li>
+<li>initrd 使用 <code>/linuxrc</code> 作为最初执行的程序，而 initramfs 使用 <code>/init</code> 作为最初执行的程序</li>
+</ul>
+<p>2026 年 4 月 12 日，Linux 7.0 发布，新增了对 nullfs 的支持。</p>
+<p>现在，内核不再把 rootfs 作为一个不可卸载的根文件系统，而是把 rootfs 挂载在一个不可变的空文件系统 nullfs 上，因此 <code>pivot_root</code> 系统调用和卸载操作可以在 rootfs 上使用了。</p>
 <h3 id="initramfs-tools">initramfs-tools<a class="headerlink" href="#initramfs-tools" title="Permanent link">&para;</a></h3>
 <h3 id="dracut">dracut<a class="headerlink" href="#dracut" title="Permanent link">&para;</a></h3>
 <h3 id="uki">UKI<a class="headerlink" href="#uki" title="Permanent link">&para;</a></h3>
@@ -4231,6 +4247,9 @@ Do not link to a "generic" man page for these commands -->
 <li id="fn:grub-bios-partition-layout">
 <p><a href="https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg">https://en.wikipedia.org/wiki/File:GNU_GRUB_components.svg</a>&#160;<a class="footnote-backref" href="#fnref:grub-bios-partition-layout" title="Jump back to footnote 7 in the text">&#8617;</a></p>
 </li>
+<li id="fn:what's-the-init">
+<p>实际上，还有 <code>/etc/init</code>、<code>/bin/init</code>、<code>/bin/sh</code> 等其他待选项，但是在早期版本中内核对于这几个程序的优先级关系经常会变动，所以只取最具代表性的 <code>/sbin/init</code>，具体逻辑可在内核源代码的 <code>init/main.c</code> 中找到。&#160;<a class="footnote-backref" href="#fnref:what's-the-init" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
 </ol>
 </div>
 
@@ -4253,7 +4272,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月9日 12:46:17 UTC">2026年8月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 10:10:00 UTC">2026年8月10日</span>
   </span>
 
     
