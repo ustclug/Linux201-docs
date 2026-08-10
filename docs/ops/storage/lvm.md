@@ -1036,13 +1036,15 @@ sudo lvchange --cachepolicy smq lug/repo
 
 在我们的配置下，写全部脏块操作（包括中间的 `sleep` 操作在内）需要大约 10 个小时。
 
-!!! danger "GRUB 可能无法处理自定义的 migration_threshold 等属性"
+/// danger | GRUB 可能无法处理自定义的 migration_threshold 等属性
+    attrs: {id: lvmcache-grub-bug}
 
-    参考 patch: <https://github.com/taoky/grub/commit/484b718831ab3ca034bb5ea3624a85efeb5bf2ba>。
+参考 patch: <https://github.com/taoky/grub/commit/484b718831ab3ca034bb5ea3624a85efeb5bf2ba>。
 
-    相关的备注信息：<https://blog.taoky.moe/attachments/2021-04-17-tunight/show.html#21>。
+相关的备注信息：<https://blog.taoky.moe/attachments/2021-04-17-tunight/show.html#21>。
 
-    虽然这个 patch 也有问题，并且 GRUB 的开发非常不活跃，所以可能一直都要自己编译 GRUB 了。
+虽然这个 patch 也有问题，并且 GRUB 的开发非常不活跃，所以可能一直都要自己编译 GRUB 了。
+///
 
 我们目前的建议是在计划重启（维护窗口）前手动卸载缓存，在重启后再挂载（之前维护时观察到，即使正常关机，也可能出现脏块的问题）。
 另一种方式是：（在确认没有事实上的脏块的前提下）手动修改 LVM 元数据，把缓存扔掉。

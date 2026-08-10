@@ -452,8 +452,10 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
     这在上游软件的复杂度提升时尤其容易产生问题，一个典型的例子是 [GRUB 不支持 ZFS `dnodesize=auto`](https://www.reddit.com/r/zfs/comments/g9mtll/linux_zfs_root_issue_grub2_hates_dnodesizeauto/)。
     因此许多 ZFS 用户为了保证系统能够正常启动，会为 `/boot` 划分一个独立的分区，采用 ext4 文件系统。
 
-    另一个例子是 USTC 镜像站在初次配置 LVMcache 之后就<s>倒闭了</s>无法启动了，原因是 LVM 在启用了 cache 或 raid 等高级功能后出现了更加复杂的 metadata 数据结构，而 GRUB 解析 LVM metadata 的实现并没有考虑到这种情况。
+    另一个例子是 USTC 镜像站在修改 lvmcache 的配置之后差点就<s>倒闭了</s>无法启动了，原因是 lvmcache 在设置 `migration_threshold` 等属性后出现了更加复杂的 metadata 数据结构，而 GRUB 解析 LVM metadata 的实现并[没有考虑到这种情况](./storage/lvm.md#lvmcache-grub-bug)。
     我们最终[自己 patch 了 GRUB][taoky-patch]，并沿用此版本的 GRUB 直到多年后[再次迁移回 ZFS](https://lug.ustc.edu.cn/planet/2024/12/ustc-mirrors-zfs-rebuild/)。
+
+    考虑到 GRUB 的开发目前实质上已经不是很活跃，这也解释了为什么 [Canonical 会激进地在 Ubuntu 26.10 中移除 GRUB 的许多模块](https://discourse.ubuntu.com/t/streamlining-secure-boot-for-26-10/79069)。
 
   [taoky-patch]: https://github.com/taoky/grub/commit/85b260baec91aa4f7db85d7592f6be92d549a0ae
 
