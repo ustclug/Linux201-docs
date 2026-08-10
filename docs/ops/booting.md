@@ -611,6 +611,20 @@ systemd-boot 是 systemd 项目的一部分，是一个目前正在逐渐流行�
 
 不同于 GRUB 通过自己编写模块来实现各种功能，systemd-boot 则是充分利用了 UEFI 固件已有功能来实现，比如从 UEFI 固件继承对文件系统的支持、内核加载依赖于内核的 EFI stub 等等，从而保证了 systemd-boot 足够轻量。
 
+!!! tip "从 GRUB 迁移到 systemd-boot"
+
+    虽然现在部分发行版在安装时已经将 systemd-boot 作为候选项了，但是通常主流发行版都默认采用 GRUB 作为 bootloader，因此更多情况是已经有一个安装好使用 GRUB 作为 bootloader 的系统了，需要手动从 GRUB 迁移到 systemd-boot。
+
+    通常来说，按照 [Arch Wiki](https://wiki.archlinux.org/title/Systemd-boot) 中的介绍正常安装就可以了，不过这里列举一些安装过程中需要特别注意的点：
+
+    - 确认这个系统是用 UEFI 模式启动的，而且使用的是 GPT 分区表，判断方法很简单：
+        - 运行 `stat /sys/firmware/efi/efivars`，如果正常输出，则是用 UEFI 模式启动的；如果找不到文件夹，则是用 BIOS 模式启动的，需要考虑放弃使用 systemd-boot 或者迁移到 UEFI 模式启动
+        - 运行 `sudo fdisk -l`，如果 `Disklabel type` 一栏是 `gpt`，则是使用 GPT 分区表；如果是 `dos`，则是使用 DOS 分区表，需要使用 `gdisk` 等工具转换为 GPT 分区表格式
+    - 不建议手动编写 `esp/loader/entries/*.conf`，这会导致你在更新内核的时候配置不会自动更新，导致系统在某一天突然无法启动的问题；建议使用 `kernel-install` 工具自动生成配置，同样可以参照 [Arch Wiki](https://wiki.archlinux.org/title/Kernel-install)
+    - 某些系统在安装 `kernel-install` 的时候可能不会自带 `kernel-install` 在包管理器（比如 pacman）的 hook，这同样会导致你在更新内核的时候配置不会自动更新，需要注意不要忘记安装了（比如 Arch Linux 就需要额外安装一个 `pacman-hook-kernel-install` 的 pacman hook）
+    - 需要注意 `kernel-install` 生成的配置必须位于 ESP 或 XBOOTLDR 分区内，并且最好是 vfat 类型文件系统（否则 systemd-boot 读取不了），并在分区内以 `\loader` 作为前缀，否则 systemd-boot 将无法读取配置文件，可以通过 `lsblk -f` 和 `bootctl list` 查看分区文件系统类型和 systemd-boot 能够找到哪些配置文件
+    - 如果需要使用安全启动，请记得给 `esp/EFI/systemd/systemd-bootx64.efi` 和 `esp/EFI/BOOT/BOOTX64.EFI` 这两个文件签名
+
 ## initramfs
 
 早期 Linux 内核采用整体静态编译的方式，把根文件系统驱动、磁盘驱动都编进内核，开机后可以直接挂载根分区。但随着硬件种类爆发式增长，LVM、软 RAID、LUKS 全盘加密等需求出现，内核开始把驱动做成可加载模块，只有需要的时候才会从存储介质中按需加载驱动。但是这又带来一个新的问题，在内核没有存储介质的驱动的时候，内核怎么挂载根文件系统，从存储介质中读取驱动？因此，内核在启动过程中就需要一个临时的、过渡阶段的根文件系统，以便内核从中读取存储介质的驱动，并做好准备工作，再切换到存储介质中的根文件系统，这便是 initrd/initramfs 的作用。
