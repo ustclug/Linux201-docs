@@ -607,24 +607,26 @@ Journald 的配置文件位于 `/etc/systemd/journald.conf`，可以通过 [`jou
 
 如果你需要手动清理日志，释放磁盘空间的话，可以使用 `journalctl --vacuum-size=100M` 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 `--vacuum-time=` 和 `--vacuum-files=10` 也可参考。
 
-!!! note "用户程序视角：如何记录日志？"
+/// note | 用户程序视角：如何记录日志？
+    attrs: {id: syslog}
 
-    C 库提供了传统的 [`syslog()`][syslog.3] 函数，用来连接到 `/dev/log` 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：
+C 库提供了传统的 [`syslog()`][syslog.3] 函数，用来连接到 `/dev/log` 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：
 
-    ```console
-    $ ls -l /dev/log
-    lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -> /run/systemd/journal/dev-log=
-    ```
+```console
+$ ls -l /dev/log
+lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -> /run/systemd/journal/dev-log=
+```
 
-    而在容器场景中，容器运行时一般不会对 `/dev/log` 作特殊处理，因此如果容器内执行的程序使用了 `syslog()` 记录日志，那么就需要将 `/dev/log` 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。
+而在容器场景中，容器运行时一般不会对 `/dev/log` 作特殊处理，因此如果容器内执行的程序使用了 `syslog()` 记录日志，那么就需要将 `/dev/log` 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。
 
-    对脚本程序，可以使用 `logger` 记录日志：
+对脚本程序，可以使用 `logger` 记录日志：
 
-    ```shell
-    logger "hello, world!"
-    ```
+```shell
+logger "hello, world!"
+```
 
-    libsystemd 也提供了 `sd_journal` 系列函数，允许记录结构化日志等操作。
+libsystemd 也提供了 `sd_journal` 系列函数，允许记录结构化日志等操作。
+///
 
 ### logrotate
 
