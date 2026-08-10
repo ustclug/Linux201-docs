@@ -613,6 +613,35 @@ systemd-boot 是 systemd 项目的一部分，是一个目前正在逐渐流行�
 
 ## initramfs
 
+早期 Linux 内核采用整体静态编译的方式，把根文件系统驱动、磁盘驱动都编进内核，开机后可以直接挂载根分区。但随着硬件种类爆发式增长，LVM、软 RAID、LUKS 全盘加密等需求出现，内核开始把驱动做成可加载模块，只有需要的时候才会从存储介质中按需加载驱动。但是这又带来一个新的问题，在内核没有存储介质的驱动的时候，内核怎么挂载根文件系统，从存储介质中读取驱动？因此，内核在启动过程中就需要一个临时的、过渡阶段的根文件系统，以便内核从中读取存储介质的驱动，并做好准备工作，再切换到存储介质中的根文件系统，这便是 initrd/initramfs 的作用。
+
+1996 年 3 月 12 日，Linux 1.3.73 发布，新增了对 initrd（Initial RAM Disk）的支持。
+
+initrd 本质上是一个块设备镜像（通常是 ext2 等文件系统格式），启动时由 bootloader 连同内核一起加载进内存，并通过 Boot Protocol（x86）、Device Tree（arm/arm64/riscv 等）等机制告知内核。内核在启动过程中会把 initrd 当作块设备挂载为临时根文件系统，并执行位于 `/linuxrc` 的初始化程序，在做完必要的初始化后，将真正存放根文件系统的设备的设备号写入 `/proc/sys/kernel/real-root-dev`，然后退出，再由内核挂载真正的根文件系统，最后执行位于 `/sbin/init`[^what's-the-init] 的程序作为 init 进程。
+
+[^what's-the-init]: 实际上，还有 `/etc/init`、`/bin/init`、`/bin/sh` 等其他待选项，但是在早期版本中内核对于这几个程序的优先级关系经常会变动，所以只取最具代表性的 `/sbin/init`，具体逻辑可在内核源代码的 `init/main.c` 中找到。
+
+其中，内核执行 `/linuxrc`，写入设备号，交给内核挂载的整个过程被称之为 change_root。
+
+2000 年 1 月 28 日，Linux 2.3.41 发布，新增了 `pivot_root` 系统调用。
+
+`pivot_root` 系统调用的目的就是替代之前 change_root 必须由内核读取 `/proc/sys/kernel/real-root-dev`，由内核线程挂载真实根文件目录系统的逻辑，从而将切换根文件系统的逻辑变成由用户态程序主动调用。此后，使用 `pivot_root` 变成推荐做法，change_root 机制不被推荐使用。
+
+2003 年 12 月 18 日，Linux 2.6.0 发布，rootfs 的概念和对 initramfs（Initial RAM Filesystem）的支持正式进入稳定版。
+
+根据 Linux 官方文档所述，rootfs 是 ramfs 或 tmpfs（两种位于内存的文件系统）的一个特殊实例，在内核挂载后无法卸载，只能通过挂载新的根文件系统以覆盖。因此，`pivot_root` 系统调用无法在 rootfs 上使用（`pivot_root` 内部有一条专门的检查，一旦发现 rootfs 就返回 `EINVAL` 拒绝操作），需要用户态改用一个名为 `switch_root` 的程序，通过 `mount` 系统调用将新的根文件系统挂载在根上，覆盖 rootfs 来实现切换根文件系统，比如 util-linux 包的 [`switch_root`](https://github.com/util-linux/util-linux/blob/master/sys-utils/switch_root.c)。
+
+而 initramfs 则是把这个 rootfs 要用到的内容，预先打包成一个 cpio 格式的归档文件，内核启动时再把它解包填充进 rootfs 里，取代了之前以 initrd 作为内核最初根文件系统的做法。相比于 initrd 通过块设备抽象作为根文件系统使用，initramfs 直接基于内存搭建根文件系统，除去了块设备抽象，因此性能更好、启动更快，同时也无需 ext2 等驱动支持，减轻了内核附带额外驱动的负担。
+
+除此之外，initramfs 和 initrd 还有以下关系和区别：
+
+- initramfs 和 initrd 在 bootloader 和内核通信时共用同一套参数，内核会自动检测 bootloader 加载的是旧的 initrd 还是新的 initramfs
+- initrd 使用 `/linuxrc` 作为最初执行的程序，而 initramfs 使用 `/init` 作为最初执行的程序
+
+2026 年 4 月 12 日，Linux 7.0 发布，新增了对 nullfs 的支持。
+
+现在，内核不再把 rootfs 作为一个不可卸载的根文件系统，而是把 rootfs 挂载在一个不可变的空文件系统 nullfs 上，因此 `pivot_root` 系统调用和卸载操作可以在 rootfs 上使用了。
+
 ### initramfs-tools
 
 ### dracut
