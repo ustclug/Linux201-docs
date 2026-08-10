@@ -4060,8 +4060,9 @@
 <p>需要注意的是，GRUB 的模块一般不依赖上游软件，也没有采用上游软件的实现方式，而是将各种功能重新独立地实现了一遍。
 这在上游软件的复杂度提升时尤其容易产生问题，一个典型的例子是 <a href="https://www.reddit.com/r/zfs/comments/g9mtll/linux_zfs_root_issue_grub2_hates_dnodesizeauto/">GRUB 不支持 ZFS <code>dnodesize=auto</code></a>。
 因此许多 ZFS 用户为了保证系统能够正常启动，会为 <code>/boot</code> 划分一个独立的分区，采用 ext4 文件系统。</p>
-<p>另一个例子是 USTC 镜像站在初次配置 LVMcache 之后就<s>倒闭了</s>无法启动了，原因是 LVM 在启用了 cache 或 raid 等高级功能后出现了更加复杂的 metadata 数据结构，而 GRUB 解析 LVM metadata 的实现并没有考虑到这种情况。
+<p>另一个例子是 USTC 镜像站在修改 lvmcache 的配置之后差点就<s>倒闭了</s>无法启动了，原因是 lvmcache 在设置 <code>migration_threshold</code> 等属性后出现了更加复杂的 metadata 数据结构，而 GRUB 解析 LVM metadata 的实现并<a href="../storage/lvm/#lvmcache-grub-bug">没有考虑到这种情况</a>。
 我们最终<a href="https://github.com/taoky/grub/commit/85b260baec91aa4f7db85d7592f6be92d549a0ae">自己 patch 了 GRUB</a>，并沿用此版本的 GRUB 直到多年后<a href="https://lug.ustc.edu.cn/planet/2024/12/ustc-mirrors-zfs-rebuild/">再次迁移回 ZFS</a>。</p>
+<p>考虑到 GRUB 的开发目前实质上已经不是很活跃，这也解释了为什么 <a href="https://discourse.ubuntu.com/t/streamlining-secure-boot-for-26-10/79069">Canonical 会激进地在 Ubuntu 26.10 中移除 GRUB 的许多模块</a>。</p>
 </div>
 <p>在 BIOS 启动模式下，磁盘的第一个分区通常从 1 MiB 的位置开始，此时磁盘开头的前 1 MiB 空间就可以用于写入 GRUB 的启动代码。
 这部分代码通常包含了 FAT 和 ext4 分区格式的支持，因此 GRUB 可以继续从这些格式的分区中读取配置文件、Linux 内核或更多的 GRUB 模块。</p>
@@ -4288,7 +4289,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 18:59:08 UTC">2026年8月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 19:05:10 UTC">2026年8月10日</span>
   </span>
 
     
