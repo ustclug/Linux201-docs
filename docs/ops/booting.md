@@ -437,7 +437,17 @@ BOOT_IMAGE=/vmlinuz-linux-cachyos root=UUID=eea8de7e-b37f-4b3b-b530-1003eeab9746
 
 GRUB（GRand Unified Bootloader）是目前应用最广泛的 Linux bootloader，同时支持 BIOS 启动模式和 UEFI 启动模式，并且以 BIOS 模式启动时 GRUB 可以被安装在 GPT 分区表中。
 
-GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分区及 RAID 配置形式，或者通过 TFTP 或 HTTP 从网络中加载文件，甚至还能提供图形化的启动界面（例如 [Minecraft 风格的自定义 GRUB 主题](https://github.com/Lxtharia/minegrub-theme)）。这些模块通常存储在 `/usr/lib/grub` 下，并会在安装 GRUB 时被复制到 `/boot` 下。
+GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分区及 RAID 配置形式，或者通过 TFTP 或 HTTP 从网络中加载文件，甚至还能提供图形化的启动界面（例如 [Minecraft 风格的自定义 GRUB 主题](https://github.com/Lxtharia/minegrub-theme)）。这些模块通常存储在 `/usr/lib/grub` 下，并会在安装 GRUB 时被复制到 `/boot/grub/` 下。
+
+一般来讲不应该主动修改 `/boot/grub/` 下的内容。对常见的配置修改（设置是否显示菜单、timeout 时间、Linux 的内核命令行参数等），需要修改 `/etc/default/grub`，然后使用 `update-grub` 更新配置。
+
+!!! tip "`update-grub`"
+
+    `update-grub` 是 Debian 下一个特有的脚本，其实际执行的是：
+
+    ```sh
+    grub-mkconfig -o /boot/grub/grub.cfg
+    ```
 
 以下是一个 GRUB 启动界面的示例：
 
