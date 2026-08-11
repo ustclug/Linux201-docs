@@ -36,8 +36,10 @@
 [getaddrinfo.3]: https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
 [gethostbyname.3]: https://man7.org/linux/man-pages/man3/gethostbyname.3.html
 [getnameinfo.3]: https://man7.org/linux/man-pages/man3/getnameinfo.3.html
+[malloc_trim.3]: https://man7.org/linux/man-pages/man3/malloc_trim.3.html
 [resolver.3]: https://man7.org/linux/man-pages/man3/resolver.3.html
 [sd-login.3]: https://www.freedesktop.org/software/systemd/man/latest/sd-login.html
+[sd_event_add_memory_pressure.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_event_add_memory_pressure.html
 [syslog.3]: https://man7.org/linux/man-pages/man3/syslog.3.html
 
 <!-- man 4 -->
@@ -85,6 +87,7 @@
 [systemd.kill.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html
 [systemd.mount.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html
 [systemd.resource-control.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html
+[systemd.resource-control.5#ManagedOOMSwap]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#ManagedOOMSwap=auto%7Ckill
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
 [systemd.swap.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.swap.html

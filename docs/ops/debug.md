@@ -80,7 +80,13 @@ systemd-oomd
 
     systemd-oomd 是 opt-in 的——需要主动在 systemd 相关 unit 中添加相关配置，systemd-oomd 才会处理。可以使用 `oomctl` 命令获取当前 systemd-oomd 状态，检查 "Swap Monitored CGroups" 与 "Memory Pressure Monitored CGroups" 是否包含需要监控的 systemd unit。诸如 Debian、Fedora 等发行版均做了相关的预配置。
 
-    除了在 unit 文件中配置 `ManagedOOMSwap` 和 `ManagedOOMMemoryPressure` 外，建议通过编辑 `/etc/systemd/oomd.conf` 文件来调整 systemd-oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。systemd-oomd **触发**的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。
+    在 unit 文件中配置 [`ManagedOOMSwap` 和 `ManagedOOMMemoryPressure`][systemd.resource-control.5#ManagedOOMSwap] 可以控制 systemd-oomd 是否监控对应 unit（cgroup）的 Swap 使用与内存压力。`/etc/systemd/oomd.conf` 文件可以调整 systemd-oomd 的全局行为。其中 `SwapUsedLimit` 参数（默认为 90%）虽然名称中包含 "Swap"，但它**同时适用于物理内存和 Swap 空间**。
+    
+    systemd-oomd **触发**的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。
+
+    !!! note "为什么设置 `ManagedOOMSwap=kill` 之后，`oomctl` 显示的 cgroup swap 使用量和实际不相符？"
+
+        `oomctl` 显示的 cgroup 统计信息是从 systemd-oomd 内部读取的（不是实时从 cgroup 读取的），而 ["Swap Monitored CGroups" 中的 cgroup 只会在**加入 systemd-oomd 监控的时候**读取 swap 使用情况](https://github.com/systemd/systemd/blob/0b2d1203cbcc9a1ce5ec4c26d86070eaac0ccba5/src/oom/oomd-manager.c#L472-L475)，因此大概率和 `oomctl` 执行时候的情况是不同的。"System Context" 下显示的内存使用情况是最新的。
 
     触发后，systemd-oomd 需要**选择**一个 cgroup 来杀死。当触发条件为 `SwapUsedLimit` 时，systemd-oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 `pgscan` 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。
 
@@ -94,7 +100,7 @@ systemd-oomd
 
     ??? example "Debian 13 中的 systemd-oomd 配置"
 
-        Debian 13 的默认配置为：在用户 service 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；默认不监控 swap 使用量（与 Debian 12 的行为不同）。
+        Debian 13 的默认配置为：在用户 service 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；默认不监控 swap 使用量（与 Debian 12 的行为不同）。这里 `ManagedOOMSwap` 的 `auto` 代表默认不监控，除非在其上层有 cgroup 将这个属性设置为了 `kill`。
 
         ```ini title="/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf"
         [Slice]
@@ -150,6 +156,29 @@ systemd-oomd
     思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
 
 还有很多其他的实现，在 [nohang 的 README](https://github.com/hakavlad/nohang?tab=readme-ov-file#solution) 中有相关整理，可以作为参考。
+
+!!! note "应用开发者怎么知道当前内存等资源使用是否紧张呢？"
+
+    以下以 GLib 和 systemd 为例介绍，不使用 glib 与 systemd 用户库的程序也可以自行实现相关的方式。[GLib](https://gitlab.gnome.org/GNOME/glib) 是 Linux 下大量 C 与 C++ 应用使用的基础库，特别是在 GNOME/GTK 生态中随处可见。它的 [GMemoryMonitor](https://docs.gtk.org/gio/iface.MemoryMonitor.html) 结构体实现了检测系统内存是否紧张的功能，并允许通过 GLib 的信号机制在内存紧张时执行自定义的函数（需要应用开发者主动使用）。除了传统的定时轮询以外，它也支持其他获取内存使用情况的接口。
+
+    在 Linux 支持 PSI 之前，[`low-memory-monitor`](https://gitlab.freedesktop.org/hadess/low-memory-monitor) 包会在 [DBus](../advanced/desktop.md#dbus) 上暴露 `org.freedesktop.LowMemoryMonitor` 接口，在内存不足时发送信号。不过目前的系统已经基本不再采用这个方案。内核暴露的 PSI 文件允许应用通过打开对应文件的方式[写入来注册 trigger](https://docs.kernel.org/accounting/psi.html#monitoring-for-pressure-thresholds)，在满足条件的情况下，应用在 PSI 文件上的 `poll()` 会被触发。针对不能获取到 PSI 文件的沙盒场景，[Portal](../advanced/desktop.md#portal) 也提供了 [`org.freedesktop.portal.MemoryMonitor`](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.MemoryMonitor.html) 接口。
+
+    [Systemd 也提供了对应的支持](https://systemd.io/PRESSURE/)，会在程序启动时设置相关的环境变量，以此在内存、CPU、IO 资源不足的情况下让应用知晓。其中 CPU 与 IO 的支持需要在 systemd 261 版本后，Debian 13 的 systemd 不支持。对目前大部分发行版的默认配置来说，相关的 `PressureWatch` 配置都是 `auto`，因此：
+
+    - 默认内存统计（`MemoryAccounting`）是启用的，相关环境变量会设置。
+    - CPU 统计在 cgroup 中总是启用的，因此在 unit 配置了 CPU 限制时，相关环境变量才会设置。
+    - 默认 IO 统计（`IOAccounting`）是关闭的，不会设置对应的环境变量。
+
+    效果类似如下，对 systemd 启动的 unit，可以看到有 `MEMORY_PRESSURE_WRITE` 和 `MEMORY_PRESSURE_WATCH` 两个环境变量设置。
+
+    ```console
+    $ run0
+    # env | grep PRESSURE
+    MEMORY_PRESSURE_WRITE=c29tZSAyMDAwMDAgMjAwMDAwMAA=
+    MEMORY_PRESSURE_WATCH=/sys/fs/cgroup/user.slice/run-p1162-i4807.service/memory.pressure
+    ```
+
+    之后应用内部使用 [`sd_event_add_memory_pressure`][sd_event_add_memory_pressure.3] 等函数即可注册对应的 handler。有一些通用的方式可以释放内存，例如对使用 glibc 的程序来说，[`malloc_trim`][malloc_trim.3] 可以释放堆中已经 `free` 但是还没有归还给系统的内存空间；对诸如 Python、Go 这类利用垃圾回收的语言则可以触发 GC 来释放内存。不过很不幸的是，以上介绍的所有内容几乎都需要应用开发者主动调用，而不是相关库或 runtime 的默认行为。
 
 ##### Swap、Zram 与 Zswap {#swap-zram-zswap}
 
