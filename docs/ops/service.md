@@ -536,7 +536,7 @@ WantedBy=timers.target
 
 ### 临时服务 {#transient-service}
 
-systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 `.service` 文件，这对于一些临时任务或一次性操作非常有用。
+systemd 提供了临时（transient）服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 `.service` 文件，这对于一些临时任务或一次性操作非常有用。
 
 `systemd-run` 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：
 
@@ -548,14 +548,49 @@ systemd-run --unit=my-sleep sleep 600
 
 默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 `systemctl status my-sleep` 将会显示 service not found。此时你仍然可以使用 `journalctl` 命令查看日志，回收服务并不会清除其运行日志。`systemd-run` 有两个参数可以改变此默认行为：
 
-- `-r` 可以使 systemd 在进程正常退出后仍然保留服务；
-- `-G` 可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。
+- `-r`（`--remain-after-exit`）可以使 systemd 在进程正常退出后仍然保留服务；
+- `-G`（`--collect`）可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。
 
 同时，`systemd-run` 还有更多的参数可以用于指定服务进程的运行环境，例如工作目录和输入输出文件描述符等，具体可参考 [`systemd-run(1)`][systemd-run.1]。
 
 基于这些讨论，本文认为 `systemd-run` 是 `nohup` 命令的全面替代品，也鼓励读者尽量使用 `systemd-run` 来运行各种一次性的后台命令，而不是使用 `nohup` 和 `&`。
 
-作为一个常见的使用场景，普通用户需要使用 `systemd-run --user` 以运行临时的用户服务，而非系统服务。
+作为一个常见的使用场景，普通用户需要使用 `systemd-run --user` 以运行临时的用户服务，而非系统服务。用户服务如果需要在用户注销之后继续运行，需要配置 lingering，见本文[登录管理器](#logind)部分的介绍。
+
+!!! example "`nohup` 与 `systemd-run` 对照例子"
+
+    对下面这个例子：
+
+    ```sh
+    nohup ./calc > result 2> err &
+    ```
+
+    在开启 lingering 的情况下，对应的 `systemd-run` 可以是：
+
+    ```sh
+    systemd-run --user --service-type=exec --unit=mycalc --collect --same-dir /bin/sh -c './calc > result 2> err'
+    ```
+
+    其中 `--same-dir` 设置了任务的 cwd 与当前所处目录相同。`--service-type=exec` 是可选但推荐的，参见 [Service Type](#service-type) 一节。
+
+    如果允许让 journald 存储结果的话，可以不需要使用 `sh -c` 的方式使用：
+
+    ```sh
+    systemd-run --user --service-type=exec --unit=mycalc --collect --same-dir ./calc
+    ```
+
+    之后 `journalctl --user -u mycalc` 查看即可。
+
+!!! note "run0"
+
+    从 systemd 256 开始，其附带了一个 `sudo`、`pkexec` 等提权工具的替代品 `run0`，可以从 Debian 13 开始使用到。`run0` 最大的特点是和 `sudo` 等工具不同，它本体不是一个 SUID binary，因此提权方式不是让自己成为 root（或其他用户），再判断调用者有没有权限，而是直接让系统的 systemd 创建一个临时的 unit（由 polkit 判断是否能够提权），然后在里面运行提权后的程序。它实质上是 `systemd-run` 的软链接：
+
+    ```console
+    $ ls -lha /usr/bin/run0
+    lrwxrwxrwx 1 root root 11 Jul 24 01:43 /usr/bin/run0 -> systemd-run*
+    ```
+
+    其对应的最小替代为 `systemd-run -q --shell --uid=root`（如果直接运行 shell），或者 `systemd-run -q --pty --same-dir --wait --collect --service-type=exec --uid=root ./your_program`。
 
 ## 日志管理 {#log}
 
@@ -804,7 +839,7 @@ action(
 
 ## 登录管理器 {#logind}
 
-systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 [systemd-logind(8)][systemd-logind.8]。本部分主要关注在日常运维中可能会用到的一部分特性。
+systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户的 user manager 与 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 [systemd-logind(8)][systemd-logind.8]。本部分主要关注在日常运维中可能会用到的一部分特性。
 
 在登录系统时，PAM 的 `pam_systemd.so` 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。
 
@@ -820,7 +855,7 @@ SESSION  UID USER  SEAT  TTY
 
 `loginctl` 支持锁定（`lock-session`）、解锁（`unlock-session`）、注销（`terminate-session`）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 `loginctl` 的功能来实现。
 
-systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 `systemctl`、`journalctl` 操作时添加 `--user` 参数即可查看当前用户的服务和日志等。
+systemd 中每个 session 都会启动一个用户级别的 systemd 进程（user manager），用于管理用户的服务、timer 等，在 `systemctl`、`journalctl` 操作时添加 `--user` 参数即可查看当前用户的服务和日志等。
 
 !!! note "DBus"
 
@@ -835,7 +870,25 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用
 
     如果需要使用 `sudo` 或 `su` 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
 
-有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
+有些场景下，我们希望在机器启动时，用户的 user manager（`user@UID.service`）也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
+
+!!! note "`session-*.scope` 和 `user@UID.service`"
+
+    如果观察 `systemctl status`，可以看到在 `user.slice` 下出现类似这样的场景：
+
+    ```
+    └─user.slice
+      └─user-1000.slice
+        ├─session-23.scope
+        │ ├─717950 "gdm-session-worker [pam/gdm-password]"
+        │ ├─718687 /usr/lib/gdm-wayland-session /usr/bin/gnome-session
+        │ └─718700 /usr/lib/gnome-session-init-worker gnome
+        └─user@1000.service
+          ├─app.slice
+          （下略）
+    ```
+
+    可以注意到 `user@UID.service` 和 `session-*.scope` 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，[logind.conf][logind.conf.5] 的 `KillUserProcesses=` 参数（默认为 `no`）就控制是否强制杀死对应的 session scope 的进程。因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
 
 !!! lab "限制用户的资源使用"
 

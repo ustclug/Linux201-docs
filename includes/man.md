@@ -38,8 +38,10 @@
 [getnameinfo.3]: https://man7.org/linux/man-pages/man3/getnameinfo.3.html
 [malloc_trim.3]: https://man7.org/linux/man-pages/man3/malloc_trim.3.html
 [resolver.3]: https://man7.org/linux/man-pages/man3/resolver.3.html
-[sd-login.3]: https://www.freedesktop.org/software/systemd/man/latest/sd-login.html
 [sd_event_add_memory_pressure.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_event_add_memory_pressure.html
+[sd_listen_fds.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_listen_fds.html
+[sd-login.3]: https://www.freedesktop.org/software/systemd/man/latest/sd-login.html
+[sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
 [syslog.3]: https://man7.org/linux/man-pages/man3/syslog.3.html
 
 <!-- man 4 -->
@@ -62,11 +64,10 @@
 [gitprotocol-pack.5]: https://git-scm.com/docs/gitprotocol-pack
 [gitprotocol-v2.5]: https://git-scm.com/docs/gitprotocol-v2
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
+[logind.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/logind.conf
 [nsswitch.conf.5]: https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html
 [podman-systemd.unit.5]: https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
 [resolv.conf.5]: https://man7.org/linux/man-pages/man5/resolv.conf.5.html
-[sd_listen_fds.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_listen_fds.html
-[sd_notify.3]: https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html
 <!-- begin slurm config files -->
 [slurm.conf.5]: https://slurm.schedmd.com/slurm.conf.html
 [slurmdbd.conf.5]: https://slurm.schedmd.com/slurmdbd.conf.html
