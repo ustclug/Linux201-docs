@@ -4151,19 +4151,41 @@ U --&gt; F(scope)</code></pre>
 <p>此时 <code>certbot.timer</code> 会自动触发同名的 service，也就是 <code>certbot.service</code>。</p>
 <p>在编辑完两个文件之后，需要运行 <code>systemctl daemon-reload</code> 使 systemd 重新加载配置文件，然后可以使用 <code>systemctl start certbot.timer</code> 启动定时器，或者使用 <code>systemctl enable certbot.timer</code> 让其开机启动。</p>
 <h3 id="transient-service">临时服务<a class="headerlink" href="#transient-service" title="Permanent link">&para;</a></h3>
-<p>systemd 提供了临时服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 <code>.service</code> 文件，这对于一些临时任务或一次性操作非常有用。</p>
+<p>systemd 提供了临时（transient）服务的支持，可以在需要时动态创建和启动服务，而不需要事先编写 <code>.service</code> 文件，这对于一些临时任务或一次性操作非常有用。</p>
 <p><code>systemd-run</code> 命令可以创建临时服务。例如，以下命令会创建一个临时服务并立即启动：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>systemd-run<span class="w"> </span>--unit<span class="o">=</span>my-sleep<span class="w"> </span>sleep<span class="w"> </span><span class="m">600</span>
 </code></pre></div>
 <p>此后，你就可以通过 <code>systemctl status my-sleep</code> 查看临时服务的状态，或者使用诸如 <code>systemctl stop</code> / <code>systemctl restart</code> 等命令管理其状态了。同时，你也可以使用 <code>journalctl</code> 命令查看进程的输出（<a href="#log">见下</a>）。</p>
 <p>默认情况下，如果临时服务的命令正常退出了，那么对应的服务会被回收，即 <code>systemctl status my-sleep</code> 将会显示 service not found。此时你仍然可以使用 <code>journalctl</code> 命令查看日志，回收服务并不会清除其运行日志。<code>systemd-run</code> 有两个参数可以改变此默认行为：</p>
 <ul>
-<li><code>-r</code> 可以使 systemd 在进程正常退出后仍然保留服务；</li>
-<li><code>-G</code> 可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。</li>
+<li><code>-r</code>（<code>--remain-after-exit</code>）可以使 systemd 在进程正常退出后仍然保留服务；</li>
+<li><code>-G</code>（<code>--collect</code>）可以使 systemd 在进程退出后立刻回收服务，即使不是正常退出（如非零的 exit code 或被信号杀死）。</li>
 </ul>
 <p>同时，<code>systemd-run</code> 还有更多的参数可以用于指定服务进程的运行环境，例如工作目录和输入输出文件描述符等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html"><code>systemd-run(1)</code></a>。</p>
 <p>基于这些讨论，本文认为 <code>systemd-run</code> 是 <code>nohup</code> 命令的全面替代品，也鼓励读者尽量使用 <code>systemd-run</code> 来运行各种一次性的后台命令，而不是使用 <code>nohup</code> 和 <code>&amp;</code>。</p>
-<p>作为一个常见的使用场景，普通用户需要使用 <code>systemd-run --user</code> 以运行临时的用户服务，而非系统服务。</p>
+<p>作为一个常见的使用场景，普通用户需要使用 <code>systemd-run --user</code> 以运行临时的用户服务，而非系统服务。用户服务如果需要在用户注销之后继续运行，需要配置 lingering，见本文<a href="#logind">登录管理器</a>部分的介绍。</p>
+<div class="admonition example">
+<p class="admonition-title"><code>nohup</code> 与 <code>systemd-run</code> 对照例子</p>
+<p>对下面这个例子：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>nohup<span class="w"> </span>./calc<span class="w"> </span>&gt;<span class="w"> </span>result<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>err<span class="w"> </span><span class="p">&amp;</span>
+</code></pre></div>
+<p>在开启 lingering 的情况下，对应的 <code>systemd-run</code> 可以是：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--service-type<span class="o">=</span><span class="nb">exec</span><span class="w"> </span>--unit<span class="o">=</span>mycalc<span class="w"> </span>--collect<span class="w"> </span>--same-dir<span class="w"> </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;./calc &gt; result 2&gt; err&#39;</span>
+</code></pre></div>
+<p>其中 <code>--same-dir</code> 设置了任务的 cwd 与当前所处目录相同。<code>--service-type=exec</code> 是可选但推荐的，参见 <a href="#service-type">Service Type</a> 一节。</p>
+<p>如果允许让 journald 存储结果的话，可以不需要使用 <code>sh -c</code> 的方式使用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--service-type<span class="o">=</span><span class="nb">exec</span><span class="w"> </span>--unit<span class="o">=</span>mycalc<span class="w"> </span>--collect<span class="w"> </span>--same-dir<span class="w"> </span>./calc
+</code></pre></div>
+<p>之后 <code>journalctl --user -u mycalc</code> 查看即可。</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">run0</p>
+<p>从 systemd 256 开始，其附带了一个 <code>sudo</code>、<code>pkexec</code> 等提权工具的替代品 <code>run0</code>，可以从 Debian 13 开始使用到。<code>run0</code> 最大的特点是和 <code>sudo</code> 等工具不同，它本体不是一个 SUID binary，因此提权方式不是让自己成为 root（或其他用户），再判断调用者有没有权限，而是直接让系统的 systemd 创建一个临时的 unit（由 polkit 判断是否能够提权），然后在里面运行提权后的程序。它实质上是 <code>systemd-run</code> 的软链接：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-lha<span class="w"> </span>/usr/bin/run0
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">lrwxrwxrwx 1 root root 11 Jul 24 01:43 /usr/bin/run0 -&gt; systemd-run*</span>
+</code></pre></div>
+<p>其对应的最小替代为 <code>systemd-run -q --shell --uid=root</code>（如果直接运行 shell），或者 <code>systemd-run -q --pty --same-dir --wait --collect --service-type=exec --uid=root ./your_program</code>。</p>
+</div>
 <h2 id="log">日志管理<a class="headerlink" href="#log" title="Permanent link">&para;</a></h2>
 <h3 id="systemd-journald">Systemd-journald<a class="headerlink" href="#systemd-journald" title="Permanent link">&para;</a></h3>
 <p>Journald 是 systemd 套件中负责管理日志的部分。与传统的 <code>/var/log/*.log</code> 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（<code>less</code>、<code>vim</code> 等）查看，需要通过 <code>journalctl</code> 管理。</p>
@@ -4237,36 +4259,36 @@ U --&gt; F(scope)</code></pre>
 <p class="admonition-title">避免覆盖由包管理器管理的文件</p>
 <p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
 <p>例如，要限制磁盘占用（<code>/var/log/journal</code>）为 1G，可以创建如下文件，然后重启 <code>systemd-journald</code> 服务：</p>
-<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">[Journal]</span>
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
+<div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">[Journal]</span>
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="na">SystemMaxUse</span><span class="o">=</span><span class="s">1G</span>
 </code></pre></div>
 </div>
 <p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <div class="admonition note" id="syslog">
 <p class="admonition-title">用户程序视角：如何记录日志？</p>
 <p>C 库提供了传统的 <a href="https://man7.org/linux/man-pages/man3/syslog.3.html"><code>syslog()</code></a> 函数，用来连接到 <code>/dev/log</code> 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/log
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -&gt; /run/systemd/journal/dev-log=</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/log
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -&gt; /run/systemd/journal/dev-log=</span>
 </code></pre></div>
 <p>而在容器场景中，容器运行时一般不会对 <code>/dev/log</code> 作特殊处理，因此如果容器内执行的程序使用了 <code>syslog()</code> 记录日志，那么就需要将 <code>/dev/log</code> 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。</p>
 <p>对脚本程序，可以使用 <code>logger</code> 记录日志：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>logger<span class="w"> </span><span class="s2">&quot;hello, world!&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>logger<span class="w"> </span><span class="s2">&quot;hello, world!&quot;</span>
 </code></pre></div>
 <p>libsystemd 也提供了 <code>sd_journal</code> 系列函数，允许记录结构化日志等操作。</p>
 </div>
 <h3 id="logrotate">logrotate<a class="headerlink" href="#logrotate" title="Permanent link">&para;</a></h3>
 <p>按照 Unix 的“一个程序只做一件事”的设计思想，一般的程序只管将日志输出到指定地方，因此有了 logrotate 这个工具来负责非 journald 日志的“滚动”（rotate），即重命名、压缩、删除等操作。</p>
 <p>logrotate 的全局配置文件位于 <code>/etc/logrotate.conf</code>，而每个服务的配置文件则位于 <code>/etc/logrotate.d/</code> 目录下。以 Telegraf 为例，其配置文件如下：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>/var/log/telegraf/telegraf.log
-<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="o">{</span>
-<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
-<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span>daily
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">    </span>missingok
-<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">    </span>dateext
-<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">    </span>copytruncate
-<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">    </span>notifempty
-<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">    </span>compress
-<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a><span class="o">}</span>
+<div class="highlight"><span class="filename">/etc/logrotate.d/telegraf</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>/var/log/telegraf/telegraf.log
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="o">{</span>
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">    </span>rotate<span class="w"> </span><span class="m">6</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">    </span>daily
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">    </span>missingok
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">    </span>dateext
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">    </span>copytruncate
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">    </span>notifempty
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="w">    </span>compress
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="o">}</span>
 </code></pre></div>
 <p>配置文件的开头可以指定一个或多个文件（每行一个，可以使用 shell 的通配符），然后是一系列的配置项。常见的配置项有：</p>
 <dl>
@@ -4299,10 +4321,10 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>压缩旧的日志文件，以及压缩参数（默认使用 <code>gzip</code> / <code>gunzip</code> / <code>.gz</code> / <code>-9</code>）。其中 <code>compress</code> 是开关，默认行为是 <code>nocompress</code>。</p>
 <p>例如，如果使用 Zstd 压缩，可以使用以下配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
-<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
-<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>compressext<span class="w"> </span>.zst
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>compresscmd<span class="w"> </span>/usr/bin/zstd
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>uncompresscmd<span class="w"> </span>/usr/bin/unzstd
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>compressext<span class="w"> </span>.zst
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>compressoptions<span class="w"> </span>-13<span class="w"> </span>-T0
 </code></pre></div>
 </dd>
 <dt>delaycompress</dt>
@@ -4313,9 +4335,9 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>在 rotate 之前/之后执行的命令，命令块需要以 <code>endscript</code> 结束。与 Makefile / Dockerfile 等语法类似，每行为单独的一个命令，因此如果要将 <code>if</code> 等 shell 语法写成多行，需要在除了最后一行以外的每一行末尾使用反斜杠，避免被解释成多条命令。</p>
 <p>例如，Nginx 软件包提供的配置就会在 rotate 之后重载 Nginx：</p>
-<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>postrotate
-<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
-<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>endscript
+<div class="highlight"><span class="filename">/etc/logrotate.d/nginx</span><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>postrotate
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">    </span>invoke-rc.d<span class="w"> </span>nginx<span class="w"> </span>rotate<span class="w"> </span>&gt;/dev/null<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>endscript
 </code></pre></div>
 </dd>
 </dl>
@@ -4325,11 +4347,11 @@ U --&gt; F(scope)</code></pre>
 <p>rsyslog 和 syslog-ng 是传统的日志管理方案，尽管 journald 已经取代了它们不少功能，但是在一些场景下仍然有着重要的作用。以下介绍 rsyslog 的相关内容。</p>
 <h4 id="rsyslog-with-journald">与 journald 协作<a class="headerlink" href="#rsyslog-with-journald" title="Permanent link">&para;</a></h4>
 <p>在 Debian 12 之前，rsyslog 默认预装，用于将文本格式的日志输出到 <code>/var/log</code> 下。在 Debian 12 之后，由于 systemd-journald 会将日志存储为二进制格式（<code>/var/log/journal/</code> 下），因此 rsyslog 不再预装，避免同时写两份内容一样的东西到磁盘上。不过，Debian 12 之后的 journald 配置仍然会将日志转发到 <code>/run/systemd/journal/syslog</code>：</p>
-<div class="highlight"><span class="filename">/usr/lib/systemd/journald.conf.d/syslog.conf</span><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># Undo upstream commit 46b131574fdd7d77 for now. For details see</span>
-<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="c1">#  http://lists.freedesktop.org/archives/systemd-devel/2014-November/025550.html</span>
-<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>
-<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="k">[Journal]</span>
-<a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="na">ForwardToSyslog</span><span class="o">=</span><span class="s">yes</span>
+<div class="highlight"><span class="filename">/usr/lib/systemd/journald.conf.d/syslog.conf</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># Undo upstream commit 46b131574fdd7d77 for now. For details see</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="c1">#  http://lists.freedesktop.org/archives/systemd-devel/2014-November/025550.html</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="k">[Journal]</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="na">ForwardToSyslog</span><span class="o">=</span><span class="s">yes</span>
 </code></pre></div>
 <p><code>/run/systemd/journal/syslog</code> 由 <code>syslog.socket</code> 控制，被激活时会启动 <code>syslog.service</code>。安装 rsyslog 后，<code>/etc/systemd/system/syslog.service</code> 会变成指向 <code>rsyslog.service</code> 的软链接。在激活后，rsyslog 的 <a href="https://docs.rsyslog.com/doc/configuration/modules/imuxsock.html#coexistence-with-systemd">imuxsock 插件</a> 会从 systemd 获取到对应的 socket 的描述符。</p>
 <p>在配置后，如果不希望 journald 继续记录日志（只做转发日志到 rsyslog 的中间人），直接删除 <code>/var/log/journal</code> 目录即可。这项设置由 <code>journald.conf</code> 的 <code>Storage=auto</code> 控制，在目录不存在时不会执行存储日志到磁盘的操作。</p>
@@ -4345,67 +4367,67 @@ U --&gt; F(scope)</code></pre>
 <p>以下介绍使用 rsyslog TLS 加密传输日志的相关设置，下面给出的例子中服务端有证书，客户端没有（客户端会校验服务端，但是服务端不会校验客户端），在需要高安全性的场合下，建议为客户端也生成证书。生成 CA 证书与服务端（接收端）证书的部分可参考 <a href="../network-service/nginx/#getting-certificates">nginx 一章中我们的相关介绍</a>。</p>
 <p>TLS 传输日志一般使用 TCP 6514 端口（传统非加密的 syslog 传输使用 TCP 或 UDP 的 514 端口）。两端都需要运行 rsyslog。这里使用 GnuTLS 模块（需要安装 <code>rsyslog-gnutls</code> 包）。</p>
 <p>服务端：</p>
-<div class="highlight"><span class="filename">/etc/rsyslog.d/server.conf</span><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>global(
-<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>    DefaultNetstreamDriver=&quot;gtls&quot;
-<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>    DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;
-<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>    DefaultNetstreamDriverCertFile=&quot;/path/to/server.crt&quot;
-<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>    DefaultNetstreamDriverKeyFile=&quot;/path/to/server.key&quot;
-<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>)
-<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>
-<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>module(
-<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>    load=&quot;imtcp&quot;
-<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>    StreamDriver.Name=&quot;gtls&quot;
-<a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>    StreamDriver.Mode=&quot;1&quot;
-<a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>    # anon -- 不校验客户端
-<a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>    StreamDriver.Authmode=&quot;anon&quot;
-<a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>)
-<a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>
-<a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a>input(
-<a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a>    type=&quot;imtcp&quot;
-<a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a>    port=&quot;6514&quot;
-<a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a>)
-<a id="__codelineno-29-20" name="__codelineno-29-20" href="#__codelineno-29-20"></a>
-<a id="__codelineno-29-21" name="__codelineno-29-21" href="#__codelineno-29-21"></a># 设置按照主机名分开的模板
-<a id="__codelineno-29-22" name="__codelineno-29-22" href="#__codelineno-29-22"></a>template(name=&quot;PerHost&quot; type=&quot;string&quot;
-<a id="__codelineno-29-23" name="__codelineno-29-23" href="#__codelineno-29-23"></a>    string=&quot;/var/log/remote/%hostname%.log&quot;
-<a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a>)
-<a id="__codelineno-29-25" name="__codelineno-29-25" href="#__codelineno-29-25"></a>
-<a id="__codelineno-29-26" name="__codelineno-29-26" href="#__codelineno-29-26"></a>if ($inputname == &quot;imtcp&quot;) then {
-<a id="__codelineno-29-27" name="__codelineno-29-27" href="#__codelineno-29-27"></a>    action(
-<a id="__codelineno-29-28" name="__codelineno-29-28" href="#__codelineno-29-28"></a>        type=&quot;omfile&quot;
-<a id="__codelineno-29-29" name="__codelineno-29-29" href="#__codelineno-29-29"></a>        dynaFile=&quot;PerHost&quot;
-<a id="__codelineno-29-30" name="__codelineno-29-30" href="#__codelineno-29-30"></a>    )
-<a id="__codelineno-29-31" name="__codelineno-29-31" href="#__codelineno-29-31"></a>    # 防止远程日志再被写入本地默认的日志文件
-<a id="__codelineno-29-32" name="__codelineno-29-32" href="#__codelineno-29-32"></a>    stop
-<a id="__codelineno-29-33" name="__codelineno-29-33" href="#__codelineno-29-33"></a>}
+<div class="highlight"><span class="filename">/etc/rsyslog.d/server.conf</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>global(
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>    DefaultNetstreamDriver=&quot;gtls&quot;
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    DefaultNetstreamDriverCertFile=&quot;/path/to/server.crt&quot;
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    DefaultNetstreamDriverKeyFile=&quot;/path/to/server.key&quot;
+<a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>)
+<a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>
+<a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>module(
+<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>    load=&quot;imtcp&quot;
+<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a>    StreamDriver.Name=&quot;gtls&quot;
+<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>    StreamDriver.Mode=&quot;1&quot;
+<a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a>    # anon -- 不校验客户端
+<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>    StreamDriver.Authmode=&quot;anon&quot;
+<a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a>)
+<a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a>
+<a id="__codelineno-33-16" name="__codelineno-33-16" href="#__codelineno-33-16"></a>input(
+<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>    type=&quot;imtcp&quot;
+<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>    port=&quot;6514&quot;
+<a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a>)
+<a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a>
+<a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a># 设置按照主机名分开的模板
+<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>template(name=&quot;PerHost&quot; type=&quot;string&quot;
+<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>    string=&quot;/var/log/remote/%hostname%.log&quot;
+<a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a>)
+<a id="__codelineno-33-25" name="__codelineno-33-25" href="#__codelineno-33-25"></a>
+<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a>if ($inputname == &quot;imtcp&quot;) then {
+<a id="__codelineno-33-27" name="__codelineno-33-27" href="#__codelineno-33-27"></a>    action(
+<a id="__codelineno-33-28" name="__codelineno-33-28" href="#__codelineno-33-28"></a>        type=&quot;omfile&quot;
+<a id="__codelineno-33-29" name="__codelineno-33-29" href="#__codelineno-33-29"></a>        dynaFile=&quot;PerHost&quot;
+<a id="__codelineno-33-30" name="__codelineno-33-30" href="#__codelineno-33-30"></a>    )
+<a id="__codelineno-33-31" name="__codelineno-33-31" href="#__codelineno-33-31"></a>    # 防止远程日志再被写入本地默认的日志文件
+<a id="__codelineno-33-32" name="__codelineno-33-32" href="#__codelineno-33-32"></a>    stop
+<a id="__codelineno-33-33" name="__codelineno-33-33" href="#__codelineno-33-33"></a>}
 </code></pre></div>
 <p>客户端：</p>
-<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>global(DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;)
-<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
-<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>action(
-<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a>    type=&quot;omfwd&quot;
-<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>    protocol=&quot;tcp&quot;
-<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>    target=&quot;logserver.example.com&quot;  # 或者 IP 地址
-<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>    port=&quot;6514&quot;
-<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>    StreamDriver=&quot;gtls&quot;
-<a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a>    StreamDriverMode=&quot;1&quot;
-<a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a>    # 验证远程证书的名称
-<a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a>    StreamDriverAuthMode=&quot;x509/name&quot;
-<a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a>    StreamDriverPermittedPeers=&quot;logserver.example.com&quot;
-<a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a>)
+<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>global(DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;)
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>action(
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>    type=&quot;omfwd&quot;
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>    protocol=&quot;tcp&quot;
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>    target=&quot;logserver.example.com&quot;  # 或者 IP 地址
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>    port=&quot;6514&quot;
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>    StreamDriver=&quot;gtls&quot;
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>    StreamDriverMode=&quot;1&quot;
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>    # 验证远程证书的名称
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>    StreamDriverAuthMode=&quot;x509/name&quot;
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    StreamDriverPermittedPeers=&quot;logserver.example.com&quot;
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>)
 </code></pre></div>
 <h2 id="logind">登录管理器<a class="headerlink" href="#logind" title="Permanent link">&para;</a></h2>
-<p>systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html">systemd-logind(8)</a>。本部分主要关注在日常运维中可能会用到的一部分特性。</p>
+<p>systemd-logind 是 systemd 的登录管理器，其负责的功能包括用户的 user manager 与 session、电源管理（例如按下电源键、笔记本电脑盒盖时的行为）等，具体可参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-logind.html">systemd-logind(8)</a>。本部分主要关注在日常运维中可能会用到的一部分特性。</p>
 <p>在登录系统时，PAM 的 <code>pam_systemd.so</code> 模块会在用户登录时创建一个 session。因此在使用 systemd 的发行版中，不管是 SSH 登录、通过 TTY 控制台登录，还是在图形界面登录，在配置正确的情况下都会创建一个 session。</p>
 <p><code>loginctl list-sessions</code> 可以显示当前的所有用户 session：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
-<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
-<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">      2 1000 user  seat0</span>
-<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a>
-<a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="go">1 sessions listed.</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gp">$ </span>loginctl<span class="w"> </span>list-sessions
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="go">SESSION  UID USER  SEAT  TTY</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="go">      2 1000 user  seat0</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>
+<a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="go">1 sessions listed.</span>
 </code></pre></div>
 <p><code>loginctl</code> 支持锁定（<code>lock-session</code>）、解锁（<code>unlock-session</code>）、注销（<code>terminate-session</code>）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 <code>loginctl</code> 的功能来实现。</p>
-<p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程，用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
+<p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程（user manager），用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
 <div class="admonition note">
 <p class="admonition-title">DBus</p>
 <p><code>systemctl</code>、<code>journalctl</code> 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 <code>/run/user/&lt;用户 UID&gt;/bus</code>）。</p>
@@ -4417,7 +4439,22 @@ U --&gt; F(scope)</code></pre>
 <p>相关设计原因可阅读 <a href="https://github.com/systemd/systemd/issues/7451#issuecomment-346787237">systemd/systemd#7451</a>。注意，以上方法对非 root 用户使用 polkit 鉴权，与 sudo 配置无关。</p>
 <p>如果需要使用 <code>sudo</code> 或 <code>su</code> 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 <code>XDG_RUNTIME_DIR=/run/user/&lt;用户 PID&gt;</code> 与 <code>DBUS_SESSION_BUS_ADDRESS=/run/user/&lt;用户 PID&gt;/bus</code> 环境变量，以便 <code>systemctl</code> 等命令能够正常工作。</p>
 </div>
-<p>有些场景下，我们希望在机器启动时，用户 session 也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 <code>loginctl enable-linger &lt;user&gt;</code> 命令即可启用。</p>
+<p>有些场景下，我们希望在机器启动时，用户的 user manager（<code>user@UID.service</code>）也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 <code>loginctl enable-linger &lt;user&gt;</code> 命令即可启用。</p>
+<div class="admonition note">
+<p class="admonition-title"><code>session-*.scope</code> 和 <code>user@UID.service</code></p>
+<p>如果观察 <code>systemctl status</code>，可以看到在 <code>user.slice</code> 下出现类似这样的场景：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>└─user.slice
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  └─user-1000.slice
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>    ├─session-23.scope
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>    │ ├─717950 &quot;gdm-session-worker [pam/gdm-password]&quot;
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>    │ ├─718687 /usr/lib/gdm-wayland-session /usr/bin/gnome-session
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>    │ └─718700 /usr/lib/gnome-session-init-worker gnome
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>    └─user@1000.service
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>      ├─app.slice
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>      （下略）
+</code></pre></div>
+<p>可以注意到 <code>user@UID.service</code> 和 <code>session-*.scope</code> 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，<a href="https://www.freedesktop.org/software/systemd/man/latest/logind.conf">logind.conf</a> 的 <code>KillUserProcesses=</code> 参数（默认为 <code>no</code>）就控制是否强制杀死对应的 session scope 的进程。因此，如果你 SSH 到某台远程服务器上，开了个 <code>tmux</code> 或者 <code>nohup</code>，注销之后再登录发现没了，那么就很有可能是 <code>KillUserProcesses</code> 设置为了 <code>yes</code> 导致的。</p>
+</div>
 <div class="admonition lab">
 <p class="admonition-title">限制用户的资源使用</p>
 <p>用户 session 启动时，systemd 会创建 <code>user-&lt;uid&gt;.slice</code>。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。</p>
@@ -4479,7 +4516,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 18:38:35 UTC">2026年8月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月11日 20:26:52 UTC">2026年8月11日</span>
   </span>
 
     
