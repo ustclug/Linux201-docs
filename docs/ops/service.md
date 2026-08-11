@@ -132,7 +132,7 @@ $ ls /run/systemd/generator/home.mount
 /run/systemd/generator/home.mount
 ```
 
-这些临时生成出来的 unit 是由 [systemd.generator.5][systemd.generator.5] 生成的。Generator 程序（大部分都在 `/usr/lib/systemd/system-generators/`）会在系统启动最开始，以及重新加载配置的时候执行，生成对应的 unit。
+这些临时生成出来的 unit 是由 [`systemd.generator(5)`][systemd.generator.5] 生成的。Generator 程序（大部分都在 `/usr/lib/systemd/system-generators/`）会在系统启动最开始，以及重新加载配置的时候执行，生成对应的 unit。
 ///
 
 #### 顺序与依赖 {#unit-dependency}
@@ -864,11 +864,11 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
     在命令行下需要切换用户的场合中，如果需要使用用户级别的 systemd，推荐的做法是使用以下命令：
 
     - `machinectl shell username@`
-    - `run0`（需要很新的发行版，如 Debian 13）
+    - `run0`（需要新的发行版，如 Debian 13）
 
     相关设计原因可阅读 [systemd/systemd#7451](https://github.com/systemd/systemd/issues/7451#issuecomment-346787237)。注意，以上方法对非 root 用户使用 polkit 鉴权，与 sudo 配置无关。
 
-    如果需要使用 `sudo` 或 `su` 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 `XDG_RUNTIME_DIR=/run/user/<用户 PID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 PID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。
+    如果需要使用 `sudo` 或 `su` 切换用户，或者在某些非常特殊的环境下，可能需要自行配置 `XDG_RUNTIME_DIR=/run/user/<用户 UID>` 与 `DBUS_SESSION_BUS_ADDRESS=/run/user/<用户 UID>/bus` 环境变量，以便 `systemctl` 等命令能够正常工作。有关 DBus 的详细信息，可阅读 [Linux 桌面与窗口系统的 DBus 介绍](../advanced/desktop.md#dbus)。
 
 有些场景下，我们希望在机器启动时，用户的 user manager（`user@UID.service`）也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
 
