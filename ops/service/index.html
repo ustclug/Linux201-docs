@@ -4453,7 +4453,8 @@ U --&gt; F(scope)</code></pre>
 <a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a>      ├─app.slice
 <a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>      （下略）
 </code></pre></div>
-<p>可以注意到 <code>user@UID.service</code> 和 <code>session-*.scope</code> 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，<a href="https://www.freedesktop.org/software/systemd/man/latest/logind.conf">logind.conf</a> 的 <code>KillUserProcesses=</code> 参数（默认为 <code>no</code>）就控制是否强制杀死对应的 session scope 的进程。因此，如果你 SSH 到某台远程服务器上，开了个 <code>tmux</code> 或者 <code>nohup</code>，注销之后再登录发现没了，那么就很有可能是 <code>KillUserProcesses</code> 设置为了 <code>yes</code> 导致的。</p>
+<p>可以注意到 <code>user@UID.service</code> 和 <code>session-*.scope</code> 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，<a href="https://www.freedesktop.org/software/systemd/man/latest/logind.conf">logind.conf</a> 的 <code>KillUserProcesses=</code> 参数（systemd 上游默认为 <code>yes</code>，但 <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=825394">Debian 修改为了默认为 <code>no</code></a>）就控制是否强制杀死对应的 session scope 的进程。</p>
+<p>因此，如果你 SSH 到某台远程服务器上，开了个 <code>tmux</code> 或者 <code>nohup</code>，注销之后再登录发现没了，那么就很有可能是 <code>KillUserProcesses</code> 设置为了 <code>yes</code> 导致的。</p>
 </div>
 <div class="admonition lab">
 <p class="admonition-title">限制用户的资源使用</p>
@@ -4516,7 +4517,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月11日 20:31:52 UTC">2026年8月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月12日 03:58:18 UTC">2026年8月12日</span>
   </span>
 
     
