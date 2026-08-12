@@ -888,7 +888,9 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
           （下略）
     ```
 
-    可以注意到 `user@UID.service` 和 `session-*.scope` 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，[logind.conf][logind.conf.5] 的 `KillUserProcesses=` 参数（默认为 `no`）就控制是否强制杀死对应的 session scope 的进程。因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
+    可以注意到 `user@UID.service` 和 `session-*.scope` 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，[logind.conf][logind.conf.5] 的 `KillUserProcesses=` 参数（systemd 上游默认为 `yes`，但 [Debian 修改为了默认为 `no`](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=825394)）就控制是否强制杀死对应的 session scope 的进程。
+
+    因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
 
 !!! lab "限制用户的资源使用"
 
