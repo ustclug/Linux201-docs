@@ -189,8 +189,7 @@ $ systemctl status
 
 也可以使用 `systemd-cgtop` 实时查看 cgroup 的使用情况。
 
-Cgroup 有 v1 与 v2 两个版本。
-较新的发行版默认仅支持 cgroup v2，稍老一些的会使用 systemd 的 "unified_cgroup_hierarchy" 特性，将 cgroup v1 与 v2 合并暴露给用户。目前大部分软件都已经支持 cgroup v2，因此下文讨论 cgroup 时，默认为 v2。
+Cgroup 有 v1 与 v2 两个版本。较新的发行版默认仅支持 cgroup v2，稍老一些的会使用 systemd 的 hybrid 结构，将 cgroup v1 与功能不完整的 v2 合并暴露给用户。目前大部分软件都已经支持 cgroup v2，且从 systemd 258 开始，cgroup v1 不再被支持。因此，在 Linux 201 中，除非特殊说明，否则 cgroup 默认讨论的均为 v2。
 
 可以手工通过读写文件控制 cgroups：
 
