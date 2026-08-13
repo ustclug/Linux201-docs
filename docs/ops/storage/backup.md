@@ -134,14 +134,16 @@ rsync -avPz -e "ssh -p 2222" user@remote:/path/to/source /path/to/destination
 
     通过网络传输数据时，rsync 在接收端会有 generator 和 receiver 两个进程，在发送端有 sender 进程。大致的流程如下：
 
-    1. 接收端的 generator 进程与发送端 sender 进程握手，sender 遍历本地文件，发送文件列表。
-    2. Generator 收到文件列表后，对比本地文件。在不添加 `--checksum` 选项的情况下，generator 只会检查文件的修改时间（mtime）和大小是否与文件列表的一致。对不一致的文件，generator 会将本地文件分块，计算强校验和（慢、可靠）和弱校验和（快速、容易冲突），发送给远端。这里 generator 相当于是**生成**文件传输请求的程序。
-    3. Sender 进程收到分块校验和信息后，与本地比较，然后传输差异部分。
+    1. Client 与 server 握手，根据是发送还是接收文件决定谁是 sender、谁是 receiver/generator。sender 遍历本地文件，发送文件列表。
+    2. Generator 收到文件列表后，对比本地文件[^inc-rec]。在不添加 `--checksum` 选项的情况下，generator 只会检查文件的修改时间（mtime）和大小是否与文件列表的一致。对不一致的文件，generator 会将本地文件分块，计算强校验和（慢、可靠）和弱校验和（滚动、快速、容易冲突），发送给远端。这里 generator 相当于是**生成**文件传输请求的程序。
+    3. Sender 进程收到分块校验和信息后，与本地比较，然后传输差异部分给 receiver。
     4. Receiver 进程根据 sender 的指令更新本地文件。
 
     这种结构实现了简单的流水线，可以一边让 generator 计算哈希，一边 sender 发送数据，一边 receiver 处理接收的数据。
 
     有关 rsync 算法细节，也可以阅读 [rsync 的技术报告](https://github.com/RsyncProject/rsync/blob/master/tech_report.tex)。
+
+[^inc-rec]: 从 rsync 3.0 开始，如果发送端和接收端都足够新，并且没有使用特定的选项，那么 `--inc-recursive` 参数是默认启用的，此时 Generator 不需要等待完整的文件列表就可以开始操作。但是常用的 `--delay-updates` 选项也会关闭这个行为。
 
 ### 镜像同步 {#rsync-mirror}
 
