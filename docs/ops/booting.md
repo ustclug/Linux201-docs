@@ -77,7 +77,19 @@ UEFI 规范下的计算机启动过程分为以下几个阶段：
 
 与 BIOS 通过 MBR 和 PBR 来加载 Bootloader 的方式不同，UEFI 固件会在 BDS 阶段运行一个 Boot Manager 程序，用于加载和执行 UEFI Image、UEFI Application、UEFI OS Loader（Bootloader）、UEFI Drivers 等 UEFI 规定的可加载文件类型。
 
-Boot Manager 通过读取 NVRAM（Non-Volatile Random Access Memory）中的 Boot Option（启动项）来确定要加载哪个文件（通常以 .efi 结尾）作为 Bootloader。
+!!! note "ESP 分区"
+
+    ESP 分区（EFI System Partition）是 UEFI 规范定义的一类特殊分区，通常配合 GPT 分区表使用（在 MBR 分区表下也有对应定义，但不常用），用来存放系统启动时需要用到的 Bootloader 和相关文件。
+    
+    通常，ESP 是一个 FAT32（少数是 FAT16）的简易文件系统，可以由 UEFI 固件直接读取。常见配置中，ESP 分区的大小通常在几百 MB 到 1GB 左右，需根据内核和 Bootloader 的数量、大小适当调整（例如使用 UKI 并保留多个内核版本时，通常需要预留更多空间）。
+
+    ESP 中主要存放的是以 `.efi` 结尾的可执行文件，本质上是 PE/COFF 格式的可执行文件，和在 Windows 系统中的 `.exe` 和 `.dll` 等二进制文件一样的格式，可以被 UEFI 固件直接执行，通常这些 `.efi` 文件就是 Bootloader 或者 UKI、memtest 等可执行文件。
+
+    通常，Boot Manager 会从 ESP 中加载 Bootloader，从而从 Firmware 阶段进入到 Bootloader 阶段。
+
+    本文将使用 `esp/` 表示 ESP 在 Linux 中挂载的路径，比如 `esp/EFI/BOOT/BOOTX64.efi` 表示在 ESP 中 `\EFI\BOOT\BOOTX64.efi` 路径的文件。
+
+Boot Manager 通过读取主板上的 NVRAM（Non-Volatile Random Access Memory）中的 Boot Option（启动项）来确定要加载哪个分区下、哪个路径对应的文件作为 Bootloader。
 
 对于已经以 UEFI 方式启动的 Linux 系统，使用 `efibootmgr` 命令可以查看 NVRAM 中所有的 Boot Option 的信息：
 
@@ -90,7 +102,7 @@ Boot0000* debian	HD(1,GPT,7c003990-9d67-48fb-b6c9-f44a4577cd5f,0x800,0x100000)/F
 Boot0002  UEFI: Built-in EFI Shell	VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f
 ```
 
-在以上示例中，UEFI 固件会从分区 GUID 为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
+在以上示例中，Boot Manager 会从唯一分区 GUID（Unique Partition GUID, PARTUUID）为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
 
 !!! note "Boot Option 的 fallback 查找路径"
 
