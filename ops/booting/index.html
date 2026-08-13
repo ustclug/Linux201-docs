@@ -3780,7 +3780,7 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">Boot0002  UEFI: Built-in EFI Shell  VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f</span>
 </code></pre></div>
 <p>在以上示例中，UEFI 固件会从分区 GUID 为 <code>7c003990-9d67-48fb-b6c9-f44a4577cd5f</code> 的分区中加载 <code>\EFI\DEBIAN\GRUBX64.EFI</code> 文件作为 Bootloader。你可以观察 <code>blkid</code> 命令的输出，寻找 <code>PARTUUID=</code> 匹配的分区。</p>
-<div class="admonition tip">
+<div class="admonition note">
 <p class="admonition-title">Boot Option 的 fallback 查找路径</p>
 <p>如果在启动过程中，UEFI 固件没能通过 NVRAM 在某个可移动介质（Removable Media，比如 U 盘、移动硬盘等）上找到任何可以加载的 Boot Option，那么 UEFI 固件就会查找该可移动介质的 ESP 分区的 <code>\EFI\BOOT\BOOT&lt;arch&gt;.EFI</code> 路径上是否有可加载的 EFI 文件，其中 <code>arch</code> 表示当前机器的指令集架构，比如如果是 x86_64 平台，<code>arch</code> 就是 <code>X64</code>，其他架构可以在 UEFI 规范文件中找到。</p>
 <p>除此之外，虽然 UEFI 规范只要求了可移动介质需要支持 fallback 查找路径，并没有要求所有介质都需要支持，不过在实践上，UEFI 固件通常也会在找不到任何可以加载的 Boot Option 时支持 fallback 查找路径，具体来说，对于固定介质，只有当系统整体的 Boot Option 处理流程未能成功启动时，固件才会作为恢复手段去遍历各固定介质、检查其 fallback 路径；如果 NVRAM 中已有可用的 Boot Option 并成功启动，正常情况下自动开机流程不会触发这一步（但用户仍可能在 Boot Manager 中手动触发）。</p>
@@ -4312,7 +4312,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月13日 12:14:53 UTC">2026年8月13日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月13日 15:28:29 UTC">2026年8月13日</span>
   </span>
 
     
