@@ -251,7 +251,7 @@ db: List 4, type X509
     不同于 Microsoft 的 Windows，可以向 OEM 授权预装自己的 KEK 证书和 db 证书进主板，从而默认允许 Windows 的 Bootloader 能够通过 Secure Boot 的认证，属于开源社区并且种类众多的各大 Linux 发行版并没有一个统一的机构能够提供一个统一的 KEK 证书或 db 证书预装进主板。因此，开源社区逐渐形成了以下两种在 Linux 中使用 Secure Boot 的方案：
 
     - 使用一个已经被 Microsoft 签名过的 [shim 程序](https://github.com/rhboot/shim)作为跳板先行通过 BDS 阶段对于 Bootloader 的 Secure Boot 认证，而 shim 程序在编译时已经嵌入了发行版厂商自签名的证书，因此发行版厂商可以自己签署自己发行的 Bootloader 和内核，并被 shim 程序认证执行。除此之外，如果安装了第三方签名的模块，也支持通过导入 MOK（Machine Owner Key）信任第三方自签名的证书。
-        - 常见于 Ubuntu、Fedora、Debian、openSUSE 等主流发行版，通常 shim 程序位于 `/boot/efi/EFI/<release>/shimx64.efi`
+        - 常见于 Ubuntu、Fedora、Debian、openSUSE 等主流发行版，通常 shim 程序位于 `esp/EFI/<vendor>/shimx64.efi`
         - 优点：安装即用，可导入自定义证书，不会破坏机器内原始的 PK、KEK、db 和 dbx 里的证书
         - 缺点：依赖 Microsoft 的审核与背书（部分社区认为这与软件自由理念存在张力）
     - 重新设置本机 Secure Boot 认证体系，将 PK 设置为自签名证书，在 KEK、db 里添加自签名证书，然后在每次安装新 Bootloader 和内核的时候，使用自签名证书的私钥给 Bootloader 和内核签名即可
