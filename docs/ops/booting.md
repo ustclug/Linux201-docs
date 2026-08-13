@@ -92,6 +92,12 @@ Boot0002  UEFI: Built-in EFI Shell	VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8
 
 在以上示例中，UEFI 固件会从分区 GUID 为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
 
+!!! tip "Boot Option 的 fallback 查找路径"
+
+    如果在启动过程中，UEFI 固件没能通过 NVRAM 在某个可移动介质（Removable Media，比如 U 盘、移动硬盘等）上找到任何可以加载的 Boot Option，那么 UEFI 固件就会查找该可移动介质的 ESP 分区的 `\EFI\BOOT\BOOT<arch>.EFI` 路径上是否有可加载的 EFI 文件，其中 `arch` 表示当前机器的指令集架构，比如如果是 x86_64 平台，`arch` 就是 `X64`，其他架构可以在 UEFI 规范文件中找到。
+
+    除此之外，虽然 UEFI 规范只要求了可移动介质需要支持 fallback 查找路径，并没有要求所有介质都需要支持，不过在实践上，UEFI 固件通常也会在找不到任何可以加载的 Boot Option 时支持 fallback 查找路径，具体来说，对于固定介质，只有当系统整体的 Boot Option 处理流程未能成功启动时，固件才会作为恢复手段去遍历各固定介质、检查其 fallback 路径；如果 NVRAM 中已有可用的 Boot Option 并成功启动，正常情况下自动开机流程不会触发这一步（但用户仍可能在 Boot Manager 中手动触发）。
+
 #### Setup Utility {#uefi-setup-utility}
 
 UEFI 固件通常也包含设置实用程序（Setup Utility），用户可以在其中设置系统配置选项，比如启动优先级，CPU 频率，内存时序等。UEFI 设置实用程序的界面通常比 BIOS 设置实用程序更加现代化和友好，支持鼠标操作和图形界面。
