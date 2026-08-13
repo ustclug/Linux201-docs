@@ -3780,6 +3780,11 @@
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">Boot0002  UEFI: Built-in EFI Shell  VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8)0000424f</span>
 </code></pre></div>
 <p>在以上示例中，UEFI 固件会从分区 GUID 为 <code>7c003990-9d67-48fb-b6c9-f44a4577cd5f</code> 的分区中加载 <code>\EFI\DEBIAN\GRUBX64.EFI</code> 文件作为 Bootloader。你可以观察 <code>blkid</code> 命令的输出，寻找 <code>PARTUUID=</code> 匹配的分区。</p>
+<div class="admonition tip">
+<p class="admonition-title">Boot Option 的 fallback 查找路径</p>
+<p>如果在启动过程中，UEFI 固件没能通过 NVRAM 在某个可移动介质（Removable Media，比如 U 盘、移动硬盘等）上找到任何可以加载的 Boot Option，那么 UEFI 固件就会查找该可移动介质的 ESP 分区的 <code>\EFI\BOOT\BOOT&lt;arch&gt;.EFI</code> 路径上是否有可加载的 EFI 文件，其中 <code>arch</code> 表示当前机器的指令集架构，比如如果是 x86_64 平台，<code>arch</code> 就是 <code>X64</code>，其他架构可以在 UEFI 规范文件中找到。</p>
+<p>除此之外，虽然 UEFI 规范只要求了可移动介质需要支持 fallback 查找路径，并没有要求所有介质都需要支持，不过在实践上，UEFI 固件通常也会在找不到任何可以加载的 Boot Option 时支持 fallback 查找路径，具体来说，对于固定介质，只有当系统整体的 Boot Option 处理流程未能成功启动时，固件才会作为恢复手段去遍历各固定介质、检查其 fallback 路径；如果 NVRAM 中已有可用的 Boot Option 并成功启动，正常情况下自动开机流程不会触发这一步（但用户仍可能在 Boot Manager 中手动触发）。</p>
+</div>
 <h4 id="uefi-setup-utility">Setup Utility<a class="headerlink" href="#uefi-setup-utility" title="Permanent link">&para;</a></h4>
 <p>UEFI 固件通常也包含设置实用程序（Setup Utility），用户可以在其中设置系统配置选项，比如启动优先级，CPU 频率，内存时序等。UEFI 设置实用程序的界面通常比 BIOS 设置实用程序更加现代化和友好，支持鼠标操作和图形界面。</p>
 <p>UEFI 设置实用程序通常是在 DXE 阶段被加载，而在 BDS 阶段通过判断用户是否按下特定的按键（如 F2、Del 等）来决定是否进入设置实用程序。</p>
@@ -3905,7 +3910,7 @@
 <p>不同于 Microsoft 的 Windows，可以向 OEM 授权预装自己的 KEK 证书和 db 证书进主板，从而默认允许 Windows 的 Bootloader 能够通过 Secure Boot 的认证，属于开源社区并且种类众多的各大 Linux 发行版并没有一个统一的机构能够提供一个统一的 KEK 证书或 db 证书预装进主板。因此，开源社区逐渐形成了以下两种在 Linux 中使用 Secure Boot 的方案：</p>
 <ul>
 <li>使用一个已经被 Microsoft 签名过的 <a href="https://github.com/rhboot/shim">shim 程序</a>作为跳板先行通过 BDS 阶段对于 Bootloader 的 Secure Boot 认证，而 shim 程序在编译时已经嵌入了发行版厂商自签名的证书，因此发行版厂商可以自己签署自己发行的 Bootloader 和内核，并被 shim 程序认证执行。除此之外，如果安装了第三方签名的模块，也支持通过导入 MOK（Machine Owner Key）信任第三方自签名的证书。<ul>
-<li>常见于 Ubuntu、Fedora、Debian、openSUSE 等主流发行版，通常 shim 程序位于 <code>/boot/efi/EFI/&lt;release&gt;/shimx64.efi</code></li>
+<li>常见于 Ubuntu、Fedora、Debian、openSUSE 等主流发行版，通常 shim 程序位于 <code>esp/EFI/&lt;vendor&gt;/shimx64.efi</code></li>
 <li>优点：安装即用，可导入自定义证书，不会破坏机器内原始的 PK、KEK、db 和 dbx 里的证书</li>
 <li>缺点：依赖 Microsoft 的审核与背书（部分社区认为这与软件自由理念存在张力）</li>
 </ul>
@@ -4054,10 +4059,21 @@
 <p>GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分区及 RAID 配置形式，或者通过 TFTP 或 HTTP 从网络中加载文件，甚至还能提供图形化的启动界面（例如 <a href="https://github.com/Lxtharia/minegrub-theme">Minecraft 风格的自定义 GRUB 主题</a>）。这些模块通常存储在 <code>/usr/lib/grub</code> 下，并会在安装 GRUB 时被复制到 <code>/boot/grub/</code> 下。</p>
 <p>一般来讲不应该主动修改 <code>/boot/grub/</code> 下的内容。对常见的配置修改（设置是否显示菜单、timeout 时间、Linux 的内核命令行参数等），需要修改 <code>/etc/default/grub</code>，然后使用 <code>update-grub</code> 更新配置。</p>
 <div class="admonition tip">
-<p class="admonition-title"><code>update-grub</code></p>
-<p><code>update-grub</code> 是 Debian 下一个特有的脚本，其实际执行的是：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>grub-mkconfig<span class="w"> </span>-o<span class="w"> </span>/boot/grub/grub.cfg
+<p class="admonition-title"><code>update-grub</code> 命令</p>
+<p><code>update-grub</code> 是一个 Debian、Ubuntu 等基于 Debian 的发行版中特有的命令，本质上就是一个脚本：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/bin/sh</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">set</span><span class="w"> </span>-e
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">exec</span><span class="w"> </span>grub-mkconfig<span class="w"> </span>-o<span class="w"> </span>/boot/grub/grub.cfg<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$@</span><span class="s2">&quot;</span>
 </code></pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title"><code>--removable</code> 选项</p>
+<p>有时候，我们可能会需要在可移动介质（Removable Media，比如 U 盘、移动硬盘等）中安装 GRUB 以引导位于可移动介质上的系统，比如制作一个可以随身携带的 Linux 系统。这时，在使用 <code>grub-install</code> 安装 GRUB 的时候，就需要添加 <code>--removable</code> 选项。相比于默认不添加，添加该选项后，<code>grub-install</code> 的行为会发生以下变化：</p>
+<ul>
+<li>不再向主板上的 NVRAM 中写入 Boot Option，也不会清理 NVRAM 里的旧 Boot Option 条目</li>
+<li>仅向 <code>esp/EFI/BOOT/</code> 中安装 grub，不再向 <code>esp/EFI/&lt;vendor&gt;/</code> 安装</li>
+</ul>
+<p>需要注意的是，通过 <code>--removable</code> 安装的 GRUB 只能在支持 UEFI 固件的系统中启动。</p>
 </div>
 <p>以下是一个 GRUB 启动界面的示例：</p>
 <p><img alt="GRUB 启动界面" src="../../images/grub-interface.jpg" /></p>
@@ -4179,7 +4195,7 @@
 <li>不建议手动编写 <code>esp/loader/entries/*.conf</code>，这会导致你在更新内核的时候配置不会自动更新，导致系统在某一天突然无法启动的问题；建议使用 <code>kernel-install</code> 工具自动生成配置，同样可以参照 <a href="https://wiki.archlinux.org/title/Kernel-install">Arch Wiki</a></li>
 <li>某些系统在安装 <code>kernel-install</code> 的时候可能不会自带 <code>kernel-install</code> 在包管理器（比如 pacman）的 hook，这同样会导致你在更新内核的时候配置不会自动更新，需要注意不要忘记安装了（比如 Arch Linux 就需要额外安装一个 <code>pacman-hook-kernel-install</code> 的 pacman hook）</li>
 <li>需要注意 <code>kernel-install</code> 生成的配置必须位于 ESP 或 XBOOTLDR 分区内，并且最好是 vfat 类型文件系统（否则 systemd-boot 读取不了），并在分区内以 <code>\loader</code> 作为前缀，否则 systemd-boot 将无法读取配置文件，可以通过 <code>lsblk -f</code> 和 <code>bootctl list</code> 查看分区文件系统类型和 systemd-boot 能够找到哪些配置文件</li>
-<li>如果需要使用安全启动，请记得给 <code>esp/EFI/systemd/systemd-bootx64.efi</code> 和 <code>esp/EFI/BOOT/BOOTX64.EFI</code> 这两个文件签名</li>
+<li>如果需要使用安全启动，请记得给 <code>esp/EFI/systemd/systemd-bootx64.efi</code> 和 <code>esp/EFI/BOOT/BOOTX64.EFI</code> 这两个文件签名（假设是 x86_64 平台）</li>
 </ul>
 </div>
 <h2 id="initramfs">initramfs<a class="headerlink" href="#initramfs" title="Permanent link">&para;</a></h2>
@@ -4296,7 +4312,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 19:19:26 UTC">2026年8月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月13日 12:14:53 UTC">2026年8月13日</span>
   </span>
 
     
@@ -4315,14 +4331,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
-        </a>
-      
         <a href="https://github.com/Vertsineu" class="md-author" title="@Vertsineu">
           
           <img src="https://avatars.githubusercontent.com/u/97820175?v=4&size=72" alt="Vertsineu">
+        </a>
+      
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
