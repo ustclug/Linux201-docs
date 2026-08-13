@@ -441,12 +441,14 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
 
 一般来讲不应该主动修改 `/boot/grub/` 下的内容。对常见的配置修改（设置是否显示菜单、timeout 时间、Linux 的内核命令行参数等），需要修改 `/etc/default/grub`，然后使用 `update-grub` 更新配置。
 
-!!! tip "`update-grub`"
+!!! tip "`update-grub` 命令"
 
-    `update-grub` 是 Debian 下一个特有的脚本，其实际执行的是：
+    `update-grub` 是一个 Debian、Ubuntu 等基于 Debian 的发行版中特有的命令，本质上就是一个脚本：
 
     ```sh
-    grub-mkconfig -o /boot/grub/grub.cfg
+    #!/bin/sh
+    set -e
+    exec grub-mkconfig -o /boot/grub/grub.cfg "$@"
     ```
 
 以下是一个 GRUB 启动界面的示例：
