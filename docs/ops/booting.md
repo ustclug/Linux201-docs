@@ -451,6 +451,15 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
     exec grub-mkconfig -o /boot/grub/grub.cfg "$@"
     ```
 
+!!! tip "`--removable` 选项"
+
+    有时候，我们可能会需要在可移动介质（Removable Media，比如 U 盘、移动硬盘等）中安装 GRUB 以引导位于可移动介质上的系统，比如制作一个可以随身携带的 Linux 系统。这时，在使用 `grub-install` 安装 GRUB 的时候，就需要添加 `--removable` 选项。相比于默认不添加，添加该选项后，`grub-install` 的行为会发生以下变化：
+
+    - 不再向主板上的 NVRAM 中写入 Boot Option，也不会清理 NVRAM 里的旧 Boot Option 条目
+    - 仅向 `esp/EFI/BOOT/` 中安装 grub，不再向 `esp/EFI/<vendor>/` 安装
+
+    需要注意的是，通过 `--removable` 安装的 GRUB 只能在支持 UEFI 固件的系统中启动。
+
 以下是一个 GRUB 启动界面的示例：
 
 ![GRUB 启动界面](../images/grub-interface.jpg)
