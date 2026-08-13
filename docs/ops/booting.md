@@ -92,7 +92,7 @@ Boot0002  UEFI: Built-in EFI Shell	VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8
 
 在以上示例中，UEFI 固件会从分区 GUID 为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
 
-!!! tip "Boot Option 的 fallback 查找路径"
+!!! note "Boot Option 的 fallback 查找路径"
 
     如果在启动过程中，UEFI 固件没能通过 NVRAM 在某个可移动介质（Removable Media，比如 U 盘、移动硬盘等）上找到任何可以加载的 Boot Option，那么 UEFI 固件就会查找该可移动介质的 ESP 分区的 `\EFI\BOOT\BOOT<arch>.EFI` 路径上是否有可加载的 EFI 文件，其中 `arch` 表示当前机器的指令集架构，比如如果是 x86_64 平台，`arch` 就是 `X64`，其他架构可以在 UEFI 规范文件中找到。
 
