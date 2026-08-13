@@ -639,7 +639,7 @@ systemd-boot 是 systemd 项目的一部分，是一个目前正在逐渐流行�
     - 不建议手动编写 `esp/loader/entries/*.conf`，这会导致你在更新内核的时候配置不会自动更新，导致系统在某一天突然无法启动的问题；建议使用 `kernel-install` 工具自动生成配置，同样可以参照 [Arch Wiki](https://wiki.archlinux.org/title/Kernel-install)
     - 某些系统在安装 `kernel-install` 的时候可能不会自带 `kernel-install` 在包管理器（比如 pacman）的 hook，这同样会导致你在更新内核的时候配置不会自动更新，需要注意不要忘记安装了（比如 Arch Linux 就需要额外安装一个 `pacman-hook-kernel-install` 的 pacman hook）
     - 需要注意 `kernel-install` 生成的配置必须位于 ESP 或 XBOOTLDR 分区内，并且最好是 vfat 类型文件系统（否则 systemd-boot 读取不了），并在分区内以 `\loader` 作为前缀，否则 systemd-boot 将无法读取配置文件，可以通过 `lsblk -f` 和 `bootctl list` 查看分区文件系统类型和 systemd-boot 能够找到哪些配置文件
-    - 如果需要使用安全启动，请记得给 `esp/EFI/systemd/systemd-bootx64.efi` 和 `esp/EFI/BOOT/BOOTX64.EFI` 这两个文件签名
+    - 如果需要使用安全启动，请记得给 `esp/EFI/systemd/systemd-bootx64.efi` 和 `esp/EFI/BOOT/BOOTX64.EFI` 这两个文件签名（假设是 x86_64 平台）
 
 ## initramfs
 
