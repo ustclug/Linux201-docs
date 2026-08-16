@@ -340,6 +340,9 @@ SETTINGS index_granularity = 8192;
 
 - 对于 `url`、`referer` 和 `request_id` 等长字符串列，指定 [`CODEC(ZSTD(3))`][clickhouse-codec] 压缩算法和等级节省存储空间。
     - ClickHouse 的默认值是 LZ4，速度较快但压缩率低，所以我们换用压缩率更高的 Zstandard 算法。
+
+        ClickHouse 对压缩算法的介绍可以参考 [Compression in ClickHouse][clickhouse-compression]。
+
 - 根据 ClickHouse 的 convention，存储时间序列数据时，将主要的时间戳列命名为 `event_time`，并使用 `DateTime64(3)` 类型存储毫秒级时间戳（或者如果只需要秒级精度时，可以使用 `DateTime`）。原始的浮点数时间戳列 `timestamp` 仍然保留，方便通过 JSON 方式导入数据。
     - 这两列的 `CODEC` 设置为 `DoubleDelta`，可以通过记录相邻两行的二阶差值来节省存储空间。
 - `clientip` 列使用 [`IPv6` 类型][clickhouse-ipv6] 存储 IP 地址，其中 IPv4 地址会被转换为 IPv4-mapped IPv6 地址（例如 `::ffff:127.0.0.1`）。
@@ -404,6 +407,75 @@ if(
     concat(toString(tupleElement(IPv6CIDRToRange(ip, ipv6_length), 1)), '/', toString(ipv6_length))
   )
 );
+```
+
+### 字典 {#dictionaries}
+
+ClickHouse 的[字典（Dictionary）][clickhouse-dictionaries]是一种键值存储机制，可以将外部数据源（如本地文件、HTTP 服务或数据库）加载到 ClickHouse 中成为键值对，并通过 `dictGet` 等函数在查询中高地使用。
+
+  [clickhouse-dictionaries]: https://clickhouse.com/docs/concepts/features/dictionaries
+
+例如，为了使从 URL 中提取镜像仓库名称并进行归一化处理变得更灵活，我们首先建立一张新的表存储仓库名称的映射关系，然后创建一个字典从该表中加载数据。这样我们就可以在不修改 UDF 的情况下，直接通过更新表中的数据来改变仓库名称的归一化规则。
+
+```sql
+CREATE TABLE mirrors.repo_names (
+  name String,
+  canonical_name String,
+  updated_at DateTime64(3) DEFAULT now64()
+)
+ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY name;
+
+CREATE DICTIONARY mirrors.repo_names_dict (
+  name String,
+  canonical_name String,
+  updated_at DateTime
+)
+PRIMARY KEY name
+SOURCE(CLICKHOUSE(
+  DB 'mirrors'
+  TABLE 'repo_names'
+))
+LIFETIME(MIN 0 MAX 300)
+LAYOUT(HASHED());
+```
+
+其中，[`CREATE DICTIONARY`][create-dictionary] 时指定的 `PRIMARY KEY` 就是字典的键，`LAYOUT(HASHED())` 表示使用哈希表存储字典数据。`LIFETIME(MIN 0 MAX 300)` 表示字典数据的最小和最大缓存时间，单位为秒。字典会在首次访问时加载数据，并在缓存过期后重新加载。
+
+  [create-dictionary]: https://clickhouse.com/docs/reference/statements/create/dictionary
+
+填入数据：
+
+```sql
+INSERT INTO mirrors.repo_names (name, canonical_name)
+SELECT name, name
+FROM (
+  SELECT arrayJoin([
+    'adoptium', 'alpine', 'anaconda', -- 一大串仓库名
+    'zerotier',
+    'help', '/'
+  ]) AS name
+);
+
+INSERT INTO mirrors.repo_names (name, canonical_name) VALUES
+  ('archive.raspberrypi.org', 'raspberrypi'),
+  ('assets', '/'),
+  ('static', '/'),
+  ('status', '/'),
+  ('.well-known', '/'),
+  ('misc', 'ustclug');
+```
+
+前文展示的冗长的 `extract_repo` 函数就可以被替换为一个更简单的函数，使用字典来查找仓库名称：
+
+```sql
+CREATE OR REPLACE FUNCTION extract_repo AS (path) ->
+  dictGetOrDefault(
+    'mirrors.repo_names_dict',
+    'canonical_name',
+    extract_repo_dir(path),
+    '<invalid>'
+  );
 ```
 
 ### 物化列 {#materialized-columns}
