@@ -478,6 +478,15 @@ CREATE OR REPLACE FUNCTION extract_repo AS (path) ->
   );
 ```
 
+最后，由于 ClickHouse 不会在表和列的定义中保留对 UDF 的引用，而是会将 UDF 直接展开，因此我们还需要再次更新 `repo` 列的定义，以使其使用新的 `extract_repo` 函数：
+
+```sql
+ALTER TABLE mirrors.access_log
+  MODIFY COLUMN `repo` LowCardinality(String) MATERIALIZED extract_repo("url");
+```
+
+由于新旧函数对 `repo` 的定义是一致的，因此更新 `repo` 列的定义不会影响现有数据，而新的数据插入时会使用新的 `extract_repo` 函数计算 `repo` 列的值。
+
 ### 物化列 {#materialized-columns}
 
 ClickHouse 的物化列（`MATERIALIZED` columns）是指在表中定义的列，其值由其他列的表达式计算得出，并在数据插入时自动计算和存储，是一种以空间换时间的思想。
@@ -490,6 +499,18 @@ ClickHouse 的物化列（`MATERIALIZED` columns）是指在表中定义的列�
 
 默认情况下，MATERIALIZED 列不允许被插入数据，如果尝试插入的数据包含了 MATERIALIZED 的列，ClickHouse 会返回错误。
 开启设置 `insert_allow_materialized_columns` 可以让 ClickHouse 忽略尝试插入到 MATERIALIZED 列的数据（采用计算结果），继续插入其他列的数据。
+
+如果现有的列的 `MATERIALIZED` 定义需要修改，可以使用 `ALTER TABLE ... MODIFY COLUMN` 语句来更新列的定义。
+前一小节已经展示过一个 `MODIFY COLUMN` 的示例。
+
+修改后的列定义会在新插入的数据中生效，而已有的数据不会受到影响。若要将新的定义应用到已有数据，可以使用 `ALTER TABLE ... MATERIALIZE COLUMN` 语句来使 ClickHouse 重新计算并更新已有数据中该列的值，例如：
+
+```sql
+ALTER TABLE mirrors.access_log
+  MATERIALIZE COLUMN `repo`;
+```
+
+注意该语句会对整个表进行扫描和计算，容易消耗大量的 I/O 和 CPU 资源，因此应在负载低峰期执行，并根据表的大小和服务器性能预估执行时间。
 
 ## 数据采集 {#data-collection}
 
