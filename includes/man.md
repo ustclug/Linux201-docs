@@ -66,6 +66,7 @@
 [journald.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html
 [logind.conf.5]: https://www.freedesktop.org/software/systemd/man/latest/logind.conf
 [nsswitch.conf.5]: https://man7.org/linux/man-pages/man5/nsswitch.conf.5.html
+[pipewire.conf.5]: https://docs.pipewire.org/page_man_pipewire_conf_5.html
 [podman-systemd.unit.5]: https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html
 [resolv.conf.5]: https://man7.org/linux/man-pages/man5/resolv.conf.5.html
 <!-- begin slurm config files -->

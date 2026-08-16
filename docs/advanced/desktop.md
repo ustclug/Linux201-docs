@@ -1662,7 +1662,7 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
     使用 PulseAudio 的应用（链接了 libpulse）可以通过设置环境变量 [`PULSE_LATENCY_MSEC`](https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0cc36279ec993680bccad6b907ba15de97b55c4d/src/pulse/stream.c#L1003) 来指定自己希望达到的延迟。在这个环境变量存在的情况下，libpulse 在创建音频流时，会根据 PulseAudio 的[延迟控制方式](https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Clients/LatencyControl/)设置相关的 flag 与 buffer 属性（如果应用自行进行延迟控制，相关的设置可能会被覆盖），直接指定希望达到的延迟目标，发送给音频服务器。
     
-    PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对[写作时最新的 pipewire-pulse](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485)，延迟目标（tlength）需要分给两部分：计算一次图的时间（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 tlength / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (tlength - 2 * minreq) / 2，剩下的部分就留给 buffer。因此对下述例子：
+    PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对[写作时最新的 pipewire-pulse](https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485)，延迟目标（初始的 tlength，记为 latency）需要分给两部分：图计算一个周期的时长（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 latency / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (latency - 2 * minreq) / 2，剩下的部分就留给 buffer（实际的 tlength）。因此对下述例子：
 
     ```sh
     # paplay 会连接 PulseAudio 服务端播放音频
@@ -1671,7 +1671,24 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
     假设采样率为 48kHz，此时可以使用 `pw-top` 看到 quantum = 300，因为 minreq = 25ms / 4 = 6.25ms，quantum 时间 = (25ms - 2 * 6.25ms) / 2 = 6.25ms，乘以采样率就能得到这个结果。
 
-    (TODO)
+    而在录音时，给定的延迟就直接成为累计对应长度录音数据后向客户端发送的阈值（fragsize），在没有其他限制条件下也是对应的 quantum。
+
+    ```sh
+    # parecord，同样连接 PulseAudio 服务端录制音频
+    PULSE_LATENCY_MSEC=25 parecord example.pcm
+    ```
+
+    对上面的例子，如果采样率是 44.1kHz（`parecord` 默认值），那么 quantum 就会是 44100Hz * 25ms ~= 1102。
+
+    以上参数（frag、req、tlength、quantum）的设置可以通过配置修改，参见 [PipeWire 对 Protocol Pulse 的文档](https://docs.pipewire.org/page_module_protocol_pulse.html)。
+
+    对直接连接 PipeWire 的应用来说，`PIPEWIRE_LATENCY` 环境变量则可以控制应用对应节点需要的 quantum 与采样率：
+
+    ```sh
+    PIPEWIRE_LATENCY=128/48000 pw-play example.ogg
+    ```
+
+    相关设置也可以在 [pipewire.conf][pipewire.conf.5]（`default.clock`）修改。
 
 此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)
 
