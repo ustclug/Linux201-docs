@@ -1,10 +1,54 @@
-"""Add heading-style permalinks to admonitions with explicit IDs."""
+"""Support IDs and heading-style permalinks on admonitions."""
+
+import re
 
 from xml.etree import ElementTree as etree
 
 from markdown.extensions import Extension
+from markdown.extensions.admonition import AdmonitionProcessor
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import AMP_SUBSTITUTE
+from pymdownx.details import DetailsProcessor
+
+
+_ID_PATTERN = r"[^{}\s]+"
+
+
+class AdmonitionIdProcessor(AdmonitionProcessor):
+    """Add an optional ``{#id}`` suffix to traditional admonitions."""
+
+    RE = re.compile(
+        rf'(?:^|\n)!!! ?([\w\-]+(?: +[\w\-]+)*)(?: +"(.*?)")?'
+        rf'(?: +\{{#({_ID_PATTERN})\}})? *(?:\n|$)'
+    )
+
+    def run(self, parent, blocks):
+        match = self.RE.search(blocks[0])
+        anchor_id = match.group(3) if match else None
+
+        super().run(parent, blocks)
+
+        if anchor_id is not None:
+            parent[-1].set("id", anchor_id)
+
+
+class DetailsIdProcessor(DetailsProcessor):
+    """Add an optional ``{#id}`` suffix to traditional details blocks."""
+
+    START = re.compile(
+        rf'(?:^|\n)\?{{3}}(\+)? ?(?:([\w\-]+(?: +[\w\-]+)*?)?'
+        rf'(?: +"(.*?)")|([\w\-]+(?: +[\w\-]+)*?))'
+        rf'(?: +\{{#({_ID_PATTERN})\}})? *(?:\n|$)'
+    )
+
+    def run(self, parent, blocks):
+        match = self.START.search(blocks[0])
+        anchor_id = match.group(5) if match else None
+
+        super().run(parent, blocks)
+
+        if anchor_id is not None:
+            parent[-1].set("id", anchor_id)
 
 
 class AdmonitionAnchorsTreeprocessor(Treeprocessor):
@@ -57,10 +101,16 @@ class AdmonitionAnchorsTreeprocessor(Treeprocessor):
 
 
 class AdmonitionAnchorsExtension(Extension):
-    """Register the admonition anchor treeprocessor."""
+    """Register traditional ID support and the anchor treeprocessor."""
 
     def extendMarkdown(self, md):
         md.registerExtension(self)
+        md.parser.blockprocessors.register(
+            AdmonitionIdProcessor(md.parser), "admonition", 105
+        )
+        md.parser.blockprocessors.register(
+            DetailsIdProcessor(md.parser), "details", 105
+        )
         md.treeprocessors.register(
             AdmonitionAnchorsTreeprocessor(md), "admonition_anchors", 4
         )

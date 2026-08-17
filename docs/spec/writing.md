@@ -104,24 +104,32 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
 - lab: 教程不会详细说明，需要读者自己尝试的实验。
 
-此外，有些时候我们需要给提示框添加 `id` 信息以便使用 `#id` 的方式引用，此时需要使用 [pythonmdown 的扩展语法](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/)：
+此外，有些时候我们需要给提示框添加 `id` 信息以便使用 `#id` 的方式引用。可以在传统提示框语法的标题后添加 `{#id}`：
+
+```markdown
+!!! tip "一个例子" {#example}
+
+    一些文本。
+
+??? note "可折叠的例子" {#collapsible-example}
+
+    一些默认折叠的文本。
+```
+
+设置 ID 后，提示框标题右侧会显示与章节标题相同的永久链接。`???+` 同样支持 ID。
+
+也可以使用 [Pymdown Blocks 的扩展语法](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/)。这种写法的正文不需要缩进：
 
 ```markdown
 /// tip | 一个例子
-    attrs: {id: example}
+    attrs: {id: block-example}
 
 一些文本，不需要缩进。
-
-另一段文本。
 ///
-```
 
-设置 ID 后，提示框标题右侧会显示与章节标题相同的永久链接。可折叠提示框需要使用 blocks details 语法：
-
-```markdown
-/// details | 可折叠的例子
+/// details | Blocks 语法的可折叠例子
     type: note
-    attrs: {id: collapsible-example}
+    attrs: {id: block-collapsible-example}
 
 一些默认折叠的文本。
 ///
