@@ -10,7 +10,7 @@ icon: octicons/device-desktop-16
 
 !!! warning "本文编写中"
 
-!!! note "参考" {#references}
+!!! note "参考" {#ref}
 
     本章参考了以下内容：
     
