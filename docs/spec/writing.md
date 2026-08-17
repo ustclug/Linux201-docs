@@ -136,6 +136,24 @@ ID 应当是提示框标题含义的简洁英文翻译，并遵循[标题 ID](#h
 
 如果你使用 [draw.io](https://draw.io) 绘制图片，请在「文件→属性」中设置缩放比为 200%，并导出为 SVG 格式。如果使用其他绘图工具，请确保导出的图片清晰可见，且文字大小适中。
 
+### 图片的宽高比 {#image-aspect-ratio}
+
+构建文档时，Linux 201 中的 mkdocs hook 会读取本地图片的固有尺寸，并自动为生成的 `<img>` 元素设置 `aspect-ratio`。浏览器可以据此提前为图片预留空间，减少图片加载导致的页面重排以及锚点位置偏移。位图和带有 `width`、`height` 或 `viewBox` 信息的 SVG 图片均受支持。
+
+以下情况不会自动设置宽高比：
+
+- 图片已经同时设置了 `width` 和 `height`；
+- 图片已经通过 `style` 设置了 `aspect-ratio`；
+- 图片使用远程 URL，构建过程不会为了读取尺寸而下载远程图片。
+
+对于远程图片，请在能够确定尺寸时指定宽高比：
+
+```markdown
+![image](https://example.com/image.png){ style="aspect-ratio: 16 / 9" }
+```
+
+如需检查哪些远程图片被跳过，可以使用 `DEBUG=1 mkdocs build` 构建文档。
+
 ### 为图片添加配字 {#image-caption}
 
 使用 [Python Markdown Extension](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/caption/) 的语法，在图片后面添加配字，格式如下：
