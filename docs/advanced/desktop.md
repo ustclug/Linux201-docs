@@ -1690,6 +1690,30 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
     相关设置也可以在 [pipewire.conf][pipewire.conf.5]（`default.clock`）修改。
 
+!!! note "RTkit 与音频服务"
+
+    实现低延迟音频非常重要的一点是音频处理有足够的 CPU 时间来运行。Linux 支持实时[优先级][sched.7]，能够保障指定的应用在指定规则内不被抢占，包含以下三种模式：
+
+    - `SCHED_FIFO`：同一优先级下按 FIFO 的方式执行，除非线程主动放弃或者被更高优先级抢占，否则一直拿着 CPU 资源。
+    - `SCHED_RR`：在 `SCHED_FIFO` 基础上，有一个时间片限制，超过时间片后放在队列最尾部。
+    - `SCHED_DEADLINE`：思路与上两者不同，设置调度时需要提供每次调度的运行时间（runtime）、deadline 与周期（period），例如「每 100ms（period）需要 20ms 的运行时间（runtime），需要在 50ms 内完成（deadline）」。如果无法调度，那么优先级设置就会失败。
+
+    不过，虽然实时优先级对某些工作负载很重要，但同时也很危险：如果恶意程序或者编写不善的程序获取实时优先级，那么就可能会让系统卡死，无法执行其他操作。[RTkit](https://gitlab.freedesktop.org/pipewire/rtkit) 目前是 PipeWire 项目维护的在 Linux 桌面下为应用提供实时优先级能力的工具，在应用申请下默认提供 `SCHED_RR` 设置（也可以设置为 `SCHED_FIFO`。目前不支持 `SCHED_DEADLINE`）。为了防止应用写坏了导致系统卡死，RTkit 有 watchdog 的设计：一个 `SCHED_OTHER` 的非实时线程每 5s 发送一次心跳到 `SCHED_RR`（默认设置）、优先级 99 的 watchdog 线程，如果 watchdog 10s 都没收到心跳，那么就认为系统的实时优先级线程出了问题，会强制降级它设置的所有实时线程，并且拒绝新请求一段时间。
+
+    `pipewire` 和 `pipewire-pulse` 默认都会通过 RTkit（以及 Portal 暴露的 [Realtime Portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Realtime.html)）设置自己的数据处理的线程为实时优先级。直接连接 pipewire socket 的用户应用的数据处理线程也会尽量设置为实时优先级。可以通过 `chrt` 确认：
+
+    ```console
+    $ chrt -a -p 462852
+    pid 462852's current scheduling policy: SCHED_OTHER|SCHED_RESET_ON_FORK
+    pid 462852's current scheduling priority: 0
+    pid 462852's current runtime parameter: 2800000
+    pid 462899's current scheduling policy: SCHED_OTHER|SCHED_RESET_ON_FORK
+    pid 462899's current scheduling priority: 0
+    pid 462899's current runtime parameter: 2800000
+    pid 462900's current scheduling policy: SCHED_RR|SCHED_RESET_ON_FORK
+    pid 462900's current scheduling priority: 20
+    ```
+
 此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)
 
 (TODO)
