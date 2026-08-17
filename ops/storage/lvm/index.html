@@ -3458,14 +3458,14 @@
 <li>LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置</li>
 <li>LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Device mapper</p>
+<div class="admonition note" id="device-mapper">
+<p class="admonition-title">Device mapper<a class="headerlink" href="#device-mapper" title="Permanent link">&para;</a></p>
 <p><a href="https://docs.kernel.org/admin-guide/device-mapper/index.html">Device mapper</a> 是 Linux 内核的特性。它可以在已有的块设备上面创建虚拟的块设备，在处理虚拟设备的 IO 时根据其维护的映射表来修改请求、转发到实际的块设备上面。在 device mapper 中实现功能的模块被称为 target，可以叠加。其能实现的功能不仅包括本文介绍的 LVM（RAID 等卷管理功能）、SSD 缓存，还能实现诸如磁盘加密（dm-crypt）、块设备级别压缩与去重（dm-vdo）等功能。</p>
 <p>Device mapper 暴露出的虚拟块设备可以在 <code>/dev/dm-X</code> 文件和 <code>/dev/mapper/</code> 目录下看到。管理系统 device mapper 的用户态工具为 <code>dmsetup</code>。</p>
 </div>
 <p>一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自<a href="https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper">红帽 RHEL 的 LVM 管理指南</a><sup id="fnref:rhel-version"><a class="footnote-ref" href="#fn:rhel-version">1</a></sup>。</p>
-<div class="admonition warning">
-<p class="admonition-title">本部分无法涵盖全部内容</p>
+<div class="admonition warning" id="this-section-cannot-cover-all-content">
+<p class="admonition-title">本部分无法涵盖全部内容<a class="headerlink" href="#this-section-cannot-cover-all-content" title="Permanent link">&para;</a></p>
 <p>LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。</p>
 </div>
 <h2 id="basic">基础概念<a class="headerlink" href="#basic" title="Permanent link">&para;</a></h2>
@@ -3476,8 +3476,8 @@
 <li>逻辑卷（Logical Volume，LV）：在卷组里分配的逻辑存储空间。称之为「逻辑」，是因为它可以跨越多个物理卷，也不一定是连续的</li>
 </ul>
 <p>这里我们创建三个 1GB 的文件作为物理卷，并且加入到一个卷组中：</p>
-<div class="admonition warning">
-<p class="admonition-title">避免在物理磁盘上创建无分区表的文件系统/物理卷</p>
+<div class="admonition warning" id="require-partition-table-on-physical-disk">
+<p class="admonition-title">避免在物理磁盘上创建无分区表的文件系统/物理卷<a class="headerlink" href="#require-partition-table-on-physical-disk" title="Permanent link">&para;</a></p>
 <p>在实践中，尽管技术上可行，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
 这会给其他人带来困惑，并且如果未来有在对应磁盘上启动系统等需要多分区的需求，会带来很多麻烦（可能只能备份数据后从头再来）。</p>
 <p>直接对物理磁盘设备格式化为文件系统也是操作时常见的输入错误：</p>
@@ -3541,8 +3541,8 @@
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
 <a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="go">  lvol0 vg201-test -wi-a----- 2.50g</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">等等，怎么每块盘少了几 MB 空间？</p>
+<div class="admonition note" id="why-is-there-less-space-on-each-disk">
+<p class="admonition-title">等等，怎么每块盘少了几 MB 空间？<a class="headerlink" href="#why-is-there-less-space-on-each-disk" title="Permanent link">&para;</a></p>
 <p>其实大概可以猜到，这些空间留给了 LVM 的元数据。LVM 的元数据为<strong>纯文本</strong>格式，可以存储相对复杂的信息，但是也带来了下述两个问题：</p>
 <ul>
 <li>LVM 的元数据格式没有书面的标准，因此其他软件在解析 LVM 元数据时可能会出现问题。<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=985974">科大镜像站的机器就遇到过 GRUB 解析 LVM 元数据代码的问题</a>，导致无法正确配置启动器。
@@ -3550,8 +3550,8 @@
 <li>LVM 的纯文本格式导致元数据本身较大，如果预分配的元数据空间不足，并且卷组中有大量逻辑卷（默认值 + 上千个 LV 就会出现问题），那么最后会导致无法再创建/扩容逻辑卷，并且只能通过添加新的物理卷，然后由该卷存储元数据来解决问题。<a href="https://vlab.ibugone.com/records/2022-06-16/">Vlab 项目曾遇到过这样的问题</a>。</li>
 </ul>
 </div>
-<div class="admonition note">
-<p class="admonition-title">这里创建的逻辑卷横跨了三块盘，所以 LVM 默认是 RAID 0？</p>
+<div class="admonition note" id="is-this-raid-0">
+<p class="admonition-title">这里创建的逻辑卷横跨了三块盘，所以 LVM 默认是 RAID 0？<a class="headerlink" href="#is-this-raid-0" title="Permanent link">&para;</a></p>
 <p>这是不正确的。这里逻辑卷的数据布局与 RAID 0 不同。RAID 0 考虑的是性能，因此数据类似于这么存储：</p>
 <table>
 <thead>
@@ -3620,8 +3620,8 @@
 <p>LVM 也提供了创建 RAID 0 逻辑卷的功能，被称为「条带化」（Striped）卷，上面默认生成的被称为「线性」（Linear）卷。</p>
 </div>
 <h2 id="raid">创建 RAID<a class="headerlink" href="#raid" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">不建议使用 LVM 构建 RAID</p>
+<div class="admonition warning" id="do-not-use-lvm-to-build-raid">
+<p class="admonition-title">不建议使用 LVM 构建 RAID<a class="headerlink" href="#do-not-use-lvm-to-build-raid" title="Permanent link">&para;</a></p>
 <p>相比于 mdadm，LVM 与 RAID 相关的概念与提供的工具更加复杂，并且这种复杂性在很多场景下没有收益。
 更加常见的模式是，使用 mdadm 构建 RAID，然后使用 LVM 管理构建好的 RAID 上的逻辑卷。</p>
 <p>LVM 与 mdadm 使用的都是内核的 md 模块。即使最终使用 LVM 构建 RAID，也建议简单阅读后一节关于 mdadm 的内容。</p>
@@ -3649,15 +3649,15 @@
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="go">  lvraid1 vg201-test rwi-a-r--- 512.00m                                    100.00          </span>
 <a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="go">  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">不要使用 <code>--type mirror</code></p>
+<div class="admonition warning" id="do-not-use-type-mirror">
+<p class="admonition-title">不要使用 <code>--type mirror</code><a class="headerlink" href="#do-not-use-type-mirror" title="Permanent link">&para;</a></p>
 <p><code>mirror</code> 和 <code>raid1</code> 是两个<strong>不同</strong>的 type。除非有特殊需要，否则应该使用 <code>--type raid1</code> 创建 RAID 1 阵列。
 可以使用 <code>lvconvert</code> 将 mirror 转换为 raid1。</p>
 <p>相关讨论可查看 <a href="https://unix.stackexchange.com/q/697364">In what case(s) will <code>--type mirror</code> continue to be a good choice / is not deprecated?</a>。</p>
 <p>在后文的缺盘测试中，<code>mirror</code> 的行为也与预期不同——LVM 默认会拒绝挂载，如果强行挂载，会直接将缺失的盘丢掉。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Extent 是多大</p>
+<div class="admonition note" id="what-is-extent-size">
+<p class="admonition-title">Extent 是多大<a class="headerlink" href="#what-is-extent-size" title="Permanent link">&para;</a></p>
 <p>有时在输入错误的参数之后，会出现 extent 不足的提示，类似于这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span><span class="c1"># --mirrors 参数多了一，空间不够</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>raid1<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
@@ -3742,8 +3742,8 @@
 <a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="go">  [lvraid5_rmeta_1]  vg201-test ewi-aor---   4.00m                                                     /dev/loop1(172)                                            </span>
 <a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="go">  [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                     /dev/loop2(172)</span>
 </code></pre></div>
-<details class="note">
-<summary>rimage, rmeta（与 mimage, mlog）</summary>
+<details class="note" id="rimage-rmeta-vs-mimage-mlog">
+<summary>rimage, rmeta（与 mimage, mlog）<a class="headerlink" href="#rimage-rmeta-vs-mimage-mlog" title="Permanent link">&para;</a></summary>
 <p>可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1/5/6 的产物：</p>
 <ul>
 <li>rimage: "RAID image"，代表了实际存储数据（以及校验信息）的逻辑卷</li>
@@ -3932,8 +3932,8 @@
 <a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="go">  lvraid1 vg201-test rwi-a-r--- 512.00m                                    100.00           idle                0</span>
 <a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="go">  lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00           idle                0</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">dm-integrity</p>
+<div class="admonition note" id="dm-integrity">
+<p class="admonition-title">dm-integrity<a class="headerlink" href="#dm-integrity" title="Permanent link">&para;</a></p>
 <p>LVM 支持在设置 RAID 时添加 integrity 功能（<code>--raidintegrity</code>），这项功能为数据添加了校验和，
 LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。</p>
 <p>这项功能不是 scrub 的替代品。</p>
@@ -4025,12 +4025,12 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <p>对于支持的文件系统，<code>lvreduce</code> 会检查文件系统的大小，避免数据损坏。但在操作时仍然需要谨慎。</p>
 <h2 id="lvmcache">SSD 缓存<a class="headerlink" href="#lvmcache" title="Permanent link">&para;</a></h2>
 <p>LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm-cache 的读写缓存。</p>
-<div class="admonition note">
-<p class="admonition-title">dm-writecache</p>
+<div class="admonition note" id="dm-writecache">
+<p class="admonition-title">dm-writecache<a class="headerlink" href="#dm-writecache" title="Permanent link">&para;</a></p>
 <p>本部分不介绍以优化写入为目的的 dm-writecache——我们没有相关的使用场景。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">缓存方案</p>
+<div class="admonition note" id="caching-schemes">
+<p class="admonition-title">缓存方案<a class="headerlink" href="#caching-schemes" title="Permanent link">&para;</a></p>
 <p>目前内核自带这些缓存方案：</p>
 <ul>
 <li><a href="https://wiki.archlinux.org/title/Bcache">bcache</a>：需要将 SSD 和 HDD 对应的块设备分区使用 <code>make-bcache</code> 初始化后，
@@ -4076,8 +4076,8 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">  LV     VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices      </span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">  lvdata vg201-test -wi-a----- &lt;100.00g                                                     /dev/loop0(0)</span>
 </code></pre></div>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 另一种做法</p>
+<div class="admonition comment" id="another-approach">
+<p class="admonition-title">@taoky: 另一种做法<a class="headerlink" href="#another-approach" title="Permanent link">&para;</a></p>
 <p>在配置 mirrors4 服务器的缓存时，<a href="https://docs.ustclug.org/services/mirrors/4/volumes/#ssd">我们的文档</a>中的做法是把 SSD 和 HDD 分别开 VG，在后面创建好之后再 <code>vgmerge</code>。</p>
 <p>这么做其实是没有必要的，只要 <code>lvcreate</code> 的时候清醒一些就行。
 况且缓存盘和后备设备必须在同一个 VG 里头。</p>
@@ -4106,21 +4106,21 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="go">  lvdata_corig(0) smq         writethrough                         163584               15                0                5               51                0                0</span>
 </code></pre></div>
 <p>可以看到缓存的模式是 writethrough，策略是 smq，以及缓存的读写命中率与脏块数量。</p>
-<div class="admonition warning">
-<p class="admonition-title">resize</p>
+<div class="admonition warning" id="lvmcache-resize">
+<p class="admonition-title">resize<a class="headerlink" href="#lvmcache-resize" title="Permanent link">&para;</a></p>
 <p>直到<a href="https://github.com/lvmteam/lvm2/issues/30#issuecomment-1412248104">相对新（&gt;= 2.03.12，发布于 2021/05/08）的 LVM 工具</a>之前，被缓存的 LV 不能被 resize。因此 resize 之前必须先撤下缓存，resize 结束后再安回去。</p>
 <p>因此 <a href="https://packages.debian.org/bookworm/lvm2">Debian Bookworm 的 LVM 工具</a>支持这种情况下的 resize，而 Bullseye 不支持。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title"><code>cachevol</code> 无法修复</p>
+<div class="admonition warning" id="cachevol-cannot-be-repaired">
+<p class="admonition-title"><code>cachevol</code> 无法修复<a class="headerlink" href="#cachevol-cannot-be-repaired" title="Permanent link">&para;</a></p>
 <p>目前 <code>lvconvert --repair</code> 不支持修复 cachevol，尝试这么做会看到以下输出：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--repair<span class="w"> </span>vg201-test/lvdata_cache_cvol
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">  WARNING: Command on LV vg201-test/lvdata_cache_cvol does not accept LV type linear.</span>
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">  Command not permitted on LV vg201-test/lvdata_cache_cvol.</span>
 </code></pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">lvmcache 的缓存模式、策略与部分术语</p>
+<div class="admonition note" id="lvmcache-caching-modes-and-terms">
+<p class="admonition-title">lvmcache 的缓存模式、策略与部分术语<a class="headerlink" href="#lvmcache-caching-modes-and-terms" title="Permanent link">&para;</a></p>
 <p>lvmcache 支持三种缓存模式：</p>
 <ul>
 <li>passthrough: 缓存无效。此时<strong>所有读写</strong>都到后备设备。同时写命中会触发对应的块缓存失效。</li>
@@ -4137,8 +4137,8 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <li>Demotion：将一块数据从缓存设备复制到后备设备</li>
 </ul>
 </div>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 关于缓存模式</p>
+<div class="admonition comment" id="comment-on-caching-modes">
+<p class="admonition-title">@taoky: 关于缓存模式<a class="headerlink" href="#comment-on-caching-modes" title="Permanent link">&para;</a></p>
 <p>分享一个笑话，最开始 @iBug 配的缓存模式选了 passthrough，理由是：</p>
 <blockquote>
 <p>这里的缓存模式采用 passthrough，即写入动作绕过缓存直接写回原设备（当然啦，写入都是由从上游同步产生的），另外两种 writeback 和 writethrough 都会写入缓存，不是我们想要的。</p>
@@ -4147,8 +4147,8 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <p>另外可以注意到，<code>lvmcache</code> 做了这么一个假设：写入的内容很快就会被读取。但是这个假设真的总是成立吗？
 writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有实现这个模式。</p>
 </div>
-<details class="note">
-<summary><code>dm-cache-policy-smq.c</code> 中实现的 SMQ 策略算法</summary>
+<details class="note" id="smq-policy-algorithm-in-dm-cache-policy-smq-c">
+<summary><code>dm-cache-policy-smq.c</code> 中实现的 SMQ 策略算法<a class="headerlink" href="#smq-policy-algorithm-in-dm-cache-policy-smq-c" title="Permanent link">&para;</a></summary>
 <p>核心的结构体是 <code>smq_policy</code>，其中包含了三个 SMQ 队列：热点（hotspot）队列、clean 队列和 dirty 队列。
 每个 SMQ 队列中包含 64 个 LRU 队列。这 64 个队列构成不同的等级，存储由热到冷的内容。</p>
 <!-- TODO: 更详细的介绍 -->
@@ -4242,8 +4242,8 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>                 Please consider increasing the cache block size to reduce the overall cache block count.
 </code></pre></div>
 <p>考虑到在服务器场合，内存一般都是足够（甚至过量）的，因此唯一可能需要考虑的就是额外的延迟了。</p>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 真实事件的教训</p>
+<div class="admonition comment" id="real-world-lesson-on-lvmcache-scalability">
+<p class="admonition-title">@taoky: 真实事件的教训<a class="headerlink" href="#real-world-lesson-on-lvmcache-scalability" title="Permanent link">&para;</a></p>
 <p>最开始的时候，mirrors 的 chunk size 设置为了 1M，结果过了两年多就发现 SSD 快挂了。
 查看统计发现 SSD 每小时读取 0.1T，但是写 1T 数据……</p>
 <p>因为经历过 SSD 被 lvmcache 磨没的事件，所以我个人的看法是，
@@ -4268,8 +4268,8 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <h3 id="lvmcache-dirty-issue">Too dirty to use<a class="headerlink" href="#lvmcache-dirty-issue" title="Permanent link">&para;</a></h3>
 <p>lvmcache 方案的一个无法忽视的弊端是：<strong>即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块</strong>。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。</p>
-<details class="tip">
-<summary>如何实验复现「所有块被标记」的行为？</summary>
+<details class="tip" id="how-to-reproduce-all-blocks-marked-as-dirty">
+<summary>如何实验复现「所有块被标记」的行为？<a class="headerlink" href="#how-to-reproduce-all-blocks-marked-as-dirty" title="Permanent link">&para;</a></summary>
 <p>由于没有能够强制卸载本地回环的方法，因此这里可以考虑的思路是：
 在虚拟机中使用本地回环设备创建 lvmcache，写入并读取一些数据（单纯的写入一次可能不会使用缓存块空间），然后使用 <code>reboot -f</code> 强制重启。</p>
 <p>如果使用的块够多，并且操作及时，可能就能看到 dirty block &gt; 0 的情况：</p>
@@ -4290,18 +4290,18 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <p>来自 linux-lvm 邮件列表的可能相关的故障报告参见
 <a href="https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/">https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/</a>。</p>
 </details>
-<div class="admonition note">
-<p class="admonition-title">最新的内核可能部分修复了后一个问题</p>
+<div class="admonition note" id="latest-kernel-may-partially-fix-the-issue">
+<p class="admonition-title">最新的内核可能部分修复了后一个问题<a class="headerlink" href="#latest-kernel-may-partially-fix-the-issue" title="Permanent link">&para;</a></p>
 <p>参见 <a href="https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb">https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb</a>。
 根据该 commit 的描述，<strong>在 cleaner 状态下</strong>即使 IO idle 为 false，也会进行脏块迁移。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">lvmcache 的设计</p>
+<div class="admonition note" id="lvmcache-design">
+<p class="admonition-title">lvmcache 的设计<a class="headerlink" href="#lvmcache-design" title="Permanent link">&para;</a></p>
 <p>从前面的统计数据可以注意到，脏块的数量是一个指标。在 lvmcache 的设计中，存在出现模式为 writethrough 并且存在脏块的可能，所以目前程序上没有实现看到 writethrough 之后
 就忽略脏块的问题。</p>
 </div>
-<details class="note">
-<summary>模拟在 IO 压力下迁移缓慢的情况</summary>
+<details class="note" id="slow-cache-migration-under-io">
+<summary>模拟在 IO 压力下迁移缓慢的情况<a class="headerlink" href="#slow-cache-migration-under-io" title="Permanent link">&para;</a></summary>
 <p>格式化我们刚才创建的有 cache 的 LV，使用 <code>fio</code> 上点压力：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span>--runtime<span class="o">=</span><span class="m">120</span><span class="w"> </span>--numjobs<span class="o">=</span><span class="m">4</span><span class="w"> </span>--time_based<span class="w"> </span>--group_reporting<span class="w"> </span>--name<span class="o">=</span>job_name<span class="w"> </span>--eta-newline<span class="o">=</span><span class="m">1</span>
 </code></pre></div>
@@ -4366,8 +4366,8 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </code></pre></div>
 <p>可以注意到卡在了 <code>Flushing 6481 blocks</code> 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。</p>
 </details>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 其他信息</p>
+<div class="admonition comment" id="additional-lvmcache-notes">
+<p class="admonition-title">@taoky: 其他信息<a class="headerlink" href="#additional-lvmcache-notes" title="Permanent link">&para;</a></p>
 <p>这可能是对于较大缓存、较重的负载下 lvmcache 最大的问题了。
 关于下面处理不方便的问题，我在 lvm2 仓库提交了 issue: <a href="https://github.com/lvmteam/lvm2/issues/141">https://github.com/lvmteam/lvm2/issues/141</a>，
 希望能够在 lvm 工具中实现绕过 flush dirty block 的操作。</p>
@@ -4385,19 +4385,19 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </code></pre></div>
 <p>在我们的配置下，写全部脏块操作（包括中间的 <code>sleep</code> 操作在内）需要大约 10 个小时。</p>
 <div class="admonition danger" id="lvmcache-grub-bug">
-<p class="admonition-title">GRUB 可能无法处理自定义的 migration_threshold 等属性</p>
+<p class="admonition-title">GRUB 可能无法处理自定义的 migration_threshold 等属性<a class="headerlink" href="#lvmcache-grub-bug" title="Permanent link">&para;</a></p>
 <p>参考 patch: <a href="https://github.com/taoky/grub/commit/484b718831ab3ca034bb5ea3624a85efeb5bf2ba">https://github.com/taoky/grub/commit/484b718831ab3ca034bb5ea3624a85efeb5bf2ba</a>。</p>
 <p>相关的备注信息：<a href="https://blog.taoky.moe/attachments/2021-04-17-tunight/show.html#21">https://blog.taoky.moe/attachments/2021-04-17-tunight/show.html#21</a>。</p>
 <p>虽然这个 patch 也有问题，并且 GRUB 的开发非常不活跃，所以可能一直都要自己编译 GRUB 了。</p>
 </div>
 <p>我们目前的建议是在计划重启（维护窗口）前手动卸载缓存，在重启后再挂载（之前维护时观察到，即使正常关机，也可能出现脏块的问题）。
 另一种方式是：（在确认没有事实上的脏块的前提下）手动修改 LVM 元数据，把缓存扔掉。</p>
-<div class="admonition danger">
-<p class="admonition-title">小心操作</p>
+<div class="admonition danger" id="lvmcache-operation-caution">
+<p class="admonition-title">小心操作<a class="headerlink" href="#lvmcache-operation-caution" title="Permanent link">&para;</a></p>
 <p>对每次 LVM 操作，lvm 的工具都会在 <code>/etc/lvm/archive</code> 备份操作前的元数据信息，同时在 <code>/etc/lvm/backup</code> 存储当前的元数据，但是还是尽量小心，以免酿成悲剧。</p>
 </div>
-<details class="note">
-<summary>有 cache 的 VG 元数据例子</summary>
+<details class="note" id="cached-vg-metadata-example">
+<summary>有 cache 的 VG 元数据例子<a class="headerlink" href="#cached-vg-metadata-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a># Generated by LVM2 version 2.03.23(2) (2023-11-21): Sun Feb 18 00:25:36 2024
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>contents = "Text Format Volume Group"
@@ -4518,8 +4518,8 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-34-118" name="__codelineno-34-118" href="#__codelineno-34-118"></a>}
 </code></pre></div>
 </details>
-<details class="note">
-<summary>没有 cache 的 VG 元数据例子</summary>
+<details class="note" id="uncached-vg-metadata-example">
+<summary>没有 cache 的 VG 元数据例子<a class="headerlink" href="#uncached-vg-metadata-example" title="Permanent link">&para;</a></summary>
 <p>以下仅展示 <code>logical_volumes</code> 部分：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a># （省略）
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>
@@ -4675,13 +4675,13 @@ PVE 自带的集群管理功能使用了 <code>corosync</code> 维护了一个�
 并且 PVE 不存在多台机器访问同一个 LV 的情况，因此这一套方案不依赖于 <code>lvmlockd</code>。</p>
 <!-- TODO: 关于 corosync 和分布式系统相关的内容放在哪里呢？ -->
 
-<div class="admonition warning">
-<p class="admonition-title">确保所有访问 LVM 的机器在同一个 PVE 集群中</p>
+<div class="admonition warning" id="pve-cluster-membership-required">
+<p class="admonition-title">确保所有访问 LVM 的机器在同一个 PVE 集群中<a class="headerlink" href="#pve-cluster-membership-required" title="Permanent link">&para;</a></p>
 <p>否则在集群外的虚拟机创建等操作不会正确获取锁，导致<strong>覆盖</strong>已有的虚拟机磁盘。
 相关故障案例见 <a href="https://vlab.ibugone.com/servers/ct100/#%E6%95%85%E9%9A%9C">https://vlab.ibugone.com/servers/ct100/#%E6%95%85%E9%9A%9C</a>。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">LVM 集群不支持精简置备 LV</p>
+<div class="admonition warning" id="no-thin-lv-in-lvm-cluster">
+<p class="admonition-title">LVM 集群不支持精简置备 LV<a class="headerlink" href="#no-thin-lv-in-lvm-cluster" title="Permanent link">&para;</a></p>
 <p>在虚拟化场景下，一个常见的节省空间的做法是使用精简置备（thin-provisioned）的存储，
 这么做可以在创建 LV 时只分配少量的空间，然后在需要的时候再分配更多的空间。
 但是 LVM 集群不支持这种操作（因此每个虚拟机都要实打实地占用对应的空间）。
@@ -4764,7 +4764,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月10日 19:05:10 UTC">2026年8月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

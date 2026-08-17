@@ -3764,8 +3764,8 @@
 </code></pre></div>
 <p>此外，尽管这里不展示 RAID10 的创建过程，但是 mdadm 的 RAID10 涉及到 near, far 和 offset 三种布局的选择。
 详细的介绍可参考 <a href="https://man7.org/linux/man-pages/man4/md.4.html">md(4)</a> 的 "About the RAID10 Layout Examples" 部分。</p>
-<div class="admonition warning">
-<p class="admonition-title">有关 raid456 的性能争议</p>
+<div class="admonition warning" id="raid456-performance-controversy">
+<p class="admonition-title">有关 raid456 的性能争议<a class="headerlink" href="#raid456-performance-controversy" title="Permanent link">&para;</a></p>
 <p>内核 md 的 raid456 模块中定义了一个固定大小的 4K "stripe"，所有的块 IO 操作都会被先被分成 4K 的块，
 commit 到设备上后再合并操作。并且目前合并操作无法正确处理 trim 指令，这就导致了对 raid4/5/6 进行 trim
 的时候，全盘 trim 会被拆分成大量的 4k trim，从而导致 trim 卡住。在进行其他操作时，也可能发现性能不及预期。</p>
@@ -3904,8 +3904,8 @@ commit 到设备上后再合并操作。并且目前合并操作无法正确处�
 <h2 id="hardware-raid">硬件 RAID 方案<a class="headerlink" href="#hardware-raid" title="Permanent link">&para;</a></h2>
 <p>不同的服务器可能提供了不同的硬件 RAID 方案，目前最常见的是 MegaRAID 方案。
 在服务器启动时，按下指定的按键，可以进入 RAID 卡的设置界面进行操作。</p>
-<details class="example">
-<summary>图片：可能会看到的界面</summary>
+<details class="example" id="hardware-raid-example">
+<summary>图片：可能会看到的界面<a class="headerlink" href="#hardware-raid-example" title="Permanent link">&para;</a></summary>
 <p><figure markdown="span">
   <img alt="MegaRAID Utility" src="https://docs.oracle.com/cd/E41059_01/html/E48312/figures/adapter_selection.jpg" />
   <figcaption>MegaRAID 在开机时可以选择进入的设置页面</figcaption>
@@ -3915,8 +3915,8 @@ commit 到设备上后再合并操作。并且目前合并操作无法正确处�
 HPE 的 Smart Array 可以使用 <code>ssacli</code> 等。
 这些软件 Linux 发行版不自带，需要自行下载安装。</p>
 <p>以下介绍 MegaRAID 相关的一些操作。</p>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 硬件 RAID，md/LVM，还是 ZFS？</p>
+<div class="admonition comment" id="hardware-raid-vs-md-lvm-zfs">
+<p class="admonition-title">@taoky: 硬件 RAID，md/LVM，还是 ZFS？<a class="headerlink" href="#hardware-raid-vs-md-lvm-zfs" title="Permanent link">&para;</a></p>
 <p>选择何种方案，需要在系统部署前确定好，否则后续切换的代价极高。
 在约十年前，硬件 RAID 是很合理的方案，因为能够节省 CPU 计算资源，性能足够好，配置简单，而且服务器一般都会带个卡。
 但在今天，硬件 RAID 方案（以及块设备级别的软件 RAID 方案）可能不总是最佳选择了：</p>
@@ -3948,8 +3948,8 @@ HPE 的 Smart Array 可以使用 <code>ssacli</code> 等。
 <p>MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是某些型号的旧阵列仅支持 MegaCLI。
 由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
 这里提供了一些链接：</p>
-<div class="admonition warning">
-<p class="admonition-title">尽可能从官方来源获取这些工具</p>
+<div class="admonition warning" id="get-megaraid-tools-from-official">
+<p class="admonition-title">尽可能从官方来源获取这些工具<a class="headerlink" href="#get-megaraid-tools-from-official" title="Permanent link">&para;</a></p>
 <p>即使会麻烦一些，在下载前确认来源站点（在这里是博通）是非常重要的。
 从不明网站下载工具存在很大的供应链攻击的风险。</p>
 </div>
@@ -3969,12 +3969,12 @@ HPE 的 Smart Array 可以使用 <code>ssacli</code> 等。
 如果在运行时缺少库（例如 <code>libncurses.so.5</code>），安装对应的包即可。</p>
 <p>MegaCLI 与 StorCLI 的操作有许多不同，下面主要展示 StorCLI 的操作。
 MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是不同的阵列）。</p>
-<div class="admonition tip">
-<p class="admonition-title">使用时加上 <code>-NoLog</code> (MegaCLI) / <code>nolog</code> (StorCLI) 参数</p>
+<div class="admonition tip" id="megaraid-tools-nolog">
+<p class="admonition-title">使用时加上 <code>-NoLog</code> (MegaCLI) / <code>nolog</code> (StorCLI) 参数<a class="headerlink" href="#megaraid-tools-nolog" title="Permanent link">&para;</a></p>
 <p>MegaRAID 的这两个工具默认每次执行都会在当前工作目录创建日志文件，可以使用 <code>-NoLog</code> 或 <code>nolog</code> 参数禁用。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">StorCLI 的 JSON 支持</p>
+<div class="admonition tip" id="storcli-json-support">
+<p class="admonition-title">StorCLI 的 JSON 支持<a class="headerlink" href="#storcli-json-support" title="Permanent link">&para;</a></p>
 <p>StorCLI 支持输出 JSON 格式的信息，这对程序化解析 RAID 阵列状态很有帮助。
 在命令的最后添加 <code>J</code> 即可，如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>show<span class="w"> </span>all<span class="w"> </span>nolog<span class="w"> </span>J
@@ -4026,8 +4026,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="go">--------------------------------------------------------------</span>
 <a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a><span class="go">（以下省略）</span>
 </code></pre></div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-basics-alternative">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-basics-alternative" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpallInfo<span class="w"> </span>-a0<span class="w"> </span>-NoLog<span class="w">  </span><span class="c1"># 使用 -aALL 表示所有控制器</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">Adapter #0</span>
@@ -4118,8 +4118,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="go">--------------------</span>
 <a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="go">（以下省略）</span>
 </code></pre></div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-battery-alternative">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-battery-alternative" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpBbuCmd<span class="w"> </span>-a0<span class="w"> </span>-NoLog
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">BBU status for Adapter: 0</span>
@@ -4133,8 +4133,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 </code></pre></div>
 <p>MegaCLI 可能不支持 CacheVault。</p>
 </details>
-<div class="admonition note">
-<p class="admonition-title">RAID 5/6 write hole 问题</p>
+<div class="admonition note" id="raidad56-write-hole-problem">
+<p class="admonition-title">RAID 5/6 write hole 问题<a class="headerlink" href="#raidad56-write-hole-problem" title="Permanent link">&para;</a></p>
 <p>在讨论 RAID 5/6 的可靠性，以及为什么 btrfs 一直没有稳定的 RAID 5/6 支持时，经常会提到 write hole 问题。
 在 RAID 5/6 阵列中，在每块盘写入的数据都需要保持一致性（包括 parity），但是阵列的写入操作不是「原子」的。
 这意味着每次写入时，阵列在事实上有一小段时间是不一致的。
@@ -4145,8 +4145,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <p>ZFS 的 raidz1/2/3 不受 write hole 影响。</p>
 </div>
 <h4 id="megaraid-scrub">完整性检查<a class="headerlink" href="#megaraid-scrub" title="Permanent link">&para;</a></h4>
-<div class="admonition note">
-<p class="admonition-title">下面的部分内容没有命令输出展示</p>
+<div class="admonition note" id="megaraid-scrub-no-output">
+<p class="admonition-title">下面的部分内容没有命令输出展示<a class="headerlink" href="#megaraid-scrub-no-output" title="Permanent link">&para;</a></p>
 <p>由于没有测试条件，因此下面的部分需要对磁盘状态作修改的内容仅作示例。</p>
 </div>
 <p>MegaRAID 阵列卡默认定期进行完整性检查（Consistency Check）与 Patrol Read；
@@ -4186,12 +4186,12 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a><span class="go">PR MaxConcurrentPd      255                  </span>
 <a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a><span class="go">---------------------------------------------</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">检查阵列卡的时间</p>
+<div class="admonition tip" id="check-array-card-time">
+<p class="admonition-title">检查阵列卡的时间<a class="headerlink" href="#check-array-card-time" title="Permanent link">&para;</a></p>
 <p>阵列卡的时间可能与系统时间不一致，可以使用 <code>/cx show time</code> (StorCLI) / <code>-AdpGetTime -ax</code> (MegaCLI) 查看。</p>
 </div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-scrub-alternative">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-scrub-alternative" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpCcSched<span class="w"> </span>-Info<span class="w"> </span>-a0<span class="w"> </span>-NoLog
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="go">Adapter #0</span>
@@ -4243,8 +4243,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="go">Rebuildrate 60%   </span>
 <a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="go">------------------</span>
 </code></pre></div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-rebuild-rate">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-rebuild-rate" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-AdpGetProp<span class="w"> </span>RebuildRate<span class="w"> </span>-a0<span class="w"> </span>-NoLog
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="go">Adapter 0: Rebuild Rate = 30%</span>
@@ -4260,8 +4260,8 @@ MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是
 <p>在重建时，也可以查看重建的进度：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="go">sudo ./storcli64 /c0 /sx show rebuild nolog</span>
 </code></pre></div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-rebuild-progress">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-rebuild-progress" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./MegaCli64<span class="w"> </span>-PDRbld<span class="w"> </span>-ShowProg<span class="w"> </span>-PhysDrv<span class="w"> </span><span class="o">[</span><span class="m">252</span>:7<span class="o">]</span><span class="w"> </span>-a0<span class="w"> </span>-NoLog
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">Rebuild Progress on Device at Enclosure 252, Slot 7 Completed 8% in 39 Minutes.</span>
@@ -4278,16 +4278,16 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp"># </span>停止闪烁
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">sudo ./storcli64 /c0 /e252 /s0 locate stop nolog</span>
 </code></pre></div>
-<details class="note">
-<summary>MegaCLI alternative</summary>
+<details class="note" id="megacli-identify-alternative">
+<summary>MegaCLI alternative<a class="headerlink" href="#megacli-identify-alternative" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp"># </span>开始闪烁
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">sudo ./MegaCli64 -PdLocate -start -physdrv[252:0] -a0 -NoLog</span>
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gp"># </span>停止闪烁
 <a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">sudo ./MegaCli64 -PdLocate -stop -physdrv[252:0] -a0 -NoLog</span>
 </code></pre></div>
 </details>
-<div class="admonition tip">
-<p class="admonition-title">还可以让阵列卡发出声音……</p>
+<div class="admonition tip" id="megaraid-controller-beeper">
+<p class="admonition-title">还可以让阵列卡发出声音……<a class="headerlink" href="#megaraid-controller-beeper" title="Permanent link">&para;</a></p>
 <p>可以配置阵列卡在阵列出现异常情况时发出声音，这可以帮助在机房的系统管理员发现异常情况。
 可以使用 <code>show alarm</code> (StorCLI) / <code>-AdpGetProp AlarmDsply</code> (MegaCLI) 显示当前的配置情况。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>./storcli64<span class="w"> </span>/c0<span class="w"> </span>show<span class="w"> </span>alarm<span class="w"> </span>nolog
@@ -4392,8 +4392,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 </code></pre></div>
 <p><code>smartctl -a</code> 的输出主要分为两个部分：information section 和 smart data section。</p>
 <p>Information section 展示硬盘的基本信息，包括型号、序列号、容量、固件版本等。</p>
-<details class="example">
-<summary>一块 NVMe SSD 的信息示例</summary>
+<details class="example" id="nvme-ssd-device-info-example">
+<summary>一块 NVMe SSD 的信息示例<a class="headerlink" href="#nvme-ssd-device-info-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>=== START OF INFORMATION SECTION ===
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>Model Number:                       INTEL SSDPEKNU020TZ
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>Serial Number:                      PHKA119600MK2P0D
@@ -4427,8 +4427,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a id="__codelineno-26-31" name="__codelineno-26-31" href="#__codelineno-26-31"></a>0 +     512       0         0
 </code></pre></div>
 </details>
-<details class="example">
-<summary>一块 SATA SSD 的信息示例</summary>
+<details class="example" id="sata-ssd-device-info-example">
+<summary>一块 SATA SSD 的信息示例<a class="headerlink" href="#sata-ssd-device-info-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>=== START OF INFORMATION SECTION ===
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>Model Family:     Intel S4510/S4610/S4500/S4600 Series SSDs
 <a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>Device Model:     INTEL SSDSC2KB019T8
@@ -4448,8 +4448,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a>SMART support is: Enabled
 </code></pre></div>
 </details>
-<details class="example">
-<summary>一块 SATA HDD 的信息示例</summary>
+<details class="example" id="sata-hdd-device-info-example">
+<summary>一块 SATA HDD 的信息示例<a class="headerlink" href="#sata-hdd-device-info-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>=== START OF INFORMATION SECTION ===
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>Model Family:     Hitachi Ultrastar A7K2000
 <a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>Device Model:     Hitachi HUA722020ALA330
@@ -4468,8 +4468,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a id="__codelineno-28-16" name="__codelineno-28-16" href="#__codelineno-28-16"></a>SMART support is: Enabled
 </code></pre></div>
 </details>
-<details class="example">
-<summary>一块 SAS HDD 的信息示例</summary>
+<details class="example" id="sas-hdd-device-info-example">
+<summary>一块 SAS HDD 的信息示例<a class="headerlink" href="#sas-hdd-device-info-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>=== START OF INFORMATION SECTION ===
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>Vendor:               WDC
 <a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>Product:              WUH721818AL5206
@@ -4491,8 +4491,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a>Temperature Warning:  Enabled
 </code></pre></div>
 </details>
-<div class="admonition warning">
-<p class="admonition-title">检查硬盘的固件版本</p>
+<div class="admonition warning" id="check-ssd-firmware">
+<p class="admonition-title">检查硬盘的固件版本<a class="headerlink" href="#check-ssd-firmware" title="Permanent link">&para;</a></p>
 <p>数据中心盘的 SSD 近年来有多起因为固件问题导致使用时间过长（几万小时）后盘坏掉的新闻：</p>
 <ul>
 <li><a href="https://www.pcmag.com/news/time-to-patch-hpe-ssds-will-fail-after-32768-hours">Time to Patch: HPE SSDs Will Fail After 32,768 Hours</a></li>
@@ -4506,8 +4506,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <a href="https://docs.ustclug.org/faq/ssd/">我们的文档</a>记录了在两块盘遇到固件导致的损坏后升级 Intel SSD 固件（XCV10100 -&gt; XCV10110）的惨痛经历，可以作为参考。</p>
 </div>
 <p>Smart data section 则展示了硬盘的 SMART 信息。其中<strong>自检信息</strong>与<strong>错误记录</strong>均会显示，其他的部分视硬盘类型而定。</p>
-<details class="example">
-<summary>一块 NVMe SSD 的 SMART 数据示例</summary>
+<details class="example" id="nvme-ssd-smart-example">
+<summary>一块 NVMe SSD 的 SMART 数据示例<a class="headerlink" href="#nvme-ssd-smart-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>=== START OF SMART DATA SECTION ===
 <a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>SMART overall-health self-assessment test result: PASSED
 <a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
@@ -4541,8 +4541,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 <li>出现错误的次数：Media and Data Integrity Errors（也就是俗称的 0E 错误数量）。<b><span style="color: red">如果这个数字不是 0，需要立刻备份数据并且考虑更换！</span></b></li>
 </ul>
 </details>
-<details class="example">
-<summary>一块 SATA SSD 的 SMART 数据示例</summary>
+<details class="example" id="sata-ssd-smart-example">
+<summary>一块 SATA SSD 的 SMART 数据示例<a class="headerlink" href="#sata-ssd-smart-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>=== START OF READ SMART DATA SECTION ===
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>SMART overall-health self-assessment test result: PASSED
 <a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>
@@ -4632,8 +4632,8 @@ MegaRAID 的工具可以控制硬盘的 LED 灯，便于找到对应的硬盘。
 Value 为 100（有些硬盘的起始值会更高）通常表示最佳指标，随着使用逐渐降低。Worst 则记录历史最差（最低）值，如果值低于阈值（Threshold），则代表硬盘出现了问题。</p>
 <p>对于 SSD 来说，除了 Pre-fail 以外，需要额外关注与 wearout（磨损）有关的指标。</p>
 </details>
-<details class="example">
-<summary>一块 SATA HDD 的 SMART 数据示例</summary>
+<details class="example" id="sata-hdd-smart-example">
+<summary>一块 SATA HDD 的 SMART 数据示例<a class="headerlink" href="#sata-hdd-smart-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>=== START OF READ SMART DATA SECTION ===
 <a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>SMART Status not supported: ATA return descriptor not supported by controller firmware
 <a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>SMART overall-health self-assessment test result: PASSED
@@ -4711,8 +4711,8 @@ Value 为 100（有些硬盘的起始值会更高）通常表示最佳指标，�
 </code></pre></div>
 <p>阅读 attributes 的方法参见上面的 SATA SSD 的示例。</p>
 </details>
-<details class="example">
-<summary>一块 SAS HDD 的 SMART 数据示例</summary>
+<details class="example" id="sas-hdd-smart-example">
+<summary>一块 SAS HDD 的 SMART 数据示例<a class="headerlink" href="#sas-hdd-smart-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>=== START OF READ SMART DATA SECTION ===
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>SMART Health Status: OK
 <a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>
@@ -4754,8 +4754,8 @@ Value 为 100（有些硬盘的起始值会更高）通常表示最佳指标，�
 </code></pre></div>
 <p><code>/usr/share/smartmontools/smartd-runner</code> 会调用 <code>/etc/smartmontools/run.d/</code> 下的文件，
 其中默认提供的 <code>10mail</code> 会使用系统的 <code>mail</code> 命令发送邮件。</p>
-<details class="example">
-<summary>邮件样例</summary>
+<details class="example" id="smart-example">
+<summary>邮件样例<a class="headerlink" href="#smart-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>This message was generated by the smartd daemon running on:
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>
 <a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>   host name:  example
@@ -4786,15 +4786,15 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 编写自己的监控插件也很方便。</p>
 <!-- TODO: 一个到「指标监控与告警」的 link -->
 
-<div class="admonition note">
-<p class="admonition-title">USTCLUG 目前的方案</p>
+<div class="admonition note" id="ustclug-raid-setup">
+<p class="admonition-title">USTCLUG 目前的方案<a class="headerlink" href="#ustclug-raid-setup" title="Permanent link">&para;</a></p>
 <p>我们的 RAID 目前主要有 ZFS (zpool) 与硬件 RAID 两种。前者我们使用的方案是 <a href="https://github.com/iwvelando/telegraf-exec-zpool-status">https://github.com/iwvelando/telegraf-exec-zpool-status</a>，
 而后者是 @taoky 编写的 <a href="https://github.com/ustclug/raid-telegraf">raid-telegraf</a>。</p>
 <p>可用于导入的 <a href="https://grafana.com/grafana/dashboards/20645-raid-and-ssd/">Grafana.com Dashboard 分享页面</a>，<a href="../../../assets/RAID%20and%20SSD-1709828565742.json">Grafana Dashboard JSON</a>，以及<a href="https://monitor.ustclug.org/d/SonKmbWnk/raid-and-ssd?orgId=1">参考效果</a>。</p>
 </div>
 <h2 id="emergency-rescue">紧急救援<a class="headerlink" href="#emergency-rescue" title="Permanent link">&para;</a></h2>
-<div class="admonition danger">
-<p class="admonition-title">数据无价，谨慎操作！</p>
+<div class="admonition danger" id="data-loss-warning">
+<p class="admonition-title">数据无价，谨慎操作！<a class="headerlink" href="#data-loss-warning" title="Permanent link">&para;</a></p>
 <p>如果不满足以下任一条件，请咨询专业的数据恢复公司，不要轻易尝试自行操作：</p>
 <ul>
 <li>数据的价值不高，可以承受丢失的风险</li>
@@ -4802,8 +4802,8 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 <li>有足够的盘能被识别，并能够读取大部分的内容</li>
 </ul>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">也可阅读 Hackergame 2021 题目「阵列恢复大师」的官方题解</p>
+<div class="admonition tip" id="raid-recovery-writeup">
+<p class="admonition-title">也可阅读 Hackergame 2021 题目「阵列恢复大师」的官方题解<a class="headerlink" href="#raid-recovery-writeup" title="Permanent link">&para;</a></p>
 <p>相关内容基于真实的事件改编。该题目要求选手从完整未损坏但配置未知的 RAID 盘组中恢复数据。
 题目描述与题解参见 <a href="https://github.com/USTC-Hackergame/hackergame2021-writeups/tree/master/official/%E9%98%B5%E5%88%97%E6%81%A2%E5%A4%8D%E5%A4%A7%E5%B8%88">https://github.com/USTC-Hackergame/hackergame2021-writeups/tree/master/official/%E9%98%B5%E5%88%97%E6%81%A2%E5%A4%8D%E5%A4%A7%E5%B8%88</a>。</p>
 </div>
@@ -4896,7 +4896,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月20日 19:22:08 UTC">2026年7月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

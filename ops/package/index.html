@@ -3991,8 +3991,8 @@
 <h2 id="apt-common-operations">APT 常用操作<a class="headerlink" href="#apt-common-operations" title="Permanent link">&para;</a></h2>
 <p>Debian 有多个与软件包管理相关的工具。</p>
 <p>其中的底层工具为 dpkg。dpkg 不负责管理软件依赖关系，只管理具体某一个包的安装、卸载等操作。因此<strong>除非需要排查疑难问题，否则不应该直接使用 dpkg 修改系统状态</strong>。</p>
-<div class="admonition warning">
-<p class="admonition-title">避免在安装 deb 文件时使用 dpkg</p>
+<div class="admonition warning" id="avoid-dpkg-installing-deb">
+<p class="admonition-title">避免在安装 deb 文件时使用 dpkg<a class="headerlink" href="#avoid-dpkg-installing-deb" title="Permanent link">&para;</a></p>
 <p>网络上许多教程，甚至是一些官方文档，都会建议使用 <code>dpkg -i</code> 安装 deb 文件。当 deb 存在依赖，并且系统未安装满足要求的依赖时，直接使用 <code>dpkg</code> 会导致系统依赖管理出现问题，需要额外花费精力修复。</p>
 <p>建议始终使用 <code>apt install ./path/to/package.deb</code> 的方式安装 deb 文件。</p>
 </div>
@@ -4039,15 +4039,15 @@
 <li><code>apt-mark showauto</code> 与 <code>apt-mark showmanual</code> 可以显示系统中被标记为自动安装与手动安装的包。</li>
 <li><code>apt-mark auto &lt;package&gt;</code> 与 <code>apt-mark manual &lt;package&gt;</code> 可以修改包的标记。</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">自动/手动安装的信息记录在哪里？</p>
+<div class="admonition note" id="auto-manual-installation">
+<p class="admonition-title">自动/手动安装的信息记录在哪里？<a class="headerlink" href="#auto-manual-installation" title="Permanent link">&para;</a></p>
 <p>某个包是否为自动安装是 APT 维护的信息，存储在 <code>/var/lib/apt/extended_states</code>。事实上，APT 只会把自动安装的包放进这个文件，于是不在这个文件里面的就是手动安装的——所以如果用 dpkg 安装了某个包（尽管不推荐这么做），那么这个包就会被 APT 视为手动安装的，因为 dpkg 不会修改 <code>extended_states</code> 文件的内容。</p>
 </div>
 <h3 id="recommends-suggests">推荐与建议<a class="headerlink" href="#recommends-suggests" title="Permanent link">&para;</a></h3>
 <p>安装软件包时，APT 在默认配置下会安装推荐（Recommended）的包。建议（Suggested）的包会显示在安装界面，但是不会自动被安装。例如在 Debian 12 中，<a href="https://packages.debian.org/bookworm/docker.io">docker.io 包</a>的推荐有 apparmor、ca-certificates 等，建议包有 btrfs-progs、debootstrap 等。那么在安装 <code>docker.io</code> 时，包括 apparmor、ca-certificates 等包就会默认被安装，并且用户也可以看到这些包建议，并且可以在当前包安装完成后自行安装。</p>
 <p>大部分情况下，被设置为「推荐」的包是有意义的，如果不安装，可能程序仍然可以运行，但是会缺失一些重要的功能。不过在某些环境下，例如容器场景，我们需要安装的包尽可能得少。为了精简安装的软件包，可以使用 <code>--no-install-recommends</code> 的选项，以跳过推荐的软件包。还可以在 <a href="https://manpages.debian.org/unstable/apt/apt.conf.5.en.html"><code>apt.conf</code></a> 配置中添加 <code>Apt::Install-Recommends "false"</code> 以使默认配置不会安装推荐的包。</p>
-<div class="admonition tip">
-<p class="admonition-title">使用 <code>.conf.d</code> 目录形式，避免直接修改 <code>.conf</code> 配置文件</p>
+<div class="admonition tip" id="conf-d-over-direct-edit">
+<p class="admonition-title">使用 <code>.conf.d</code> 目录形式，避免直接修改 <code>.conf</code> 配置文件<a class="headerlink" href="#conf-d-over-direct-edit" title="Permanent link">&para;</a></p>
 <p>对于绝大多数 Debian 包来说，软件包对应的配置文件（以下称为 <code>.conf</code> 文件）是直接由软件包安装（管理）的。尽管直接修改配置也可以达到目的，但是在软件包升级，特别是系统大版本更新时，<code>apt</code> 会要求用户手工介入配置冲突问题（保留原配置，或者安装新配置），会带来一些困扰。</p>
 <p>目前大部分软件包的配置文件都支持 <code>.conf.d</code> 目录形式，允许用户以不同文件的形式添加自己的配置片段，对应的程序会「导入」这些配置。这种方式不仅可以避免直接修改软件包的配置文件，还可以更好地管理配置文件（例如，用户可以将不同目的的配置以不同的文件名存储，提升配置的可维护性）。</p>
 <p>以上文的 <code>apt.conf</code> 为例，这里推荐的做法是在 <code>/etc/apt/apt.conf.d/</code> 目录下创建一个新的 <code>.conf</code> 文件，在其中写入需要的配置，例如不安装推荐包：</p>
@@ -4055,8 +4055,8 @@
 </code></pre></div>
 <p>某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 <code>99</code> 作为前缀，确保这个配置文件在其他配置文件之后被读取。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">为什么某个包会被安装</p>
+<div class="admonition tip" id="why-package-installed">
+<p class="admonition-title">为什么某个包会被安装<a class="headerlink" href="#why-package-installed" title="Permanent link">&para;</a></p>
 <p>由于推荐关系的存在，有时候在安装某个包时，会带上一些看起来无关的包。可以使用<a href="#apt-frontend">下文介绍的 aptitude</a> 的 <code>why</code> 命令查看，例如确认为什么 <code>apt install lightdm</code> 会安装 <code>plymouth</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>aptitude<span class="w"> </span>why<span class="w"> </span>lightdm<span class="w"> </span>plymouth
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">p   lightdm             Depends    lightdm-gtk-greeter | lightdm-greeter</span>
@@ -4098,8 +4098,8 @@
 <li><code>~o</code> 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（<code>?obsolete</code>，在 <code>apt list</code> 的输出中显示为 <code>[installed,local]</code>）。</li>
 <li><code>~M</code> 被标记为自动安装的包（<code>?automatic</code>）。</li>
 </ul>
-<div class="admonition question">
-<p class="admonition-title">搜索模式练习</p>
+<div class="admonition question" id="apt-search-pattern-practice">
+<p class="admonition-title">搜索模式练习<a class="headerlink" href="#apt-search-pattern-practice" title="Permanent link">&para;</a></p>
 <p>请尝试写出以下查询的搜索模式，并且在自己的环境中试一试：</p>
 <ul>
 <li>输出（提示：<code>apt list</code>）所有未完全删除以及远程仓库不再提供的包（虽然 <code>apt purge</code> 也支持搜索模式，小心执行，因为所有配置都会被删除！）</li>
@@ -4158,8 +4158,8 @@
 <a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="go">htop: /usr/share/man/man1/htop.1.gz</span>
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">htop: /usr/share/pixmaps/htop.png</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">使用 dpkg 类命令在<strong>已安装的包</strong>内查找文件</p>
+<div class="admonition tip" id="find-files-in-installed-packages">
+<p class="admonition-title">使用 dpkg 类命令在<strong>已安装的包</strong>内查找文件<a class="headerlink" href="#find-files-in-installed-packages" title="Permanent link">&para;</a></p>
 <p><code>apt-file</code> 依赖于对完整仓库的索引，并且搜索也是一个略微耗时的过程。如果只需要确认本地已经安装的包，以及已有的 deb 包文件中的文件情况，有更快的方法：</p>
 <ul>
 <li><code>dpkg-query -S &lt;file&gt;</code> 可以查找所有已安装包中的文件。</li>
@@ -4253,8 +4253,8 @@
 <p><code>aptitude</code> 提供了 TUI 界面的包管理功能，不过对于运维的场景下，其更加重要的是相比于 <code>apt</code> 更灵活的依赖解析功能。在系统出现损坏包的情况下，<code>apt</code> 可能无法提供有效的解决方案，而 <code>aptitude</code> 会计算出多种解法，并且提供给用户选择。</p>
 <h3 id="verify">完整性校验<a class="headerlink" href="#verify" title="Permanent link">&para;</a></h3>
 <p>dpkg 可以对已经安装的包进行完整性校验。<code>dpkg --verify &lt;name&gt;</code> 可以校验已经安装的包的完整性，可以省略 <code>&lt;name&gt;</code> 选项，以对于所有包进行检查。如果怀疑软件包文件因意外被破坏（例如在升级时断电，或误删除等），可以使用该命令确认哪些软件包需要重新安装。</p>
-<div class="admonition example">
-<p class="admonition-title">检查某系统强制重启后无法开机的问题</p>
+<div class="admonition example" id="check-system-reboot-issue">
+<p class="admonition-title">检查某系统强制重启后无法开机的问题<a class="headerlink" href="#check-system-reboot-issue" title="Permanent link">&para;</a></p>
 <p>一个现实发生的例子是，某系统强制重启后无法正常开机，提示：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">[    4.634427] systemd[1]: Assertion 'close_nointr(fd) != -EBADF' failed at src/basic/fd-util.c:77, function safe_close(). Aborting.</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">[    4.635043] systemd[1]: Caught &lt;ABRT&gt; from our own process.</span>
@@ -4274,8 +4274,8 @@
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>missing     /some/missing_file
 </code></pre></div>
 <p><code>dpkg</code> 目前只会检查文件的 MD5（即上面的 <code>5</code>），因此其他列均标记为 <code>?</code>（未检查）。<code>c</code> 代表是配置文件，<code>missing</code> 代表文件不存在。</p>
-<div class="admonition warning">
-<p class="admonition-title"><code>dpkg --verify</code> 不是为安全性用途设计的</p>
+<div class="admonition warning" id="dpkg-verify-not-security-check">
+<p class="admonition-title"><code>dpkg --verify</code> 不是为安全性用途设计的<a class="headerlink" href="#dpkg-verify-not-security-check" title="Permanent link">&para;</a></p>
 <p>如果怀疑攻击者已经有对应机器的 root 权限，那么 <code>dpkg --verify</code> 的结果是不可信的，因为攻击者可以修改 <code>dpkg</code> 本身，或者修改本地的包数据库。</p>
 </div>
 <h3 id="priority">软件优先级<a class="headerlink" href="#priority" title="Permanent link">&para;</a></h3>
@@ -4303,8 +4303,8 @@
 <a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="go">        500 http://mirrors.ustc.edu.cn/debian bookworm/main amd64 Packages</span>
 </code></pre></div>
 <p>可以看到，APT 已知四个不同的 <code>yt-dlp</code> 版本，分别是 deb-multimedia 的 <code>1:2025.01.26-dmo1</code>、本地安装的 <code>1:2024.10.07-dmo1</code>、backports 的 <code>2025.01.26-1~bpo12+1</code> 以及官方源的 <code>2023.03.04-1</code>。特别地，本地的版本的优先级为 100。因此当执行更新命令时，APT 会首先选择优先级最高的（<code>deb-multimedia</code> 或者官方源），然后选择版本最高的（<code>1:2025.01.26-dmo1</code>）。</p>
-<div class="admonition note">
-<p class="admonition-title">如果本地的版本比远程的版本更高……</p>
+<div class="admonition note" id="local-version-higher-than-remote">
+<p class="admonition-title">如果本地的版本比远程的版本更高……<a class="headerlink" href="#local-version-higher-than-remote" title="Permanent link">&para;</a></p>
 <p>此时 APT <strong>不会降级</strong>软件包，除非远程对应的优先级超过 1000。如果需要手动降级，可以使用 <code>apt install &lt;name&gt;=&lt;version&gt;</code>。</p>
 </div>
 <p>如果需要指定从某个特定的源安装软件包，可以使用 <code>-t</code> 选项，例如：</p>
@@ -4341,8 +4341,8 @@
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="nt">Pin-Priority</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
 </code></pre></div>
 <p>详细文档请参考 <a href="https://manpages.debian.org/unstable/apt/apt_preferences.5.en.html">apt_preferences(5)</a>。</p>
-<div class="admonition lab">
-<p class="admonition-title">使用优先级机制阻止软件包安装</p>
+<div class="admonition lab" id="block-package-installation-with-pinning">
+<p class="admonition-title">使用优先级机制阻止软件包安装<a class="headerlink" href="#block-package-installation-with-pinning" title="Permanent link">&para;</a></p>
 <p>当 <code>Pin-Priority</code> 为负数时，APT 会拒绝安装这个包。请阅读文档，尝试创建一个配置文件，阻止安装 <code>snapd</code>（可在 Ubuntu 容器中实验）。</p>
 </div>
 <h3 id="listbugs">Bug 查询<a class="headerlink" href="#listbugs" title="Permanent link">&para;</a></h3>
@@ -4474,8 +4474,8 @@
 <li><code>control.tar.xz</code>（或 <code>control.tar.zst</code> 等）：包含软件包的元数据，例如软件包的依赖、描述、安装脚本等。</li>
 <li><code>data.tar.xz</code>（或 <code>data.tar.zst</code> 等）：包含软件包的实际文件。</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">ar 与 tar</p>
+<div class="admonition note" id="ar-and-tar">
+<p class="admonition-title">ar 与 tar<a class="headerlink" href="#ar-and-tar" title="Permanent link">&para;</a></p>
 <p>ar 格式（1971）与 tar（1979）类似，都是归档格式。由于 ar 不支持目录，因此目前 ar 仅用于生成静态链接库（<code>.a</code> 文件）与 deb 包。</p>
 </div>
 <h4 id="control"><code>control</code><a class="headerlink" href="#control" title="Permanent link">&para;</a></h4>
@@ -4510,8 +4510,8 @@
 <li><code>triggers</code>，定义了软件包感兴趣（interest）的触发器，以及软件包状态变化时会触发（activate）的触发器。</li>
 </ul>
 <p>这些 hook 脚本与额外的信息文件在软件包安装后会保存在 <code>/var/lib/dpkg/info</code> 目录下，以便在维护软件包时参考，如卸载软件包或进行完整性校验（<code>dpkg -V</code>）等。</p>
-<div class="admonition note">
-<p class="admonition-title">Hook 脚本与 init 系统的交互</p>
+<div class="admonition note" id="package-hooks-and-init-system">
+<p class="admonition-title">Hook 脚本与 init 系统的交互<a class="headerlink" href="#package-hooks-and-init-system" title="Permanent link">&para;</a></p>
 <p>传统上，Debian 软件包安装后，其 <code>postinst</code> 脚本会以默认安全的配置启动对应的服务，删除软件包时 <code>prerm</code> 和 <code>postrm</code> 也会做服务的关闭与删除操作。不过，直接在 hook 脚本里面运行 <code>systemctl</code> 是不太恰当的，因为运行所处的环境可能根本没有 systemd（例如容器或 chroot 等）。</p>
 <p>Debian 的 <a href="https://packages.debian.org/trixie/init-system-helpers">init-system-helpers</a> 包提供了 <code>invoke-rc.d</code> 脚本，hook 脚本中可以以类似传统 SysVinit service 的方式调用（<code>invoke-rc.d start</code>），在现代 Debian 系统中会转换为 systemd 操作。其在启动时会运行 <a href="http://people.debian.org/~hmh/invokerc.d-policyrc.d-specification.txt"><code>/usr/sbin/policy-rc.d</code></a>，如果 <code>policy-rc.d</code> 返回 101，那么 <code>invoke-rc.d</code> 就不会去尝试做服务操作。Docker 的 <code>library/debian</code> 就做了相关的操作：</p>
 <div class="highlight"><span class="filename">/usr/sbin/policy-rc.d</span><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="ch">#!/bin/sh</span>
@@ -4525,8 +4525,8 @@
 <p>需要注意的是，<code>invoke-rc.d</code> 不止会在软件安装或卸载的时候被调用，因此在 init 正常的系统上不建议配置 <code>policy-rc.d</code>，否则可能会遇到出乎意料的问题（例如我们调试过的 <a href="../storage/zfs/#debugging">ZFS 相关问题</a>）。</p>
 <p>另外，由于 Debian 已经全面使用 systemd，因此在 hook 脚本中更常见的其实是 <code>deb-systemd-helper</code> 和 <code>deb-systemd-invoke</code>，这两个命令也由 init-system-helpers 包提供。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">debconf</p>
+<div class="admonition note" id="debconf-interactive-setup">
+<p class="admonition-title">debconf<a class="headerlink" href="#debconf-interactive-setup" title="Permanent link">&para;</a></p>
 <p>一些软件包在安装时会需要用户提供额外的信息，例如 <code>tzdata</code> 包安装时会咨询用户所属的时区。这类交互式功能是由 debconf 实现的。需要 debconf 集成的软件包会包含 <code>templates</code> 文件，里面是需要询问用户的信息，类似这样：</p>
 <div class="highlight"><span class="filename">templates</span><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Template: tzdata/Areas
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>Type: select
@@ -4558,8 +4558,8 @@
 <a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="nt">Components</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
 <a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="nt">Signed-By</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/share/keyrings/debian-archive-keyring.gpg</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">DEB822</p>
+<div class="admonition tip" id="deb822-format">
+<p class="admonition-title">DEB822<a class="headerlink" href="#deb822-format" title="Permanent link">&para;</a></p>
 <p>DEB822 是 Debian 新的仓库配置格式，用于取代旧的 <code>sources.list</code> 格式（又被称为 One-Line-Style 格式）。详情可阅读 <a href="https://repolib.readthedocs.io/en/latest/deb822-format.html">https://repolib.readthedocs.io/en/latest/deb822-format.html</a>。</p>
 </div>
 <p><code>apt source</code> 会下载必要的文件、解压并应用 Debian 的补丁：</p>
@@ -4587,8 +4587,8 @@
 <h3 id="debian-dir">修改软件包源码<a class="headerlink" href="#debian-dir" title="Permanent link">&para;</a></h3>
 <p>得到的源码中除了软件包本身的代码以外，还有 <code>debian</code> 目录。这个目录包含了软件包的构建相关信息，包括 <code>control</code>、<code>changelog</code>、<code>patches/</code> 等等。</p>
 <h4 id="quilt">使用 quilt 管理补丁<a class="headerlink" href="#quilt" title="Permanent link">&para;</a></h4>
-<div class="admonition note">
-<p class="admonition-title">补丁简介</p>
+<div class="admonition note" id="patch-introduction">
+<p class="admonition-title">补丁简介<a class="headerlink" href="#patch-introduction" title="Permanent link">&para;</a></p>
 <p>补丁是后缀为 <code>patch</code> 的文件，由 <code>diff</code> 生成。补丁有多种不同的格式：unified diff (<code>diff -u</code>)、context diff (<code>diff -c</code>) 和 normal diff（默认）。其中最常见的是 unified diff 格式，类似如下（命令为 <code>diff -u test.txt test_new.txt</code>）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gd">--- test.txt    2025-02-07 16:00:16.591987241 +0800</span>
 <a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="gi">+++ test_new.txt    2025-02-07 16:00:28.462299382 +0800</span>
@@ -4770,8 +4770,8 @@
 <a id="__codelineno-51-4" name="__codelineno-51-4" href="#__codelineno-51-4"></a><span class="nf">%</span><span class="o">:</span>
 <a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">    </span>dh<span class="w"> </span><span class="nv">$@</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title"><code>%:</code></p>
+<div class="admonition tip" id="makefile-wildcard-rule">
+<p class="admonition-title"><code>%:</code><a class="headerlink" href="#makefile-wildcard-rule" title="Permanent link">&para;</a></p>
 <p>这是一个 Makefile 的通配符规则，表示所有的目标都使用 <code>dh</code> 命令来处理。例如，执行 <code>debian/rules build</code> 时，Makefile 会将 <code>build</code> 作为目标传递给 <code>dh</code>，因此等价于执行 <code>dh build</code>。</p>
 </div>
 <p>可以使用 <code>DH_NO_ACT=1</code> 环境变量来查看 <code>dh</code> 会执行哪些操作：</p>
@@ -4804,8 +4804,8 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>lintian<span class="w"> </span>--pedantic<span class="w"> </span>-E<span class="w"> </span>-i<span class="w"> </span>-I
 </code></pre></div>
 <h4 id="checkinstall">使用 <code>checkinstall</code> 快速打包<a class="headerlink" href="#checkinstall" title="Permanent link">&para;</a></h4>
-<div class="admonition warning">
-<p class="admonition-title">checkinstall 工具仅适用于临时打包</p>
+<div class="admonition warning" id="checkinstall-temporary-packaging">
+<p class="admonition-title">checkinstall 工具仅适用于临时打包<a class="headerlink" href="#checkinstall-temporary-packaging" title="Permanent link">&para;</a></p>
 <p>checkinstall 的工作原理是，在 <code>make install</code> 使用 <code>installwatch</code> 环节拦截文件相关系统调用（类似 <code>strace</code>），检查文件的变化，并将其打包为 deb 包。因此其只适用于使用 Makefile 构建系统（包括 <code>cmake</code>、<code>autotools</code> 等）的软件包。并且 checkinstall 的工作原理决定了其无法处理复杂的软件包，例如如果某软件包在安装时修改了 <code>/etc/passwd</code>，那么 checkinstall 无法正确打包这个软件包——在卸载时可能会破坏系统<sup id="fnref:debian-system"><a class="footnote-ref" href="#fn:debian-system">1</a></sup>。</p>
 <p>Debian 打包是一项复杂的工作。针对不同的编程语言与构建系统，Debian 提供了一些工具（例如 <code>dh-make-golang</code> 可以打包 Go 语言项目）辅助打包，建议在操作前先行搜索。<code>debmake</code> 工具也可以帮助生成一些 Debian 打包的模板文件。</p>
 </div>
@@ -4919,8 +4919,8 @@
 <a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./</span>
 <a id="__codelineno-66-4" name="__codelineno-66-4" href="#__codelineno-66-4"></a><span class="nt">Trusted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yes</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title"><code>Signed-By</code> 与 GPG 签名</p>
+<div class="admonition warning" id="signed-by-gpg-signature">
+<p class="admonition-title"><code>Signed-By</code> 与 GPG 签名<a class="headerlink" href="#signed-by-gpg-signature" title="Permanent link">&para;</a></p>
 <p><a href="https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6">从 apt 2.9.24 开始，没有 <code>Signed-By</code> 字段的源会视作废弃状态</a>，并弹出警告信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="go">Notice: Missing Signed-By in the sources.list(5) entry for 'https://deb.example.com/repo'</span>
 </code></pre></div>
@@ -4945,8 +4945,8 @@
 <li><code>ChangeLog</code>：变更记录。</li>
 <li><code>contrib/</code>, <code>main/</code>, <code>non-free/</code>, <code>non-free-firmware/</code>：不同的组件（Components）。</li>
 </ul>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 安全更新源与镜像站</p>
+<div class="admonition comment" id="security-update-mirror-trust">
+<p class="admonition-title">@taoky: 安全更新源与镜像站<a class="headerlink" href="#security-update-mirror-trust" title="Permanent link">&para;</a></p>
 <p>曾经有人问过这个问题：镜像站提供安全更新源的话，怎么保证镜像站本身不会通过拖延更新等方式阻止用户获取安全更新？</p>
 <p>首先，Debian <strong>不鼓励</strong>修改默认的安全更新源，甚至其安装器在默认模式下，即使设置了镜像站，安全更新仍然会从官方获取（这也是 Debian 安装器在某些网络环境下很慢的一大原因），需要使用专家模式才能修改。</p>
 <p>然后，安全更新源的 <code>Release</code> 文件有一个重要的字段：<code>Valid-Until</code>，例如：</p>
@@ -4971,8 +4971,8 @@
 <li><code>Release</code>：该架构的元数据。</li>
 <li><code>by-hash/</code>：同上。</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">使用 rsync 同步 Debian 软件源</p>
+<div class="admonition note" id="rsync-sync-debian-repo">
+<p class="admonition-title">使用 rsync 同步 Debian 软件源<a class="headerlink" href="#rsync-sync-debian-repo" title="Permanent link">&para;</a></p>
 <p>使用 rsync 同步 Debian 软件源（以及其他软件仓库）的一个常见问题是：index（索引）文件和包数据文件的一致性。如果发生了不一致，用户在更新的时候就会遇到错误，影响体验。尽管 <a href="../storage/backup/#rsync-client">rsync 支持推迟更新与删除文件</a>，但是仍然可能有问题：</p>
 <ul>
 <li>如果在同步的时候上游内容发生变化，那么 rsync 得到的数据就可能会不一致（虽然 rsync 能够检测到这种情况并返回错误，但是对应文件的更新与覆盖已经发生了）</li>
@@ -4983,8 +4983,8 @@
 <li>Stage 1 会同步除了 index 以外的数据（包括 <code>pool</code>、<code>by-hash</code> 目录等），同步这些文件不会修改已有的 index，也不会删除已有的 index 引用的数据包。</li>
 <li>Stage 2 开始前会检测符合 <code>Archive-Update-in-Progress-*</code> 形式的文件，如果存在，那么说明上游正在同步（这个文件被 stage 1 同步了进来），那么就从头开始重试。否则做一遍完整的 rsync 同步（由于 stage 1 已经同步了非 index 数据，这一步只会同步 index 数据）。</li>
 </ul>
-<details class="note">
-<summary>Stage 1 和 2 的 rsync 参数</summary>
+<details class="note" id="rsync-stage-parameters">
+<summary>Stage 1 和 2 的 rsync 参数<a class="headerlink" href="#rsync-stage-parameters" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$RSYNC_PROTOCOL</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">31</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
 <a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">"-prltvHSB8192 --safe-links --chmod=D755,F644 --timeout 120 --stats --no-human-readable --no-inc-recursive"</span><span class="si">}</span>
 <a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="k">else</span>
@@ -5062,7 +5062,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月28日 21:11:01 UTC">2026年6月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

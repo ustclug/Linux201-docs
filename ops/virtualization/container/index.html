@@ -4108,8 +4108,8 @@
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>nsenter<span class="w"> </span>--target<span class="w"> </span><span class="m">117426</span><span class="w"> </span>--uts<span class="w"> </span>bash<span class="w"> </span><span class="c1"># 进入 UTS 命名空间</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="gp">[root@9213a075a2f4 example]# </span><span class="c1"># 可以看到 hostname 已经改变</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">ustclug Docker image</p>
+<div class="admonition note" id="ustclug-docker-image">
+<p class="admonition-title">ustclug Docker image<a class="headerlink" href="#ustclug-docker-image" title="Permanent link">&para;</a></p>
 <p>本页的容器示例使用了 <a href="https://github.com/ustclug/mirrorimage/">ustclug/mirrorimage</a> 生成的容器镜像，默认配置了科大镜像站，帮助减少 <code>apt</code> 等操作之前还要跑 <code>sed</code> 的麻烦，支持包括 Ubuntu、Debian、Alpine 等多个发行版。</p>
 <p>如果无法顺利访问 Docker Hub，也可以使用 <code>ghcr.io/ustclug/ubuntu:22.04</code>。</p>
 </div>
@@ -4139,8 +4139,8 @@
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">root           1  0.0  0.0  10876  4568 pts/17   S    21:42   0:00 bash</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">root           2  0.0  0.0  14020  4464 pts/17   R+   21:42   0:00 ps aux</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">bind mount</p>
+<div class="admonition tip" id="bind-mount">
+<p class="admonition-title">bind mount<a class="headerlink" href="#bind-mount" title="Permanent link">&para;</a></p>
 <p>对容器、沙盒等应用来说，在建立 mount 命名空间后一般都需要切换根目录到新位置（<a href="https://man7.org/linux/man-pages/man2/pivot_root.2.html">pivot_root(2)</a>）。但是很多时候，我们需要将主机的某个目录或者文件挂载进来，这就需要用到 bind mount 了。bind mount 可以以挂载点的形式将某个文件或者目录「挂载」到其他地方。使用 <a href="https://man7.org/linux/man-pages/man8/mount.8.html">mount(8)</a> 命令可以实现 bind mount：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># 将 /dir1 挂载到 /dir2</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>sudo<span class="w"> </span>mount<span class="w"> </span>--bind<span class="w"> </span>/dir1<span class="w"> </span>/dir2
@@ -4170,15 +4170,15 @@
 <a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="go">root           1  0.0  0.0  10876  4468 pts/16   S    21:46   0:00 bash</span>
 <a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="go">root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">subuid 和 subgid</p>
+<div class="admonition note" id="subuid-and-subgid">
+<p class="admonition-title">subuid 和 subgid<a class="headerlink" href="#subuid-and-subgid" title="Permanent link">&para;</a></p>
 <p><code>/etc/subuid</code> 和 <code>/etc/subgid</code> 文件定义了用户命名空间允许的 UID 和 GID 的映射关系。一个 <code>subuid</code> 文件的例子如下：</p>
 <div class="highlight"><span class="filename">/etc/subuid</span><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>user:100000:65536
 </code></pre></div>
 <p>这代表用户名为 user 的用户在创建新的用户命名空间的时候，可以将从 UID 100000 开始的 65536 个 UID 映射到新的用户命名空间中。一种常见的映射关系是，新命名空间的 root 用户（UID 0）映射到宿主机的当前用户，而 root 以外的用户则依次使用映射，例如用户命名空间中的 UID 1 就映射到宿主机的 UID 100000，以此类推。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">命名空间的魔法</p>
+<div class="admonition note" id="namespace-magic">
+<p class="admonition-title">命名空间的魔法<a class="headerlink" href="#namespace-magic" title="Permanent link">&para;</a></p>
 <p>在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。</p>
 <p>作为其中一个「花式操作」的例子，可以阅读这篇 USENIX ATC 2018 的论文：<a href="https://www.usenix.org/conference/atc18/presentation/thalheim">Cntr: Lightweight OS Containers</a>（以及目前仍然在维护的<a href="https://github.com/Mic92/cntr">代码仓库</a>）。这篇工作实现了在不包含调试工具的容器中使用包含调试工具的镜像（或者 host 的调试工具）进行调试的功能。</p>
 </div>
@@ -4250,8 +4250,8 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/
 <p>控制器可以通过 <code>cgroup.subtree_control</code> 控制是否启用。
 需要注意的是，根据 cgroup v2 的 "no internal processes" 规则，
 除根节点以外，其他的 cgroup 不能同时本身既包含进程，又设置了 <code>subtree_control</code>。</p>
-<div class="admonition lab">
-<p class="admonition-title">尝试操作 <code>subtree_control</code></p>
+<div class="admonition lab" id="try-subtree-control">
+<p class="admonition-title">尝试操作 <code>subtree_control</code><a class="headerlink" href="#try-subtree-control" title="Permanent link">&para;</a></p>
 <p>请根据 cgroups 手册以及上文的说明，在 <code>test</code> cgroup 下创建一个新的 cgroup，并且使其仅包含内存控制器。
 想一想：上面的 <code>sleep</code> 进程应该怎么操作？</p>
 </div>
@@ -4260,8 +4260,8 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="gp"># </span><span class="nb">kill</span><span class="w"> </span><span class="m">1910225</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="gp"># </span>rmdir<span class="w"> </span>/sys/fs/cgroup/test
 </code></pre></div>
-<div class="admonition question">
-<p class="admonition-title">为什么不使用 <code>rm -r</code></p>
+<div class="admonition question" id="why-not-use-rm-r">
+<p class="admonition-title">为什么不使用 <code>rm -r</code><a class="headerlink" href="#why-not-use-rm-r" title="Permanent link">&para;</a></p>
 <p>思考这个问题：
 <code>/sys/fs/cgroup/test</code> 并非我们传统意义上的「空目录」，为什么这里要用 <code>rmdir</code>，而不是用 <code>rm -r</code> 递归删除？</p>
 </div>
@@ -4275,8 +4275,8 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="go">Killed</span>
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>cgdelete<span class="w"> </span>memory:test<span class="w">  </span><span class="c1"># 清理现场</span>
 </code></pre></div>
-<div class="admonition lab">
-<p class="admonition-title">观察这些命令的行为</p>
+<div class="admonition lab" id="observe-commands-behavior">
+<p class="admonition-title">观察这些命令的行为<a class="headerlink" href="#observe-commands-behavior" title="Permanent link">&para;</a></p>
 <p>请使用系统调用分析工具 <code>strace</code> 观察 <code>cgcreate</code>、<code>cgset</code>、<code>cgexec</code>、<code>cgdelete</code> 的文件系统操作。</p>
 </div>
 <p>具体的控制器使用方法这里不再赘述。</p>
@@ -4286,8 +4286,8 @@ Cgroups 以文件系统的形式暴露给用户态，一般挂载在 <code>/sys/
 root 权限的进程可以随意进行诸如关机、操作内核模块等危险操作，这通常是非预期的；
 即使通过用户机制限制了权限，暴露所有的系统调用仍然大幅度增加了攻击面。</p>
 <p>从程序员的角度，可以使用 libseccomp 库简化 seccomp 的使用。</p>
-<div class="admonition lab">
-<p class="admonition-title">执行 Python 3 解释器最少需要多少系统调用？</p>
+<div class="admonition lab" id="execute-python-3-interpreter-minimum-system-calls">
+<p class="admonition-title">执行 Python 3 解释器最少需要多少系统调用？<a class="headerlink" href="#execute-python-3-interpreter-minimum-system-calls" title="Permanent link">&para;</a></p>
 <p>使用 libseccomp 编写程序，设置系统调用白名单限制。
 尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。</p>
 </div>
@@ -4298,13 +4298,13 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>getcap<span class="w"> </span>/usr/bin/ping
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">/usr/bin/ping cap_net_raw=ep</span>
 </code></pre></div>
-<details class="note">
-<summary>Permitted、Effective 和 Inheritable 集合</summary>
+<details class="note" id="permitted-effective-and-inheritable-sets">
+<summary>Permitted、Effective 和 Inheritable 集合<a class="headerlink" href="#permitted-effective-and-inheritable-sets" title="Permanent link">&para;</a></summary>
 <p>上面输出中的 <code>ep</code> 代表这个程序的 <code>CAP_NET_RAW</code> 能力被设置到了 Permitted 和 Effective 集合中。</p>
 <p>对进程（线程）来说，它可以申请使用在 Permitted 集合中的能力，在 Effective 集合中的能力则是当前生效的能力。除此之外，还有一个 Inheritable 集合，代表可以被子进程继承的能力。而对文件来说，相关的集合定义有一些细微的差别，详情可以参考手册。</p>
 </details>
-<details class="note">
-<summary>为什么我的系统上，<code>ping</code> 既不是 SUID 程序，也没有 capabilities？</summary>
+<details class="note" id="why-ping-is-not-suid-or-capabilities">
+<summary>为什么我的系统上，<code>ping</code> 既不是 SUID 程序，也没有 capabilities？<a class="headerlink" href="#why-ping-is-not-suid-or-capabilities" title="Permanent link">&para;</a></summary>
 <p>Linux 内核支持设置 <a href="https://man7.org/linux/man-pages/man7/icmp.7.html"><code>net.ipv4.ping_group_range</code></a>（这个选项也<a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67">控制 IPv6 下对应行为</a>），指定哪些用户组可以不依赖 capabilities 而对外发送 ICMP Echo Request，相比 capabilities 更加细化，且不再局限于具体的程序：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>sysctl<span class="w"> </span>net.ipv4.ping_group_range
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">net.ipv4.ping_group_range = 0   2147483647</span>
@@ -4322,13 +4322,13 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 <a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="go">Ambient set =</span>
 <a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="go">（以下省略）</span>
 </code></pre></div>
-<div class="admonition lab">
-<p class="admonition-title">试一下限制 capabilities</p>
+<div class="admonition lab" id="try-limit-capabilities">
+<p class="admonition-title">试一下限制 capabilities<a class="headerlink" href="#try-limit-capabilities" title="Permanent link">&para;</a></p>
 <p>使用 <code>capsh</code> 限制 capabilities，尝试运行一些需要特定 capabilities 的命令，例如安装/卸载内核模块。</p>
 </div>
 <p>容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其<a href="https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19">默认列表</a>。</p>
-<div class="admonition note">
-<p class="admonition-title">违背 Capabilities 设计初衷的 <code>CAP_SYS_ADMIN</code></p>
+<div class="admonition note" id="cap-sys-admin-contradicts-design">
+<p class="admonition-title">违背 Capabilities 设计初衷的 <code>CAP_SYS_ADMIN</code><a class="headerlink" href="#cap-sys-admin-contradicts-design" title="Permanent link">&para;</a></p>
 <p>理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 <code>mount</code>，都依赖于 <code>CAP_SYS_ADMIN</code> 这一能力。这就导致了 <code>CAP_SYS_ADMIN</code> 成为事实上的 "the new root"。</p>
 <p>可阅读 <a href="https://lwn.net/Articles/486306/">LWN.net 的相关文章</a> 了解更多。</p>
 </div>
@@ -4431,8 +4431,8 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 <a id="__codelineno-20-16" name="__codelineno-20-16" href="#__codelineno-20-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea66a0bb8506cf7b81dff5/diff/
 <a id="__codelineno-20-17" name="__codelineno-20-17" href="#__codelineno-20-17"></a><span class="go">test</span>
 </code></pre></div>
-<div class="admonition question">
-<p class="admonition-title">解释 Dockerfile 编写中的实践</p>
+<div class="admonition question" id="explain-dockerfile-practice">
+<p class="admonition-title">解释 Dockerfile 编写中的实践<a class="headerlink" href="#explain-dockerfile-practice" title="Permanent link">&para;</a></p>
 <p>从 OverlayFS 的角度，解释以下 Dockerfile 存在的问题：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c"># 以上部分省略</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="k">RUN</span><span class="w"> </span>wget<span class="w"> </span>-O<span class="w"> </span>/tmp/example.tar.gz<span class="w"> </span>https://example.com/example.tar.gz
@@ -4450,12 +4450,12 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（<code>/run/docker.sock</code>），
 用户通过 <code>docker</code> 这个 CLI 工具，或者自行编写程序与其通信。
 这个 daemon 的容器操作则是与 containerd 进行交互。</p>
-<div class="admonition info">
-<p class="admonition-title">Podman</p>
+<div class="admonition info" id="podman-alternative">
+<p class="admonition-title">Podman<a class="headerlink" href="#podman-alternative" title="Permanent link">&para;</a></p>
 <p>对比 Docker 的 C-S 架构，红帽主推的 <a href="https://podman.io/">Podman</a> 则不再依赖于 daemon 进行容器管理。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">重启 Docker 后保持容器继续运行</p>
+<div class="admonition tip" id="keep-containers-running-after-restart">
+<p class="admonition-title">重启 Docker 后保持容器继续运行<a class="headerlink" href="#keep-containers-running-after-restart" title="Permanent link">&para;</a></p>
 <p>默认情况下，重启 Docker（<code>docker.service</code>）会让所有容器停止，在生产环境很多时候是非预期的。可以为 Docker 开启 <code>live-restore</code> 让容器即使在 Docker 的 daemon 退出之后仍然继续运行：</p>
 <div class="highlight"><span class="filename">/etc/docker/daemon.json</span><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="p">{</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">"live-restore"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
@@ -4465,8 +4465,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>最简单的创建容器的方法是：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="go">sudo docker run -it --rm --name test ubuntu:22.04</span>
 </code></pre></div>
-<div class="admonition danger">
-<p class="admonition-title">加入 docker 用户组等价于提供 root 权限</p>
+<div class="admonition danger" id="joining-docker-group-equivalent-to-root">
+<p class="admonition-title">加入 docker 用户组等价于提供 root 权限<a class="headerlink" href="#joining-docker-group-equivalent-to-root" title="Permanent link">&para;</a></p>
 <p>在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
 将用户加入 docker 用户组即授权了对应的用户与 Docker 的 UNIX socket，或者说与 dockerd 服务端，任意通信的权限。
 用户可以通过创建特权容器、任意挂载宿主机目录等操作来实际做和 root 一模一样的事情。</p>
@@ -4476,8 +4476,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 请阅读 <a href="https://docs.docker.com/engine/security/protect-access/">https://docs.docker.com/engine/security/protect-access/</a> 了解安全配置远程访问 Docker 的方法。</p>
 <p>以下所有块代码示例中均会使用 <code>sudo</code>。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">保持环境整洁：给容器起名，并且为临时使用的容器加上 <code>--rm</code></p>
+<div class="admonition warning" id="keep-environment-clean-name-and-rm">
+<p class="admonition-title">保持环境整洁：给容器起名，并且为临时使用的容器加上 <code>--rm</code><a class="headerlink" href="#keep-environment-clean-name-and-rm" title="Permanent link">&para;</a></p>
 <p>一个非常常见的问题是，很多人启动容器的时候直接这么做：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="go">sudo docker run -it ubuntu:22.04</span>
 </code></pre></div>
@@ -4498,8 +4498,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <li><code>--restart=always</code>/<code>--restart=unless-stopped</code>：设置容器启动、重启策略（可以使用 <code>docker update</code> 修改）</li>
 <li><code>--memory=512m --memory-swap=512m</code>：限制容器内存使用</li>
 </ul>
-<div class="admonition danger">
-<p class="admonition-title">映射端口的安全性</p>
+<div class="admonition danger" id="port-mapping-security">
+<p class="admonition-title">映射端口的安全性<a class="headerlink" href="#port-mapping-security" title="Permanent link">&para;</a></p>
 <p>默认情况下，Docker 会自行维护 iptables 规则，并且这样的规则不受 ufw 等工具的管理。
 这会导致暴露的端口绕过了系统的防火墙。</p>
 <p><strong>如果不需要其他机器访问，使用 <code>-p 127.0.0.1:xxxx:xxxx</code>，而非 <code>-p xxxx:xxxx</code></strong>。
@@ -4569,8 +4569,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 
 <p>在容器中运行图形程序也是相当常见的需求。
 以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。</p>
-<div class="admonition tip">
-<p class="admonition-title">X 客户端与服务器</p>
+<div class="admonition tip" id="x-client-and-server">
+<p class="admonition-title">X 客户端与服务器<a class="headerlink" href="#x-client-and-server" title="Permanent link">&para;</a></p>
 <p>X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。</p>
 <p>如果你正在使用 Linux 作为桌面环境，那么要么整个桌面环境就由 X 服务器渲染，要么在 Wayland 下 Xwayland 会作为 X 服务器提供兼容。如果正在使用 Windows 或 macOS，则需要各自安装 X 服务器实现。</p>
 <p class="annotate">对于 SSH 连接到远程服务器的场景，可以使用 <code>ssh -X</code>（或 <code>ssh -Y</code> (1)）为远程的服务器上的 X 客户端暴露自己的 X 服务器。下面的例子假设了 X 服务器 socket 是一个本地的 UNIX socket 文件，但是这对 SSH X forwarding 的场景来说并不适用（SSH 会使用 TCP 转发 X 端口）。对应的，如果正在使用 SSH 测试下面的内容，那么在传递环境变量与 <code>$HOME/.Xauthority</code> 文件的同时，还需要设置容器与主机使用相同的网络（<code>--network host</code>）。</p>
@@ -4579,8 +4579,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 </ol>
 </div>
 <p>X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 <code>DISPLAY</code> 环境变量指定的，一般是 <code>:0</code>，代表连接到 <code>/tmp/.X11-unix/X0</code> 这个 UNIX socket。此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 <code>DISPLAY=host:port</code> 的方式连接。</p>
-<div class="admonition warning">
-<p class="admonition-title">X 与抽象套接字（abstract socket）</p>
+<div class="admonition warning" id="x-and-abstract-socket">
+<p class="admonition-title">X 与抽象套接字（abstract socket）<a class="headerlink" href="#x-and-abstract-socket" title="Permanent link">&para;</a></p>
 <p>目前，X server 会默认开启 abstract socket 支持，即使不共享 <code>/tmp/.X11-unix</code>，X 客户端也可以以此连接到 X 服务器。Abstract socket 只能通过网络命名空间隔离。详情见<a href="../../../advanced/desktop/">高级内容的「Linux 桌面与窗口系统」部分</a>。</p>
 </div>
 <p>因此，首先需要传递 <code>DISPLAY</code> 环境变量，并且将 <code>/tmp/.X11-unix</code> 挂载到容器中：</p>
@@ -4598,8 +4598,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="go">/run/user/1000/.mutter-Xwaylandauth.5S15L2</span>
 </code></pre></div>
 <p>如果这个环境变量不存在，那么就会使用默认值：当前用户的家目录下的 <code>.Xauthority</code> 文件。</p>
-<div class="admonition warning">
-<p class="admonition-title">避免直接关闭认证的做法</p>
+<div class="admonition warning" id="avoid-directly-disabling-authentication">
+<p class="admonition-title">避免直接关闭认证的做法<a class="headerlink" href="#avoid-directly-disabling-authentication" title="Permanent link">&para;</a></p>
 <p>如果阅读网络上的一些教程，它们可能会建议直接关闭 X 服务器的认证，就像这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="go">xhost +</span>
 </code></pre></div>
@@ -4610,16 +4610,16 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 </code></pre></div>
 <p>这样就可以在容器中运行基本的图形应用了。
 不过，如果实际需求是在类似沙盒的环境中运行图形应用，有一些更合适的选择，例如 <a href="https://github.com/containers/bubblewrap">bubblewrap</a> 以及基于此的 <a href="https://flatpak.org/">Flatpak</a> 等。</p>
-<details class="note">
-<summary>GPU</summary>
+<details class="note" id="gpu">
+<summary>GPU<a class="headerlink" href="#gpu" title="Permanent link">&para;</a></summary>
 <p><strong>（以下内容不完全适用于使用 NVIDIA 专有驱动的 NVIDIA GPU）</strong></p>
 <p>在 Linux 下，GPU 设备文件位于 <code>/dev/dri</code> 目录下。每张显卡会暴露两个设备文件，其中 <code>cardX</code> 代表了完整的 GPU 设备（有写入权限相当于有控制 GPU 的完整权限），而 <code>renderDXXX</code> 代表了 GPU 的渲染设备。对于需要 GPU 加速渲染的场景，为其挂载 <code>/dev/dri/renderDXXX</code> 设备即可。</p>
 <p>与此同时，容器内还需要安装对应的 GPU <strong>用户态</strong>驱动。对于开源驱动来说，安装 Mesa 即可。</p>
 </details>
 <h3 id="registry">Registry<a class="headerlink" href="#registry" title="Permanent link">&para;</a></h3>
 <p>Registry 是存储与分发容器镜像的服务。在大部分时候，我们使用的 registry 是 <a href="https://hub.docker.com/">Docker Hub</a>。</p>
-<div class="admonition warning">
-<p class="admonition-title">区分 Docker 和 Docker Hub</p>
+<div class="admonition warning" id="distinguish-docker-and-docker-hub">
+<p class="admonition-title">区分 Docker 和 Docker Hub<a class="headerlink" href="#distinguish-docker-and-docker-hub" title="Permanent link">&para;</a></p>
 <p>Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
 这些服务提供的容器镜像也可以正常在 Docker 中使用。</p>
 </div>
@@ -4703,8 +4703,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <p>在计算机网络中，网桥（bridge）负责连接两个网络，提供在网络之间过滤与转发数据包等功能。
 而在 Docker 中，bridge 网络也可以看作是连接容器网络和主机网络之间的桥。
 连接到相同 bridge 的容器之间可以互相通信。</p>
-<div class="admonition note">
-<p class="admonition-title">bridge 在 Linux 上的实现</p>
+<div class="admonition note" id="bridge-implementation-on-linux">
+<p class="admonition-title">bridge 在 Linux 上的实现<a class="headerlink" href="#bridge-implementation-on-linux" title="Permanent link">&para;</a></p>
 <p>首先，Docker 会创建一个虚拟的 <code>docker0</code> 网络设备作为网桥，这个设备默认对应了 IP 段 <code>172.17.0.1/16</code>，
 创建的容器会被分配到这个网段中的一个 IP 地址。路由表也会将对这个网段的请求转发到 <code>docker0</code> 设备上：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="gp">$ </span>ip<span class="w"> </span>a<span class="w"> </span>show<span class="w"> </span>docker0
@@ -4791,8 +4791,8 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 <a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a><span class="w">    </span><span class="nt">"bip"</span><span class="p">:</span><span class="w"> </span><span class="s2">"172.17.0.1/24"</span>
 <a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="p">}</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">创建只允许访问某个特定 interface 的 Docker bridge 网络</p>
+<div class="admonition tip" id="create-docker-bridge-network-for-specific-interface">
+<p class="admonition-title">创建只允许访问某个特定 interface 的 Docker bridge 网络<a class="headerlink" href="#create-docker-bridge-network-for-specific-interface" title="Permanent link">&para;</a></p>
 <p>在有多个 interface 的主机上（例如对外提供服务的机器可能会接入多个 ISP 的网络，每个 interface 对应不同的 ISP），我们可能会希望能够控制程序访问网络时使用的 interface。一些程序支持用户提供 <code>bind()</code> 的参数来指定使用哪个 interface，但是也有一些程序没有给用户暴露这个功能。如果不想 hook 程序的话，使用 Docker 的 bridge 网络，结合一些配置也可以起到类似的效果，并且不需要像下面介绍的 Macvlan 或者 IPvlan 那样需要在对应的 interface 上获取额外的 IP 地址（有些环境下是不可行的）。</p>
 <p>首先创建一个 bridge 网络：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-50-1" name="__codelineno-50-1" href="#__codelineno-50-1"></a>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
@@ -4891,19 +4891,19 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-58-17" name="__codelineno-58-17" href="#__codelineno-58-17"></a><span class="go">PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data bytes</span>
 <a id="__codelineno-58-18" name="__codelineno-58-18" href="#__codelineno-58-18"></a><span class="go">64 bytes from 2001:da8:d800:95::110 (2001:da8:d800:95::110): icmp_seq=1 ttl=62 time=2.42 ms</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">IPv6 与 IPv4 的优先级</p>
+<div class="admonition warning" id="ipv6-preference-over-ipv4">
+<p class="admonition-title">IPv6 与 IPv4 的优先级<a class="headerlink" href="#ipv6-preference-over-ipv4" title="Permanent link">&para;</a></p>
 <p>由于 RFC 3848 对 IPv6 公网地址（Global Unique Address）和 ULA 规定了不同的优先级，为容器分配 ULA 时，容器内的应用程序仍然可能优先使用 IPv4。
 此问题在 <a href="../../network-service/dns/#addr-sort-and-gai-conf">DNS</a> 一页有更详细的介绍。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">ip6tables</p>
+<div class="admonition note" id="ip6tables-configuration">
+<p class="admonition-title">ip6tables<a class="headerlink" href="#ip6tables-configuration" title="Permanent link">&para;</a></p>
 <p>注意在以上配置（旧版本手工启用，或者新版本默认）的情况下，系统的 ip6tables 配置会被 Docker 管理。在某些环境下，这可能会干扰系统管理员做的其他配置。如果你已经设置了 <code>"iptables": false</code>，那么很有可能你也会需要设置 <code>"ip6tables": false</code>。</p>
 </div>
 <h4 id="vlan">VLAN<a class="headerlink" href="#vlan" title="Permanent link">&para;</a></h4>
 <p>VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。Docker 支持 <code>macvlan</code> 和 <code>ipvlan</code> 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。</p>
-<div class="admonition note">
-<p class="admonition-title">Bridge 与 macvlan</p>
+<div class="admonition note" id="bridge-and-macvlan">
+<p class="admonition-title">Bridge 与 macvlan<a class="headerlink" href="#bridge-and-macvlan" title="Permanent link">&para;</a></p>
 <p>如果你曾经有过使用类似于 VMware Workstation / VMware Fusion 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。</p>
 <p>Linux 下的 bridge 实际上是一个虚拟的交换机：在创建 bridge 之后，可以为这个 bridge 添加其他的设备作为 "slave"（设置其他设备的 "master" 为这个 bridge），然后 bridge 就像交换机一样转发数据包。同时，bridge 也支持设置一个 IP 地址，相当于在主机一端有一个自己的 "slave"。Docker 默认的 bridge 网络模式则是利用了这一点：bridge 的 IP 为容器的网关，主机一端的 veth 设备的 master 是 Docker 创建的 bridge 设备。这个 bridge 不对应到具体的物理设备（Docker 未提供相关的配置方式）。</p>
 <p>而虚拟机软件的桥接则需要指定一个物理设备，这个设备会加入虚拟的交换机里面，虚拟机也会连接到这个交换机上。从外部来看，这种模式和 macvlan 的效果是一样的：有多个不同的 MAC 地址的设备连接到同一个物理网络上，但是具体实现是不同的。</p>
@@ -5038,14 +5038,14 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>从 v1 迁移到 v2 的细节问题参见 <a href="https://docs.docker.com/compose/migrate/">Migrate to Compose V2</a>（主要是容器名称与环境变量处理上存在差异）。</p>
 <p>特别地，Ubuntu 在官方源中打包了 <code>docker-compose-v2</code> 这个包，Debian 13 官方源开始提供的 <code>docker-compose</code> 也是 v2 版本的。</p>
 <p>对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。</p>
-<div class="admonition warning">
-<p class="admonition-title">避免在非 swarm 集群场合使用 version 3 compose 文件格式</p>
+<div class="admonition warning" id="avoid-using-version-3-compose-in-non-swarm">
+<p class="admonition-title">避免在非 swarm 集群场合使用 version 3 compose 文件格式<a class="headerlink" href="#avoid-using-version-3-compose-in-non-swarm" title="Permanent link">&para;</a></p>
 <p>Version 3 格式令人诟病一点的是其<a href="https://docs.docker.com/compose/compose-file/compose-versioning/#version-2x-to-3x">抛弃了对资源限制的支持</a>。最为糟糕的是，如果配置了资源限制，docker-compose 不会输出警告，而是直接忽略：</p>
 <blockquote>
 <p><code>cpu_shares</code>, <code>cpu_quota</code>, <code>cpuset</code>, <code>mem_limit</code>, <code>memswap_limit</code>: These have been replaced by the <a href="https://docs.docker.com/compose/compose-file/compose-file-v3/#resources">resources</a> key under <code>deploy</code>. <code>deploy</code> configuration only takes effect when using <code>docker stack deploy</code>, and is ignored by <code>docker-compose</code>.</p>
 </blockquote>
-<details class="note">
-<summary>测试用 <code>docker-compose.yml</code> 文件</summary>
+<details class="note" id="test-docker-compose-yml-file">
+<summary>测试用 <code>docker-compose.yml</code> 文件<a class="headerlink" href="#test-docker-compose-yml-file" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.8'</span>
 <a id="__codelineno-71-2" name="__codelineno-71-2" href="#__codelineno-71-2"></a><span class="nt">services</span><span class="p">:</span>
 <a id="__codelineno-71-3" name="__codelineno-71-3" href="#__codelineno-71-3"></a><span class="w">  </span><span class="nt">python-app</span><span class="p">:</span>
@@ -5078,12 +5078,12 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </code></pre></div>
 <p>假设当前目录名为 <code>helloworld</code>，运行 <code>docker compose up</code> 之后，可以看到 compose 会创建一个名为 <code>helloworld-hello-world-1</code> 的容器，并且为容器创建 <code>helloworld-hello-world-1</code> 的 bridge 网络——由于 <code>hello-world</code> 的唯一功能是输出一段文字，所以容器会立即退出。</p>
 <p>在测试完成后，使用 <code>docker compose down</code> 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。</p>
-<div class="admonition tip">
-<p class="admonition-title">查看当前所有 compose 环境</p>
+<div class="admonition tip" id="view-all-compose-environments">
+<p class="admonition-title">查看当前所有 compose 环境<a class="headerlink" href="#view-all-compose-environments" title="Permanent link">&para;</a></p>
 <p>可以使用 <code>docker compose ls</code> 查看当前所有打开的 compose 环境。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">某个容器是 compose 管理的吗？</p>
+<div class="admonition tip" id="is-container-managed-by-compose">
+<p class="admonition-title">某个容器是 compose 管理的吗？<a class="headerlink" href="#is-container-managed-by-compose" title="Permanent link">&para;</a></p>
 <p>Compose 会为容器添加以 <code>com.docker.compose</code> 开头的 label，可以使用 <code>docker inspect</code> 查看：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>nginx
 <a id="__codelineno-73-2" name="__codelineno-73-2" href="#__codelineno-73-2"></a><span class="go">（省略）</span>
@@ -5153,8 +5153,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-75-12" name="__codelineno-75-12" href="#__codelineno-75-12"></a><span class="w">    </span><span class="nt">init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>其中 <a href="https://docs.docker.com/reference/cli/docker/container/run/#init"><code>init: true</code></a> 表示 Docker 会在容器启动时使用基于 <a href="https://github.com/krallin/tini">tini</a> 的 <code>docker-init</code> 管理容器内进程。</p>
-<div class="admonition note">
-<p class="admonition-title">容器里的 PID 1，与信号处理</p>
+<div class="admonition note" id="pid-1-in-container-and-signal-handling">
+<p class="admonition-title">容器里的 PID 1，与信号处理<a class="headerlink" href="#pid-1-in-container-and-signal-handling" title="Permanent link">&para;</a></p>
 <p>在 Unix 系列的操作系统中，PID 1（init）是最重要的用户态程序，如果 init 退出，那么整个系统就会崩溃。在 Linux 的 PID 命名空间里面也是如此，如果其中 PID 为 1 的程序退出，那么 PID 命名空间里的其他程序都会收到内核发送的 SIGKILL 一起陪葬。对于容器来说，除了启动容器实际的服务程序以外，PID 1 至少还需要：</p>
 <ol>
 <li>处理僵尸进程。当一个进程的父进程结束之后，这个进程的父进程就会变成 PID 1。当该进程结束之后，PID 1 需要妥善「收尸」，否则系统中会存在大量的僵尸进程占用资源。</li>
@@ -5200,8 +5200,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>其中 <code>challenge</code> 服务代表题目本身，这里修改 <code>entrypoint</code>，让运行时行为变成直接退出，只是为了能让 compose 创建出对应的容器镜像（选手在连接时由拥有 Docker socket 的 <code>front</code> 操作为每个选手创建、运行容器）。<code>front</code> 与 <code>web</code> 使用了 <a href="https://docs.docker.com/compose/compose-file/05-services/#extends"><code>extends</code> 指令</a>来继承对应的 compose 配置。另外，<code>depends_on</code> 指令表示 <code>front</code> 服务依赖于 <code>challenge</code> 服务，即 <code>challenge</code> 服务启动后 <code>front</code> 服务才会启动。</p>
 <p>在 <code>extends</code> 之后 interpolation 会优先使用当前目录的 <code>.env</code> 文件，因此 <a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env"><code>example/.env</code></a> 文件中可以覆盖掉上述两个目录下 <code>.env</code> 的配置。</p>
 <p>最终生成的配置可以使用 <code>docker compose config</code> 查看。</p>
-<details class="note">
-<summary>Example 最后的实际配置</summary>
+<details class="note" id="example-final-configuration">
+<summary>Example 最后的实际配置<a class="headerlink" href="#example-final-configuration" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-79-1" name="__codelineno-79-1" href="#__codelineno-79-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>config
 <a id="__codelineno-79-2" name="__codelineno-79-2" href="#__codelineno-79-2"></a><span class="go">WARN[0000] /example/hackergame-challenge-docker/example/docker-compose.yml: `version` is obsolete</span>
 <a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="go">name: example</span>
@@ -5325,13 +5325,13 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-81-3" name="__codelineno-81-3" href="#__codelineno-81-3"></a><span class="w">  </span><span class="nt">nginx-log</span><span class="p">:</span>
 <a id="__codelineno-81-4" name="__codelineno-81-4" href="#__codelineno-81-4"></a><span class="w">  </span><span class="nt">hackergame-postgresql</span><span class="p">:</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title"><code>docker compose down</code> 与 volume</p>
+<div class="admonition note" id="docker-compose-down-and-volume">
+<p class="admonition-title"><code>docker compose down</code> 与 volume<a class="headerlink" href="#docker-compose-down-and-volume" title="Permanent link">&para;</a></p>
 <p>默认情况下，<code>docker compose down</code> 不会删除 volume。如果需要删除 volume，可以使用 <code>docker compose down -v</code>。</p>
 </div>
 <p>而这里额外设置 <code>container_name</code>（容器名）的目的是，在这些容器组成的内网中，Docker 提供的 DNS 就允许使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 <code>hackergame-</code> 开头，可以方便地区分平台容器与其他的容器。</p>
-<details class="note">
-<summary><code>resolv.conf</code> 配置，与 <code>ping</code> 主机名与容器名的输出</summary>
+<details class="note" id="resolv-conf-configuration-and-ping-output">
+<summary><code>resolv.conf</code> 配置，与 <code>ping</code> 主机名与容器名的输出<a class="headerlink" href="#resolv-conf-configuration-and-ping-output" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-82-1" name="__codelineno-82-1" href="#__codelineno-82-1"></a><span class="gp">root@hackergame:/# </span>cat<span class="w"> </span>/etc/resolv.conf
 <a id="__codelineno-82-2" name="__codelineno-82-2" href="#__codelineno-82-2"></a><span class="gp"># </span>Generated<span class="w"> </span>by<span class="w"> </span>Docker<span class="w"> </span>Engine.
 <a id="__codelineno-82-3" name="__codelineno-82-3" href="#__codelineno-82-3"></a><span class="gp"># </span>This<span class="w"> </span>file<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>edited<span class="p">;</span><span class="w"> </span>Docker<span class="w"> </span>Engine<span class="w"> </span>will<span class="w"> </span>not<span class="w"> </span>make<span class="w"> </span>further<span class="w"> </span>changes<span class="w"> </span>once<span class="w"> </span>it
@@ -5355,8 +5355,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-82-21" name="__codelineno-82-21" href="#__codelineno-82-21"></a><span class="go">^C</span>
 </code></pre></div>
 </details>
-<div class="admonition danger">
-<p class="admonition-title">映射端口的安全性（Compose）</p>
+<div class="admonition danger" id="port-mapping-security-compose">
+<p class="admonition-title">映射端口的安全性（Compose）<a class="headerlink" href="#port-mapping-security-compose" title="Permanent link">&para;</a></p>
 <p>如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-83-1" name="__codelineno-83-1" href="#__codelineno-83-1"></a><span class="nt">postgresql</span><span class="p">:</span>
 <a id="__codelineno-83-2" name="__codelineno-83-2" href="#__codelineno-83-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
@@ -5414,8 +5414,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="c1"># ...</span>
 </code></pre></div>
 <p>一个重要的原因是，UNIX socket 是有用户所有者和权限的，但是在多个容器的场合下，保证所有容器的 <code>/etc/passwd</code> 映射的用户一致是比较困难的。而 TCP socket 则解决了这个问题。但是其<strong>安全性</strong>需要考虑，例如 uWSGI 的 TCP socket 默认是没有额外的鉴权的，而能够连接到这个 socket 的进程就可以<a href="https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi-rce-zh.md">执行任意命令</a>，<a href="https://github.com/PKU-GeekGame/geekgame-1st/tree/master/writeups/xmcp#%E6%97%A9%E6%9C%9F%E4%BA%BA%E7%B1%BB%E7%9A%84%E8%81%8A%E5%A4%A9%E5%AE%A4-uwsgi">在某些不正确的设置下，即使在配置中将 uWSGI 降权运行，也可以以此获取到更高的权限</a>。即使 uWSGI 的端口没有暴露到容器内网外部，如果有其他容器被攻破，那么攻击者也可以轻松横向移动到 uWSGI 所在容器。</p>
-<div class="admonition lab">
-<p class="admonition-title">Health check</p>
+<div class="admonition lab" id="health-check">
+<p class="admonition-title">Health check<a class="headerlink" href="#health-check" title="Permanent link">&para;</a></p>
 <p>在上面的例子中，我们限制了一些容器在其他容器启动之后再启动。但是在某些场景下，「容器启动」并不意味着「容器已经准备好接受请求」，在「启动」和「准备好」这个时间间隔中，启动需要对应服务的容器可能会失败。</p>
 <p>Docker 提供了 <a href="https://docs.docker.com/reference/dockerfile/#healthcheck">Health check</a> 功能，可以定义健康检查的命令，在容器启动后，Docker 会定期执行这个命令，根据返回值判断容器是否「健康」。</p>
 <p>尝试编写一个 compose 文件，其中一个容器启动一个数据库（你可能需要自行定义 health check 命令），另一个容器需要在数据库准备好之后才能启动。</p>
@@ -5424,8 +5424,8 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>在 Docker 部分，我们提到将用户加入 <code>docker</code> 组就相当于给予了用户 root 权限，而传统的基于 SUID 的方式，如果 SUID 程序存在漏洞，那么也很容易被利用提权。那么是否有办法让普通用户创建容器，而不产生这样的安全风险呢？<a href="https://rootlesscontaine.rs/">Rootless 容器</a>基于非特权 user namespace 技术，可以让普通用户创建容器，而不需要 root 权限。在这样的容器中，用户「看起来」获得了 root 权限，并且能够在容器中做 root 能做的事情，但是实际上容器内的 root 用户对应的是宿主机上的一个普通用户。</p>
 <p>Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置文档（<a href="https://docs.docker.com/engine/security/rootless/">Docker</a>、<a href="https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md">Podman</a>）。</p>
 <p>不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。</p>
-<div class="admonition example">
-<p class="admonition-title">Rootless 容器与安全的 Docker-in-Docker 设计</p>
+<div class="admonition example" id="rootless-container-and-secure-docker-in-docker">
+<p class="admonition-title">Rootless 容器与安全的 Docker-in-Docker 设计<a class="headerlink" href="#rootless-container-and-secure-docker-in-docker" title="Permanent link">&para;</a></p>
 <p>在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 <a href="https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/">LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」</a>一文了解。</p>
 </div>
 <h2 id="container-implementations">其他的容器实现<a class="headerlink" href="#container-implementations" title="Permanent link">&para;</a></h2>
@@ -5446,25 +5446,25 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li>由于 Podman 没有 daemon，因此设置容器自动启动等依赖于 systemd 的用户服务等功能。</li>
 </ul>
 <p>Podman 提供了与 Docker 兼容的命令行工具，包括 compose 在内也有支持（可以使用 <a href="https://github.com/containers/podman-compose">podman-compose</a> 或 docker-compose），但是在一些细节设置上仍然会出现不同的情况。</p>
-<div class="admonition note">
-<p class="admonition-title">Pod 支持</p>
+<div class="admonition note" id="pod-support">
+<p class="admonition-title">Pod 支持<a class="headerlink" href="#pod-support" title="Permanent link">&para;</a></p>
 <p>Podman 的名字来源于 <a href="https://kubernetes.io/docs/concepts/workloads/pods/">Pods</a>，这是一个 k8s 中的概念，代表一个或多个共享某些命名空间（一般共享网络、IPC、UTS）的容器组成的集合。Podman 的 pod 类似于单机、简化了的 k8s pod，其包含一个 "infra" 容器（保留共享的命名空间，一直睡着），以及用户向 pod 添加的容器。</p>
 <p>Podman 支持以 k8s YAML 格式导出 pod（<code>podman generate kube</code>），以及导入这样的 YAML（<code>podman play kube</code>）。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">配置容器镜像的默认 registry</p>
+<div class="admonition tip" id="configure-default-registry-for-container-images">
+<p class="admonition-title">配置容器镜像的默认 registry<a class="headerlink" href="#configure-default-registry-for-container-images" title="Permanent link">&para;</a></p>
 <p>在 Docker 中如果没有指定镜像的 <a href="#registry">registry</a>，那么它就会默认以 <code>docker.io</code> 作为 registry。但是 Podman 不会这么做。<a href="https://github.com/containers/shortnames/blob/main/shortnames.conf"><code>/etc/containers/registries.conf.d/shortnames.conf</code></a> 会包含一些常用镜像的短命名与实际命名的映射（例如 <code>"debian" = "docker.io/library/debian"</code>），但是在实际使用时用户可能还是更习惯于 Docker 的行为。</p>
 <p>可以添加以下配置文件：</p>
 <div class="highlight"><span class="filename">/etc/containers/registries.conf.d/unqualified-search-registries.conf</span><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a>unqualified-search-registries = ["docker.io"]
 </code></pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">兼容使用 Docker API 的程序</p>
+<div class="admonition tip" id="support-docker-api-programs">
+<p class="admonition-title">兼容使用 Docker API 的程序<a class="headerlink" href="#support-docker-api-programs" title="Permanent link">&para;</a></p>
 <p>例如 <code>docker-compose</code> 等程序默认会连接 Docker 的 socket（<code>/var/run/docker.sock</code>），但是 Podman 默认不会监听这个 socket。为了提供支持，需要在系统或者用户 systemd session（取决于是否为 rootless）启动 <code>podman.service</code> 服务或 <code>podman.socket</code>（<a href="../../service/#systemd-socket">由 systemd 在收到连接后激活服务</a>）。</p>
 <p>Socket 默认在 <code>/run/podman/podman.sock</code> 或 <code>/run/user/&lt;uid&gt;/podman/podman.sock</code>（rootless）。对需要使用 Docker API 的程序，一般设置 <code>DOCKER_HOST</code> 环境变量即可。仍然需要提醒的是，Podman 提供的是尝试兼容 Docker API 的实现，可能无法满足某些程序的需求。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">配置 Podman 容器的自启动</p>
+<div class="admonition tip" id="configure-podman-container-autostart">
+<p class="admonition-title">配置 Podman 容器的自启动<a class="headerlink" href="#configure-podman-container-autostart" title="Permanent link">&para;</a></p>
 <p>Podman 使用 <a href="https://github.com/containers/podman/tree/main/pkg/systemd/quadlet">Quadlet</a> 为 systemd 环境提供自启动支持。Quadlet 是一个 systemd generator（位于 <code>/usr/lib/systemd/system-generators/podman-system-generator</code>）——会从 quadlet 文件生成 systemd 服务。Quadlet 文件的格式和 systemd 单元的配置很像：</p>
 <div class="highlight"><span class="filename">example.container</span><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a><span class="k">[Container]</span>
 <a id="__codelineno-90-2" name="__codelineno-90-2" href="#__codelineno-90-2"></a><span class="na">ContainerName</span><span class="o">=</span><span class="s">example</span>
@@ -5622,7 +5622,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月12日 15:05:13 UTC">2026年8月12日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

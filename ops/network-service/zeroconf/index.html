@@ -3238,13 +3238,13 @@
 <li>如果有人回应了 ARP 请求，说明地址已经被使用，回到步骤 1。</li>
 </ol>
 <p>而在 IPv6 下，link-local 的地址段是 fe80::/10，无论如何，设备都会为自己分配一个 link-local 地址（有些设备上会基于接口的 MAC 地址来分配），所以在支持 IPv6 的场合下，你会发现设备会有多个 IPv6 地址，其中就包括一个 link-local 地址。和 IPv4 类似，在选择地址之后，也需要避免和其他人的地址冲突。IPv6 不再使用 ARP，而是使用基于 ICMPv6 的 NDP（Neighbor Discovery Protocol, <a href="https://datatracker.ietf.org/doc/html/rfc4861">RFC 4861</a>）完成地址冲突检测（DAD，Duplicate Address Detection）。</p>
-<div class="admonition note">
-<p class="admonition-title">为什么 IPv6 没有 ARP？</p>
+<div class="admonition note" id="why-ipv6-no-arp">
+<p class="admonition-title">为什么 IPv6 没有 ARP？<a class="headerlink" href="#why-ipv6-no-arp" title="Permanent link">&para;</a></p>
 <p>IPv6 并非「更大地址空间的 IPv4」。IPv6 的设计者在设计时，就希望将 IPv4 中能用，但是设计得不好的东西改进掉。ARP 是一个横跨二层（数据链路层，最常见的是以太网）和三层（网络层，这里是 IP）的特殊协议，在解析 IP 到 MAC 地址的过程中需要在二层广播（在以太网中，是将目标 MAC 地址设置为 ff:ff:ff:ff:ff:ff），在大型网络中这样做开销很大。而 ARP 也无法基于 ICMP 实现，因为 ICMP 协议依赖于 IP 层，而 ARP 要解决的问题就是在 IP 层还没有准备好的时候，获取 IP 到 MAC 的映射关系。</p>
 <p>而在 IPv6 中，所有接口都必须有 link-local 地址，因此 NDP 就可以在 ICMPv6 的基础上实现。在检测地址冲突时，NDP 会构造 <a href="https://datatracker.ietf.org/doc/html/rfc4291#section-2.7.1">solicited-node multicast address</a> 多播地址（IPv6 ff02::1:ff00:0/104，对应 MAC 地址 33:33:FF:xx:xx:xx，以太网也是支持多播的），只有可能使用该地址的节点会收到这个多播包，从而避免了广播带来的开销。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Link-local 地址 = 网坏了？</p>
+<div class="admonition note" id="link-local-address-network-failed">
+<p class="admonition-title">Link-local 地址 = 网坏了？<a class="headerlink" href="#link-local-address-network-failed" title="Permanent link">&para;</a></p>
 <p>有一定网络经验的读者可能对 169.254.0.0/16 和 fe80::/10 这两个地址段比较熟悉，因为如果自己的设备只分配到了这个地址段的地址，通常意味着网络出现了问题。</p>
 <p>对 IPv4 来说，这是因为 DHCP 服务器做的事情除了分配 IP 地址以外，还会将网关、DNS 服务器等信息一并发送给客户端，而如果没有网关信息的话，设备就无法和局域网外的设备通信了（无法连接到互联网），对很多场景来讲，这就是网络出现了故障的表现。</p>
 <p>那么，假如我们回到过去，修改 IPv4 下关于 link-local 的约定，让设备在 APIPA 的时候自动将默认网关和默认 DNS 设置为 169.254.0.1 的话，那么就可以不需要 DHCP 服务器，也能够组建小型的局域网络，并且让这个网络有访问外部网络的能力了（假设网关支持 NAT）——这个模型就比较接近 IPv6 有关 link-local 的设计思路了。</p>
@@ -3258,8 +3258,8 @@
 <!-- Introduce WSD and DNS-SD -->
 
 <p>如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。在「网上邻居」里，你可以看到局域网内其他计算机，以及它们共享的文件夹、打印机等资源。早期这个功能依赖于 NetBIOS 来实现。</p>
-<div class="admonition note">
-<p class="admonition-title">NetBIOS</p>
+<div class="admonition note" id="netbios">
+<p class="admonition-title">NetBIOS<a class="headerlink" href="#netbios" title="Permanent link">&para;</a></p>
 <p>NetBIOS（以下均指代 NetBIOS over TCP/IP）需要三种端口：</p>
 <ul>
 <li>命名与解析（TCP 137 和 UDP 137）：NetBIOS 会广播主机名，并确定是否存在冲突。其他计算机可以使用主机名连接。由于等待冲突检测会花掉比较长的时间，因此之后添加了 WINS（Windows Internet Name Service）来集中管理主机名，Windows 在查找到 WINS 服务器后会优先使用 WINS。尽管不是以 DNS 的形式存在，但是 Windows 机器可以以此解析主机名对应的 IP 地址。</li>
@@ -3331,7 +3331,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年4月25日 09:14:27 UTC">2026年4月25日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     
@@ -3350,14 +3350,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
       

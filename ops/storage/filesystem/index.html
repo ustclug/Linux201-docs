@@ -3928,8 +3928,8 @@
 <li><code>/dev/nvme0n1</code> - 控制器 <code>0</code> 上的命名空间 <code>1</code>，第一个控制器上的第一个命名空间。</li>
 <li><code>/dev/nvme2n5</code> - 控制器 <code>2</code> 上的命名空间 <code>5</code>，第三个控制器上的第五个命名空间。</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">命名空间（Namespace）</p>
+<div class="admonition note" id="namespace">
+<p class="admonition-title">命名空间（Namespace）<a class="headerlink" href="#namespace" title="Permanent link">&para;</a></p>
 <p>命名空间是 NVMe 用于保存用户数据的结构。一个 NVMe 控制器可以包含多个命名空间。目前，大多数 NVMe 固态硬盘都只有一个命名空间，但在虚拟化、安全等领域需要使用多个命名空间。</p>
 </div>
 <h3 id="mmc">MMC<a class="headerlink" href="#mmc" title="Permanent link">&para;</a></h3>
@@ -3940,8 +3940,8 @@
 <li><code>/dev/mmcblk0</code> - 设备 <code>0</code>，第一个发现的设备。</li>
 <li><code>/dev/mmcblk4</code> - 设备 <code>4</code>，第五个发现的设备。</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">注意</p>
+<div class="admonition note" id="usb-sd-card-device-naming">
+<p class="admonition-title">注意<a class="headerlink" href="#usb-sd-card-device-naming" title="Permanent link">&para;</a></p>
 <p>如果 SD/MMC 读卡器使用 USB 接口，则对应的块设备将由 <a href="#scsi">SCSI 驱动子系统</a>处理，并遵循其命名规则。</p>
 </div>
 <h3 id="scsi-optical">SCSI 光盘驱动器<a class="headerlink" href="#scsi-optical" title="Permanent link">&para;</a></h3>
@@ -3974,8 +3974,8 @@ udev 也提供到 <code>/dev/sr0</code> 的软链接，名为 <code>/dev/cdrom</
 <h2 id="loop">本地回环<a class="headerlink" href="#loop" title="Permanent link">&para;</a></h2>
 <p>Linux 支持「本地回环设备」，支持挂载一个文件作为块设备使用，类似于「虚拟光驱」类软件。
 因此，可以通过本地回环的方式，在不购买新硬件的情况下进行一些磁盘相关的实验。</p>
-<div class="admonition note">
-<p class="admonition-title">本地回环与容器</p>
+<div class="admonition note" id="loop-devices-in-containers">
+<p class="admonition-title">本地回环与容器<a class="headerlink" href="#loop-devices-in-containers" title="Permanent link">&para;</a></p>
 <p>Linux 目前不支持设备命名空间（隔离），因此如果需要在容器环境内对本地回环进行挂载等操作，需要特权容器，并且为 root 权限。
 Linux 内核开发中曾有过允许非特权用户挂载本地回环的讨论（<a href="https://lwn.net/Articles/819625/">loopfs LWN</a>），
 但是由于安全性问题（内核文件系统开发时假设挂载的内容不会被恶意构造，而提供相关支持会破坏这样的假设），未进入主线。</p>
@@ -4051,8 +4051,8 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <p>而 GPT（GUID Partition Table）分区表是新一代的分区表格式，不再存储引导信息，并且支持更多的分区、更大的磁盘。
 目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」（Protective MBR），用于防止不认识 GPT 的旧系统和软件对磁盘误操作，
 同时分区表信息在磁盘最后有一份备份，以减小损坏风险。</p>
-<div class="admonition note">
-<p class="admonition-title">那 GPT 的磁盘怎么开机呢？</p>
+<div class="admonition note" id="gpt-boot">
+<p class="admonition-title">那 GPT 的磁盘怎么开机呢？<a class="headerlink" href="#gpt-boot" title="Permanent link">&para;</a></p>
 <p>对于使用传统 BIOS 的机器，GPT 开头的保护性 MBR 仍然可以存储引导代码。不过，目前的主流是使用 UEFI，不再需要在扇区里存储引导代码，
 而是有一个专门的 EFI 系统分区（必须格式化为 FAT32），用来存储引导程序与其他信息。</p>
 <p>以下展示一个 EFI 系统分区的例子：</p>
@@ -4086,8 +4086,8 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 </code></pre></div>
 <p>这里 <code>efi</code> 后缀的文件就是 UEFI 会选择的启动引导程序，一般可以在启动时按下 F12 或者其他快捷键选择启动的设备或 EFI 文件。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">/efi</p>
+<div class="admonition tip" id="efi">
+<p class="admonition-title">/efi<a class="headerlink" href="#efi" title="Permanent link">&para;</a></p>
 <p>在 systemd 的<a href="https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html">文件系统层次结构标准 (FHS) 扩展</a> 中，
 如果 <code>/boot</code> 独立于 EFI 系统分区 (ESP)，则后者挂载点为 <code>/efi</code>。</p>
 <p>过去 EFI 分区挂载点通常为 <code>/boot/efi</code>，现在已不推荐使用<sup id="fnref:esp-mountpoint"><a class="footnote-ref" href="#fn:esp-mountpoint">4</a></sup>。</p>
@@ -4097,8 +4097,8 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <p>首先创建一个空文件：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>truncate<span class="w"> </span>-s<span class="w"> </span>8G<span class="w"> </span>test.img
 </code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">稀疏文件</p>
+<div class="admonition info" id="sparse-file">
+<p class="admonition-title">稀疏文件<a class="headerlink" href="#sparse-file" title="Permanent link">&para;</a></p>
 <p>这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>test.img
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">0   test.img</span>
@@ -4113,13 +4113,13 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 </code></pre></div>
 <p>以下的例子会创建一个 256M 的 EFI 分区，一个 1G 的 swap 分区，剩下的空间作为根文件系统的分区。</p>
 <div class="admonition tip" id="swap">
-<p class="admonition-title">什么是 swap？</p>
+<p class="admonition-title">什么是 swap？<a class="headerlink" href="#swap" title="Permanent link">&para;</a></p>
 <p>Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存不足时，系统会将一部分内存「交换」到 swap 分区中，以腾出物理内存的空间。在系统休眠（hibernate）的时候，物理内存中的所有数据也都会写入到 swap 中。Swap 也可以实现为文件的形式。</p>
 <p>需要注意的是，这一项功能在 Windows 下被称为「虚拟内存」，但是从操作系统的角度来说，这种用语是不正确的。「虚拟内存」实际上指代这样一种机制：程序看到的虚拟内存地址和实际的物理地址是不一样的，由操作系统和硬件的映射机制进行关联。程序看到的连续的地址可能在物理上不是连续的，甚至有可能不在物理内存，而是在外部存储（swap）中。这样的话，程序在使用内存时就不需要考虑可能访问到其他程序内存的问题，同时这也允许操作系统更加灵活地管理内存（因为不再需要严格保证内存的连续性要求）。</p>
 <p>有关 Swap 的更多内容，可参考<a href="../../debug/#swap-zram-zswap">问题调试中的「Swap、Zram 与 Zswap」部分</a>。</p>
 </div>
-<details class="info">
-<summary>fdisk 操作示例</summary>
+<details class="info" id="fdisk-partition-example">
+<summary>fdisk 操作示例<a class="headerlink" href="#fdisk-partition-example" title="Permanent link">&para;</a></summary>
 <p>fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 <code>g</code> 命令。
 在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 <code>+</code> 表示相对于当前位置的偏移量（即分区大小），或者使用 <code>-</code> 表示相对于磁盘末尾的偏移量（即在尾部留出多少空间）。</p>
 <p>最后使用 <code>w</code> 命令写入分区表。如果不想实际写入到磁盘，可以使用 <code>q</code> 退出而不保存。
@@ -4188,8 +4188,8 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a><span class="go">Syncing disks.</span>
 </code></pre></div>
 </details>
-<details class="info">
-<summary>parted 操作示例</summary>
+<details class="info" id="parted-partition-example">
+<summary>parted 操作示例<a class="headerlink" href="#parted-partition-example" title="Permanent link">&para;</a></summary>
 <p>这里不推荐交互式使用 <code>parted</code>，因为其交互不如 <code>fdisk</code> 直观，并且<strong>所有操作均为立刻写入</strong>。但是 <code>parted</code> 在脚本中使用更加方便。
 parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46">101strap 脚本</a>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>parted<span class="w"> </span>-a<span class="w"> </span>optimal<span class="w"> </span>test.img<span class="w">  </span><span class="c1"># 使用 optimal 参数，在创建新分区时使用最佳对齐</span>
@@ -4237,15 +4237,15 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="go">test.img3  2623488 16775167 14151680  6.7G Linux filesystem</span>
 </code></pre></div>
 <p>如果对 GPT 的细节感兴趣，可以使用十六进制编辑器查看镜像内容，并与 GPT 标准对照。</p>
-<details class="info">
-<summary>分区对齐</summary>
+<details class="info" id="partition-alignment">
+<summary>分区对齐<a class="headerlink" href="#partition-alignment" title="Permanent link">&para;</a></summary>
 <p>观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
 这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。</p>
 <p>在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
 2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。</p>
 </details>
-<div class="admonition tip">
-<p class="admonition-title"><code>/dev/disk</code></p>
+<div class="admonition tip" id="dev-disk">
+<p class="admonition-title"><code>/dev/disk</code><a class="headerlink" href="#dev-disk" title="Permanent link">&para;</a></p>
 <p>在 Linux 中，硬盘设备的设备文件名不是固定的，如果机器有多个硬盘，就可能发生重启前名为 <code>sda</code> 的设备重启之后变成了 <code>sdb</code> 
 的事情。Linux 的用户态设备管理器 udev 会在 <code>/dev/disk</code> 下根据不同分类方式，提供硬盘/分区到实际设备的软链接。
 其命名不会在重启后变化。一个例子如下：</p>
@@ -4422,8 +4422,8 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 </tbody>
 </table>
 <p>此外，Linux 还支持用户态文件系统（FUSE）。FUSE 允许在不编写内核代码的情况下支持新的文件系统。</p>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 关于 ReiserFS</p>
+<div class="admonition comment" id="reiserfs">
+<p class="admonition-title">@taoky: 关于 ReiserFS<a class="headerlink" href="#reiserfs" title="Permanent link">&para;</a></p>
 <p>ReiserFS 其实有一个其他文件系统不能有效替代的优势：它是目前主线中唯一一个能够只使用几个 GB 的空间就能存储上千万个文件元数据的文件系统。
 （例如，对于一百九十万个只有几个字节的文件，Reiserfs 只需要 325MB，而对比之下，即使是「针对小文件优化」的 Btrfs 也需要接近 1GB。）
 这个场景在镜像站使用 <a href="https://github.com/tuna/rsync">rsync-huai</a> 的时候就非常有用。
@@ -4439,8 +4439,8 @@ parted 脚本的例子可以参考 <a href="https://github.com/ustclug/101strap/
 <p>ext4 是包括 Debian 和 Ubuntu 在内的众多发行版为系统分区（根文件系统）默认采用的文件系统格式。
 如果没有特殊的需求，ext4 是一个不错的选择；即使有其他需求，也建议对系统分区使用 ext4。
 ext4 最常见的问题之一是 inode 的数量限制。</p>
-<div class="admonition info">
-<p class="admonition-title">inode</p>
+<div class="admonition info" id="inode">
+<p class="admonition-title">inode<a class="headerlink" href="#inode" title="Permanent link">&para;</a></p>
 <p>inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
 可以使用 <code>stat</code> 或 <code>ls -i</code> 查看文件的 inode 信息。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>stat<span class="w"> </span><span class="nb">test</span>
@@ -4531,8 +4531,8 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="go">               1.8T   1.4T 400.9G  78% /var/lib/docker/btrfs</span>
 </code></pre></div>
 <p><code>xfs_quota</code> 的 <code>df</code> 也会输出其他文件系统的空间使用情况，忽略即可。</p>
-<div class="admonition info">
-<p class="admonition-title">引用复制</p>
+<div class="admonition info" id="xfs-reflink">
+<p class="admonition-title">引用复制<a class="headerlink" href="#xfs-reflink" title="Permanent link">&para;</a></p>
 <p>尽管不是 CoW 文件系统，XFS 也支持引用复制（reflink）功能。使用方法详见 <a href="#btrfs-reflink">Btrfs 的引用复制一节</a>。</p>
 </div>
 <h3 id="btrfs">Btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
@@ -4541,8 +4541,8 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <h4 id="btrfs-subvolume">Subvolume<a class="headerlink" href="#btrfs-subvolume" title="Permanent link">&para;</a></h4>
 <p>Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」，类似于 <a href="../zfs/">ZFS</a> 的 dataset。与目录不同，Subvolume 是独立的，可以有自己的挂载点。同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。</p>
 <p>Subvolume 在 Btrfs 中的层次结构类似一棵树，其中每个 Btrfs 文件系统都有一个顶层（top-level）subvolume 作为树根，<strong>其 ID 永远是 5（<code>subvolid=5</code>）</strong>。</p>
-<div class="admonition tip">
-<p class="admonition-title">约定俗成的 subvolume 名称</p>
+<div class="admonition tip" id="subvolume-names">
+<p class="admonition-title">约定俗成的 subvolume 名称<a class="headerlink" href="#subvolume-names" title="Permanent link">&para;</a></p>
 <p>几乎所有支持在安装时由发行版安装器选择 Btrfs 的 Linux 发行版都不会创建 Btrfs 文件系统后就直接开始使用，而是会创建名为 <code>@</code> 的 subvolume 作为根文件系统，<code>@home</code> 作为 <code>/home</code> subvolume 等等。这种起名不是强制要求，但是许多工具都会做这样的假设。</p>
 <p>更多信息可参考 <a href="https://askubuntu.com/a/987116">Why the @ in Btrfs subvolume names</a>。</p>
 </div>
@@ -4575,12 +4575,12 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a><span class="go">drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol3/</span>
 </code></pre></div>
 <p>这里分别以默认的 top-level subvolume 为父节点，创建了 subvol1、subvol2、subvol3 这三个 subvolume。从 <code>btrfs subvolume list</code> 的输出可以看到它们的 ID 分别为 256、257、258，父 ID（top level）都为 5。</p>
-<div class="admonition note">
-<p class="admonition-title">为什么 <code>btrfs subvolume list</code> 没有显示 top-level subvolume？</p>
+<div class="admonition note" id="top-level-subvolume">
+<p class="admonition-title">为什么 <code>btrfs subvolume list</code> 没有显示 top-level subvolume？<a class="headerlink" href="#top-level-subvolume" title="Permanent link">&para;</a></p>
 <p>顶层 subvolume 不会出现在 <code>btrfs subvolume list</code> 的输出中。</p>
 </div>
-<details class="note">
-<summary><code>gen</code> 的含义</summary>
+<details class="note" id="gen">
+<summary><code>gen</code> 的含义<a class="headerlink" href="#gen" title="Permanent link">&para;</a></summary>
 <p><code>btrfs subvolume list</code> 的输出中还包含了 <code>gen</code>，代表这个 subvolume 最近一次被修改时所处的事务编号。Btrfs 下事务默认是每 30 秒 commit 一次，或者在程序需要 sync 的时候 commit，所以这个数字增长其实比想象的慢。作为参考，一台使用了 4 年的笔记本电脑，其 <code>@home</code> subvolume 的 gen 大约为 1838000。</p>
 </details>
 <p>创建出来的 subvolume 在父 subvolume 上以目录的形式存在，不过这些 subvolume 的设备号是不同的，因此通过判断设备号，应用可以区分当前的文件操作是否还在相同的 subvolume 上（例如 <code>rsync</code> 的 <code>-x</code> 参数），避免跨过 subvolume 边界误操作：</p>
@@ -4590,8 +4590,8 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">224 /media/btrfs/subvol2/</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">226 /media/btrfs/subvol3/</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">想改名/修改 subvolume 父节点？</p>
+<div class="admonition tip" id="subvolume-rename">
+<p class="admonition-title">想改名/修改 subvolume 父节点？<a class="headerlink" href="#subvolume-rename" title="Permanent link">&para;</a></p>
 <p>直接 <code>mv</code> subvolume 对应目录即可！</p>
 </div>
 <p>挂载时添加 <code>subvol=&lt;path&gt;</code> 或 <code>subvolid=&lt;id&gt;</code> 参数可以挂载指定的 subvolume。如果两个参数都不指定，则会挂载默认 subvolume。多个 subvolume 可以同时挂载到不同的挂载点。</p>
@@ -4605,8 +4605,8 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs1
 <a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs2
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">全局挂载参数</p>
+<div class="admonition warning" id="global-mount-params">
+<p class="admonition-title">全局挂载参数<a class="headerlink" href="#global-mount-params" title="Permanent link">&para;</a></p>
 <p><a href="https://btrfs.readthedocs.io/en/latest/Subvolumes.html#mount-options">大部分 Btrfs 的挂载参数（例如透明压缩）只适用于整个文件系统</a>，在首个 subvolume 上挂载时，这些参数会被应用到整个文件系统。
 后续挂载使用的参数会被忽略。</p>
 </div>
@@ -4671,13 +4671,13 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="gp">$ </span>touch<span class="w"> </span>/media/btrfs/recovered/subvol1/test<span class="w">  </span><span class="c1"># 向还原的 subvol1 添加文件</span>
 <a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">嵌套 subvolume</p>
+<div class="admonition note" id="nested-subvolume">
+<p class="admonition-title">嵌套 subvolume<a class="headerlink" href="#nested-subvolume" title="Permanent link">&para;</a></p>
 <p>虽然嵌套 subvolume 在目录树中看上去是上级 subvolume 的一部分，但它并不是上级 subvolume 的文件，因此不会被包括在快照中，只会保留作为挂载点的空目录。</p>
 </div>
 <p>我们可以定时执行快照，以便在文件被误操作时能够恢复。例如 <a href="../backup/#snapper-snapshots">snapper</a> 等软件可以在后台自动执行快照任务。</p>
-<div class="admonition tip">
-<p class="admonition-title">使用快照将 top-level subvolume 的文件迁移到 <code>@</code> 或其他 subvolume</p>
+<div class="admonition tip" id="migrate-top-level-subvolume">
+<p class="admonition-title">使用快照将 top-level subvolume 的文件迁移到 <code>@</code> 或其他 subvolume<a class="headerlink" href="#migrate-top-level-subvolume" title="Permanent link">&para;</a></p>
 <p>如果你在配置系统时直接在 top-level subvolume 下安装了系统，或者需要处理使用 <a href="#btrfs-convert"><code>btrfs-convert</code></a> 转换得到的 Btrfs，那么根据上面所描述的快照的原理，可以比较方便地迁移，而不需要再手动复制或移动：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># 假设 top-level subvolume 在 /mnt</span>
 <a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvolid</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>/dev/your-device<span class="w"> </span>/mnt
@@ -4721,12 +4721,12 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <div class="highlight"><span class="filename">通过 TCP 传输数据，并用 pv 查看传输带宽</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="gp gp-VirtualEnv">(receiver)</span> <span class="gp">$ </span>nc<span class="w"> </span>-l<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>receive<span class="w"> </span>/media/btrfs/
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="gp gp-VirtualEnv">(sender)</span> <span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>send<span class="w"> </span>/media/btrfs/snap3<span class="w"> </span><span class="p">|</span><span class="w"> </span>pv<span class="w"> </span>&gt;<span class="w"> </span>/dev/tcp/receiver/12345
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Btrfs 传输限制</p>
+<div class="admonition note" id="btrfs-send-limit">
+<p class="admonition-title">Btrfs 传输限制<a class="headerlink" href="#btrfs-send-limit" title="Permanent link">&para;</a></p>
 <p>与 ZFS 不同，<code>btrfs-send</code> 不支持断点续传。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">传输压缩后的数据</p>
+<div class="admonition tip" id="btrfs-send-compressed">
+<p class="admonition-title">传输压缩后的数据<a class="headerlink" href="#btrfs-send-compressed" title="Permanent link">&para;</a></p>
 <p>默认情况下，与 <code>zfs send</code> 类似，<code>btrfs send</code> 会解压本地透明压缩过的数据再传输，很多时候这是在浪费带宽与 CPU。因此建议如果开启了透明压缩，<code>btrfs send</code> 总是添加 <code>--compressed-data</code> 参数，除非发送方或接收方的内核版本过低。</p>
 </div>
 <p>Btrfs 还支持增量备份/传输。增量传输需要保证在目标路径下存在此前收到，且内容未被修改的快照，Btrfs 可以自动计算并传输两个快照的差异部分。这里依然以本地为示例，首先进行第一次传输：</p>
@@ -4750,12 +4750,12 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 <a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs-alt
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">增量传输与只读 subvolume</p>
+<div class="admonition tip" id="btrfs-send-incremental">
+<p class="admonition-title">增量传输与只读 subvolume<a class="headerlink" href="#btrfs-send-incremental" title="Permanent link">&para;</a></p>
 <p>为了确保增量传输正常，默认情况下 btrfs 会对接收到的 subvolume 设置为只读。如果使用 <code>btrfs property set</code> 参数修改的话，需要添加 <code>-f</code> 参数（当然，操作之后也就不能再做增量传输了）。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">网络安全风险</p>
+<div class="admonition warning" id="btrfs-send-security">
+<p class="admonition-title">网络安全风险<a class="headerlink" href="#btrfs-send-security" title="Permanent link">&para;</a></p>
 <p>Btrfs 工具目前不会充分验证增量传输流的可靠性，攻击者可以通过精心构造 Btrfs 流使得创建的快照中包括目标文件系统中的任意文件。在通过网络接收 Btrfs 流时，应该首先确保传输来源和传输链路的安全性、可靠性，防范潜在的网络安全攻击风险。</p>
 </div>
 <h4 id="btrfs-compression">透明压缩<a class="headerlink" href="#btrfs-compression" title="Permanent link">&para;</a></h4>
@@ -4784,8 +4784,8 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>btrfs<span class="w"> </span>property<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/path/to/btrfs/dir<span class="w"> </span>compression<span class="w"> </span>zstd
 </code></pre></div>
 <p>以这种方式设置的压缩算法优先级高于挂载参数，并且会被继承到该目录下的子目录和文件中，但这种方式不能够指定压缩等级（使用算法对应的默认等级或挂载参数中的等级）<sup id="fnref:btrfs:compress_file_range"><a class="footnote-ref" href="#fn:btrfs:compress_file_range">1</a></sup>。</p>
-<div class="admonition question">
-<p class="admonition-title">Rsync 对于 btrfs property 的影响</p>
+<div class="admonition question" id="rsync-btrfs-property">
+<p class="admonition-title">Rsync 对于 btrfs property 的影响<a class="headerlink" href="#rsync-btrfs-property" title="Permanent link">&para;</a></p>
 <p>如果你使用 <code>btrfs property set</code> 为一个新目录设置了压缩算法，然后以 root 使用 <code>rsync -aHAXx</code> 将外部文件复制进这个目录，那么复制后的文件会使用指定的压缩算法吗？</p>
 <p>动手实验及查阅资料，尝试找出答案并解释原因。</p>
 <!-- Answer: <code>rsync -x</code> overwrites <code>btrfs.compression</code> -->
@@ -4799,8 +4799,8 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>btrfs-convert<span class="w"> </span>/path/to/device
 </code></pre></div>
 <p>如果文件数量较多，或者文件大小较大的话，需要耐心等待。在转换后，数据会在 top-level subvolume 中。</p>
-<div class="admonition warning">
-<p class="admonition-title">计算 checksum 的时间开销</p>
+<div class="admonition warning" id="checksum-compute-overhead">
+<p class="admonition-title">计算 checksum 的时间开销<a class="headerlink" href="#checksum-compute-overhead" title="Permanent link">&para;</a></p>
 <p><code>btrfs-convert</code> 在运行时会将原来的文件系统的 image 放在单独的 subvolume 里面（例如 ext 系列是 <code>ext2_saved</code>，用来之后提供恢复到旧文件系统的功能），并在 Btrfs 文件系统元数据中为每个文件添加对应的 inode。由于 Btrfs 支持数据 checksum，<code>btrfs-convert</code> 会花大量的时间计算哈希，而且很不幸的是，这个过程目前不是并行的。这可能会导致转换的大部分时间都卡在 <code>Create ext2 image file</code>，给 <code>ext2_saved</code> 计算哈希（而可能你之后完全不会使用它）。</p>
 <p>尽管 <code>btrfs-convert</code> 提供了 <code>--no-datasum</code> 参数，但是这个参数也会把普通文件的数据 checksum 关闭，只有在创建了新 inode 之后才能恢复。因此对规模较大的场景，如果想节约转换的时间，可能直接格式化然后从备份复制过来会更快一些。</p>
 </div>
@@ -4810,8 +4810,8 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <div class="highlight"><pre><span></span><code><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>duperemove<span class="w"> </span>--hashfile<span class="o">=</span>example.hashfile<span class="w"> </span>-dhr<span class="w"> </span>/path/to/btrfs
 </code></pre></div>
 <p>即可扫描 <code>/path/to/btrfs</code> 下的文件，搜索重复的块并去重，并将相关文件的哈希存储到 <code>example.hashfile</code> 中，在下次去重的时候加速。</p>
-<div class="admonition note">
-<p class="admonition-title">其他文件系统的去重</p>
+<div class="admonition note" id="other-filesystem-dedup">
+<p class="admonition-title">其他文件系统的去重<a class="headerlink" href="#other-filesystem-dedup" title="Permanent link">&para;</a></p>
 <p>除了 ZFS 自带去重功能，duperemove 支持 XFS 文件系统（因为 XFS 也提供了 <code>FIDEDUPRANGE</code> 的内核接口）以外，其他文件系统可以使用 <a href="https://codeberg.org/jbruchon/jdupes">jdupes</a>，搜索相同的文件，并且做 reflink 或者 hardlink。</p>
 </div>
 <h4 id="btrfs-faq">常见问题<a class="headerlink" href="#btrfs-faq" title="Permanent link">&para;</a></h4>
@@ -4969,16 +4969,16 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <a id="__codelineno-48-3" name="__codelineno-48-3" href="#__codelineno-48-3"></a><span class="c1"># 或者 umount，旧版本可能需要 root 权限</span>
 <a id="__codelineno-48-4" name="__codelineno-48-4" href="#__codelineno-48-4"></a><span class="c1"># umount mountpoint/</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">FUSE 的代价</p>
+<div class="admonition tip" id="fuse-overhead">
+<p class="admonition-title">FUSE 的代价<a class="headerlink" href="#fuse-overhead" title="Permanent link">&para;</a></p>
 <p>用户态文件系统虽然方便，但是其代价之一是性能。FAST '17 的论文 <a href="https://www.usenix.org/conference/fast17/technical-sessions/presentation/vangoor">To FUSE or Not to FUSE: Performance of User-Space File Systems</a> 对此做了详细的量化分析。</p>
 <p>此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，<a href="https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications">存在潜在的安全问题</a>，在生产环境使用时需要注意。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">解决 FUSE 死锁问题</p>
+<div class="admonition tip" id="fuse-deadlock-solution">
+<p class="admonition-title">解决 FUSE 死锁问题<a class="headerlink" href="#fuse-deadlock-solution" title="Permanent link">&para;</a></p>
 <p>一些实现不佳的 FUSE 文件系统可能会出现死锁，此时文件系统进程和访问该文件系统的进程都会陷入内核中，无法用常用的 SIGKILL 信号终止。</p>
-<details class="note">
-<summary>一个死锁的代码例子：FUSE 文件系统实现访问自身的路径</summary>
+<details class="note" id="fuse-self-access-deadlock">
+<summary>一个死锁的代码例子：FUSE 文件系统实现访问自身的路径<a class="headerlink" href="#fuse-self-access-deadlock" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-49-1" name="__codelineno-49-1" href="#__codelineno-49-1"></a><span class="cp">#define FUSE_USE_VERSION 31</span>
 <a id="__codelineno-49-2" name="__codelineno-49-2" href="#__codelineno-49-2"></a>
 <a id="__codelineno-49-3" name="__codelineno-49-3" href="#__codelineno-49-3"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;assert.h&gt;</span>
@@ -5129,7 +5129,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年7月22日 19:33:32 UTC">2026年7月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

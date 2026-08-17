@@ -3282,8 +3282,8 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>caddy
 </code></pre></div>
 <p>默认的 <code>Caddyfile</code> 的目录在 <code>/etc/caddy/Caddyfile</code>，可以通过修改 <code>Caddyfile</code> 来配置 Caddy 的行为。修改 Caddyfile 之后，可以使用 <code>sudo systemctl reload caddy</code> 让 Caddy 重新加载配置，而无须重启服务。</p>
-<div class="admonition note">
-<p class="admonition-title">Caddyfile 验证与格式化</p>
+<div class="admonition note" id="caddyfile-validation">
+<p class="admonition-title">Caddyfile 验证与格式化<a class="headerlink" href="#caddyfile-validation" title="Permanent link">&para;</a></p>
 <p>在修改配置文件后，可以通过如下命令检查 Caddyfile 格式（类似 <code>nginx -t</code>）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>caddy<span class="w"> </span>validate<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
 </code></pre></div>
@@ -3291,8 +3291,8 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>caddy<span class="w"> </span>fmt<span class="w"> </span>--overwrite<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
 </code></pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Caddyfile 与 Caddy 配置</p>
+<div class="admonition note" id="caddyfile-configuration">
+<p class="admonition-title">Caddyfile 与 Caddy 配置<a class="headerlink" href="#caddyfile-configuration" title="Permanent link">&para;</a></p>
 <p>在 Caddy v1 时，Caddyfile 是唯一配置 Caddy 的方法。但是目前的 Caddy v2 相比于 v1 发生了非常大的变化，其中尽管 Caddyfile 仍然是标准的配置方式（一部分语法有变化，参考<a href="https://caddyserver.com/docs/v2-upgrade">升级指南</a>），但是 Caddy 实际识别的是 <a href="https://caddyserver.com/docs/json">JSON 格式</a>的配置，对 Caddyfile（以及其他类型的配置）的支持则由 <a href="https://caddyserver.com/docs/config-adapters">config adapter</a> 实现。</p>
 <p>考虑目前的使用情况，以下配置均只考虑 Caddy v2。</p>
 <p>同时，Caddy v2 默认还会在本地监听 2019 端口用来实时接收管理配置修改，详情可参考 <a href="https://caddyserver.com/docs/api">API</a>。</p>
@@ -3314,8 +3314,8 @@
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="k">reverse_proxy</span><span class="w"> </span>localhost:8080
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Simple LB</p>
+<div class="admonition note" id="simple-lb">
+<p class="admonition-title">Simple LB<a class="headerlink" href="#simple-lb" title="Permanent link">&para;</a></p>
 <p>使用如下配置可做简单的 Load Balance：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>example.com<span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="k">reverse_proxy</span><span class="w"> </span>localhost:8080<span class="w"> </span>localhost:8081<span class="w"> </span><span class="p">{</span>
@@ -3387,7 +3387,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月11日 18:59:21 UTC">2026年5月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

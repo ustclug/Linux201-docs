@@ -3460,8 +3460,8 @@
 </code></pre></div>
 <p>将 <code>/srv/abcde</code> 目录「导出」给了本机（localhost），并且设置了诸如只读等选项。
 在修改配置后，运行 <code>systemctl reload nfs-server.service</code>（等价于 <code>exportfs -r</code>）重新加载配置。</p>
-<div class="admonition lab">
-<p class="admonition-title">尝试配置并挂载</p>
+<div class="admonition lab" id="configure-and-mount">
+<p class="admonition-title">尝试配置并挂载<a class="headerlink" href="#configure-and-mount" title="Permanent link">&para;</a></p>
 <p>NFS 在各种主流桌面/服务器操作系统上都有不错的支持。请尝试在你的系统（虚拟机或 Linux 主机）上配置 NFS 服务端，
 并在主机上挂载。如果需要在 Linux 上挂载，可先阅读下面的客户端配置。</p>
 <p>需要注意的是，Windows 需要启用 NFS 对应的可选特性，并且不支持 NFSv4。</p>
@@ -3472,8 +3472,8 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>/media 192.168.93.2(rw,no_subtree_check) 192.168.93.3(rw,no_subtree_check)
 </code></pre></div>
 <p>分别代表目录导出给了一个 CIDR 网段、所有 IP，以及两个特定的 IP。</p>
-<div class="admonition warning">
-<p class="admonition-title">使用 <code>exportfs -a</code> 检查配置问题</p>
+<div class="admonition warning" id="check-exports-configuration">
+<p class="admonition-title">使用 <code>exportfs -a</code> 检查配置问题<a class="headerlink" href="#check-exports-configuration" title="Permanent link">&para;</a></p>
 <p><code>exports</code> 文件如果编辑不当，可能会导致客户端无法正确挂载，或者带来非预期的安全风险。
 这是在 <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/configuring_and_using_network_file_services/index#the-etc-exports-configuration-file_exporting-nfs-shares">RHEL 9 手册</a>中举的一个例子：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>/home bob.example.com(rw)
@@ -3507,15 +3507,15 @@
 <li><code>all_squash</code>：将所有客户端的用户映射到一个特定的用户（<code>nobody</code>）</li>
 <li><code>secure</code>/<code>insecure</code>：默认情况下，NFS 服务端只接受客户端使用 1024 以下的端口访问，设置 <code>insecure</code> 会放宽这个限制</li>
 </ul>
-<div class="admonition tip">
-<p class="admonition-title">1024 端口，与 root</p>
+<div class="admonition tip" id="port-1024-and-root">
+<p class="admonition-title">1024 端口，与 root<a class="headerlink" href="#port-1024-and-root" title="Permanent link">&para;</a></p>
 <p>在传统上，类 Unix 操作系统中只有 root 用户才能使用 1024 以下的端口。因此在很久以前，程序可以假设来自 1024 以下的端口的请求/服务是 root 用户发出/授权的。
 在 NFS 的情况下，这意味着只有 root 才能访问 NFS 服务，没有 root 权限的用户不能够假冒自己为 NFS 客户端，从而以假的用户权限读写数据。
 这在很久以前的内部网络中的服务器场景是有意义的。</p>
 <p>目前 Linux 仍然保留了这个机制，但是程序不应该仅仅依赖于这个机制来保证安全性。</p>
 </div>
-<details class="note">
-<summary>关于「子树检查」的解释</summary>
+<details class="note" id="subtree-checking-explanation">
+<summary>关于「子树检查」的解释<a class="headerlink" href="#subtree-checking-explanation" title="Permanent link">&para;</a></summary>
 <p>NFS 服务器与客户端之间使用「文件句柄」（file handle）来标识文件。
 文件句柄的内容含义由服务器决定。
 在 Linux 内核态 NFS 的实现中，文件句柄的结构体为 <a href="https://elixir.bootlin.com/linux/v6.8/source/fs/nfsd/nfsfh.h#L47"><code>knfsd_fh</code></a>，如下所示：</p>
@@ -3593,8 +3593,8 @@ inode 编号后是 generation number，用于检测文件是否被修改。</p>
 <a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>Signed-off-by: Chuck Lever &lt;chuck.lever@oracle.com&gt;
 </code></pre></div>
 </details>
-<details class="note">
-<summary>RDMA 支持（服务端）</summary>
+<details class="note" id="rdma-support-server">
+<summary>RDMA 支持（服务端）<a class="headerlink" href="#rdma-support-server" title="Permanent link">&para;</a></summary>
 <p>NFS 支持 RDMA 协议，在配置了专用 RDMA 卡的情况下，可以在数据中心内部网络的场景下减小网络延迟，提升性能。
 （如果希望本地测试，可以安装 <code>rdma-core</code> 包，其包含了 Soft-RoCE 实现，即软件模拟的 RDMA；
 <code>rdmacm-utils</code> 包包含了 <code>rping</code> 工具用于测试 RDMA 连接。
@@ -3692,8 +3692,8 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <p>此外，<code>intr</code> 参数在现在能碰到的内核（2.6.25+）中，没有任何意义，因此没有必要设置。</p>
 <h4 id="nfs-client-other">其他问题<a class="headerlink" href="#nfs-client-other" title="Permanent link">&para;</a></h4>
 <p>NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些差异。</p>
-<div class="admonition note">
-<p class="admonition-title">NFS 与 capability 问题</p>
+<div class="admonition note" id="nfs-and-capability">
+<p class="admonition-title">NFS 与 capability 问题<a class="headerlink" href="#nfs-and-capability" title="Permanent link">&para;</a></p>
 <p>在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。</p>
 <ul>
 <li>当尝试在 NFS 挂载的路径上进行操作时，客户端进程的 capability 不会被传递到 NFS 服务器端进行权限检查。这意味着一些在本地文件系统上因进程具备特定 capability 而成功的操作，在 NFS 环境下可能会失败，因为 <a href="https://access.redhat.com/solutions/2117321">NFS 并不支持 Linux Capabilities</a>。</li>
@@ -3702,8 +3702,8 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <li>在实际问题场景中，尽管执行操作的进程具备 <code>cap_dac_override</code> capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。</li>
 </ul>
 </div>
-<div class="admonition note">
-<p class="admonition-title">NFS 与用户命名空间 (User Namespace) 的兼容性问题</p>
+<div class="admonition note" id="nfs-and-user-namespace">
+<p class="admonition-title">NFS 与用户命名空间 (User Namespace) 的兼容性问题<a class="headerlink" href="#nfs-and-user-namespace" title="Permanent link">&para;</a></p>
 <p>在容器化环境中使用 NFS 时，会遇到其与用户命名空间相关的兼容性问题：</p>
 <ul>
 <li><strong>Rootless Podman 与用户命名空间</strong>：Rootless Podman 利用 Linux 的用户命名空间功能，将容器内部的用户 ID（例如，容器内的 root 用户，其 UID 为 0）映射到宿主机上的一个非特权用户 ID 范围。这样，容器内的 root 用户在宿主机上并不具备真正的 root 权限。更多详情请参阅 <a href="https://www.redhat.com/en/blog/rootless-podman-user-namespace-modes">Understanding rootless Podman's user namespace modes</a>。</li>
@@ -3727,8 +3727,8 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 </div>
 <h2 id="iscsi">iSCSI<a class="headerlink" href="#iscsi" title="Permanent link">&para;</a></h2>
 <p>iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。</p>
-<div class="admonition tip">
-<p class="admonition-title">SCSI 的概念</p>
+<div class="admonition tip" id="scsi-concepts">
+<p class="admonition-title">SCSI 的概念<a class="headerlink" href="#scsi-concepts" title="Permanent link">&para;</a></p>
 <p>在阅读下述内容之前，理清一些 SCSI 协议（不限于 iSCSI）的概念会有所帮助：</p>
 <dl>
 <dt>Initiator</dt>
@@ -3831,8 +3831,8 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 </code></pre></div>
 <p>一个在所有地址的 3260 端口监听的 iSCSI target 就创建好了。
 <code>portals</code> 可以限制连接的 IP 地址，如有需要可自行查询使用方法。</p>
-<div class="admonition tip">
-<p class="admonition-title">关于 portal</p>
+<div class="admonition tip" id="about-portal">
+<p class="admonition-title">关于 portal<a class="headerlink" href="#about-portal" title="Permanent link">&para;</a></p>
 <p>一些 SAN 方案会提供多个 portal，对应不同的网口。在集群场景下让不同的节点连接到不同的 portal，以此提升性能。</p>
 </div>
 <p>如果需要实际登录（诸如按照下面的客户端配置），还需要将客户端的 iqn 也记录在 <code>acls</code> 中：</p>
@@ -3848,8 +3848,8 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <p>然后为这个 target 创建一个 logical unit——这里是设置实际的「后备存储」的地方。<code>--backing-store</code> 可以是一个块设备或者一个文件。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>sudo<span class="w"> </span>tgtadm<span class="w"> </span>--lld<span class="w"> </span>iscsi<span class="w"> </span>--mode<span class="w"> </span>logicalunit<span class="w"> </span>--op<span class="w"> </span>new<span class="w"> </span>--tid<span class="w"> </span><span class="m">1</span><span class="w"> </span>--lun<span class="w"> </span><span class="m">1</span><span class="w"> </span>--backing-store<span class="w"> </span>/dev/loop0
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">tgtd 报告错误？</p>
+<div class="admonition warning" id="tgtd-error">
+<p class="admonition-title">tgtd 报告错误？<a class="headerlink" href="#tgtd-error" title="Permanent link">&para;</a></p>
 <p>后备存储需要保证 tgtd 能够访问到，否则会报告没有什么信息量的 <code>tgtadm: invalid request</code> 错误。</p>
 </div>
 <p>之后就可以配置允许对指定的客户端服务。这个过程被称为 <code>bind</code>。</p>
@@ -3875,8 +3875,8 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>iscsiadm<span class="w"> </span>-m<span class="w"> </span>node<span class="w">  </span><span class="c1"># 列出发现的 target</span>
 <a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="go">127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">iSCSI node</p>
+<div class="admonition tip" id="iscsi-node">
+<p class="admonition-title">iSCSI node<a class="headerlink" href="#iscsi-node" title="Permanent link">&para;</a></p>
 <p>Node 在 iSCSI 中是代表 target 和 initiator 的单位。Initiator node 就是发起连接的一端（客户端），target node 就是提供存储资源的一端（服务端）。可以认为在 <code>iscsiadm</code> 的操作中，<code>node</code> 就代表 target。</p>
 </div>
 <p>第二步是「登录」。但是直接登录会吃到闭门羹：</p>
@@ -3935,8 +3935,8 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a><span class="go">└─vda1 254:1    0    50G  0 part </span>
 <a id="__codelineno-41-10" name="__codelineno-41-10" href="#__codelineno-41-10"></a><span class="gp">$ </span><span class="c1"># 多出了新添加的 sdb</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">iSCSI session</p>
+<div class="admonition tip" id="iscsi-session">
+<p class="admonition-title">iSCSI session<a class="headerlink" href="#iscsi-session" title="Permanent link">&para;</a></p>
 <p>当 initiator 连接到 target 后，会创建一个 iSCSI session，同个 initiator 可以对同个 target 创建多个 session。可以使用 <code>iscsiadm -m session</code> 查看当前所有的 session。</p>
 </div>
 <p>另一点需要注意的是开机时的配置，虽然 <code>iscsid.service</code> 会在开机时自动启用，但是登录操作默认不是自动的。
@@ -3953,12 +3953,12 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="go">iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o update -n node.conn[0].startup -v automatic</span>
 </code></pre></div>
 <p><code>open-iscsi.service</code> 在开机时会自动登录所有配置好的 target。</p>
-<div class="admonition warning">
-<p class="admonition-title">避免修改（override）<code>open-iscsi.service</code></p>
+<div class="admonition warning" id="avoid-modifying-open-iscsi-service">
+<p class="admonition-title">避免修改（override）<code>open-iscsi.service</code><a class="headerlink" href="#avoid-modifying-open-iscsi-service" title="Permanent link">&para;</a></p>
 <p>在按照以上方法恰当配置 <code>startup</code> 为 <code>automatic</code> 后，<code>open-iscsi.service</code> 会自动启动这些 node。一些资料可能会建议通过 <code>systemctl edit open-iscsi.service</code> 的方式覆盖掉其原先的 <code>ExecStart</code>，并且自行添加 <code>iscsiadm</code> 登录指令。请避免这么做。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">重启 <code>open-iscsi.service</code> 会 logout 当前挂载的所有 iSCSI 块设备</p>
+<div class="admonition warning" id="restarting-open-iscsi-service">
+<p class="admonition-title">重启 <code>open-iscsi.service</code> 会 logout 当前挂载的所有 iSCSI 块设备<a class="headerlink" href="#restarting-open-iscsi-service" title="Permanent link">&para;</a></p>
 <p>可以看一下这个服务在开启与关闭时的行为：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/sbin/iscsiadm -m node --loginall=automatic</span>
 <a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/lib/open-iscsi/activate-storage.sh</span>
@@ -3972,14 +3972,14 @@ iqn 的格式形如 <code>iqn.yyyy-mm.com.example:some-storage-target</code>，�
 <a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="go">iscsiadm: Could not log into all portals</span>
 </code></pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">优化建议：巨型帧</p>
+<div class="admonition tip" id="optimize-jumbo-frame">
+<p class="admonition-title">优化建议：巨型帧<a class="headerlink" href="#optimize-jumbo-frame" title="Permanent link">&para;</a></p>
 <p>巨型帧（jumbo frame）是指 MTU 大于 1500 的以太网帧，一般为 9000。如果链路设备均支持巨型帧，那么可以考虑在 iSCSI 部署时启用巨型帧，减小以太网的额外开销，提升性能。</p>
 </div>
 <h2 id="samba">Samba<a class="headerlink" href="#samba" title="Permanent link">&para;</a></h2>
 <p>Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现匿名访问与用户名、密码访问。有关服务发现（让局域网内其他计算机自动找到 Samba 共享的目录）相关内容，请参考 <a href="../../network-service/zeroconf/#service-discovery">Zeroconf 的「服务发现」部分</a>。</p>
-<div class="admonition note">
-<p class="admonition-title">家用场景下的其他协议</p>
+<div class="admonition note" id="other-protocols-home-scenario">
+<p class="admonition-title">家用场景下的其他协议<a class="headerlink" href="#other-protocols-home-scenario" title="Permanent link">&para;</a></p>
 <p>除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。诸如 <a href="https://nextcloud.com/">Nextcloud</a>、<a href="https://github.com/9001/copyparty">copyparty</a> 等工具提供了成熟的方案，如有需要可以自行搜索相关的配置方法。</p>
 </div>
 <!--
@@ -4037,7 +4037,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月2日 15:30:03 UTC">2026年5月2日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

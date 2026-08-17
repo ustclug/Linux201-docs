@@ -3632,8 +3632,8 @@
 </figcaption>
 </figure>
 <p>这边只介绍该工具的常用命令与常见网络环境下的单文件配置，详细的文件可以参见 <a href="https://netplan.io/">Netplan 文档</a>。</p>
-<div class="admonition comment">
-<p class="admonition-title">@Pd12: 与 NetworkManager 和 Systemd-networkd 比较</p>
+<div class="admonition comment" id="netplan-comparison">
+<p class="admonition-title">@Pd12: 与 NetworkManager 和 Systemd-networkd 比较<a class="headerlink" href="#netplan-comparison" title="Permanent link">&para;</a></p>
 <p>编者同时使用过 NetworkManager，Systemd-networkd，Netplan 三者，根据个人经验给出一些比较。</p>
 <p>简单网络环境下（例如只是配置个固定 IP），使用哪种都差不多，一般系统默认安装哪个就用哪个。</p>
 <p>在易用性上，NetworkManager 完胜，该软件带有的 <code>nmtui</code> 工具可以使用图形界面配置网络，无需编写配置文件。如果需要使用 Systemd-networkd 提供的更多功能（例如在接口上启用 DHCP 服务器这种），请直接编写 Systemd-networkd 配置，缺点是需要编写大量配置文件（一般一个网络接口需要提供 .network .netdev 两个文件）。而 Netplan 则对配置文件进行了简化处理，一般只需要一个配置文件即可。</p>
@@ -3683,8 +3683,8 @@
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">        </span><span class="nt">addresses</span><span class="p">:</span>
 <a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.1</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">DNS 服务器的选择</p>
+<div class="admonition note" id="dns-server-selection">
+<p class="admonition-title">DNS 服务器的选择<a class="headerlink" href="#dns-server-selection" title="Permanent link">&para;</a></p>
 <p>一般来说，DNS 服务器应选择网络提供商分配的即可。出于备份或是隐私的考虑可以使用公共 DNS，可参见<a href="../../network-service/dns/#client">网络服务实践的 DNS 章节</a>。</p>
 </div>
 <h3 id="netplan-wlan">连接到无线网络<a class="headerlink" href="#netplan-wlan" title="Permanent link">&para;</a></h3>
@@ -3745,8 +3745,8 @@
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">        </span><span class="nt">addresses</span><span class="p">:</span>
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.1</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">IPv6 下的 DNS 服务器</p>
+<div class="admonition note" id="ipv6-dns-server">
+<p class="admonition-title">IPv6 下的 DNS 服务器<a class="headerlink" href="#ipv6-dns-server" title="Permanent link">&para;</a></p>
 <p>在使用了 SLAAC 或 DHCPv6 分配地址的网络下，一般也会通过 Router Advertisement 报文或 DHCP 报文下发 IPv6 地址的 DNS 服务器。在双栈网络中，IPv6 地址的 DNS 服务器不是必须的，通过 IPv4 的 DNS 服务器也可以解析出域名的 IPv6 地址。</p>
 </div>
 <h4 id="netplan-ipv6-dhcpv6">使用 DHCPv6 获取 IPv6 地址<a class="headerlink" href="#netplan-ipv6-dhcpv6" title="Permanent link">&para;</a></h4>
@@ -3792,8 +3792,8 @@
 <a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">        </span><span class="nt">addresses</span><span class="p">:</span>
 <a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.1</span>
 </code></pre></div>
-<div class="admonition comment">
-<p class="admonition-title">@Pd12: 何时使用静态 IPv6 地址</p>
+<div class="admonition comment" id="when-to-use-static-ipv6">
+<p class="admonition-title">@Pd12: 何时使用静态 IPv6 地址<a class="headerlink" href="#when-to-use-static-ipv6" title="Permanent link">&para;</a></p>
 <p>大多数情况下 IPv6 都使用动态方式分配地址，很少使用静态 IPv6 地址。编者唯一使用过的情况是校园网中使用路由器架设宿舍网络，由于学校的网络需要登陆使用，只能使用一个 IPv6 地址，故不得不采取 NAT 的形式在宿舍网络中使用 IPv6 网络。</p>
 </div>
 <h3 id="netplan-bridge">创建网桥<a class="headerlink" href="#netplan-bridge" title="Permanent link">&para;</a></h3>
@@ -3828,8 +3828,8 @@
 <a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">        </span><span class="nt">addresses</span><span class="p">:</span>
 <a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">192.168.0.1</span>
 </code></pre></div>
-<details class="note">
-<summary>无线网络与网桥</summary>
+<details class="note" id="bridge-wireless">
+<summary>无线网络与网桥<a class="headerlink" href="#bridge-wireless" title="Permanent link">&para;</a></summary>
 <p>注意，大多数情况下 wlan 接口作为客户端运行时无法作为网桥的子接口（AP 模式可以）。如果的确需要多设备接入无线网络，建议使用 网桥+NAT 实现。</p>
 </details>
 <h3 id="netplan-vlan">接入 VLAN<a class="headerlink" href="#netplan-vlan" title="Permanent link">&para;</a></h3>
@@ -3964,7 +3964,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年5月10日 13:33:06 UTC">2026年5月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     
@@ -3983,6 +3983,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
         <a href="https://github.com/pd12bb" class="md-author" title="@pd12bb">
           
           <img src="https://avatars.githubusercontent.com/u/33011786?v=4&size=72" alt="pd12bb">
@@ -3996,11 +4001,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
           <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
-        <a href="https://github.com/autofix-ci%5Bbot%5D" class="md-author" title="@autofix-ci[bot]">
-          
-          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="GitHub user">
         </a>
       
       

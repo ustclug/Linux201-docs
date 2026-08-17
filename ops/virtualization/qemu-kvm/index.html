@@ -3739,8 +3739,8 @@
 <h2 id="_1">组件介绍<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
 <h3 id="qemu">QEMU<a class="headerlink" href="#qemu" title="Permanent link">&para;</a></h3>
 <p>QEMU（Quick Emulator）是一个开源的虚拟化软件，它通过动态二进制翻译来模拟 CPU，并提供一系列的硬件模型，可以模拟多种外设硬件。QEMU 可以在没有硬件加速的情况下独立运行，但这样其中的 CPU 部分是模拟指令的执行，性能低下。</p>
-<div class="admonition note">
-<p class="admonition-title">QEMU TCG</p>
+<div class="admonition note" id="qemu-tcg">
+<p class="admonition-title">QEMU TCG<a class="headerlink" href="#qemu-tcg" title="Permanent link">&para;</a></p>
 <p>QEMU 内部使用 TCG（Tiny Code Generator）作为其模拟器，TCG 会将原始指令转换为 TCG 内部的 op，经过简单的优化后转换为主机指令并执行。TCG 不是专门为性能优化的，因此使用 TCG 运行程序或操作系统会有较大的性能损失。</p>
 <p>对于跨架构系统级模拟（例如 x86 下运行 aarch64 的操作系统），目前 QEMU 基本上是唯一的通用方案。而如果需求只是运行用户态程序（例如在其他指令集下运行 x86 的游戏），那么目前有一些更快的方案：</p>
 <ul>
@@ -3749,8 +3749,8 @@
 </ul>
 </div>
 <p>此外 QEMU 也可以仅用于 CPU 指令和系统调用的翻译，不模拟硬件模型，这种模式称为 User Mode。主要用于运行不同于宿主系统 CPU 指令集的用户态二进制程序。</p>
-<div class="admonition note">
-<p class="admonition-title">binfmt_misc</p>
+<div class="admonition note" id="binfmt-misc">
+<p class="admonition-title">binfmt_misc<a class="headerlink" href="#binfmt-misc" title="Permanent link">&para;</a></p>
 <p><a href="https://docs.kernel.org/admin-guide/binfmt-misc.html">binfmt_misc</a> 是内核提供的运行非原生程序的方案——程序使用 binfmt_misc 注册自己能够处理的程序特征（例如开头是 <code>MZ</code> 的话，那么就是 Windows PE 程序），内核在遇到自己无法运行的程序的时候，就会查询 binfmt_misc。该功能对应的挂载点是 <code>/proc/sys/fs/binfmt_misc/</code>。</p>
 <p>安装 <code>qemu-user-binfmt</code> 即可在 binfmt_misc 注册所有 QEMU 用户模式支持的架构。<code>systemd-binfmt.service</code> 会在启动时检查 <a href="https://man7.org/linux/man-pages/man5/binfmt.d.5.html">binfmt.d.5</a> 中的目录，并进行信息注册。</p>
 </div>
@@ -3761,8 +3761,8 @@
 <h2 id="_2">安装配置<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <p>现在大多数发行版提供的内核都包含 KVM 相关模块，也提供了 QEMU 的二进制包。因此在大多数情况下，KVM 无需进行任何配置，只需要安装 QEMU 的二进制包即可。</p>
 <p>如果需要手动进行配置，以下内容可以作为参考。</p>
-<details class="info">
-<summary>KVM</summary>
+<details class="info" id="kvm-overview">
+<summary>KVM<a class="headerlink" href="#kvm-overview" title="Permanent link">&para;</a></summary>
 <p>以 x86 为例。</p>
 <ol>
 <li>确保内核配置中包含了 KVM 相关模块。需要的配置项包括：<ul>
@@ -3775,8 +3775,8 @@
 <li>正确配置 <code>/dev/kvm</code> 字符设备的权限，使需要运行虚拟机的用户可以访问该设备。</li>
 </ol>
 </details>
-<details class="info">
-<summary>QEMU</summary>
+<details class="info" id="qemu-overview">
+<summary>QEMU<a class="headerlink" href="#qemu-overview" title="Permanent link">&para;</a></summary>
 <p>只需安装 QEMU 的二进制包。</p>
 <p>如果发行版不提供相关包，也可以从 <a href="https://www.qemu.org/download/">QEMU 官网</a> 下载源码编译安装。</p>
 </details>
@@ -3836,12 +3836,12 @@
 </code></pre></div>
 <p>QEMU 支持多种网络设备模型，包括 <code>virtio</code>，<code>e1000</code>，<code>rtl8139</code> 等。其中 <code>virtio</code> 是性能最好的设备模型，且现在几乎所有 Linux 发行版均包含了对应驱动，因此大多数情况下直接使用该模型即可。</p>
 <h3 id="_9">内存<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">本节内容待补充</p>
+<div class="admonition warning" id="qemu-kvm-section-incomplete">
+<p class="admonition-title">本节内容待补充<a class="headerlink" href="#qemu-kvm-section-incomplete" title="Permanent link">&para;</a></p>
 </div>
 <h3 id="cpu">CPU<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
-<div class="admonition warning">
-<p class="admonition-title">本节内容待补充</p>
+<div class="admonition warning" id="cpu-section-incomplete">
+<p class="admonition-title">本节内容待补充<a class="headerlink" href="#cpu-section-incomplete" title="Permanent link">&para;</a></p>
 </div>
 <h2 id="_10">实用工具<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
 <h3 id="qemu-img">qemu-img<a class="headerlink" href="#qemu-img" title="Permanent link">&para;</a></h3>
@@ -3852,8 +3852,8 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>qemu-img<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>&lt;FORMAT:raw<span class="p">|</span>qcow2<span class="p">|</span>...&gt;<span class="w"> </span>-o<span class="w"> </span>&lt;OPTIONS&gt;<span class="w"> </span>&lt;IMAGE&gt;<span class="w"> </span>&lt;SIZE&gt;
 </code></pre></div>
 <p>其中 <code>-f</code> 选项用于指定磁盘镜像格式，<code>-o</code> 选项用于指定格式相关的选项，<code>&lt;IMAGE&gt;</code> 为磁盘镜像文件名，<code>&lt;SIZE&gt;</code> 为磁盘镜像大小。</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
+<div class="admonition tip" id="qemu-img-preallocation">
+<p class="admonition-title">Tip<a class="headerlink" href="#qemu-img-preallocation" title="Permanent link">&para;</a></p>
 <p>创建 <code>qcow2</code> 格式的磁盘镜像时，可以使用 <code>-o preallocation=metadata</code> 选项指定预分配元数据，以提高性能。</p>
 </div>
 <h4 id="_12">转换<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h4>
@@ -3867,8 +3867,8 @@
 </code></pre></div>
 <p>其中 <code>-f</code> 选项用于指定磁盘镜像格式，<code>--shrink</code> 选项用于指定是否收缩磁盘镜像，<code>&lt;IMAGE&gt;</code> 为磁盘镜像文件名，<code>&lt;SIZE&gt;</code> 为磁盘镜像大小。</p>
 <p>需要注意的是，缩小镜像时，超过指定大小的数据将被截断丢弃，因此需要在镜像内部先进行文件系统容量调整和分区表调整操作，并需要小心计算各分区偏移量和目标镜像大小。</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
+<div class="admonition tip" id="qemu-img-shrink-workflow">
+<p class="admonition-title">Tip<a class="headerlink" href="#qemu-img-shrink-workflow" title="Permanent link">&para;</a></p>
 <p>缩容时，可以先将内部文件系统调整至最小大小，然后调整分区大小至目标大小，接着调整镜像大小，最后再将文件系统扩容至最大。在此过程中也需要小心计算涉及到的各种大小和偏移量。</p>
 </div>
 <h3 id="qemu-nbd">qemu-nbd<a class="headerlink" href="#qemu-nbd" title="Permanent link">&para;</a></h3>
@@ -3876,8 +3876,8 @@
 <p>使用前需要先加载 <code>nbd</code> 内核模块：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>modprobe<span class="w"> </span>nbd
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">坑</p>
+<div class="admonition warning" id="qemu-nbd-device-number-limit">
+<p class="admonition-title">坑<a class="headerlink" href="#qemu-nbd-device-number-limit" title="Permanent link">&para;</a></p>
 <p><code>nbd</code> 默认创建很多 nbd 设备，占据大量设备号，如果主机上本来就已经有很多设备，在加载 <code>nbd</code> 模块的过程中可能因设备号分配失败而出错，在内核日志中留下一个 oops。这种情况下可以通过 <code>nbds_max</code> 参数限制 <code>nbd</code> 设备的数量。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>modprobe<span class="w"> </span>nbd<span class="w"> </span><span class="nv">nbds_max</span><span class="o">=</span><span class="m">2</span>
 </code></pre></div>
@@ -3887,8 +3887,8 @@
 </code></pre></div>
 <p>其中 <code>-c</code> 选项用于指定 nbd 设备号，<code>-f</code> 选项用于指定磁盘镜像格式，<code>--discard</code> 选项用于指定磁盘镜像支持的 TRIM/DISCARD 操作，<code>&lt;IMAGE&gt;</code> 为磁盘镜像文件。如果需要只读挂载，可以指定 <code>-r</code> 选项。<code>qemu-nbd</code> 的其他用法和选项可以通过 <code>man qemu-nbd</code> 或 <code>qemu-nbd --help</code> 查看。</p>
 <h2 id="_14">管理工具<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">本节内容待补充</p>
+<div class="admonition warning" id="management-tools-section-incomplete">
+<p class="admonition-title">本节内容待补充<a class="headerlink" href="#management-tools-section-incomplete" title="Permanent link">&para;</a></p>
 </div>
 <p>QEMU 直接运行参数众多，配置复杂，因此一般不直接运行 QEMU 命令，而是使用一些管理工具来创建和管理虚拟机，如 <a href="https://libvirt.org/">libvirt</a>，<a href="https://virt-manager.org/">virt-manager</a>, <a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview">Proxmox VE</a> 等。</p>
 <!--
@@ -3946,7 +3946,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月12日 18:16:24 UTC">2026年6月12日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     
@@ -3965,14 +3965,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/iBug" class="md-author" title="@iBug">
-          
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/iBug" class="md-author" title="@iBug">
+          
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
         </a>
       
         <a href="https://github.com/apps/github-actions" class="md-author" title="@github-actions[bot]">

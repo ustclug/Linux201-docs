@@ -3697,21 +3697,21 @@
 </code></pre></div>
 <h3 id="admonition">使用提示框（Admonition）<a class="headerlink" href="#admonition" title="Permanent link">&para;</a></h3>
 <p>提示框是 mkdocs-material 的特色功能。格式类似于如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>!!! warning "警告标题"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>!!! warning "警告标题" {#warning-title}
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    这是提示框的内容。
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>??? note "提示标题"
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>??? note "提示标题" {#note-title}
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    这是提示框的内容，`???` 表示默认折叠。
 </code></pre></div>
 <p>效果如下：</p>
-<div class="admonition warning">
-<p class="admonition-title">警告标题</p>
+<div class="admonition warning" id="warning-title">
+<p class="admonition-title">警告标题<a class="headerlink" href="#warning-title" title="Permanent link">&para;</a></p>
 <p>这是提示框的内容。</p>
 </div>
-<details class="note">
-<summary>提示标题</summary>
+<details class="note" id="note-title">
+<summary>提示标题<a class="headerlink" href="#note-title" title="Permanent link">&para;</a></summary>
 <p>这是提示框的内容，<code>???</code> 表示默认折叠, 使用 <code>???+</code> 可以折叠, 但是默认展开。</p>
 </details>
 <p>我们使用的 mkdocs-material 提供的标准提示框有以下几种：</p>
@@ -3728,12 +3728,12 @@
 <ul>
 <li>
 <p>comment: 表示编者对内容的评论（类似于某些游戏的「Developer Commentary」），使用时请在标题处写上你的昵称，类似于这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>!!! comment "@taoky: 吐槽"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>!!! comment "@taoky: 吐槽" {#comment-title}
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    比如说……
 </code></pre></div>
-<div class="admonition comment">
-<p class="admonition-title">@taoky: 吐槽</p>
+<div class="admonition comment" id="comment-title">
+<p class="admonition-title">@taoky: 吐槽<a class="headerlink" href="#comment-title" title="Permanent link">&para;</a></p>
 <p>比如说……</p>
 </div>
 <p><strong>如果你需要使用第一人称（例如「我」「作者」）表达个人经历或观点，除非你是当前正在编辑页面的唯一作者，否则请将相应的段落使用 comment 提示框包裹</strong>。如果你不是唯一主要作者，请不要使用「作者」自称。</p>
@@ -3742,15 +3742,17 @@
 <p>lab: 教程不会详细说明，需要读者自己尝试的实验。</p>
 </li>
 </ul>
-<p>此外，有些时候我们需要给提示框添加 <code>id</code> 信息以便使用 <code>#id</code> 的方式引用，此时需要使用 <a href="https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/">pythonmdown 的扩展语法</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>/// tip | 一个例子
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    attrs: {id: example}
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>一些文本，不需要缩进。
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>另一段文本。
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>///
+<p>正文中的提示框应当像标题一样添加 ID，以便使用 <code>#id</code> 的方式引用。Linux 201 添加了相关的处理 hook，可以直接在传统提示框语法的标题后添加 <code>{#id}</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>!!! tip "一个例子" {#example}
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    一些文本。
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>??? note "可折叠的例子" {#collapsible-example}
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    一些默认折叠的文本。
 </code></pre></div>
+<p>设置 ID 后，提示框标题右侧会显示与章节标题相同的永久链接。<code>???+</code> 同样支持 ID。</p>
+<p>ID 应当是提示框标题含义的简洁英文翻译，并遵循<a href="#heading-ids">标题 ID</a>的命名规则。用于标记页面元信息的「主要作者」「本文编写中」「本文已完成」提示框不需要添加 ID。</p>
 <h3 id="heading-ids">为标题和小标题添加 ID<a class="headerlink" href="#heading-ids" title="Permanent link">&para;</a></h3>
 <p>由于文章篇目较长，使用时会经常遇到需要链接到文章某一段的情况。受限于 MkDocs 自动生成 Anchor ID 的功能（只支持英文字符），纯中文的标题会导致生成 <code>_1</code>, <code>_2</code> 这样的 ID。一方面这样的 ID 看起来不直观，另一方面每当标题发生增减时这些 ID 都会变，因此请为每个<strong>除了 h1 以外的标题</strong>手动添加一个有意义的 ID，方法如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gu">### 为标题和小标题添加 ID {#heading-ids}</span>
@@ -4005,7 +4007,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月30日 18:48:16 UTC">2026年6月30日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     

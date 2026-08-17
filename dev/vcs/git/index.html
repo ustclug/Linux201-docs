@@ -3741,13 +3741,13 @@
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>004d2057d06042847ca109edd9ca12be7cc255cb<span class="w"> </span>tree<span class="w"> </span><span class="m">409</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>（以下省略）
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">git 的文档</p>
+<div class="admonition tip" id="git-documentation">
+<p class="admonition-title">git 的文档<a class="headerlink" href="#git-documentation" title="Permanent link">&para;</a></p>
 <p>可以使用诸如 <code>man git-xxx</code> 的方式查看 <code>git xxx</code> 命令的文档，例如上面的 <code>git cat-file</code> 对应的是 <code>man git-cat-file</code>。</p>
 </div>
 <p>其中，<code>blob</code> 对象代表单个文件的内容，<code>tree</code> 对象代表目录结构，<code>commit</code> 对象代表提交，<code>tag</code> 对象代表标签。可以使用 <code>git cat-file -p &lt;SHA-1&gt;</code> 查看对象的内容。例如对于本仓库 hash 为 <code>74b5f6330f76d1e464deeff4d29935bba8d48c55</code> 的提交：</p>
-<div class="admonition tip">
-<p class="admonition-title">Commit ID 就是 Commit Object 的 SHA-1 值</p>
+<div class="admonition tip" id="commit-id-sha1">
+<p class="admonition-title">Commit ID 就是 Commit Object 的 SHA-1 值<a class="headerlink" href="#commit-id-sha1" title="Permanent link">&para;</a></p>
 </div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span>git<span class="w"> </span>cat-file<span class="w"> </span>-p<span class="w"> </span>74b5f6330f76d1e464deeff4d29935bba8d48c55
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>tree<span class="w"> </span>367ba031c357a771f2444048db71d109ec7e76d3
@@ -3767,13 +3767,13 @@
 </li>
 <li>提交的作者（<code>author</code>）与提交者（<code>committer</code>）</li>
 </ul>
-<div class="admonition tip">
-<p class="admonition-title">作者与提交者</p>
+<div class="admonition tip" id="author-committer">
+<p class="admonition-title">作者与提交者<a class="headerlink" href="#author-committer" title="Permanent link">&para;</a></p>
 <p>没错，commit 的作者和提交者可以是两个不同的人。一般来讲，作者是编写原始代码的人，提交者是实际执行 commit 操作的人。</p>
 <p>默认情况下，作者和提交者都会采用 <code>git config</code> 中的配置。使用 <code>git commit --author="Name &lt;email&gt;"</code> 可以手动指定作者，设置环境变量 <code>GIT_COMMITTER_NAME</code> 和 <code>GIT_COMMITTER_EMAIL</code> 可以手动指定提交者。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">其他角色</p>
+<div class="admonition tip" id="other-roles">
+<p class="admonition-title">其他角色<a class="headerlink" href="#other-roles" title="Permanent link">&para;</a></p>
 <p>除了作者与提交者以外，完成工作的可能还有其他角色，例如合作者、审阅者等。Git 本身并没有提供这些角色的概念，但是可以通过 commit message 来记录这些信息。对合作者角色，最常见、收到广泛支持的方式是使用 <code>Co-Authored-By</code> 标记信息，例如下面这个示例 commit message：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>modules: Add a new module
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
@@ -3819,16 +3819,16 @@
 <li><code>MERGE_HEAD</code>：指向正在合并的分支。</li>
 </ul>
 <p>其中最重要的是 <code>HEAD</code>。例如，<code>git checkout some-branch</code> 就会将 <code>HEAD</code> 指向 <code>refs/heads/some-branch</code>；而 <code>git reset --hard HEAD~1</code> 就会将 <code>HEAD</code> 指向 <code>HEAD~1</code>（同时更新工作目录下面的文件）。</p>
-<div class="admonition tip">
-<p class="admonition-title">HEAD~n</p>
+<div class="admonition tip" id="head-tilde-n">
+<p class="admonition-title">HEAD~n<a class="headerlink" href="#head-tilde-n" title="Permanent link">&para;</a></p>
 <p><code>HEAD~n</code> 表示 <code>HEAD</code> 的第 n 个父提交（前 n 个提交）。</p>
 </div>
-<div class="admonition question">
-<p class="admonition-title">比较差异</p>
+<div class="admonition question" id="compare-differences">
+<p class="admonition-title">比较差异<a class="headerlink" href="#compare-differences" title="Permanent link">&para;</a></p>
 <p>如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">refspec</p>
+<div class="admonition tip" id="refspec">
+<p class="admonition-title">refspec<a class="headerlink" href="#refspec" title="Permanent link">&para;</a></p>
 <p>你可能会在 <code>.git/config</code> 或者其他人写的 <code>git fetch</code> 等命令中看到以 <code>:</code> 分割的类似下面的东西：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>+refs/heads/*:refs/remotes/origin/*
 </code></pre></div>
@@ -3836,8 +3836,8 @@
 <p><code>git push</code> 同样也可以接受 refspec，默认的 <code>push.default</code> 配置项的值为 <code>simple</code>，表示将当前分支推送到与其同名的远程分支，相当于 <code>refs/heads/&lt;some-branch&gt;:refs/heads/&lt;some-branch&gt;</code>（把 <code>&lt;source&gt;</code> 的对象推送到远程的 <code>&lt;destination&gt;</code> 上）。</p>
 <p>更多信息可阅读 <a href="https://git-scm.com/book/en/v2/Git-Internals-The-Refspec">Git Book 的 10.5 节</a> 与 <a href="https://git-scm.com/docs/git-fetch">git-fetch(1)</a>。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title"><code>git reflog</code></p>
+<div class="admonition tip" id="git-reflog">
+<p class="admonition-title"><code>git reflog</code><a class="headerlink" href="#git-reflog" title="Permanent link">&para;</a></p>
 <p>Reflogs（Reference logs）记录了 git 操作中 ref 的更新历史，在需要从误操作恢复，或确认之前操作给 ref 带来的变化时非常有用。例子参考 <a href="https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Git%20Git!">Hackergame 2023 的 "Git? Git!" 一题</a>。</p>
 </div>
 <h3 id="git-remote">Remote<a class="headerlink" href="#git-remote" title="Permanent link">&para;</a></h3>
@@ -3853,8 +3853,8 @@
 <li><code>git remote set-url &lt;name&gt; &lt;url&gt;</code>：设置 remote 的 URL</li>
 </ul>
 <p>可以使用 <code>git fetch &lt;remote&gt;</code> 从远程仓库拉取最新的 commit——注意这个命令<strong>只会更新远程分支相关对象以及 ref</strong>。之后可以使用 <code>git merge</code> 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，<code>git pull origin master</code> 等价于 <code>git fetch origin master &amp;&amp; git merge origin/master</code>。</p>
-<div class="admonition question">
-<p class="admonition-title">让本地分支与远程一致</p>
+<div class="admonition question" id="sync-local-remote">
+<p class="admonition-title">让本地分支与远程一致<a class="headerlink" href="#sync-local-remote" title="Permanent link">&para;</a></p>
 <p>有的时候，我们的本地分支做了一些操作，与远程不一致，此时需要让本地分支与远程一致，那么怎么做呢？</p>
 <p>提示：如果希望让远程和本地一致，那么可以 <code>git push -f</code>，但是 <code>git pull -f</code> 是<strong>不正确的</strong>。你可能需要 <code>git fetch</code> 与 <code>git reset</code>。</p>
 </div>
@@ -3872,8 +3872,8 @@
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>no<span class="w"> </span>changes<span class="w"> </span>added<span class="w"> </span>to<span class="w"> </span>commit<span class="w"> </span><span class="o">(</span>use<span class="w"> </span><span class="s2">"git add"</span><span class="w"> </span>and/or<span class="w"> </span><span class="s2">"git commit -a"</span><span class="o">)</span>
 </code></pre></div>
 <p>这里的 "Changes not staged for commit" 指的是工作目录下的修改还没有被添加到 staging area（暂存区，也叫 index 或 cached）中。常用的诸如 <code>git add</code>、<code>git rm --cached</code> 等命令就是用来在 staging area 中添加、删除文件的。</p>
-<div class="admonition tip">
-<p class="admonition-title">Reset</p>
+<div class="admonition tip" id="reset">
+<p class="admonition-title">Reset<a class="headerlink" href="#reset" title="Permanent link">&para;</a></p>
 <p><code>git reset</code> 有三种不同的模式，分别会重置工作目录、暂存区和当前分支的不同部分：</p>
 <table>
 <thead>
@@ -3906,18 +3906,18 @@
 </tbody>
 </table>
 </div>
-<div class="admonition note">
-<p class="admonition-title">See also</p>
+<div class="admonition note" id="see-also">
+<p class="admonition-title">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></p>
 <p><a href="https://jvns.ca/blog/2023/11/01/confusing-git-terminology/">Confusing git terminology</a></p>
 </div>
 <h2 id="git-config-file">本地配置<a class="headerlink" href="#git-config-file" title="Permanent link">&para;</a></h2>
-<div class="admonition note">
-<p class="admonition-title">配置文件</p>
+<div class="admonition note" id="configuration-file">
+<p class="admonition-title">配置文件<a class="headerlink" href="#configuration-file" title="Permanent link">&para;</a></p>
 <p>Git 的配置文件一般存放于 <code>~/.gitconfig</code> 或 <code>~/.config/git/config</code> 中, 可以使用 <code>git config --global --edit</code> 快速打开配置文件, 你可以直接拷贝下面的内容。</p>
 <p>下文中会讲解部分配置的作用及注意事项。</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">缩进问题</p>
+<div class="admonition warning" id="indentation-issue">
+<p class="admonition-title">缩进问题<a class="headerlink" href="#indentation-issue" title="Permanent link">&para;</a></p>
 <p>下面的文档中，<code>.gitconfig</code> 的配置文件均使用 4 个空格而不是 Tab 进行缩进。</p>
 <p>为了方便阅读，Git 默认的配置文件使用 Tab 进行缩进，但 Git 在解析配置文件时并不强制要求使用缩进，也允许等号两边有灵活数量的空格。</p>
 </div>
@@ -3934,8 +3934,8 @@
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="na">push-with-lease</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">push --force-with-lease</span>
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">    </span><span class="na">uncommit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">reset --soft HEAD~1</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">部分别名介绍</p>
+<div class="admonition tip" id="alias-introduction">
+<p class="admonition-title">部分别名介绍<a class="headerlink" href="#alias-introduction" title="Permanent link">&para;</a></p>
 <p><code>git commit --amend</code> 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。详情可阅读 <a href="#git-commit-amend">Amend</a>。</p>
 <p><code>git push --force-with-lease</code> 在 force push 之前先检查 remote 的状态，如果 remote 有本地不存在的新提交，该命令就会阻止此次 force push 操作。</p>
 </div>
@@ -3963,8 +3963,8 @@
 </code></pre></div>
 <h2 id="git-gitignore">gitignore<a class="headerlink" href="#git-gitignore" title="Permanent link">&para;</a></h2>
 <p>GitHub 在 <a href="https://github.com/github/gitignore">这里</a> 提供了一些常见的 <code>.gitignore</code> 文件，对于较为复杂的项目，也可以使用 <a href="https://www.gitignore.io/">gitignore.io</a> 生成。</p>
-<div class="admonition note">
-<p class="admonition-title">仅本地的 gitignore</p>
+<div class="admonition note" id="local-gitignore">
+<p class="admonition-title">仅本地的 gitignore<a class="headerlink" href="#local-gitignore" title="Permanent link">&para;</a></p>
 <p>本地的 <code>.git/info/exclude</code> 起到与 <code>.gitignore</code> 相同的作用，但是不会被提交到版本库中，适用于以下的情况：</p>
 <ul>
 <li>项目不允许修改 <code>.gitignore</code></li>
@@ -3991,12 +3991,12 @@
 此时你可以使用 <code>git show</code> 来查看这个文件在 index 中的版本，并结合文件重定向来将其恢复到工作目录中。</p>
 <p>如果需要取消 Git 对这个文件的无条件忽略，可以使用 <code>git update-index --no-skip-worktree &lt;file&gt;</code>。
 文件的“忽略本地修改”状态可以通过 <code>git ls-files -v</code> 来查看，此类文件的状态字母为 S（被标记为 skip-worktree）。</p>
-<div class="admonition tip">
-<p class="admonition-title">Sparse checkout</p>
+<div class="admonition tip" id="sparse-checkout">
+<p class="admonition-title">Sparse checkout<a class="headerlink" href="#sparse-checkout" title="Permanent link">&para;</a></p>
 <p>截至 Git 2.52 仍然处在实验阶段的 sparse checkout 使用了相同的底层实现，即将 sparse checkout 目录以外的所有文件都标记为 skip-worktree，因此 sparse checkout 也会受到 skip-worktree 的影响。</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Assume unchanged</p>
+<div class="admonition note" id="assume-unchanged">
+<p class="admonition-title">Assume unchanged<a class="headerlink" href="#assume-unchanged" title="Permanent link">&para;</a></p>
 <p><code>git update-index --assume-unchanged &lt;file&gt;</code> 与 <code>--skip-worktree</code> 的作用类似，但它告诉 Git 假设这个文件在本地没有被修改，因此 Git 会在 index 发生更新的时候（例如上游发生修改或 <code>git reset --hard</code> 等操作）重置这个文件在工作目录中的版本，并同时重置 <code>assume-unchanged</code> 标志。
 因此，将文件标记为 <code>assume-unchanged</code> 的主要目的是为了提升性能，让 Git 跳过不必要的文件状态检查，而不是为了忽略本地修改。</p>
 <p>一种简单的理解方式是，<code>skip-worktree</code> 要求 Git 向你承诺不会修改工作目录中的版本，而 <code>assume-unchanged</code> 则是你向 Git 承诺相同的事情。</p>
@@ -4006,8 +4006,8 @@
 此时 Git 会使用当前 commit 的元信息进行一次新的 commit 操作，并且以当前的 staging area 的状态作为新的 commit 内容，允许你重写 commit message。
 如果你需要保留原来的 commit message，可以添加 <code>--no-edit</code> 参数来跳过编辑。</p>
 <p>默认情况下，Git 会使用当前 commit 的作者（author）信息和时间，以当前的提交者信息进行新的 commit 操作，如果需要修改作者信息，可以使用 <code>--author</code> 和 <code>--date</code> 参数来指定新的作者和作者时间，但提交者信息和时间只能通过环境变量 <code>GIT_COMMITTER_NAME</code>、<code>GIT_COMMITTER_EMAIL</code> 和 <code>GIT_COMMITTER_DATE</code> 来修改。</p>
-<div class="admonition example">
-<p class="admonition-title">No-op <code>git commit --amend</code></p>
+<div class="admonition example" id="no-op-git-commit-amend">
+<p class="admonition-title">No-op <code>git commit --amend</code><a class="headerlink" href="#no-op-git-commit-amend" title="Permanent link">&para;</a></p>
 <p>在 index 没有发生改变的情况下，以下命令将会创建一个新的 commit，且 SHA-1 值与原来的 commit 相同：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">GIT_COMMITTER_DATE</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>log<span class="w"> </span>-1<span class="w"> </span>--pretty<span class="o">=</span>tformat:%cD<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nv">GIT_COMMITTER_NAME</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>log<span class="w"> </span>-1<span class="w"> </span>--pretty<span class="o">=</span>tformat:%cn<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
@@ -4018,8 +4018,8 @@
 <h2 id="git-hooks">Git Hook<a class="headerlink" href="#git-hooks" title="Permanent link">&para;</a></h2>
 <p>对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 Git Hook 来自动化。</p>
 <p>一个较为成熟的框架是 <a href="https://pre-commit.com/">pre-commit</a>，它支持多种语言和工具，例如 <code>black</code>、<code>flake8</code>、<code>eslint</code> 等，<a href="https://github.com/pre-commit/pre-commit-hooks">这里</a> 提供了一些常用的 hook.</p>
-<div class="admonition note">
-<p class="admonition-title">如果只需要在 commit 后运行一段脚本</p>
+<div class="admonition note" id="run-script-on-commit">
+<p class="admonition-title">如果只需要在 commit 后运行一段脚本<a class="headerlink" href="#run-script-on-commit" title="Permanent link">&para;</a></p>
 <p>可以按照如下方法进行配置：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># 在项目根目录下创建 .git/hooks/post-commit</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>touch<span class="w"> </span>.git/hooks/__hook_name__
@@ -4042,8 +4042,8 @@
 </ul>
 <p>在网络上常见的部分 clone 方式为 <code>--depth=1</code>，但是请注意：<strong><code>--depth=1</code> 在后续更新时，会给服务器和网络带宽带来非常大的负担，因此建议仅在用完即删的场景下使用</strong>。因为 shallow clone 没有存储历史信息，在某些情况下，服务器需要索引全部历史信息，并且这一过程难以优化。一个知名的例子是：<a href="https://github.com/Homebrew/brew/pull/9383">由于 shallow clone 给服务器带来的压力过大，GitHub 勒令要求 Homebrew 不允许 shallow clone</a>。</p>
 <p>有关更多内容，可阅读 <a href="https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/">Get up to speed with partial clone and shallow clone</a>。</p>
-<div class="admonition tip">
-<p class="admonition-title">将部分 clone 的仓库恢复为完整 clone</p>
+<div class="admonition tip" id="restore-full-clone">
+<p class="admonition-title">将部分 clone 的仓库恢复为完整 clone<a class="headerlink" href="#restore-full-clone" title="Permanent link">&para;</a></p>
 <p>对使用 <code>--filter</code> 参数进行的部分 clone，git 会设置 <code>remote.origin.partialclonefilter</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>git<span class="w"> </span>config<span class="w"> </span>remote.origin.partialclonefilter
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">tree:0</span>
@@ -4108,13 +4108,13 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">[pull]</span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">    </span><span class="na">ff</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">only</span>
 </code></pre></div>
-<div class="admonition question">
-<p class="admonition-title">更新一个有修改的本地仓库</p>
+<div class="admonition question" id="update-local-repo-with-changes">
+<p class="admonition-title">更新一个有修改的本地仓库<a class="headerlink" href="#update-local-repo-with-changes" title="Permanent link">&para;</a></p>
 <p>以下是一个现实的例子：某个代码 git 仓库（存储在 GitHub 上）的 <code>master</code> 分支部署在一台服务器上，并且在该服务器上不仅做了一些额外的 commit 用来记录一些服务器相关的配置，还有一些没有被 stage 的文件。现在该代码仓库在 GitHub 上的 <code>master</code> 分支有一些新的更新 commit（例如更新了依赖，修复了 bug 等），那么如何将这些 commit 部署在该服务器上呢？</p>
 <p>提示：你可能会需要 <code>git fetch</code>、<code>git stash</code> 与 <code>git rebase</code>。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">交互式 rebase</p>
+<div class="admonition tip" id="interactive-rebase">
+<p class="admonition-title">交互式 rebase<a class="headerlink" href="#interactive-rebase" title="Permanent link">&para;</a></p>
 <p><code>git rebase</code> 另一个重要的功能是修改 commit 历史记录。使用 <code>git rebase -i HEAD~n</code> 来修改历史以来的 n 个 commit。在输入命令后，git 会打开编辑器，将 commit 从旧到新排序，显示类似如下的内容：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>pick b9c96cc Install XDG Desktop Portal
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>pick d20fcf1 Set 2048m mem when running qemu
@@ -4158,8 +4158,8 @@
 </code></pre></div>
 <p>交互式 rebase 的其他用法请参考相关文档。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title">解决冲突</p>
+<div class="admonition tip" id="resolve-conflicts">
+<p class="admonition-title">解决冲突<a class="headerlink" href="#resolve-conflicts" title="Permanent link">&para;</a></p>
 <p>在合并其他人的分支时，如果你和其他人的分支用不同的方式修改了相同的部分，那么就会出现冲突。当出现 git 无法处理的冲突时，合并会停在出现冲突的 commit 上，并且提示你解决冲突。出现冲突的文件类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>This is your own changes.
@@ -4176,8 +4176,8 @@
 </ul>
 <p>可以使用 pre-commit 的 <a href="https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#check-merge-conflict">pre-commit-hooks</a> 来避免不小心把未解决的冲突 commit 到仓库里。</p>
 </div>
-<div class="admonition tip">
-<p class="admonition-title"><code>git commit --fixup</code></p>
+<div class="admonition tip" id="git-commit--fixup">
+<p class="admonition-title"><code>git commit --fixup</code><a class="headerlink" href="#git-commit--fixup" title="Permanent link">&para;</a></p>
 <p>git 提供了 fixup 功能，可以直接向指定的 commit 添加修改，并且在 rebase 时自动合并。一个常见的场景是：在编写 PR 时需要保证每个 commit 有意义、功能完整，同时需要向 PR 里之前的 commit 添加修复，此时使用 fixup 功能会很方便。方法如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># 先 stage 修改，然后：</span>
 <a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>git<span class="w"> </span>commit<span class="w"> </span>--fixup<span class="w"> </span>&lt;commit&gt;
@@ -4187,8 +4187,8 @@
 <a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>git<span class="w"> </span>rebase<span class="w"> </span>-i<span class="w"> </span>--autosquash<span class="w"> </span>&lt;base&gt;
 </code></pre></div>
 </div>
-<div class="admonition tip">
-<p class="admonition-title"><code>git history</code></p>
+<div class="admonition tip" id="git-history">
+<p class="admonition-title"><code>git history</code><a class="headerlink" href="#git-history" title="Permanent link">&para;</a></p>
 <p>Git 2.54（2026/4/20 发布）添加了两个新命令，旨在简化修改历史 commit 的操作：</p>
 <ul>
 <li><code>git history reword &lt;commit&gt;</code> 允许重写指定 commit 的 message。</li>
@@ -4208,8 +4208,8 @@
 <a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="go">git bisect bad &lt;new-commit&gt;</span>
 </code></pre></div>
 <p>之后 <code>git bisect</code> 就会帮助你做二分搜索，跳转到两者中间的 commit 以供测试，之后提供 <code>git bisect good</code> 或者 <code>git bisect bad</code> 引导 git 搜索，最终找到对应的 commit。</p>
-<div class="admonition question">
-<p class="admonition-title">good or bad?</p>
+<div class="admonition question" id="good-or-bad">
+<p class="admonition-title">good or bad?<a class="headerlink" href="#good-or-bad" title="Permanent link">&para;</a></p>
 <p>有时候我们会需要确认哪个 commit <strong>修复</strong>（而不是导致）了问题，但是 <code>git bisect</code> 默认 good 需要早于 bad，直接 <code>git bisect start</code> 的话很容易误操作。请阅读 <a href="https://git-scm.com/docs/git-bisect">git-bisect(1)</a> 了解应该如何处理此类情况。</p>
 </div>
 <h2 id="git-worktree">Worktree<a class="headerlink" href="#git-worktree" title="Permanent link">&para;</a></h2>
@@ -4231,8 +4231,8 @@
 <a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="c1"># 将已有的 dev2 分支 checkout 到 /tmp/201-dev2 目录下</span>
 <a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a>git<span class="w"> </span>worktree<span class="w"> </span>add<span class="w"> </span>/tmp/201-dev2<span class="w"> </span>dev2
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">新的 worktree 目录结构</p>
+<div class="admonition note" id="new-worktree-directory-structure">
+<p class="admonition-title">新的 worktree 目录结构<a class="headerlink" href="#new-worktree-directory-structure" title="Permanent link">&para;</a></p>
 <p>在新的 worktree 目录下，并不会有完整的 <code>.git</code> 目录，而是一个 <code>.git</code> 文件，内容类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>gitdir: /home/username/Projects/Linux201-docs/.git/worktrees/201-dev1
 </code></pre></div>
@@ -4243,8 +4243,8 @@
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="go">/tmp/201-dev1                          abf5b5c8 [dev1] prunable</span>
 </code></pre></div>
 <p>需要使用 <code>git worktree prune</code> 来清理这些已经不存在的 worktree。</p>
-<div class="admonition warning">
-<p class="admonition-title">worktree 与 submodule 的兼容性</p>
+<div class="admonition warning" id="worktree-and-submodule-compatibility">
+<p class="admonition-title">worktree 与 submodule 的兼容性<a class="headerlink" href="#worktree-and-submodule-compatibility" title="Permanent link">&para;</a></p>
 <p>目前 worktree 对 submodule 的支持还不完善，这一点在 <a href="https://git-scm.com/docs/git-worktree">git-worktree(1)</a> 中也有提到：</p>
 <blockquote>
 <p>... and the support for submodules is incomplete.</p>
@@ -4253,8 +4253,8 @@
 </div>
 <h2 id="git-commit-message">Commit Message Convention<a class="headerlink" href="#git-commit-message" title="Permanent link">&para;</a></h2>
 <p>对于多人协作的项目，良好的 commit message 是非常重要的。胡乱使用诸如 <code>update</code>、<code>fix</code>、<code>change</code> 等无意义的 Commit Message，会使得项目的历史记录变得难以理解，也会给后续的维护带来困难。</p>
-<div class="admonition note">
-<p class="admonition-title">Conventional Commits</p>
+<div class="admonition note" id="conventional-commits">
+<p class="admonition-title">Conventional Commits<a class="headerlink" href="#conventional-commits" title="Permanent link">&para;</a></p>
 <p>一种常见的 Commit Message 格式是 <a href="https://www.conventionalcommits.org/">Conventional Commits</a>，它的格式是：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>&lt;type&gt;[optional scope]: &lt;description&gt;
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>
@@ -4272,8 +4272,8 @@
 </ul>
 <p>值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的<a href="https://github.com/ustclug/Linux201-docs">仓库</a>是一个文档类的项目，一般情况下可以直接省略掉 <code>type</code>, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 <code>dev/git: fix typo</code>.</p>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Commit Message 模板</p>
+<div class="admonition note" id="commit-message-template">
+<p class="admonition-title">Commit Message 模板<a class="headerlink" href="#commit-message-template" title="Permanent link">&para;</a></p>
 <p>即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 <a href="https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file">这里的例子</a> 添加到 <code>~/.gitmessage</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="c1"># ~/.gitconfig</span>
 <a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="k">[commit]</span>
@@ -4336,7 +4336,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年6月29日 20:53:30 UTC">2026年6月29日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
   </span>
 
     
