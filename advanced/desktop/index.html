@@ -5222,12 +5222,21 @@
 <p class="admonition-title">调整延迟</p>
 <p>PulseAudio 和 PipeWire 都支持应用程序调整延迟，在需要较低延迟的场景，或者出现 xrun 需要提高延迟的情况下都很有用。</p>
 <p>使用 PulseAudio 的应用（链接了 libpulse）可以通过设置环境变量 <a href="https://gitlab.freedesktop.org/pulseaudio/pulseaudio/-/blob/0cc36279ec993680bccad6b907ba15de97b55c4d/src/pulse/stream.c#L1003"><code>PULSE_LATENCY_MSEC</code></a> 来指定自己希望达到的延迟。在这个环境变量存在的情况下，libpulse 在创建音频流时，会根据 PulseAudio 的<a href="https://www.freedesktop.org/wiki/Software/PulseAudio/Documentation/Developer/Clients/LatencyControl/">延迟控制方式</a>设置相关的 flag 与 buffer 属性（如果应用自行进行延迟控制，相关的设置可能会被覆盖），直接指定希望达到的延迟目标，发送给音频服务器。</p>
-<p>PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对<a href="https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485">写作时最新的 pipewire-pulse</a>，延迟目标（tlength）需要分给两部分：计算一次图的时间（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 tlength / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (tlength - 2 * minreq) / 2，剩下的部分就留给 buffer。因此对下述例子：</p>
+<p>PipeWire 的 PulseAudio 兼容实现在不同版本下，对延迟要求可能有不同的处理。对<a href="https://gitlab.freedesktop.org/pipewire/pipewire/-/blob/718675fc4ed158b585cb2c86b0dc5689e1041eb0/src/modules/module-protocol-pulse/pulse-server.c#L485">写作时最新的 pipewire-pulse</a>，延迟目标（初始的 tlength，记为 latency）需要分给两部分：图计算一个周期的时长（quantum）和 pipewire-pulse 内置的 buffer 大小对应的时间。不考虑最小限制的情况下，pipewire-pulse 会将 latency / 4 作为每次客户端的数据最小要求的时间（minreq），然后 quantum 时间 = (latency - 2 * minreq) / 2，剩下的部分就留给 buffer（实际的 tlength）。因此对下述例子：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="c1"># paplay 会连接 PulseAudio 服务端播放音频</span>
 <a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="nv">PULSE_LATENCY_MSEC</span><span class="o">=</span><span class="m">25</span><span class="w"> </span>paplay<span class="w"> </span>example.ogg
 </code></pre></div>
 <p>假设采样率为 48kHz，此时可以使用 <code>pw-top</code> 看到 quantum = 300，因为 minreq = 25ms / 4 = 6.25ms，quantum 时间 = (25ms - 2 * 6.25ms) / 2 = 6.25ms，乘以采样率就能得到这个结果。</p>
-<p>(TODO)</p>
+<p>而在录音时，给定的延迟就直接成为累计对应长度录音数据后向客户端发送的阈值（fragsize），在没有其他限制条件下也是对应的 quantum。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a><span class="c1"># parecord，同样连接 PulseAudio 服务端录制音频</span>
+<a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a><span class="nv">PULSE_LATENCY_MSEC</span><span class="o">=</span><span class="m">25</span><span class="w"> </span>parecord<span class="w"> </span>example.pcm
+</code></pre></div>
+<p>对上面的例子，如果采样率是 44.1kHz（<code>parecord</code> 默认值），那么 quantum 就会是 44100Hz * 25ms ~= 1102。</p>
+<p>以上参数（frag、req、tlength、quantum）的设置可以通过配置修改，参见 <a href="https://docs.pipewire.org/page_module_protocol_pulse.html">PipeWire 对 Protocol Pulse 的文档</a>。</p>
+<p>对直接连接 PipeWire 的应用来说，<code>PIPEWIRE_LATENCY</code> 环境变量则可以控制应用对应节点需要的 quantum 与采样率：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="nv">PIPEWIRE_LATENCY</span><span class="o">=</span><span class="m">128</span>/48000<span class="w"> </span>pw-play<span class="w"> </span>example.ogg
+</code></pre></div>
+<p>相关设置也可以在 <a href="https://docs.pipewire.org/page_man_pipewire_conf_5.html">pipewire.conf</a>（<code>default.clock</code>）修改。</p>
 </div>
 <p>此外，相比 PulseAudio，PipeWire 在安全性上也有所改善。(TODO)</p>
 <p>(TODO)</p>
@@ -5286,7 +5295,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月4日 21:05:22 UTC">2026年8月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月16日 21:34:58 UTC">2026年8月16日</span>
   </span>
 
     
