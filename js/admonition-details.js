@@ -34,28 +34,12 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  const permalink = event.target.closest("a.headerlink");
   const interactive = event.target.closest(
     "a, button, input, select, textarea"
   );
 
-  if (interactive && interactive !== permalink) {
+  if (interactive) {
     return;
-  }
-
-  if (permalink) {
-    if (
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    details.open = !details.open;
   }
 
   const url = new URL(window.location.href);
