@@ -3962,7 +3962,7 @@ U --&gt; F(scope)</code></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager<span class="w"> </span>caddy.service
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">  NAME                                         DESCRIPTION                                  EXPOSURE</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">✗ RemoveIPC=                                   Service user may leave SysV IPC objects aro…      0.1</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">✗ RootDirectory=/RootImage=                    Service runs within the host&#39;s root directo…      0.1</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">✗ RootDirectory=/RootImage=                    Service runs within the host's root directo…      0.1</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">✓ User=/DynamicUser=                           Service runs under a static non-root user i…</span>
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">✗ CapabilityBoundingSet=~CAP_SYS_TIME          Service processes may change the system clo…      0.2</span>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">（以下省略）</span>
@@ -4080,7 +4080,7 @@ U --&gt; F(scope)</code></pre>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>ssh<span class="w"> </span>user@vsock/3
 </code></pre></div>
 <p>当然也可以用 <code>socat</code> 来做：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ssh<span class="w"> </span>-o<span class="w"> </span><span class="nv">ProxyCommand</span><span class="o">=</span><span class="s2">&quot;socat - VSOCK-CONNECT:3:22&quot;</span><span class="w"> </span>user@anythingyoulike
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ssh<span class="w"> </span>-o<span class="w"> </span><span class="nv">ProxyCommand</span><span class="o">=</span><span class="s2">"socat - VSOCK-CONNECT:3:22"</span><span class="w"> </span>user@anythingyoulike
 </code></pre></div>
 </div>
 <h3 id="timers">定时任务<a class="headerlink" href="#timers" title="Permanent link">&para;</a></h3>
@@ -4170,7 +4170,7 @@ U --&gt; F(scope)</code></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>nohup<span class="w"> </span>./calc<span class="w"> </span>&gt;<span class="w"> </span>result<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>err<span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
 <p>在开启 lingering 的情况下，对应的 <code>systemd-run</code> 可以是：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--service-type<span class="o">=</span><span class="nb">exec</span><span class="w"> </span>--unit<span class="o">=</span>mycalc<span class="w"> </span>--collect<span class="w"> </span>--same-dir<span class="w"> </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;./calc &gt; result 2&gt; err&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--service-type<span class="o">=</span><span class="nb">exec</span><span class="w"> </span>--unit<span class="o">=</span>mycalc<span class="w"> </span>--collect<span class="w"> </span>--same-dir<span class="w"> </span>/bin/sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'./calc &gt; result 2&gt; err'</span>
 </code></pre></div>
 <p>其中 <code>--same-dir</code> 设置了任务的 cwd 与当前所处目录相同。<code>--service-type=exec</code> 是可选但推荐的，参见 <a href="#service-type">Service Type</a> 一节。</p>
 <p>如果允许让 journald 存储结果的话，可以不需要使用 <code>sh -c</code> 的方式使用：</p>
@@ -4272,7 +4272,7 @@ U --&gt; F(scope)</code></pre>
 </code></pre></div>
 <p>而在容器场景中，容器运行时一般不会对 <code>/dev/log</code> 作特殊处理，因此如果容器内执行的程序使用了 <code>syslog()</code> 记录日志，那么就需要将 <code>/dev/log</code> 和指向的 socket 都 bind mount 进入容器，或者在容器中跑 rsyslog 或 syslog-ng。</p>
 <p>对脚本程序，可以使用 <code>logger</code> 记录日志：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>logger<span class="w"> </span><span class="s2">&quot;hello, world!&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>logger<span class="w"> </span><span class="s2">"hello, world!"</span>
 </code></pre></div>
 <p>libsystemd 也提供了 <code>sd_journal</code> 系列函数，允许记录结构化日志等操作。</p>
 </div>
@@ -4368,52 +4368,52 @@ U --&gt; F(scope)</code></pre>
 <p>TLS 传输日志一般使用 TCP 6514 端口（传统非加密的 syslog 传输使用 TCP 或 UDP 的 514 端口）。两端都需要运行 rsyslog。这里使用 GnuTLS 模块（需要安装 <code>rsyslog-gnutls</code> 包）。</p>
 <p>服务端：</p>
 <div class="highlight"><span class="filename">/etc/rsyslog.d/server.conf</span><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>global(
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>    DefaultNetstreamDriver=&quot;gtls&quot;
-<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;
-<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    DefaultNetstreamDriverCertFile=&quot;/path/to/server.crt&quot;
-<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    DefaultNetstreamDriverKeyFile=&quot;/path/to/server.key&quot;
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a>    DefaultNetstreamDriver="gtls"
+<a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a>    DefaultNetstreamDriverCAFile="/path/to/ca.crt"
+<a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>    DefaultNetstreamDriverCertFile="/path/to/server.crt"
+<a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a>    DefaultNetstreamDriverKeyFile="/path/to/server.key"
 <a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a>)
 <a id="__codelineno-33-7" name="__codelineno-33-7" href="#__codelineno-33-7"></a>
 <a id="__codelineno-33-8" name="__codelineno-33-8" href="#__codelineno-33-8"></a>module(
-<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>    load=&quot;imtcp&quot;
-<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a>    StreamDriver.Name=&quot;gtls&quot;
-<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>    StreamDriver.Mode=&quot;1&quot;
+<a id="__codelineno-33-9" name="__codelineno-33-9" href="#__codelineno-33-9"></a>    load="imtcp"
+<a id="__codelineno-33-10" name="__codelineno-33-10" href="#__codelineno-33-10"></a>    StreamDriver.Name="gtls"
+<a id="__codelineno-33-11" name="__codelineno-33-11" href="#__codelineno-33-11"></a>    StreamDriver.Mode="1"
 <a id="__codelineno-33-12" name="__codelineno-33-12" href="#__codelineno-33-12"></a>    # anon -- 不校验客户端
-<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>    StreamDriver.Authmode=&quot;anon&quot;
+<a id="__codelineno-33-13" name="__codelineno-33-13" href="#__codelineno-33-13"></a>    StreamDriver.Authmode="anon"
 <a id="__codelineno-33-14" name="__codelineno-33-14" href="#__codelineno-33-14"></a>)
 <a id="__codelineno-33-15" name="__codelineno-33-15" href="#__codelineno-33-15"></a>
 <a id="__codelineno-33-16" name="__codelineno-33-16" href="#__codelineno-33-16"></a>input(
-<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>    type=&quot;imtcp&quot;
-<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>    port=&quot;6514&quot;
+<a id="__codelineno-33-17" name="__codelineno-33-17" href="#__codelineno-33-17"></a>    type="imtcp"
+<a id="__codelineno-33-18" name="__codelineno-33-18" href="#__codelineno-33-18"></a>    port="6514"
 <a id="__codelineno-33-19" name="__codelineno-33-19" href="#__codelineno-33-19"></a>)
 <a id="__codelineno-33-20" name="__codelineno-33-20" href="#__codelineno-33-20"></a>
 <a id="__codelineno-33-21" name="__codelineno-33-21" href="#__codelineno-33-21"></a># 设置按照主机名分开的模板
-<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>template(name=&quot;PerHost&quot; type=&quot;string&quot;
-<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>    string=&quot;/var/log/remote/%hostname%.log&quot;
+<a id="__codelineno-33-22" name="__codelineno-33-22" href="#__codelineno-33-22"></a>template(name="PerHost" type="string"
+<a id="__codelineno-33-23" name="__codelineno-33-23" href="#__codelineno-33-23"></a>    string="/var/log/remote/%hostname%.log"
 <a id="__codelineno-33-24" name="__codelineno-33-24" href="#__codelineno-33-24"></a>)
 <a id="__codelineno-33-25" name="__codelineno-33-25" href="#__codelineno-33-25"></a>
-<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a>if ($inputname == &quot;imtcp&quot;) then {
+<a id="__codelineno-33-26" name="__codelineno-33-26" href="#__codelineno-33-26"></a>if ($inputname == "imtcp") then {
 <a id="__codelineno-33-27" name="__codelineno-33-27" href="#__codelineno-33-27"></a>    action(
-<a id="__codelineno-33-28" name="__codelineno-33-28" href="#__codelineno-33-28"></a>        type=&quot;omfile&quot;
-<a id="__codelineno-33-29" name="__codelineno-33-29" href="#__codelineno-33-29"></a>        dynaFile=&quot;PerHost&quot;
+<a id="__codelineno-33-28" name="__codelineno-33-28" href="#__codelineno-33-28"></a>        type="omfile"
+<a id="__codelineno-33-29" name="__codelineno-33-29" href="#__codelineno-33-29"></a>        dynaFile="PerHost"
 <a id="__codelineno-33-30" name="__codelineno-33-30" href="#__codelineno-33-30"></a>    )
 <a id="__codelineno-33-31" name="__codelineno-33-31" href="#__codelineno-33-31"></a>    # 防止远程日志再被写入本地默认的日志文件
 <a id="__codelineno-33-32" name="__codelineno-33-32" href="#__codelineno-33-32"></a>    stop
 <a id="__codelineno-33-33" name="__codelineno-33-33" href="#__codelineno-33-33"></a>}
 </code></pre></div>
 <p>客户端：</p>
-<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>global(DefaultNetstreamDriverCAFile=&quot;/path/to/ca.crt&quot;)
+<div class="highlight"><span class="filename">/etc/rsyslog.d/client.conf</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>global(DefaultNetstreamDriverCAFile="/path/to/ca.crt")
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>action(
-<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>    type=&quot;omfwd&quot;
-<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>    protocol=&quot;tcp&quot;
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>    target=&quot;logserver.example.com&quot;  # 或者 IP 地址
-<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>    port=&quot;6514&quot;
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>    StreamDriver=&quot;gtls&quot;
-<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>    StreamDriverMode=&quot;1&quot;
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>    type="omfwd"
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>    protocol="tcp"
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>    target="logserver.example.com"  # 或者 IP 地址
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>    port="6514"
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>    StreamDriver="gtls"
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>    StreamDriverMode="1"
 <a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>    # 验证远程证书的名称
-<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>    StreamDriverAuthMode=&quot;x509/name&quot;
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    StreamDriverPermittedPeers=&quot;logserver.example.com&quot;
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>    StreamDriverAuthMode="x509/name"
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    StreamDriverPermittedPeers="logserver.example.com"
 <a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>)
 </code></pre></div>
 <h2 id="logind">登录管理器<a class="headerlink" href="#logind" title="Permanent link">&para;</a></h2>
@@ -4446,7 +4446,7 @@ U --&gt; F(scope)</code></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>└─user.slice
 <a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  └─user-1000.slice
 <a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>    ├─session-23.scope
-<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>    │ ├─717950 &quot;gdm-session-worker [pam/gdm-password]&quot;
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>    │ ├─717950 "gdm-session-worker [pam/gdm-password]"
 <a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>    │ ├─718687 /usr/lib/gdm-wayland-session /usr/bin/gnome-session
 <a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a>    │ └─718700 /usr/lib/gnome-session-init-worker gnome
 <a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a>    └─user@1000.service

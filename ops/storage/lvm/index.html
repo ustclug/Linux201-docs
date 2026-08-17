@@ -3494,11 +3494,11 @@
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv3.img
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">/dev/loop2</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvcreate<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2<span class="w">  </span><span class="c1"># 创建物理卷</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">  Physical volume &quot;/dev/loop0&quot; successfully created.</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">  Physical volume &quot;/dev/loop1&quot; successfully created.</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">  Physical volume &quot;/dev/loop2&quot; successfully created.</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">  Physical volume "/dev/loop0" successfully created.</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="go">  Physical volume "/dev/loop1" successfully created.</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">  Physical volume "/dev/loop2" successfully created.</span>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgcreate<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1<span class="w"> </span>/dev/loop2<span class="w">  </span><span class="c1"># 创建卷组</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully created</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="go">  Volume group "vg201-test" successfully created</span>
 <a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvs<span class="w">  </span><span class="c1"># 查看物理卷信息</span>
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="go">  PV         VG         Fmt  Attr PSize    PFree   </span>
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="go">  /dev/loop0 vg201-test lvm2 a--  1020.00m 1020.00m</span>
@@ -3508,7 +3508,7 @@
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="go">  VG         #PV #LV #SN Attr   VSize  VFree </span>
 <a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="go">  vg201-test   3   0   0 wz--n- &lt;2.99g &lt;2.99g</span>
 <a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvol0<span class="w"> </span>-L<span class="w"> </span><span class="m">2</span>.5G<span class="w"> </span>vg201-test<span class="w">  </span><span class="c1"># 创建一个 2.5G 的逻辑卷</span>
-<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">  Logical volume &quot;lvol0&quot; created.</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="go">  Logical volume "lvol0" created.</span>
 <a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w">  </span><span class="c1"># 查看逻辑卷信息</span>
 <a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="go">  LV    VG         Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
 <a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="go">  lvol0 vg201-test -wi-a----- 2.50g</span>
@@ -3630,19 +3630,19 @@
 以下展示了 RAID0, 1, 5 的创建方式：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvremove<span class="w"> </span>vg201-test/lvol0<span class="w">  </span><span class="c1"># 删除刚才的 LV，腾出一些空间</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvol0? [y/n]: y</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  Logical volume &quot;lvol0&quot; successfully removed.</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  Logical volume "lvol0" successfully removed.</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="gp">$ </span><span class="c1"># RAID 0 (striped)。--stripes 参数指定了条带的数量，正常情况下和盘数量一致</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid0<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>striped<span class="w"> </span>--stripes<span class="w"> </span><span class="m">3</span><span class="w"> </span>vg201-test
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">  Using default stripesize 64.00 KiB.</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">  Logical volume &quot;lvraid0&quot; created.</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="go">  Logical volume "lvraid0" created.</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="gp">$ </span><span class="c1"># RAID 1。--mirrors 参数指定了副本数量（不含本体），所以是盘数量减一</span>
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid1<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.5G<span class="w"> </span>--type<span class="w"> </span>raid1<span class="w"> </span>--mirrors<span class="w"> </span><span class="m">2</span><span class="w"> </span>vg201-test
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">  Logical volume &quot;lvraid1&quot; created.</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="go">  Logical volume "lvraid1" created.</span>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="gp">$ </span><span class="c1"># 因为只有 3 块盘，这里展示 RAID 5。--stripes 参数不包含额外的验证盘。</span>
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvraid5<span class="w"> </span>-L<span class="w"> </span><span class="m">0</span>.2G<span class="w"> </span>--type<span class="w"> </span>raid5<span class="w"> </span>--stripes<span class="w"> </span><span class="m">2</span><span class="w"> </span>vg201-test
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="go">  Using default stripesize 64.00 KiB.</span>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="go">  Rounding up size to full physical extent 208.00 MiB</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="go">  Logical volume &quot;lvraid5&quot; created.</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="go">  Logical volume "lvraid5" created.</span>
 <a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs
 <a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="go">  LV      VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
 <a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="go">  lvraid0 vg201-test -wi-a----- 516.00m                                                    </span>
@@ -3760,7 +3760,7 @@
 <p>正常情况下，<code>lvs</code> 返回的 RAID 1/5/6 设备的 "Cpy%Sync" 应该是 100.00，表示数据已经同步到所有盘上。
 并且 <code>health_status</code> 属性应该为空。这里模拟强制删除一块盘的情况：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-an<span class="w"> </span>vg201-test
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">  0 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">  0 logical volume(s) in volume group "vg201-test" now active</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-D
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gp">$ </span><span class="c1"># 接下来只挂载两块盘</span>
 <a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv1.img
@@ -3768,19 +3768,19 @@
 <a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>pv2.img
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="go">/dev/loop1</span>
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvs
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="go">  PV         VG         Fmt  Attr PSize    PFree  </span>
 <a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="go">  /dev/loop0 vg201-test lvm2 a--  1020.00m 228.00m</span>
 <a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="go">  /dev/loop1 vg201-test lvm2 a--  1020.00m 228.00m</span>
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="go">  [unknown]  vg201-test lvm2 a-m  1020.00m 224.00m</span>
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test
-<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
-<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="go">  Refusing activation of partial LV vg201-test/lvraid0.  Use &#39;--activationmode partial&#39; to override.</span>
-<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="go">  2 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="go">  Refusing activation of partial LV vg201-test/lvraid0.  Use '--activationmode partial' to override.</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="go">  2 logical volume(s) in volume group "vg201-test" now active</span>
 <a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a<span class="w"> </span>-o<span class="w"> </span>name,copy_percent,health_status,devices<span class="w"> </span>vg201-test
-<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
 <a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="go">  LV                 Cpy%Sync Health          Devices                                                    </span>
 <a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="go">  lvraid0                     partial         /dev/loop0(0),/dev/loop1(0),[unknown](0)                   </span>
@@ -3808,31 +3808,31 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>1G<span class="w"> </span>pv4.img
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>/dev/loop3<span class="w"> </span>pv4.img
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvcreate<span class="w"> </span>/dev/loop3
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">  Physical volume &quot;/dev/loop3&quot; successfully created.</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="go">  Physical volume "/dev/loop3" successfully created.</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgextend<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop3
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to /dev/loop2).</span>
-<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
-<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully extended</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="go">  Volume group "vg201-test" successfully extended</span>
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--repair<span class="w"> </span>vg201-test/lvraid1
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).</span>
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="go">Attempt to replace failed RAID images (requires full device resync)? [y/n]: y</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="go">  Faulty devices in vg201-test/lvraid1 successfully replaced.</span>
 <a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--repair<span class="w"> </span>vg201-test/lvraid5
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).</span>
-<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="go">Attempt to replace failed RAID images (requires full device resync)? [y/n]: y</span>
-<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
-<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="go">  Faulty devices in vg201-test/lvraid5 successfully replaced.</span>
 <a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a<span class="w"> </span>-o<span class="w"> </span>name,copy_percent,health_status,devices<span class="w"> </span>vg201-test
-<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="go">  WARNING: Couldn&#39;t find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="go">  WARNING: Couldn't find device with uuid AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="go">  WARNING: VG vg201-test is missing PV AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ (last written to [unknown]).</span>
 <a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="go">  LV                 Cpy%Sync Health          Devices                                                    </span>
 <a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="go">  lvraid0                     partial         /dev/loop0(0),/dev/loop1(0),[unknown](0)                   </span>
@@ -3874,7 +3874,7 @@
 <a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="go">  WARNING: VG vg201-test was missing PV /dev/loop2 AQj8ej-EKps-ud3h-0KkP-wDxo-ZagG-ZJIdnZ.</span>
 <a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="go">  WARNING: VG vg201-test was previously updated while PV /dev/loop2 was missing.</span>
 <a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="go">  WARNING: updating old metadata to 44 on /dev/loop2 for VG vg201-test.</span>
-<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully extended</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="go">  Volume group "vg201-test" successfully extended</span>
 <a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a<span class="w"> </span>-o<span class="w"> </span>name,copy_percent,health_status,devices<span class="w"> </span>vg201-test
 <a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="go">  LV                 Cpy%Sync Health          Devices                                                    </span>
 <a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="go">  lvraid0                                     /dev/loop0(0),/dev/loop1(0),/dev/loop2(0)                  </span>
@@ -3988,7 +3988,7 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/somewhere/you/like
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>resize2fs<span class="w"> </span>-M<span class="w"> </span>/dev/vg201-test/lvraid0
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">resize2fs 1.47.0 (5-Feb-2023)</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">Please run &#39;e2fsck -f /dev/vg201-test/lvraid0&#39; first.</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">Please run 'e2fsck -f /dev/vg201-test/lvraid0' first.</span>
 <a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>
 <a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp">$ </span><span class="c1"># 在缩小前，保险起见，需要先检查文件系统的完整性</span>
 <a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>e2fsck<span class="w"> </span>-f<span class="w"> </span>/dev/vg201-test/lvraid0
@@ -4046,13 +4046,13 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 </div>
 <p>首先删除上面创建的 LV 与 PV，然后创建一个大的 image 和一个小的 image 作为 HDD 与 SSD：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvremove<span class="w"> </span>vg201-test/lvraid0<span class="w"> </span>vg201-test/lvraid1<span class="w"> </span>vg201-test/lvraid5
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">  Logical volume &quot;lvraid0&quot; successfully removed.</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">  Logical volume "lvraid0" successfully removed.</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvraid1? [y/n]: y</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">  Logical volume &quot;lvraid1&quot; successfully removed.</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">  Logical volume "lvraid1" successfully removed.</span>
 <a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="go">Do you really want to remove active logical volume vg201-test/lvraid5? [y/n]: y</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">  Logical volume &quot;lvraid5&quot; successfully removed.</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="go">  Logical volume "lvraid5" successfully removed.</span>
 <a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgremove<span class="w"> </span>vg201-test
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully removed</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="go">  Volume group "vg201-test" successfully removed</span>
 <a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-D
 <a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="gp">$ </span>rm<span class="w"> </span>pv*.img
 <a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="gp">$ </span>truncate<span class="w"> </span>-s<span class="w"> </span>100G<span class="w"> </span>hdd.img
@@ -4062,16 +4062,16 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>losetup<span class="w"> </span>-f<span class="w"> </span>--show<span class="w"> </span>ssd.img
 <a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a><span class="go">/dev/loop1</span>
 <a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="gp">$ </span>sudo<span class="w"> </span>pvcreate<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1
-<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="go">  Physical volume &quot;/dev/loop0&quot; successfully created.</span>
-<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="go">  Physical volume &quot;/dev/loop1&quot; successfully created.</span>
+<a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="go">  Physical volume "/dev/loop0" successfully created.</span>
+<a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="go">  Physical volume "/dev/loop1" successfully created.</span>
 <a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgcreate<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop0<span class="w"> </span>/dev/loop1
-<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="go">  Volume group &quot;vg201-test&quot; successfully created</span>
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="go">  Volume group "vg201-test" successfully created</span>
 </code></pre></div>
 <!-- TODO: 如何模拟限制访问 hdd.img 的速度？ -->
 
 <p>接下来我们创建存储（后备）数据的 LV，这个 LV 只应该在 HDD 上：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvdata<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop0
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">  Logical volume &quot;lvdata&quot; created.</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">  Logical volume "lvdata" created.</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-o<span class="w"> </span>+devices<span class="w"> </span>vg201-test
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">  LV     VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert Devices      </span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="go">  lvdata vg201-test -wi-a----- &lt;100.00g                                                     /dev/loop0(0)</span>
@@ -4090,7 +4090,7 @@ LVM 在发现数据不一致时会在内核日志中报告，并在可以修复�
 <p>许多教程中都使用 <code>cachepool</code>，但是很多时候是没有必要的。</p>
 <p>下面先展示 <code>cachevol</code> 的操作（只需两步：创建缓存盘，然后 <code>lvconvert</code> 配置缓存即可）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-n<span class="w"> </span>lvdata_cache<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; created.</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">  Logical volume "lvdata_cache" created.</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache<span class="w"> </span>--cachevol<span class="w"> </span>lvdata_cache<span class="w"> </span>vg201-test/lvdata
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">Erase all existing data on vg201-test/lvdata_cache? [y/n]: y</span>
 <a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">  Logical volume vg201-test/lvdata is now cached.</span>
@@ -4155,12 +4155,12 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </details>
 <p>如果不关心数据卷和元数据卷的细节，创建 <code>cachepool</code> 的体验也类似。先把上面的 uncache 掉：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--uncache<span class="w"> </span>vg201-test/lvdata
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; successfully removed.</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">  Logical volume "lvdata_cache" successfully removed.</span>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">  Logical volume vg201-test/lvdata is not cached and vg201-test/lvdata_cache is removed.</span>
 </code></pre></div>
 <p>然后创建 <strong>cache-pool 类型</strong>的 LV，并且附加到后备设备上：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>-n<span class="w"> </span>lvdata_cache<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">  Logical volume &quot;lvdata_cache&quot; created.</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">  Logical volume "lvdata_cache" created.</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">  LV                   VG         Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">  lvdata               vg201-test -wi-a----- &lt;100.00g                                                    </span>
@@ -4185,14 +4185,14 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <p>根据 <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/logical_volume_manager_administration/lvm_cache_volume_creation">RHEL 6 的文档</a>，数据和元数据的推荐大小比例是 1000:1（例如如果有 2G 的缓存，那么就需要 12M 的元数据）。
 这里我们的 "SSD" 有 10G，因此大约需要 60M 的元数据，可以先创建元数据 LV，然后剩下的——全部给数据？</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-L<span class="w"> </span>60M<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">  Logical volume &quot;lvdata_cache_meta&quot; created.</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="go">  Logical volume "lvdata_cache_meta" created.</span>
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvcreate<span class="w"> </span>-l<span class="w"> </span><span class="m">100</span>%FREE<span class="w"> </span>-n<span class="w"> </span>lvdata_cache_data<span class="w"> </span>vg201-test<span class="w"> </span>/dev/loop1
-<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">  Logical volume &quot;lvdata_cache_data&quot; created.</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="go">  Logical volume "lvdata_cache_data" created.</span>
 <a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>--poolmetadata<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata_cache_data
-<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool&#39;s data and metadata volumes with metadata wiping.</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool's data and metadata volumes with metadata wiping.</span>
 <a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="go">  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)</span>
 <a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="go">Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y</span>
-<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  Volume group &quot;vg201-test&quot; has insufficient free space (0 extents): 15 required.</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="go">  Volume group "vg201-test" has insufficient free space (0 extents): 15 required.</span>
 <a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="go">  Failed to set up spare metadata LV for pool.</span>
 </code></pre></div>
 <p>可以看到还需要一些空间（15 个 extent），因此使用 <code>lvreduce</code> 留点出来：</p>
@@ -4201,7 +4201,7 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">  Size of logical volume vg201-test/lvdata_cache_data changed from &lt;9.94 GiB (2544 extents) to &lt;9.88 GiB (2529 extents).</span>
 <a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">  Logical volume vg201-test/lvdata_cache_data successfully resized.</span>
 <a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvconvert<span class="w"> </span>--type<span class="w"> </span>cache-pool<span class="w"> </span>--poolmetadata<span class="w"> </span>lvdata_cache_meta<span class="w"> </span>--cachemode<span class="w"> </span>writethrough<span class="w"> </span>vg201-test/lvdata_cache_data
-<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool&#39;s data and metadata volumes with metadata wiping.</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">  WARNING: Converting vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool's data and metadata volumes with metadata wiping.</span>
 <a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">  THIS WILL DESTROY CONTENT OF LOGICAL VOLUME (filesystem etc.)</span>
 <a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="go">Do you really want to convert vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta? [y/n]: y</span>
 <a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="go">  Converted vg201-test/lvdata_cache_data and vg201-test/lvdata_cache_meta to cache pool.</span>
@@ -4400,19 +4400,19 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <summary>有 cache 的 VG 元数据例子</summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a># Generated by LVM2 version 2.03.23(2) (2023-11-21): Sun Feb 18 00:25:36 2024
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>
-<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>contents = &quot;Text Format Volume Group&quot;
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>contents = "Text Format Volume Group"
 <a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a>version = 1
 <a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>
-<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>description = &quot;Created *after* executing &#39;lvconvert --type cache --cachevol lvdata_cache --config allocation/cache_pool_max_chunks=25148800 vg201-test/lvdata&#39;&quot;
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a>description = "Created *after* executing 'lvconvert --type cache --cachevol lvdata_cache --config allocation/cache_pool_max_chunks=25148800 vg201-test/lvdata'"
 <a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a>
-<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>creation_host = &quot;shimarin.taoky.moe&quot;    # Linux shimarin.taoky.moe 6.6.10-arch1-1 #1 SMP PREEMPT_DYNAMIC Fri, 05 Jan 2024 16:20:41 +0000 x86_64
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a>creation_host = "shimarin.taoky.moe"    # Linux shimarin.taoky.moe 6.6.10-arch1-1 #1 SMP PREEMPT_DYNAMIC Fri, 05 Jan 2024 16:20:41 +0000 x86_64
 <a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a>creation_time = 1708187136  # Sun Feb 18 00:25:36 2024
 <a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a>
 <a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a>vg201-test {
-<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    id = &quot;kDKbJ2-kebs-HaIJ-4Vfj-E4OB-aCce-yEcdAy&quot;
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a>    id = "kDKbJ2-kebs-HaIJ-4Vfj-E4OB-aCce-yEcdAy"
 <a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a>    seqno = 34
-<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>    format = &quot;lvm2&quot;         # informational
-<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>    status = [&quot;RESIZEABLE&quot;, &quot;READ&quot;, &quot;WRITE&quot;]
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>    format = "lvm2"         # informational
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a>    status = ["RESIZEABLE", "READ", "WRITE"]
 <a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a>    flags = []
 <a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a>    extent_size = 8192      # 4 Megabytes
 <a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a>    max_lv = 0
@@ -4422,10 +4422,10 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-34-22" name="__codelineno-34-22" href="#__codelineno-34-22"></a>    physical_volumes {
 <a id="__codelineno-34-23" name="__codelineno-34-23" href="#__codelineno-34-23"></a>
 <a id="__codelineno-34-24" name="__codelineno-34-24" href="#__codelineno-34-24"></a>        pv0 {
-<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>            id = &quot;VfZ83M-BPwe-bIQ1-JJRO-ZBSf-ks8d-fMln8E&quot;
-<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a>            device = &quot;/dev/loop0&quot;   # Hint only
+<a id="__codelineno-34-25" name="__codelineno-34-25" href="#__codelineno-34-25"></a>            id = "VfZ83M-BPwe-bIQ1-JJRO-ZBSf-ks8d-fMln8E"
+<a id="__codelineno-34-26" name="__codelineno-34-26" href="#__codelineno-34-26"></a>            device = "/dev/loop0"   # Hint only
 <a id="__codelineno-34-27" name="__codelineno-34-27" href="#__codelineno-34-27"></a>
-<a id="__codelineno-34-28" name="__codelineno-34-28" href="#__codelineno-34-28"></a>            status = [&quot;ALLOCATABLE&quot;]
+<a id="__codelineno-34-28" name="__codelineno-34-28" href="#__codelineno-34-28"></a>            status = ["ALLOCATABLE"]
 <a id="__codelineno-34-29" name="__codelineno-34-29" href="#__codelineno-34-29"></a>            flags = []
 <a id="__codelineno-34-30" name="__codelineno-34-30" href="#__codelineno-34-30"></a>            dev_size = 139586437120 # 65 Terabytes
 <a id="__codelineno-34-31" name="__codelineno-34-31" href="#__codelineno-34-31"></a>            pe_start = 2048
@@ -4433,10 +4433,10 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-34-33" name="__codelineno-34-33" href="#__codelineno-34-33"></a>        }
 <a id="__codelineno-34-34" name="__codelineno-34-34" href="#__codelineno-34-34"></a>
 <a id="__codelineno-34-35" name="__codelineno-34-35" href="#__codelineno-34-35"></a>        pv1 {
-<a id="__codelineno-34-36" name="__codelineno-34-36" href="#__codelineno-34-36"></a>            id = &quot;8hZXeS-gZJX-OfrY-vfUm-tG1R-pw3V-6c3CBI&quot;
-<a id="__codelineno-34-37" name="__codelineno-34-37" href="#__codelineno-34-37"></a>            device = &quot;/dev/loop1&quot;   # Hint only
+<a id="__codelineno-34-36" name="__codelineno-34-36" href="#__codelineno-34-36"></a>            id = "8hZXeS-gZJX-OfrY-vfUm-tG1R-pw3V-6c3CBI"
+<a id="__codelineno-34-37" name="__codelineno-34-37" href="#__codelineno-34-37"></a>            device = "/dev/loop1"   # Hint only
 <a id="__codelineno-34-38" name="__codelineno-34-38" href="#__codelineno-34-38"></a>
-<a id="__codelineno-34-39" name="__codelineno-34-39" href="#__codelineno-34-39"></a>            status = [&quot;ALLOCATABLE&quot;]
+<a id="__codelineno-34-39" name="__codelineno-34-39" href="#__codelineno-34-39"></a>            status = ["ALLOCATABLE"]
 <a id="__codelineno-34-40" name="__codelineno-34-40" href="#__codelineno-34-40"></a>            flags = []
 <a id="__codelineno-34-41" name="__codelineno-34-41" href="#__codelineno-34-41"></a>            dev_size = 3221225472   # 1.5 Terabytes
 <a id="__codelineno-34-42" name="__codelineno-34-42" href="#__codelineno-34-42"></a>            pe_start = 2048
@@ -4447,24 +4447,24 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-34-47" name="__codelineno-34-47" href="#__codelineno-34-47"></a>    logical_volumes {
 <a id="__codelineno-34-48" name="__codelineno-34-48" href="#__codelineno-34-48"></a>
 <a id="__codelineno-34-49" name="__codelineno-34-49" href="#__codelineno-34-49"></a>        lvdata {
-<a id="__codelineno-34-50" name="__codelineno-34-50" href="#__codelineno-34-50"></a>            id = &quot;6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2&quot;
-<a id="__codelineno-34-51" name="__codelineno-34-51" href="#__codelineno-34-51"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-34-50" name="__codelineno-34-50" href="#__codelineno-34-50"></a>            id = "6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2"
+<a id="__codelineno-34-51" name="__codelineno-34-51" href="#__codelineno-34-51"></a>            status = ["READ", "WRITE", "VISIBLE"]
 <a id="__codelineno-34-52" name="__codelineno-34-52" href="#__codelineno-34-52"></a>            flags = []
 <a id="__codelineno-34-53" name="__codelineno-34-53" href="#__codelineno-34-53"></a>            creation_time = 1708181300  # 2024-02-17 22:48:20 +0800
-<a id="__codelineno-34-54" name="__codelineno-34-54" href="#__codelineno-34-54"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-54" name="__codelineno-34-54" href="#__codelineno-34-54"></a>            creation_host = "shimarin.taoky.moe"
 <a id="__codelineno-34-55" name="__codelineno-34-55" href="#__codelineno-34-55"></a>            segment_count = 1
 <a id="__codelineno-34-56" name="__codelineno-34-56" href="#__codelineno-34-56"></a>
 <a id="__codelineno-34-57" name="__codelineno-34-57" href="#__codelineno-34-57"></a>            segment1 {
 <a id="__codelineno-34-58" name="__codelineno-34-58" href="#__codelineno-34-58"></a>                start_extent = 0
 <a id="__codelineno-34-59" name="__codelineno-34-59" href="#__codelineno-34-59"></a>                extent_count = 17039359 # 65 Terabytes
 <a id="__codelineno-34-60" name="__codelineno-34-60" href="#__codelineno-34-60"></a>
-<a id="__codelineno-34-61" name="__codelineno-34-61" href="#__codelineno-34-61"></a>                type = &quot;cache+CACHE_USES_CACHEVOL&quot;
-<a id="__codelineno-34-62" name="__codelineno-34-62" href="#__codelineno-34-62"></a>                cache_pool = &quot;lvdata_cache_cvol&quot;
-<a id="__codelineno-34-63" name="__codelineno-34-63" href="#__codelineno-34-63"></a>                origin = &quot;lvdata_corig&quot;
+<a id="__codelineno-34-61" name="__codelineno-34-61" href="#__codelineno-34-61"></a>                type = "cache+CACHE_USES_CACHEVOL"
+<a id="__codelineno-34-62" name="__codelineno-34-62" href="#__codelineno-34-62"></a>                cache_pool = "lvdata_cache_cvol"
+<a id="__codelineno-34-63" name="__codelineno-34-63" href="#__codelineno-34-63"></a>                origin = "lvdata_corig"
 <a id="__codelineno-34-64" name="__codelineno-34-64" href="#__codelineno-34-64"></a>                metadata_format = 2
 <a id="__codelineno-34-65" name="__codelineno-34-65" href="#__codelineno-34-65"></a>                chunk_size = 128
-<a id="__codelineno-34-66" name="__codelineno-34-66" href="#__codelineno-34-66"></a>                cache_mode = &quot;writethrough&quot;
-<a id="__codelineno-34-67" name="__codelineno-34-67" href="#__codelineno-34-67"></a>                policy = &quot;smq&quot;
+<a id="__codelineno-34-66" name="__codelineno-34-66" href="#__codelineno-34-66"></a>                cache_mode = "writethrough"
+<a id="__codelineno-34-67" name="__codelineno-34-67" href="#__codelineno-34-67"></a>                policy = "smq"
 <a id="__codelineno-34-68" name="__codelineno-34-68" href="#__codelineno-34-68"></a>                metadata_start = 0
 <a id="__codelineno-34-69" name="__codelineno-34-69" href="#__codelineno-34-69"></a>                metadata_len = 2170880
 <a id="__codelineno-34-70" name="__codelineno-34-70" href="#__codelineno-34-70"></a>                data_start = 2170880
@@ -4473,43 +4473,43 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-34-73" name="__codelineno-34-73" href="#__codelineno-34-73"></a>        }
 <a id="__codelineno-34-74" name="__codelineno-34-74" href="#__codelineno-34-74"></a>
 <a id="__codelineno-34-75" name="__codelineno-34-75" href="#__codelineno-34-75"></a>        lvdata_cache_cvol {
-<a id="__codelineno-34-76" name="__codelineno-34-76" href="#__codelineno-34-76"></a>            id = &quot;RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV&quot;
-<a id="__codelineno-34-77" name="__codelineno-34-77" href="#__codelineno-34-77"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
-<a id="__codelineno-34-78" name="__codelineno-34-78" href="#__codelineno-34-78"></a>            flags = [&quot;CACHE_VOL&quot;]
+<a id="__codelineno-34-76" name="__codelineno-34-76" href="#__codelineno-34-76"></a>            id = "RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV"
+<a id="__codelineno-34-77" name="__codelineno-34-77" href="#__codelineno-34-77"></a>            status = ["READ", "WRITE"]
+<a id="__codelineno-34-78" name="__codelineno-34-78" href="#__codelineno-34-78"></a>            flags = ["CACHE_VOL"]
 <a id="__codelineno-34-79" name="__codelineno-34-79" href="#__codelineno-34-79"></a>            creation_time = 1708187133  # 2024-02-18 00:25:33 +0800
-<a id="__codelineno-34-80" name="__codelineno-34-80" href="#__codelineno-34-80"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-80" name="__codelineno-34-80" href="#__codelineno-34-80"></a>            creation_host = "shimarin.taoky.moe"
 <a id="__codelineno-34-81" name="__codelineno-34-81" href="#__codelineno-34-81"></a>            segment_count = 1
 <a id="__codelineno-34-82" name="__codelineno-34-82" href="#__codelineno-34-82"></a>
 <a id="__codelineno-34-83" name="__codelineno-34-83" href="#__codelineno-34-83"></a>            segment1 {
 <a id="__codelineno-34-84" name="__codelineno-34-84" href="#__codelineno-34-84"></a>                start_extent = 0
 <a id="__codelineno-34-85" name="__codelineno-34-85" href="#__codelineno-34-85"></a>                extent_count = 393215   # 1.5 Terabytes
 <a id="__codelineno-34-86" name="__codelineno-34-86" href="#__codelineno-34-86"></a>
-<a id="__codelineno-34-87" name="__codelineno-34-87" href="#__codelineno-34-87"></a>                type = &quot;striped&quot;
+<a id="__codelineno-34-87" name="__codelineno-34-87" href="#__codelineno-34-87"></a>                type = "striped"
 <a id="__codelineno-34-88" name="__codelineno-34-88" href="#__codelineno-34-88"></a>                stripe_count = 1    # linear
 <a id="__codelineno-34-89" name="__codelineno-34-89" href="#__codelineno-34-89"></a>
 <a id="__codelineno-34-90" name="__codelineno-34-90" href="#__codelineno-34-90"></a>                stripes = [
-<a id="__codelineno-34-91" name="__codelineno-34-91" href="#__codelineno-34-91"></a>                    &quot;pv1&quot;, 0
+<a id="__codelineno-34-91" name="__codelineno-34-91" href="#__codelineno-34-91"></a>                    "pv1", 0
 <a id="__codelineno-34-92" name="__codelineno-34-92" href="#__codelineno-34-92"></a>                ]
 <a id="__codelineno-34-93" name="__codelineno-34-93" href="#__codelineno-34-93"></a>            }
 <a id="__codelineno-34-94" name="__codelineno-34-94" href="#__codelineno-34-94"></a>        }
 <a id="__codelineno-34-95" name="__codelineno-34-95" href="#__codelineno-34-95"></a>
 <a id="__codelineno-34-96" name="__codelineno-34-96" href="#__codelineno-34-96"></a>        lvdata_corig {
-<a id="__codelineno-34-97" name="__codelineno-34-97" href="#__codelineno-34-97"></a>            id = &quot;xIprwR-KD4I-f6E8-tdgp-lcjN-iUdk-rS63YR&quot;
-<a id="__codelineno-34-98" name="__codelineno-34-98" href="#__codelineno-34-98"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;]
+<a id="__codelineno-34-97" name="__codelineno-34-97" href="#__codelineno-34-97"></a>            id = "xIprwR-KD4I-f6E8-tdgp-lcjN-iUdk-rS63YR"
+<a id="__codelineno-34-98" name="__codelineno-34-98" href="#__codelineno-34-98"></a>            status = ["READ", "WRITE"]
 <a id="__codelineno-34-99" name="__codelineno-34-99" href="#__codelineno-34-99"></a>            flags = []
 <a id="__codelineno-34-100" name="__codelineno-34-100" href="#__codelineno-34-100"></a>            creation_time = 1708187136  # 2024-02-18 00:25:36 +0800
-<a id="__codelineno-34-101" name="__codelineno-34-101" href="#__codelineno-34-101"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-34-101" name="__codelineno-34-101" href="#__codelineno-34-101"></a>            creation_host = "shimarin.taoky.moe"
 <a id="__codelineno-34-102" name="__codelineno-34-102" href="#__codelineno-34-102"></a>            segment_count = 1
 <a id="__codelineno-34-103" name="__codelineno-34-103" href="#__codelineno-34-103"></a>
 <a id="__codelineno-34-104" name="__codelineno-34-104" href="#__codelineno-34-104"></a>            segment1 {
 <a id="__codelineno-34-105" name="__codelineno-34-105" href="#__codelineno-34-105"></a>                start_extent = 0
 <a id="__codelineno-34-106" name="__codelineno-34-106" href="#__codelineno-34-106"></a>                extent_count = 17039359 # 65 Terabytes
 <a id="__codelineno-34-107" name="__codelineno-34-107" href="#__codelineno-34-107"></a>
-<a id="__codelineno-34-108" name="__codelineno-34-108" href="#__codelineno-34-108"></a>                type = &quot;striped&quot;
+<a id="__codelineno-34-108" name="__codelineno-34-108" href="#__codelineno-34-108"></a>                type = "striped"
 <a id="__codelineno-34-109" name="__codelineno-34-109" href="#__codelineno-34-109"></a>                stripe_count = 1    # linear
 <a id="__codelineno-34-110" name="__codelineno-34-110" href="#__codelineno-34-110"></a>
 <a id="__codelineno-34-111" name="__codelineno-34-111" href="#__codelineno-34-111"></a>                stripes = [
-<a id="__codelineno-34-112" name="__codelineno-34-112" href="#__codelineno-34-112"></a>                    &quot;pv0&quot;, 0
+<a id="__codelineno-34-112" name="__codelineno-34-112" href="#__codelineno-34-112"></a>                    "pv0", 0
 <a id="__codelineno-34-113" name="__codelineno-34-113" href="#__codelineno-34-113"></a>                ]
 <a id="__codelineno-34-114" name="__codelineno-34-114" href="#__codelineno-34-114"></a>            }
 <a id="__codelineno-34-115" name="__codelineno-34-115" href="#__codelineno-34-115"></a>        }
@@ -4529,43 +4529,43 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a>    logical_volumes {
 <a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>
 <a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a>        lvdata {
-<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a>            id = &quot;6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2&quot;
-<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a>            id = "6BsYbX-T21Z-BgiW-pZET-a3Lf-wcSh-E5hSm2"
+<a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a>            status = ["READ", "WRITE", "VISIBLE"]
 <a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a>            flags = []
 <a id="__codelineno-35-12" name="__codelineno-35-12" href="#__codelineno-35-12"></a>            creation_time = 1708181300  # 2024-02-17 22:48:20 +0800
-<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a>            creation_host = "shimarin.taoky.moe"
 <a id="__codelineno-35-14" name="__codelineno-35-14" href="#__codelineno-35-14"></a>            segment_count = 1
 <a id="__codelineno-35-15" name="__codelineno-35-15" href="#__codelineno-35-15"></a>
 <a id="__codelineno-35-16" name="__codelineno-35-16" href="#__codelineno-35-16"></a>            segment1 {
 <a id="__codelineno-35-17" name="__codelineno-35-17" href="#__codelineno-35-17"></a>                start_extent = 0
 <a id="__codelineno-35-18" name="__codelineno-35-18" href="#__codelineno-35-18"></a>                extent_count = 17039359 # 65 Terabytes
 <a id="__codelineno-35-19" name="__codelineno-35-19" href="#__codelineno-35-19"></a>
-<a id="__codelineno-35-20" name="__codelineno-35-20" href="#__codelineno-35-20"></a>                type = &quot;striped&quot;
+<a id="__codelineno-35-20" name="__codelineno-35-20" href="#__codelineno-35-20"></a>                type = "striped"
 <a id="__codelineno-35-21" name="__codelineno-35-21" href="#__codelineno-35-21"></a>                stripe_count = 1    # linear
 <a id="__codelineno-35-22" name="__codelineno-35-22" href="#__codelineno-35-22"></a>
 <a id="__codelineno-35-23" name="__codelineno-35-23" href="#__codelineno-35-23"></a>                stripes = [
-<a id="__codelineno-35-24" name="__codelineno-35-24" href="#__codelineno-35-24"></a>                    &quot;pv0&quot;, 0
+<a id="__codelineno-35-24" name="__codelineno-35-24" href="#__codelineno-35-24"></a>                    "pv0", 0
 <a id="__codelineno-35-25" name="__codelineno-35-25" href="#__codelineno-35-25"></a>                ]
 <a id="__codelineno-35-26" name="__codelineno-35-26" href="#__codelineno-35-26"></a>            }
 <a id="__codelineno-35-27" name="__codelineno-35-27" href="#__codelineno-35-27"></a>        }
 <a id="__codelineno-35-28" name="__codelineno-35-28" href="#__codelineno-35-28"></a>
 <a id="__codelineno-35-29" name="__codelineno-35-29" href="#__codelineno-35-29"></a>        lvdata_cache {
-<a id="__codelineno-35-30" name="__codelineno-35-30" href="#__codelineno-35-30"></a>            id = &quot;RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV&quot;
-<a id="__codelineno-35-31" name="__codelineno-35-31" href="#__codelineno-35-31"></a>            status = [&quot;READ&quot;, &quot;WRITE&quot;, &quot;VISIBLE&quot;]
+<a id="__codelineno-35-30" name="__codelineno-35-30" href="#__codelineno-35-30"></a>            id = "RuL2He-0xlL-J4fd-T0eD-2YTr-QASe-gsWtBV"
+<a id="__codelineno-35-31" name="__codelineno-35-31" href="#__codelineno-35-31"></a>            status = ["READ", "WRITE", "VISIBLE"]
 <a id="__codelineno-35-32" name="__codelineno-35-32" href="#__codelineno-35-32"></a>            flags = []
 <a id="__codelineno-35-33" name="__codelineno-35-33" href="#__codelineno-35-33"></a>            creation_time = 1708187133  # 2024-02-18 00:25:33 +0800
-<a id="__codelineno-35-34" name="__codelineno-35-34" href="#__codelineno-35-34"></a>            creation_host = &quot;shimarin.taoky.moe&quot;
+<a id="__codelineno-35-34" name="__codelineno-35-34" href="#__codelineno-35-34"></a>            creation_host = "shimarin.taoky.moe"
 <a id="__codelineno-35-35" name="__codelineno-35-35" href="#__codelineno-35-35"></a>            segment_count = 1
 <a id="__codelineno-35-36" name="__codelineno-35-36" href="#__codelineno-35-36"></a>
 <a id="__codelineno-35-37" name="__codelineno-35-37" href="#__codelineno-35-37"></a>            segment1 {
 <a id="__codelineno-35-38" name="__codelineno-35-38" href="#__codelineno-35-38"></a>                start_extent = 0
 <a id="__codelineno-35-39" name="__codelineno-35-39" href="#__codelineno-35-39"></a>                extent_count = 393215   # 1.5 Terabytes
 <a id="__codelineno-35-40" name="__codelineno-35-40" href="#__codelineno-35-40"></a>
-<a id="__codelineno-35-41" name="__codelineno-35-41" href="#__codelineno-35-41"></a>                type = &quot;striped&quot;
+<a id="__codelineno-35-41" name="__codelineno-35-41" href="#__codelineno-35-41"></a>                type = "striped"
 <a id="__codelineno-35-42" name="__codelineno-35-42" href="#__codelineno-35-42"></a>                stripe_count = 1    # linear
 <a id="__codelineno-35-43" name="__codelineno-35-43" href="#__codelineno-35-43"></a>
 <a id="__codelineno-35-44" name="__codelineno-35-44" href="#__codelineno-35-44"></a>                stripes = [
-<a id="__codelineno-35-45" name="__codelineno-35-45" href="#__codelineno-35-45"></a>                    &quot;pv1&quot;, 0
+<a id="__codelineno-35-45" name="__codelineno-35-45" href="#__codelineno-35-45"></a>                    "pv1", 0
 <a id="__codelineno-35-46" name="__codelineno-35-46" href="#__codelineno-35-46"></a>                ]
 <a id="__codelineno-35-47" name="__codelineno-35-47" href="#__codelineno-35-47"></a>            }
 <a id="__codelineno-35-48" name="__codelineno-35-48" href="#__codelineno-35-48"></a>        }
@@ -4582,9 +4582,9 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 <a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
 <a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="go">  Volume group vg201-test has active volume: lvdata_cache_cvol.</span>
 <a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="go">  Volume group vg201-test has active volume: lvdata_corig.</span>
-<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="go">  WARNING: Found 5 active volume(s) in volume group &quot;vg201-test&quot;.</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="go">  WARNING: Found 5 active volume(s) in volume group "vg201-test".</span>
 <a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="go">  Restoring VG with active LVs, may cause mismatch with its metadata.</span>
-<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">Do you really want to proceed with restore of volume group &quot;vg201-test&quot;, while 5 volume(s) are active? [y/n]: y</span>
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="go">Do you really want to proceed with restore of volume group "vg201-test", while 5 volume(s) are active? [y/n]: y</span>
 <a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="go">  Restored volume group vg201-test.</span>
 <a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
 <a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a><span class="go">  WARNING: Detected cache segment type does not match expected type striped for vg201-test/lvdata.</span>
@@ -4594,9 +4594,9 @@ writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有�
 </code></pre></div>
 <p>在重新 activate 之后，状态即恢复正常：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-an<span class="w"> </span>vg201-test
-<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="go">  0 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="go">  0 logical volume(s) in volume group "vg201-test" now active</span>
 <a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>vgchange<span class="w"> </span>-ay<span class="w"> </span>vg201-test
-<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="go">  2 logical volume(s) in volume group &quot;vg201-test&quot; now active</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="go">  2 logical volume(s) in volume group "vg201-test" now active</span>
 <a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>lvs<span class="w"> </span>-a
 <a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="go">  LV           VG         Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert</span>
 <a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="go">  lvdata       vg201-test -wi-a----- &lt;65.00t                                                    </span>

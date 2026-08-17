@@ -3578,7 +3578,7 @@
 <details class="tip">
 <summary>munge 测试</summary>
 <p>可通过以下命令测试 munge 是否配置正确：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>harry@foo:~$ echo &#39;Hello World&#39; | munge | ssh bar unmunge
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>harry@foo:~$ echo 'Hello World' | munge | ssh bar unmunge
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>STATUS:          Success (0)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>ENCODE_HOST:     foo (172.23.15.1)
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>ENCODE_TIME:     2025-11-23 23:03:26 +0800 (1763910206)
@@ -3740,7 +3740,7 @@
 <li>如果使用 DNS SRV 记录，需要保证 slurmd 启动时本地没有任何配置（因为 <a href="https://slurm.schedmd.com/configless_slurm.html#NOTES">搜索顺序</a> 中 DNS SRV 记录优先级最低）。</li>
 </ol>
 <p>简单起见，可以选择传参的方案，即在所有安装 slurmd 的节点上修改 <code>/etc/default/slurmd</code>，在 <code>SLURMD_OPTIONS</code> 中添加：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">SLURMD_OPTIONS</span><span class="o">=</span><span class="s2">&quot;--conf-server your_ctl_server:6817&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nv">SLURMD_OPTIONS</span><span class="o">=</span><span class="s2">"--conf-server your_ctl_server:6817"</span>
 </code></pre></div>
 <p>（此部分可选）保险起见，还可以通过 systemd 对 slurmd 隐藏整个 <code>/etc/slurm</code> 的文件夹，避免潜在的冲突/混淆问题。运行 <code>systemctl edit slurmd</code>，增加：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[Service]</span>
@@ -3755,7 +3755,7 @@
 </details>
 <p>如果有未安装任何 slurm 守护进程的节点（即“瘦”登录节点），需要安装 <a href="https://slurm.schedmd.com/sackd.html"><code>sackd</code></a>（从 25.05 开始提供），负责请求控制器、拉取缓存的配置供 <code>srun</code> 等客户端程序使用：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>sackd
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;SACKD_OPTIONS=&quot;--conf-server your_ctl_server:6817&quot;&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/default/sackd
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'SACKD_OPTIONS="--conf-server your_ctl_server:6817"'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>/etc/default/sackd
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>sackd
 </code></pre></div>
 <h2 id="further-reading">延伸阅读<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>

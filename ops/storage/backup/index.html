@@ -3643,7 +3643,7 @@
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>/path/to/source<span class="w"> </span>user@remote:/path/to/destination
 </code></pre></div>
 <p>如果远程服务器需要特殊的 <code>ssh</code> 参数（例如端口），并且不想修改 <code>~/.ssh/config</code>，可以使用 <code>-e</code> 参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;ssh -p 2222&quot;</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">"ssh -p 2222"</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">rsync 的 sender、generator 和 receiver</p>
@@ -3837,21 +3837,21 @@
 <p>为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。</p>
 </div>
 <p>之后设置环境变量并初始化仓库：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_ID</span><span class="o">=</span><span class="s2">&quot;your_account_id&quot;</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_KEY</span><span class="o">=</span><span class="s2">&quot;your_account_key&quot;</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">&quot;b2:your_bucket_name:/&quot;</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_PASSWORD</span><span class="o">=</span><span class="s2">&quot;your_strong_password&quot;</span><span class="w">  </span><span class="c1"># restic 使用这个密码加密备份数据</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_HOST</span><span class="o">=</span><span class="s2">&quot;your_hostname&quot;</span><span class="w">  </span><span class="c1"># 用于区分不同主机的备份</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"b2:your_bucket_name:/"</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_PASSWORD</span><span class="o">=</span><span class="s2">"your_strong_password"</span><span class="w">  </span><span class="c1"># restic 使用这个密码加密备份数据</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_HOST</span><span class="o">=</span><span class="s2">"your_hostname"</span><span class="w">  </span><span class="c1"># 用于区分不同主机的备份</span>
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>restic<span class="w"> </span>init
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">也可使用 S3 兼容模式连接 Backblaze B2</p>
 <p>事实上，由于使用的第三方库的错误处理问题，<a href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2">restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">&quot;your_account_id&quot;</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">&quot;your_account_key&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># 以下 endpoint 需要根据桶所在的实际区域修改</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">&quot;s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name&quot;</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name"</span>
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># ...</span>
 </code></pre></div>
 <p>有关 S3 兼容模式的注意事项，请参阅上述文档。</p>

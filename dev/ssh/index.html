@@ -4259,7 +4259,7 @@
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">echo Agent pid 3173587;</span>
 </code></pre></div>
 <p>其中 <code>SSH_AUTH_SOCK</code> 环境变量表示 SSH agent 监听的 Unix domain socket，可以用于控制所使用的 SSH agent。通常使用以下命令启动并在当前环境中使用该 SSH agent：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>ssh-agent<span class="w"> </span>-s<span class="k">)</span><span class="s2">"</span>
 </code></pre></div>
 <p>在配置文件中可以使用 <code>IdentityAgent</code> 选项来指定使用特定 Unix domain socket 与 SSH agent 通信，其优先级高于 <code>SSH_AUTH_SOCK</code> 环境变量，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Host<span class="w"> </span>example
@@ -4491,7 +4491,7 @@
 <p>完整的选项列表可以在 <a href="https://linux.die.net/man/8/sshd">sshd(8)</a> 的 <code>AUTHORIZED_KEYS FILE FORMAT</code> 部分找到。</p>
 <details class="example">
 <summary>例：用于备份 LUG FTP 的公钥配置</summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>restrict,from<span class="o">=</span><span class="s2">&quot;192.0.2.2&quot;</span>,command<span class="o">=</span><span class="s2">&quot;/usr/bin/rrsync -ro /mnt/lugftp&quot;</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>restrict,from<span class="o">=</span><span class="s2">"192.0.2.2"</span>,command<span class="o">=</span><span class="s2">"/usr/bin/rrsync -ro /mnt/lugftp"</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
 </code></pre></div>
 </details>
 <h3 id="authorized-keys-from-command">从命令获取 Authorized Keys<a class="headerlink" href="#authorized-keys-from-command" title="Permanent link">&para;</a></h3>
@@ -4502,13 +4502,13 @@
 <p>其中，<code>&lt;some program&gt;</code> 会以 <code>nobody</code> 用户身份运行，并接收待认证的用户名作为唯一参数。程序需要输出一组候选公钥，其格式与 <code>authorized_keys</code> 文件完全一致。下面是一个 <code>&lt;some program&gt;</code> 的示例：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="ch">#!/bin/sh</span>
 <a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a>
-<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="nv">USERNAME</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$1</span><span class="s2">&quot;</span><span class="w"> </span><span class="c1"># 用户名从命令行参数传入</span>
+<a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="nv">USERNAME</span><span class="o">=</span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span><span class="w"> </span><span class="c1"># 用户名从命令行参数传入</span>
 <a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a>
 <a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="nb">exec</span><span class="w"> </span>/usr/bin/curl<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="w">    </span>--silent<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="w">    </span>--fail<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a><span class="w">    </span>--show-error<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="w">    </span><span class="s2">&quot;SOME_SOURCES/</span><span class="si">${</span><span class="nv">USERNAME</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="w">    </span><span class="s2">"SOME_SOURCES/</span><span class="si">${</span><span class="nv">USERNAME</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div>
 <p>借助这一功能，可以从统一的数据源获取公钥，从而确保所有服务器上的公钥保持同步。启用该功能后，可以将 <code>AuthorizedKeysFile</code> 设置为 <code>none</code>，以禁用基于 <code>authorized_keys</code> 文件的公钥认证——<strong>请务必阅读下面的注意事项</strong>。</p>
 <div class="admonition warning">
@@ -4545,7 +4545,7 @@
 <p>与 X.509 证书类似，<strong>客户端通过证书信任服务端和服务端通过证书认证客户端是两件独立的事，在实际应用中也可以根据需求使用同一个 CA 或分别使用不同的 CA</strong>。以下分别以「服务端 CA」和「客户端 CA」指代为服务端/客户端签发证书的 CA。</p>
 <h3 id="ssh-ca">创建 SSH CA<a class="headerlink" href="#ssh-ca" title="Permanent link">&para;</a></h3>
 <p>前文提到，SSH CA 的身份由<strong>公钥</strong>唯一确定，因此一对普通的 SSH 密钥对就是一个 SSH CA 所需的全部内容，不像 X.509 需要再进一步为根 CA 产生一个自签名证书。此处引用创建 SSH 密钥对的命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>my_ca<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>ed25519<span class="o">]</span><span class="w"> </span><span class="o">[</span>-C<span class="w"> </span><span class="s1">&#39;My CA&#39;</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>-N<span class="w"> </span><span class="s1">&#39;my-ca-p@ssw0rd&#39;</span><span class="o">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>my_ca<span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>ed25519<span class="o">]</span><span class="w"> </span><span class="o">[</span>-C<span class="w"> </span><span class="s1">'My CA'</span><span class="o">]</span><span class="w"> </span><span class="o">[</span>-N<span class="w"> </span><span class="s1">'my-ca-p@ssw0rd'</span><span class="o">]</span>
 </code></pre></div>
 <p>注意到尽管 <code>-t</code>、<code>-C</code> 和 <code>-N</code> 参数都是可选的<sup id="fnref:filename-is-optional"><a class="footnote-ref" href="#fn:filename-is-optional">2</a></sup>，为了便于辨认 CA 和提高安全性，我们强烈建议采用先进的密码学算法（Ed25519）、指定可读的备注文字和为私钥设置密码。</p>
 <p>生成密钥对后，请保管好 <code>my_ca</code> 私钥文件，然后即可将 <code>my_ca.pub</code> 公钥文件复制或公开传播了。</p>
@@ -4588,7 +4588,7 @@
 </code></pre></div>
 <h4 id="sign-client-certificates">签发客户端证书<a class="headerlink" href="#sign-client-certificates" title="Permanent link">&para;</a></h4>
 <p>与服务端证书类似，签发客户端证书需要使用客户端 CA 私钥和对应客户端的<strong>公钥</strong>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>ssh-keygen<span class="w"> </span>-s<span class="w"> </span>my_ca<span class="w"> </span>-I<span class="w"> </span><span class="s1">&#39;User 1&#39;</span><span class="w"> </span>-n<span class="w"> </span>user1<span class="w"> </span><span class="o">[</span>-V<span class="w"> </span>validity<span class="o">]</span><span class="w"> </span><span class="o">[</span>-z<span class="w"> </span>serial<span class="o">]</span><span class="w"> </span><span class="o">[</span>-O<span class="w"> </span>options<span class="o">]</span><span class="w"> </span>~/.ssh/id_ed25519.pub
+<div class="highlight"><pre><span></span><code><a id="__codelineno-47-1" name="__codelineno-47-1" href="#__codelineno-47-1"></a>ssh-keygen<span class="w"> </span>-s<span class="w"> </span>my_ca<span class="w"> </span>-I<span class="w"> </span><span class="s1">'User 1'</span><span class="w"> </span>-n<span class="w"> </span>user1<span class="w"> </span><span class="o">[</span>-V<span class="w"> </span>validity<span class="o">]</span><span class="w"> </span><span class="o">[</span>-z<span class="w"> </span>serial<span class="o">]</span><span class="w"> </span><span class="o">[</span>-O<span class="w"> </span>options<span class="o">]</span><span class="w"> </span>~/.ssh/id_ed25519.pub
 </code></pre></div>
 <p>签发客户端证书时使用的命令行参数基本相同，仅有少许区别：</p>
 <ul>
@@ -4617,7 +4617,7 @@
 <a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a><span class="w">        </span>Type:<span class="w"> </span>ssh-ed25519-cert-v01@openssh.com<span class="w"> </span>user<span class="w"> </span>certificate
 <a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a><span class="w">        </span>Public<span class="w"> </span>key:<span class="w"> </span>ED25519-CERT<span class="w"> </span>SHA256:A2ZueGXJGzK3nnECPgD7rJTxMAY9wbhUDGq+cEjf5qA
 <a id="__codelineno-51-4" name="__codelineno-51-4" href="#__codelineno-51-4"></a><span class="w">        </span>Signing<span class="w"> </span>CA:<span class="w"> </span>RSA<span class="w"> </span>SHA256:6evsncr34cyV1FzWyCozOg8pbHMeiSgAknUYJJlbuFs<span class="w"> </span><span class="o">(</span>using<span class="w"> </span>rsa-sha2-512<span class="o">)</span>
-<a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">        </span>Key<span class="w"> </span>ID:<span class="w"> </span><span class="s2">&quot;ustc@ustclug&quot;</span>
+<a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">        </span>Key<span class="w"> </span>ID:<span class="w"> </span><span class="s2">"ustc@ustclug"</span>
 <a id="__codelineno-51-6" name="__codelineno-51-6" href="#__codelineno-51-6"></a><span class="w">        </span>Serial:<span class="w"> </span><span class="m">0</span>
 <a id="__codelineno-51-7" name="__codelineno-51-7" href="#__codelineno-51-7"></a><span class="w">        </span>Valid:<span class="w"> </span>from<span class="w"> </span><span class="m">2025</span>-01-01T19:55:00<span class="w"> </span>to<span class="w"> </span><span class="m">2025</span>-02-01T20:00:00
 <a id="__codelineno-51-8" name="__codelineno-51-8" href="#__codelineno-51-8"></a><span class="w">        </span>Principals:

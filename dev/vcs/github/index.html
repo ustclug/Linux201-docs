@@ -3494,7 +3494,7 @@
 <p>GitHub CLI 是 GitHub 官方提供的命令行工具，可以用于管理 GitHub 仓库、Issue、Pull Request 等。</p>
 <p>例如，给 <code>ustclug/Linux201-docs</code> 修 bug 的流程可以简化为：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>gh<span class="w"> </span>repo<span class="w"> </span>clone<span class="w"> </span>ustclug/Linux201-docs
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: some bug&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>commit<span class="w"> </span>-a<span class="w"> </span>-m<span class="w"> </span><span class="s2">"fix: some bug"</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>gh<span class="w"> </span>pr<span class="w"> </span>create
 </code></pre></div>
 <p>其他常用的 GitHub CLI 命令包括：</p>
@@ -3508,15 +3508,15 @@
 <p>默认情况下 <code>gh run watch</code> 需要手动选择关注的 GitHub workflow, 如果只想关注最新的 workflow 可以将如下函数添加到 <code>~/.bashrc</code> 或 <code>~/.zshrc</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>watch_latest_run<span class="o">()</span><span class="w"> </span><span class="o">{</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="c1"># Fetch the latest run ID using gh and jq</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nb">local</span><span class="w"> </span><span class="nv">latest_run_id</span><span class="o">=</span><span class="k">$(</span>gh<span class="w"> </span>run<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span><span class="w"> </span>--json<span class="w"> </span>databaseId<span class="w"> </span>--jq<span class="w"> </span><span class="s1">&#39;.[0].databaseId&#39;</span><span class="k">)</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nb">local</span><span class="w"> </span><span class="nv">latest_run_id</span><span class="o">=</span><span class="k">$(</span>gh<span class="w"> </span>run<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">1</span><span class="w"> </span>--json<span class="w"> </span>databaseId<span class="w"> </span>--jq<span class="w"> </span><span class="s1">'.[0].databaseId'</span><span class="k">)</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;No runs found.&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">"</span><span class="nv">$latest_run_id</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"No runs found."</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="m">1</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="k">fi</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="c1"># Pass the latest run ID to gh run watch</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>gh<span class="w"> </span>run<span class="w"> </span>watch<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$latest_run_id</span><span class="s2">&quot;</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span>gh<span class="w"> </span>run<span class="w"> </span>watch<span class="w"> </span><span class="s2">"</span><span class="nv">$latest_run_id</span><span class="s2">"</span>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="o">}</span>
 </code></pre></div>
 <p>之后可以直接使用 <code>watch_latest_run</code> 命令即可。</p>
@@ -3564,9 +3564,9 @@
 <p>进入仓库的 <code>.git</code> 目录，在该目录下创建密钥对。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">cd</span><span class="w"> </span>.git
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># RSA key pair</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_rsa<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_rsa<span class="w"> </span>-t<span class="w"> </span>rsa<span class="w"> </span>-b<span class="w"> </span><span class="m">4096</span><span class="w"> </span>-N<span class="w"> </span><span class="s2">""</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># or ED25519 key pair</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_ed25519<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-N<span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>ssh-keygen<span class="w"> </span>-f<span class="w"> </span>./id_ed25519<span class="w"> </span>-t<span class="w"> </span>ed25519<span class="w"> </span>-N<span class="w"> </span><span class="s2">""</span>
 </code></pre></div>
 </li>
 <li>
@@ -3667,7 +3667,7 @@
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="nt">attributes</span><span class="p">:</span>
 <a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">      </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Describe the bug</span>
 <a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">      </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A clear and concise description of what the bug is.</span>
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">      </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I&#39;m always frustrated when...</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">      </span><span class="nt">placeholder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">I'm always frustrated when...</span>
 <a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">    </span><span class="nt">validations</span><span class="p">:</span>
 <a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">      </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
@@ -3711,8 +3711,8 @@
 <div class="admonition tip">
 <p class="admonition-title">便于同步 PR/MR 的参考 alias</p>
 <div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">[alias]</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2 &amp;&amp; git reset --hard HEAD&#39; -</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c 'git fetch -u $1 +pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2 &amp;&amp; git reset --hard HEAD' -</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c 'git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2 &amp;&amp; git reset --hard HEAD' -</span>
 </code></pre></div>
 <p>使用例子：<code>git pr origin 1234</code>（GitHub）、<code>git mr origin 1234</code>（GitLab）。重复执行可从 PR/MR 中获取最新的修改。</p>
 <div class="admonition question">
@@ -3724,8 +3724,8 @@
 <p class="admonition-title">参数说明</p>
 <p>原始的 alias 如下：</p>
 <div class="highlight"><span class="filename">~/.gitconfig</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">[alias]</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2&#39; -</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c &#39;git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2&#39; -</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="na">pr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 &amp;&amp; git checkout pr-$1-$2' -</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="na">mr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">!sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 &amp;&amp; git checkout mr-$1-$2' -</span>
 </code></pre></div>
 <p>相比原始的 alias，这里的有什么变化？添加这些变化的目的是什么？是否有更好的解决方案？</p>
 </div>

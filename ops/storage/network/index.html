@@ -3486,8 +3486,8 @@
 <p>之后执行 <code>exportfs -a</code>，可以看到输出了一些警告，提示我们目前的配置存在潜在的问题（一些配置没有显式给出）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>exportfs<span class="w"> </span>-a
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">exportfs: No options for /srv/abcde localhost: suggest localhost(sync) to avoid warning</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">exportfs: /etc/exports [2]: Neither &#39;subtree_check&#39; or &#39;no_subtree_check&#39; specified for export &quot;localhost:/srv/abcde&quot;.</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">Assuming default behaviour (&#39;no_subtree_check&#39;).</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">exportfs: /etc/exports [2]: Neither 'subtree_check' or 'no_subtree_check' specified for export "localhost:/srv/abcde".</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">Assuming default behaviour ('no_subtree_check').</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="go">NOTE: this default has changed since nfs-utils version 1.0.x</span>
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="go">exportfs: No host name given with /srv/abcde (rw,no_root_squash,async,insecure,no_subtree_check), suggest *(rw,no_root_squash,async,insecure,no_subtree_check) to avoid warning</span>
@@ -3565,19 +3565,19 @@ inode 编号后是 generation number，用于检测文件是否被修改。</p>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>Even after this update, it is still possible for NFSv3 clients to
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>guess valid file handles and access files outside an exported
-<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>subdirectory, unless the &quot;subtree_check&quot; export option is enabled.
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>subdirectory, unless the "subtree_check" export option is enabled.
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>It is recommended that you do not use that option but only export
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>whole filesystem volumes.
 </code></pre></div>
 <p><a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=51b2ee7d006a736a9126e8111d1f24e4fd0afaa6">nfsd4: readdirplus shouldn't return parent of export</a>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>nfsd4: readdirplus shouldn&#39;t return parent of export
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>nfsd4: readdirplus shouldn't return parent of export
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>If you export a subdirectory of a filesystem, a READDIRPLUS on the root
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>of that export will return the filehandle of the parent with the &quot;..&quot;
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>of that export will return the filehandle of the parent with the ".."
 <a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>entry.
 <a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>The filehandle is optional, so let&#39;s just not return the filehandle for
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>&quot;..&quot; if we&#39;re at the root of an export.
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>The filehandle is optional, so let's just not return the filehandle for
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>".." if we're at the root of an export.
 <a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>Note that once the client learns one filehandle outside of the export,
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>they can trivially access the rest of the export using further lookups.
@@ -3645,7 +3645,7 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 让我们<strong>在虚拟机里试一试（请先保存全部数据！）</strong>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-t<span class="w"> </span>nfs<span class="w"> </span>localhost:/srv/abcde<span class="w"> </span>/mnt/nfs
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemctl<span class="w"> </span>stop<span class="w"> </span>nfs-server
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;test&quot;</span><span class="w"> </span>&gt;<span class="w"> </span>/mnt/nfs/testfile
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"test"</span><span class="w"> </span>&gt;<span class="w"> </span>/mnt/nfs/testfile
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="go">^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C^C</span>
 </code></pre></div>
 <p>可以发现 <code>echo</code> 被阻塞住了，并且发送 SIGINT 无法正常终止。此时的 bash 进程处于 D 状态，栈如下：</p>
@@ -3715,7 +3715,7 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">pfile_handle</span><span class="o">-&gt;</span><span class="n">fhversion</span><span class="w"> </span><span class="o">!=</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">            </span><span class="n">GANESHA_FH_VERSION</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">            </span><span class="n">LogInfo</span><span class="p">(</span><span class="n">COMPONENT_FILEHANDLE</span><span class="p">,</span>
-<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">                </span><span class="s">&quot;INVALID HANDLE: not a Ganesha handle, fhversion=%d&quot;</span><span class="p">,</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">                </span><span class="s">"INVALID HANDLE: not a Ganesha handle, fhversion=%d"</span><span class="p">,</span>
 <a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">                </span><span class="n">pfile_handle</span><span class="o">-&gt;</span><span class="n">fhversion</span><span class="p">);</span>
 </code></pre></div>
 <p>其定义是：</p>
@@ -3754,7 +3754,7 @@ NFS 客户端在每次重试之前会等待 <code>timeo</code> / 10（默认 600
 <div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>targetcli
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="go">targetcli shell version 2.1.53</span>
 <a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="go">Copyright 2011-2013 by Datera, Inc and others.</span>
-<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">For help on commands, type &#39;help&#39;.</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="go">For help on commands, type 'help'.</span>
 <a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
 <a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="go">/&gt; ls</span>
 <a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="go">o- / ..................................................................... [...]</span>
