@@ -55,7 +55,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
   [^unix-socket]: 事实上 Unix socket 是一种 IPC 方式，与网络栈几乎无关，没有「路由」和「防火墙」等组件。
 
-!!! question "路由决策与 Reroute check 是什么关系？"
+!!! question "路由决策与 Reroute check 是什么关系？" {#routing-decision-and-reroute-check}
 
     可能有部分读者见过 Wikipedia 的这张著名的 [Netfilter packet flow](https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg)：
 
@@ -72,7 +72,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
   [^iptable_mangle_hook]: 此图的 2021 年的版本仍然有一处错误：Reroute check 发生在 OUTPUT 阶段内部，而 FORWARD 阶段后不经过 reroute check。细节可见 [`iptable_mangle_hook`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78) 函数。
 
-??? info "Reroute check 的细节"
+??? info "Reroute check 的细节" {#reroute-check-details}
 
     首先需要重复的一点是：数据包最终的路由结果是基于经过 OUTPUT 阶段后、进入 POSTROUTING（或 INPUT）阶段前的状态决定的。
     那么既然数据包在 OUTPUT 阶段可能发生 MARK 或 DNAT 等修改，为什么不像外部传入的数据包一样，直接在 OUTPUT 阶段后进行路由决策呢？
@@ -205,7 +205,7 @@ Conntrack 除了记录连接的五元组（四层协议、源地址、目的地�
 conntrack -L
 ```
 
-??? example "conntrack 输出示例"
+??? example "conntrack 输出示例" {#conntrack-output-example}
 
     ```text
     udp      17 91 src=192.0.2.2 dst=8.8.8.8 sport=39043 dport=53 src=8.8.8.8 dst=198.51.100.1 sport=53 dport=39043 [ASSURED] mark=1 use=1
@@ -414,7 +414,7 @@ iptables -P OUTPUT ACCEPT
 
 每条内置链都有一个**默认策略**（`-P` / `--policy`），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。
 
-???+ example "例：科大镜像站上限制 80 / 443 端口并发连接数"
+???+ example "例：科大镜像站上限制 80 / 443 端口并发连接数" {#iptables-jump-example}
 
     ```shell
     iptables -A LIMIT \

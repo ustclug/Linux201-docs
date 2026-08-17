@@ -10,11 +10,11 @@ icon: simple/cplusplus
 
 !!! warning "本文编写中"
 
-!!! comment "适用范围"
+!!! comment "适用范围" {#c-cpp-scope}
 
     C/C++ 的适用范围非常广泛，几乎可以适用于计算机的各种领域，通常用于性能要求较高或是资源受限、贴近底层的地方，比如操作系统内核、游戏引擎、高频量化交易、嵌入式开发等
 
-!!! note "特点"
+!!! note "特点" {#c-cpp-features}
 
     - 高性能：编译为机器码，没有额外开销
     - 手动内存管理：与一些自带 GC 的语言不同，C/C++ 要求开发者自行管理内存
@@ -39,6 +39,6 @@ Style Guide:
 
 - [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
 
-!!! comment "@xiao-h1024: 关于 C/C++ 生态的吐槽"
+!!! comment "@xiao-h1024: 关于 C/C++ 生态的吐槽" {#c-cpp-ecosystem-comment}
 
     C/C++ 的生态非常分散且混乱，你可以看到各种各样的构建工具，每个都声称自己解决了先前构建工具的问题，然而现实是各有各的坑点，生态还是那样混乱。想要把第三方库顺利集成到自己的项目中，还要跨平台，解决构建问题的时间都够写好多代码了，这可真是噩梦。所以还得是 Rust（逃

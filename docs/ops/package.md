@@ -20,7 +20,7 @@ Debian 有多个与软件包管理相关的工具。
 
 其中的底层工具为 dpkg。dpkg 不负责管理软件依赖关系，只管理具体某一个包的安装、卸载等操作。因此**除非需要排查疑难问题，否则不应该直接使用 dpkg 修改系统状态**。
 
-!!! warning "避免在安装 deb 文件时使用 dpkg"
+!!! warning "避免在安装 deb 文件时使用 dpkg" {#avoid-dpkg-installing-deb}
 
     网络上许多教程，甚至是一些官方文档，都会建议使用 `dpkg -i` 安装 deb 文件。当 deb 存在依赖，并且系统未安装满足要求的依赖时，直接使用 `dpkg` 会导致系统依赖管理出现问题，需要额外花费精力修复。
 
@@ -75,7 +75,7 @@ The following packages will be REMOVED:
 - `apt-mark showauto` 与 `apt-mark showmanual` 可以显示系统中被标记为自动安装与手动安装的包。
 - `apt-mark auto <package>` 与 `apt-mark manual <package>` 可以修改包的标记。
 
-!!! note "自动/手动安装的信息记录在哪里？"
+!!! note "自动/手动安装的信息记录在哪里？" {#auto-manual-installation}
 
     某个包是否为自动安装是 APT 维护的信息，存储在 `/var/lib/apt/extended_states`。事实上，APT 只会把自动安装的包放进这个文件，于是不在这个文件里面的就是手动安装的——所以如果用 dpkg 安装了某个包（尽管不推荐这么做），那么这个包就会被 APT 视为手动安装的，因为 dpkg 不会修改 `extended_states` 文件的内容。
 
@@ -85,7 +85,7 @@ The following packages will be REMOVED:
 
 大部分情况下，被设置为「推荐」的包是有意义的，如果不安装，可能程序仍然可以运行，但是会缺失一些重要的功能。不过在某些环境下，例如容器场景，我们需要安装的包尽可能得少。为了精简安装的软件包，可以使用 `--no-install-recommends` 的选项，以跳过推荐的软件包。还可以在 [`apt.conf`][apt.conf.5] 配置中添加 `Apt::Install-Recommends "false"` 以使默认配置不会安装推荐的包。
 
-!!! tip "使用 `.conf.d` 目录形式，避免直接修改 `.conf` 配置文件"
+!!! tip "使用 `.conf.d` 目录形式，避免直接修改 `.conf` 配置文件" {#conf-d-over-direct-edit}
 
     对于绝大多数 Debian 包来说，软件包对应的配置文件（以下称为 `.conf` 文件）是直接由软件包安装（管理）的。尽管直接修改配置也可以达到目的，但是在软件包升级，特别是系统大版本更新时，`apt` 会要求用户手工介入配置冲突问题（保留原配置，或者安装新配置），会带来一些困扰。
 
@@ -99,7 +99,7 @@ The following packages will be REMOVED:
 
     某些软件会根据文件名的字典序来决定配置的优先级，因此这里使用 `99` 作为前缀，确保这个配置文件在其他配置文件之后被读取。
 
-!!! tip "为什么某个包会被安装"
+!!! tip "为什么某个包会被安装" {#why-package-installed}
 
     由于推荐关系的存在，有时候在安装某个包时，会带上一些看起来无关的包。可以使用[下文介绍的 aptitude](#apt-frontend) 的 `why` 命令查看，例如确认为什么 `apt install lightdm` 会安装 `plymouth`：
 
@@ -151,7 +151,7 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
 - `~o` 远程已经不再存在的包，一般是在系统大版本更新后残留的旧包，或者是本地手动安装的包（`?obsolete`，在 `apt list` 的输出中显示为 `[installed,local]`）。
 - `~M` 被标记为自动安装的包（`?automatic`）。
 
-!!! question "搜索模式练习"
+!!! question "搜索模式练习" {#apt-search-pattern-practice}
 
     请尝试写出以下查询的搜索模式，并且在自己的环境中试一试：
 
@@ -217,7 +217,7 @@ htop: /usr/share/man/man1/htop.1.gz
 htop: /usr/share/pixmaps/htop.png
 ```
 
-!!! tip "使用 dpkg 类命令在**已安装的包**内查找文件"
+!!! tip "使用 dpkg 类命令在**已安装的包**内查找文件" {#find-files-in-installed-packages}
 
     `apt-file` 依赖于对完整仓库的索引，并且搜索也是一个略微耗时的过程。如果只需要确认本地已经安装的包，以及已有的 deb 包文件中的文件情况，有更快的方法：
 
@@ -342,7 +342,7 @@ Ubuntu 24.04 下的新立得软件包管理器截图
 
 dpkg 可以对已经安装的包进行完整性校验。`dpkg --verify <name>` 可以校验已经安装的包的完整性，可以省略 `<name>` 选项，以对于所有包进行检查。如果怀疑软件包文件因意外被破坏（例如在升级时断电，或误删除等），可以使用该命令确认哪些软件包需要重新安装。
 
-!!! example "检查某系统强制重启后无法开机的问题"
+!!! example "检查某系统强制重启后无法开机的问题" {#check-system-reboot-issue}
 
     一个现实发生的例子是，某系统强制重启后无法正常开机，提示：
 
@@ -373,7 +373,7 @@ missing     /some/missing_file
 
 `dpkg` 目前只会检查文件的 MD5（即上面的 `5`），因此其他列均标记为 `?`（未检查）。`c` 代表是配置文件，`missing` 代表文件不存在。
 
-!!! warning "`dpkg --verify` 不是为安全性用途设计的"
+!!! warning "`dpkg --verify` 不是为安全性用途设计的" {#dpkg-verify-not-security-check}
 
     如果怀疑攻击者已经有对应机器的 root 权限，那么 `dpkg --verify` 的结果是不可信的，因为攻击者可以修改 `dpkg` 本身，或者修改本地的包数据库。
 
@@ -409,7 +409,7 @@ yt-dlp:
 
 可以看到，APT 已知四个不同的 `yt-dlp` 版本，分别是 deb-multimedia 的 `1:2025.01.26-dmo1`、本地安装的 `1:2024.10.07-dmo1`、backports 的 `2025.01.26-1~bpo12+1` 以及官方源的 `2023.03.04-1`。特别地，本地的版本的优先级为 100。因此当执行更新命令时，APT 会首先选择优先级最高的（`deb-multimedia` 或者官方源），然后选择版本最高的（`1:2025.01.26-dmo1`）。
 
-!!! note "如果本地的版本比远程的版本更高……"
+!!! note "如果本地的版本比远程的版本更高……" {#local-version-higher-than-remote}
 
     此时 APT **不会降级**软件包，除非远程对应的优先级超过 1000。如果需要手动降级，可以使用 `apt install <name>=<version>`。
 
@@ -463,7 +463,7 @@ Pin-Priority: 1000
 
 详细文档请参考 [apt_preferences(5)][apt_preferences.5]。
 
-!!! lab "使用优先级机制阻止软件包安装"
+!!! lab "使用优先级机制阻止软件包安装" {#block-package-installation-with-pinning}
 
     当 `Pin-Priority` 为负数时，APT 会拒绝安装这个包。请阅读文档，尝试创建一个配置文件，阻止安装 `snapd`（可在 Ubuntu 容器中实验）。
 
@@ -615,7 +615,7 @@ Deb 包是一个 ar 格式的包，包含三个文件（可以使用 `ar t` 查�
 - `control.tar.xz`（或 `control.tar.zst` 等）：包含软件包的元数据，例如软件包的依赖、描述、安装脚本等。
 - `data.tar.xz`（或 `data.tar.zst` 等）：包含软件包的实际文件。
 
-!!! note "ar 与 tar"
+!!! note "ar 与 tar" {#ar-and-tar}
 
     ar 格式（1971）与 tar（1979）类似，都是归档格式。由于 ar 不支持目录，因此目前 ar 仅用于生成静态链接库（`.a` 文件）与 deb 包。
 
@@ -658,7 +658,7 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
 这些 hook 脚本与额外的信息文件在软件包安装后会保存在 `/var/lib/dpkg/info` 目录下，以便在维护软件包时参考，如卸载软件包或进行完整性校验（`dpkg -V`）等。
 
-!!! note "Hook 脚本与 init 系统的交互"
+!!! note "Hook 脚本与 init 系统的交互" {#package-hooks-and-init-system}
 
     传统上，Debian 软件包安装后，其 `postinst` 脚本会以默认安全的配置启动对应的服务，删除软件包时 `prerm` 和 `postrm` 也会做服务的关闭与删除操作。不过，直接在 hook 脚本里面运行 `systemctl` 是不太恰当的，因为运行所处的环境可能根本没有 systemd（例如容器或 chroot 等）。
 
@@ -678,7 +678,7 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
     另外，由于 Debian 已经全面使用 systemd，因此在 hook 脚本中更常见的其实是 `deb-systemd-helper` 和 `deb-systemd-invoke`，这两个命令也由 init-system-helpers 包提供。
 
-!!! note "debconf"
+!!! note "debconf" {#debconf-interactive-setup}
 
     一些软件包在安装时会需要用户提供额外的信息，例如 `tzdata` 包安装时会咨询用户所属的时区。这类交互式功能是由 debconf 实现的。需要 debconf 集成的软件包会包含 `templates` 文件，里面是需要询问用户的信息，类似这样：
 
@@ -725,7 +725,7 @@ Components: main
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 ```
 
-!!! tip "DEB822"
+!!! tip "DEB822" {#deb822-format}
 
     DEB822 是 Debian 新的仓库配置格式，用于取代旧的 `sources.list` 格式（又被称为 One-Line-Style 格式）。详情可阅读 <https://repolib.readthedocs.io/en/latest/deb822-format.html>。
 
@@ -760,7 +760,7 @@ dpkg-source: info: applying sudo-ldap-docs
 
 #### 使用 quilt 管理补丁 {#quilt}
 
-!!! note "补丁简介"
+!!! note "补丁简介" {#patch-introduction}
 
     补丁是后缀为 `patch` 的文件，由 `diff` 生成。补丁有多种不同的格式：unified diff (`diff -u`)、context diff (`diff -c`) 和 normal diff（默认）。其中最常见的是 unified diff 格式，类似如下（命令为 `diff -u test.txt test_new.txt`）：
 
@@ -1010,7 +1010,7 @@ esac
 	dh $@
 ```
 
-!!! tip "`%:`"
+!!! tip "`%:`" {#makefile-wildcard-rule}
 
     这是一个 Makefile 的通配符规则，表示所有的目标都使用 `dh` 命令来处理。例如，执行 `debian/rules build` 时，Makefile 会将 `build` 作为目标传递给 `dh`，因此等价于执行 `dh build`。
 
@@ -1057,7 +1057,7 @@ lintian --pedantic -E -i -I
 
 #### 使用 `checkinstall` 快速打包 {#checkinstall}
 
-!!! warning "checkinstall 工具仅适用于临时打包"
+!!! warning "checkinstall 工具仅适用于临时打包" {#checkinstall-temporary-packaging}
 
     checkinstall 的工作原理是，在 `make install` 使用 `installwatch` 环节拦截文件相关系统调用（类似 `strace`），检查文件的变化，并将其打包为 deb 包。因此其只适用于使用 Makefile 构建系统（包括 `cmake`、`autotools` 等）的软件包。并且 checkinstall 的工作原理决定了其无法处理复杂的软件包，例如如果某软件包在安装时修改了 `/etc/passwd`，那么 checkinstall 无法正确打包这个软件包——在卸载时可能会破坏系统[^debian-system]。
 
@@ -1210,7 +1210,7 @@ Suites: ./
 Trusted: yes
 ```
 
-!!! warning "`Signed-By` 与 GPG 签名"
+!!! warning "`Signed-By` 与 GPG 签名" {#signed-by-gpg-signature}
 
     [从 apt 2.9.24 开始，没有 `Signed-By` 字段的源会视作废弃状态](https://salsa.debian.org/apt-team/apt/-/commit/61f8f40f921cde13c5b97abbdf900646745e8e30#b3f55b8d9783f2ed27acfd1f0fe06dfc461e2aba_1_6)，并弹出警告信息：
 
@@ -1242,7 +1242,7 @@ Trusted: yes
 - `ChangeLog`：变更记录。
 - `contrib/`, `main/`, `non-free/`, `non-free-firmware/`：不同的组件（Components）。
 
-!!! comment "@taoky: 安全更新源与镜像站"
+!!! comment "@taoky: 安全更新源与镜像站" {#security-update-mirror-trust}
 
     曾经有人问过这个问题：镜像站提供安全更新源的话，怎么保证镜像站本身不会通过拖延更新等方式阻止用户获取安全更新？
 
@@ -1271,7 +1271,7 @@ Trusted: yes
 - `Release`：该架构的元数据。
 - `by-hash/`：同上。
 
-!!! note "使用 rsync 同步 Debian 软件源"
+!!! note "使用 rsync 同步 Debian 软件源" {#rsync-sync-debian-repo}
 
     使用 rsync 同步 Debian 软件源（以及其他软件仓库）的一个常见问题是：index（索引）文件和包数据文件的一致性。如果发生了不一致，用户在更新的时候就会遇到错误，影响体验。尽管 [rsync 支持推迟更新与删除文件](./storage/backup.md#rsync-client)，但是仍然可能有问题：
 
@@ -1283,7 +1283,7 @@ Trusted: yes
     - Stage 1 会同步除了 index 以外的数据（包括 `pool`、`by-hash` 目录等），同步这些文件不会修改已有的 index，也不会删除已有的 index 引用的数据包。
     - Stage 2 开始前会检测符合 `Archive-Update-in-Progress-*` 形式的文件，如果存在，那么说明上游正在同步（这个文件被 stage 1 同步了进来），那么就从头开始重试。否则做一遍完整的 rsync 同步（由于 stage 1 已经同步了非 index 数据，这一步只会同步 index 数据）。
 
-    ??? note "Stage 1 和 2 的 rsync 参数"
+    ??? note "Stage 1 和 2 的 rsync 参数" {#rsync-stage-parameters}
 
         ```sh
         if [[ $RSYNC_PROTOCOL -ge 31 ]]; then

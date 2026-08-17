@@ -128,7 +128,7 @@ http {
 
 从 Nginx 的角度来看，唯一的区别在于来自 `conf.d` 的文件能够更早被处理，因此，如果你有相互冲突的配置，那么来自 `conf.d` 的配置会优先于 `sites-enabled` 中的配置。
 
-!!! note "其他发行版和 Nginx 官方的配置"
+!!! note "其他发行版和 Nginx 官方的配置" {#nginx-configuration-layouts}
 
     对于其他发行版和官方源来说，配置中则不包含 `sites-available` 和 `sites-enabled`，而是只会 `include` `conf.d` 目录：
 
@@ -161,7 +161,7 @@ sudo nginx -s reload
 
 需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。
 
-??? note "Nginx 的主进程与工作进程的设计"
+??? note "Nginx 的主进程与工作进程的设计" {#nginx-process-model}
 
     Nginx 采用了主进程（master process）和工作进程（worker process）的设计。主进程负责读取配置、打开端口、管理工作进程，而工作进程则负责处理实际的请求。当你向主进程发送 SIGHUP 信号时（重新加载配置文件），主进程先验证新的配置，成功后会启动新的工作进程来应用新的配置，并且让旧的工作进程停止接受新连接，处理完成已有的连接之后再退出，因此正在处理的请求不会被突然中断。
 
@@ -211,13 +211,13 @@ events {
 
 对生产环境来说，以上的参数设置可能是不够的。例如对一台分配了 4 核心的虚拟机，按照上述设置，其最多只能同时处理 3072 个连接，对很多业务来说在高峰期都是不够用的，因此需要根据对同时连接数的估计、系统核心数量等来设置 `worker_connections`。作为参考，科大镜像站的 `worker_connections` 设置为 32767，并有 80 个 CPU 核心，每个核心一个工作进程。
 
-!!! note "那 `multi_accept` 呢？"
+!!! note "那 `multi_accept` 呢？" {#multi-accept}
 
     在 Linux 下，nginx 默认使用 epoll。[`multi_accept`](https://nginx.org/en/docs/ngx_core_module.html#multi_accept) 开启后，每次 nginx epoll 都会尽可能多地 accept 新连接，而不是一个一个来。在一部分场景下可能有效果，但是这也会让某个 worker 一次性抢到太多的连接，导致负载不均等问题。
 
     相比之下，更推荐的优化是在 `server` 块（下文介绍）的 `listen` 指令添加 [`reuseport` 参数](https://nginx.org/en/docs/http/ngx_http_core_module.html#reuseport)，让内核将新连接均衡到不同的工作进程上（而不是每个工作进程在有新连接时一起被唤醒抢夺连接——这也被称为[「惊群」（Thundering herd）问题](https://en.wikipedia.org/wiki/Thundering_herd_problem)）。
 
-!!! warning "调整文件描述符数量限制"
+!!! warning "调整文件描述符数量限制" {#file-descriptor-limit}
 
     每个进程能够打开的文件数量是有限制的。对 Shell，可以使用 `ulimit -S -n` 和 `ulimit -H -n` 分别查看 soft limit 和 hard limit；对已有的进程也可以查看 `/proc/<PID>/limits` 文件。
 
@@ -225,7 +225,7 @@ events {
 
     如果使用 systemd，也可以调整 `nginx.service`，添加 `LimitNOFILE` 参数。
 
-!!! tip "使用 `aio` 避免工作进程阻塞"
+!!! tip "使用 `aio` 避免工作进程阻塞" {#use-aio}
 
     默认配置下，Nginx 的工作进程会打开、读取需要的文件，但是 POSIX 默认的文件 API（`open()`、`read()` 等）是同步的——这意味着，如果 IO 处理的速度较慢（例如在机械硬盘上），那么对应的工作进程在调用文件 API 时就无法处理其他的请求，导致响应的延迟增大。
 
@@ -256,7 +256,7 @@ server {
 
 [`location` 块](https://nginx.org/en/docs/http/ngx_http_core_module.html#location)嵌套于 `server` 块中，用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许让 Nginx 根据请求的路径、参数或其他条件来执行不同的操作。一个 `server` 块中可以有多个 `location` 块。
 
-!!! tip "URI? URL? Request URI?"
+!!! tip "URI? URL? Request URI?" {#uri-url-request-uri}
 
     URI（Uniform Resource Identifier，统一资源标识符）包含 URL（Uniform Resource Locator，统一资源定位符）和 URN（Uniform Resource Name，统一资源名称）。其中 URL 大家都非常熟悉，而 URN 则比较少见。URN 的格式类似于 [`urn:isbn:0262510871`](https://web.mit.edu/6.001/6.037/sicp.pdf)，用于标识资源（这里是一本书）的名称。因为 URN 很少见，在绝大部分场景下，URI 和 URL 可以视为同义词。
 
@@ -334,7 +334,7 @@ server {
 
 其中对绝大部分后端服务来说，`Host` 头是必须设置的。
 
-!!! note "约定俗成的 HTTP 请求头"
+!!! note "约定俗成的 HTTP 请求头" {#http-request-headers}
 
     以上配置中除了 `Host` 是 HTTP/1.1 标准的请求头以外，其他以 `X-` 开头的请求头都是约定俗成的非标准请求头，用于让反向代理（Nginx）传递请求用户的真实 IP 地址和请求协议等信息，否则后端服务只能看到反代本身的 IP 信息。需要注意的是，如果后端服务器没有经过反向代理，或者反向代理配置不正确，那么用户可能会伪造这些请求头，如果此时后端服务错误地信任了这些请求头，就会导致安全问题。
 
@@ -378,7 +378,7 @@ server {
 
 那 `default_server` 又是什么意思呢？它表示默认站点，当请求的域名不在 `server_name` 中时，Nginx 会使用 `default_server` 对应的 `server` 块来处理请求。该站点的 server_name 指定为 `_`，是一种约定俗成的默认域名，本身没有特殊含义。对于配置了 `default_server` 的 `server` 块，你也可以完全不写 `server_name` 指令。一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。
 
-!!! example "拒绝未知域名请求"
+!!! example "拒绝未知域名请求" {#reject-unknown-domain}
 
     你也可以通过配置一个默认站点来拒绝未知域名的请求，例如：
 
@@ -537,7 +537,7 @@ Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
     如果有匹配到的正则表达式，Nginx 会使用该 `location` 块处理请求。
     如果没有匹配到的正则表达式，Nginx 会使用第二步中匹配到的前缀 `location` 块处理请求。
 
-!!! question "分析以下配置的问题"
+!!! question "分析以下配置的问题" {#location-matching-analysis}
 
     以下配置节选自 [Hackergame 2020 题目「超简易的网盘服务器」](https://github.com/USTC-Hackergame/hackergame2020-writeups/tree/master/official/%E8%B6%85%E7%AE%80%E6%98%93%E7%9A%84%E7%BD%91%E7%9B%98%E6%9C%8D%E5%8A%A1%E5%99%A8)，该服务为 [h5ai](https://github.com/lrsjng/h5ai)（一个 PHP 编写的文件分享服务）：
 
@@ -569,7 +569,7 @@ Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
 
 TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <https://cherr.cc/ssl.html> 找到 SSL/TLS 的原理解释。
 
-!!! note "SSL?"
+!!! note "SSL?" {#ssl-vs-tls}
 
     在早期，HTTPS 使用 SSL 来加密通信，但是人们后续发现 SSL 存在一些安全漏洞，因此逐渐被 TLS 取代。尽管如此，SSL 这个术语仍然被广泛使用，尤其是在非正式场合下。因此，SSL 和 TLS 在很多情况下可以视为同义词。
 
@@ -583,11 +583,11 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 - 购买商业证书。
 - 自签名证书（仅用于测试环境，不建议在生产环境中使用）。
 
-!!! tip "ngx_http_acme_module"
+!!! tip "ngx_http_acme_module" {#ngx-http-acme-module}
 
     Nginx 的 [`ngx_http_acme_module`](https://nginx.org/en/docs/http/ngx_http_acme_module.html) 也实现了 ACME 协议，可以类似 Caddy 那样避免多余的证书管理工具，直接让 Nginx 自行申请和续期证书。该模块可能需要自行编译安装。
 
-!!! comment "@taoky: 商业证书一定比免费证书更好吗？"
+!!! comment "@taoky: 商业证书一定比免费证书更好吗？" {#commercial-vs-free-certificates}
 
     不一定。经常有的一种论调是：商业证书因为付了钱，所以比 Let's Encrypt 等免费证书更可靠、更安全，例如像[下面这样](https://www.bilibili.com/opus/1119462279183597571)：
 
@@ -607,7 +607,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
     4. 免费证书使用的 ACME 协议决定了，能为域名申请到有效证书的前提是申请方对域名有控制权。并且，现在所有证书签署都有证书透明度（Certificate Transparency，CT）机制，任何人都可以[查询](https://crt.sh/)到某个域名对应的证书签署记录。因此想要骗签证书难度很大，并且很容易被发现。
     5. 安全性不取决于花了多少钱，而是取决于具体实践。ACME 协议支持自动化签署、续期证书，可以大大降低人为操作失误（包括泄漏私钥、忘记续期）的风险。而**如果花了钱买了 EV 证书，但是最后部署的时候却是通过微信（我听说过不止一例类似的情况）给对应服务的运维传递证书私钥，那安全性反而大大降低了，远不如自动化的免费证书**。
 
-!!! tip "Debian 的 snakeoil 自签名证书"
+!!! tip "Debian 的 snakeoil 自签名证书" {#debian-snakeoil-certificate}
 
     Debian 系统的 `ssl-cert` 包自带了一个自签名的测试证书。对应的证书在 `/etc/ssl/certs/ssl-cert-snakeoil.pem`，私钥在 `/etc/ssl/private/ssl-cert-snakeoil.key`。可以用它本地测试 HTTPS 配置，但不建议在生产环境中使用。
 
@@ -617,11 +617,11 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
     make-ssl-cert generate-default-snakeoil -f
     ```
 
-!!! tip "使用 mkcert 创建 CA 证书"
+!!! tip "使用 mkcert 创建 CA 证书" {#use-mkcert}
 
     以上介绍的「蛇油证书」对简单的场景够用了，但是在一些场景下我们需要生成 CA 证书，再使用 CA 证书签署新的证书（例如需要配置让程序信任使用指定 CA 证书签发的证书）。OpenSSL 虽然能解决这个问题，但是实在是太麻烦了——
 
-    ??? note "如果 OpenSSL 是 GUI 程序，会是什么样子的？"
+    ??? note "如果 OpenSSL 是 GUI 程序，会是什么样子的？" {#openssl-gui}
 
         ![If OpenSSL were a GUI](https://smallstep.imgix.net/openssl_83b5f638ef.png)
 
@@ -647,7 +647,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 
     CA 证书存储的位置可以使用 `mkcert -CAROOT` 查看。
 
-    ??? note "我还是想用 OpenSSL"
+    ??? note "我还是想用 OpenSSL" {#i-want-to-use-openssl}
 
         ```shell
         # 创建 CA 证书与密钥
@@ -668,7 +668,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
 
 以下假设你的证书保存在 `/etc/nginx/ssl/example.com.crt` 和 `/etc/nginx/ssl/example.com.key`。
 
-!!! tip "证书格式"
+!!! tip "证书格式" {#certificate-format}
 
     PEM 格式是最常见的证书格式。其内容为纯文本，包含 base64 编码的相关数据。对于证书（一般为 `pem`、`crt` 或者 `cer` 后缀）：
 
@@ -693,7 +693,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
     openssl pkey -in example.key -text -noout  # 检查私钥
     ```
 
-!!! tip "fullchain.pem"
+!!! tip "fullchain.pem" {#fullchain-pem}
 
     一些 ACME 客户端会生成 `fullchain.pem` 文件，它包含了服务器证书和中间证书的完整链。如果存在这个文件，请**优先使用**它，否则浏览器以外的其他客户端可能会因为缺少中间证书而无法验证证书链。
 
@@ -728,11 +728,11 @@ server {
 
 注意到和前文的配置不同，这里的监听端口是 443，而且增加了 `ssl` 选项。`ssl_certificate` 和 `ssl_certificate_key` 分别指定了 TLS 证书和密钥的路径。
 
-!!! note "既然 TLS 是加密的，那么 Nginx 是怎么在握手阶段知道要用哪个 `server` 块，以及里面对应的证书呢？"
+!!! note "既然 TLS 是加密的，那么 Nginx 是怎么在握手阶段知道要用哪个 `server` 块，以及里面对应的证书呢？" {#tls-sni-server-selection}
 
     在 TLS 握手阶段，绝大多数客户端都会发送 SNI（Server Name Indication，服务器名称指示）信息，告诉服务器它想要连接的域名。**SNI 是明文的**，因此服务器可以根据 SNI 信息来选择对应的 `server` 块和证书。
 
-!!! tip "使用 `curl` 调试指定 IP 地址上的 HTTPS 站点"
+!!! tip "使用 `curl` 调试指定 IP 地址上的 HTTPS 站点" {#curl-resolve-https-debugging}
 
     假设你希望 `curl` 能够命中某个服务器（以 127.0.0.1 为例子）上的 example.com `server` 块，但是 example.com 的 DNS 解析不指向这个服务器。对 HTTP 网站可以直接这么做：
 
@@ -748,7 +748,7 @@ server {
 
 在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 `ssl_protocols TLSv1.2 TLSv1.3;`，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。
 
-!!! note "`ssl_dhparam`"
+!!! note "`ssl_dhparam`" {#ssl-dhparam}
 
     由于非对称加密的性能不及对称加密，因此 TLS 在握手阶段需要非对称交换对称加密的密钥。在最早期的时候，SSL 使用 RSA 算法进行密钥交换——客户端生成对称加密密钥，使用服务端证书的公钥加密之后，服务端用自己的私钥解密。但是一旦私钥泄露，那么以往的加密流量也就能够轻松解密出来。而使用 Diffie-Hellman 算法的 DHE（Ephemeral DH）会在每次都生成新的 DH 私钥（算法的具体细节这里不展开），即使未来私钥泄露，以往的流量也无法轻松解密。这种性质也被称为**前向安全性（forward secrecy）**。
 
@@ -756,13 +756,13 @@ server {
 
 HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 `Strict-Transport-Security` 头部，指示浏览器该网站应仅通过 HTTPS 访问。`add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;` 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。
 
-!!! tip "购买域名之前注意一下 HSTS 预加载列表哦！"
+!!! tip "购买域名之前注意一下 HSTS 预加载列表哦！" {#check-hsts-preload-before-domain}
 
     [HSTS 预加载列表（HSTS Preload List）](https://hstspreload.org)是一个由浏览器维护的列表，在这个列表里面的网站浏览器在访问时必须使用 HTTPS。如果买了一个在 HSTS 预加载列表上面的域名，但是不想用 HTTPS 的话，事情就会非常麻烦。
 
     此外，一些 TLD（顶级域）也被加入到了 HSTS 预加载列表中，例如 `.dev` 等。
 
-!!! lab "访问 HTTP 自动跳转到 HTTPS 的配置"
+!!! lab "访问 HTTP 自动跳转到 HTTPS 的配置" {#http-to-https-redirect}
 
     假设希望让用户访问 `http://example.com` 时自动跳转到 `https://example.com`，对应的 `server` 块要怎么写呢？（提示：`return` 指令；HTTP 301 是永久重定向）
 
@@ -800,7 +800,7 @@ location /api/ {
 
 此外，在配置一些应用的时候，可能需要额外添加 WebSocket 支持。
 
-!!! note "WebSocket 是什么？"
+!!! note "WebSocket 是什么？" {#what-is-websocket}
 
     在现代网站开发时，经常存在的一种需求是：服务端需要主动向客户端推送数据，而不是仅仅被动地响应客户端（浏览器）请求。如果让浏览器定期轮询服务器，既浪费资源，又增加延迟。WebSocket 协议正是为了解决这个问题而设计的。它允许在客户端和服务器之间建立一个持久的双向通信通道，从而实现实时数据传输。
 
@@ -829,17 +829,17 @@ http {
 }
 ```
 
-!!! tip "以 `$http_` 开头的变量"
+!!! tip "以 `$http_` 开头的变量" {#http-variables}
 
     Nginx 会自动将所有 HTTP 请求头转换为以 `$http_` 开头的变量，变量名中的连字符 `-` 会被替换为下划线 `_`。例如，HTTP 请求头 `Upgrade` 对应的变量是 `$http_upgrade`，`User-Agent` 对应的变量是 `$http_user_agent`。
 
 这里 [`map`](https://nginx.org/en/docs/http/ngx_http_map_module.html#map) 指令必须在 `http` 块中，定义了一个从 HTTP 请求的 `Upgrade` 头到 `$connection_upgrade` 变量的映射关系。
 
-!!! note "为什么不能 `proxy_set_header Connection $http_connection`？"
+!!! note "为什么不能 `proxy_set_header Connection $http_connection`？" {#proxy-connection-header}
 
     在 HTTP 标准中，[`Connection`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection) 头是 hop-by-hop 的，这意味着这个头[不应该按照原样转发](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#hop-by-hop_headers)。直接转发会存在非预期的副作用。
 
-!!! tip "替换响应中的字符串"
+!!! tip "替换响应中的字符串" {#replace-response-string}
 
     有些时候我们会不得不需要修改上游返回的内容，特别是在没有办法修改上游（一般是网站后端）代码和配置的时候。例如，上游可能在返回的 HTML 里面写死了路径 `/static/`，但是你希望放在 `/app/static/`。此时可以使用 [`ngx_http_sub_module`](https://nginx.org/en/docs/http/ngx_http_sub_module.html) 模块提供的 [`sub_filter`](https://nginx.org/en/docs/http/ngx_http_sub_module.html#sub_filter) 相关的指令：
 
@@ -979,7 +979,7 @@ upstream backend {
 }
 ```
 
-!!! tip "一致性哈希算法"
+!!! tip "一致性哈希算法" {#consistent-hashing}
 
     在上面的配置中，我们添加了 `consistent` 选项，这表示使用[一致性哈希算法](https://en.wikipedia.org/wiki/Consistent_hashing)，而不是传统的 `hash(key) % N` 的方法。它可以保证在节点数量变化时，尽可能少地改变已有的映射关系。
 
@@ -999,7 +999,7 @@ autoindex on;
 
 如果 `autoindex` 设置为 `off`，并且 `index` 指令中没有匹配的文件，Nginx 会返回 HTTP 403。
 
-!!! tip "autoindex 的 JSON 输出支持"
+!!! tip "autoindex 的 JSON 输出支持" {#autoindex-json-output}
 
     `autoindex` 的 HTML 的输出很简陋。不过鲜为人知的是，`autoindex` 也支持输出为 XML、JSON 或 JSONP 格式。JSON 类格式可以方便前端的 JavaScript 进行处理，从而实现更复杂、美观的文件列表界面。对应的指令为 [`autoindex_format`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html#autoindex_format)。
 
@@ -1012,7 +1012,7 @@ autoindex on;
     ]
     ```
 
-    ??? tip "JSONP"
+    ??? tip "JSONP" {#jsonp}
 
         JSONP（JSON with Padding）是一种古老的在前端获取其他站点数据（跨域）的技术。在以上的例子中，如果 `autoindex_format` 设置为 `jsonp`，则在请求时添加 `callback` 参数即可获得 JSONP 格式的响应，例如 `http://example.com/files/?callback=handleFileList`：
 
@@ -1034,7 +1034,7 @@ autoindex on;
 
 如果需要更好看的界面，一般会使用 fancyindex 模块（`libnginx-mod-http-fancyindex` 包）。添加 [`fancyindex on;`](https://github.com/aperezdc/ngx-fancyindex?tab=readme-ov-file#fancyindex) 指令后，fancyindex 就会以默认样式生成文件列表页面。用户可以自定义 CSS、header 和 footer 来美化页面，网络上也有不少现成的样式可以参考。
 
-!!! note "使用一个专门的后端程序生成文件列表页面"
+!!! note "使用一个专门的后端程序生成文件列表页面" {#backend-generated-file-listing}
 
     你可能会希望使用其他的文件列表程序（例如 [h5ai](https://github.com/lrsjng/h5ai)，或者我们编写的用于科大镜像站的 [yadex](https://github.com/ustclug/yadex)），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：
 
@@ -1087,7 +1087,7 @@ location /downloads/ {
 }
 ```
 
-!!! tip "Nginx 使用的单位"
+!!! tip "Nginx 使用的单位" {#nginx-unit-usage}
 
     在 Nginx 配置中，`k`、`m`、`g` 均使用 1024 作为基数，而不是 1000。即分别是 KiB（Kibibyte）、MiB（Mebibyte）、GiB（Gibibyte）等。
 
@@ -1177,7 +1177,7 @@ location /old-path/ {
 }
 ```
 
-!!! tip "internal 与 named location"
+!!! tip "internal 与 named location" {#internal-and-named-locations}
 
     有时候我们希望某个路径只能在诸如 `rewrite`、[`error_page`](https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page) 或 [`try_files`](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files) 等指令中被跳转访问，而不能被外部直接请求，此时可以使用 [`internal`](https://nginx.org/en/docs/http/ngx_http_core_module.html#internal) 指令：
 
@@ -1214,7 +1214,7 @@ if (-x $request_filename) {
 }
 ```
 
-!!! tip "同时符合多个条件的判断"
+!!! tip "同时符合多个条件的判断" {#multiple-conditions}
 
     Nginx 的 `if` 指令不支持 `&&` 或者 `||` 这样的逻辑运算，并且不支持 `if` 嵌套。如果需要同时满足多个条件，可以添加一个变量来实现：
 
@@ -1252,7 +1252,7 @@ if (-x $request_filename) {
     }
     ```
 
-!!! warning "谨慎在 `location` 中使用 `if`"
+!!! warning "谨慎在 `location` 中使用 `if`" {#caution-if-in-location}
 
     曾有一篇[官方博客文章 "If is evil"](https://github.com/nginxinc/nginx-wiki/blob/master/source/start/topics/depth/ifisevil.rst) 讨论了在 `location` 块中使用 `if` 指令可能带来的问题。简单来讲，以下的使用场景是安全的：
 
@@ -1280,7 +1280,7 @@ http {
 }
 ```
 
-!!! warning "不要写 `error_log off`"
+!!! warning "不要写 `error_log off`" {#do-not-use-error-log-off}
 
     `access_log` 支持 `off` 参数，表示关闭访问日志，但是 `error_log` 不支持 `off` 参数。如果写了 `error_log off`，Nginx 不会报错，看起来也能正常运行，但是实际上错误日志会被写入到**名为 `off` 的文件**中（默认情况下，路径会是 `/usr/share/nginx/off`）。很多时候要等待 `off` 这个文件变得非常大，才会发现问题所在。
 
@@ -1563,7 +1563,7 @@ http {
 
 在 Lua 代码中使用 [`ngx.shared.DICT`](https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxshareddict) 调用。
 
-!!! lab "获取共享 dict 的剩余空间"
+!!! lab "获取共享 dict 的剩余空间" {#shared-dict-space}
 
     对比较复杂的需求场景下，获取共享 dict 的剩余空间是有必要的——可以据此添加监控告警，防止共享 dict 被写满导致服务异常。请编写一个 Lua 脚本，当用户访问 `/shared-dict-info` 时，返回共享 dict 的总大小和剩余空间。
 

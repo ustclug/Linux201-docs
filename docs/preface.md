@@ -26,7 +26,7 @@ DevOps
 
 :   DevOps 和 SRE 的工作很多时候是相近的，但是 DevOps 更加侧重于开发与运维之间的融合，减少两者之间的沟通成本，加快产品的开发与迭代。例如，开发可能会希望能够尽可能快速地部署自己的更新，而运维可能会由于稳定性上的顾虑而尽可能避免变化，但通过 CI（Continuous Integration，持续集成）和 CD（Continuous Delivery，持续交付）上的工作，更新（交付）可以在保证稳定性的同时更加快速。
 
-!!! note "Linux 201"
+!!! note "Linux 201" {#linux-201-scope}
 
     需要注意，Linux 201 **不是**专门的 SRE/DevOps 入门教程。
 
@@ -34,7 +34,7 @@ DevOps
 
 当我们讨论「可靠性」时，经常可以听到像「3 个 9」「4 个 9」这样的描述，这代表了服务正常运行的时间比例。如果服务的可靠性有 **3 个 9（99.9%），那么每年则最多允许不可用 8 小时 41 分钟 38 秒**。如果再加一个 9（99.99%），那么每年的不可用时间段就**最多只允许 52 分钟 9.8 秒**。在签订法律合同时，这项指标也被称为 **SLA（Service Level Agreement）**，代表了服务提供商和客户之间的可用性约定，如果服务没能达到 SLA 的要求，服务提供商需要提供补偿。
 
-!!! note "`s/SLA/availability/g`"
+!!! note "`s/SLA/availability/g`" {#availability-not-sla}
 
     不少时候，SLA 这个词会被误用来描述某个服务的「可用性」，这通常是不正确的（除非你与服务提供商签订了正式协议）。特别是对公益性质的网络服务而言，因为这类服务无法承担违约赔偿责任，因此只能够尽力而为保障可用性，而不能使用 SLA 这种有合同约束效力的词汇。
     
@@ -57,7 +57,7 @@ DevOps
 
 因此，这是一份**能力、道德素养与责任心缺一不可**的任务。同时，在将系统的重要权限授予其他用户时，也请确保对应的用户了解相关的注意事项，并能够为自己的行为负责。特别需要注意的是，目前大语言模型无法代替没有任何经验的用户进行系统管理（这一点也可以从下面的例子看到），并且由于忽略警告、盲目听从建议等原因，可能会导致更严重的后果。
 
-!!! example "sudo 的首次提示语"
+!!! example "sudo 的首次提示语" {#sudo-first-prompt}
 
     当作为普通用户第一次使用 `sudo` 命令时，你会看到下面这段话：
 
@@ -75,7 +75,7 @@ USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system
 
 此外，在维护的过程中，出现问题是不可避免的。但是在出现问题之后，应当**避免责备某个具体的人**。正如绝大部分的飞机事故都是各个方面的问题共同导致，几乎不会出现某一个人需要承担全部责任的结果一样，一个合格的系统管理员，需要能够系统地分析故障原因（这也被称为 Post-Mortem，即「事故复盘」或「事后分析」），并且针对分析得到的问题，或编写工具，或改进流程，这样才能够有效地防止同样的问题再次发生。
 
-!!! note "事故复盘"
+!!! note "事故复盘" {#incident-postmortem}
 
     一份简单的事故复盘包括以下内容：
 
@@ -84,7 +84,7 @@ USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system
     - 改进措施：具体如何改进防止问题再次发生？改进步骤每一步的负责人是谁？改进的时间表是什么？
     - 总结：有哪些地方做得好（正面经验）？有哪些地方做得不足（教训）？
 
-!!! example "著名事故的复盘"
+!!! example "著名事故的复盘" {#notable-incident-postmortems}
 
     - [GitLab 数据库删除事故（2017）](https://about.gitlab.com/blog/gitlab-dot-com-database-incident/)
     - [GitHub 服务降级事故（2018）](https://github.blog/news-insights/company-news/oct21-post-incident-analysis/)
@@ -93,7 +93,7 @@ USENIX 的 [System Administrators' Code of Ethics](https://www.usenix.org/system
     - [AWS us-east-1 区域中断事故（2025）](https://aws.amazon.com/message/101925/)
     - [Cloudflare 服务中断事故（2025）](https://blog.cloudflare.com/18-november-2025-outage/)
 
-!!! question "真实案例"
+!!! question "真实案例" {#real-case}
 
     这是一件真实发生的、在某群聊中流传出来的例子：实验室的 A 将服务器的用户私钥提供给了 B（用户有 root 权限），B 为了运行游戏尝试将 Linux 远程重装为 Windows，在咨询 GPT 后进行操作（[聊天记录的 GitHub Gist 存档](https://gist.github.com/Xuanwo/a8a85439cc6c391df7ddc0b1684a1c4e/)），结果导致数据丢失，所幸服务器上没有重要数据。
 

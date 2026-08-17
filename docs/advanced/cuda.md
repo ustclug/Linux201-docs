@@ -45,7 +45,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 ![CUDA components](../images/cuda.png)
 
-!!! note "NVIDIA 内核驱动"
+!!! note "NVIDIA 内核驱动" {#nvidia-kernel-driver}
 
      默认情况下，Linux 内核自带开源的 Nouveau 驱动。Nouveau 驱动大部分时候能够点亮屏幕，进行基础的图形渲染，对于没有计算和重度渲染需求（例如大型游戏）的用户来讲是可以尝试的选择[^nouveau-performance]。但是很遗憾，Nouveau 不支持运行包括 CUDA 在内的计算任务[^nouveau-matrix]。
 
@@ -55,7 +55,7 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
      [^nouveau-matrix]: <https://nouveau.freedesktop.org/FeatureMatrix.html> 中 "Compute" 一行均为 WIP（Work In Progress）状态，即尚未支持。
 
-!!! tip "确认是否已经安装过 NVIDIA 驱动"
+!!! tip "确认是否已经安装过 NVIDIA 驱动" {#check-nvidia-driver}
 
     使用 `cat /proc/driver/nvidia/version` 命令来确认是否安装了 NVIDIA 驱动。如果已安装则显示版本号。
 
@@ -77,13 +77,13 @@ CUDA（Compute Unified Device Architecture）是由 NVIDIA 公司推出的开发
 
 对于后两种方式，可以在官网下载页面 <https://developer.nvidia.com/CUDA-downloads> 选择合适的操作系统，网页将给出对应操作系统的安装指令。其中 "Install Type" 中 local 代表安装包包含了完整的 CUDA 运行时和相关驱动，包管理器在需要时从本地获取；而 network 单纯只包含了源配置，由包管理器在需要时联网获取。"runfile (local)" 则是上面所说的第三种不推荐的安装方式。另外，旧的 CUDA 版本需要在 [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive) 中查找。
 
-!!! note "不是安装 NVIDIA 驱动吗？为什么在 CUDA 下载页面？"
+!!! note "不是安装 NVIDIA 驱动吗？为什么在 CUDA 下载页面？" {#nvidia-driver-cuda}
 
     这里的「CUDA 下载」实际上下载的是 NVIDIA 驱动 + CUDA 开发环境。即使不想要 CUDA，其软件仓库也包含了 NVIDIA 驱动的安装包。同时，CUDA 开发环境也可以通过其他的方式（例如从 PyPI 或 Conda）获取。
 
 在安装时，可能会需要选择 NVIDIA 驱动的版本。如果没有特殊需求，选择最新的版本即可，因为旧的驱动可能不支持新版本的 CUDA 与显卡。详情见[版本关系说明](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html)。
 
-!!! tip "Linux 头文件，与 DKMS"
+!!! tip "Linux 头文件，与 DKMS" {#linux-headers-dkms}
 
      NVIDIA 驱动尽管是闭源的，但是其仍然包含一部分开源的代码，用于在内核和闭源驱动之间交互（这一部分代码也被戏称为 "GPL condom"）。由于不同版本的内核的 ABI 不兼容，因此更换内核后就需要重新编译驱动。DKMS（Dynamic Kernel Module Support）会帮助在内核更新后自动重新编译驱动，不过编译驱动还需要内核头文件，否则 DKMS 会跳过编译。
 
@@ -156,7 +156,7 @@ Wed Jul 30 02:25:00 2025
 
 如果能够查看到你的显卡，那么恭喜你，显卡已经可以使用了。
 
-!!! tip "CUDA Version"
+!!! tip "CUDA Version" {#nvidia-smi-cuda-version}
 
     `nvidia-smi` 界面右上角显示的 CUDA 版本是指当前系统上安装的 NVIDIA 驱动支持的最高 CUDA 版本，并不是已安装的 CUDA 版本——比显示版本低的 CUDA 也是能够正常使用的。
 
@@ -167,7 +167,7 @@ Wed Jul 30 02:25:00 2025
 nvidia-smi --loop=2
 ```
 
-!!! warning "nvidia-smi 的额外开销"
+!!! warning "nvidia-smi 的额外开销" {#nvidia-smi-overhead}
 
     频繁获取统计信息是有额外开销的，可能会对 GPU 的性能产生影响。因此建议间隔时间不要设置得太小——默认的 5s 就是一个比较合适的值。
 
@@ -261,13 +261,13 @@ Collecting package metadata (current_repodata.json): done
 （以下省略）
 ```
 
-!!! tip "Conda 频道"
+!!! tip "Conda 频道" {#conda-channels}
 
     Anaconda 默认仅包含 Anaconda 公司的软件包源（`pkg/main` 和 `pkg/r`，**商用用途需要付费**），但是允许第三方开发者设立自己的「频道」（即仓库）。使用 `-c` 参数可以指定使用的频道。
 
     不建议从 Anaconda 的 `pkg/main` 频道安装 CUDA，因为它包含的 CUDA 版本通常不是你想要的。除了 NVIDIA 官方的 `nvidia` 频道外，由社区维护的 Conda Forge（`-c conda-forge`）频道也包含了 CUDA 包。
 
-!!! tip "`cuda` 和 `cuda-toolkit`"
+!!! tip "`cuda` 和 `cuda-toolkit`" {#cuda-cuda-toolkit}
 
     如果不需要 CUDA 开发工具（例如 nvcc），可以只安装 `cuda-toolkit` 包。
 
@@ -336,7 +336,7 @@ Hello, World from GPU thread 3!
 Hello, World from GPU thread 4!
 ```
 
-!!! note "没有输出？"
+!!! note "没有输出？" {#no-output}
 
     可以添加 `cudaGetLastError()` 函数来检查是否有错误发生：
 

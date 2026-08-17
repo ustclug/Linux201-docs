@@ -14,7 +14,7 @@ icon: fontawesome/solid/tasks
 
 常见的开源作业调度系统包括 [Slurm](https://github.com/SchedMD/slurm)、[OpenPBS](https://github.com/openpbs/openpbs)、[HTCondor](https://github.com/htcondor/htcondor) 等。其中由 SchedMD 开发的 Slurm（Simple Linux Utility for Resource Management）是目前最流行的作业调度系统之一，广泛应用于各大超算计算中心和超级计算机。
 
-!!! note "本文不是用户指南"
+!!! note "本文不是用户指南" {#not-user-guide}
 
     本文主要基于系统管理员的视角，重点介绍 Slurm 在 Debian 集群上的部署、管理。关于集群用户对 Slurm 客户端的使用（如 `srun`, `sbatch`, `sinfo`, `squeue` 等命令），请参考或者向用户提供如下资料：
 
@@ -24,7 +24,7 @@ icon: fontawesome/solid/tasks
 
 ## Slurm 部署 {#slurm-deployment}
 
-!!! note "前提要求"
+!!! note "前提要求" {#slurm-deployment-prerequisites}
 
     我们假设读者已经具备一定的基本概念，了解常见的名词（如 node、partition、job 等）。如果不熟悉这些概念，建议先阅读 Slurm 官方文档的[概述](https://slurm.schedmd.com/overview.html)，以及上面的用户文档。
 
@@ -51,7 +51,7 @@ icon: fontawesome/solid/tasks
 
 运行控制守护进程的节点使用 `munge` 进行身份验证和通信，需要提前使用 apt 安装，并同步 `/etc/munge/munge.key`。munge 的正常工作还依赖于集群内时间的同步，请参阅 [网络时间同步](../../ops/network-service/ntp.md) 进行配置。
 
-??? tip "munge 测试"
+??? tip "munge 测试" {#munge-test}
 
     可通过以下命令测试 munge 是否配置正确：
 
@@ -106,7 +106,7 @@ ConstrainRAMSpace=yes # 启用内存约束
 
 slurmdbd 是其他守护进程访问数据库的代理，可以避免在配置文件中直接暴露数据库连接信息。目前 slurmdbd 只支持 MySQL/MariaDB 作为后端，并只支持通过网络连接（而非 UNIX Domain Socket）。
 
-!!! warning "注意备份数据库"
+!!! warning "注意备份数据库" {#backup-slurmdb}
 
     Slurm 数据库中存储了用户组织关系、作业历史记录、资源使用情况等重要信息，务必定期备份数据库，以防止数据丢失。
 
@@ -163,11 +163,11 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 
 需要特别注意的是，为了正确应用任务优先级，需要显式在配置中启用 [Multifactor Priority Plugin](https://slurm.schedmd.com/priority_multifactor.html)，并恰当地配置优先级的计算公式中各项系数；否则，QoS 中的优先级效果可能无法体现。
 
-!!! tip "注意打开配置"
+!!! tip "注意打开配置" {#enable-accounting}
 
     为了使得设置生效，需要正确配置 `slurm.conf` 中的 `AccountingStorageEnforce` 选项，常见的值是 `associations,limits,qos,safe`。
 
-??? example "示例配置"
+??? example "示例配置" {#example-configuration}
 
     下面是作者在管理的某个 Slurm 课程集群上运行 `sacctmgr show qos` 的输出，展示了三个 QoS 分组的配置情况：
 
@@ -222,12 +222,12 @@ Slurm 的权限管理依赖于其账户数据库，因此需要 slurmdbd 的支�
 * 禁用 `pam_systemd` 模块，否则会与 `pam_slurm_adopt` 冲突，导致其失效。可通过 `pam-auth-update` 工具进行配置。
 * 确保没有其他模块绕过了 `pam_slurm_adopt`。
 
-!!! note "潜在影响"
+!!! note "潜在影响" {#potential-impact}
 
     禁用 `pam_systemd` 可能会导致某些依赖于 systemd 用户会话的功能（如用户级别的定时任务、用户级别的服务等）无法正常工作。
     考虑到计算节点通常不需要这些功能，作者认为这是可以接受的权衡。
 
-??? example "样例 PAM 配置"
+??? example "样例 PAM 配置" {#pam-configuration}
 
     在作者管理的集群上，sshd 的 PAM 配置如下：
 
@@ -276,7 +276,7 @@ SLURMD_OPTIONS="--conf-server your_ctl_server:6817"
 TemporaryFileSystem=/etc/slurm
 ```
 
-??? tip "Trixie 前的特殊配置"
+??? tip "Trixie 前的特殊配置" {#pre-trixie-configless-setup}
 
     较旧（Debian Trixie 前）的 `slurmd.service` 中含有多余的 `ConditionPathExists=/etc/slurm/slurmd.conf`，需要一并覆盖清除，否则会导致无配置的情况下，服务无法正常启动：
 
@@ -305,7 +305,7 @@ systemctl enable --now sackd
 
 进一步地，Slurm 还可以作为 OCI 容器运行时（“后端”）：用户在提交作业时不需要使用 slurm 相关命令，而是直接使用 `podman`, `dockers` 或者 `singularity` 等前端工具，它们通过标准 OCI 接口调用 Slurm 的 [`scrun`][scrun.1] 命令来创建和运行容器，而 Slurm 会将容器提交到计算节点上运行。也就是说，Slurm 本身也对容器用户是透明的；最终效果是，用户可以像在单机上运行容器一样，在集群上运行容器，而不需要关心底层的调度和资源分配。
 
-!!! warning "配置复杂"
+!!! warning "配置复杂" {#container-configuration}
 
     目前 Slurm 对容器的支持仍然比较初级，配置较为晦涩难懂（如对共享文件系统有更复杂的要求），且对不同的容器运行时支持程度不一，限制较多。作者尚未成功配置过此功能，建议有兴趣的读者仔细阅读官方文档，谨慎部署。
 

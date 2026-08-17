@@ -143,7 +143,7 @@ mdadm: /dev/loop2 appears to be part of a raid array:
 此外，尽管这里不展示 RAID10 的创建过程，但是 mdadm 的 RAID10 涉及到 near, far 和 offset 三种布局的选择。
 详细的介绍可参考 [md(4)][md.4] 的 "About the RAID10 Layout Examples" 部分。
 
-!!! warning "有关 raid456 的性能争议"
+!!! warning "有关 raid456 的性能争议" {#raid456-performance-controversy}
 
     内核 md 的 raid456 模块中定义了一个固定大小的 4K "stripe"，所有的块 IO 操作都会被先被分成 4K 的块，
     commit 到设备上后再合并操作。并且目前合并操作无法正确处理 trim 指令，这就导致了对 raid4/5/6 进行 trim
@@ -295,7 +295,7 @@ $ # 再执行一次 check 后 mismatch_cnt 值会变为 0
 不同的服务器可能提供了不同的硬件 RAID 方案，目前最常见的是 MegaRAID 方案。
 在服务器启动时，按下指定的按键，可以进入 RAID 卡的设置界面进行操作。
 
-??? example "图片：可能会看到的界面"
+??? example "图片：可能会看到的界面" {#hardware-raid-example}
 
     <figure markdown="span">
       ![MegaRAID Utility](https://docs.oracle.com/cd/E41059_01/html/E48312/figures/adapter_selection.jpg)
@@ -308,7 +308,7 @@ HPE 的 Smart Array 可以使用 `ssacli` 等。
 
 以下介绍 MegaRAID 相关的一些操作。
 
-!!! comment "@taoky: 硬件 RAID，md/LVM，还是 ZFS？"
+!!! comment "@taoky: 硬件 RAID，md/LVM，还是 ZFS？" {#hardware-raid-vs-md-lvm-zfs}
 
     选择何种方案，需要在系统部署前确定好，否则后续切换的代价极高。
     在约十年前，硬件 RAID 是很合理的方案，因为能够节省 CPU 计算资源，性能足够好，配置简单，而且服务器一般都会带个卡。
@@ -338,7 +338,7 @@ MegaCLI 是早期的 MegaRAID 管理工具，之后被 StorCLI 取代，但是�
 由于博通的文档管理混乱，找到需要的管理软件并不是一件容易的事情。
 这里提供了一些链接：
 
-!!! warning "尽可能从官方来源获取这些工具"
+!!! warning "尽可能从官方来源获取这些工具" {#get-megaraid-tools-from-official}
 
     即使会麻烦一些，在下载前确认来源站点（在这里是博通）是非常重要的。
     从不明网站下载工具存在很大的供应链攻击的风险。
@@ -363,11 +363,11 @@ $ rpm2cpio MegaCli-8.07.14-1.noarch.rpm | cpio -div
 MegaCLI 与 StorCLI 的操作有许多不同，下面主要展示 StorCLI 的操作。
 MegaCLI 的相似命令会折叠给出（以下的例子中，两者展示的是不同的阵列）。
 
-!!! tip "使用时加上 `-NoLog` (MegaCLI) / `nolog` (StorCLI) 参数"
+!!! tip "使用时加上 `-NoLog` (MegaCLI) / `nolog` (StorCLI) 参数" {#megaraid-tools-nolog}
 
     MegaRAID 的这两个工具默认每次执行都会在当前工作目录创建日志文件，可以使用 `-NoLog` 或 `nolog` 参数禁用。
 
-!!! tip "StorCLI 的 JSON 支持"
+!!! tip "StorCLI 的 JSON 支持" {#storcli-json-support}
 
     StorCLI 支持输出 JSON 格式的信息，这对程序化解析 RAID 阵列状态很有帮助。
     在命令的最后添加 ` J` 即可，如：
@@ -427,7 +427,7 @@ DG/VD TYPE  State Access Consist Cache Cac sCC      Size Name
 （以下省略）
 ```
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-basics-alternative}
 
     ```console
     $ sudo ./MegaCli64 -AdpallInfo -a0 -NoLog  # 使用 -aALL 表示所有控制器
@@ -525,7 +525,7 @@ State       Optimal
 （以下省略）
 ```
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-battery-alternative}
 
     ```console
     $ sudo ./MegaCli64 -AdpBbuCmd -a0 -NoLog
@@ -542,7 +542,7 @@ State       Optimal
 
     MegaCLI 可能不支持 CacheVault。
 
-!!! note "RAID 5/6 write hole 问题"
+!!! note "RAID 5/6 write hole 问题" {#raidad56-write-hole-problem}
 
     在讨论 RAID 5/6 的可靠性，以及为什么 btrfs 一直没有稳定的 RAID 5/6 支持时，经常会提到 write hole 问题。
     在 RAID 5/6 阵列中，在每块盘写入的数据都需要保持一致性（包括 parity），但是阵列的写入操作不是「原子」的。
@@ -557,7 +557,7 @@ State       Optimal
 
 #### 完整性检查 {#megaraid-scrub}
 
-!!! note "下面的部分内容没有命令输出展示"
+!!! note "下面的部分内容没有命令输出展示" {#megaraid-scrub-no-output}
 
     由于没有测试条件，因此下面的部分需要对磁盘状态作修改的内容仅作示例。
 
@@ -601,11 +601,11 @@ PR MaxConcurrentPd      255
 ---------------------------------------------
 ```
 
-!!! tip "检查阵列卡的时间"
+!!! tip "检查阵列卡的时间" {#check-array-card-time}
 
     阵列卡的时间可能与系统时间不一致，可以使用 `/cx show time` (StorCLI) / `-AdpGetTime -ax` (MegaCLI) 查看。
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-scrub-alternative}
 
     ```console
     $ sudo ./MegaCli64 -AdpCcSched -Info -a0 -NoLog
@@ -664,7 +664,7 @@ Rebuildrate 60%
 ------------------
 ```
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-rebuild-rate}
 
     ```console
     $ sudo ./MegaCli64 -AdpGetProp RebuildRate -a0 -NoLog
@@ -685,7 +685,7 @@ Rebuildrate 60%
 sudo ./storcli64 /c0 /sx show rebuild nolog
 ```
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-rebuild-progress}
 
     ```console
     $ sudo ./MegaCli64 -PDRbld -ShowProg -PhysDrv [252:7] -a0 -NoLog
@@ -708,7 +708,7 @@ sudo ./storcli64 /c0 /e252 /s0 locate start nolog
 sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
 ```
 
-??? note "MegaCLI alternative"
+??? note "MegaCLI alternative" {#megacli-identify-alternative}
 
     ```console
     # 开始闪烁
@@ -717,7 +717,7 @@ sudo ./storcli64 /c0 /e252 /s0 locate stop nolog
     sudo ./MegaCli64 -PdLocate -stop -physdrv[252:0] -a0 -NoLog
     ```
 
-!!! tip "还可以让阵列卡发出声音……"
+!!! tip "还可以让阵列卡发出声音……" {#megaraid-controller-beeper}
 
     可以配置阵列卡在阵列出现异常情况时发出声音，这可以帮助在机房的系统管理员发现异常情况。
     可以使用 `show alarm` (StorCLI) / `-AdpGetProp AlarmDsply` (MegaCLI) 显示当前的配置情况。
@@ -819,7 +819,7 @@ $ sudo smartctl -a /dev/bus/4 -d megaraid,8  # 添加参数可以看到真实的
 
 Information section 展示硬盘的基本信息，包括型号、序列号、容量、固件版本等。
 
-??? example "一块 NVMe SSD 的信息示例"
+??? example "一块 NVMe SSD 的信息示例" {#nvme-ssd-device-info-example}
 
     ```smartctl
     === START OF INFORMATION SECTION ===
@@ -855,7 +855,7 @@ Information section 展示硬盘的基本信息，包括型号、序列号、容
     0 +     512       0         0
     ```
 
-??? example "一块 SATA SSD 的信息示例"
+??? example "一块 SATA SSD 的信息示例" {#sata-ssd-device-info-example}
 
     ```smartctl
     === START OF INFORMATION SECTION ===
@@ -877,7 +877,7 @@ Information section 展示硬盘的基本信息，包括型号、序列号、容
     SMART support is: Enabled
     ```
 
-??? example "一块 SATA HDD 的信息示例"
+??? example "一块 SATA HDD 的信息示例" {#sata-hdd-device-info-example}
 
     ```smartctl
     === START OF INFORMATION SECTION ===
@@ -898,7 +898,7 @@ Information section 展示硬盘的基本信息，包括型号、序列号、容
     SMART support is: Enabled
     ```
 
-??? example "一块 SAS HDD 的信息示例"
+??? example "一块 SAS HDD 的信息示例" {#sas-hdd-device-info-example}
 
     ```smartctl
     === START OF INFORMATION SECTION ===
@@ -922,7 +922,7 @@ Information section 展示硬盘的基本信息，包括型号、序列号、容
     Temperature Warning:  Enabled
     ```
 
-!!! warning "检查硬盘的固件版本"
+!!! warning "检查硬盘的固件版本" {#check-ssd-firmware}
 
     数据中心盘的 SSD 近年来有多起因为固件问题导致使用时间过长（几万小时）后盘坏掉的新闻：
 
@@ -940,7 +940,7 @@ Information section 展示硬盘的基本信息，包括型号、序列号、容
 
 Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**与**错误记录**均会显示，其他的部分视硬盘类型而定。
 
-??? example "一块 NVMe SSD 的 SMART 数据示例"
+??? example "一块 NVMe SSD 的 SMART 数据示例" {#nvme-ssd-smart-example}
 
     ```smartctl
     === START OF SMART DATA SECTION ===
@@ -976,7 +976,7 @@ Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**�
     - 写入量与寿命：Available Spare、Percentage Used、Data Units Written
     - 出现错误的次数：Media and Data Integrity Errors（也就是俗称的 0E 错误数量）。<b><span style="color: red">如果这个数字不是 0，需要立刻备份数据并且考虑更换！</span></b>
 
-??? example "一块 SATA SSD 的 SMART 数据示例"
+??? example "一块 SATA SSD 的 SMART 数据示例" {#sata-ssd-smart-example}
 
     ```smartctl
     === START OF READ SMART DATA SECTION ===
@@ -1070,7 +1070,7 @@ Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**�
 
     对于 SSD 来说，除了 Pre-fail 以外，需要额外关注与 wearout（磨损）有关的指标。
 
-??? example "一块 SATA HDD 的 SMART 数据示例"
+??? example "一块 SATA HDD 的 SMART 数据示例" {#sata-hdd-smart-example}
 
     ```smartctl
     === START OF READ SMART DATA SECTION ===
@@ -1151,7 +1151,7 @@ Smart data section 则展示了硬盘的 SMART 信息。其中**自检信息**�
 
     阅读 attributes 的方法参见上面的 SATA SSD 的示例。
 
-??? example "一块 SAS HDD 的 SMART 数据示例"
+??? example "一块 SAS HDD 的 SMART 数据示例" {#sas-hdd-smart-example}
 
     ```smartctl
     === START OF READ SMART DATA SECTION ===
@@ -1200,7 +1200,7 @@ DEVICESCAN -d removable -n standby -m root -M exec /usr/share/smartmontools/smar
 `/usr/share/smartmontools/smartd-runner` 会调用 `/etc/smartmontools/run.d/` 下的文件，
 其中默认提供的 `10mail` 会使用系统的 `mail` 命令发送邮件。
 
-??? example "邮件样例"
+??? example "邮件样例" {#smart-example}
 
     ```
     This message was generated by the smartd daemon running on:
@@ -1237,7 +1237,7 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 
 <!-- TODO: 一个到「指标监控与告警」的 link -->
 
-!!! note "USTCLUG 目前的方案"
+!!! note "USTCLUG 目前的方案" {#ustclug-raid-setup}
 
     我们的 RAID 目前主要有 ZFS (zpool) 与硬件 RAID 两种。前者我们使用的方案是 <https://github.com/iwvelando/telegraf-exec-zpool-status>，
     而后者是 @taoky 编写的 [raid-telegraf](https://github.com/ustclug/raid-telegraf)。
@@ -1246,7 +1246,7 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
 
 ## 紧急救援 {#emergency-rescue}
 
-!!! danger "数据无价，谨慎操作！"
+!!! danger "数据无价，谨慎操作！" {#data-loss-warning}
 
     如果不满足以下任一条件，请咨询专业的数据恢复公司，不要轻易尝试自行操作：
 
@@ -1254,7 +1254,7 @@ mdadm 与 ZFS 方案均支持邮件通知。而 LVM 不包含这样的功能，�
     - 有足够的时间、精力，以及购置临时存储的硬盘的预算
     - 有足够的盘能被识别，并能够读取大部分的内容
 
-!!! tip "也可阅读 Hackergame 2021 题目「阵列恢复大师」的官方题解"
+!!! tip "也可阅读 Hackergame 2021 题目「阵列恢复大师」的官方题解" {#raid-recovery-writeup}
 
     相关内容基于真实的事件改编。该题目要求选手从完整未损坏但配置未知的 RAID 盘组中恢复数据。
     题目描述与题解参见 <https://github.com/USTC-Hackergame/hackergame2021-writeups/tree/master/official/%E9%98%B5%E5%88%97%E6%81%A2%E5%A4%8D%E5%A4%A7%E5%B8%88>。

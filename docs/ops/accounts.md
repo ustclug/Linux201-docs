@@ -78,7 +78,7 @@ info: Adding user `test' to group `users' ...
 
     注意这不是 adduser 的默认行为，而是本实例的实验环境在 `adduser.conf` 中已经设置了 `ADD_EXTRA_GROUPS=1`（或者添加 `--add-extra-groups` 参数）。
 
-!!! question "`useradd` 呢？"
+!!! question "`useradd` 呢？" {#no-useradd}
 
     尽管在其他的发行版中更加常见，但 Debian 认为 [`useradd(8)`][useradd.8] 是一个低层次的命令，因此不建议管理员直接使用，并且 `adduser.conf` 文件中的配置也不会对 `useradd` 命令生效。
 
@@ -96,7 +96,7 @@ LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol）�
 
 常用的 LDAP 服务器有 OpenLDAP 和 [389 Directory Server](https://www.port389.org/) 等。在 Debian 中，OpenLDAP 的软件名为 `slapd`。由于 LDAP 的复杂性，可以使用成熟的客户端查看 LDAP 的信息，以便理解与修改数据，例如 [Apache Directory Studio](https://directory.apache.org/studio/)。
 
-!!! comment "@taoky: LDAP 的都市传说"
+!!! comment "@taoky: LDAP 的都市传说" {#ldap-urban-legends}
 
     根据来自 [TUNA](https://tuna.moe/) 的都市传说：折腾过 LDAP 的人，都会在某种意义上延毕。因此这一部分是由已经毕业的同学编写的（大概吧）。
 
@@ -136,7 +136,7 @@ dc=bangdream,dc=example,dc=org
         ...
 ```
 
-!!! note "字符转义"
+!!! note "字符转义" {#ldap-escape}
 
     可以看到上述 LDAP 树的 `ou=groups` 里面有一些项的 `cn` 有特殊的字符。`cn` 里面确实可以存储任意 UTF-8 字符串，但是根据 [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4) 的要求，有一些字符需要转义，例如 `cn=Hello\, Happy World!` 中的 `,` 就需要在前面添加 `\`，避免在写成 `dn` 的时候产生混淆：
 
@@ -173,7 +173,7 @@ modifyTimestamp: 20260112000000Z
 
 属性不是想怎么填就可以怎么填的，可以使用的属性和 `objectClass` 的定义受到 LDAP schema 的限制。`objectClass` 规定了当前项中必选或可选哪些属性，例如 `inetOrgPerson` 要求当前项必须有 `cn` 或 `commonName`、`objectClass` 属性和 `sn` 或 `surname` 属性，可选诸如 `carLicense`、`photo`、`manager` 等属性。属性的语法以及匹配规则也由 schema 限制。
 
-!!! note "`objectClass` 的继承"
+!!! note "`objectClass` 的继承" {#objectclass-inheritance}
 
     可以注意到上面有一个特殊的 `objectClass`：`top`。这个类是所有其他 `objectClass` 的根。`cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的例子里出现的 `objectClass` 的继承关系如下：
 
@@ -201,7 +201,7 @@ changetype: delete
 
 以下以 OpenLDAP 为例讲解相关配置。在安装 `slapd` 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 `/var/lib/ldap`。
 
-!!! note "mdb 格式"
+!!! note "mdb 格式" {#mdb-format}
 
     OpenLDAP 会保存两个 mdb 文件：`data.mdb` 和 `lock.mdb`，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 [LMDB](https://www.symas.com/mdb)，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。
 

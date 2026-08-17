@@ -20,7 +20,7 @@
 - 使用诸如 [Duplicity](https://duplicity.gitlab.io/)、[BorgBackup](https://www.borgbackup.org/)、[restic](https://restic.net/) 等备份工具。
 - 特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 [Proxmox Backup Server](https://proxmox.com/en/products/proxmox-backup-server/overview)。
 
-!!! warning "单纯的快照与 RAID 都不是备份"
+!!! warning "单纯的快照与 RAID 都不是备份" {#no-snapshot-and-raid-are-not-backup}
 
     快照是文件系统的特性，如果文件系统损坏，那么快照就都无法正常读取。而 RAID 只能在硬盘故障数量小于对应等级限制时才能保证数据完整性，无法防止在诸如误删除、自然灾害等情况下数据的丢失与损坏。
 
@@ -34,7 +34,7 @@
 
 而数据一致性的问题在不少时候会被忽视。
 
-!!! note "崩溃一致性"
+!!! note "崩溃一致性" {#crash-consistency}
 
     很多时候，我们希望即使程序崩溃、系统断电，程序维护的数据内部状态仍然是一致的。这被称为崩溃一致性（crash consistency）。一般来讲，数据库都实现了崩溃一致性。
 
@@ -44,7 +44,7 @@
 
 最后，在有条件的情况下，需要验证备份的有效性，避免出现备份损坏或不完整的情况。
 
-!!! example "反面例子"
+!!! example "反面例子" {#negative-example}
 
     2017 年，GitLab 由于操作失误，在错误的数据库主机上执行了命令导致数据丢失。尽管设置了各种备份，他们没能够第一时间有效恢复：
 
@@ -103,7 +103,7 @@ rsync -avP /etc/ /tmp/example2/
 # 此时 /etc/passwd 对应 /tmp/example2/passwd
 ```
 
-!!! warning "是否要在目标路径后添加 `/`？"
+!!! warning "是否要在目标路径后添加 `/`？" {#should-i-add-slash-at-target-path}
 
     在以上的例子中，我们给目标路径（`/tmp/example1/` 和 `/tmp/example2/`）结尾都添加了 `/`。这是因为如果不在目标结尾添加 `/`，如果原始路径是文件或者**空目录**，并且目标路径不存在的话，rsync 的行为会变成复制并重命名为目标路径。对以下的例子，结果会出现区别：
 
@@ -130,7 +130,7 @@ rsync -avPz /path/to/source user@remote:/path/to/destination
 rsync -avPz -e "ssh -p 2222" user@remote:/path/to/source /path/to/destination
 ```
 
-!!! note "rsync 的 sender、generator 和 receiver"
+!!! note "rsync 的 sender、generator 和 receiver" {#rsync-sender-generator-receiver}
 
     通过网络传输数据时，rsync 在接收端会有 generator 和 receiver 两个进程，在发送端有 sender 进程。大致的流程如下：
 
@@ -149,7 +149,7 @@ rsync -avPz -e "ssh -p 2222" user@remote:/path/to/source /path/to/destination
 
 Rsync 同时也可以作为服务端（daemon 模式）对外提供 rsync 服务，默认端口为 TCP 873。
 
-!!! tip "Rsync over TLS"
+!!! tip "Rsync over TLS" {#rsync-over-tls}
 
     Rsync 默认为明文协议，不过其支持通过其他反向代理工具（例如 Nginx 的 stream 模块）实现 TLS 加密，默认端口为 874，需要使用 `rsync-ssl` 命令连接。
 
@@ -197,7 +197,7 @@ path = /path/to/repo2
 
 模块是 rsync URL 的第一层，例如 `rsync://server/repo1/somedir/` 中，`repo1` 就是模块名。配置完成之后，可以使用 `rsync://server/` 列出全部模块，`rsync rsync://server/repo1` 来确认，并且采用类似的命令同步某个模块的全部文件。
 
-!!! tip "同时启用多个 rsync 服务"
+!!! tip "同时启用多个 rsync 服务" {#enable-multiple-rsync-services}
 
     如果有需要多个 daemon 的需求（例如需要多个 rsync 服务端 bind 到不同的 IP 地址上），可以使用 systemd 的[模板单元格式](../service.md#unit-template)手动编写 `rsync@.service` 文件。
 
@@ -210,7 +210,7 @@ path = /path/to/repo2
     &include /etc/rsyncd/common.conf
     ```
 
-!!! tip "使用 systemd 安全加固 rsync 服务"
+!!! tip "使用 systemd 安全加固 rsync 服务" {#secure-rsync-with-systemd}
 
     [Systemd 服务的安全加固参数](../service.md#service)可以帮助避免未知的安全问题影响 rsync 服务，特别是在 [rsync 于 2025 年 1 月暴露了多个 CVE 的情况下](https://kb.cert.org/vuls/id/952657)（其中两个是服务端的漏洞），这样的加固就显得更加重要。
 
@@ -252,7 +252,7 @@ path = /path/to/repo2
 
     也可以考虑将 `uid` 与 `gid` 修改为在 systemd 服务中配置（而不是让 daemon 自己降权），并且提供 `chroot` 等必要的 capability。
 
-!!! tip "Rsync 反向代理"
+!!! tip "Rsync 反向代理" {#rsync-reverse-proxy}
 
     [ustclug/rsync-proxy](https://github.com/ustclug/rsync-proxy) 项目支持基于模块名的 rsync 反向代理，可以将不同的模块放在不同的服务器上，由 rsync-proxy 代理到不同的后端服务器上。
 
@@ -289,7 +289,7 @@ Rsync 支持 `--include` 与 `--exclude` 参数。简单来讲，rsync 的处理
    - 如果某个文件夹被 `--exclude` 排除，那么它的内容都不会被遍历到。因此如果要包含 `a/b/c/d`，那么 `a/`, `a/b/`, `a/b/c/` 都不能够被排除。
    - 如果需要包含某个目录和目录下的内容，需要使用 `***`，例如 `--include=a/***`（等价于 `--include=a/ --include=a/**`）。如果只写 `--include=a/`，那么只有 `a` 这个目录本身能够匹配到对应的规则。
 
-!!! question "匹配练习"
+!!! question "匹配练习" {#matching-exercise}
 
     请尝试分别写出符合以下条件的 rsync 参数，假设需要从 src 同步到 dst：
 
@@ -317,7 +317,7 @@ restic 是一款现代的备份工具，支持使用包括本地、SFTP、S3 等
 
 首先在 Backblaze 处创建桶和 Application Key，记录下 Bucket 名称和 Application Key 的 ID 和 Key。
 
-!!! note "为每台主机设置单独的 Application Key"
+!!! note "为每台主机设置单独的 Application Key" {#application-key-per-host}
 
     为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。
 
@@ -333,7 +333,7 @@ export RESTIC_HOST="your_hostname"  # 用于区分不同主机的备份
 restic init
 ```
 
-!!! tip "也可使用 S3 兼容模式连接 Backblaze B2"
+!!! tip "也可使用 S3 兼容模式连接 Backblaze B2" {#use-s3-compatible-mode}
 
     事实上，由于使用的第三方库的错误处理问题，[restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2)：
 
@@ -413,7 +413,7 @@ Persistent=true
 WantedBy=timers.target
 ```
 
-!!! note "restic 的缓存"
+!!! note "restic 的缓存" {#restic-cache}
 
     默认情况下，restic 会在 `$XDG_CACHE_HOME/restic` 或 `~/.cache/restic` 下缓存一些索引文件以提升性能。不过 systemd 默认不会给服务设置 `XDG_CACHE_HOME` 和 `HOME` 环境变量。因此，环境变量文件中需要额外设置 `RESTIC_CACHE_DIR`，或前述的与家目录相关的环境变量。
 
@@ -434,7 +434,7 @@ sudo snapper -c root create-config /
 sudo snapper -c home create-config /home
 ```
 
-!!! note "在给 `/` 创建配置时的注意事项"
+!!! note "在给 `/` 创建配置时的注意事项" {#note-on-creating-config-for-root}
 
     给 `/` 设置自动快照的一种用途是在系统升级出现问题时回滚到以前的状态。不过你应该不会希望回滚系统的时候把系统日志、你的个人数据、虚拟机磁盘、临时文件等等也一起回滚了。这些不希望被回滚（被快照）的目录需要创建单独的 subvolume，避免在给 `@` 打快照的时候被包含。
 

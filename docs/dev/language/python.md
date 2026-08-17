@@ -10,11 +10,11 @@ icon: simple/python
 
 !!! warning "本文编写中"
 
-!!! comment "适用范围"
+!!! comment "适用范围" {#python-scope}
 
     Python 的适用范围更加广泛, 常用在 Web 开发, 以及各种科学计算、数据处理、机器学习等领域。
 
-!!! note "特点"
+!!! note "特点" {#python-features}
 
     - 社区生态完善，有大量的第三方库和框架，例如 Django、Flask、numpy、pandas 等。
     - 语法简洁，易于学习，适合初学者。

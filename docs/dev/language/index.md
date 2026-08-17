@@ -6,7 +6,7 @@ icon: material/xml
 
 本部分介绍我们开发时常用的编程语言，以及常用工具、实用技巧等信息。
 
-!!! note
+!!! note {#language-guide-scope}
 
     现代开发语言种类丰富、内容繁多；部分语言也存在不少的历史遗留问题，我们无法在一篇文档中涵盖完全。
 
@@ -24,7 +24,7 @@ icon: material/xml
     [@tiankaima][tiankaima]、[@xiao-h1024][xiao-h1024]
  -->
 
-!!! tip "IDE 推荐"
+!!! tip "IDE 推荐" {#recommended-ides}
 
     - [Visual Studio Code](https://code.visualstudio.com/): 其实 Visual Studio Code 是个代码编辑器，但是在众多插件的帮助下，可以有 IDE 一样的体验。Visual Studio Code 可以用于各种语言的开发，更是拥有非常出色的远程开发功能。
     - [PyCharm](https://www.jetbrains.com/pycharm/): JetBrains 开发的 Python IDE，提供了开箱即用的 Python 开发体验，支持 Python 的各种框架。

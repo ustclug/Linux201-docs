@@ -20,7 +20,7 @@ QEMU/KVM 是 Linux 服务器上常用的虚拟化方案。其分为运行在用�
 
 QEMU（Quick Emulator）是一个开源的虚拟化软件，它通过动态二进制翻译来模拟 CPU，并提供一系列的硬件模型，可以模拟多种外设硬件。QEMU 可以在没有硬件加速的情况下独立运行，但这样其中的 CPU 部分是模拟指令的执行，性能低下。
 
-!!! note "QEMU TCG"
+!!! note "QEMU TCG" {#qemu-tcg}
 
     QEMU 内部使用 TCG（Tiny Code Generator）作为其模拟器，TCG 会将原始指令转换为 TCG 内部的 op，经过简单的优化后转换为主机指令并执行。TCG 不是专门为性能优化的，因此使用 TCG 运行程序或操作系统会有较大的性能损失。
 
@@ -31,7 +31,7 @@ QEMU（Quick Emulator）是一个开源的虚拟化软件，它通过动态二�
 
 此外 QEMU 也可以仅用于 CPU 指令和系统调用的翻译，不模拟硬件模型，这种模式称为 User Mode。主要用于运行不同于宿主系统 CPU 指令集的用户态二进制程序。
 
-!!! note "binfmt_misc"
+!!! note "binfmt_misc" {#binfmt-misc}
 
     [binfmt_misc](https://docs.kernel.org/admin-guide/binfmt-misc.html) 是内核提供的运行非原生程序的方案——程序使用 binfmt_misc 注册自己能够处理的程序特征（例如开头是 `MZ` 的话，那么就是 Windows PE 程序），内核在遇到自己无法运行的程序的时候，就会查询 binfmt_misc。该功能对应的挂载点是 `/proc/sys/fs/binfmt_misc/`。
 
@@ -51,7 +51,7 @@ QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提�
 
 如果需要手动进行配置，以下内容可以作为参考。
 
-??? info "KVM"
+??? info "KVM" {#kvm-overview}
 
     以 x86 为例。
 
@@ -62,7 +62,7 @@ QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提�
     2. 加载 KVM 模块：`modprobe kvm_intel` 或 `modprobe kvm_amd`。
     3. 正确配置 `/dev/kvm` 字符设备的权限，使需要运行虚拟机的用户可以访问该设备。
 
-??? info "QEMU"
+??? info "QEMU" {#qemu-overview}
 
     只需安装 QEMU 的二进制包。
 
@@ -152,11 +152,11 @@ QEMU 支持多种网络设备模型，包括 `virtio`，`e1000`，`rtl8139` 等�
 
 ### 内存
 
-!!! warning "本节内容待补充"
+!!! warning "本节内容待补充" {#qemu-kvm-section-incomplete}
 
 ### CPU
 
-!!! warning "本节内容待补充"
+!!! warning "本节内容待补充" {#cpu-section-incomplete}
 
 ## 实用工具
 
@@ -176,7 +176,7 @@ qemu-img create -f <FORMAT:raw|qcow2|...> -o <OPTIONS> <IMAGE> <SIZE>
 
 其中 `-f` 选项用于指定磁盘镜像格式，`-o` 选项用于指定格式相关的选项，`<IMAGE>` 为磁盘镜像文件名，`<SIZE>` 为磁盘镜像大小。
 
-!!! tip
+!!! tip {#qemu-img-preallocation}
 
     创建 `qcow2` 格式的磁盘镜像时，可以使用 `-o preallocation=metadata` 选项指定预分配元数据，以提高性能。
 
@@ -202,7 +202,7 @@ qemu-img resize -f <FORMAT> [--shrink] <IMAGE> [+|-]<SIZE>
 
 需要注意的是，缩小镜像时，超过指定大小的数据将被截断丢弃，因此需要在镜像内部先进行文件系统容量调整和分区表调整操作，并需要小心计算各分区偏移量和目标镜像大小。
 
-!!! tip
+!!! tip {#qemu-img-shrink-workflow}
     缩容时，可以先将内部文件系统调整至最小大小，然后调整分区大小至目标大小，接着调整镜像大小，最后再将文件系统扩容至最大。在此过程中也需要小心计算涉及到的各种大小和偏移量。
 
 ### qemu-nbd
@@ -215,7 +215,7 @@ qemu-img resize -f <FORMAT> [--shrink] <IMAGE> [+|-]<SIZE>
 modprobe nbd
 ```
 
-!!! warning "坑"
+!!! warning "坑" {#qemu-nbd-device-number-limit}
     `nbd` 默认创建很多 nbd 设备，占据大量设备号，如果主机上本来就已经有很多设备，在加载 `nbd` 模块的过程中可能因设备号分配失败而出错，在内核日志中留下一个 oops。这种情况下可以通过 `nbds_max` 参数限制 `nbd` 设备的数量。
 
     ```bash
@@ -232,6 +232,6 @@ qemu-nbd -c /dev/nbdX -f <FORMAT:raw|qcow2|...> --discard=<unmap|ignore> <IMAGE>
 
 ## 管理工具
 
-!!! warning "本节内容待补充"
+!!! warning "本节内容待补充" {#management-tools-section-incomplete}
 
 QEMU 直接运行参数众多，配置复杂，因此一般不直接运行 QEMU 命令，而是使用一些管理工具来创建和管理虚拟机，如 [libvirt](https://libvirt.org/)，[virt-manager](https://virt-manager.org/), [Proxmox VE](https://www.proxmox.com/en/proxmox-virtual-environment/overview) 等。

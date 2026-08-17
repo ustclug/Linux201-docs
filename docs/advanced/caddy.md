@@ -38,7 +38,7 @@ sudo systemctl restart caddy
 
 默认的 `Caddyfile` 的目录在 `/etc/caddy/Caddyfile`，可以通过修改 `Caddyfile` 来配置 Caddy 的行为。修改 Caddyfile 之后，可以使用 `sudo systemctl reload caddy` 让 Caddy 重新加载配置，而无须重启服务。
 
-!!! note "Caddyfile 验证与格式化"
+!!! note "Caddyfile 验证与格式化" {#caddyfile-validation}
 
     在修改配置文件后，可以通过如下命令检查 Caddyfile 格式（类似 `nginx -t`）：
 
@@ -52,7 +52,7 @@ sudo systemctl restart caddy
     caddy fmt --overwrite --config /etc/caddy/Caddyfile
     ```
 
-!!! note "Caddyfile 与 Caddy 配置"
+!!! note "Caddyfile 与 Caddy 配置" {#caddyfile-configuration}
 
     在 Caddy v1 时，Caddyfile 是唯一配置 Caddy 的方法。但是目前的 Caddy v2 相比于 v1 发生了非常大的变化，其中尽管 Caddyfile 仍然是标准的配置方式（一部分语法有变化，参考[升级指南](https://caddyserver.com/docs/v2-upgrade)），但是 Caddy 实际识别的是 [JSON 格式](https://caddyserver.com/docs/json)的配置，对 Caddyfile（以及其他类型的配置）的支持则由 [config adapter](https://caddyserver.com/docs/config-adapters) 实现。
 
@@ -85,7 +85,7 @@ example.com {
 }
 ```
 
-!!! note "Simple LB"
+!!! note "Simple LB" {#simple-lb}
 
     使用如下配置可做简单的 Load Balance：
 

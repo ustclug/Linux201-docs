@@ -56,22 +56,22 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 提示框是 mkdocs-material 的特色功能。格式类似于如下：
 
 ```markdown
-!!! warning "警告标题"
+!!! warning "警告标题" {#warning-title}
 
     这是提示框的内容。
 
-??? note "提示标题"
+??? note "提示标题" {#note-title}
 
     这是提示框的内容，`???` 表示默认折叠。
 ```
 
 效果如下：
 
-!!! warning "警告标题"
+!!! warning "警告标题" {#warning-title}
 
     这是提示框的内容。
 
-??? note "提示标题"
+??? note "提示标题" {#note-title}
 
     这是提示框的内容，`???` 表示默认折叠, 使用 `???+` 可以折叠, 但是默认展开。
 
@@ -91,12 +91,12 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 - comment: 表示编者对内容的评论（类似于某些游戏的「Developer Commentary」），使用时请在标题处写上你的昵称，类似于这样：
 
     ```markdown
-    !!! comment "@taoky: 吐槽"
+    !!! comment "@taoky: 吐槽" {#comment-title}
 
         比如说……
     ```
 
-    !!! comment "@taoky: 吐槽"
+    !!! comment "@taoky: 吐槽" {#comment-title}
 
         比如说……
 
@@ -104,7 +104,7 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
 - lab: 教程不会详细说明，需要读者自己尝试的实验。
 
-此外，有些时候我们需要给提示框添加 `id` 信息以便使用 `#id` 的方式引用。可以在传统提示框语法的标题后添加 `{#id}`：
+正文中的提示框应当像标题一样添加 ID，以便使用 `#id` 的方式引用。Linux 201 添加了相关的处理 hook，可以直接在传统提示框语法的标题后添加 `{#id}`：
 
 ```markdown
 !!! tip "一个例子" {#example}
@@ -118,22 +118,7 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
 设置 ID 后，提示框标题右侧会显示与章节标题相同的永久链接。`???+` 同样支持 ID。
 
-也可以使用 [Pymdown Blocks 的扩展语法](https://facelessuser.github.io/pymdown-extensions/extensions/blocks/plugins/admonition/)。这种写法的正文不需要缩进：
-
-```markdown
-/// tip | 一个例子
-    attrs: {id: block-example}
-
-一些文本，不需要缩进。
-///
-
-/// details | Blocks 语法的可折叠例子
-    type: note
-    attrs: {id: block-collapsible-example}
-
-一些默认折叠的文本。
-///
-```
+ID 应当是提示框标题含义的简洁英文翻译，并遵循[标题 ID](#heading-ids)的命名规则。用于标记页面元信息的「主要作者」「本文编写中」「本文已完成」提示框不需要添加 ID。
 
 ### 为标题和小标题添加 ID {#heading-ids}
 

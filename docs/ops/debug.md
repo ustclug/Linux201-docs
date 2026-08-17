@@ -58,7 +58,7 @@ icon: material/bug
 
 另外，向 `/proc/sysrq-trigger` 写入字符也可以触发对应的操作。其他内容可以参考以上内核文档链接。
 
-!!! lab "测试 kdump"
+!!! lab "测试 kdump" {#test-kdump}
 
     Debian 的 `kdump-tools` 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 `kdump-tools`，并使用 SysRq 触发内核崩溃，验证配置的有效性。
 
@@ -84,13 +84,13 @@ systemd-oomd
     
     systemd-oomd **触发**的条件是：内存压力（PSI）超过 `DefaultMemoryPressureLimit` **或** (物理内存使用率 > `SwapUsedLimit` **且** Swap 空间使用率 > `SwapUsedLimit`)。
 
-    !!! note "为什么设置 `ManagedOOMSwap=kill` 之后，`oomctl` 显示的 cgroup swap 使用量和实际不相符？"
+    !!! note "为什么设置 `ManagedOOMSwap=kill` 之后，`oomctl` 显示的 cgroup swap 使用量和实际不相符？" {#oomctl-cgroup-swap-mismatch}
 
         `oomctl` 显示的 cgroup 统计信息是从 systemd-oomd 内部读取的（不是实时从 cgroup 读取的），而 ["Swap Monitored CGroups" 中的 cgroup 只会在**加入 systemd-oomd 监控的时候**读取 swap 使用情况](https://github.com/systemd/systemd/blob/0b2d1203cbcc9a1ce5ec4c26d86070eaac0ccba5/src/oom/oomd-manager.c#L472-L475)，因此大概率和 `oomctl` 执行时候的情况是不同的。"System Context" 下显示的内存使用情况是最新的。
 
     触发后，systemd-oomd 需要**选择**一个 cgroup 来杀死。当触发条件为 `SwapUsedLimit` 时，systemd-oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 `pgscan` 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。
 
-    !!! note "为什么不选择 PSI 最大的 cgroup 杀死？"
+    !!! note "为什么不选择 PSI 最大的 cgroup 杀死？" {#why-not-kill-cgroup-with-highest-psi}
 
         PSI 是一个很好的衡量压力的参数，但是在整个系统内存极度紧张的情况下，所有 cgroup 的内存 PSI 都会很高，此时 PSI 最大的 cgroup 不一定就是资源占用最大的罪魁祸首。
 
@@ -98,7 +98,7 @@ systemd-oomd
 
     在物理内存较大的服务器上，默认的 90% `SwapUsedLimit` 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 `SwapUsedLimit` 的时候，会首先 kill 占用 swap 最多的 cgroup，而不是占用内存最多的 cgroup，因此可能会出现占用了最多的内存的 cgroup 并没有被 kill，而是占用比较少内存的 cgroup 被 kill 了。
 
-    ??? example "Debian 13 中的 systemd-oomd 配置"
+    ??? example "Debian 13 中的 systemd-oomd 配置" {#debian-13-systemd-oomd-configuration}
 
         Debian 13 的默认配置为：在用户 service 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；默认不监控 swap 使用量（与 Debian 12 的行为不同）。这里 `ManagedOOMSwap` 的 `auto` 代表默认不监控，除非在其上层有 cgroup 将这个属性设置为了 `kill`。
 
@@ -120,7 +120,7 @@ systemd-oomd
         DefaultMemoryPressureDurationSec=20s
         ```
 
-    ??? example "Fedora 44 中的 systemd-oomd 配置"
+    ??? example "Fedora 44 中的 systemd-oomd 配置" {#fedora-44-systemd-oomd-configuration}
 
         Fedora 44 由 `systemd-oomd-defaults` 包提供的的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。
 
@@ -151,13 +151,13 @@ systemd-oomd
 
     ![earlyoom in Vlab](../images/vlab-earlyoom.png)
 
-!!! question "tmpfs?"
+!!! question "tmpfs?" {#tmpfs}
 
     思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？
 
 还有很多其他的实现，在 [nohang 的 README](https://github.com/hakavlad/nohang?tab=readme-ov-file#solution) 中有相关整理，可以作为参考。
 
-!!! note "应用开发者怎么知道当前内存等资源使用是否紧张呢？"
+!!! note "应用开发者怎么知道当前内存等资源使用是否紧张呢？" {#how-app-developers-know-resource-tightness}
 
     以下以 GLib 和 systemd 为例介绍，不使用 glib 与 systemd 用户库的程序也可以自行实现相关的方式。[GLib](https://gitlab.gnome.org/GNOME/glib) 是 Linux 下大量 C 与 C++ 应用使用的基础库，特别是在 GNOME/GTK 生态中随处可见。它的 [GMemoryMonitor](https://docs.gtk.org/gio/iface.MemoryMonitor.html) 结构体实现了检测系统内存是否紧张的功能，并允许通过 GLib 的信号机制在内存紧张时执行自定义的函数（需要应用开发者主动使用）。除了传统的定时轮询以外，它也支持其他获取内存使用情况的接口。
 
@@ -186,7 +186,7 @@ systemd-oomd
 
 传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 [In defense of swap: common misconceptions](https://chrisdown.name/2018/01/02/in-defence-of-swap.html)（中文版：[替 swap 辩护：常见的误解](https://farseerfc.me/zhs/in-defence-of-swap.html)）。
 
-!!! note "tl;dr：为什么 swap 是有必要的？"
+!!! note "tl;dr：为什么 swap 是有必要的？" {#tl-dr-why-swap-is-necessary}
 
     上述文章中一个重要的观点是：swap 对高效的内存管理来说是有必要的。
 
@@ -195,7 +195,7 @@ systemd-oomd
     - 在内存没什么压力的情况下，空闲的内存可以更多存储诸如文件缓存等内容。
     - 如果内存压力增大，在有 swap 的情况下，文件页内存和匿名内存都可以被回收，这允许系统将访问最不频繁的内存页回收掉，留出更多的内存空间给新增的需求；而在没有 swap 的情况下，只有文件页内存可以被回收——如果不得不回收脏页的话，就必须等待脏页写入到磁盘上；如果丢掉的是包括代码文件页在内的热文件页，那么很快就要再读回来，导致频繁的磁盘 I/O 读写（换句话说，内存的速度在这种情况下，就更容易退化成磁盘的速度）。只有在实在找不到能够回收的内存页的时候，内核的 OOM Killer 才会被激活，此时系统已经卡住很长时间了。
 
-!!! note "kswapd"
+!!! note "kswapd" {#kswapd}
 
     kswapd 是 Linux 中负责内存回收的内核线程。简单来说，内核为系统内存设置了高（high）、低（low）和最小（min）水位线。当系统剩余可用（free）内存小于 low 时，kswapd 就会在后台工作回收内存，直到 free 达到 high 为止。如果情况更糟糕，小于 min 的话，就会进入直接回收（direct reclaim），此时所有程序的内存分配请求都需要先进行内存回收操作，可以发现大多数程序的运行速度会很明显变慢。如果仍然没有改善，那就只能内核 OOM Killer 出场了。
 
@@ -211,7 +211,7 @@ systemd-oomd
 - 如果真的不想在磁盘上开 swap（例如嵌入式环境，或者由于隐私考虑不希望内存数据落盘的场景），那么使用 zram 的同时，需要设置好用户态 OOM Killer，根据 PSI 压力来避免系统锁死。可以使用 `systemd-zram-generator` 包帮助配置 zram。
     - 和 zswap 不同，zram 的空间可以说是「虚空」创建出来的，并且内存管理子系统对此不知情。如果压缩率不达预期，或者 zram 大得离谱，有可能会出现在内存紧张时内核以为 swap 还有很多空间，结果一直在尝试塞数据到实际已经满了的 zram 里面的场景。作为参考，Fedora 默认配置下限制 zram size 为 min(ram / 2, 4096) MB，并且启用了 systemd-oomd。在 zram 大小限制和用户态 OOM Killer 两道防线下，即使内存数据完全无法压缩，也不至于出现灾难性的卡死。
 
-!!! note "为什么 zram + swap 不是合理的选择？"
+!!! note "为什么 zram + swap 不是合理的选择？" {#why-zram-plus-swap-is-not-recommended}
 
     如果配置过 zram 的话，会注意到系统使用的 swap 有优先级的顺序：
 
@@ -226,7 +226,7 @@ systemd-oomd
 
     Zram 虽然支持设置 writeback 设备，允许写回长时间没有访问的页面到指定的块设备文件，但是与 zswap 不同，zram 的 writeback 不会自动触发。作为 zram 最著名的用户，[AOSP 的内存管理 daemon 会定时进行 zram writeback](https://source.android.com/docs/core/perf/mmd#zram-writeback-policy)。但是 Android 移动设备和桌面、服务器的 workload 有很大差异，因此在这种情况下，仍然建议选择 zswap 方案，除非你愿意花时间自己写 daemon 定时触发 writeback，并且花上更多的时间调优。
 
-!!! note "查看内存压缩情况"
+!!! note "查看内存压缩情况" {#check-memory-compression}
 
     针对系统全局来说，zram 可以用 `zramctl` 查看每个 zram 设备压缩了多少内容，zswap 则可以在 `/sys/kernel/debug/zswap/` 查看整体的指标。不过它们都查看不了某个进程的情况——进程显示的 swap 占用空间是压缩之前的空间。
 
@@ -275,7 +275,7 @@ systemd-oomd
 journalctl 默认会使用 pager（换句话说，`less`）显示日志，当然也可以后面接个 `| grep ...` 来过滤日志。
 此外，如果使用了用户服务（user service），那么检查用户服务的状态或者日志时，需要加上 `--user` 参数。
 
-!!! comment "@taoky: journald 的一点吐槽"
+!!! comment "@taoky: journald 的一点吐槽" {#journald-complaint}
 
     首先……journald 看日志太慢了，日志很多的话实在是慢。而且 `systemctl status xxx.service` 因为要显示最近几条日志，也跟着慢——在 mirrors 服务器上甚至要一分多钟才能显示出服务状态。关于这个问题，可以阅读以下讨论:
 
@@ -295,7 +295,7 @@ journalctl 默认会使用 pager（换句话说，`less`）显示日志，当然
 logrotate 会定期（一般是每天，或者文件足够大的时候，请参考 `/etc/logrotate*` 对应的配置）「轮转」（rotate）日志文件：
 这是一个将旧日志压缩，更旧的日志删除的过程。为了分析被压缩过的历史日志，可以使用对应压缩软件提供的工具，例如 `gz` 格式对应 `zcat`/`zgrep`，`xz` 格式对应 `xzcat`/`xzgrep`，`zst` 格式对应 `zstdcat`/`zstdgrep` 等等。
 
-!!! tip "某段日志/错误信息是从哪个程序的源代码中的哪里输出的？"
+!!! tip "某段日志/错误信息是从哪个程序的源代码中的哪里输出的？" {#find-source-of-log-message}
 
     在排查问题时，有时候会需要去搞清楚是什么东西在哪里输出了我们看到的错误信息。此时可以考虑使用代码搜索网站，最常见的选择有：
 
@@ -316,7 +316,7 @@ pstore 支持多种存储后端，包括一小段专门划分的内存区域（�
 默认情况下，Linux 会在 `/sys/fs/pstore` 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
 pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/module/pstore/parameters/backend` 的内容确认当前 pstore 选用的存储后端。
 
-!!! tip "ACPI ERST"
+!!! tip "ACPI ERST" {#acpi-erst}
 
     可以使用以下命令验证硬件是否支持 ACPI ERST：
 
@@ -324,17 +324,17 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/mo
     ls /sys/firmware/acpi/tables/ | grep ERST
     ```
 
-!!! note "UEFI 变量存储可能不会被默认启用"
+!!! note "UEFI 变量存储可能不会被默认启用" {#uefi-variable-storage}
 
     UEFI 变量存储区域的空间是有限的，并且非常不幸的是，UEFI 固件的编写者不少都没有恰当处理**变量存储区域被写满**的情况。这意味着，一旦这种情况发生，那么**系统就可能变砖，无法正常启动**。因此内核提供了 `CONFIG_EFI_VARS_PSTORE_DEFAULT_DISABLE` 选项，如果它被启用，那么内核就不会默认使用 UEFI 变量存储区域作为 pstore 的存储后端。
 
     视内核与发行版配置，可以使用 `zcat /proc/config.gz | grep PSTORE` 或 `cat /boot/config-$(uname -r) | grep PSTORE` 来检查当前内核是否启用了 pstore 以及相关配置情况。
 
-!!! note "ramoops 能够保留数据吗？"
+!!! note "ramoops 能够保留数据吗？" {#ramoops-data-retention}
 
     pstore 的 ramoops 后端无法突破物理规律——如果机器断电重启了，那么（易失性）内存里的数据就自然没了。在不断电重启的情况下，内存是否会被清空取决于硬件实现。
 
-!!! tip "kdump"
+!!! tip "kdump" {#kdump}
 
     如果无法使用 pstore，kdump 机制也可以作为替代方案。kdump 需要在启动时占用一块内存空间存储备用内核等信息。在 kernel panic 时，kernel 会 kexec 到备用内核上，备用内核此时就可以获取到内核的 coredump、dmesg 等信息。Debian 可以使用上文提到的 `kdump-tools` 包来配置 kdump。
 
@@ -351,7 +351,7 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/mo
 - `fd` 目录包含了所有程序打开的文件描述符
 - `stack`：程序在内核态的栈信息，这一项信息在程序一直处于 D 状态（不可中断睡眠）时特别有用
 
-!!! tip "`lsof`"
+!!! tip "`lsof`" {#lsof}
 
     lsof 工具可以遍历 procfs 上各个进程的 `fd` 目录，并输出进程打开的文件信息。以下命令可以快速地输出当前系统全部相关的信息：
 
@@ -370,11 +370,11 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 `/sys/mo
 - `strace -ff -o /tmp/test.log bash`：将 `bash` 及其 fork 出的子进程的系统调用输出到 `/tmp/test.log.*`
 - `strace -k -yy -e mmap ls`: 跟踪 `ls` 的 `mmap` 系统调用，并打印出执行此系统调用时的堆栈（`-k`），同时解码所有文件描述符（`-yy`）。这样即可追踪到每个被 `mmap` 的文件在程序的何处被引入。
 
-!!! tip "Sysinternals' Procmon"
+!!! tip "Sysinternals' Procmon" {#sysinternals-procmon}
 
     Windows 系统上的类似工具是 Sysinternals 的 [Procmon](https://docs.microsoft.com/en-us/sysinternals/downloads/procmon)，可以查看所有进程对文件系统、注册表等的操作。有趣的是，Sysinternals 在多年前也推出了 Procmon 的 [Linux 版本](https://github.com/Sysinternals/ProcMon-for-Linux)，使用了 eBPF 技术实现（详见下文）。同样的功能（查看全系统的系统调用情况）也可以使用 `perf trace` 实现。
 
-!!! example "案例：CentOS 7 容器使用 `yum` 安装软件的 bug"
+!!! example "案例：CentOS 7 容器使用 `yum` 安装软件的 bug" {#centos-7-yum-bug-case}
 
     在某些配置下，可以注意到 `centos:7` 容器中使用 `yum` 安装软件时会卡住：
 
@@ -483,7 +483,7 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
 在进入调试环境后，使用 `bt` 命令可以查看当前线程的调用栈。在调试符号配置正确的情况下，至少大部分的信息都能被显示出来（而不是一堆 `???`）。
 
-??? example "一个 coredump 的调用栈例子"
+??? example "一个 coredump 的调用栈例子" {#coredump-call-stack-example}
 
     ```console
     >>> bt
@@ -565,7 +565,7 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 - `l`：显示当前函数的源码
 - `print xxx`：打印变量的值，参数支持表达式（需要对 C 的指针与类型系统有一定的了解）
 
-!!! note "Debian/Ubuntu 的调试符号不包含源代码文件"
+!!! note "Debian/Ubuntu 的调试符号不包含源代码文件" {#debian-ubuntu-debug-symbols-no-source}
 
     在安装调试符号后，如果你尝试在 gdb 中使用 `l` 命令查看源码，可能会发现无法显示。以下以 coreutils 的 `yes` 程序为例：
 
@@ -601,7 +601,7 @@ Copyright (C) 2023 Free Software Foundation, Inc.
     66
     ```
 
-!!! tip "了解内核 backtrace 对应源代码文件与行号"
+!!! tip "了解内核 backtrace 对应源代码文件与行号" {#kernel-backtrace-source-location}
 
     在调试与内核有关的问题时，经常需要判断内核输出的 backtrace 信息里每个函数的具体位置。例如以下是由 SysRq 的 `l` 命令触发的向 dmesg 输出所有活跃核心当前栈的信息：
 
@@ -646,7 +646,7 @@ Copyright (C) 2023 Free Software Foundation, Inc.
 
     可以结合 `apt source` 获取到的有 Debian 补丁的内核源代码查看。
 
-!!! tip "使用 `crash` 或 `drgn` 调试正在运行的内核"
+!!! tip "使用 `crash` 或 `drgn` 调试正在运行的内核" {#live-kernel-debugging}
 
     Linux 内核将自己的内存信息以 `/proc/kcore` 文件的形式暴露出来，这是一个 ELF 程序文件，应用可以以此获取内核全貌，而不干扰内核运行。[crash](https://github.com/crash-utility/crash/) 和 [drgn](https://github.com/osandov/drgn) 就是此类工具，在安装了内核的调试符号后即可使用。crash 提供了类似 gdb 的调试功能：
 
@@ -734,7 +734,7 @@ rtt min/avg/max/mdev = 81.736/81.799/81.863/0.063 ms
 
 具体的服务一般也有对应的测试工具，例如对 HTTP(S) 类服务可以使用 `curl` 测试。添加 `-v` 参数可以查看详细的请求与响应信息，而添加 `-I` 参数可以发送 HEAD 请求，避免终端输出过多的内容。与 `ping` 类似，`-4` 与 `-6` 参数可以指定使用 IPv4 或者 IPv6。
 
-??? example "`curl -I -v` 样例输出"
+??? example "`curl -I -v` 样例输出" {#curl-head-verbose-output}
 
     ```console
     $ curl -I -v https://www.example.com
@@ -836,7 +836,7 @@ $ echo $?
 
 对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。`mtr` 命令可以看作是 `ping` 和 `traceroute` 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。
 
-!!! tip "mtr-tiny"
+!!! tip "mtr-tiny" {#mtr-tiny}
 
     Debian 下的 `mtr` 包会包含图形界面程序，在服务器上建议安装 `mtr-tiny` 包。
 
@@ -868,7 +868,7 @@ curl: (6) Could not resolve host: www.example.com
 
 可以阅读[网络服务实践的 DNS 部分](./network-service/dns.md)了解更多信息。
 
-!!! tip "C 运行时库与 DNS 解析"
+!!! tip "C 运行时库与 DNS 解析" {#libc-dns-resolution}
 
     许多程序会直接使用系统 C 运行时库的 [`getaddrinfo()`][getaddrinfo.3] 等函数获取 DNS 解析的结果。但是 `dig` 不会。这可能导致 `dig` 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。
 
@@ -966,7 +966,7 @@ tcpdump -ni eth0 host 8.8.8.8
 
 `-n` 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 `host 8.8.8.8` 部分为 pcap 表达式，详情可阅读 [pcap-filter(7)][pcap-filter.7]。
 
-!!! question "编写 pcap 表达式"
+!!! question "编写 pcap 表达式" {#pcap-filter-expressions}
 
     尝试编写满足以下要求的表达式，并用 `tcpdump` 测试：
 
@@ -981,11 +981,11 @@ tcpdump -ni eth0 host 8.8.8.8
 - `http`：过滤 HTTP 协议
 - `tcp.port = 1234`：过滤 TCP 端口为 1234 的所有包
 
-!!! question "编写 Wireshark 表达式"
+!!! question "编写 Wireshark 表达式" {#wireshark-display-filters}
 
     请在 Wireshark 中编写满足和上一个问题相同的过滤表达式，并测试。
 
-!!! tip "TLS 抓包"
+!!! tip "TLS 抓包" {#tls-packet-capture}
 
     TLS（如 HTTPS 等）是加密的，这意味着抓包只能够看到连接双方之间发送了一些 TLS 数据包（如果是 HTTPS，可能还能看到证书和明文的目标域名，即 SNI），但是无法看到具体的请求与响应内容。但是有些时候，我们需要抓包了解内容，分析问题。
 
@@ -1001,7 +1001,7 @@ tcpdump -ni eth0 host 8.8.8.8
 
     [bcc](#ebpf) 提供的 `sslsniff` 工具、[eCapture](https://github.com/gojue/ecapture) 工具则通过 eBPF 的方式实现了查看加密内容的功能。
 
-!!! note "HTTP/HTTPS 抓包工具"
+!!! note "HTTP/HTTPS 抓包工具" {#http-https-capture-tools}
 
     如 Burp Suite、Fiddler 等工具专门设计为 HTTP/HTTPS 抓包工具，以方便开发者调试。它们的工作原理是在本机运行一个代理服务器，在设置浏览器或应用使用这个代理服务器后，这些工具就可以获取 HTTP 请求与响应内容。如果安装它们提供的根证书，还可以解密 HTTPS 的内容。
 
@@ -1022,7 +1022,7 @@ tcpdump -ni eth0 host 8.8.8.8
 
 火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。
 
-!!! note "为什么要分析「热点」？"
+!!! note "为什么要分析「热点」？" {#why-analyze-hotspots}
 
     阿姆达尔定律（Amdahl's Law）指出，如果某个部分的执行时间占总体的比重大，那么优化这个部分（热点）就能显著提升整体性能；相反，如果某部分所占的时间比例很小，即使优化得再多，对整体性能提升也十分有限。
 
@@ -1042,11 +1042,11 @@ perf record -F 499 --call-graph dwarf,64000 -g -p 12345
 
 其中 `-F` 指定了采样频率为 499 Hz，`-g` 代表采样函数调用栈，`--call-graph` 参数指定了调用栈的采样方式。
 
-!!! note "为什么采样频率不使用整百的数字？"
+!!! note "为什么采样频率不使用整百的数字？" {#non-round-sampling-frequency}
 
     以上内容中采样频率设置为了 499 Hz。如果阅读别的教程，可以发现不少也会设置为 99 Hz。避开 500 或者 100 的原因是，某些事件可能会恰好间隔 10ms（100 Hz）或者 2ms（500 Hz）发生，如果采样频率与这些事件的周期刚好匹配，就会导致结果出现偏差。设置为恰好整百减一可以最大程度避免这种情况。
 
-!!! tip "采样方式"
+!!! tip "采样方式" {#profiling-sampling-methods}
 
     `perf` 支持三种采样方式：
 
@@ -1066,7 +1066,7 @@ FlameGraph/stackcollapse-perf.pl out.perf > out.folded
 FlameGraph/flamegraph.pl out.folded > out.svg
 ```
 
-!!! tip "包含 PID 的输出信息"
+!!! tip "包含 PID 的输出信息" {#include-pid-in-output}
 
     有些情况下，我们会希望火焰图输出中能够区分相同程序、不同进程的情况。此时需要在 `perf script` 时让它在输出中添加 PID 和 TID 信息，`stackcollapse-perf.pl` 脚本才能正常提取：
 
@@ -1077,11 +1077,11 @@ FlameGraph/flamegraph.pl out.folded > out.svg
 
     相关内容可参考 `stackcollapse-perf.pl` 脚本的帮助。
 
-!!! tip "`perf report`"
+!!! tip "`perf report`" {#perf-report}
 
     `perf.data` 文件也可以使用 TUI 的 `perf report` 命令查看。`perf report` 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。
 
-!!! note "Off-CPU"
+!!! note "Off-CPU" {#off-cpu-profiling}
 
     以上 `perf record` 的方式会在程序使用 CPU 时（on-CPU）定时获取程序的调用栈信息，但是程序不会总是占着 CPU——在睡眠、等待 IO 等情况下，内核调度器可能会把程序从 CPU 上调度下来，程序不会在 CPU 上运行。但是在一些场合下，这一段 off-CPU 的时间也有做 profiling 的需求。有以下几种方法：
 
@@ -1091,7 +1091,7 @@ FlameGraph/flamegraph.pl out.folded > out.svg
 
 注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。
 
-!!! comment "@taoky: 快速生成火焰图"
+!!! comment "@taoky: 快速生成火焰图" {#quick-flamegraph-generation}
 
     我还是觉得每次都要写这么多命令有点麻烦，所以我自己一般直接用 [flamegraph-rs/flamegraph](https://github.com/flamegraph-rs/flamegraph)，于是直接这样就可以生成了：
 
@@ -1315,13 +1315,13 @@ $ nm example | grep example
 0000000000001220 T _Z7exampleii
 ```
 
-!!! note "符号的名称修饰（Name mangling）"
+!!! note "符号的名称修饰（Name mangling）" {#symbol-name-mangling}
 
     可以注意到，上面的符号名不是 `example`，而是 `_Z7exampleii`。
     C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名称，以便支持函数重载等特性。
     这里的名字经过 demangle 之后就是 `example(int, int)`。
 
-!!! tip "`nm`"
+!!! tip "`nm`" {#nm-symbol-inspection}
 
     `nm` 是一个用于查看二进制文件中符号的工具，可以用于查看函数、变量等的地址。
     如果不加参数，那么其会列出文件中的静态符号（例如全局变量、函数等）。
@@ -1339,7 +1339,7 @@ example(1, 2)
 example(1023, 1024)
 ```
 
-!!! note "编译器优化"
+!!! note "编译器优化" {#compiler-optimization-effects}
 
     如果上面的例子使用 `-O2`，那么你可能会发现这里的 bpftrace 没有输出任何内容。
     这是因为编译器进行了内联优化，将 `example()` 函数内联到了 `main()` 函数中，省去了函数调用的开销。
@@ -1347,7 +1347,7 @@ example(1023, 1024)
 
     可以使用 `objdump -d` 来查看编译后的汇编代码，以确认是否发生了内联优化。
 
-!!! lab "使用 uprobe 追踪容器中的程序"
+!!! lab "使用 uprobe 追踪容器中的程序" {#uprobes-in-containers}
 
     在容器中编译并运行下面的程序：
 
@@ -1382,7 +1382,7 @@ example(1023, 1024)
 - [The bpftrace One-Liner Tutorial](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners.md)（[中文版](https://github.com/bpftrace/bpftrace/blob/master/docs/tutorial_one_liners_chinese.md)）
 - [bpftrace(8) Manual Page](https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc)
 
-!!! lab "eBPF 程序编写实验"
+!!! lab "eBPF 程序编写实验" {#ebpf-programming-lab}
 
     尝试使用 bpftrace 或 bcc 完成以下任务：
 

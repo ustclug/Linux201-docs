@@ -28,7 +28,7 @@ gh pr create
 - `gh issue list`：列出当前仓库的 Issue
 - `gh run watch`：查看当前仓库的 GitHub Actions 运行状态
 
-??? note "`gh run watch`"
+??? note "`gh run watch`" {#github-run-watch}
 
     默认情况下 `gh run watch` 需要手动选择关注的 GitHub workflow, 如果只想关注最新的 workflow 可以将如下函数添加到 `~/.bashrc` 或 `~/.zshrc`:
 
@@ -85,7 +85,7 @@ gpg --keyserver keyserver.ubuntu.com --send-keys <GPG Key ID>
 gpg --keyserver pgp.mit.edu --send-keys <GPG Key ID>
 ```
 
-!!! warning "过期的 GPG Key"
+!!! warning "过期的 GPG Key" {#expired-gpg-key}
 
     过期的 GPG Key 是可以更新的, 参考 [这个 StackOverflow 回答](https://superuser.com/a/1141251).
     在 GitHub 上 rotate 只需要删除旧的 GPG Key, 然后重新添加新的 GPG Key 即可.
@@ -131,7 +131,7 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 
 之后就可以像普通的仓库一样，正常进行 `git` 操作了。
 
-!!! tip
+!!! tip {#git-root-directory}
 
     Git 会在当前项目的「根目录」中执行 `ssh` 命令，这也是 `sshCommand` 中 `-i` 参数的相对路径的参照路径。
 
@@ -250,25 +250,25 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
     - 使用 `git fetch origin pull/1234/head:pr-1234` 的形式将编号为 1234 的 PR 对应的 HEAD 同步到本地的 `pr-1234` 分支
     - 之后 `git checkout pr-1234` 即可
 
-!!! warning "只读分支"
+!!! warning "只读分支" {#readonly-branch}
 
     需要注意的是，远程的 `pull/<id>/head` 是只读的分支，如果需要写入其他人的 PR 分支，需要自行 `git remote add` 添加对方的仓库，并将其 PR 对应的分支添加到本地。
 
 维护者可以在这个新分支中同步贡献者的新修改，如果 PR 设置为 "Allow edits from maintainers"，那么维护者也可以直接写入贡献者的 PR。
 
-!!! note "在 Pull Request 之前：早期的邮件协作"
+!!! note "在 Pull Request 之前：早期的邮件协作" {#pull-request-before}
 
     在基于网页端的 Pull Request 出现之前，早期的 Git 使用邮件列表作为协作的主要方式。贡献者通过 `git send-email` 将补丁发送到邮件列表，维护者通过 `git am` 将补丁应用到代码库中。目前诸如 Linux Kernel 等项目仍然使用邮件列表作为主要的协作方式。
 
     本文不介绍相关使用方法。有兴趣的读者可以参考阅读由 [sourcehut](https://sourcehut.org/) 编写的 [git-send-email.io](https://git-send-email.io/) 与 [git-am.io](https://git-am.io/) 教程。一句题外话：sourcehut 与 GitHub、GitLab 等平台不同，它基于传统的邮件工作流，但是提供了简洁美观的网页界面。
 
-!!! note "GitLab"
+!!! note "GitLab" {#gitlab}
 
     GitLab 的 Merge Request 整体上与 GitHub 的 Pull Request 类似，不过 checkout 到本地的操作有所不同。可以使用 GitLab 提供的命令行工具 [glab](https://docs.gitlab.com/editor_extensions/gitlab_cli/)，也可以使用 `git fetch origin merge-requests/1234/head:mr-1234` 的方式将编号为 1234 的 MR 对应的 HEAD 同步到本地的 `mr-1234` 分支。
 
     以上内容也适用于自托管的 GitLab 实例。
 
-!!! tip "便于同步 PR/MR 的参考 alias"
+!!! tip "便于同步 PR/MR 的参考 alias" {#sync-pr-mr-reference-alias}
 
     ```ini title="~/.gitconfig"
     [alias]
@@ -278,13 +278,13 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
     使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。重复执行可从 PR/MR 中获取最新的修改。
 
-    !!! question "`git pull`?"
+    !!! question "`git pull`?" {#git-pull}
 
         为什么这样得到的分支无法执行 `git pull`？如何修复这个问题？
 
     以上修改自 [Check out locally by adding a Git alias](https://docs.gitlab.com/user/project/merge_requests/merge_request_troubleshooting/#check-out-locally-by-adding-a-git-alias)。
 
-    !!! question "参数说明"
+    !!! question "参数说明" {#alias-parameters}
 
         原始的 alias 如下：
 
@@ -300,7 +300,7 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
 GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建、测试、部署等。
 
-!!! note "GitHub Actions Pricing"
+!!! note "GitHub Actions Pricing" {#github-actions-pricing}
 
     对于 Public 仓库，GitHub 提供了免费的服务，对于 Private 仓库，GitHub 提供了 2000 分钟的免费服务。
 
@@ -316,7 +316,7 @@ GitHub Actions 是 GitHub 提供的 CI/CD 服务，可以用于自动化构建�
 
 GitHub 在 [这里](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions) 提供了详细的文档。
 
-!!! tip "本地运行 GitHub Actions"
+!!! tip "本地运行 GitHub Actions" {#run-github-actions-locally}
 
     测试 CI 很多时候是件头疼的事情：要一遍又一遍 commit、push、观察是否运行正确，几乎是一种无尽的折磨——如果能在本地运行指定的 workflow 就好了！对于 GitHub Actions，可以使用 [act](https://github.com/nektos/act) 工具，其会调用 Docker 运行模拟 Actions 的环境，可以在本地快速测试。
 

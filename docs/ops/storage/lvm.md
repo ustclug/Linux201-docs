@@ -15,7 +15,7 @@ LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核
 - LVM 中的逻辑卷可以跨越多个物理卷，文件系统不需要关心物理卷的位置
 - LVM 的逻辑卷可以动态调整大小，而不需要移动分区的位置——移动分区的起始位置是一个危险且耗时的操作
 
-!!! note "Device mapper"
+!!! note "Device mapper" {#device-mapper}
 
     [Device mapper](https://docs.kernel.org/admin-guide/device-mapper/index.html) 是 Linux 内核的特性。它可以在已有的块设备上面创建虚拟的块设备，在处理虚拟设备的 IO 时根据其维护的映射表来修改请求、转发到实际的块设备上面。在 device mapper 中实现功能的模块被称为 target，可以叠加。其能实现的功能不仅包括本文介绍的 LVM（RAID 等卷管理功能）、SSD 缓存，还能实现诸如磁盘加密（dm-crypt）、块设备级别压缩与去重（dm-vdo）等功能。
 
@@ -23,7 +23,7 @@ LVM（Logical Volume Manager）是 Linux 下的逻辑卷管理器，基于内核
 
 一些 Linux 发行版的安装程序默认使用 LVM 来管理磁盘，例如 Fedora、CentOS 等。如果需要实际使用 LVM，也推荐阅读来自[红帽 RHEL 的 LVM 管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/9/html-single/configuring_and_managing_logical_volumes/index#doc-wrapper)[^rhel-version]。
 
-!!! warning "本部分无法涵盖全部内容"
+!!! warning "本部分无法涵盖全部内容" {#this-section-cannot-cover-all-content}
 
     LVM 包含了很多功能，在本份文档中不可能面面俱到，因此我们仅介绍在 LUG 与 Vlab 项目中使用过的功能。
 
@@ -37,7 +37,7 @@ LVM 中有三个基本概念：
 
 这里我们创建三个 1GB 的文件作为物理卷，并且加入到一个卷组中：
 
-!!! warning "避免在物理磁盘上创建无分区表的文件系统/物理卷"
+!!! warning "避免在物理磁盘上创建无分区表的文件系统/物理卷" {#require-partition-table-on-physical-disk}
 
     在实践中，尽管技术上可行，但是不创建分区表、直接将整个磁盘格式化为某个文件系统，或者加入 LVM 中是不建议的。
     这会给其他人带来困惑，并且如果未来有在对应磁盘上启动系统等需要多分区的需求，会带来很多麻烦（可能只能备份数据后从头再来）。
@@ -111,7 +111,7 @@ $ sudo lvs
   lvol0 vg201-test -wi-a----- 2.50g
 ```
 
-!!! note "等等，怎么每块盘少了几 MB 空间？"
+!!! note "等等，怎么每块盘少了几 MB 空间？" {#why-is-there-less-space-on-each-disk}
 
     其实大概可以猜到，这些空间留给了 LVM 的元数据。LVM 的元数据为**纯文本**格式，可以存储相对复杂的信息，但是也带来了下述两个问题：
 
@@ -119,7 +119,7 @@ $ sudo lvs
     这个问题直到现在都没有被 GRUB 修复，因此只能自行编译手动修复后的版本，并且固定 GRUB 版本。
     - LVM 的纯文本格式导致元数据本身较大，如果预分配的元数据空间不足，并且卷组中有大量逻辑卷（默认值 + 上千个 LV 就会出现问题），那么最后会导致无法再创建/扩容逻辑卷，并且只能通过添加新的物理卷，然后由该卷存储元数据来解决问题。[Vlab 项目曾遇到过这样的问题](https://vlab.ibugone.com/records/2022-06-16/)。
 
-!!! note "这里创建的逻辑卷横跨了三块盘，所以 LVM 默认是 RAID 0？"
+!!! note "这里创建的逻辑卷横跨了三块盘，所以 LVM 默认是 RAID 0？" {#is-this-raid-0}
 
     这是不正确的。这里逻辑卷的数据布局与 RAID 0 不同。RAID 0 考虑的是性能，因此数据类似于这么存储：
 
@@ -145,7 +145,7 @@ $ sudo lvs
 
 ## 创建 RAID {#raid}
 
-!!! warning "不建议使用 LVM 构建 RAID"
+!!! warning "不建议使用 LVM 构建 RAID" {#do-not-use-lvm-to-build-raid}
 
     相比于 mdadm，LVM 与 RAID 相关的概念与提供的工具更加复杂，并且这种复杂性在很多场景下没有收益。
     更加常见的模式是，使用 mdadm 构建 RAID，然后使用 LVM 管理构建好的 RAID 上的逻辑卷。
@@ -178,7 +178,7 @@ $ sudo lvs
   lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00
 ```
 
-!!! warning "不要使用 `--type mirror`"
+!!! warning "不要使用 `--type mirror`" {#do-not-use-type-mirror}
 
     `mirror` 和 `raid1` 是两个**不同**的 type。除非有特殊需要，否则应该使用 `--type raid1` 创建 RAID 1 阵列。
     可以使用 `lvconvert` 将 mirror 转换为 raid1。
@@ -187,7 +187,7 @@ $ sudo lvs
 
     在后文的缺盘测试中，`mirror` 的行为也与预期不同——LVM 默认会拒绝挂载，如果强行挂载，会直接将缺失的盘丢掉。
 
-!!! note "Extent 是多大"
+!!! note "Extent 是多大" {#what-is-extent-size}
 
     有时在输入错误的参数之后，会出现 extent 不足的提示，类似于这样：
 
@@ -282,7 +282,7 @@ $ sudo lvs -a -o +devices vg201-test
   [lvraid5_rmeta_2]  vg201-test ewi-aor---   4.00m                                                     /dev/loop2(172)
 ```
 
-??? note "rimage, rmeta（与 mimage, mlog）"
+??? note "rimage, rmeta（与 mimage, mlog）" {#rimage-rmeta-vs-mimage-mlog}
 
     可以观察到，列表中出现了一些默认隐藏的逻辑卷，它们是创建 RAID 1/5/6 的产物：
 
@@ -487,7 +487,7 @@ $ sudo lvs -o +raid_sync_action,raid_mismatch_count
   lvraid5 vg201-test rwi-a-r--- 208.00m                                    100.00           idle                0
 ```
 
-!!! note "dm-integrity"
+!!! note "dm-integrity" {#dm-integrity}
 
     LVM 支持在设置 RAID 时添加 integrity 功能（`--raidintegrity`），这项功能为数据添加了校验和，
     LVM 在发现数据不一致时会在内核日志中报告，并在可以修复的情况下自动修复。
@@ -600,11 +600,11 @@ Filesystem                       Size  Used Avail Use% Mounted on
 
 LVM 支持将 SSD 作为 HDD 的缓存，以提高性能。以下介绍基于 dm-cache 的读写缓存。
 
-!!! note "dm-writecache"
+!!! note "dm-writecache" {#dm-writecache}
 
     本部分不介绍以优化写入为目的的 dm-writecache——我们没有相关的使用场景。
 
-!!! note "缓存方案"
+!!! note "缓存方案" {#caching-schemes}
 
     目前内核自带这些缓存方案：
 
@@ -660,7 +660,7 @@ $ sudo lvs -o +devices vg201-test
   lvdata vg201-test -wi-a----- <100.00g                                                     /dev/loop0(0)
 ```
 
-!!! comment "@taoky: 另一种做法"
+!!! comment "@taoky: 另一种做法" {#another-approach}
 
     在配置 mirrors4 服务器的缓存时，[我们的文档](https://docs.ustclug.org/services/mirrors/4/volumes/#ssd)中的做法是把 SSD 和 HDD 分别开 VG，在后面创建好之后再 `vgmerge`。
     
@@ -699,13 +699,13 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
 
 可以看到缓存的模式是 writethrough，策略是 smq，以及缓存的读写命中率与脏块数量。
 
-!!! warning "resize"
+!!! warning "resize" {#lvmcache-resize}
 
     直到[相对新（>= 2.03.12，发布于 2021/05/08）的 LVM 工具](https://github.com/lvmteam/lvm2/issues/30#issuecomment-1412248104)之前，被缓存的 LV 不能被 resize。因此 resize 之前必须先撤下缓存，resize 结束后再安回去。
 
     因此 [Debian Bookworm 的 LVM 工具](https://packages.debian.org/bookworm/lvm2)支持这种情况下的 resize，而 Bullseye 不支持。
 
-!!! warning "`cachevol` 无法修复"
+!!! warning "`cachevol` 无法修复" {#cachevol-cannot-be-repaired}
 
     目前 `lvconvert --repair` 不支持修复 cachevol，尝试这么做会看到以下输出：
 
@@ -715,7 +715,7 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
       Command not permitted on LV vg201-test/lvdata_cache_cvol.
     ```
 
-!!! note "lvmcache 的缓存模式、策略与部分术语"
+!!! note "lvmcache 的缓存模式、策略与部分术语" {#lvmcache-caching-modes-and-terms}
 
     lvmcache 支持三种缓存模式：
 
@@ -733,7 +733,7 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
     - Promotion：将一块数据从后备设备复制到缓存设备
     - Demotion：将一块数据从缓存设备复制到后备设备
 
-!!! comment "@taoky: 关于缓存模式"
+!!! comment "@taoky: 关于缓存模式" {#comment-on-caching-modes}
 
     分享一个笑话，最开始 @iBug 配的缓存模式选了 passthrough，理由是：
 
@@ -744,7 +744,7 @@ $ sudo lvs -o devices,cache_policy,cachemode,cache_settings,cache_total_blocks,c
     另外可以注意到，`lvmcache` 做了这么一个假设：写入的内容很快就会被读取。但是这个假设真的总是成立吗？
     writearound 的做法是写入的内容会绕过缓存，当然 lvmcache 没有实现这个模式。
 
-??? note "`dm-cache-policy-smq.c` 中实现的 SMQ 策略算法"
+??? note "`dm-cache-policy-smq.c` 中实现的 SMQ 策略算法" {#smq-policy-algorithm-in-dm-cache-policy-smq-c}
 
     核心的结构体是 `smq_policy`，其中包含了三个 SMQ 队列：热点（hotspot）队列、clean 队列和 dirty 队列。
     每个 SMQ 队列中包含 64 个 LRU 队列。这 64 个队列构成不同的等级，存储由热到冷的内容。
@@ -867,7 +867,7 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 
 考虑到在服务器场合，内存一般都是足够（甚至过量）的，因此唯一可能需要考虑的就是额外的延迟了。
 
-!!! comment "@taoky: 真实事件的教训"
+!!! comment "@taoky: 真实事件的教训" {#real-world-lesson-on-lvmcache-scalability}
 
     最开始的时候，mirrors 的 chunk size 设置为了 1M，结果过了两年多就发现 SSD 快挂了。
     查看统计发现 SSD 每小时读取 0.1T，但是写 1T 数据……
@@ -904,7 +904,7 @@ Erase all existing data on vg201-test/lvdata_cache? [y/n]: y
 lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 writethrough，如果没有干净地卸载，那么在下次加载后，缓存中所有的块都会被标记为脏块**。
 更加致命的是，在生产负载下，可能会出现脏块写回在默认情况下极其缓慢的问题（即使设置 policy 为 cleaner），以至于可能过了几个小时都没有迁移任何一个块。
 
-??? tip "如何实验复现「所有块被标记」的行为？"
+??? tip "如何实验复现「所有块被标记」的行为？" {#how-to-reproduce-all-blocks-marked-as-dirty}
 
     由于没有能够强制卸载本地回环的方法，因此这里可以考虑的思路是：
     在虚拟机中使用本地回环设备创建 lvmcache，写入并读取一些数据（单纯的写入一次可能不会使用缓存块空间），然后使用 `reboot -f` 强制重启。
@@ -931,17 +931,17 @@ lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 write
     来自 linux-lvm 邮件列表的可能相关的故障报告参见
     <https://lore.kernel.org/all/b9e10482-e508-63fa-5518-94cccc007e81@redhat.com/T/>。
 
-!!! note "最新的内核可能部分修复了后一个问题"
+!!! note "最新的内核可能部分修复了后一个问题" {#latest-kernel-may-partially-fix-the-issue}
 
     参见 <https://github.com/torvalds/linux/commit/1e4ab7b4c881cf26c1c72b3f56519e03475486fb>。
     根据该 commit 的描述，**在 cleaner 状态下**即使 IO idle 为 false，也会进行脏块迁移。
 
-!!! note "lvmcache 的设计"
+!!! note "lvmcache 的设计" {#lvmcache-design}
 
     从前面的统计数据可以注意到，脏块的数量是一个指标。在 lvmcache 的设计中，存在出现模式为 writethrough 并且存在脏块的可能，所以目前程序上没有实现看到 writethrough 之后
     就忽略脏块的问题。
 
-??? note "模拟在 IO 压力下迁移缓慢的情况"
+??? note "模拟在 IO 压力下迁移缓慢的情况" {#slow-cache-migration-under-io}
 
     格式化我们刚才创建的有 cache 的 LV，使用 `fio` 上点压力：
 
@@ -1013,7 +1013,7 @@ lvmcache 方案的一个无法忽视的弊端是：**即使模式设置为 write
 
     可以注意到卡在了 `Flushing 6481 blocks` 比较长的时间。测试环境为笔记本电脑的 NVMe SSD，如果是实际的 HDD + 较大负载的话，问题会严重得多。
 
-!!! comment "@taoky: 其他信息"
+!!! comment "@taoky: 其他信息" {#additional-lvmcache-notes}
 
     这可能是对于较大缓存、较重的负载下 lvmcache 最大的问题了。
     关于下面处理不方便的问题，我在 lvm2 仓库提交了 issue: <https://github.com/lvmteam/lvm2/issues/141>，
@@ -1049,11 +1049,11 @@ sudo lvchange --cachepolicy smq lug/repo
 我们目前的建议是在计划重启（维护窗口）前手动卸载缓存，在重启后再挂载（之前维护时观察到，即使正常关机，也可能出现脏块的问题）。
 另一种方式是：（在确认没有事实上的脏块的前提下）手动修改 LVM 元数据，把缓存扔掉。
 
-!!! danger "小心操作"
+!!! danger "小心操作" {#lvmcache-operation-caution}
 
     对每次 LVM 操作，lvm 的工具都会在 `/etc/lvm/archive` 备份操作前的元数据信息，同时在 `/etc/lvm/backup` 存储当前的元数据，但是还是尽量小心，以免酿成悲剧。
 
-??? note "有 cache 的 VG 元数据例子"
+??? note "有 cache 的 VG 元数据例子" {#cached-vg-metadata-example}
 
     ```lvm
     # Generated by LVM2 version 2.03.23(2) (2023-11-21): Sun Feb 18 00:25:36 2024
@@ -1176,7 +1176,7 @@ sudo lvchange --cachepolicy smq lug/repo
     }
     ```
 
-??? note "没有 cache 的 VG 元数据例子"
+??? note "没有 cache 的 VG 元数据例子" {#uncached-vg-metadata-example}
 
     以下仅展示 `logical_volumes` 部分：
 
@@ -1294,12 +1294,12 @@ PVE 自带的集群管理功能使用了 `corosync` 维护了一个集群内部�
 
 <!-- TODO: 关于 corosync 和分布式系统相关的内容放在哪里呢？ -->
 
-!!! warning "确保所有访问 LVM 的机器在同一个 PVE 集群中"
+!!! warning "确保所有访问 LVM 的机器在同一个 PVE 集群中" {#pve-cluster-membership-required}
 
     否则在集群外的虚拟机创建等操作不会正确获取锁，导致**覆盖**已有的虚拟机磁盘。
     相关故障案例见 <https://vlab.ibugone.com/servers/ct100/#%E6%95%85%E9%9A%9C>。
 
-!!! warning "LVM 集群不支持精简置备 LV"
+!!! warning "LVM 集群不支持精简置备 LV" {#no-thin-lv-in-lvm-cluster}
 
     在虚拟化场景下，一个常见的节省空间的做法是使用精简置备（thin-provisioned）的存储，
     这么做可以在创建 LV 时只分配少量的空间，然后在需要的时候再分配更多的空间。

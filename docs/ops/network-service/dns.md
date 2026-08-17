@@ -28,7 +28,7 @@ DNS 是网络最重要的组件之一。如果 DNS 出现问题，那么可能�
 nameserver 8.8.8.8
 ```
 
-??? note "公共的 DNS 服务器"
+??? note "公共的 DNS 服务器" {#public-dns-servers}
 
     虽然在绝大多数场景下，用户都不需要使用公共的 DNS 服务器，因为：
 
@@ -71,7 +71,7 @@ struct hostent host_2 = gethostbyaddr(&ip, sizeof(ip), AF_INET);
 // 域名在 he->h_name 中
 ```
 
-!!! tip "从 IP 反查域名"
+!!! tip "从 IP 反查域名" {#reverse-dns-lookup}
 
     很多人对 DNS 的理解仅限于「从域名查 IP」（A 记录和 AAAA 记录），但 DNS 也支持「从 IP 查域名」（PTR 记录）。例如对上面 1.1.1.1 的域名的查询，可以先构造出 `1.1.1.1.in-addr.arpa` 这个域名，然后查询这个域名的 PTR 记录。
 
@@ -100,7 +100,7 @@ int ret_2 = getnameinfo((struct sockaddr *)&sa, sizeof(sa),
 // 域名在 hostname 中
 ```
 
-!!! note "`res_query`"
+!!! note "`res_query`" {#res-query}
 
     尽管 `getaddrinfo()` 可以解决不少问题，并且跨平台兼容性也不错，但是如果我们需要更底层的 DNS 查询功能（例如查询 A/AAAA 以外的记录）的时候，上面的 API 就不太够用了。而 libresolv（包含在 glibc 中）则提供了更底层的 [`res_nquery()`/`res_query()`][resolver.3] 等接口，便于需要直接构造 DNS 报文进行查询的程序使用。
 
@@ -108,7 +108,7 @@ int ret_2 = getnameinfo((struct sockaddr *)&sa, sizeof(sa),
 
     libresolv 在其他平台上可能有不同的行为，可参考：[getaddrinfo sucks. everything else is much worse](https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse)。
 
-!!! tip "获取 C 库解析 API 的延迟"
+!!! tip "获取 C 库解析 API 的延迟" {#libc-dns-api-latency}
 
     bcc 提供的基于 eBPF 的 [gethostlatency](https://github.com/iovisor/bcc/blob/master/tools/gethostlatency.py) 工具可以用来获取使用 C 运行时库的 DNS 解析延迟：
 
@@ -201,7 +201,7 @@ getent -s files hosts example.com
 
 就（一般来说）会返回空，因为其只会用 `files` 模块来解析 `example.com`，如果 `/etc/hosts` 中没有相关的记录，那么就不会有结果。
 
-!!! note "NSS 的返回状态"
+!!! note "NSS 的返回状态" {#nss-return-status}
 
     NSS 模块可能会返回以下几种状态：
 
@@ -218,7 +218,7 @@ getent -s files hosts example.com
 
     这样的话，如果某用户在本地（`files`）属于组 A，在 sssd（`sss`）中属于组 B，那么最终该用户就会同时属于组 A 和组 B。
 
-!!! note "为什么解析本机还需要 `myhostname` 模块？"
+!!! note "为什么解析本机还需要 `myhostname` 模块？" {#nss-myhostname-local-resolution}
 
     一个约定俗成的做法是，将主机名放在 `/etc/hostname` 文件，而在 `/etc/hosts` 中添加相关的映射：
 
@@ -246,7 +246,7 @@ getent -s files hosts example.com
     127.0.0.2       myhost
     ```
 
-!!! note "glibc、NSS 与静态链接"
+!!! note "glibc、NSS 与静态链接" {#glibc-nss-static-linking}
 
     如果有尝试对访问网络（使用了 NSS 的）C 程序进行静态链接（`-static`）的话，那么你可能会看到：
 
@@ -276,7 +276,7 @@ RFC 3484 的排序包含两者：源地址选择（source address selection）�
 precedence ::ffff:0:0/96  100
 ```
 
-!!! tip "如果不希望 glibc 发送 AAAA 请求……"
+!!! tip "如果不希望 glibc 发送 AAAA 请求……" {#disable-aaaa-queries}
 
     glibc 的 `getaddrinfo()` 在参数为 `AF_UNSPEC` 时，总是会同时发送 A 和 AAAA 请求（即使设置了 `net.ipv6.conf.all.disable_ipv6`）。同样，上面的 `gai.conf` 配置也无法阻止 glibc 发送 AAAA 请求（只是在获取到两者之后优先选择 IPv4）。
 
@@ -290,7 +290,7 @@ glibc 在实际发 DNS 请求前会读取 [`/etc/resolv.conf`][resolv.conf.5]。
 
 - 对查询非完整域名（例如主机名）的场景，glibc 会依次将 `search` 列表中的域名附加到查询的域名后面进行查询。例如，假设配置了 `search example.com`，那么查询 `myhost` 的时候，会优先搜索 `myhost.example.com`。
 
-    !!! tip "没有点（dot）的公开域名"
+    !!! tip "没有点（dot）的公开域名" {#single-label-public-domains}
 
         其实反直觉的是，有非常少量（有解析）的域名是没有点的，比如说 `bd`（孟加拉国的顶级域）：
 
@@ -375,7 +375,7 @@ resolved 提供了以下几种 `resolv.conf` 文件，分别对应不同的模�
 
 默认情况下，resolved 会启用 DNS 缓存，根据 DNS 响应的 TTL 信息缓存数据，避免额外的网络开销。
 
-!!! tip "TTL"
+!!! tip "TTL" {#ttl}
 
     每条 DNS 记录都有 TTL 时间（秒为单位），标志下游的服务器可以缓存该记录的时间。例如：
 
@@ -390,7 +390,7 @@ resolved 提供了以下几种 `resolv.conf` 文件，分别对应不同的模�
 
     这里的 237 就是获取到的 TTL 秒数。显然，如果 TTL 设置较长，那么每次更新之后，其他机器就可能需要更长的时间获取到修改后的记录；而如果 TTL 太短，那么就可能会给 DNS 服务器（特别是权威 DNS 服务器）带来较大的压力。
 
-!!! tip "Negative cache 与 SOA 记录"
+!!! tip "Negative cache 与 SOA 记录" {#negative-cache-soa}
 
     为了减小网络开销，不仅成功的查询需要缓存，失败的也需要。这被称为 Negative cache。一些常见的情况：
 
@@ -411,7 +411,7 @@ resolved 提供了以下几种 `resolv.conf` 文件，分别对应不同的模�
 
     而如果 DNS 服务器本身查询失败（返回 SERVFAIL），那么也就没有 SOA 记录。[resolved 对此默认缓存 10 秒](https://github.com/systemd/systemd/pull/17814)。
 
-!!! warning "Ubuntu 默认不启用 negative cache"
+!!! warning "Ubuntu 默认不启用 negative cache" {#ubuntu-negative-cache-disabled}
 
     与 systemd 上游设置不同，Ubuntu 的 systemd-resolved 包的 `Cache` 参数默认值为 `no-negative`，而不是 `yes`。
 
@@ -419,7 +419,7 @@ resolved 提供了以下几种 `resolv.conf` 文件，分别对应不同的模�
 
 #### dnsmasq
 
-!!! warning "dnsmasq 与 Docker 默认 bridge 网络的行为"
+!!! warning "dnsmasq 与 Docker 默认 bridge 网络的行为" {#dnsmasq-docker-bridge-behavior}
 
     Docker 的默认 bridge 网络不会使用其内置的 DNS 服务器，而是直接使用主机的 `/etc/resolv.conf` 配置放进容器中。假如 Docker 发现 `nameserver` 全都是本地地址，那么就会 fallback 到 8.8.8.8/8.8.4.4 上，绕过 dnsmasq 的缓存功能（Docker 对 systemd-resolved 做了特殊处理，可以从 `/run/systemd/resolve/resolv.conf` 获取到实际上游的 DNS 地址并设置，但是缓存也就失效了）。
 

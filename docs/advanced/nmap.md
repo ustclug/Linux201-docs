@@ -14,11 +14,11 @@ Nmap（Network Mapper）是开源的网络探测和安全检查工具。其主�
 
 以下介绍 Nmap 的常用功能。
 
-!!! danger "请勿进行未经授权的扫描操作"
+!!! danger "请勿进行未经授权的扫描操作" {#do-not-perform-unauthorized-scanning}
 
     再次重复：**扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。**
 
-!!! tip "GUI 版本"
+!!! tip "GUI 版本" {#gui-version}
 
     如果你不喜欢命令行，可以使用 Zenmap，它提供了相对用户友好的界面来运行 Nmap。
 
@@ -28,7 +28,7 @@ Nmap（Network Mapper）是开源的网络探测和安全检查工具。其主�
 
 以下假设网络段为 192.168.1.0/24。
 
-!!! tip "扫描到哪里了？"
+!!! tip "扫描到哪里了？" {#where-is-the-scan-at}
 
     在扫描中按下任意键可以显示进度。
 
@@ -36,11 +36,11 @@ Nmap（Network Mapper）是开源的网络探测和安全检查工具。其主�
 
 Nmap 的 `-sn` 选项会关闭端口扫描，只进行存活检测。`-sn` 选项会发送 ICMP Echo（ping）、TCP SYN 到 443（HTTPS）端口和 TCP ACK 到 80（HTTP）端口，以及发送 ICMP Timestamp 请求来检测主机是否在线。
 
-!!! note "为什么 TCP SYN 到 443，但是 TCP ACK 到 80？"
+!!! note "为什么 TCP SYN 到 443，但是 TCP ACK 到 80？" {#why-tcp-syn-to-443-but-tcp-ack-to-80}
 
     很多防火墙会配置直接丢弃对非公开服务端口的 TCP SYN 请求包，但是不是所有防火墙都会丢弃 TCP ACK 请求包，特别是对应防火墙没有记录 TCP 连接状态的情况下。因此采取不同的 TCP 包探测方式可以提高存活检测的成功率。
 
-!!! note "ICMP Timestamp"
+!!! note "ICMP Timestamp" {#icmp-timestamp}
 
     ICMP Timestamp 请求是一个较少使用的 ICMP 类型，用来获取目标主机的时间信息。部分现代操作系统默认不响应此请求。
 
@@ -50,17 +50,17 @@ Nmap 的 `-sn` 选项会关闭端口扫描，只进行存活检测。`-sn` 选�
     sudo nping --icmp --icmp-type timestamp 192.168.1.2
     ```
 
-!!! tip "使用 root 执行"
+!!! tip "使用 root 执行" {#run-as-root}
 
     由于发送 ICMP 包需要特权（创建 raw socket），如果希望 Nmap 把所有的扫描方法都用上，建议采用 `sudo` 执行 Nmap。此外，只发送 TCP SYN、TCP ACK 也需要特权，如果以普通用户运行，Nmap 会使用 `connect()` 系统调用来检测存活主机，因此只发送 TCP ACK 在这种条件下无法实现。
 
     如果扫描的是本地网络并且是 root，Nmap 还会尝试使用 ARP 请求来检测存活主机。
 
-!!! tip "关闭 DNS 解析"
+!!! tip "关闭 DNS 解析" {#disable-dns-resolution}
 
     Nmap 默认会尝试从 IP 地址使用 DNS 解析主机名，这很多时候是没有必要的，而且会占用大量时间。可以使用 `-n` 选项关闭 DNS 解析。
 
-!!! tip "减小等待时间"
+!!! tip "减小等待时间" {#reduce-wait-time}
 
     Nmap 的 `-T` 参数会控制操作的时间间隔，默认是 `-T3`。如果网络情况好，可以使用 `-T4` 或 `-T5` 来加快扫描速度。
 
@@ -76,11 +76,11 @@ nmap -n -sn -PE 192.168.1.0/24
 nmap -n -sn -PS443 192.168.1.0/24
 ```
 
-!!! tip "跳过某些主机"
+!!! tip "跳过某些主机" {#skip-some-hosts}
 
     如果你想扫描整个网络，但需要跳过某些主机，可以使用 `--exclude` 选项。
 
-!!! question "第一天的工作"
+!!! question "第一天的工作" {#first-day-work}
 
     假设你刚刚加入了一个新的团队，上一任的系统管理员没有留下任何文档。为了搞清楚有哪些机器，你需要做什么来获取你需要扫描的网段？
 
@@ -94,11 +94,11 @@ nmap -n -sn -PS443 192.168.1.0/24
 
 此外，Nmap 默认只会扫描最常用的 1000 种端口。`-p` 选项可以指定要扫描的端口（例如 `-p 12345`），或者端口范围（例如 `-p 1-1024`）。如果希望让 Nmap 扫描所有端口，可以使用 `-p-`。
 
-!!! question "扫描网段内的指定端口"
+!!! question "扫描网段内的指定端口" {#scan-specific-port-in-subnet}
 
     你想扫描整个网段内有哪些主机开放了 22 端口（SSH），应该怎么写参数？
 
-!!! tip "rustscan 和 masscan"
+!!! tip "rustscan 和 masscan" {#rustscan-and-masscan}
 
     在端口扫描领域，除了 Nmap 以外还有一些其他的工具。其中常用的包括：
     
@@ -173,7 +173,7 @@ PORT   STATE SERVICE
 Nmap done: 1 IP address (1 host up) scanned in 10.23 seconds
 ```
 
-!!! tip "部分 NSE 脚本示例"
+!!! tip "部分 NSE 脚本示例" {#some-nse-script-examples}
 
     正如最开始所说的那样，Nmap 是一个中性的工具，其自带脚本集也是如此：一些脚本可以用于调试用途，另一些脚本则非常有攻击性。例如 [`broadcast-dhcp-discover`](https://nmap.org/nsedoc/scripts/broadcast-dhcp-discover.html) 脚本会广播发送 `DHCPDISCOVER`，输出得到的 `DHCPOFFER`，可以帮助系统管理员检查 DHCP 服务器是否存在问题；而 [`ssh-brute`](https://nmap.org/nsedoc/scripts/ssh-brute.html) 则会尝试暴力破解 SSH 密码。
 

@@ -10,13 +10,13 @@ icon: simple/html5
 
 !!! warning "本文编写中"
 
-!!! comment "适用范围"
+!!! comment "适用范围" {#frontend-scope}
 
     HTML/CSS/JavaScript 分别负责网页的结构、样式和交互。得益于 NodeJS 等技术的发展，JavaScript 不必受限在浏览器中运行，应用场景更加广泛。
 
     使用场景：Web 开发、跨平台应用开发等。
 
-!!! note "特点"
+!!! note "特点" {#frontend-features}
 
     -   较完善的社区生态：有大量的库、脚手架、模板等。
     -   JavaScript 存在太多语言特性的问题，例如 [equality](https://dorey.github.io/JavaScript-Equality-Table/), [this](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/this) 等。

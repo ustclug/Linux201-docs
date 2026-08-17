@@ -57,7 +57,7 @@ $ sudo nsenter --target 117426 --uts bash # 进入 UTS 命名空间
 [root@9213a075a2f4 example]# # 可以看到 hostname 已经改变
 ```
 
-!!! note "ustclug Docker image"
+!!! note "ustclug Docker image" {#ustclug-docker-image}
 
     本页的容器示例使用了 [ustclug/mirrorimage](https://github.com/ustclug/mirrorimage/) 生成的容器镜像，默认配置了科大镜像站，帮助减少 `apt` 等操作之前还要跑 `sed` 的麻烦，支持包括 Ubuntu、Debian、Alpine 等多个发行版。
 
@@ -99,7 +99,7 @@ root           1  0.0  0.0  10876  4568 pts/17   S    21:42   0:00 bash
 root           2  0.0  0.0  14020  4464 pts/17   R+   21:42   0:00 ps aux
 ```
 
-!!! tip "bind mount"
+!!! tip "bind mount" {#bind-mount}
 
     对容器、沙盒等应用来说，在建立 mount 命名空间后一般都需要切换根目录到新位置（[pivot_root(2)][pivot_root.2]）。但是很多时候，我们需要将主机的某个目录或者文件挂载进来，这就需要用到 bind mount 了。bind mount 可以以挂载点的形式将某个文件或者目录「挂载」到其他地方。使用 [mount(8)][mount.8] 命令可以实现 bind mount：
 
@@ -136,7 +136,7 @@ root           1  0.0  0.0  10876  4468 pts/16   S    21:46   0:00 bash
 root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux
 ```
 
-!!! note "subuid 和 subgid"
+!!! note "subuid 和 subgid" {#subuid-and-subgid}
 
     `/etc/subuid` 和 `/etc/subgid` 文件定义了用户命名空间允许的 UID 和 GID 的映射关系。一个 `subuid` 文件的例子如下：
 
@@ -146,7 +146,7 @@ root           2  0.0  0.0  14020  4416 pts/16   R+   21:46   0:00 ps aux
 
     这代表用户名为 user 的用户在创建新的用户命名空间的时候，可以将从 UID 100000 开始的 65536 个 UID 映射到新的用户命名空间中。一种常见的映射关系是，新命名空间的 root 用户（UID 0）映射到宿主机的当前用户，而 root 以外的用户则依次使用映射，例如用户命名空间中的 UID 1 就映射到宿主机的 UID 100000，以此类推。
 
-!!! note "命名空间的魔法"
+!!! note "命名空间的魔法" {#namespace-magic}
 
     在了解命名空间的基础上，我们可以绕过容器运行时的一些限制，直接操作命名空间。
 
@@ -236,7 +236,7 @@ cpu.max			cpu.weight			 hugetlb.2MB.rsvd.current  memory.high		 memory.swap.peak
 需要注意的是，根据 cgroup v2 的 "no internal processes" 规则，
 除根节点以外，其他的 cgroup 不能同时本身既包含进程，又设置了 `subtree_control`。
 
-!!! lab "尝试操作 `subtree_control`"
+!!! lab "尝试操作 `subtree_control`" {#try-subtree-control}
 
     请根据 cgroups 手册以及上文的说明，在 `test` cgroup 下创建一个新的 cgroup，并且使其仅包含内存控制器。
     想一想：上面的 `sleep` 进程应该怎么操作？
@@ -249,7 +249,7 @@ cpu.max			cpu.weight			 hugetlb.2MB.rsvd.current  memory.high		 memory.swap.peak
 # rmdir /sys/fs/cgroup/test
 ```
 
-!!! question "为什么不使用 `rm -r`"
+!!! question "为什么不使用 `rm -r`" {#why-not-use-rm-r}
 
     思考这个问题：
     `/sys/fs/cgroup/test` 并非我们传统意义上的「空目录」，为什么这里要用 `rmdir`，而不是用 `rm -r` 递归删除？
@@ -267,7 +267,7 @@ Killed
 $ sudo cgdelete memory:test  # 清理现场
 ```
 
-!!! lab "观察这些命令的行为"
+!!! lab "观察这些命令的行为" {#observe-commands-behavior}
 
     请使用系统调用分析工具 `strace` 观察 `cgcreate`、`cgset`、`cgexec`、`cgdelete` 的文件系统操作。
 
@@ -282,7 +282,7 @@ root 权限的进程可以随意进行诸如关机、操作内核模块等危险
 
 从程序员的角度，可以使用 libseccomp 库简化 seccomp 的使用。
 
-!!! lab "执行 Python 3 解释器最少需要多少系统调用？"
+!!! lab "执行 Python 3 解释器最少需要多少系统调用？" {#execute-python-3-interpreter-minimum-system-calls}
 
     使用 libseccomp 编写程序，设置系统调用白名单限制。
     尝试找出最小的系统调用集合，并且了解其中的每个系统调用的作用。
@@ -300,13 +300,13 @@ $ getcap /usr/bin/ping
 /usr/bin/ping cap_net_raw=ep
 ```
 
-??? note "Permitted、Effective 和 Inheritable 集合"
+??? note "Permitted、Effective 和 Inheritable 集合" {#permitted-effective-and-inheritable-sets}
 
     上面输出中的 `ep` 代表这个程序的 `CAP_NET_RAW` 能力被设置到了 Permitted 和 Effective 集合中。
 
     对进程（线程）来说，它可以申请使用在 Permitted 集合中的能力，在 Effective 集合中的能力则是当前生效的能力。除此之外，还有一个 Inheritable 集合，代表可以被子进程继承的能力。而对文件来说，相关的集合定义有一些细微的差别，详情可以参考手册。
 
-??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？"
+??? note "为什么我的系统上，`ping` 既不是 SUID 程序，也没有 capabilities？" {#why-ping-is-not-suid-or-capabilities}
 
     Linux 内核支持设置 [`net.ipv4.ping_group_range`][icmp.7]（这个选项也[控制 IPv6 下对应行为](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/net?id=6d0bfe22611602f36617bc7aa2ffa1bbb2f54c67)），指定哪些用户组可以不依赖 capabilities 而对外发送 ICMP Echo Request，相比 capabilities 更加细化，且不再局限于具体的程序：
 
@@ -330,13 +330,13 @@ Ambient set =
 （以下省略）
 ```
 
-!!! lab "试一下限制 capabilities"
+!!! lab "试一下限制 capabilities" {#try-limit-capabilities}
 
     使用 `capsh` 限制 capabilities，尝试运行一些需要特定 capabilities 的命令，例如安装/卸载内核模块。
 
 容器实现一般会限制掉大部分的 capabilities（除非用户需要特权容器）。例如 Docker 可参考其[默认列表](https://github.com/moby/moby/blob/312c247990be04b5002fdc0a6463251a816fa4df/daemon/pkg/oci/caps/defaults.go#L6-L19)。
 
-!!! note "违背 Capabilities 设计初衷的 `CAP_SYS_ADMIN`"
+!!! note "违背 Capabilities 设计初衷的 `CAP_SYS_ADMIN`" {#cap-sys-admin-contradicts-design}
 
     理论上来说，Capabilities 是一个好的设计：细化原先 root 的权限，减少攻击面。但是在实践上，许多重要的功能，例如 `mount`，都依赖于 `CAP_SYS_ADMIN` 这一能力。这就导致了 `CAP_SYS_ADMIN` 成为事实上的 "the new root"。
 
@@ -461,7 +461,7 @@ $ sudo ls /var/lib/docker/overlay2/34e8198226f478c89021fd9a00a31570cdda57d4fcea6
 test
 ```
 
-!!! question "解释 Dockerfile 编写中的实践"
+!!! question "解释 Dockerfile 编写中的实践" {#explain-dockerfile-practice}
 
     从 OverlayFS 的角度，解释以下 Dockerfile 存在的问题：
 
@@ -486,11 +486,11 @@ Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（
 用户通过 `docker` 这个 CLI 工具，或者自行编写程序与其通信。
 这个 daemon 的容器操作则是与 containerd 进行交互。
 
-!!! info "Podman"
+!!! info "Podman" {#podman-alternative}
 
     对比 Docker 的 C-S 架构，红帽主推的 [Podman](https://podman.io/) 则不再依赖于 daemon 进行容器管理。
 
-!!! tip "重启 Docker 后保持容器继续运行"
+!!! tip "重启 Docker 后保持容器继续运行" {#keep-containers-running-after-restart}
 
     默认情况下，重启 Docker（`docker.service`）会让所有容器停止，在生产环境很多时候是非预期的。可以为 Docker 开启 `live-restore` 让容器即使在 Docker 的 daemon 退出之后仍然继续运行：
 
@@ -506,7 +506,7 @@ Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（
 sudo docker run -it --rm --name test ubuntu:22.04
 ```
 
-!!! danger "加入 docker 用户组等价于提供 root 权限"
+!!! danger "加入 docker 用户组等价于提供 root 权限" {#joining-docker-group-equivalent-to-root}
 
     在默认安装下，Docker socket 只有位于 docker 用户组的用户才能访问，对应的 server daemon 程序以 root 权限运行。
     将用户加入 docker 用户组即授权了对应的用户与 Docker 的 UNIX socket，或者说与 dockerd 服务端，任意通信的权限。
@@ -521,7 +521,7 @@ sudo docker run -it --rm --name test ubuntu:22.04
 
     以下所有块代码示例中均会使用 `sudo`。
 
-!!! warning "保持环境整洁：给容器起名，并且为临时使用的容器加上 `--rm`"
+!!! warning "保持环境整洁：给容器起名，并且为临时使用的容器加上 `--rm`" {#keep-environment-clean-name-and-rm}
 
     一个非常常见的问题是，很多人启动容器的时候直接这么做：
 
@@ -548,7 +548,7 @@ sudo docker run -it --rm --name test ubuntu:22.04
 - `--restart=always`/`--restart=unless-stopped`：设置容器启动、重启策略（可以使用 `docker update` 修改）
 - `--memory=512m --memory-swap=512m`：限制容器内存使用
 
-!!! danger "映射端口的安全性"
+!!! danger "映射端口的安全性" {#port-mapping-security}
 
     默认情况下，Docker 会自行维护 iptables 规则，并且这样的规则不受 ufw 等工具的管理。
     这会导致暴露的端口绕过了系统的防火墙。
@@ -639,7 +639,7 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 在容器中运行图形程序也是相当常见的需求。
 以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。
 
-!!! tip "X 客户端与服务器"
+!!! tip "X 客户端与服务器" {#x-client-and-server}
 
     X 服务器负责显示图形界面，而具体的图形界面程序，即 X 客户端，则需要连接到 X 服务器才能绘制出自己的窗口。
 
@@ -652,7 +652,7 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 
 X 客户端连接到服务器，首先需要知道 X 服务器的地址。这是由 `DISPLAY` 环境变量指定的，一般是 `:0`，代表连接到 `/tmp/.X11-unix/X0` 这个 UNIX socket。此外，由于 X 的协议设计是「网络透明」的，因此 X 服务器理论上也可以以 TCP 的方式暴露出来（但是不建议这么做），客户端通过类似于 `DISPLAY=host:port` 的方式连接。
 
-!!! warning "X 与抽象套接字（abstract socket）"
+!!! warning "X 与抽象套接字（abstract socket）" {#x-and-abstract-socket}
 
     目前，X server 会默认开启 abstract socket 支持，即使不共享 `/tmp/.X11-unix`，X 客户端也可以以此连接到 X 服务器。Abstract socket 只能通过网络命名空间隔离。详情见[高级内容的「Linux 桌面与窗口系统」部分](../../advanced/desktop.md)。
 
@@ -681,7 +681,7 @@ $ echo $XAUTHORITY  # 一个例子，实际值会根据环境不同而不同
 
 如果这个环境变量不存在，那么就会使用默认值：当前用户的家目录下的 `.Xauthority` 文件。
 
-!!! warning "避免直接关闭认证的做法"
+!!! warning "避免直接关闭认证的做法" {#avoid-directly-disabling-authentication}
 
     如果阅读网络上的一些教程，它们可能会建议直接关闭 X 服务器的认证，就像这样：
 
@@ -700,7 +700,7 @@ sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -e "XAUTHORITY=$XAUTHORITY" -v /t
 这样就可以在容器中运行基本的图形应用了。
 不过，如果实际需求是在类似沙盒的环境中运行图形应用，有一些更合适的选择，例如 [bubblewrap](https://github.com/containers/bubblewrap) 以及基于此的 [Flatpak](https://flatpak.org/) 等。
 
-??? note "GPU"
+??? note "GPU" {#gpu}
 
     **（以下内容不完全适用于使用 NVIDIA 专有驱动的 NVIDIA GPU）**
 
@@ -712,7 +712,7 @@ sudo docker run -it --rm -e "DISPLAY=$DISPLAY" -e "XAUTHORITY=$XAUTHORITY" -v /t
 
 Registry 是存储与分发容器镜像的服务。在大部分时候，我们使用的 registry 是 [Docker Hub](https://hub.docker.com/)。
 
-!!! warning "区分 Docker 和 Docker Hub"
+!!! warning "区分 Docker 和 Docker Hub" {#distinguish-docker-and-docker-hub}
 
     Docker 是容器运行时，而 Docker Hub 是一个 registry 服务。除了 Docker Hub 以外，还有很多其他的 registry 服务，
     这些服务提供的容器镜像也可以正常在 Docker 中使用。
@@ -830,7 +830,7 @@ a490cc0dc175   host                   host      local
 而在 Docker 中，bridge 网络也可以看作是连接容器网络和主机网络之间的桥。
 连接到相同 bridge 的容器之间可以互相通信。
 
-!!! note "bridge 在 Linux 上的实现"
+!!! note "bridge 在 Linux 上的实现" {#bridge-implementation-on-linux}
 
     首先，Docker 会创建一个虚拟的 `docker0` 网络设备作为网桥，这个设备默认对应了 IP 段 `172.17.0.1/16`，
     创建的容器会被分配到这个网段中的一个 IP 地址。路由表也会将对这个网段的请求转发到 `docker0` 设备上：
@@ -944,7 +944,7 @@ a490cc0dc175   host                   host      local
 }
 ```
 
-!!! tip "创建只允许访问某个特定 interface 的 Docker bridge 网络"
+!!! tip "创建只允许访问某个特定 interface 的 Docker bridge 网络" {#create-docker-bridge-network-for-specific-interface}
 
     在有多个 interface 的主机上（例如对外提供服务的机器可能会接入多个 ISP 的网络，每个 interface 对应不同的 ISP），我们可能会希望能够控制程序访问网络时使用的 interface。一些程序支持用户提供 `bind()` 的参数来指定使用哪个 interface，但是也有一些程序没有给用户暴露这个功能。如果不想 hook 程序的话，使用 Docker 的 bridge 网络，结合一些配置也可以起到类似的效果，并且不需要像下面介绍的 Macvlan 或者 IPvlan 那样需要在对应的 interface 上获取额外的 IP 地址（有些环境下是不可行的）。
 
@@ -1077,12 +1077,12 @@ PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data 
 64 bytes from 2001:da8:d800:95::110 (2001:da8:d800:95::110): icmp_seq=1 ttl=62 time=2.42 ms
 ```
 
-!!! warning "IPv6 与 IPv4 的优先级"
+!!! warning "IPv6 与 IPv4 的优先级" {#ipv6-preference-over-ipv4}
 
     由于 RFC 3848 对 IPv6 公网地址（Global Unique Address）和 ULA 规定了不同的优先级，为容器分配 ULA 时，容器内的应用程序仍然可能优先使用 IPv4。
     此问题在 [DNS](../network-service/dns.md#addr-sort-and-gai-conf) 一页有更详细的介绍。
 
-!!! note "ip6tables"
+!!! note "ip6tables" {#ip6tables-configuration}
 
     注意在以上配置（旧版本手工启用，或者新版本默认）的情况下，系统的 ip6tables 配置会被 Docker 管理。在某些环境下，这可能会干扰系统管理员做的其他配置。如果你已经设置了 `"iptables": false`，那么很有可能你也会需要设置 `"ip6tables": false`。
 
@@ -1090,7 +1090,7 @@ PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data 
 
 VLAN（虚拟局域网）用于将一个物理局域网划分为多个逻辑上的局域网，以实现网络隔离。Docker 支持 `macvlan` 和 `ipvlan` 两种 VLAN 驱动，前者允许每个容器拥有自己的 MAC 地址，后者则允许每个容器拥有自己的 IP 地址（MAC 地址共享）。这个功能适用于需要将多个容器直接在某个特定网络内提供服务的场景——一种场景是，内网使用 tinc 互联，希望能够使用内网的 IP 地址连接内部服务，而这些服务又在 Docker 容器中。此时可以使用 Docker 的 VLAN 功能，并且为容器分配不同的内网 IP 地址，实现内网通过对应的 IP 即可直接访问到容器服务的需求。
 
-!!! note "Bridge 与 macvlan"
+!!! note "Bridge 与 macvlan" {#bridge-and-macvlan}
 
     如果你曾经有过使用类似于 VMware Workstation / VMware Fusion 虚拟机软件的经验，可能会发现：软件中的 NAT 更像是 Docker 里面的 bridge，而「桥接」则更像是这里介绍的 macvlan。
 
@@ -1277,13 +1277,13 @@ Docker Compose version v2.24.5
 
 对于 compose 文件，早期 version 2 与 version 3 的共存导致了一些混乱，因为后者是为了与 Docker Swarm（集群管理）兼容而设计的，丢弃了一些有意义的功能。
 
-!!! warning "避免在非 swarm 集群场合使用 version 3 compose 文件格式"
+!!! warning "避免在非 swarm 集群场合使用 version 3 compose 文件格式" {#avoid-using-version-3-compose-in-non-swarm}
 
     Version 3 格式令人诟病一点的是其[抛弃了对资源限制的支持](https://docs.docker.com/compose/compose-file/compose-versioning/#version-2x-to-3x)。最为糟糕的是，如果配置了资源限制，docker-compose 不会输出警告，而是直接忽略：
 
     > `cpu_shares`, `cpu_quota`, `cpuset`, `mem_limit`, `memswap_limit`: These have been replaced by the [resources](https://docs.docker.com/compose/compose-file/compose-file-v3/#resources) key under `deploy`. `deploy` configuration only takes effect when using `docker stack deploy`, and is ignored by `docker-compose`.
 
-    ??? note "测试用 `docker-compose.yml` 文件"
+    ??? note "测试用 `docker-compose.yml` 文件" {#test-docker-compose-yml-file}
 
         ```yaml
         version: '3.8'
@@ -1326,11 +1326,11 @@ services:
 
 在测试完成后，使用 `docker compose down` 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。
 
-!!! tip "查看当前所有 compose 环境"
+!!! tip "查看当前所有 compose 环境" {#view-all-compose-environments}
 
     可以使用 `docker compose ls` 查看当前所有打开的 compose 环境。
 
-!!! tip "某个容器是 compose 管理的吗？"
+!!! tip "某个容器是 compose 管理的吗？" {#is-container-managed-by-compose}
 
     Compose 会为容器添加以 `com.docker.compose` 开头的 label，可以使用 `docker inspect` 查看：
 
@@ -1414,7 +1414,7 @@ services:
 
 其中 [`init: true`](https://docs.docker.com/reference/cli/docker/container/run/#init) 表示 Docker 会在容器启动时使用基于 [tini](https://github.com/krallin/tini) 的 `docker-init` 管理容器内进程。
 
-!!! note "容器里的 PID 1，与信号处理"
+!!! note "容器里的 PID 1，与信号处理" {#pid-1-in-container-and-signal-handling}
 
     在 Unix 系列的操作系统中，PID 1（init）是最重要的用户态程序，如果 init 退出，那么整个系统就会崩溃。在 Linux 的 PID 命名空间里面也是如此，如果其中 PID 为 1 的程序退出，那么 PID 命名空间里的其他程序都会收到内核发送的 SIGKILL 一起陪葬。对于容器来说，除了启动容器实际的服务程序以外，PID 1 至少还需要：
 
@@ -1473,7 +1473,7 @@ services:
 
 最终生成的配置可以使用 `docker compose config` 查看。
 
-??? note "Example 最后的实际配置"
+??? note "Example 最后的实际配置" {#example-final-configuration}
 
     ```console
     $ docker compose config
@@ -1605,13 +1605,13 @@ volumes:
   hackergame-postgresql:
 ```
 
-!!! note "`docker compose down` 与 volume"
+!!! note "`docker compose down` 与 volume" {#docker-compose-down-and-volume}
 
     默认情况下，`docker compose down` 不会删除 volume。如果需要删除 volume，可以使用 `docker compose down -v`。
 
 而这里额外设置 `container_name`（容器名）的目的是，在这些容器组成的内网中，Docker 提供的 DNS 就允许使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 `hackergame-` 开头，可以方便地区分平台容器与其他的容器。
 
-??? note "`resolv.conf` 配置，与 `ping` 主机名与容器名的输出"
+??? note "`resolv.conf` 配置，与 `ping` 主机名与容器名的输出" {#resolv-conf-configuration-and-ping-output}
 
     ```console
     root@hackergame:/# cat /etc/resolv.conf
@@ -1637,7 +1637,7 @@ volumes:
     ^C
     ```
 
-!!! danger "映射端口的安全性（Compose）"
+!!! danger "映射端口的安全性（Compose）" {#port-mapping-security-compose}
 
     如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：
 
@@ -1718,7 +1718,7 @@ socket=:2018
 
 一个重要的原因是，UNIX socket 是有用户所有者和权限的，但是在多个容器的场合下，保证所有容器的 `/etc/passwd` 映射的用户一致是比较困难的。而 TCP socket 则解决了这个问题。但是其**安全性**需要考虑，例如 uWSGI 的 TCP socket 默认是没有额外的鉴权的，而能够连接到这个 socket 的进程就可以[执行任意命令](https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi-rce-zh.md)，[在某些不正确的设置下，即使在配置中将 uWSGI 降权运行，也可以以此获取到更高的权限](https://github.com/PKU-GeekGame/geekgame-1st/tree/master/writeups/xmcp#%E6%97%A9%E6%9C%9F%E4%BA%BA%E7%B1%BB%E7%9A%84%E8%81%8A%E5%A4%A9%E5%AE%A4-uwsgi)。即使 uWSGI 的端口没有暴露到容器内网外部，如果有其他容器被攻破，那么攻击者也可以轻松横向移动到 uWSGI 所在容器。
 
-!!! lab "Health check"
+!!! lab "Health check" {#health-check}
 
     在上面的例子中，我们限制了一些容器在其他容器启动之后再启动。但是在某些场景下，「容器启动」并不意味着「容器已经准备好接受请求」，在「启动」和「准备好」这个时间间隔中，启动需要对应服务的容器可能会失败。
 
@@ -1734,7 +1734,7 @@ Docker 与 Podman 均支持 rootless 容器，可以分别参考对应的配置�
 
 不过，非特权 user namespace 的安全性也存在争议。尽管较新的发行版一般都默认开启了非特权 user namespace，但是有观点认为，这一项特性在内核中的实现仍然有较多（未发现）的安全漏洞，因此在安全性要求较高的场合，可能需要谨慎使用。
 
-!!! example "Rootless 容器与安全的 Docker-in-Docker 设计"
+!!! example "Rootless 容器与安全的 Docker-in-Docker 设计" {#rootless-container-and-secure-docker-in-docker}
 
     在一些场合下，我们不得不将 Docker socket 暴露给一些服务，但是又希望即使服务的安全边界被攻破，攻击者获得了 Docker socket 的访问权限，也无法影响宿主机。此时 Rootless 的 Docker-in-Docker（DinD）就是一种解决方案。详情可以参考 [LUG Planet 的「Rootless Docker in Docker 在 Hackergame 中的实践」](https://lug.ustc.edu.cn/planet/2025/02/hackergame-rootless-docker/)一文了解。
 
@@ -1758,13 +1758,13 @@ Docker 不是唯一的容器实现。OCI（Open Container Initiative）是 Linux
 
 Podman 提供了与 Docker 兼容的命令行工具，包括 compose 在内也有支持（可以使用 [podman-compose](https://github.com/containers/podman-compose) 或 docker-compose），但是在一些细节设置上仍然会出现不同的情况。
 
-!!! note "Pod 支持"
+!!! note "Pod 支持" {#pod-support}
 
     Podman 的名字来源于 [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)，这是一个 k8s 中的概念，代表一个或多个共享某些命名空间（一般共享网络、IPC、UTS）的容器组成的集合。Podman 的 pod 类似于单机、简化了的 k8s pod，其包含一个 "infra" 容器（保留共享的命名空间，一直睡着），以及用户向 pod 添加的容器。
 
     Podman 支持以 k8s YAML 格式导出 pod（`podman generate kube`），以及导入这样的 YAML（`podman play kube`）。
 
-!!! tip "配置容器镜像的默认 registry"
+!!! tip "配置容器镜像的默认 registry" {#configure-default-registry-for-container-images}
 
     在 Docker 中如果没有指定镜像的 [registry](#registry)，那么它就会默认以 `docker.io` 作为 registry。但是 Podman 不会这么做。[`/etc/containers/registries.conf.d/shortnames.conf`](https://github.com/containers/shortnames/blob/main/shortnames.conf) 会包含一些常用镜像的短命名与实际命名的映射（例如 `"debian" = "docker.io/library/debian"`），但是在实际使用时用户可能还是更习惯于 Docker 的行为。
 
@@ -1774,13 +1774,13 @@ Podman 提供了与 Docker 兼容的命令行工具，包括 compose 在内也�
     unqualified-search-registries = ["docker.io"]
     ```
 
-!!! tip "兼容使用 Docker API 的程序"
+!!! tip "兼容使用 Docker API 的程序" {#support-docker-api-programs}
 
     例如 `docker-compose` 等程序默认会连接 Docker 的 socket（`/var/run/docker.sock`），但是 Podman 默认不会监听这个 socket。为了提供支持，需要在系统或者用户 systemd session（取决于是否为 rootless）启动 `podman.service` 服务或 `podman.socket`（[由 systemd 在收到连接后激活服务](../service.md#systemd-socket)）。
 
     Socket 默认在 `/run/podman/podman.sock` 或 `/run/user/<uid>/podman/podman.sock`（rootless）。对需要使用 Docker API 的程序，一般设置 `DOCKER_HOST` 环境变量即可。仍然需要提醒的是，Podman 提供的是尝试兼容 Docker API 的实现，可能无法满足某些程序的需求。
 
-!!! tip "配置 Podman 容器的自启动"
+!!! tip "配置 Podman 容器的自启动" {#configure-podman-container-autostart}
 
     Podman 使用 [Quadlet](https://github.com/containers/podman/tree/main/pkg/systemd/quadlet) 为 systemd 环境提供自启动支持。Quadlet 是一个 systemd generator（位于 `/usr/lib/systemd/system-generators/podman-system-generator`）——会从 quadlet 文件生成 systemd 服务。Quadlet 文件的格式和 systemd 单元的配置很像：
 

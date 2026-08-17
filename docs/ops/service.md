@@ -44,17 +44,17 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
 - `systemctl enable [some-unit]` 可以“启用”一个 unit，即激活该 unit 在 `[Install]` 部分声明的自动启动条件，如 `WantedBy=` 和 `RequiredBy=` 等，以及 `Alias=`。该命令的本质是在 `/etc/systemd/system` 目录下创建软链接。
 
-    !!! tip
+    !!! tip {#enable-and-start-unit}
 
         `systemctl enable --now [some-unit]` 可以在 enable 一个 unit 的同时立即启动它。
 
 - `systemctl disable [some-unit]` 可以“禁用”一个 unit，即取消它的自动启动条件。类似地，该命令的本质是删除了上面创建的软链接。
 
-    !!! tip
+    !!! tip {#disable-and-stop-unit}
 
         - 同理，`systemctl disable --now [some-unit]` 可以在 disable 一个 unit 的同时立即停止它。
 
-    !!! note "`systemctl mask`"
+    !!! note "`systemctl mask`" {#systemctl-mask}
 
         有些时候，`systemctl disable` 无法满足需求，例如：
 
@@ -73,7 +73,7 @@ Systemd unit 的配置文件**主要**从以下目录按顺序载入，其中同
 
     相比于手工修改文件，使用 `systemctl edit` 更加安全，它会检查配置文件的语法，而且不需要再额外运行 `systemctl daemon-reload`。
 
-    !!! tip "修改可以指定多次的字段"
+    !!! tip "修改可以指定多次的字段" {#multiple-fields}
 
         Systemd unit 中有一些字段是可以指定多次的，例如下文介绍的服务的 `ExecStart=`。如果你想在 `systemctl edit` 中覆盖这些字段，那么需要先指定空值，再设置，类似下面这样：
 
@@ -101,7 +101,7 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-!!! tip "查询手册"
+!!! tip "查询手册" {#query-manual}
 
     Unit 配置中不同的字段分布在 systemd 不同的手册页中。其中 `[Unit]` 和 `[Install]` 部分的字段可以在 [`systemd.unit(5)`][systemd.unit.5] 中找到。
 
@@ -167,7 +167,7 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
 
 需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 `Requires=` 或 `Wants=`，没有写 `Before=` 或 `After=`，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序；反过来，如果只写 `Before=` 或 `After=`，那么 systemd 不保证这些服务会被启动。
 
-!!! tip "获取某个 unit 的顺序与依赖关系"
+!!! tip "获取某个 unit 的顺序与依赖关系" {#unit-dependency-order}
 
     使用 `systemctl show [unit]` 可以查看某个 unit 的所有属性，包括上面提到的依赖关系和启动顺序。例如：
 
@@ -205,7 +205,7 @@ Systemd 中的 unit 有很多状态，大致可以归为以下几类：
     （以下省略）
     ```
 
-!!! tip "分析系统启动时间"
+!!! tip "分析系统启动时间" {#analyze-boot-time}
 
     相比传统的 init，systemd 的一大卖点就是通过分析顺序与依赖，并行启动服务，从而缩短系统启动时间。可以使用 `systemd-analyze` 来绘制启动时间线：
 
@@ -270,13 +270,13 @@ Service 也就是我们最常见的服务，它的配置文件中有一个 `[Ser
 - `EnvironmentFile=-/etc/default/cron` 表示会读取 `/etc/default/cron` 文件中的环境变量。开头的 `-` 表示如果这个文件不存在，则直接忽略。
 - `ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS` 指定了服务的启动命令，其中 `$EXTRA_OPTS` 是从上面的文件中读取的环境变量。
 
-    !!! tip
+    !!! tip {#absolute-path}
 
         通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 `$PATH` 环境变量，而是使用一个硬编码的列表。
 
 - `Restart=on-failure` 表示服务在失败时会自动重启。`Restart=` 的取值和含义可以在 [systemd.service][systemd.service.5#Restart=] 文档中找到。
 
-    !!! warning "Systemd 的重试限流机制"
+    !!! warning "Systemd 的重试限流机制" {#systemd-retry-rate-limiting}
 
         实际部署过服务的话，可能会注意到：即使设置了 `Restart=always`，有的时候服务也会挂掉，systemd 不会重启。这是因为 systemd 会限制 unit 的重试频率，由 `StartLimitIntervalSec=` 和 `StartLimitBurst=` 两项参数控制，默认 10s 内最多允许启动 5 次。如果触发到了这个频率，那么 systemd 就不会再尝试重启对应的服务了。
 
@@ -303,7 +303,7 @@ Service 也就是我们最常见的服务，它的配置文件中有一个 `[Ser
 
 :   指定运行服务的用户和组，以及额外的附加组。默认情况下服务会以 `root` 用户运行，如果有安全和权限管理的需求，那么你应该配置这几项设置。
 
-    !!! tip
+    !!! tip {#security-check}
 
         如果你有额外的安全需求，可以参考 [Sandboxing][systemd.exec.5#Sandboxing] 一节使用 systemd 提供的高级隔离功能。可以使用 `systemd-analyze security` 命令检查整个系统的服务安全性配置情况，与单个服务的具体配置是否安全。该命令会根据服务配置计算 "exposure level" 分数，并且提供相关配置以及解释，类似如下：
 
@@ -347,7 +347,7 @@ notify 和 dbus
 :   类似 `simple` 和 `exec`，但是服务会在启动完成后主动通知 systemd。
     与前面的类型不同的是，这类服务需要程序主动支持 `sd_notify` 或者 D-Bus 接口。
 
-    ??? tip "sd_notify"
+    ??? tip "sd_notify" {#sd-notify}
 
         [sd_notify(3)][sd_notify.3] 是一个非常简单的协议。Systemd 对于标注自己支持 `notify` 的服务，会通过环境变量 `NOTIFY_SOCKET` 给应用提供一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以发送 `READY=1` 来通知 systemd 服务已经成功启动。
 
@@ -365,13 +365,13 @@ Socket activation 帮助实现了服务的惰性加载，可以在不必要的�
 
 当然，对 SSH，如果你想继续使用 `ssh.socket` 并且修改端口的话，就需要 `systemctl edit ssh.socket`，而不是编辑 sshd 配置了。
 
-!!! note "应用是如何获取到自己的 socket 的？"
+!!! note "应用是如何获取到自己的 socket 的？" {#how-to-get-socket}
 
     Systemd 提供了两种方法：应用可以用 libsystemd 的 [sd_listen_fds(3)][sd_listen_fds.3] 函数获取到 socket 对应的文件描述符，然后直接 `accept` 或者 `recv`（根据 `Accept` 选项的不同）。
 
     而旧的 inetd 应用会直接从 stdin 读取 socket，向 stdout 写入 socket，此时需要在配置 `Accept=yes` 的同时，配置 `StandardInput=socket` 等参数。
 
-??? example "使用 systemd socket 将 rsync 服务监听在 Unix domain socket 上"
+??? example "使用 systemd socket 将 rsync 服务监听在 Unix domain socket 上" {#rsync-socket-example}
 
     分别创建 systemd 需要的 socket unit 和模板化 service unit：
 
@@ -416,7 +416,7 @@ Socket activation 帮助实现了服务的惰性加载，可以在不必要的�
     将 rsync 服务监听在 UDS 的好处是可以通过文件权限来控制访问，且本地访问时不会经过防火墙等网络协议栈组件，性能会更好一些。
     例如，USTC 镜像站的 [rsync-proxy](https://github.com/ustclug/rsync-proxy) 就支持通过 UDS 和后端 rsync 服务通信。
 
-!!! note "`Accept=yes` 与拒绝服务攻击"
+!!! note "`Accept=yes` 与拒绝服务攻击" {#accept-yes-and-dos}
 
     配置 `Accept=yes` 时，systemd 接受的并发连接数由 `MaxConnections=` 选项控制（默认为 64）。
     如果服务暴露在互联网等不可信环境的话，默认的连接数限制可能会导致正常用户无法使用服务。
@@ -425,7 +425,7 @@ Socket activation 帮助实现了服务的惰性加载，可以在不必要的�
 
     如果无法切换到 `Accept=no`，那么可能需要增大最大连接数，或者利用 [fail2ban](security.md#public-service-and-login) 与[防火墙](network/firewall.md)等方式来阻止恶意的扫描影响正常服务。
 
-!!! note "systemd-ssh-generator"
+!!! note "systemd-ssh-generator" {#systemd-ssh-generator}
 
     可能出乎人意料的是，systemd 默认除了对外的 TCP 22 端口以外，还会额外 bind：
 
@@ -557,7 +557,7 @@ systemd-run --unit=my-sleep sleep 600
 
 作为一个常见的使用场景，普通用户需要使用 `systemd-run --user` 以运行临时的用户服务，而非系统服务。用户服务如果需要在用户注销之后继续运行，需要配置 lingering，见本文[登录管理器](#logind)部分的介绍。
 
-!!! example "`nohup` 与 `systemd-run` 对照例子"
+!!! example "`nohup` 与 `systemd-run` 对照例子" {#nohup-vs-systemd-run}
 
     对下面这个例子：
 
@@ -581,7 +581,7 @@ systemd-run --unit=my-sleep sleep 600
 
     之后 `journalctl --user -u mycalc` 查看即可。
 
-!!! note "run0"
+!!! note "run0" {#run0}
 
     从 systemd 256 开始，其附带了一个 `sudo`、`pkexec` 等提权工具的替代品 `run0`，可以从 Debian 13 开始使用到。`run0` 最大的特点是和 `sudo` 等工具不同，它本体不是一个 SUID binary，因此提权方式不是让自己成为 root（或其他用户），再判断调用者有没有权限，而是直接让系统的 systemd 创建一个临时的 unit（由 polkit 判断是否能够提权），然后在里面运行提权后的程序。它实质上是 `systemd-run` 的软链接：
 
@@ -598,7 +598,7 @@ systemd-run --unit=my-sleep sleep 600
 
 Journald 是 systemd 套件中负责管理日志的部分。与传统的 `/var/log/*.log` 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（`less`、`vim` 等）查看，需要通过 `journalctl` 管理。
 
-!!! note "为什么 journald 选择使用二进制格式？"
+!!! note "为什么 journald 选择使用二进制格式？" {#why-binary-log}
 
     传统上，Unix 系统的日志都以文本格式存储，并定时压缩、删除过期的日志。但作为中心化的日志管理服务，journald 选择了二进制格式存储日志，打破 Unix 传统，主要基于下面几点考虑：
 
@@ -629,7 +629,7 @@ Journald 的配置文件位于 `/etc/systemd/journald.conf`，可以通过 [`jou
 | RuntimeMaxUse=<br>RuntimeKeepFree= | 指定运行时日志（`/run/log/journal`）的最大占用空间或保证磁盘的空余空间 |
 |  MaxRetentionSec=<br>MaxFileSec=   | 指定日志内容和日志文件的最大保存时间                                   |
 
-!!! tip "避免覆盖由包管理器管理的文件"
+!!! tip "避免覆盖由包管理器管理的文件" {#avoid-overwriting-package-managed-files}
 
     自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 `/etc/systemd/*.conf` 文件均支持 `*.conf.d` 目录，即可以创建 `/etc/systemd/journald.conf.d/` 目录，并在其中创建文件来覆盖默认配置，而无需修改 `*.conf` 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。
 
@@ -769,7 +769,7 @@ ForwardToSyslog=yes
 
 虽然 journald 提供了转发到 socket 的功能（`ForwardToSocket` 配置），但是 journald 自带的转发是同步的——这意味着应用在输出日志时，需要等待 journald 转发完成，才能继续操作。如果网络环境不是非常好，对应用性能会有比较大的影响。
 
-!!! note "systemd-journal-{upload,remote,gatewayd}"
+!!! note "systemd-journal-{upload,remote,gatewayd}" {#systemd-journal-remote-tools}
 
     事实上，systemd-journal 也提供了远程通过网络传输日志的独立服务（由 `systemd-journal-remote` 包提供），其中 systemd-journal-gatewayd 提供了访问日志的 HTTP API 服务，systemd-journal-remote 运行在日志接收端，systemd-journal-upload 运行在发送端。
 
@@ -857,7 +857,7 @@ SESSION  UID USER  SEAT  TTY
 
 systemd 中每个 session 都会启动一个用户级别的 systemd 进程（user manager），用于管理用户的服务、timer 等，在 `systemctl`、`journalctl` 操作时添加 `--user` 参数即可查看当前用户的服务和日志等。
 
-!!! note "DBus"
+!!! note "DBus" {#dbus}
 
     `systemctl`、`journalctl` 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 `/run/user/<用户 UID>/bus`）。
 
@@ -872,7 +872,7 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
 
 有些场景下，我们希望在机器启动时，用户的 user manager（`user@UID.service`）也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 `loginctl enable-linger <user>` 命令即可启用。
 
-!!! note "`session-*.scope` 和 `user@UID.service`"
+!!! note "`session-*.scope` 和 `user@UID.service`" {#session-and-user-service}
 
     如果观察 `systemctl status`，可以看到在 `user.slice` 下出现类似这样的场景：
 
@@ -892,7 +892,7 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
 
     因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
 
-!!! lab "限制用户的资源使用"
+!!! lab "限制用户的资源使用" {#user-resource-limit}
 
     用户 session 启动时，systemd 会创建 `user-<uid>.slice`。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。
 

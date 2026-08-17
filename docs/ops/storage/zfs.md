@@ -31,7 +31,7 @@ ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS
 
 - Debian 将 ZFS 的代码以 DKMS 模块的形式打包（包名 `zfs-dkms`），以便在更新内核之后自动编译和安装。
 
-    !!! note "Debian backports"
+    !!! note "Debian backports" {#debian-backports}
 
         受限于 Debian 的稳定性政策，stable 的软件源中的 ZFS 版本可能较老。如果需要使用较新的 ZFS 版本，可以考虑使用 Debian 的 backports 仓库（例如在 Debian Bookworm 中，对应使用 backports 的命令是 `apt install -t bookworm-backports zfs-dkms`）。
 
@@ -43,7 +43,7 @@ ZFS 在内部采用“日志式文件系统”[^ostep-lfs]设计，这使得 ZFS
 
 不论是 Debian 还是 Ubuntu，都需要安装 `zfsutils-linux` 软件包，以便使用 ZFS 的命令行工具。
 
-??? tip "root on ZFS"
+??? tip "root on ZFS" {#root-on-zfs}
 
     如果你计划将 rootfs 也安装在/迁移至 ZFS 上的话，还需要安装 `zfs-initramfs` 软件包，以便在系统启动阶段加载 ZFS 模块。
 
@@ -80,7 +80,7 @@ $ sudo zpool create tank /dev/loop0 /dev/loop1 /dev/loop2
 $
 ```
 
-!!! warning "关于 zpool"
+!!! warning "关于 zpool" {#zpool-ashift}
 
     `ashift` 参数是 ZFS 对“磁盘扇区大小”的理解，且在创建 pool 后**无法更改**。
     为了确保最佳的性能，`ashift` 参数应当与硬盘的真实扇区大小相匹配，既不宜过大也不宜过小。
@@ -94,7 +94,7 @@ $
 
 在实际应用中，如果你使用 `sda`、`nvme0n1` 等设备名来创建 pool，ZFS 会自动对其进行分区，然后使用 `sda1`、`nvme0n1p1` 等分区名来创建 pool，并在每个盘的末尾创建一个 8 MB 的分区（`sda9`、`nvme0n1p9`）。分区的目的可能出于某些历史原因，目前无从考证，且这个编号为 9 的分区是没有任何用途的。
 
-!!! warning "不建议使用块设备名创建 zpool"
+!!! warning "不建议使用块设备名创建 zpool" {#do-not-use-block-device-names}
 
     [块设备名](./filesystem.md#blk-dev-naming)在 Linux 上不是稳定的，对于存在多块硬盘的情况，在每次重启之后，块设备名无法保证不变。这会导致 ZFS 无法正确识别 zpool 中的设备，并且认为所有对应的设备都已经掉线，导致 pool 进入降级或不可用状态。
 
@@ -125,7 +125,7 @@ NAME    SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH  AL
 tank   2.81G   112K  2.81G        -         -     0%     0%  1.00x    ONLINE  -
 ```
 
-!!! tip
+!!! tip {#zfs-read-only-commands-without-sudo}
 
     在 ZFS 中，绝大多数诸如查询状态等只读的命令都不需要 `sudo`。
 
@@ -173,7 +173,7 @@ zfs create tank/backup
 
 这些额外的文件系统会自动继承上级文件系统的属性（如压缩、快照等）。特别地，`mountpoint` 属性的继承方式是在上级文件系统的 `mountpoint` 属性上加上当前文件系统的名称，例如 `/tank/data` 的默认挂载点为 `/tank/data` 等。ZFS 的属性继承功能是我们非常推荐的“便于管理和维护”的特性之一，例如，中科大镜像站就将软件仓库放在 `pool0/repo` 下，该目录的 `mountpoint` 属性为 `/srv/repo`，此时每个具体的软件仓库就可以直接建立独立的文件系统并继承所有重要属性，如 `pool0/repo/ubuntu` 的挂载点就自动继承为 `/srv/repo/ubuntu`。
 
-!!! tip "ZFS 文件系统的独立性"
+!!! tip "ZFS 文件系统的独立性" {#zfs-filesystem-independence}
 
     ZFS 文件系统的层次结构仅用于管理和维护（继承参数和属性，创建、回滚和发送快照，以及 destroy 等），不同的文件系统内存储的数据是完全独立的。因此即使是具有父子关系的两个 ZFS 文件系统，其内容也不能直接合并，必须将子文件系统的内容复制到父文件系统中，再 `zfs destroy` 子文件系统。
 
@@ -209,7 +209,7 @@ zfs set xattr=sa compression=zstd tank/data
 
     一般建议启用透明压缩功能，除非你的 CPU 性能较差（例如 10 年前的服务器）或者预期的数据量不会因压缩而减小（例如归档存储已经压缩过的数据）。
 
-    !!! note "压缩算法"
+    !!! note "压缩算法" {#compression-algorithm}
 
         截至 2024 年，ZFS 的默认（`compression=on`）压缩算法为 LZ4，这是一种速度较快的单线程算法。如果你的 CPU 不是上古级别的，可以考虑使用 Zstd，这是一种更加现代化的压缩算法，支持多线程和更高的压缩比。
 
@@ -269,7 +269,7 @@ zfs set volsize=20G tank/vol
 
 此时 zvol 的大小就会立刻变为 20 GiB。
 
-!!! danger "该操作没有确认"
+!!! danger "该操作没有确认" {#no-confirmation-on-zvol-size}
 
     与其他 `zfs` 管理命令一样，这些操作没有任何确认提示，**请看清楚命令行后再执行**。
 
@@ -319,7 +319,7 @@ echo 4294967296 > /sys/module/zfs/parameters/zfs_arc_max
 
 在 Linux 下，受限于 kernel 的设计[^arc-as-used]，ARC 占用的内存会在 htop / free 等程序中显示为 used 而不是 cached，但是其行为和 cached 是一致的，即在系统内存压力升高时会自动释放，以供其他程序使用。
 
-!!! tip "强制释放 ARC"
+!!! tip "强制释放 ARC" {#force-release-arc}
 
     与 cached 内存一样，在 `echo 3 > /proc/sys/vm/drop_caches` 时，ZFS ARC 会一同释放。注意：
 
@@ -334,7 +334,7 @@ ARC 的统计信息（如内存使用量、MRU / MFU 配比、命中率等）可
 arc_summary | less
 ```
 
-??? question "I/O hit 是什么"
+??? question "I/O hit 是什么" {#what-is-io-hit}
 
     OpenZFS 2.2 新增了一类更加具体的统计数据，即 ARC I/O hit。
     这表示尽管数据并不在 ARC 中，但已经存在对应的磁盘 I/O 请求（例如数据正在被 prefetch），因此不需要再次从磁盘读取数据[^cks-ZFSUnderstandingARCHits]。
@@ -343,7 +343,7 @@ arc_summary | less
 
 如果你需要一个类似 `iostat` 这样能够持续输出 ARC 统计信息的工具，可以考察一下 `arcstat`（`zfsutils-linux`）。
 
-!!! lab "追踪每个进程的 ARC 命中率"
+!!! lab "追踪每个进程的 ARC 命中率" {#track-process-arc-hit-rate}
 
     阅读[问题调试的 eBPF 部分](../debug.md#ebpf)，可以注意到，基于 eBPF 的 `cachetop` 工具可以显示每个进程对 Linux 内核的页缓存（page cache）的命中率情况（如果还没有跑过的话，可以试一试，并阅读其源代码）。
 
@@ -364,7 +364,7 @@ L2ARC 通过接纳从 ARC 中被踢出（evicted）的数据块，结合预取�
 但根据我们的经验，L2ARC 的实用性较小，这是因为通常情况下 ZFS 存储系统会分配足够的内存作为 ARC，且 ARC 本身已经有极高的命中率，此时 L2ARC 能够带来的边际收益非常小。
 对于大部分用户来说，节约 SSD 的寿命可能是一个更好的选择。
 
-!!! abstract "USTC 镜像站上的 ARC 配置"
+!!! abstract "USTC 镜像站上的 ARC 配置" {#ustc-mirror-arc-config}
 
     USTC 镜像站服务器配备了 256 GB 内存，其中分配了 200 GB 用于 ARC，此时长期的 ARC 命中率超过 99%，而 L2ARC 的命中率仅有约 35%。
     这意味着 L2ARC 仅仅将综合命中率从 99.2% 提升到 99.5%，对于降低机械硬盘的负载效果并不明显。
@@ -429,7 +429,7 @@ ls /tank/.zfs/snapshot/snap1
 
 如果你需要恢复这个文件，可以直接将其复制出来。
 
-!!! tip
+!!! tip {#zfs-snapshot-access}
 
     由于 `.zfs` 目录是隐藏的，因此它在任何时候不会被列出，但你可以通过路径访问它，包括 `cd` 进去。
     如果你想要让 `.zfs` 目录可见，请参考 [zfsprops(7)][zfsprops.7] 中的 `snapdir` 属性。
@@ -472,7 +472,7 @@ nc -l -p 12345 | zfs receive pool1/example
 zfs send pool0/example@snap | pv > /dev/tcp/otherserver/12345
 ```
 
-!!! tip
+!!! tip {#zfs-send-receive-properties}
 
     `zfs send` 和 `zfs receive` 命令均有 `-o` 参数，既可以在发送时添加额外的属性，也可以在接收时添加，以覆盖原有的属性或进行新的设置，如修改挂载点等。
     请善用这个参数，以便更好地管理快照的传输。
@@ -510,7 +510,7 @@ zfs get receive_resume_token pool1/example
 
 此时在发送端使用 `zfs send -t <token>` 即可生成一个「断点续传流」，恢复之前被中断的传输。
 
-!!! tip "放弃中断的传输"
+!!! tip "放弃中断的传输" {#abort-interrupted-receive}
 
     如果你想要放弃（**A**bort）一个被中断的 `zfs receive -s` 接收并删除已经接收一半的内容，可以使用 `-A` 参数：
 
@@ -531,7 +531,7 @@ ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数
 
 - **仅加载时生效**：这类参数在加载模块时就已经确定，无法在运行时修改。如果需要使用非默认值的话，需要在加载模块的时候就指定。一般在 `/etc/modprobe.d/zfs.conf` 文件来指定。
 
-    ??? example "使用 modprobe.d 配置 ZFS 模块参数的自动加载"
+    ??? example "使用 modprobe.d 配置 ZFS 模块参数的自动加载" {#configure-zfs-module-parameters}
 
         在 `/etc/modprobe.d/zfs.conf` 中添加以下内容：
 
@@ -550,7 +550,7 @@ ZFS 的内核模块具有**非常**多的可调节参数，其中大部分参数
 
 ### 案例 {#tuning-example}
 
-??? example "案例：通过调节参数降低镜像站的磁盘负载[^ustc-zfs]"
+??? example "案例：通过调节参数降低镜像站的磁盘负载[^ustc-zfs]" {#tuning-example-ustc-zfs}
 
     USTC 镜像站的 Rsync 服务器采用 11 块盘的 RAID-Z3（另有一块热备盘，共 12 块机械硬盘），绝大多数参数使用默认配置，所有机械硬盘长期处于 90% 以上的负载，读写性能较差。
 
@@ -602,7 +602,7 @@ ZFS 提供了调试工具 `zdb`，可以用于查看 pool 和文件系统的内�
 
 以下提供了一个使用 `zdb` 调试出生产环境「未解之谜」的例子：
 
-??? example "案例：使用 `zdb` 帮助找出文件系统使用空间异常的原因"
+??? example "案例：使用 `zdb` 帮助找出文件系统使用空间异常的原因" {#debugging-example-zdb}
 
     一台使用 ZFS 的服务器将 `/var/log` 挂载在了 ZFS 文件系统中：
 

@@ -282,7 +282,7 @@ ClickHouse 26.3 中，三个 `max_concurrent_*` 服务器设置的默认值均�
 
 USTC Mirrors 的 Nginx 访问日志格式为自定义的单行 JSON 格式（命名为 `ngx_json`），配置方式可以在 [Nginx](../ops/network-service/nginx.md#logging) 一页中找到，示例如下：
 
-??? example "访问日志示例（经过格式化）"
+??? example "访问日志示例（经过格式化）" {#access-log-example}
 
     ```json
     {
@@ -664,7 +664,7 @@ LIMIT 50;
 
 ![Grafana ClickHouse 查询结果示例](../images/grafana-ayano-example.png)
 
-??? example "Grafana ClickHouse SQL 示例"
+??? example "Grafana ClickHouse SQL 示例" {#grafana-clickhouse-sql-example}
 
     恰当地配置 [Grafana 的模板变量](https://grafana.com/docs/grafana/latest/visualizations/dashboards/variables/)，可以让用户（或者你自己）更方便地选择过滤条件，例如：
 

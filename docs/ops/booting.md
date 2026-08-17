@@ -31,7 +31,7 @@ icon: material/power
 
 BIOS（Basic Input/Output System，基本输入/输出系统）最初是 IBM PC 的专有固件，但是由一些公司（如 Compag、Phoenix、AMI 等）进行逆向工程，创建了兼容 BIOS 的 IBM PC 兼容机。此后，BIOS 接口成为 PC 兼容机的事实标准，被广泛采用并沿用至今。
 
-!!! note "BIOS is not BIOS"
+!!! note "BIOS is not BIOS" {#bios-is-not-bios}
 
     需要注意的是，我们日常口头上说的 BIOS 其实大部分情况下指的是广义上的 BIOS，不仅包括传统的 IBM PC 兼容机上的 BIOS 实现，还包括基于 UEFI 规范实现的 UEFI BIOS 。真正意义上的传统 BIOS 已经逐渐被淘汰，现代计算机上更多使用的是基于 UEFI 规范的 BIOS 实现。
 
@@ -77,7 +77,7 @@ UEFI 规范下的计算机启动过程分为以下几个阶段：
 
 与 BIOS 通过 MBR 和 PBR 来加载 Bootloader 的方式不同，UEFI 固件会在 BDS 阶段运行一个 Boot Manager 程序，用于加载和执行 UEFI Image、UEFI Application、UEFI OS Loader（Bootloader）、UEFI Drivers 等 UEFI 规定的可加载文件类型。
 
-!!! note "ESP 分区"
+!!! note "ESP 分区" {#esp-partition}
 
     ESP 分区（EFI System Partition）是 UEFI 规范定义的一类特殊分区，通常配合 GPT 分区表使用（在 MBR 分区表下也有对应定义，但不常用），用来存放系统启动时需要用到的 Bootloader 和相关文件。
     
@@ -104,7 +104,7 @@ Boot0002  UEFI: Built-in EFI Shell	VenMedia(0784776a-4a9c-48cb-872c-8bde289ba9e8
 
 在以上示例中，Boot Manager 会从唯一分区 GUID（Unique Partition GUID, PARTUUID）为 `7c003990-9d67-48fb-b6c9-f44a4577cd5f` 的分区中加载 `\EFI\DEBIAN\GRUBX64.EFI` 文件作为 Bootloader。你可以观察 `blkid` 命令的输出，寻找 `PARTUUID=` 匹配的分区。
 
-!!! note "Boot Option 的 fallback 查找路径"
+!!! note "Boot Option 的 fallback 查找路径" {#boot-option-fallback-path}
 
     如果在启动过程中，UEFI 固件没能通过 NVRAM 在某个可移动介质（Removable Media，比如 U 盘、移动硬盘等）上找到任何可以加载的 Boot Option，那么 UEFI 固件就会查找该可移动介质的 ESP 分区的 `\EFI\BOOT\BOOT<arch>.EFI` 路径上是否有可加载的 EFI 文件，其中 `arch` 表示当前机器的指令集架构，比如如果是 x86_64 平台，`arch` 就是 `X64`，其他架构可以在 UEFI 规范文件中找到。
 
@@ -155,7 +155,7 @@ BG (Boot Guard) 和 PSB (Platform Secure Boot) 分别是 Intel 和 AMD 处理器
 - 接着，PSP 又会从主板 ROM 中读取 OEM 的 BIOS Signing Key，并使用 ARK 验证签名，确保不被篡改，而 BIOS Signing Key 则用于验证固件的签名，确保不被篡改
 - 最后，对于固件的验证过程结束，PSP 允许 x86 主核心从复位向量开始执行
 
-!!! note "开启 Boot Guard 和 PSB 导致硬件绑定"
+!!! note "开启 Boot Guard 和 PSB 导致硬件绑定" {#boot-guard-and-psb-hardware-binding}
 
     Intel Boot Guard 将 OEM 的公钥 hash 存放在**主板**（具体来说是 PCH 芯片）的 OTP fuse 中，而 AMD PSB 则将 ARK（本质上也是 OEM 的公钥）存放在 **CPU** 里的 PSP 中的 OTP fuse 中。
     
@@ -212,7 +212,7 @@ KEK: List 1, type X509
 
 KEK 的作用是为 KEK 证书的颁发者提供修改 db 和 dbx 的能力，比如 Windows 系统需要远程推送有关驱动或者 Bootloader 相关的更新，涉及到了新证书的颁发或者过时的、存在漏洞的旧证书的撤销，就可以通过由 KEK 的私钥签名的更新包安全地修改 db 和 dbx 来实现。
 
-??? question "两张来自 Microsoft 的 KEK 证书？"
+??? question "两张来自 Microsoft 的 KEK 证书？" {#two-microsoft-kek-certificates}
 
     示例中展示了一张来自 Microsoft 于 2011 年颁发的名为 Microsoft Corporation KEK CA 2011 的证书，但是实际上，这张证书已经于 2026 年 6 月 24 日正式过期了，因此，对于不久之前的新设备，你可能还能看到另一张 Microsoft 于 2023 年颁发的名为 Microsoft Corporation KEK 2K CA 2023 的新证书，如下所示：
 
@@ -264,7 +264,7 @@ db: List 4, type X509
 
 最后就是 db 和 dbx，这部分的证书就是真正用来验证被加载的程序是否被允许的数字签名签名，比如其中的 Microsoft Windows Production PCA 2011 就是用于允许 Windows 系统的 Bootloader 程序 `bootmgfw.efi` 被加载的证书，又比如 Lenovo UEFI CA 2014 可能就是用于允许 OEM 签名的各种驱动、Option ROM 等程序被加载的证书。
 
-!!! tip "Linux 中使用 Secure Boot 的常见方案"
+!!! tip "Linux 中使用 Secure Boot 的常见方案" {#linux-secure-boot-solutions}
 
     不同于 Microsoft 的 Windows，可以向 OEM 授权预装自己的 KEK 证书和 db 证书进主板，从而默认允许 Windows 的 Bootloader 能够通过 Secure Boot 的认证，属于开源社区并且种类众多的各大 Linux 发行版并没有一个统一的机构能够提供一个统一的 KEK 证书或 db 证书预装进主板。因此，开源社区逐渐形成了以下两种在 Linux 中使用 Secure Boot 的方案：
 
@@ -408,7 +408,7 @@ Bootloader（引导加载程序）通常存储在可引导设备（如硬盘、U
 
 通常，对于 Linux 系统来说，Bootloader 还需要将 initrd / initramfs（初始内存盘）加载到内存，并将相关信息（如内核命令行参数、initramfs 的位置等）传递给 Kernel，里面包含了内核启动所需的各种驱动和工具，帮助内核完成系统的初始化过程。
 
-!!! question "为什么需要 Bootloader？"
+!!! question "为什么需要 Bootloader？" {#why-need-bootloader}
 
     一个很自然的问题是，为什么需要 Bootloader？为什么不直接让 Firmware 加载 Kernel 呢？
 
@@ -459,7 +459,7 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
 
 一般来讲不应该主动修改 `/boot/grub/` 下的内容。对常见的配置修改（设置是否显示菜单、timeout 时间、Linux 的内核命令行参数等），需要修改 `/etc/default/grub`，然后使用 `update-grub` 更新配置。
 
-!!! tip "`update-grub` 命令"
+!!! tip "`update-grub` 命令" {#update-grub-command}
 
     `update-grub` 是一个 Debian、Ubuntu 等基于 Debian 的发行版中特有的命令，本质上就是一个脚本：
 
@@ -469,7 +469,7 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
     exec grub-mkconfig -o /boot/grub/grub.cfg "$@"
     ```
 
-!!! tip "`--removable` 选项"
+!!! tip "`--removable` 选项" {#removable-option}
 
     有时候，我们可能会需要在可移动介质（Removable Media，比如 U 盘、移动硬盘等）中安装 GRUB 以引导位于可移动介质上的系统，比如制作一个可以随身携带的 Linux 系统。这时，在使用 `grub-install` 安装 GRUB 的时候，就需要添加 `--removable` 选项。相比于默认不添加，添加该选项后，`grub-install` 的行为会发生以下变化：
 
@@ -485,7 +485,7 @@ GRUB 以「模块」的方式支持丰富多样的启动方式，包括各种分
 一个装有 Debian GNU/Linux 系统的 GRUB 启动界面示例
 {: .caption }
 
-!!! bug "GRUB 的模块是独立的实现"
+!!! bug "GRUB 的模块是独立的实现" {#grub-modules-are-independent}
 
     需要注意的是，GRUB 的模块一般不依赖上游软件，也没有采用上游软件的实现方式，而是将各种功能重新独立地实现了一遍。
     这在上游软件的复杂度提升时尤其容易产生问题，一个典型的例子是 [GRUB 不支持 ZFS `dnodesize=auto`](https://www.reddit.com/r/zfs/comments/g9mtll/linux_zfs_root_issue_grub2_hates_dnodesizeauto/)。
@@ -526,7 +526,7 @@ GRUB 在 BIOS 启动模式下的分区布局示例[^grub-bios-partition-layout]
 GRUB 在 UEFI 启动模式下的分区布局示例
 {: .caption }
 
-!!! tip "使用 GRUB Console 启动"
+!!! tip "使用 GRUB Console 启动" {#use-grub-console}
 
     通常，GRUB 会通过 `/boot/grub/grub.cfg` 中配置好的 menuentry 生成一个可供用户选择的启动菜单，用户可以通过键盘上下方向键选择要启动的 menuentry，并按下回车键来启动。
 
@@ -654,7 +654,7 @@ systemd-boot 是 systemd 项目的一部分，是一个目前正在逐渐流行�
 
 不同于 GRUB 通过自己编写模块来实现各种功能，systemd-boot 则是充分利用了 UEFI 固件已有功能来实现，比如从 UEFI 固件继承对文件系统的支持、内核加载依赖于内核的 EFI stub 等等，从而保证了 systemd-boot 足够轻量。
 
-!!! tip "从 GRUB 迁移到 systemd-boot"
+!!! tip "从 GRUB 迁移到 systemd-boot" {#migrate-to-systemd-boot}
 
     虽然现在部分发行版在安装时已经将 systemd-boot 作为候选项了，但是通常主流发行版都默认采用 GRUB 作为 bootloader，因此更多情况是已经有一个安装好使用 GRUB 作为 bootloader 的系统了，需要手动从 GRUB 迁移到 systemd-boot。
 

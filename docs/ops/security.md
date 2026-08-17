@@ -10,7 +10,7 @@ icon: material/security
 
 !!! success "本文已完成"
 
-!!! note "阅读注意事项"
+!!! note "阅读注意事项" {#reading-notes}
 
     请注意，以下概念介绍部分不是严肃的学术性介绍，存在大幅度的简化，并且不会对抽象的概念进行详细解释。
 
@@ -34,7 +34,7 @@ icon: material/security
 
 ### 网络攻击的基本思路 {#network-attack-ideas}
 
-!!! danger "法律警告"
+!!! danger "法律警告" {#legal-warning}
 
     进行渗透测试必须得到所有者明确的授权，否则可能触犯法律。
 
@@ -60,7 +60,7 @@ icon: material/security
 
 此外，一些物理设备或内部网络服务存在固定的默认密码，或者是例如生日、身份证后六位之类有规律的默认密码，并且不要求用户修改。这些密码也很容易被攻击者获取并利用。
 
-!!! danger "内网 ≠ 安全"
+!!! danger "内网 ≠ 安全" {#internal-network-is-not-safe}
 
     一个常见的误区是，因为系统只有内网能够访问，所以随便设置一个简单的密码就可以了。但是，内网并非固若金汤，当攻击者通过外部服务或者其他方式进入内网之后，这些简单的密码就会成为攻击者的目标。
 
@@ -142,11 +142,11 @@ int main() {
 
 这个程序看起来没有问题，但是如果用户输入的内容中包含类似 `%s` 的格式化字符串，那么 `printf()` 函数就会按照用户输入的内容进行格式化输出。攻击者可以构造恶意的格式化字符串来读取甚至写入指定内存的内容，达到自己的目的。
 
-!!! tip "什么，这样还能写入数据？"
+!!! tip "什么，这样还能写入数据？" {#format-string-write}
 
     `%n` 格式化字符串可以将当前已经输出的字符数**写入**对应的整型指针参数所指的变量。
 
-!!! comment "@taoky: 关于大一的「程序设计」教学"
+!!! comment "@taoky: 关于大一的「程序设计」教学" {#comment-on-c-programming-teaching}
 
     看上面的代码，你可能会觉得有点熟悉——因为你可能在（大一或者更早）初学 C 语言的时候就写过这样的问题代码。直到很久很久之后，才会发觉这样的代码是有安全问题的。
 
@@ -167,7 +167,7 @@ int main() {
 - 钓鱼邮件：例如伪装成发票、上级通知、退税邮件等，欺骗用户点击恶意链接、执行恶意附件。
 - 利诱：例如有偿购买用户的校园卡/工卡/VPN 认证账号等。
 
-!!! example "钓鱼邮件示例"
+!!! example "钓鱼邮件示例" {#phishing-email-example}
 
     尽管我们一般收到的很多钓鱼邮件都能够一眼识破，但是也存在精心制作的钓鱼邮件。特别是针对高价值目标，如果精心制作的钓鱼邮件能够为攻击者打开侵入的大门，那么尽可能伪装钓鱼邮件的成本是值得的。这也是 APT（Advanced Persistent Threat，高级持续性威胁）攻击常见的起始步骤。
 
@@ -205,7 +205,7 @@ int main() {
 
 国内最知名的供应链攻击案例之一是 [XcodeGhost](https://en.wikipedia.org/wiki/XcodeGhost)。由于 Xcode 特别大，国内下载 Xcode 缓慢，有人在百度网盘上传了一个 Xcode 安装包「加速」下载，并且四处散播网盘下载链接，但是这个安装包被篡改，插入了恶意代码，再加上许多人关闭了 Gatekeeper 签名检查，导致了国内包括微信、网易云音乐在内的大量的 iOS 应用被感染。
 
-!!! comment "@tiankaima: 关于 XcodeGhost"
+!!! comment "@tiankaima: 关于 XcodeGhost" {#comment-on-xcodeghost}
 
     上述问题 Apple 已经通过分发 `.xip` 格式的 Xcode 解决，从 macOS Sierra 起，只有 Apple 签名的 `.xip` 文件能被正确解压。但供应链攻击仍然时有发生，参考：
 
@@ -222,7 +222,7 @@ int main() {
     - 适当对上游代码进行审查（关注非预期行为：不合理权限、异常文件读写等）并固定版本
     - **密切关注安全新闻**，例如在上面 polyfill\.io 的例子中，Cloudflare 注意到了域名出售等问题，并及时通知了[供应链风险](https://blog.cloudflare.com/polyfill-io-now-available-on-cdnjs-reduce-your-supply-chain-risk)，以及[后续措施](https://blog.cloudflare.com/automatically-replacing-polyfill-io-links-with-cloudflares-mirror-for-a-safer-internet)。
 
-!!! tip "包管理器的供应链攻击缓解方式"
+!!! tip "包管理器的供应链攻击缓解方式" {#package-manager-supply-chain-mitigation}
 
     2026 年 3 月，[LiteLLM](https://github.com/BerriAI/litellm/issues/24512) 和 [axios](https://github.com/axios/axios/issues/10636) 等被大量使用的库接连爆出供应链攻击问题——攻击者通过某种方式（在这里分别是通过[会被 CI 执行的漏洞扫描器](https://www.aquasec.com/blog/trivy-supply-chain-attack-what-you-need-to-know/)和社会工程学方法）发布了这些库的、带有攻击者代码的新版本，如果开发者没有使用 lock 类文件锁定版本，或者在更新新版本依赖，那么就会中招。
 
@@ -279,7 +279,7 @@ int main() {
 
 蜜罐是一种特殊的系统，从外表来看它和正常运行的系统没有区别，但是它实际上没有实际用途，只用来吸引攻击者。蜜罐可以用来收集攻击者的信息，例如攻击者的 IP 地址、行为等。蜜罐还可以用来分散攻击者的注意力，让攻击者在蜜罐上浪费时间，从而推迟对真正系统的攻击，留出更多的时间供系统管理员响应。
 
-!!! example "蜜罐示例：SSH"
+!!! example "蜜罐示例：SSH" {#ssh-honeypot-example}
 
     公网 SSH 扫描每天、每时每刻都在发生，而且这种扫描通常是自动化、成规模的，可以搭建一个假的 ssh server，来一窥攻击者的行为。以下是一些 SSH 蜜罐的实现：
 
@@ -352,11 +352,11 @@ int main() {
 
 在 [USTCLUG 2019 年的软件自由日活动](https://lug.ustc.edu.cn/wiki/lug/events/sfd/#2019-%E5%B9%B4-sfd)中，@SmartHypercube 介绍了 KeePass，可阅读 [slides](https://0x01.me/sfd2019/) 了解更多。
 
-!!! warning "密码管理器无法防御针对性的恶意软件"
+!!! warning "密码管理器无法防御针对性的恶意软件" {#password-manager-cannot-defend-targeted-malware}
 
     密码管理器在设计时一般会考虑到安全性，并且尝试利用各种方式保证密码数据库安全。但是，如果计算机被感染了针对性的恶意软件，那么密码管理器一般无法有效防御这种情况：例如，恶意软件可以将自己替换掉密码管理器程序，以获取主密码解密数据库。
 
-!!! warning "关于 LastPass"
+!!! warning "关于 LastPass" {#about-lastpass}
 
     由于 LastPass 已经多次出现安全事件，因此可能需要谨慎使用。如果继续使用 LastPass，需要确认加密迭代次数足够大（例如 600000 次）。较早注册的用户的迭代次数可能只有 5000 甚至 500。
 
@@ -364,7 +364,7 @@ int main() {
 
 上文提到，如果有网站使用明文存储密码，那么一旦数据库泄漏，那么攻击者就能利用明文密码在其他的平台上尝试。因此存储密码需要**哈希**存储，并且需要在哈希前给密码添加盐（salt）、胡椒（pepper）等「配料」。Salt 是随机生成的字符串，每个密码的 salt 都不同；而 pepper 是一串足够长的固定的私密的字符串。它们与密码拼接之后哈希得到的数据才可以持久化存储（这也意味着不同用户如果设置了相同的密码，最后存储的哈希显然应当是不同的）。如果单纯直接哈希，那么使用[**彩虹表（Rainbow table）**](https://en.wikipedia.org/wiki/Rainbow_table)就可以比较轻松地反推明文密码。
 
-!!! tip "Have I Been Pwned?"
+!!! tip "Have I Been Pwned?" {#have-i-been-pwned}
 
     [Have I Been Pwned](https://haveibeenpwned.com/) 提供了检查密码是否曾被泄漏的服务。当然，把自己的密码随便输入到乱七八糟的网站里面绝对不是一个好主意，所以该站[解释了自己如何保障用户输入的密码查询不包含明文密码信息](https://www.troyhunt.com/ive-just-launched-pwned-passwords-version-2/#cloudflareprivacyandkanonymity)。当然了，在输入密码前，需要确认他们是否真的这么实现了，并且也要信服这个匿名算法的正确性。
 
@@ -401,7 +401,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 此外，请避免下载诸如「汉化版」（作为 201 的前置条件之一，使用英文界面的软件不应该成为障碍）、「破解版」等软件。如果不得不使用破解软件以及其他你**不信任**的程序，请**务必在虚拟机或沙盒内运行**。如果不确定软件是否包含恶意行为，可以使用诸如 [VirusTotal](https://www.virustotal.com) 扫描。
 
-!!! example "新闻选摘：SSH 软件与后门"
+!!! example "新闻选摘：SSH 软件与后门" {#ssh-software-backdoor-news}
 
     [Putty、Winscp等汉化版软件内置后门事件 上万服务器账户泄露](http://yangjunwei.com/742.html)
 
@@ -421,7 +421,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
     总结：如果一个运维不从官网（或其他可信的渠道）下载运维类软件，<b><span style="color: red">那么毋庸置疑应当被立刻开除。</span></b>
 
-!!! example "真实案例：为什么不能随意下载破解软件"
+!!! example "真实案例：为什么不能随意下载破解软件" {#cracked-software-malware-case}
 
     小 A 是一名学生，因为研究领域的需要，需要使用某款付费的 CAD 软件。
     TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件。
@@ -455,7 +455,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 即使在编写软件时非常仔细谨慎，代码中仍然可能会存在安全漏洞。保持软件更新可以防止攻击者利用 1-day/n-day 漏洞乘虚而入。同时需要注意，由于对固定版本的软件提供无限长时间的技术支持是不现实的，因此许多软件会设置「生命周期」的策略，如果某个版本到达了 EOL（End-of-life）状态，那么对应的大版本就不会再收到开发商的更新，因此更有可能受到安全漏洞的威胁。
 
-!!! example "新闻选摘：LastPass 与 Plex"
+!!! example "新闻选摘：LastPass 与 Plex" {#news-excerpt-lastpass-and-plex}
 
     背景：LastPass 是一款免费的在线密码管理器，曾经出现过[多次安全事件](https://en.wikipedia.org/wiki/LastPass#Security_incidents)；Plex 是一款家庭媒体服务器软件。
 
@@ -501,7 +501,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 如果有对攻击者物理接触设备后篡改设备的担忧，那么还需要关心**安全启动（Secure Boot）**。在有必要的情况下，需要设置 UEFI 口令（否则攻击者可以直接关掉安全启动），并且（对 Linux 用户来说）正确配置安全启动。
 
-!!! example "从个人设备入侵服务器的真实案例"
+!!! example "从个人设备入侵服务器的真实案例" {#personal-device-invasion-case}
 
     2015 年中旬的真实案例，详见 [LUG 服务器被入侵事件始末](https://01.me/2015/06/lug-servers-hacked/)。
 
@@ -525,7 +525,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 为了编写安全的程序，阅读编程语言与使用的框架的手册是很有必要的，否则很容易产生意料之外的问题。
 
-!!! example "Flask `render_template()`"
+!!! example "Flask `render_template()`" {#flask-render-template}
 
     Flask 是一个 Python 的网站框架。它支持使用 Jinja2 模板渲染 HTML。小 B 因为业务需要，写了一个简单的站点，其中使用以下代码渲染主页：
 
@@ -541,7 +541,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 同时，保持良好的编码规范也可以有效减小出现安全问题的概率，特别是对一些非常灵活（例如 Python、PHP、JavaScript）或者需要谨慎编写（例如 C）的程序。一般而言可以设置 linter 来检查代码中是否存在不规范的地方，部分语言也支持通过添加参数来关闭一些可能带来安全问题的特性，或是添加编译参数等（例如 ASAN (`-fsanitize=address`) 和 `_FORTIFY_SOURCE`）加固程序。
 
-!!! question "思考题：代码问题分析"
+!!! question "思考题：代码问题分析" {#thinking-question-code-analysis}
 
     以下的 Python [FastAPI](https://fastapi.tiangolo.com/) 代码修改自互联网上某篇博客的教程。
 
@@ -570,7 +570,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
     2. 对于规模较大的程序，人类肉眼检查类似的问题的开销是很大的。请尝试**在本地**使用自动化的代码扫描工具（例如 [CodeQL](https://docs.github.com/en/code-security/codeql-cli/getting-started-with-the-codeql-cli)）扫描出这个问题。
     3. 如果你不得不需要部署一个有可能存在这一类安全问题的应用，并且无法修改代码（该程序可能是闭源的应用）。可以采取哪些措施防止相关问题被利用，以及被利用之后影响到其他的应用？
 
-!!! example "使用 ASAN 运行时检查 C 代码的内存安全问题"
+!!! example "使用 ASAN 运行时检查 C 代码的内存安全问题" {#asan-check-c-memory-safety}
 
     对于下面这个例子：
 
@@ -659,11 +659,11 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 作为现代密码学的常识，密码学算法**不应该**以算法保密为假设，而是应该在算法公开的前提下，保证在密钥不泄漏的时候加密的安全性。同时，也不应该自制安全协议，而是采用成熟的密码学库与算法实现安全目标。如果你不是密码学专家，你永远无法预料到自制的方法会受到什么类型的攻击。
 
-!!! tip "越隐蔽越安全？"
+!!! tip "越隐蔽越安全？" {#security-through-obscurity}
 
     一种常见的认识是：为了防止别人攻击，技术细节应该隐藏得越深越好（Security through obscurity）。在某些场景下，这么做确实可以让攻击者提升攻击的难度。但是安全的系统设计绝对不应该依赖于「设计细节不被外界所知」这件事情。
 
-!!! example "搜狗输入法，与 CBC padding oracle 攻击"
+!!! example "搜狗输入法，与 CBC padding oracle 攻击" {#sogou-cbc-padding-oracle}
 
     2023 年 8 月，[有安全研究者发现](https://citizenlab.ca/2023/08/vulnerabilities-in-sogou-keyboard-encryption/)国内包括搜狗输入法在内的许多输入法的云输入功能没有实现正确的加密，导致中间人可以轻而易举地知道用户输入的内容。其中，搜狗输入法实现了自制的 "EncryptWall" 加密系统，但是其实现会被 CBC padding oracle 攻击。
 
@@ -675,7 +675,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 有些时候，有问题的依赖库会给程序带来安全问题，因此保障依赖库的安全性也非常重要。最常见的 GitHub 的 Dependabot 就可以自动检查 GitHub 上你的仓库的依赖库是否有安全更新。例如 [Google 的 osv-scanner](https://github.com/google/osv-scanner) 可以本地扫描依赖项，确定是否存在已知的漏洞。
 
-!!! example "使用 osv-scanner 检查 Rust 项目依赖"
+!!! example "使用 osv-scanner 检查 Rust 项目依赖" {#osv-scanner-rust-dependency-check}
 
     ```console
     Scanning dir .
@@ -703,7 +703,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 同时，为了避免持续的扫描行为带来的影响，可以部署诸如 [fail2ban](https://github.com/fail2ban/fail2ban) 的工具来自动封禁暴力破解的 IP 地址。
 
-!!! note "fail2ban 简介"
+!!! note "fail2ban 简介" {#fail2ban-introduction}
 
     fail2ban 会监控日志文件，并且在发现 IP 地址在一定时间内多次尝试后会将对应的 IP 应用指定的规则来实现自动封禁。其主要有三个部分：
 
@@ -730,13 +730,13 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
        `- Banned IP list:   192.168.123.123
     ```
 
-!!! tip "使用 SSH 转发端口"
+!!! tip "使用 SSH 转发端口" {#ssh-port-forwarding}
 
     相比于 RDP 和 VNC，SSH 是一种相对安全的远程登录方式。可以参考 [SSH 使用技巧中端口转发部分](../dev/ssh.md#port-forwarding)的内容，实现通过 SSH 访问内网的 RDP/VNC 以及其他内部机器的 SSH 服务。
 
 对于 SSH 登录，**强烈建议关闭密码认证**（即使系统设置了密码强度要求也是如此），使用密钥登录。有条件的情况下，可以额外设置使用 2FA 登录，或者配置 SSH 证书。
 
-!!! warning "SSH 与中间人攻击"
+!!! warning "SSH 与中间人攻击" {#ssh-man-in-the-middle-attack}
 
     在首次登录某台机器时，你会看到 SSH 这样的输出：
 
@@ -784,7 +784,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 绝大多数时候，公布的漏洞都会有一个 **CVE 编号**与漏洞描述信息。可以根据描述信息判断漏洞的严重程度，进而安排合适的时间安装更新。
 
-!!! note "有关「安全」的开闭源之争"
+!!! note "有关「安全」的开闭源之争" {#security-open-source-vs-closed-source}
 
     开源软件与闭源软件何者在安全性上更占优势？有关于此存在不同的观点。开源软件由于源代码是公开的，攻击者寻找漏洞、编写 PoC 等会比闭源软件容易，但是开源软件也因此代码更容易被审计，也就更容易让安全研究人员在漏洞在野利用之前就发现漏洞并且及时反馈。并且开源软件的开发者也更容易接纳来自外部的漏洞报告与修复补丁提交。知名度高且重视安全的闭源软件公司/项目也有不少，但是同样也存在研究人员提交漏洞之后相关方拒绝回应，以及漏洞没有及时公布并修复的情况，特别是用户量较小的、社区较小的闭源软件。
 
@@ -803,7 +803,7 @@ Passkey（通行密钥）则是目前最新的「无密码登录」技术，在�
 
 一些扫描器工具可以帮助检查已经部署的程序是否存在已知的安全问题，例如专门用于扫描 WordPress 网站的 [WPScan](https://wpscan.com/)，通用的漏洞扫描器 [nuclei](https://github.com/projectdiscovery/nuclei) 等。
 
-!!! danger "请勿进行未经授权的扫描操作"
+!!! danger "请勿进行未经授权的扫描操作" {#do-not-scan-unauthorized}
 
     扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。
 
@@ -840,7 +840,7 @@ $ nuclei -u https://grafana.example.com -tags grafana
 
 日志是系统管理员排查问题的重要参考信息，攻击者进行操作时，也可能会在日志中留下痕迹，可以用于检测与[溯源](#forensics)。在需要更严格安全性的场景下，可以为服务器添加更多的审计信息。
 
-!!! note "auditd"
+!!! note "auditd" {#auditd}
 
     `auditd` 使用 Linux 内核的[审计子系统](https://github.com/linux-audit/audit-kernel)，配置审计的操作，并从内核获取审计信息。默认安装后规则列表（`/etc/audit/rules.d`）基本没有实际的内容，在 `/usr/share/doc/auditd/examples/audit-rules/` 目录下有一些规则文件可供参考（`README-rules` 中包含了这些配置类别的说明）。
 
@@ -850,7 +850,7 @@ $ nuclei -u https://grafana.example.com -tags grafana
 
     auditd 的日志存储在 `/var/log/audit/audit.log`，其 `ausearch` 和 `aureport` 工具可以帮助进行审计日志结果的搜索与分析，详情可参考对应的文档。
 
-!!! note "acct"
+!!! note "acct" {#acct}
 
     `acct` 可以记录系统执行过的命令，对应服务为 `acct.service`。默认记录的信息会写入 `/var/log/account/pacct`。`lastcomm` 可以显示执行过的命令，`sa` 可以显示命令统计信息。
 
@@ -902,7 +902,7 @@ function downloadFile($url,$x){
 - 检查 GitLab 内有权限访问重要仓库的成员列表，并且移除了一些不再参与事务的成员。
 - 花了一些时间从 WordPress 迁移至了静态的 Jekyll 方案，减小了对外暴露的攻击面。
 
-!!! question "你的看法？"
+!!! question "你的看法？" {#your-opinion}
 
     受到时间、成本与技术的限制，以上的处理不是完美的。如果你是管理员 C，你会做什么？
 
@@ -1087,7 +1087,7 @@ systemd-journald[723]: /var/log/journal/33b5f48274e0432d922e5b5d97fa1071/system.
 
 至此，此次入侵后的事故处理告一段落。
 
-!!! question "思考"
+!!! question "思考" {#thinking}
 
     如果未来再次出现了有用户的密钥泄漏的情况，那么应该怎么设计来避免上文的安全问题再次发生？
 

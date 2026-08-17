@@ -14,12 +14,12 @@ icon: material/link-box
 
 ## 桥接 {#bridge}
 
-!!! question "桥不就是一个交换机吗？"
+!!! question "桥不就是一个交换机吗？" {#bridge-is-a-switch}
 
     是的，尽管「桥接」指的是将网口加入到一个虚拟交换机中，但在 Linux 中，桥接接口（bridge interface）除了这个虚拟交换机之外，也包含了一个由本机接入该交换机的虚拟接口。
     因此 bridge interface 上可以配置 IP 地址，本机也可以通过桥接接口进行通信。
 
-!!! question "为什么 IP 地址要配置在桥接接口上，而不是被桥接的网口上？"
+!!! question "为什么 IP 地址要配置在桥接接口上，而不是被桥接的网口上？" {#why-ip-on-bridge}
 
     这是因为被桥接的网口已经失去了上层的功能，所有从该网口接收到的数据包都会直接转交给桥接接口处理，而不会再经过网口本身的协议栈。
 
@@ -29,7 +29,7 @@ icon: material/link-box
 
   [br_handle_frame]: https://elixir.bootlin.com/linux/v6.17.8/source/net/bridge/br_input.c#L331
 
-!!! question "思考题"
+!!! question "思考题" {#thinking-questions}
 
     1. 一个网络接口可以同时被加入多个桥接吗？
     2. 一个网络接口可以在被加入桥接的同时扩展出 MACVLAN 子接口吗？
@@ -45,7 +45,7 @@ icon: material/link-box
 
 ## 参考资料 {#references}
 
-??? info "思考题参考解答"
+??? info "思考题参考解答" {#thinking-questions-reference}
 
     「桥接」小节的思考题：1 和 2 的答案是否定的，而 3 的答案是肯定的。
     由于每个网口的 `rx_handler` 是唯一的，因此在被加入桥接后，就无法再注册其他的 `rx_handler` 回调函数了，例如加入另一个桥或引申出 MACVLAN 子接口等。

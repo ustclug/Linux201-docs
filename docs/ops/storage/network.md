@@ -40,7 +40,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 将 `/srv/abcde` 目录「导出」给了本机（localhost），并且设置了诸如只读等选项。
 在修改配置后，运行 `systemctl reload nfs-server.service`（等价于 `exportfs -r`）重新加载配置。
 
-!!! lab "尝试配置并挂载"
+!!! lab "尝试配置并挂载" {#configure-and-mount}
 
     NFS 在各种主流桌面/服务器操作系统上都有不错的支持。请尝试在你的系统（虚拟机或 Linux 主机）上配置 NFS 服务端，
     并在主机上挂载。如果需要在 Linux 上挂载，可先阅读下面的客户端配置。
@@ -57,7 +57,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
 分别代表目录导出给了一个 CIDR 网段、所有 IP，以及两个特定的 IP。
 
-!!! warning "使用 `exportfs -a` 检查配置问题"
+!!! warning "使用 `exportfs -a` 检查配置问题" {#check-exports-configuration}
 
     `exports` 文件如果编辑不当，可能会导致客户端无法正确挂载，或者带来非预期的安全风险。
     这是在 [RHEL 9 手册](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/configuring_and_using_network_file_services/index#the-etc-exports-configuration-file_exporting-nfs-shares)中举的一个例子：
@@ -103,7 +103,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 - `all_squash`：将所有客户端的用户映射到一个特定的用户（`nobody`）
 - `secure`/`insecure`：默认情况下，NFS 服务端只接受客户端使用 1024 以下的端口访问，设置 `insecure` 会放宽这个限制
 
-!!! tip "1024 端口，与 root"
+!!! tip "1024 端口，与 root" {#port-1024-and-root}
 
     在传统上，类 Unix 操作系统中只有 root 用户才能使用 1024 以下的端口。因此在很久以前，程序可以假设来自 1024 以下的端口的请求/服务是 root 用户发出/授权的。
     在 NFS 的情况下，这意味着只有 root 才能访问 NFS 服务，没有 root 权限的用户不能够假冒自己为 NFS 客户端，从而以假的用户权限读写数据。
@@ -111,7 +111,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
 
     目前 Linux 仍然保留了这个机制，但是程序不应该仅仅依赖于这个机制来保证安全性。
 
-??? note "关于「子树检查」的解释"
+??? note "关于「子树检查」的解释" {#subtree-checking-explanation}
 
     NFS 服务器与客户端之间使用「文件句柄」（file handle）来标识文件。
     文件句柄的内容含义由服务器决定。
@@ -205,7 +205,7 @@ NFS 的导出配置位于 `/etc/exports` 文件中。例如以下的配置：
     Signed-off-by: Chuck Lever <chuck.lever@oracle.com>
     ```
 
-??? note "RDMA 支持（服务端）"
+??? note "RDMA 支持（服务端）" {#rdma-support-server}
 
     NFS 支持 RDMA 协议，在配置了专用 RDMA 卡的情况下，可以在数据中心内部网络的场景下减小网络延迟，提升性能。
     （如果希望本地测试，可以安装 `rdma-core` 包，其包含了 Soft-RoCE 实现，即软件模拟的 RDMA；
@@ -348,7 +348,7 @@ $
 
 NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些差异。
 
-!!! note "NFS 与 capability 问题"
+!!! note "NFS 与 capability 问题" {#nfs-and-capability}
 
     在排查 NFS 共享目录上文件移动失败的问题时，我们发现在 NFS 挂载环境下执行特定文件系统操作时，Linux capability 机制的行为与预期有所不同。
 
@@ -357,7 +357,7 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
     * 然而，如果执行移动操作的进程拥有 `cap_dac_override` 这个 capability，则可以[绕过对被移动目录写权限的检查](https://elixir.bootlin.com/linux/v6.14.1/source/fs/namei.c#L475-L485)。
     * 在实际问题场景中，尽管执行操作的进程具备 `cap_dac_override` capability，但由于 NFS 不会传递进程的 capability，导致目录移动操作未能成功绕过权限检查而失败。
 
-!!! note "NFS 与用户命名空间 (User Namespace) 的兼容性问题"
+!!! note "NFS 与用户命名空间 (User Namespace) 的兼容性问题" {#nfs-and-user-namespace}
 
     在容器化环境中使用 NFS 时，会遇到其与用户命名空间相关的兼容性问题：
 
@@ -388,7 +388,7 @@ NFS 尽管使用起来像本地文件系统，但是实际上仍然存在一些�
 
 iSCSI 能够实现块设备级别的网络存储。其中服务端称为 iSCSI Target，客户端称为 iSCSI Initiator。
 
-!!! tip "SCSI 的概念"
+!!! tip "SCSI 的概念" {#scsi-concepts}
 
     在阅读下述内容之前，理清一些 SCSI 协议（不限于 iSCSI）的概念会有所帮助：
 
@@ -507,7 +507,7 @@ o- iscsi .......................................................... [Targets: 1]
 一个在所有地址的 3260 端口监听的 iSCSI target 就创建好了。
 `portals` 可以限制连接的 IP 地址，如有需要可自行查询使用方法。
 
-!!! tip "关于 portal"
+!!! tip "关于 portal" {#about-portal}
 
     一些 SAN 方案会提供多个 portal，对应不同的网口。在集群场景下让不同的节点连接到不同的 portal，以此提升性能。
 
@@ -535,7 +535,7 @@ sudo tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2025-05.org.exampl
 sudo tgtadm --lld iscsi --mode logicalunit --op new --tid 1 --lun 1 --backing-store /dev/loop0
 ```
 
-!!! warning "tgtd 报告错误？"
+!!! warning "tgtd 报告错误？" {#tgtd-error}
 
     后备存储需要保证 tgtd 能够访问到，否则会报告没有什么信息量的 `tgtadm: invalid request` 错误。
 
@@ -576,7 +576,7 @@ $ sudo iscsiadm -m node  # 列出发现的 target
 127.0.0.1:3260,1 iqn.2024-03.org.example.201:test-target
 ```
 
-!!! tip "iSCSI node"
+!!! tip "iSCSI node" {#iscsi-node}
 
     Node 在 iSCSI 中是代表 target 和 initiator 的单位。Initiator node 就是发起连接的一端（客户端），target node 就是提供存储资源的一端（服务端）。可以认为在 `iscsiadm` 的操作中，`node` 就代表 target。
 
@@ -654,7 +654,7 @@ vda    254:0    0    50G  0 disk
 $ # 多出了新添加的 sdb
 ```
 
-!!! tip "iSCSI session"
+!!! tip "iSCSI session" {#iscsi-session}
 
     当 initiator 连接到 target 后，会创建一个 iSCSI session，同个 initiator 可以对同个 target 创建多个 session。可以使用 `iscsiadm -m session` 查看当前所有的 session。
 
@@ -679,11 +679,11 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
 
 `open-iscsi.service` 在开机时会自动登录所有配置好的 target。
 
-!!! warning "避免修改（override）`open-iscsi.service`"
+!!! warning "避免修改（override）`open-iscsi.service`" {#avoid-modifying-open-iscsi-service}
 
     在按照以上方法恰当配置 `startup` 为 `automatic` 后，`open-iscsi.service` 会自动启动这些 node。一些资料可能会建议通过 `systemctl edit open-iscsi.service` 的方式覆盖掉其原先的 `ExecStart`，并且自行添加 `iscsiadm` 登录指令。请避免这么做。
 
-!!! warning "重启 `open-iscsi.service` 会 logout 当前挂载的所有 iSCSI 块设备"
+!!! warning "重启 `open-iscsi.service` 会 logout 当前挂载的所有 iSCSI 块设备" {#restarting-open-iscsi-service}
 
     可以看一下这个服务在开启与关闭时的行为：
 
@@ -703,7 +703,7 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
     iscsiadm: Could not log into all portals
     ```
 
-!!! tip "优化建议：巨型帧"
+!!! tip "优化建议：巨型帧" {#optimize-jumbo-frame}
 
     巨型帧（jumbo frame）是指 MTU 大于 1500 的以太网帧，一般为 9000。如果链路设备均支持巨型帧，那么可以考虑在 iSCSI 部署时启用巨型帧，减小以太网的额外开销，提升性能。
 
@@ -711,6 +711,6 @@ iscsiadm -m node -T iqn.2024-03.org.example.201:test-target -p 127.0.0.1 -o upda
 
 Samba 实现了 SMB（Server Message Block）协议，其是在家用场景下最常见的网络协议之一。本部分主要关注文件共享相关的内容，实现匿名访问与用户名、密码访问。有关服务发现（让局域网内其他计算机自动找到 Samba 共享的目录）相关内容，请参考 [Zeroconf 的「服务发现」部分](../network-service/zeroconf.md#service-discovery)。
 
-!!! note "家用场景下的其他协议"
+!!! note "家用场景下的其他协议" {#other-protocols-home-scenario}
 
     除了 SMB（Samba）以外，使用 FTP、WebDAV、UPnP/DLNA 等方式也可以实现文件或媒体的共享。很多时候，基于 HTTP(S) 的 WebDAV 是更加简单易用的选择。诸如 [Nextcloud](https://nextcloud.com/)、[copyparty](https://github.com/9001/copyparty) 等工具提供了成熟的方案，如有需要可以自行搜索相关的配置方法。

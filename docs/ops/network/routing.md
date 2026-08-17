@@ -156,7 +156,7 @@ broadcast 192.0.2.255 dev eth0 proto kernel scope link src 192.0.2.1
 
 你也可以在 `/etc/iproute2/rt_tables.d/` 目录中创建单独的文件来定义路由表名称映射，以避免与软件包管理的文件冲突。
 
-!!! warning
+!!! warning {#iproute2-routing-table-names}
 
     `/etc/iproute2/rt_tables` 为 iproute2 工具（即 `ip` 命令）的配置文件，修改该文件不会影响内核的实际路由表编号，也不会影响其他路由工具（如 `route` 命令）的行为。
 
@@ -356,7 +356,7 @@ COMMIT
 
 显然，本节所述的方法不区分 IPv4 和 IPv6，因此只需要将相同的配置在 `ip -6 rule` 和 `ip6tables` 中重复一遍即可。
 
-!!! question
+!!! question {#source-routing-exercise}
 
     相信你也注意到了，如果 LAN 侧还需要进一步的类似「源进源出」式路由的话，就需要更复杂的打标和路由规则设计了。
     本文将这个问题留给读者作为练习。
@@ -371,7 +371,7 @@ COMMIT
 原版的网络通服务在校园网出口处部署了魔改过的 Linux 内核，添加了额外的路由匹配规则，作为分流路由器。
 但在多宽带接入的家庭网络等小规模场景中，[ipset 的 skbinfo 功能](firewall.md#ipset-skbinfo)使得我们能够在未修改的 Linux 上实现类似的功能。
 
-!!! question
+!!! question {#wlt-lite-design-exercise}
 
     本文到此已经把实现「网络通青春版」所需的知识都介绍完了，那么系统设计和实现就留给读者作为练习吧。  
 

@@ -28,7 +28,7 @@ Netplan 是 Canonical（Ubuntu 母公司）开发的一个网络配置抽象渲�
 
 这边只介绍该工具的常用命令与常见网络环境下的单文件配置，详细的文件可以参见 [Netplan 文档](https://netplan.io/)。
 
-!!! comment "@Pd12: 与 NetworkManager 和 Systemd-networkd 比较"
+!!! comment "@Pd12: 与 NetworkManager 和 Systemd-networkd 比较" {#netplan-comparison}
 
     编者同时使用过 NetworkManager，Systemd-networkd，Netplan 三者，根据个人经验给出一些比较。
 
@@ -98,7 +98,7 @@ network:
         - 192.168.0.1
 ```
 
-!!! note "DNS 服务器的选择"
+!!! note "DNS 服务器的选择" {#dns-server-selection}
 
     一般来说，DNS 服务器应选择网络提供商分配的即可。出于备份或是隐私的考虑可以使用公共 DNS，可参见[网络服务实践的 DNS 章节](../network-service/dns.md#client)。
 
@@ -179,7 +179,7 @@ network:
         - 192.168.0.1
 ```
 
-!!! note "IPv6 下的 DNS 服务器"
+!!! note "IPv6 下的 DNS 服务器" {#ipv6-dns-server}
 
     在使用了 SLAAC 或 DHCPv6 分配地址的网络下，一般也会通过 Router Advertisement 报文或 DHCP 报文下发 IPv6 地址的 DNS 服务器。在双栈网络中，IPv6 地址的 DNS 服务器不是必须的，通过 IPv4 的 DNS 服务器也可以解析出域名的 IPv6 地址。
 
@@ -235,7 +235,7 @@ network:
         - 192.168.0.1
 ```
 
-!!! comment "@Pd12: 何时使用静态 IPv6 地址"
+!!! comment "@Pd12: 何时使用静态 IPv6 地址" {#when-to-use-static-ipv6}
 
     大多数情况下 IPv6 都使用动态方式分配地址，很少使用静态 IPv6 地址。编者唯一使用过的情况是校园网中使用路由器架设宿舍网络，由于学校的网络需要登陆使用，只能使用一个 IPv6 地址，故不得不采取 NAT 的形式在宿舍网络中使用 IPv6 网络。
 
@@ -275,7 +275,7 @@ network:
         - 192.168.0.1
 ```
 
-??? note "无线网络与网桥"
+??? note "无线网络与网桥" {#bridge-wireless}
 
     注意，大多数情况下 wlan 接口作为客户端运行时无法作为网桥的子接口（AP 模式可以）。如果的确需要多设备接入无线网络，建议使用 网桥+NAT 实现。
 

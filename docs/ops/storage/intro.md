@@ -53,7 +53,7 @@
 
 对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。此外，云服务商 Backblaze 会定期发布他们的硬盘使用报告，包含硬盘在真实数据中心工况下的 AFR 等信息，可前往 <https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data> 下载，以作参考。
 
-!!! tip "Zoned storage 与叠瓦（SMR）盘"
+!!! tip "Zoned storage 与叠瓦（SMR）盘" {#zoned-storage-vs-smr}
 
     [Zoned storage](https://zonedstorage.io/) 是一种新型的硬盘存储技术，它将硬盘分为多个区域，每个区域的写入方式不同，
     通过暴露更多的信息给 OS 使得针对性的优化得以进行，以提升硬盘的容量和性能。
@@ -76,7 +76,7 @@
     - 部分服务器会有硬盘白名单，只有白名单中的硬盘才能识别。
     - 使用的硬件 RAID 方案可能会对硬盘接口有要求，例如 SATA 和 SAS 接口的硬盘不能混用。
 
-!!! warning "仔细阅读并确认厂商文档"
+!!! warning "仔细阅读并确认厂商文档" {#read-factory-documents}
 
     一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。总结来说，如果要安装的硬盘上面的托架和已经安装的长得不一样，先不要硬塞进去。
 
@@ -90,7 +90,7 @@
 
 SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节](https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA)。
 
-??? example "图片：SATA & SAS HDD"
+??? example "图片：SATA & SAS HDD" {#sata-sas-hdd-form-factors}
 
     SATA 和 SAS 接口非常相似，都使用了类似的 7 针数据接口和 15 针电源接口，难以分辨，但是两者在外观上仍存在一些细微的差别。
     
@@ -112,21 +112,21 @@ SATA 与 SAS 的详细对比可参考[英文 Wikipedia 中 SAS 的 "Comparison w
 - U.2 接口形状与 SAS 类似，但是**不兼容 SAS**（毕竟底层协议都不一样），且 2.5 英寸和 15 mm 以上厚度的外形相比 M.2 也具有更好的散热能力，是服务器上的常见形态。
 - AIC（Add-In Card）就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。
 
-??? example "图片：M.2 SSD"
+??? example "图片：M.2 SSD" {#m-2-ssd-image}
 
     <figure markdown="span">
       ![M.2 2280 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg)
       <figcaption>M.2 2280 SSD</figcaption>
     </figure>
 
-??? example "图片：U.2 SSD"
+??? example "图片：U.2 SSD" {#u2-ssd-form-factor}
 
     <figure markdown="span">
       ![U.2 SSD](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/960px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg)
       <figcaption>U.2 SSD</figcaption>
     </figure>
 
-??? example "图片：AIC SSD"
+??? example "图片：AIC SSD" {#aic-ssd-form-factor}
 
     <figure markdown="span">
       ![PCIe AIC SSD](https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg)
@@ -152,7 +152,7 @@ $ sudo smartctl -a /dev/nvme0
 
 SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（`virtio-scsi`）、部分企业级的 SAN 等。
 
-!!! note "关注存储的可用空间比例"
+!!! note "关注存储的可用空间比例" {#pay-attention-to-available-space}
 
     不建议将存储的可用空间全部或接近全部耗尽，这是因为：
 
@@ -161,7 +161,7 @@ SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只�
 
 一般来说，确保 `fstrim.timer` 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。
 
-??? tip "为 USB 设备开启 Trim"
+??? tip "为 USB 设备开启 Trim" {#enable-trim-for-usb}
 
     由于老旧的 USB 设备对获取设备功能的请求的支持存在问题，因此 Linux 内核默认不会尝试请求相关数据，进而无法探测 USB 连接的存储设备是否支持 trim 功能。可以使用 `lsblk --discard` 或查看 `/sys/block/sdX/queue/discard_max_bytes` 确认（以下 `sda` 为 USB 磁盘设备）：
 
@@ -267,7 +267,7 @@ RAID 5
 
 :   将数据和**一份**校验信息分块存储在多个磁盘上，可以允许阵列中任何一块磁盘损坏，兼顾冗余性和容量利用率。重建期间的性能会严重下降，并且一旦在重建完成前又坏了一块盘，那么你就寄了。
 
-    !!! danger "不要为大容量机械硬盘阵列组 RAID 5"
+    !!! danger "不要为大容量机械硬盘阵列组 RAID 5" {#do-not-use-raid-5-for-large-hdd}
 
         否则坏了一块盘后重建的时候就等死吧。
         
@@ -281,7 +281,7 @@ RAID 10, 50, 60
 
 :   将不同级别的 RAID 组合在一起，兼顾性能和冗余，各取所长，对于 10 块盘以上的阵列是更加常见的选择。例如 RAID 10 = RAID 1 + RAID 0，通常将每两块盘组成 RAID 1，再将这些 RAID 1 的组合拼成一个大 RAID 0。
 
-!!! danger "磁盘阵列不是备份"
+!!! danger "磁盘阵列不是备份" {#raid-is-not-backup}
 
     RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。
 
@@ -302,7 +302,7 @@ RAID 10, 50, 60
 
 RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。
 
-!!! question "思考题"
+!!! question "思考题" {#thinking-questions}
 
     1. 为什么 RAID 5 和 RAID 6 的重建期间性能会很差？
     2. 为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？为什么 RAID 50 没人用？
@@ -359,7 +359,7 @@ Linux：
 
 我们可以使用 [`fio`](https://fio.readthedocs.io/en/latest/) 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。
 
-!!! info "使用 dd 测速的不足"
+!!! info "使用 dd 测速的不足" {#drawbacks-of-dd-benchmark}
 
     以下是使用 dd 命令测试一块希捷 4TB 机械硬盘的例子：
 
@@ -391,7 +391,7 @@ Linux：
 - `--bs`：每次 I/O 操作的块大小，默认为 4KB。bs 对性能影响很大，电商平台硬盘标称的速度通常都是 1MB 大块顺序读写的速度（代表了拷贝大文件时的速度），而更加影响实际使用体验的 4k 的随机读写性能则要弱得多。
 - `--size`：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用 `kib`, `mib` 等。
 
-    !!! note "SI 与 IEC 单位"
+    !!! note "SI 与 IEC 单位" {#si-vs-iec-units}
 
         SI 单位是国际单位制中的单位，采用 10 进制（即 1 KB = 1000 B）；IEC 单位是国际电工委员会的单位，采用二进制和带有 i 的单位（即 1 KiB = 1024 B）。
 
@@ -412,11 +412,11 @@ Linux：
 
 以下是一些例子，一部分在编写其他内容时使用到了：
 
-!!! warning "对正在运行的块设备操作时需要小心"
+!!! warning "对正在运行的块设备操作时需要小心" {#be-careful-with-running-block-devices}
 
     对已经有数据的块设备进行写入操作会导致数据丢失，在测试时请加上 `--readonly` 参数。
 
-??? example "使用 fio 测试块设备（`/dev/mapper/vg201--test-lvdata`）随机读延迟的例子"
+??? example "使用 fio 测试块设备（`/dev/mapper/vg201--test-lvdata`）随机读延迟的例子" {#fio-random-read-latency}
 
     本部分编写时参考了 [Oracle 的文档](https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm)。
 
@@ -466,7 +466,7 @@ Linux：
     READ: bw=219MiB/s (229MB/s), 219MiB/s-219MiB/s (229MB/s-229MB/s), io=2186MiB (2292MB), run=10001-10001msec
     ```
 
-??? example "向 `./test` 随机读写，模拟 I/O 压力"
+??? example "向 `./test` 随机读写，模拟 I/O 压力" {#simulate-i-o-stress}
 
     ```shell
     sudo fio --filename=./test \
@@ -476,7 +476,7 @@ Linux：
       --group_reporting --name=job_name --eta-newline=1
     ```
 
-??? example "模拟 Crystal DiskMark 测试磁盘性能"
+??? example "模拟 Crystal DiskMark 测试磁盘性能" {#simulate-crystaldiskmark}
 
     本部分来自 [Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+](https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test)。
 
@@ -498,7 +498,7 @@ fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负
 
 Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。
 
-??? example "模拟 Crystal DiskMark 测试磁盘性能 job 文件"
+??? example "模拟 Crystal DiskMark 测试磁盘性能 job 文件" {#crystaldiskmark-fio-job}
 
     ```ini
     [global]

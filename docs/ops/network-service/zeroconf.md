@@ -29,13 +29,13 @@ Link-local 在 IPv4 和 IPv6 中有着不同的表现。IPv4 下，如果网络�
 
 而在 IPv6 下，link-local 的地址段是 fe80::/10，无论如何，设备都会为自己分配一个 link-local 地址（有些设备上会基于接口的 MAC 地址来分配），所以在支持 IPv6 的场合下，你会发现设备会有多个 IPv6 地址，其中就包括一个 link-local 地址。和 IPv4 类似，在选择地址之后，也需要避免和其他人的地址冲突。IPv6 不再使用 ARP，而是使用基于 ICMPv6 的 NDP（Neighbor Discovery Protocol, [RFC 4861](https://datatracker.ietf.org/doc/html/rfc4861)）完成地址冲突检测（DAD，Duplicate Address Detection）。
 
-!!! note "为什么 IPv6 没有 ARP？"
+!!! note "为什么 IPv6 没有 ARP？" {#why-ipv6-no-arp}
 
     IPv6 并非「更大地址空间的 IPv4」。IPv6 的设计者在设计时，就希望将 IPv4 中能用，但是设计得不好的东西改进掉。ARP 是一个横跨二层（数据链路层，最常见的是以太网）和三层（网络层，这里是 IP）的特殊协议，在解析 IP 到 MAC 地址的过程中需要在二层广播（在以太网中，是将目标 MAC 地址设置为 ff:ff:ff:ff:ff:ff），在大型网络中这样做开销很大。而 ARP 也无法基于 ICMP 实现，因为 ICMP 协议依赖于 IP 层，而 ARP 要解决的问题就是在 IP 层还没有准备好的时候，获取 IP 到 MAC 的映射关系。
 
     而在 IPv6 中，所有接口都必须有 link-local 地址，因此 NDP 就可以在 ICMPv6 的基础上实现。在检测地址冲突时，NDP 会构造 [solicited-node multicast address](https://datatracker.ietf.org/doc/html/rfc4291#section-2.7.1) 多播地址（IPv6 ff02::1:ff00:0/104，对应 MAC 地址 33:33:FF:xx:xx:xx，以太网也是支持多播的），只有可能使用该地址的节点会收到这个多播包，从而避免了广播带来的开销。
 
-!!! note "Link-local 地址 = 网坏了？"
+!!! note "Link-local 地址 = 网坏了？" {#link-local-address-network-failed}
 
     有一定网络经验的读者可能对 169.254.0.0/16 和 fe80::/10 这两个地址段比较熟悉，因为如果自己的设备只分配到了这个地址段的地址，通常意味着网络出现了问题。
 
@@ -56,7 +56,7 @@ Link-local 在 IPv4 和 IPv6 中有着不同的表现。IPv4 下，如果网络�
 
 如果你使用过较早期版本的 Windows，那么你肯定会熟悉「网上邻居」这个功能。在「网上邻居」里，你可以看到局域网内其他计算机，以及它们共享的文件夹、打印机等资源。早期这个功能依赖于 NetBIOS 来实现。
 
-!!! note "NetBIOS"
+!!! note "NetBIOS" {#netbios}
 
     NetBIOS（以下均指代 NetBIOS over TCP/IP）需要三种端口：
 

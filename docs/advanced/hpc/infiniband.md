@@ -12,7 +12,7 @@ icon: material/cable-data
 
 InfiniBand (IB) 是高性能计算中常用的高带宽、低延迟的网络互联技术。得益于其简单的部署方式和优秀的扩展能力，IB 网络被广泛应用于各种规模的计算集群中。在多年的发展中，IB 战胜了 Intel OmniPath 等技术，成为了 HPC 领域的事实标准。
 
-!!! note "概念辨析：RDMA"
+!!! note "概念辨析：RDMA" {#rdma}
 
     在讨论 InfiniBand 网络和技术时，不可避免会提到 RDMA 技术。RDMA 是远程直接内存访问（Remote Direct Memory Access）的简称，指允许计算节点（通过网络）直接访问远程节点的内存，绕过操作系统内核的网络协议栈，从而实现低延迟和高吞吐量的数据传输。IB 网络是实现 RDMA 的一种常见技术，此外还有 RoCE（RDMA over Converged Ethernet）、iWARP 等技术也能实现 RDMA。
 
@@ -40,7 +40,7 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 
 为了提升网络的部署密度，从 HDR 开始，Mellanox 推出了“一拆二”的标准，如 HDR100 是只有两个通道启用的 HDR，速率为 100 Gbps；而 NDR200 则是只有两个通道的 NDR，速率为 200 Gbps。进一步地，从 NDR 开始，交换机侧“二合一”，改为使用交换机侧双端口 OSFP 笼（twin-port OSFP cage），每个笼提供 2 &times; 400 Gbps（合计 800 Gbps）的速率。通过线缆拆分后，一个 OSFP 笼可连接两个四通道的 OSFP / QSFP112 NDR 接口；也可由两个 400G half 各接一根 1:2 splitter fiber cable，连接四个两通道的 QSFP112 NDR200 接口（可参阅 NVIDIA 的 [800Gb/s Twin-port OSFP transceiver 文档](https://docs.nvidia.com/networking/display/800gmma4z00ns/overview)）。也就是说，一台 1U 的 36 口 OSFP NDR 交换机实际可以提供 72 个 400 Gbps OSFP / QSFP112 NDR 接口，或等价于 144 个 200 Gbps QSFP112 NDR200 接口，背板速率达到了 57.6 Tbps。
 
-!!! question "真的有这么快吗？"
+!!! question "真的有这么快吗？" {#is-the-speed-really-that-fast}
 
     网卡的最高通信速率受到各个环节中最短板的制约，如交换机速率、（网络）通道数量、PCIe 版本和通道数量等。在采购设备和规划网络时，务必确认各个环节的速率均满足需求。
 
@@ -56,7 +56,7 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 
 正因如此，绝大部分 IB 网卡都支持 VPI（Virtual Protocol Interconnect），仅需更改固件设置并重启，就能在同等速率的 IB 和以太网模式间自由切换（注：当然需要配合支持对应协议的交换机）。尽管如此，IB 和以太网仍然是两种截然不同的网络技术，在物理层以上，二者的协议栈、寻址方式、传输机制等均不相同，不能直接互联通信。
 
-!!! warning "谨慎采购备件"
+!!! warning "谨慎采购备件" {#be-careful-when-purchasing-replacement-parts}
 
     虽说遵守的各类标准相同，但在采购如光模块、线缆等备件时，也不能随意地将以太网标准的产品用于 IB 设备上。
     这是因为 Mellanox 对此有比较严格的兼容性要求（或许是商业考虑？），未明确标明可用于 IB 网络的产品，很可能无法在相应设备上正常工作。
@@ -71,7 +71,7 @@ IB 网络有明确的代际划分，每两代之间最主要的差异就是带�
 
 虽然 Linux 内核包含 [`mlx5` 驱动程序](https://www.kernel.org/doc/html/v6.17/networking/device_drivers/ethernet/mellanox/mlx5/index.html)，几乎可以做到开箱即用；Debian 等发行版也打包了相应的用户态工具（如 `rdma-core`, `libibverbs` 等），但为了获得更好的性能和稳定性，建议安装 Mellanox 官方提供的 [DOCA-OFED](https://developer.nvidia.com/doca-downloads?deployment_platform=Host-Server&deployment_package=DOCA-Host&target_os=Linux&Architecture=x86_64&Profile=doca-ofed) 驱动包（曾经称为 MLNX_OFED）。官方的安装十分好用，根据情况自行点击选择，并使用 `apt-get install doca-ofed` 即可完成安装。
 
-??? tip "谨防捆绑销售"
+??? tip "谨防捆绑销售" {#beware-of-bundled-software}
 
     [DOCA](https://developer.nvidia.com/networking/doca) 软件栈包含了 NVIDIA 所有网络设备（包括 IB 卡、以太网卡、智能网卡等）的驱动、运行时、SDK、文档等，内容十分庞杂。我们仅需其中的 OFED 部分即可，不必安装多余的软件包。
 
@@ -84,7 +84,7 @@ OFED 的全称是 Open Fabrics Enterprise Distribution，这个名称表明其�
 
 这些组件必须从统一来源安装，即必须都来自于发行版（或内核自带），或者都来自于 DOCA-OFED，否则可能会出现微妙而难以解决的兼容性问题。更高层的库或者应用（如 `rdma-core`, `ucx`, `openmpi` 等）可以使用 OFED 自带的版本，也可以遵循 HPC 集群上的惯例，从源码编译安装，以便多版本共存。需要注意，编译时必须遵循从底层到高层的顺序，并打开相应的选项（如 UCX 的 `--with-rc`，OpenMPI 的 `--with-ucx`），才能真正利用硬件。
 
-??? example "检查设备情况"
+??? example "检查设备情况" {#check-device-status}
 
     在成功安装驱动程序后，可以通过多种方式查看 IB 设备的状态：
     
@@ -150,7 +150,7 @@ IB 网络贯彻了软件定义网络（Software Defined Networking, SDN）的理
 
 带管理的 IB 交换机（如 QM8700、QM9700 或者更高级型号）通常内置 SM 功能，可以直接配置为 SM 角色。如果整个网络中都只有不带管理的交换机（如 QM8790、QM9790 等），则需要在集群中的某台节点上运行有 SM 能力的软件。安装 OFED 驱动包时，通常会一并安装 `opensm` 软件，只要用 `systemctl enable --now opensmd` 启用即可。
 
-!!! tip "启动不了？"
+!!! tip "启动不了？" {#cannot-start-up}
 
     如果 OpenSM 出现各种奇怪的问题（比如 segfault），首先要检查是否混用了来自发行版与 OFED 的软件包，其次不妨试一试升级你的 OFED，或许有奇效。
 
@@ -185,7 +185,7 @@ GPUDirect RDMA 的支持没有直接检测的手段，部分通信库（如 [NCC
 
 虽然 IB 网络不是以太网，但通过 IP over IB（IPoIB）协议，可以让 IB 支持 IP 协议栈，从而兼容现有的大量应用程序和工具。IPoIB 协议由内核模块 `ib_ipoib` 提供，安装 OFED 驱动包时会一并安装。启用 IPoIB 后，系统中会多出 `ib` 开头的虚拟网络接口，每个 IB 子网对应为一个 IPoIB 的广播域。此接口可通过标准的网络配置工具（如 `ip`, `ifconfig`, `netplan` 等）进行配置和管理，也可以运行任何 TCP/IP 负载。
 
-??? question "高级网络功能"
+??? question "高级网络功能" {#advanced-network-features}
 
     IPoIB 网络不提供传统意义上的 VLAN 支持，但可以通过配置 IB 子接口的方式实现；也不能通过链路聚合（bonding）进行负载均衡，而只能提供一定的冗余（failover）能力。具体配置方式请查阅文档。
 
@@ -201,7 +201,7 @@ GPUDirect RDMA 的支持没有直接检测的手段，部分通信库（如 [NCC
 
 这些工具通过私有协议与主机和网络上的 Mellanox 设备通信，能对设备进行复杂的配置，通常需要管理员权限才能运行。
 
-??? example "工具使用示例"
+??? example "工具使用示例" {#tool-use-example}
 
     下面是使用 mlxcables 查询线缆信息的示例：
     
@@ -242,7 +242,7 @@ GPUDirect RDMA 的支持没有直接检测的手段，部分通信库（如 [NCC
     
     可以看到这是一根原装 HDR DAC（同时也支持 200G 以太网），长度是 2 米，型号是 MCP1650-H002E26。
 
-!!! tip "注意更新固件"
+!!! tip "注意更新固件" {#note-on-firmware-updates}
 
     如果发现 IB 网卡有明显的性能或者稳定性问题，或者在升级系统 / OFED 后发生设备丢失等情况（即 PCIe 设备还存在，但无法识别为 IB 设备），则很可能是固件版本过旧导致的，更新固件或许可以解决这些问题。
 

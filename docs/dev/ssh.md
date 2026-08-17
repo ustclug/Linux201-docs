@@ -143,7 +143,7 @@ Host example
 
 [![SSH local and remote port forwarding](../images/iximiuz-ssh-tunnels-2000-opt.png)](https://iximiuz.com/ssh-tunnels/ssh-tunnels.png)
 
-!!! tip "代理与环境变量"
+!!! tip "代理与环境变量" {#proxy-configuration-and-environment-variables}
 
     由于各种各样的原因，目前各种应用程序对代理相关的环境变量（`http_proxy`、`https_proxy`、`all_proxy`、`no_proxy`）的支持程度差异很大：
 
@@ -165,7 +165,7 @@ Host example
 
   [^netcat-openbsd]: 需要使用 OpenBSD 版本的 `nc` 命令，如 `apt install netcat-openbsd`。
 
-!!! question "让服务器的 `git` 使用本机作为代理"
+!!! question "让服务器的 `git` 使用本机作为代理" {#make-git-use-local-as-proxy}
 
     在访问 SSH remote 时，`git` 可以读取 `GIT_SSH_COMMAND` 环境变量指定的 SSH 命令，例如 `GIT_SSH_COMMAND="ssh -i .git/id_ed25519" git ...` 就可以让 `git` 使用指定的路径的密钥。
 
@@ -199,7 +199,7 @@ Host realhost
   ProxyJump jumphost
 ```
 
-!!! note "跳板机需要支持 TCP 端口转发"
+!!! note "跳板机需要支持 TCP 端口转发" {#jump-host-needs-tcp-forwarding}
 
     SSH 跳板机和前文所述的“**本地**端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。
 
@@ -232,7 +232,7 @@ Host example
   IdentityAgent ~/example-agent.sock
 ```
 
-!!! tip "指定 SSH agent 中特定密钥"
+!!! tip "指定 SSH agent 中特定密钥" {#specify-specific-ssh-key-in-agent}
     默认情况下，SSH 客户端会依次尝试 SSH agent 中的所有密钥（如果有 SSH agent）、`IdentityFile` 指定的所有密钥（如果配置 `IdentityFile`）和默认密钥（如果没有配置 `IdentityFile`）。当 SSH agent 中管理的密钥较多时，多次错误尝试容易导致 `Too many authentication failures` 错误。可以使用 `IdentityFile` 与 `IdentitiesOnly` 来使用特定密钥，从而避免相关错误。考虑到部分场景（例如使用密码管理器提供的 SSH agent）下，本地环境中不会存储私钥，可以在本地存储公钥并在 `IdentityFile` 选项中指定相应公钥来使用对应身份凭证。例如：
     ```shell
     Host example
@@ -264,11 +264,11 @@ Host remote
   ForwardAgent yes
 ```
 
-!!! tip "SSH agent 转发的机制"
+!!! tip "SSH agent 转发的机制" {#ssh-agent-forwarding-mechanism}
 
     转发 SSH agent 会在远程主机上创建一个 Unix domain socket，并设置 `SSH_AUTH_SOCK` 环境变量指向该 socket。该 socket 上的通信通过 SSH 连接内的 `auth-agent@openssh.com` channel 发送给本地 SSH 客户端，再由本地 SSH 客户端与 SSH Agent 进行通信。
 
-!!! warning "安全提示"
+!!! warning "安全提示" {#security-warning-for-ssh-agent-forwarding}
 
     从上述机制中不难看出，SSH agent 转发期间，远程主机上拥有足够权限（例如 root）的用户可以使用你转发的 SSH agent socket，并可以使用其间接使用你的 SSH agent。建议仅在信任的远程主机上开启 `-A` 或 `ForwardAgent`，**切勿**在 `Host *` 块中全局启用。
 
@@ -287,12 +287,12 @@ Host *
 
 其中 `%C` 是 `%l%h%p%r` 的 hash，因此连接不同主机的 control socket 不会冲突。
 
-!!! bug "连接复用的标识符"
+!!! bug "连接复用的标识符" {#connection-reuse-identifier}
 
     如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 `git@github.com`），由于没有新建连接的过程，你指定的公钥并不会生效。
     解决此问题的方法是再单独指定另一个 `ControlPath`，或者设置 `ControlPath=none` 暂时禁用连接复用功能。
 
-!!! bug "连接复用时的端口转发"
+!!! bug "连接复用时的端口转发" {#port-forwarding-with-connection-reuse}
 
     当启用连接复用时，所有的端口转发等 SSH 连接特性都将由 master 进程管理，此时新的 `ssh <host> -L <forwarding>` 会将一个新的端口转发请求发送给 master 进程，并在当前 ssh 命令结束后持续转发。
 
@@ -317,7 +317,7 @@ Host *
 
 SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
 
-!!! tip "Rsync"
+!!! tip "Rsync" {#rsync-for-advanced-file-transfer}
 
     SCP 和 SFTP 能够提供的文件传输功能较为基础。如果你需要更多的功能，例如增量传输、断点续传、文件校验等，可以考虑使用 Rsync。Rsync 可以使用 SSH 作为传输层，因此可以替代 `scp` 命令。
 
@@ -351,7 +351,7 @@ scp username@remotehost:/path/to/remote/file /path/to/local/directory
 
 这个命令会提示你输入远程主机上用户的密码，除非你已经设置了 SSH 密钥认证。
 
-!!! tip
+!!! tip {#scp-multiple-files}
 
     你可以一次性传输多个文件或目录，将它们作为源路径的参数。例如：
 
@@ -383,7 +383,7 @@ scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/re
     scp -P 2222 /path/to/local/file username@remotehost:/path/to/remote/directory
     ```
 
-    !!! tip
+    !!! tip {#scp-parameters-in-ssh-config}
 
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Port 2222`，这样就不需要每次在命令行中指定端口了。
 
@@ -411,13 +411,13 @@ scp username1@remotehost1:/path/to/remote/file username2@remotehost2:/path/to/re
     scp -C /path/to/local/file username@remotehost:/path/to/remote/directory
     ```
 
-    !!! tip
+    !!! tip {#scp-compression-configuration}
 
         此选项等价于 `ssh` 的 `-C` 选项，即在 SSH 层面开启压缩，并非 SCP 协议层面的压缩。
 
         你也可以在 SSH 客户端配置文件中为 `Host remotehost` 指定 `Compression yes`，这样就不需要每次在命令行中启用压缩了。
 
-!!! tip "现代的 `scp` 命令已经默认使用 SFTP 协议"
+!!! tip "现代的 `scp` 命令已经默认使用 SFTP 协议" {#modern-scp-uses-sftp}
 
     从 OpenSSH 9.0 开始，`scp` 命令已经默认使用 SFTP 协议进行文件传输，而不再使用旧的 SCP 协议。对于一些不支持 SFTP 的远程主机（如使用 dropbear 的嵌入式设备或上古版本的 SSH 服务端等），这可能会导致问题，例如：
 
@@ -467,7 +467,7 @@ sftp -P 2233 username@remotehost
 
 输入 `exit` 或 `bye` 来终止 SFTP 会话。
 
-!!! 使用脚本进行自动化操作
+!!! 使用脚本进行自动化操作 {#automate-sftp-with-scripts}
 
     通过创建一个包含 SFTP 命令的批处理文件，你可以 让SFTP 会话自动执行这些命令。例如，你可以创建一个文件 `upload.txt`，其中包含以下内容：
 
@@ -488,7 +488,7 @@ sftp -P 2233 username@remotehost
 
 sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 `ssh.service` 中指定的 `ExecStartPre=` 命令和第一条 `ExecReload=` 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。
 
-!!! note "systemd 与 sshd"
+!!! note "systemd 与 sshd" {#systemd-and-sshd-configuration}
 
     在使用 systemd 的较新的系统下，服务端可能会有以下变化：
 
@@ -535,7 +535,7 @@ sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。`sshd -t` 命
 
 完整的选项列表可以在 [sshd(8)][sshd.8] 的 `AUTHORIZED_KEYS FILE FORMAT` 部分找到。
 
-??? example "例：用于备份 LUG FTP 的公钥配置"
+??? example "例：用于备份 LUG FTP 的公钥配置" {#example-authorized-keys-for-backup}
 
     ```shell
     restrict,from="192.0.2.2",command="/usr/bin/rrsync -ro /mnt/lugftp" ssh-rsa ...
@@ -566,7 +566,7 @@ exec /usr/bin/curl \
 
 借助这一功能，可以从统一的数据源获取公钥，从而确保所有服务器上的公钥保持同步。启用该功能后，可以将 `AuthorizedKeysFile` 设置为 `none`，以禁用基于 `authorized_keys` 文件的公钥认证——**请务必阅读下面的注意事项**。
 
-!!! warning "确保 Authorized Keys 提供程序正常工作"
+!!! warning "确保 Authorized Keys 提供程序正常工作" {#ensure-authorized-keys-provider-works}
 
     例如，对于上述 `curl` 命令，如果服务器网络出现故障，或公钥数据源不可用，SSH 服务器将无法获取用于认证的公钥，从而无法完成公钥认证。此时，只能通过其他方式访问服务器并进行修复。
 
@@ -729,7 +729,7 @@ ssh-keygen -L -f <filename-cert.pub>
 
 从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 `Include` 选项，可以在主配置文件中 include 其他文件。与 C 的 `#include` 或 Nginx 的 `include` 不同，SSH config 里的 `Include` **不**等价于文本插入替换，并且 `Include` 可以出现在 `Host` 和 `Match` 块中，出现在这两个块中的 `Include` 会被视作条件包含。因此一个（不太常见的）坑是：
 
-??? failure "错误写法"
+??? failure "错误写法" {#incorrect-include-syntax}
 
     ```shell
     Host example
@@ -741,7 +741,7 @@ ssh-keygen -L -f <filename-cert.pub>
 
 因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 `Host example` 生效。正确的写法是将其放在一个 `Match all` 块（或者 `Host *`）中：
 
-??? success "正确写法"
+??? success "正确写法" {#correct-include-syntax}
 
     ```shell
     Host example
@@ -754,7 +754,7 @@ ssh-keygen -L -f <filename-cert.pub>
 
 更加推荐的写法是将 `Include` 放在配置文件开头：
 
-!!! success "推荐写法"
+!!! success "推荐写法" {#recommended-include-syntax}
 
     ```shell
     Include ~/.ssh/global.conf
@@ -795,7 +795,7 @@ SSH 连接由本地的 ssh 客户端发起，建立连接后，你在终端输�
 - `~^Z`：挂起 SSH 客户端（发送 SIGTSTP），回到本地 shell，可以用 `fg` 恢复 SSH 会话。回车后输入 `~`，再按下 `Ctrl+Z`。
 - `~C`：打开 SSH 客户端的命令行，可以用 `-L` `-R` `-D` 参数配置端口转发。`-KL` `-KR` `-KD` 参数关闭端口转发。
 
-    !!! warning
+    !!! warning {#enable-ssh-escape-commandline}
 
         OpenSSH 9.2 新增了 `EnableEscapeCommandline` 设置项，且默认为 no。如果需要使用 `~C` 命令行，需要先启用该设置项。OpenSSH &le; 9.1 的版本默认允许 `~C`。
 
@@ -804,7 +804,7 @@ SSH 连接由本地的 ssh 客户端发起，建立连接后，你在终端输�
 
 如果开启了[连接复用](#connection-reuse)功能，那么一部分转义序列无法使用，例如 `~^Z` 和 `~C` 等。
 
-!!! note "注意事项"
+!!! note "注意事项" {#escape-sequences-usage}
 
     - 转义序列必须在按下回车后立即输入（即当前行前面不能有其他字符），否则会被当作普通输入传给远端。
     - 在多层 SSH 跳板（多次 ssh 嵌套）时，每多一层，需要输入的 `~` 会翻倍。例如，`~~.` 指令会断开第二层的 SSH 连接，而 `~~~~.` 指令会断开第三层的 SSH 连接。

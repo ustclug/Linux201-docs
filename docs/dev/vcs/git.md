@@ -33,13 +33,13 @@ $ git cat-file --batch-check --batch-all-objects
 （以下省略）
 ```
 
-!!! tip "git 的文档"
+!!! tip "git 的文档" {#git-documentation}
 
     可以使用诸如 `man git-xxx` 的方式查看 `git xxx` 命令的文档，例如上面的 `git cat-file` 对应的是 `man git-cat-file`。
 
 其中，`blob` 对象代表单个文件的内容，`tree` 对象代表目录结构，`commit` 对象代表提交，`tag` 对象代表标签。可以使用 `git cat-file -p <SHA-1>` 查看对象的内容。例如对于本仓库 hash 为 `74b5f6330f76d1e464deeff4d29935bba8d48c55` 的提交：
 
-!!! tip "Commit ID 就是 Commit Object 的 SHA-1 值"
+!!! tip "Commit ID 就是 Commit Object 的 SHA-1 值" {#commit-id-sha1}
 
 ```shell
 $ git cat-file -p 74b5f6330f76d1e464deeff4d29935bba8d48c55
@@ -59,13 +59,13 @@ ops/storage: Take reciprocal for URE
     - Merge commit 有多个父提交，代表来自不同分支的合并。
 - 提交的作者（`author`）与提交者（`committer`）
 
-!!! tip "作者与提交者"
+!!! tip "作者与提交者" {#author-committer}
 
     没错，commit 的作者和提交者可以是两个不同的人。一般来讲，作者是编写原始代码的人，提交者是实际执行 commit 操作的人。
 
     默认情况下，作者和提交者都会采用 `git config` 中的配置。使用 `git commit --author="Name <email>"` 可以手动指定作者，设置环境变量 `GIT_COMMITTER_NAME` 和 `GIT_COMMITTER_EMAIL` 可以手动指定提交者。
 
-!!! tip "其他角色"
+!!! tip "其他角色" {#other-roles}
 
     除了作者与提交者以外，完成工作的可能还有其他角色，例如合作者、审阅者等。Git 本身并没有提供这些角色的概念，但是可以通过 commit message 来记录这些信息。对合作者角色，最常见、收到广泛支持的方式是使用 `Co-Authored-By` 标记信息，例如下面这个示例 commit message：
 
@@ -125,15 +125,15 @@ d959e182468be92957bd175d189472de91f614c8
 
 其中最重要的是 `HEAD`。例如，`git checkout some-branch` 就会将 `HEAD` 指向 `refs/heads/some-branch`；而 `git reset --hard HEAD~1` 就会将 `HEAD` 指向 `HEAD~1`（同时更新工作目录下面的文件）。
 
-!!! tip "HEAD~n"
+!!! tip "HEAD~n" {#head-tilde-n}
 
     `HEAD~n` 表示 `HEAD` 的第 n 个父提交（前 n 个提交）。
 
-!!! question "比较差异"
+!!! question "比较差异" {#compare-differences}
 
     如果需要比较当前 commit 相比上一个 commit 修改了哪些东西，应该输入的命令是？
 
-!!! tip "refspec"
+!!! tip "refspec" {#refspec}
 
     你可能会在 `.git/config` 或者其他人写的 `git fetch` 等命令中看到以 `:` 分割的类似下面的东西：
 
@@ -147,7 +147,7 @@ d959e182468be92957bd175d189472de91f614c8
 
     更多信息可阅读 [Git Book 的 10.5 节](https://git-scm.com/book/en/v2/Git-Internals-The-Refspec) 与 [git-fetch(1)][git-fetch.1]。
 
-!!! tip "`git reflog`"
+!!! tip "`git reflog`" {#git-reflog}
 
     Reflogs（Reference logs）记录了 git 操作中 ref 的更新历史，在需要从误操作恢复，或确认之前操作给 ref 带来的变化时非常有用。例子参考 [Hackergame 2023 的 "Git? Git!" 一题](https://github.com/USTC-Hackergame/hackergame2023-writeups/tree/master/official/Git%20Git!)。
 
@@ -170,7 +170,7 @@ origin
 
 可以使用 `git fetch <remote>` 从远程仓库拉取最新的 commit——注意这个命令**只会更新远程分支相关对象以及 ref**。之后可以使用 `git merge` 将远程分支合并到本地分支（并更新本地分支的 ref）。因此，`git pull origin master` 等价于 `git fetch origin master && git merge origin/master`。
 
-!!! question "让本地分支与远程一致"
+!!! question "让本地分支与远程一致" {#sync-local-remote}
 
     有的时候，我们的本地分支做了一些操作，与远程不一致，此时需要让本地分支与远程一致，那么怎么做呢？
 
@@ -195,7 +195,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 这里的 "Changes not staged for commit" 指的是工作目录下的修改还没有被添加到 staging area（暂存区，也叫 index 或 cached）中。常用的诸如 `git add`、`git rm --cached` 等命令就是用来在 staging area 中添加、删除文件的。
 
-!!! tip "Reset"
+!!! tip "Reset" {#reset}
 
     `git reset` 有三种不同的模式，分别会重置工作目录、暂存区和当前分支的不同部分：
 
@@ -205,19 +205,19 @@ no changes added to commit (use "git add" and/or "git commit -a")
     | Mixed<br>（默认） | 保持原样 {: .green } |    重置 {: .red }    | 重置 {: .red } |
     |        Hard         |    重置 {: .red }    |    重置 {: .red }    | 重置 {: .red } |
 
-!!! note "See also"
+!!! note "See also" {#see-also}
 
     [Confusing git terminology](https://jvns.ca/blog/2023/11/01/confusing-git-terminology/)
 
 ## 本地配置 {#git-config-file}
 
-!!! note "配置文件"
+!!! note "配置文件" {#configuration-file}
 
     Git 的配置文件一般存放于 `~/.gitconfig` 或 `~/.config/git/config` 中, 可以使用 `git config --global --edit` 快速打开配置文件, 你可以直接拷贝下面的内容。
 
     下文中会讲解部分配置的作用及注意事项。
 
-!!! warning "缩进问题"
+!!! warning "缩进问题" {#indentation-issue}
 
     下面的文档中，`.gitconfig` 的配置文件均使用 4 个空格而不是 Tab 进行缩进。
 
@@ -239,7 +239,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
     uncommit = reset --soft HEAD~1
 ```
 
-!!! tip "部分别名介绍"
+!!! tip "部分别名介绍" {#alias-introduction}
 
     `git commit --amend` 用来修改上一个 commit 的内容（包括 commit 消息）：你可以将新的修改 stage 后使用该命令修改上一个 commit。详情可阅读 [Amend](#git-commit-amend)。
 
@@ -277,7 +277,7 @@ curl -sS https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
 
 GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见的 `.gitignore` 文件，对于较为复杂的项目，也可以使用 [gitignore.io](https://www.gitignore.io/) 生成。
 
-!!! note "仅本地的 gitignore"
+!!! note "仅本地的 gitignore" {#local-gitignore}
 
     本地的 `.git/info/exclude` 起到与 `.gitignore` 相同的作用，但是不会被提交到版本库中，适用于以下的情况：
 
@@ -314,11 +314,11 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 如果需要取消 Git 对这个文件的无条件忽略，可以使用 `git update-index --no-skip-worktree <file>`。
 文件的“忽略本地修改”状态可以通过 `git ls-files -v` 来查看，此类文件的状态字母为 S（被标记为 skip-worktree）。
 
-!!! tip "Sparse checkout"
+!!! tip "Sparse checkout" {#sparse-checkout}
 
     截至 Git 2.52 仍然处在实验阶段的 sparse checkout 使用了相同的底层实现，即将 sparse checkout 目录以外的所有文件都标记为 skip-worktree，因此 sparse checkout 也会受到 skip-worktree 的影响。
 
-!!! note "Assume unchanged"
+!!! note "Assume unchanged" {#assume-unchanged}
 
     `git update-index --assume-unchanged <file>` 与 `--skip-worktree` 的作用类似，但它告诉 Git 假设这个文件在本地没有被修改，因此 Git 会在 index 发生更新的时候（例如上游发生修改或 `git reset --hard` 等操作）重置这个文件在工作目录中的版本，并同时重置 `assume-unchanged` 标志。
     因此，将文件标记为 `assume-unchanged` 的主要目的是为了提升性能，让 Git 跳过不必要的文件状态检查，而不是为了忽略本地修改。
@@ -333,7 +333,7 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 
 默认情况下，Git 会使用当前 commit 的作者（author）信息和时间，以当前的提交者信息进行新的 commit 操作，如果需要修改作者信息，可以使用 `--author` 和 `--date` 参数来指定新的作者和作者时间，但提交者信息和时间只能通过环境变量 `GIT_COMMITTER_NAME`、`GIT_COMMITTER_EMAIL` 和 `GIT_COMMITTER_DATE` 来修改。
 
-!!! example "No-op `git commit --amend`"
+!!! example "No-op `git commit --amend`" {#no-op-git-commit-amend}
 
     在 index 没有发生改变的情况下，以下命令将会创建一个新的 commit，且 SHA-1 值与原来的 commit 相同：
 
@@ -350,7 +350,7 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 
 一个较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[这里](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook.
 
-!!! note "如果只需要在 commit 后运行一段脚本"
+!!! note "如果只需要在 commit 后运行一段脚本" {#run-script-on-commit}
 
     可以按照如下方法进行配置：
 
@@ -381,7 +381,7 @@ Git 支持三种部分 clone 的方式：
 
 有关更多内容，可阅读 [Get up to speed with partial clone and shallow clone](https://github.blog/open-source/git/get-up-to-speed-with-partial-clone-and-shallow-clone/)。
 
-!!! tip "将部分 clone 的仓库恢复为完整 clone"
+!!! tip "将部分 clone 的仓库恢复为完整 clone" {#restore-full-clone}
 
     对使用 `--filter` 参数进行的部分 clone，git 会设置 `remote.origin.partialclonefilter`：
 
@@ -481,13 +481,13 @@ git rebase master
     ff = only
 ```
 
-!!! question "更新一个有修改的本地仓库"
+!!! question "更新一个有修改的本地仓库" {#update-local-repo-with-changes}
 
     以下是一个现实的例子：某个代码 git 仓库（存储在 GitHub 上）的 `master` 分支部署在一台服务器上，并且在该服务器上不仅做了一些额外的 commit 用来记录一些服务器相关的配置，还有一些没有被 stage 的文件。现在该代码仓库在 GitHub 上的 `master` 分支有一些新的更新 commit（例如更新了依赖，修复了 bug 等），那么如何将这些 commit 部署在该服务器上呢？
 
     提示：你可能会需要 `git fetch`、`git stash` 与 `git rebase`。
 
-!!! tip "交互式 rebase"
+!!! tip "交互式 rebase" {#interactive-rebase}
 
     `git rebase` 另一个重要的功能是修改 commit 历史记录。使用 `git rebase -i HEAD~n` 来修改历史以来的 n 个 commit。在输入命令后，git 会打开编辑器，将 commit 从旧到新排序，显示类似如下的内容：
 
@@ -538,7 +538,7 @@ git rebase master
 
     交互式 rebase 的其他用法请参考相关文档。
 
-!!! tip "解决冲突"
+!!! tip "解决冲突" {#resolve-conflicts}
 
     在合并其他人的分支时，如果你和其他人的分支用不同的方式修改了相同的部分，那么就会出现冲突。当出现 git 无法处理的冲突时，合并会停在出现冲突的 commit 上，并且提示你解决冲突。出现冲突的文件类似如下：
 
@@ -559,7 +559,7 @@ git rebase master
 
     可以使用 pre-commit 的 [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#check-merge-conflict) 来避免不小心把未解决的冲突 commit 到仓库里。
 
-!!! tip "`git commit --fixup`"
+!!! tip "`git commit --fixup`" {#git-commit--fixup}
 
     git 提供了 fixup 功能，可以直接向指定的 commit 添加修改，并且在 rebase 时自动合并。一个常见的场景是：在编写 PR 时需要保证每个 commit 有意义、功能完整，同时需要向 PR 里之前的 commit 添加修复，此时使用 fixup 功能会很方便。方法如下：
 
@@ -575,7 +575,7 @@ git rebase master
     git rebase -i --autosquash <base>
     ```
 
-!!! tip "`git history`"
+!!! tip "`git history`" {#git-history}
 
     Git 2.54（2026/4/20 发布）添加了两个新命令，旨在简化修改历史 commit 的操作：
 
@@ -602,7 +602,7 @@ git bisect bad <new-commit>
 
 之后 `git bisect` 就会帮助你做二分搜索，跳转到两者中间的 commit 以供测试，之后提供 `git bisect good` 或者 `git bisect bad` 引导 git 搜索，最终找到对应的 commit。
 
-!!! question "good or bad?"
+!!! question "good or bad?" {#good-or-bad}
 
     有时候我们会需要确认哪个 commit **修复**（而不是导致）了问题，但是 `git bisect` 默认 good 需要早于 bad，直接 `git bisect start` 的话很容易误操作。请阅读 [git-bisect(1)][git-bisect.1] 了解应该如何处理此类情况。
 
@@ -633,7 +633,7 @@ git branch --copy dev2
 git worktree add /tmp/201-dev2 dev2
 ```
 
-!!! note "新的 worktree 目录结构"
+!!! note "新的 worktree 目录结构" {#new-worktree-directory-structure}
 
     在新的 worktree 目录下，并不会有完整的 `.git` 目录，而是一个 `.git` 文件，内容类似如下：
 
@@ -651,7 +651,7 @@ git worktree add /tmp/201-dev2 dev2
 
 需要使用 `git worktree prune` 来清理这些已经不存在的 worktree。
 
-!!! warning "worktree 与 submodule 的兼容性"
+!!! warning "worktree 与 submodule 的兼容性" {#worktree-and-submodule-compatibility}
 
     目前 worktree 对 submodule 的支持还不完善，这一点在 [git-worktree(1)][git-worktree.1] 中也有提到：
 
@@ -663,7 +663,7 @@ git worktree add /tmp/201-dev2 dev2
 
 对于多人协作的项目，良好的 commit message 是非常重要的。胡乱使用诸如 `update`、`fix`、`change` 等无意义的 Commit Message，会使得项目的历史记录变得难以理解，也会给后续的维护带来困难。
 
-!!! note "Conventional Commits"
+!!! note "Conventional Commits" {#conventional-commits}
 
     一种常见的 Commit Message 格式是 [Conventional Commits](https://www.conventionalcommits.org/)，它的格式是：
 
@@ -685,7 +685,7 @@ git worktree add /tmp/201-dev2 dev2
 
     值得注意的是，以上规范仅仅只是推荐，实际使用时可以根据项目的实际情况进行调整，例如本文档所存放的[仓库](https://github.com/ustclug/Linux201-docs)是一个文档类的项目，一般情况下可以直接省略掉 `type`, 可用文档相对目录来替代，例如修改本文的 Commit Message 一般就写成 `dev/git: fix typo`.
 
-!!! note "Commit Message 模板"
+!!! note "Commit Message 模板" {#commit-message-template}
 
     即便不严格遵循上述规范，设置一个 commit message 模板也是非常有用的，例如，可以将 [这里的例子](https://gist.github.com/lisawolderiksen/a7b99d94c92c6671181611be1641c733#template-file) 添加到 `~/.gitmessage`：
 

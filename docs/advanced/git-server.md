@@ -19,7 +19,7 @@ icon: fontawesome/brands/git
 
 建议在阅读[网络服务实践的 Nginx 服务器](../ops/network-service/nginx.md)与[版本管理与合作](../dev/vcs/git.md)后再阅读本部分。
 
-!!! note "其他实现：JGit"
+!!! note "其他实现：JGit" {#jgit-alternative-implementation}
 
     以下介绍的是基于 Git 官方的 C 实现的内容，不过这不是唯一的选择。Google 的 [Gerrit](https://www.gerritcodereview.com/) 平台使用的就是基于 Java 的 [JGit](https://github.com/eclipse-jgit/jgit)，其实现了完整的与 Git 服务有关的功能。
 
@@ -27,7 +27,7 @@ icon: fontawesome/brands/git
 
 Git over HTTP(S) 有两种传输协议：Dumb protocol 和 Smart protocol，前者不需要运行专门的服务，而后者需要。Smart protocol 处理用户请求的组件是 [git-http-backend][git-http-backend.1]，这是一个 CGI 程序。
 
-!!! note "CGI"
+!!! note "CGI" {#cgi}
 
     CGI（Common Gateway Interface）是一种传统的 Web 服务器与用户程序交互的接口：对需要给程序处理的每个 HTTP 连接，Web 服务器读取用户请求的头之后，启动用户程序，将请求头信息（例如请求方法 `REQUEST_METHOD`、请求路径 `PATH_INFO`）放在环境变量中，请求的 body 通过标准输入提供给用户程序，而程序的标准输出则会在 Web 服务器处理后作为返回给用户的响应。可参考 [RFC 3875](https://www.rfc-editor.org/rfc/rfc3875) 了解相关标准。
 
@@ -71,7 +71,7 @@ location ~ ^/.+?\.git/(info/refs|git-upload-pack) {
 }
 ```
 
-!!! note "并发数量注意事项"
+!!! note "并发数量注意事项" {#concurrent-limit}
 
     服务器可以同时处理的 Git 操作的硬上限由 fcgiwrap 的进程数量决定。在服务启动时，fcgiwrap 会根据 `-c` 参数的值，预先 fork 出对应的进程数。由于 `fcgiwrap.service` 设置了 `/etc/default/fcgiwrap` 作为环境变量文件：
 
@@ -87,7 +87,7 @@ location ~ ^/.+?\.git/(info/refs|git-upload-pack) {
     DAEMON_OPTS="-f -c 128"
     ```
 
-!!! tip "调试 `git-http-backend`"
+!!! tip "调试 `git-http-backend`" {#debug-git-http-backend}
 
     如果遇到请求缓慢、出现错误，甚至 git 崩溃的情况，你可能会希望能够调试 git 在接受请求时的行为。可以用类似 CGI 的形式调用 `git-http-backend`。在抓包后，将对应需要排查的请求的 HTTP body 存储在文件中，然后根据 HTTP 头的信息，设置对应的环境变量，调用即可，例如：
 

@@ -10,7 +10,7 @@ icon: octicons/device-desktop-16
 
 !!! warning "本文编写中"
 
-!!! note "参考"
+!!! note "参考" {#references}
 
     本章参考了以下内容：
     
@@ -24,7 +24,7 @@ icon: octicons/device-desktop-16
 
 以下未特殊标明的情况下，X11 协议均使用 Xorg 这个目前最主流的 X 实现。
 
-!!! note "X、X11、Xorg 的区别"
+!!! note "X、X11、Xorg 的区别" {#x-x11-xorg-difference}
 
     在讨论的时候，我们经常能看到 X、X11、Xorg 这些术语。它们的区别如下：
 
@@ -32,7 +32,7 @@ icon: octicons/device-desktop-16
     - X11：指 X 窗口系统的第 11 个版本（X Version 11），是目前仍在使用的版本，也极大概率是最后一个版本了
     - Xorg：由 X.Org 基金会维护的 X11 实现，是目前最主流的 X server 实现
 
-!!! comment "@taoky: 关于 XLibre"
+!!! comment "@taoky: 关于 XLibre" {#xlibre}
 
     如果关注 Linux 桌面相关新闻的话，你可能会听说过 [XLibre](https://github.com/X11Libre/xserver)——一个 Xorg 的 fork。随着开发重心从 Xorg 到 Wayland 的转移，Xorg 除去 Xwayland 以外的部分版本发布的频次大幅下降（事实上，尽管仓库仍然一直在更新，Xorg 已经多年没有发布新的大版本了，可以认为除了安全漏洞修复以外，Xorg 很可能不会再有新的大型变更了）。XLibre 的[主开发者 metux](https://github.com/metux) 在给 Xorg 提交代码时，由于代码质量与兼容性问题与 Xorg 的维护者产生了矛盾，之后在 freedesktop 的 GitLab 上 fork 了 Xorg，修改 README 发表了[辱骂 Xorg 开发者的言论](https://github.com/X11Libre/xserver/commit/5387f9d7f1a1c2bb401e077a8b080e564ad79b5d)而被 freedesktop 封禁。
 
@@ -52,11 +52,11 @@ icon: octicons/device-desktop-16
 
     不过，XLibre 是会实际替代 Xorg，或是平分秋色，还是只会成为很小一部分人的选择，只有时间才能告诉我们答案。
 
-!!! tip "部分内容在主章节中有介绍"
+!!! tip "部分内容在主章节中有介绍" {#content-in-main-chapter}
 
     如果你想知道怎么进行 SSH X Forwarding，以及如何在容器中运行 X 程序，可以参考[容器章节中的相关内容](../ops/virtualization/container.md#docker-gui)。
 
-!!! note "本部分不是 X 的开发介绍"
+!!! note "本部分不是 X 的开发介绍" {#this-part-is-not-x-development}
 
     如果对 X 的实现细节有兴趣，可以参考这个交互式的教程：[xplain](https://magcius.github.io/xplain/article/index.html)。
 
@@ -66,7 +66,7 @@ X 窗口系统起源于 1984 年。在那个时代，桌面环境没有酷炫的
 
 默认情况下，如果你正在使用 Linux 桌面，假设环境变量 `DISPLAY=:0`，那么客户端默认连接到的 socket [按 libxcb 的顺序](https://gitlab.freedesktop.org/xorg/lib/libxcb/-/blob/master/src/xcb_util.c?ref_type=heads#L250)则为 `@/tmp/.X11-unix/X0`（最新代码移除了支持，见下文）、`/tmp/.X11-unix/X0` 和 TCP `localhost:6000`。Xlib 库也会调用 libxcb 来选择、打开 socket。
 
-!!! warning "X 的抽象套接字支持"
+!!! warning "X 的抽象套接字支持" {#x-abstract-socket-support}
 
     Linux 支持「抽象套接字」（abstract socket），即允许 Unix socket 绑定到一个不在文件系统中的地址（正常的 Unix socket 需要将地址设置为一个文件路径）。在编写代码时，将 `bind()` 路径（`sun_path`）的开头设置为 `NULL` 就表示抽象套接字。可以查看 `/proc/net/unix` 文件，其中以 `@` 开头的条目则是抽象套接字。
 
@@ -298,7 +298,7 @@ QT_IM_MODULE="fcitx"
 
 如果应用程序不使用 GTK 或 Qt，那么一般来讲考虑到输入法需求的应用会基于 XIM 方案实现支持，即 `XMODIFIERS` 环境变量指定的输入法。
 
-!!! note "Debian 的 im-config 工具"
+!!! note "Debian 的 im-config 工具" {#debian-im-config}
 
     Debian 提供了 [`im-config`][im-config.8] 交互式工具，用于在 X 环境下自动配置输入法相关的环境变量。
 
@@ -322,7 +322,7 @@ QT_IM_MODULE="fcitx"
 
 在早期，显卡只做一件事情：把帧缓冲区（framebuffer）的内容输出到显示器上。此时，显存就是一段内存空间，修改内容，显示器上对应的像素就会变化。帧缓冲区在 Linux 上暴露为 `/dev/fb0` 这样的设备文件，用户空间程序可以直接打开并且修改它的内容以读取分辨率等信息，并改变显示器上的内容。此时，X server 使用 `fbdev`（xf86-video-fbdev）驱动来操作帧缓冲区。
 
-!!! lab "尝试直接与 `/dev/fb0` 交互，在 TTY 中输出图片"
+!!! lab "尝试直接与 `/dev/fb0` 交互，在 TTY 中输出图片" {#framebuffer-tty-output}
 
     尝试搜索资料，写一个程序，打开 `/dev/fb0`，并使用 `ioctl` 读取必要的信息，然后 `mmap` 映射帧缓冲区后，将你想显示的图片数据写入对应的内存区域。
 
@@ -330,7 +330,7 @@ QT_IM_MODULE="fcitx"
 
 因此内核提供了 DRM（Direct Rendering Manager）子系统来统一管理显卡资源，并且因此 GPU 驱动被分为了两部分：一部分在内核空间的 DRM 中（Kernel Mode Driver，KMD），另一部分在用户空间实现（User Mode Driver，UMD），很大程度缓解了所有显卡的东西都挤在 X 里面的混乱局面。此时，应用程序如果需要 GPU 加速渲染，就直接和 GPU 设备通信，而不是和 X 通信，这个架构被称为 DRI（Direct Rendering Infrastructure）。你可以在 `/dev/dri` 中看到你的显卡的设备文件，一般分为主设备（`card0`）和渲染设备（`renderD128`），后者只能做渲染操作，防止将不必要的显卡配置的权限暴露给低权限图形应用。
 
-!!! tip "获取 DRI 设备对应的名称"
+!!! tip "获取 DRI 设备对应的名称" {#dri-device-name}
 
     ```console
     $ udevadm info /sys/class/drm/card1/device
@@ -362,7 +362,7 @@ QT_IM_MODULE="fcitx"
 
 对 OpenGL 来说，这个任务由 [libglvnd](https://gitlab.freedesktop.org/glvnd/libglvnd)（the GL Vendor-Neutral Dispatch library）完成。其包含了 GLX 和 EGL 的接口。GLX 是和 X 绑定的 OpenGL 实现，而 EGL 提供了不和具体的某种窗口系统绑定的统一的 OpenGL 接口。libglvnd 会根据当前的情况调用 Mesa 或者 GPU 开发商私有的 OpenGL（GLX/EGL）实现。
 
-!!! note "libglvnd 提供的库"
+!!! note "libglvnd 提供的库" {#libglvnd-libraries}
 
     在 Debian 中，libglvnd 源码包被分成了多个包，包括：
     
@@ -387,13 +387,13 @@ QT_IM_MODULE="fcitx"
 
 如果正在使用 Mesa 开源驱动，[Mesamatrix](https://mesamatrix.net/) 提供了 Mesa 实现的各个驱动对 Vulkan、OpenGL 等标准的支持情况，可以作为参考。
 
-!!! note "Vulkan layer"
+!!! note "Vulkan layer" {#vulkan-layer}
 
     除了 ICD 以外，Vulkan 加载器还会加载被称为 layer 的库。这些 layer 会根据条件注入，提供诸如校验（例如 Vulkan 的 validation layer）、帧率显示（例如 Mesa 自带的 overlay，以及更常见的 [MangoHud](https://github.com/flightlessmango/Mangohud) 等）之类的功能。可以在 `/usr/share/vulkan/explicit_layer.d/` 和 `/usr/share/vulkan/implicit_layer.d/` 查看系统中安装的 layer。
 
     例如在安装了 Mesa overlay layer 的系统上，可以用 `VK_INSTANCE_LAYERS=VK_LAYER_MESA_overlay` 在 Vulkan 程序中显示帧率信息。
 
-!!! tip "齿轮样例程序"
+!!! tip "齿轮样例程序" {#glxgears-example}
 
     对 GLX、EGL 和 Vulkan，`mesa-utils` 都提供了对应的 demo 程序：
 
@@ -403,7 +403,7 @@ QT_IM_MODULE="fcitx"
 
     另外 `vulkan-tools` 提供了 `vkcube`，对 Vulkan 测试来说可能更常见一些。
 
-!!! note "多 GPU 与多驱动实现的场景"
+!!! note "多 GPU 与多驱动实现的场景" {#multiple-gpus-and-drivers}
 
     如果系统中有多个 GPU，那么 libglvnd 和 Vulkan 加载器会怎么选择合适的驱动实现呢？对 GLX、EGL 和 Vulkan，具体的实现有着一些差异。
 
@@ -431,13 +431,13 @@ QT_IM_MODULE="fcitx"
 
     而 Vulkan API 则不会帮你选择 GPU，而是会将所有的 GPU 信息都提供给应用程序，让应用自己选。但是不少应用就会直接选择列表中的第一块 GPU（不一定是用户想要的）。Vulkan 加载器同样也支持用环境变量（例如 `VK_LOADER_DEVICE_SELECT` 或者 `VK_LOADER_DRIVERS_DISABLE`）限制选择的设备或驱动，更多信息可参考[官方文档](https://github.com/KhronosGroup/Vulkan-Loader/blob/1bf213b2a90181553fff35aeb6fa5c468dcfd35d/docs/LoaderInterfaceArchitecture.md#active-environment-variables)。同样，如果选择了 Mesa 实现，也有一些额外的环境变量可以做额外配置，例如 `VK_LAYER_MESA_device_select` layer 接受 [`MESA_VK_DEVICE_SELECT`](https://docs.mesa3d.org/envvars.html#envvar-MESA_VK_DEVICE_SELECT) 环境变量用于设备选择。
 
-!!! note "我没有 GPU 呢？"
+!!! note "我没有 GPU 呢？" {#no-gpu}
 
     总有一些场景下没有办法使用 GPU，或者 GPU 实在太老以至于不支持 Vulkan，或者 OpenGL 比较新的特性。这不意味着无法运行任何 OpenGL 或者 Vulkan 程序——只是需要 CPU 来当苦力了。目前，Mesa 的 LLVMpipe 实现了完整的软件渲染 OpenGL 的支持，其会将 OpenGL 的 shader 翻译为 LLVM 的 IR，然后由 LLVM JIT 优化后在 CPU 上运行。对应 Vulkan 则是 Lavapipe（lvp）。
 
     此外，Mesa 的 Zink 驱动可以将 OpenGL 转换为 Vulkan，使得 OpenGL 应用可以在只支持 Vulkan 的 GPU 上运行。
 
-!!! note "什么是 shader？"
+!!! note "什么是 shader？" {#what-is-a-shader}
 
     Shader 是给 GPU 看的程序，用来控制 GPU 渲染图像和计算。开发者用 GLSL（或者其他的 shader 语言）编写相关的程序，通过编译器编译到中间代码（例如 SPIR-V）后，再由显卡驱动转换为 GPU 可以理解的机器指令。如果对 GPU 编程感兴趣的话，可以在 [Shadertoy](https://www.shadertoy.com/) 使用 GLSL 编写 shader，并通过 WebGL 实时查看效果，也可以欣赏社区其他人写的有趣 shader。
 
@@ -445,7 +445,7 @@ QT_IM_MODULE="fcitx"
 
     Mesa 会将编译好的 shader 缓存到 `~/.cache/mesa_shader_cache`。
 
-!!! note "视频编解码加速"
+!!! note "视频编解码加速" {#video-codec-acceleration}
 
     GPU 除了加速 OpenGL 与 Vulkan shader 以外，也可以加速视频的编解码，减少 CPU 的压力，降低能耗。目前最主流的接口为 Intel 推出的 [VA-API](https://en.wikipedia.org/wiki/Video_Acceleration_API)，Intel 与 AMD 的 GPU 驱动对 VA-API 有着不错的支持（NVIDIA 的 VA-API，如果使用官方驱动的话，只有第三方的 [nvidia-vaapi-driver](https://github.com/elFarto/nvidia-vaapi-driver/) 兼容层，并且只支持 Firefox）。NVIDIA 则传统上使用其推出的 [VDPAU](https://en.wikipedia.org/wiki/VDPAU) 接口用于解码加速。应用也可以使用 NVIDIA 专用的 NVENC/NVDEC 接口实现编解码加速。Vulkan 也提供了视频编解码的扩展（`VK_KHR_video_*`），各个产商较新的显卡和驱动都对其提供了支持。
 
@@ -483,7 +483,7 @@ QT_IM_MODULE="fcitx"
 
 X 本身没有逻辑分辨率的概念，并且一般只有一个全局的坐标系（一个 screen），**缩放策略如何全由应用程序自己决定**，这也导致了以下记录的各类方法的混乱。
 
-!!! note "不能不管应用实现，直接让应用以一个更大（或者更小）的分辨率渲染，再把应用渲染出来的内容缩放到正确的分辨率吗？"
+!!! note "不能不管应用实现，直接让应用以一个更大（或者更小）的分辨率渲染，再把应用渲染出来的内容缩放到正确的分辨率吗？" {#cannot-ignore-application-implementation}
 
     如果要正确实现 HiDPI，应用程序本身必须知道物理像素与逻辑像素之间的关系（DPI）。例如对一个 12pt（1pt = 1/72 英寸）的字，在 96 DPI 下的物理像素应该为 12 * 96 / 72 = 16px，在 192 DPI 下为 12 * 192 / 72 = 32px，它们的逻辑像素是一样的，但是物理像素则有差异。图标等其他的资源也类似。假如窗口系统不告知应用 DPI 信息，只将应用窗口当成位图缩放，那么最终获得的窗口要么里面的内容会小到无法阅读，要么变成一团模糊。
     
@@ -491,7 +491,7 @@ X 本身没有逻辑分辨率的概念，并且一般只有一个全局的坐标
 
     而对只支持整数缩放的应用来说，一种需要更多渲染资源但是可行的策略是：告知一个足够大（当前分数缩放比例向上取整）的缩放比例（对应 DPI），然后再将渲染出来的内容缩小到正确的分辨率。在这种情况下，窗口内容内部的大小是正确的，并且缩小位图比放大位图来说，更不容易模糊。
 
-!!! tip "在倍数不大的情况下，调整字体大小是更合适的方案"
+!!! tip "在倍数不大的情况下，调整字体大小是更合适的方案" {#adjust-font-size}
 
     对于只需要不到 1.5x 缩放的情况下，最简单的方式是把字体稍微调大一些——这可以避免下面所说的所有问题，特别是如果你的工作环境仍然依赖于 X 的话。
 
@@ -516,7 +516,7 @@ $ xrdb -merge ~/.Xresources
 
 此外，由于 X resources 的修改无法通知到客户端，因此出现了 [Xsettings](https://www.freedesktop.org/wiki/Specifications/xsettings-spec/) 的机制。Xsettings 会在 X server 中创建一个不可见的特殊窗口，其中存储了包括 `Xft/DPI` 和 `Gdk/WindowScalingFactor`（用于 GTK 程序整数缩放）在内的桌面配置。客户端可以监听这个窗口的变化，从而在运行时动态调整自己的设置。
 
-!!! tip "获取 Xsettings 提供的属性"
+!!! tip "获取 Xsettings 提供的属性" {#get-xsettings-properties}
 
     [`xsettingsd`](https://codeberg.org/derat/xsettingsd) 是一个 Xsettings 的轻量级实现，其提供了 `dump_xsettings` 命令可以输出当前 Xsettings 窗口包含的所有属性。
 
@@ -524,11 +524,11 @@ $ xrdb -merge ~/.Xresources
 
 从上面的描述，我们可以发现，其实 X 对 HiDPI 的支持是混乱的——不同应用有不同的标准，有很多「设置 DPI」的方式，并且都不完美。如果要考虑到多显示器支持，以及分数缩放的话，现有的机制就更不够用了。
 
-!!! comment "@taoky: 吐槽"
+!!! comment "@taoky: 吐槽" {#taoky-comment}
 
     我不止一次看到过在笔记本上用 Linux X 桌面的人在需要做报告的时候，HDMI 线接上，然后发现大屏幕上只能显示一部分被截断的内容，或者内容太大/太小，而且还要花大半天才能调好。如果你经常需要拿着笔记本接投影做展示，Wayland 会是好得多的选择。
 
-!!! note "平行世界：假如只有一种设置方法，X 的 HiDPI 支持会更好吗？"
+!!! note "平行世界：假如只有一种设置方法，X 的 HiDPI 支持会更好吗？" {#x-hidpi-parallel-world}
 
     让我们假设一下：假如说我们只有一种设置 DPI 的方式，让 X server 直接管理 DPI，客户端可以获取到每个屏幕的 DPI，并且在 DPI 变化时收到通知。那么这种情况下，X 的 HiDPI 支持会更好吗？
 
@@ -539,7 +539,7 @@ $ xrdb -merge ~/.Xresources
 
     虽然有这些问题，但是即使是以上这个模型，在我们这个世界中也已经难以在不破坏兼容性的情况下实现——几乎所有的 UI 框架都需要修改代码才能支持。
 
-!!! tip "Kali Linux 的 HiDPI 设置脚本"
+!!! tip "Kali Linux 的 HiDPI 设置脚本" {#kali-hidpi-script}
 
     作为一个例子，Kali 为它们自定义的 Xfce 桌面环境提供了一个 [HiDPI 设置脚本](https://gitlab.com/kalilinux/packages/kali-hidpi-mode/-/blob/kali/master/kali-hidpi-mode?ref_type=heads)，可以作为以上描述的这种混乱的一个参考。
 
@@ -549,7 +549,7 @@ $ xrdb -merge ~/.Xresources
 
 进入二十一世纪之后，桌面环境开始追求更炫酷的视觉效果，例如圆角的窗口、半透明的窗口、有阴影的窗口、不规则形状的窗口、动画效果等等。但是 X 传统仍然假设：窗口是个不透明矩形，X 服务器需要直接把这样的窗口画到屏幕上，并且跳过被挡住的部分——而且这个过程没有缓冲，动画只能靠窗口不停重绘自己来实现，非常不流畅。而混成器做的事情就是：接管图形显示的流程，让窗口不再直接画在屏幕上，而是画在一个缓冲区中，然后由混成器统一将这些缓冲区合成（composite）到屏幕上。这样一来，要显示什么酷炫的效果就由混成器说了算了。在 X 下，混成器需要调用 [X Composite 扩展](https://freedesktop.org/wiki/Software/CompositeExt/)来实现。
 
-!!! tip "我的 X 服务器开启了哪些扩展？"
+!!! tip "我的 X 服务器开启了哪些扩展？" {#x-server-extensions}
 
     可以使用 `xdpyinfo` 来查看当前 X 服务器开启了哪些扩展：
 
@@ -596,7 +596,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 因此 X 的网络透明性几乎只适合在极低延迟的网络环境下使用（基于同样的理由，我们也不介绍为远程使用 DM 设计的古早协议 XDMCP）。对于更常见的场景，根据需求不同，可以使用传统的 VNC/RDP 方案，本身作为 X server，支持多种网络与图形协议的 [Xpra](https://github.com/Xpra-org/xpra)，针对游戏场景优化的 [Sunshine](https://github.com/LizardByte/Sunshine)，或者为远程协助设计的 [RustDesk](https://rustdesk.com/) 等等。类似的远程桌面方案还有很多，可以按需选择。
 
-!!! example "SSH + VNC 的远程桌面访问方案"
+!!! example "SSH + VNC 的远程桌面访问方案" {#ssh-vnc-remote-desktop}
 
     以下介绍一种常见的远程桌面访问需求的解决方案：通过 SSH 隧道访问远程主机上的 VNC 服务器。只要能够建立 SSH 连接，就可以通过这种方法获取到基本的 X 桌面环境，并且用户之间互相隔离，且不需要配置防火墙，远程桌面图像也不会经手第三方。
 
@@ -619,7 +619,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     sudo apt install --no-install-recommends lxqt
     ```
 
-    !!! tip "使用其他桌面环境"
+    !!! tip "使用其他桌面环境" {#use-other-desktop-environment}
 
         也可以安装其他的桌面环境，例如 GNOME、KDE。在安装完成后，可以使用 [Alternatives](../ops/package.md#alternatives) 来设置默认的 `x-session-manager`：
 
@@ -629,7 +629,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
         注意，一些桌面环境可能需要完整的 systemd 支持才能正常工作，例如 GNOME。如果你的环境是没有 systemd 的容器，那么可能需要选择其他桌面环境。
     
-    !!! tip "错误调试"
+    !!! tip "错误调试" {#error-debugging}
 
         Session 的错误输出位于 `~/.xsession-errors` 文件中，可以查看该文件来调试 session 启动失败的问题。
 
@@ -656,7 +656,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
     如果需要重启 VNC 服务器，直接杀死对应的进程，再重新执行 `startvnc` 即可。
 
-!!! example "VNC 与 LightDM 集成"
+!!! example "VNC 与 LightDM 集成" {#vnc-lightdm-integration}
 
     以下介绍 USTC Vlab 项目在客户容器中[集成 VNC 服务器与 LightDM 的方案](https://github.com/USTC-vlab/deb/tree/master/vlab-vnc)。集成的好处是：用户在连接到 VNC 后，就能看到熟悉的 LightDM 的登录界面，可以在界面中输入密码、选择桌面环境等，而不需要预先配置好 VNC session。
 
@@ -700,13 +700,13 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     exit 0
     ```
 
-    !!! danger "安全性注意事项"
+    !!! danger "安全性注意事项" {#security-notice}
 
         在这里，VNC 服务没有安全性校验。在 Vlab 中，所有用户对 VNC 的访问都必须经过我们自己编写的 VNC 网关，并且用户之间的 VNC 端口由防火墙阻止互相访问，因此这种设计是安全的。如果你在其他场景使用，请务必注意安全性问题，**特别是需要暴露端口到公网的情况**。互联网中存在大量自动化扫描空密码、弱密码的 bot。如果你不注意安全，那么之后你就可能会看到自己的 VNC 的桌面被其他人分享在某些社交媒体上，然后发现自己的桌面被陌生人入侵操控。
 
         VNC 传统的密码模式 `VncAuth` 是不安全的——它的密码明文传输，并且密码长度最多只有 8 个字节，因此不建议使用。建议至少使用 `TLSVnc`，或者使用 SSH 隧道等方式保护 VNC 连接。
     
-    !!! note "为什么要给 LightDM 发送 SIGUSR1？"
+    !!! note "为什么要给 LightDM 发送 SIGUSR1？" {#why-send-sigusr1-to-lightdm}
 
         这一点在 [xserver(1)][xserver.1] 手册页中有说明：当 X 服务器发现自己从父进程继承的 SIGUSR1 信号的 handler 是 `SIG_IGN`（忽略信号）时，就会在启动完成之后向它的父进程发送 SIGUSR1 信号。DM 可以利用这个机制来等待 X 服务器启动完成。
 
@@ -717,7 +717,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
     vncconfig -nowin &
     ```
 
-    !!! note "vncconfig 的作用"
+    !!! note "vncconfig 的作用" {#vncconfig-role}
 
         [vncconfig(1)][vncconfig.1] 是 TigerVNC 提供的一个小工具，负责处理剪贴板同步等功能。如果不运行它，那么 VNC 客户端与服务器之间的剪贴板将无法同步。
     
@@ -735,11 +735,11 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 在[对 X12 的设想](https://www.x.org/wiki/Development/X12)中也提到了一些 X11 已经无法忽视的问题，并且其中不少问题已经无法在 X11 协议上渐进式地解决了。因此，新的显示协议 Wayland 于 2008 年开始开发，到如今 GNOME、KDE 已经有了完整可用的支持，其他的桌面环境也在逐步跟进，并且越来越多的应用程序开始支持 Wayland。以下部分介绍 Wayland 相关的一些基本概念，以及常见的问题解释。
 
-!!! note "参考阅读"
+!!! note "参考阅读" {#wayland-reference-reading}
 
     Xorg 与 Wayland 开发者 Daniel Stone 在 2013 年的 linux.conf.au 会议上做了 [the real story behind Wayland and X](https://people.freedesktop.org/~daniels/lca2013-wayland-x11.pdf) 的报告，其中详细介绍了 X 的设计问题以及 Wayland 的设计思路，推荐阅读。
 
-!!! note "本部分也不是 Wayland 的开发介绍"
+!!! note "本部分也不是 Wayland 的开发介绍" {#not-wayland-development-guide}
 
     如果对 Wayland 开发感兴趣，可以参考：
 
@@ -755,11 +755,11 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 只支持 X 的程序则通过 XWayland 运行，XWayland 既是 Wayland 客户端，也是一个 X server。在 rootless（没有 root window，即 XWayland 不管理整个屏幕，X 程序窗口无缝集成在 Wayland 桌面中）模式下运行时，XWayland 是需要混成器特殊对待的特权客户端，以便尽可能让 X 程序保持兼容性。而在 rootful 模式下，XWayland 就和上文介绍的 [Xephyr](#new-x-server) 表现类似。
 
-!!! note "xwayland-satellite"
+!!! note "xwayland-satellite" {#xwayland-satellite}
 
     对混成器来说，实现 XWayland rootless 的支持并不算很容易。如果 XWayland 没有那么特殊会怎么样？[xwayland-satellite](https://github.com/Supreeeme/xwayland-satellite) 作为普通的 Wayland 客户端实现了类似于 XWayland rootless 的功能，是一些轻量级混成器的选择。
 
-!!! tip "这个窗口是 Wayland 的还是 X 的？"
+!!! tip "这个窗口是 Wayland 的还是 X 的？" {#wayland-xeyes-test}
 
     最简单的判断方法是：启动 `xeyes` 程序，将鼠标移动到窗口上，如果眼睛跟着动，那么这个窗口就是 X 的，否则就是 Wayland 的——因为 `xeyes` 无法获取 Wayland 窗口下鼠标的位置。
 
@@ -777,7 +777,7 @@ X 的网络透明性设计似乎使得远程桌面访问变得非常简单——
 
 Wayland 混成器和客户端之间使用的 Wayland 协议是一套二进制协议。与 X 类似，Wayland 混成器默认在 `$XDG_RUNTIME_DIR/wayland-<N>`（`XDG_RUNTIME_DIR` 默认为 `/run/user/<UID>`）上监听 Unix socket，客户端通过 `WAYLAND_DISPLAY` 环境变量指定要连接的 Unix socket（一般为 `wayland-0`）。
 
-!!! tip "XDG Base Directory 标准"
+!!! tip "XDG Base Directory 标准" {#xdg-base-directory-standard}
 
     [XDG Base Directory 标准](https://specifications.freedesktop.org/basedir/latest/) 规定了一系列目录的定义，符合标准的程序应默认先按照环境变量设置选取目录，在不包含对应环境变量的情况下，再回退到默认值。标准包括：
 
@@ -811,7 +811,7 @@ $ WAYLAND_DEBUG=1 gtk4-demo
 
 Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https://gitlab.freedesktop.org/wayland/wayland/-/blob/main/protocol/wayland.xml)）随 Wayland 库分发。其他不少协议则在 [wayland-protocols 仓库](https://gitlab.freedesktop.org/wayland/wayland-protocols) 中。可以注意到，只有少数协议是 stable 的（例如 [xdg-shell](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/xdg-shell/xdg-shell.xml?ref_type=heads)、[linux-dmabuf](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/linux-dmabuf/linux-dmabuf-v1.xml?ref_type=heads) 等），大部分协议都在 staging、unstable 或者 experimental 中。其中除了核心的 `wayland.xml` 之外，其他的协议混成器都可以可选支持，不过如果要运行通常意义下的桌面程序，至少 xdg-shell 是必须支持的——它定义了「窗口」的概念。当然，特殊用途（嵌入式等）的混成器也可以选择不实现 xdg-shell，例如 Weston 就支持用于车载娱乐系统的 [ivi-shell](https://gitlab.freedesktop.org/wayland/weston/-/blob/main/ivi-shell/ivi-shell.c) 相关协议（ivi 即 [in-vehicle infotainment](https://en.wikipedia.org/wiki/In-car_entertainment)）。
 
-??? note "Wayland 协议细节"
+??? note "Wayland 协议细节" {#wayland-protocol-details}
 
     Wayland 的协议是「面向对象」的——所有的东西都是对象（object）以及和对象有关的操作。以这个 XML（fractional-scale-v1 的一部分）定义为例：
 
@@ -845,17 +845,17 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     
     另一点可以注意到的是，这里 request 和 event 都是单方向的——程序不需要等待 request 执行完成，而是在发送 request 之后继续执行后续代码。在有需要的情况下，协议中会定义对应的 event 来通知客户端。
 
-!!! note "`wl_surface` 与 `xdg_surface`"
+!!! note "`wl_surface` 与 `xdg_surface`" {#wl-surface-xdg-surface}
 
     Wayland 核心协议的 `wl_surface` interface 定义了一个矩形的平面。客户端可以在 `wl_surface` 上面 attach 在内存或者 GPU 显存中的 `wl_buffer`（存储实际的像素信息），指定接收输入的区域（`set_input_region`），通知混成器有哪些区域发生了变化（damage）等等。不过 `wl_surface` 并不是我们所认识的窗口。可以认为它只是一个单纯的画板，它有可能是鼠标光标、拖动内容时显示的图标，当然也有可能是窗口。
 
     真正能让 `wl_surface` 成为窗口的是 `xdg_surface` interface。在 xdg-shell 协议中，`xdg_wm_base::get_xdg_surface` 能够基于 `wl_surface` 创建出 `xdg_surface`。之后再由 `xdg_surface::get_toplevel` 或者 `xdg_surface::get_popup` 创建普通的窗口（`xdg_toplevel`）或者菜单（`xdg_popup`）。进而实现窗口的移动、大小变化、全屏/最大化/最小化等，以及配置菜单相对于其父 `xdg_surface` 显示的位置。
 
-!!! note "`wl_shell`？"
+!!! note "`wl_shell`？" {#wl-shell-deprecated}
 
     在很早期的时候，Wayland 核心协议中也是有「窗口」相关的概念的。对应的 interface 为 `wl_shell` 和 `wl_shell_surface`。但是目前这两个 interface 尽管仍然在核心协议中，但是已经被废弃——不管是混成器还是应用都不应该使用它们。相比于 xdg-shell 协议，这两个 interface 缺失了很多功能，而窗口管理的需求更多、更灵活，因此从核心协议中拆出来单独维护是更恰当的选择。
 
-??? note "Wayland 下的坐标系"
+??? note "Wayland 下的坐标系" {#wayland-coordinate-system}
 
     如果需要详细讨论有关窗口位置、缩放等话题的细节，那么坐标系概念是必不可少的。相比 X 只有一种全局的坐标系的设计来说，Wayland 有多个不同的坐标系，让实现合理的缩放等功能成为可能。
 
@@ -876,7 +876,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 可以注意到，混成器可以选择只支持部分协议，同样客户端也可以选择只使用部分协议。因此类似「Wayland 开始支持 XX 协议」实际的意义大多时候是：该协议进入了 wayland-protocols 仓库（进入的前提一般是有一些混成器/客户端已经写了相关的支持代码），但是不代表所有的混成器/客户端都会自动支持。
 
-!!! note "很多原来能做的事情做不了了！"
+!!! note "很多原来能做的事情做不了了！" {#wayland-migration-issues}
 
     X 的老用户在迁移时可能都会有这样的感觉：自己累积起来的不少基于 X 的 workflow（例如自动化操作、获取窗口信息等等）在迁移到 Wayland 之后都受到了影响，甚至有些（取决于混成器）完全无法实现。一个重要的原因是，Wayland 协议在设计上服务于 Policy（策略），而不是 Mechanism（机制）。以右键菜单（是个 popup window）为例：
 
@@ -887,7 +887,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
     不过换句话说，Wayland 的这种设计选择当然也不是完美的——确实需要控制窗口的程序（例如需要下文中 `xx-zones` 协议的多窗口应用，以及一些会在窗口上玩花样的游戏）会受到影响，需要用完全不同的方式实现（或者完全无法实现）。比如像 [OneShot](https://store.steampowered.com/app/420530/OneShot) 或者[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)这种需要移动窗口/获取窗口位置的游戏，就会头疼了。就目前来看，如果真的要在 Wayland 下原生实现这些游戏的需求，如果不考虑 `xx-zones` 支持，唯一的办法可能是：创建一个全屏的窗口，然后在窗口内管理子窗口的位置（不能用 xdg-decoration-v1，只能让客户端画边框），其他的地方完全透明 + 输入穿透，不过这种修改的代价很有可能太大了。
 
-!!! note "协议采纳的流程好慢！"
+!!! note "协议采纳的流程好慢！" {#wayland-protocol-adoption}
 
     wayland-protocols 的流程最为人诟病的地方是：整个流程实在是太慢了。一个协议要被采纳至少得好几个月，而且有很多过了好几年才有一点点进展。Valve 的工程师在 2024 年曾经尝试用 [frog-protocols](https://github.com/misyltoad/frog-protocols) 绕过流程来实现需要的功能。各个混成器（KWin、wlroots、Hyprland 等）也有不少私有协议，以支持自己需要的功能。
 
@@ -905,7 +905,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     - [xdg-dbus-annotation](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/merge_requests/52)：允许将 Wayland 对象与 DBus 对象关联起来的协议，是实现类似 macOS 的全局菜单所需要的特性。
     - [xx-zones-v1](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/experimental/xx-zones/xx-zones-v1.xml)：方便多窗口应用（例如 GIMP 不使用单窗口时，主窗口、工具箱、画笔图层设置分别是三个窗口）放置窗口的协议，允许应用申请 zone，并在 zone 中组织窗口。于 2026 年 2 月合入，目前仅有 KWin 与 SDL 有实验性实现。
 
-!!! note "CSD 与 SSD 之争"
+!!! note "CSD 与 SSD 之争" {#csd-ssd-debate}
 
     CSD（Client-Side Decoration）指让应用程序绘制窗口边框，而 SSD（Server-Side Decoration）指让混成器/窗口管理器绘制窗口边框。这可能是 Wayland 持续多年时间最具火药桶味道的争论之一。
 
@@ -934,7 +934,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 目前来讲，从应用开发者的角度，只支持 `text-input-unstable-v3` 协议就已经足够（除非有特殊需求需要兼容 Weston）。
 
-!!! note "输入法模块还能用吗？"
+!!! note "输入法模块还能用吗？" {#input-method-module}
 
     在 X 时代的 GTK/QT 的[输入法模块](#x-input-method)在 Wayland 下根据输入法实现的不同，可能仍然可以使用来绕过 Wayland 的输入法协议。以 [Fcitx 5](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Popup_candidate_window) 为例：
 
@@ -951,7 +951,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
 
 fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放的问题。在协议中，混成器会通过 `preferred_scale` event 通知客户端推荐的缩放比例。由于 `wl_surface` 在核心稳定协议中，已有的类型不能随意修改，因此 `set_buffer_scale`（需要整数）仍然为 1，分数信息则通过另一个 stable 的协议 [viewporter](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/stable/viewporter/viewporter.xml) 提供。viewporter 允许为 `wl_surface` 设置一个 viewport，原本用作裁切 surface 使用（客户端提供原始矩形和目标矩形的信息，混成器进行裁切变换）。在分数缩放协议中，客户端会将原始矩形设置为计算得到的 buffer 的大小，将目标矩形设置为逻辑大小（即应用缩放之前的大小）。混成器收到这个 surface 之后，就能知道它的缩放比例，进而决定是否要做额外的缩放操作。
 
-!!! note "逃离浮点数"
+!!! note "逃离浮点数" {#fractional-scale-escape}
 
     我们会希望分数缩放的结果每个像素都是完美的，否则你看到的窗口内容可能会模糊，或者稍微拖动一下就会有严重的抖动。但是在分数缩放的场景下，似乎就要小数点、浮点误差等很容易出错的东西打交道了。为了尽可能避免误差，fractional-scale-v1 协议使用了分母为 120 的分数的方式来表示缩放比例（preferred_scale / 120，preferred_scale 为整数）；120 这个分母是各种常用缩放倍率的最小公倍数，因此可以表示诸如 1.25（150/120）、1.5（180/120）、1.3333...（160/120）等常用的缩放比例。
 
@@ -981,7 +981,7 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 
 其中 GNOME（49 及以下版本）、Sway 等默认使用第一种策略；GNOME 50 [默认使用第二种策略](https://gitlab.gnome.org/GNOME/mutter/-/merge_requests/4877)；KDE 下用户可选择使用第一种或者第三种策略。
 
-!!! note "GTK、XWayland 与分数缩放的问题"
+!!! note "GTK、XWayland 与分数缩放的问题" {#gtk-xwayland-fractional-scale}
 
     GTK 应用在 X 上的分数缩放存在历史悠久的设计上的问题：
 
@@ -990,7 +990,7 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 
     由于仍然有少量的 GTK 应用（特别是 GTK3）依赖于 X，因此为了让 X 应用窗口的大小尽量一致，一种妥协方案就是在 Xsettings 和 X resources 中设置整数缩放，然后混成器总是进行缩放。这带来的问题就是，运行的全屏应用（特别是游戏）渲染的内容量会大于实际值，造成了性能上的浪费。
 
-!!! note "坐标系视角"
+!!! note "坐标系视角" {#coordinate-system-perspective}
 
     从坐标系的视角考虑，X 自己的物理坐标系是一套单独的坐标系。上面的三种策略大致对应三种不同的映射思路：
 
@@ -1000,7 +1000,7 @@ fractional-scale-v1 协议的出现帮助解决了 Wayland 客户端分数缩放
 
     不过在实践中，混成器的具体实现有可能不会完全按照上述描述机械性地来做。
 
-!!! example "关于 mutter 的 XWayland HiDPI 实现"
+!!! example "关于 mutter 的 XWayland HiDPI 实现" {#mutter-xwayland-hidpi}
 
     Mutter 内部与之相关定义了两个坐标系：Protocol（X 坐标系）和 Stage 坐标系（全局逻辑坐标系）。它们的映射关系为 Protocol 坐标 = Stage 坐标 * xwayland_scale。xwayland_scale 为所有显示器中最大缩放比向上取整。对 Gtk 等应用，这样可以保证窗口和元素的大小是正确的，但是对 X 下的游戏来说，Protocol 坐标系就可能太大了（因为 xwayland_scale >= 实际的分数缩放比）。
 
@@ -1021,17 +1021,17 @@ GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GN
 
 由于不同的混成器实现存在差异，如果需要统一的远程桌面解决方案，那么可能就需要基于内核接口来实现。[kmsvnc](https://github.com/isjerryxiao/kmsvnc/) 和 [reframe](https://github.com/AlynxZhou/reframe) 项目实现了基于 DRM/KMS 接口的 VNC 服务器，可以在不依赖混成器的情况下实现远程桌面访问。Sunshine 也支持通过 DRM/KMS 实现屏幕捕获，实现游戏或桌面的串流。
 
-!!! note "无头的 DRM/KMS 显示"
+!!! note "无头的 DRM/KMS 显示" {#headless-drm-kms-display}
 
     如果 GPU 没有连接显示器，那么基于内核接口的远程桌面方案可能无法使用。可以购买显卡诱骗器（dummy plug），也可以通过一些 trick（添加不存在的显示器的 EDID 信息并设置内核参数，或者使用 [VKMS](https://docs.kernel.org/gpu/vkms.html) 内核模块）实现。详情可参考 [Arch Wiki 的 headless 一文](https://wiki.archlinux.org/title/Headless)。
 
-!!! example "SSH + wayvnc + LXQt（labwc）的远程桌面方案"
+!!! example "SSH + wayvnc + LXQt（labwc）的远程桌面方案" {#ssh-wayvnc-lxqt-remote-desktop}
 
     由于 DRM 内核接口对硬件依赖较大，并且要求的用户权限也更高，以下介绍基于混成器的类似于[上文 X 部分介绍的远程桌面方案](#x-remote-desktop)的例子。
 
     作为轻量级的且基于 wlroots 的混成器，labwc 支持通过 wayvnc 实现 VNC 远程桌面访问。LXQt 自 2.1.0 之后实现了对 Wayland 的支持，且允许用户在[支持的混成器](https://lxqt-project.org/wiki/Wayland-Session.html)中自选。这里我们选择 labwc 作为混成器。
 
-    !!! note "`lxqt-wayland-session` 只在 Debian forky（14）及之后版本中可用"
+    !!! note "`lxqt-wayland-session` 只在 Debian forky（14）及之后版本中可用" {#lxqt-wayland-session-debian}
 
         该包未被包含在 Debian 目前的 stable 版本（trixie）中。当然也可以不安装 LXQt，而是自行组装基于 labwc 的 Wayland 桌面环境（和基于 OpenBox 的 X 桌面环境类似）。
 
@@ -1071,11 +1071,11 @@ GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GN
     WLR_BACKENDS=headless startlxqtwayland > ~/startlxqtwayland.log 2>&1 &
     ```
 
-    !!! note "`XDG_RUNTIME_DIR` 环境变量"
+    !!! note "`XDG_RUNTIME_DIR` 环境变量" {#xdg-runtime-dir}
 
         `XDG_RUNTIME_DIR` 是必须的环境变量，一般为 `/run/user/<UID>`。如果是容器等场景，这个环境变量可能未被设置，需要手动处理。
 
-    !!! note "可能需要额外安装的包"
+    !!! note "可能需要额外安装的包" {#additional-packages}
 
         如果 DBus 会话总线未启动，`startlxqtwayland` 脚本会尝试使用 `dbus-launch` 启动一个新的会话总线，需要 `dbus-x11` 包。
 
@@ -1083,7 +1083,7 @@ GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GN
 
     之后的操作与 X 部分类似，配置 SSH 转发 `~/.vncsock` 即可。
 
-!!! note "包含 GDM 显示管理器集成的 GNOME 远程桌面方案"
+!!! note "包含 GDM 显示管理器集成的 GNOME 远程桌面方案" {#gnome-remote-desktop}
 
     与 X 不同的是，一般显示管理器使用的混成器和桌面环境的混成器不是同一进程，而让两者在远程桌面场景下无缝切换目前没有通用的解决方案。GNOME 的远程桌面方案利用 RDP 的 [Server Redirection](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/f3f722e3-cabd-4c58-9140-c0b49963b641) 特性实现了 GDM 与 GNOME 桌面环境（Shell）的协同。具体配置方法可参考[文档](https://gitlab.gnome.org/GNOME/gnome-remote-desktop/-/blob/main/README.md)。
 
@@ -1095,11 +1095,11 @@ GNOME 与 KDE 分别实现了 [gnome-remote-desktop](https://gitlab.gnome.org/GN
 
 DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，进程间通信）机制，被 systemd 以及 Linux 桌面生态广泛使用。DBus 提供了一个集中的消息总线（message bus），进程可以连接到这个总线上，发送消息给其他进程，或者接收其他进程发送的消息。
 
-!!! note "Hackergame 2024 题目「不太分布式的软总线」"
+!!! note "Hackergame 2024 题目「不太分布式的软总线」" {#hackergame-2024}
 
     该题目是一道 DBus 基础的应用题目，可参考阅读 [writeup](https://github.com/USTC-Hackergame/hackergame2024-writeups/tree/master/official/%E4%B8%8D%E5%A4%AA%E5%88%86%E5%B8%83%E5%BC%8F%E7%9A%84%E8%BD%AF%E6%80%BB%E7%BA%BF)。
 
-!!! note "DBus 总线的实现"
+!!! note "DBus 总线的实现" {#dbus-implementation}
 
     目前有两个主要的 DBus 总线实现：
 
@@ -1113,7 +1113,7 @@ DBus（有些地方写为 D-Bus）是一套 IPC（Inter-Process Communication，
 - 系统总线（system bus）：位于 `/run/dbus/system_bus_socket`。
 - 会话总线（session bus）：地址由环境变量 `DBUS_SESSION_BUS_ADDRESS` 设置。一般位于 `/run/user/<UID>/bus`。
 
-!!! note "`DBUS_SESSION_BUS_ADDRESS` 是谁设置的？"
+!!! note "`DBUS_SESSION_BUS_ADDRESS` 是谁设置的？" {#dbus-session-bus-address}
 
     在现代的 systemd 环境下，当用户登录时 systemd 的 PAM 模块会启动用户级别的 systemd 实例，而默认 `dbus.socket` 是启用的：
 
@@ -1157,7 +1157,7 @@ DBus 的状态可以使用 systemd 提供的命令行工具 `busctl` 来查看�
 
 有关类型系统的更多信息，可参考 [DBus 标准文档的类型系统部分](https://dbus.freedesktop.org/doc/dbus-specification.html#type-system)。
 
-!!! note "VARIANT 类型"
+!!! note "VARIANT 类型" {#variant-type}
 
     DBus 中还有一种特殊的类型 VARIANT（在类型字符串中表示为 `v`），表示任意类型的值。这个类型对开发者来说是很方便的：不需要事先定义好类型（有些情况下也不好做），就可以传递任意类型的数据。但是在文档不佳的情况下，这对使用者来说是比较折磨的。以 `org.freedesktop.systemd1` 中 `/org/freedesktop/systemd1` 下的 `org.freedesktop.systemd1.Manager` 接口的 `StartTransientUnit` 方法为例：
 
@@ -1190,7 +1190,7 @@ DBus 的状态可以使用 systemd 提供的命令行工具 `busctl` 来查看�
 
 可以注意到，开发者需要用 XML 来描述 DBus 接口（在 DBus 那个时代，JSON 什么的还不存在——XML 是最流行的选择）。这被称为 introspection。客户端可以调用对象的 `org.freedesktop.DBus.Introspectable` 接口的 `Introspect` 方法来获取某个对象的 XML 描述，从而获取到该对象的接口信息。XML 信息主要用于人类阅读（了解接口信息）和代码生成。
 
-!!! warning "Introspection 可以返回任意信息"
+!!! warning "Introspection 可以返回任意信息" {#introspection-returns-anything}
 
     DBus daemon 不会验证 introspection 返回的数据是否与实际接口一致。并且考虑到 XML 潜在的复杂性和安全性问题，解析时需要小心。
 
@@ -1234,7 +1234,7 @@ SystemdService=dbus-org.bluez.service
 
 有不少命令行工具可以用来和 DBus 交互（调用方法、发送或接收信号等），例如上面介绍的 `busctl`，以及 `dbus-send`、`gdbus` 等等。并且各类编程语言都有对应的 DBus 库，可以用来编写 DBus 客户端或者服务端程序。
 
-!!! example "发送通知"
+!!! example "发送通知" {#send-notification}
 
     `notify-send` 命令行工具可以发送桌面通知。其实际上会与会话总线的 `org.freedesktop.Notifications` 接口交互。相关标准文档可参考 [Desktop Notifications Specification](https://specifications.freedesktop.org/notification/latest/)。其核心是 [`org.freedesktop.Notifications.Notify` 方法](https://specifications.freedesktop.org/notification/latest/protocol.html#command-notify)：
 
@@ -1261,7 +1261,7 @@ SystemdService=dbus-org.bluez.service
 
     运行就可以发现桌面上弹出了我们的通知。
 
-!!! lab "获取当前正在播放的音乐信息"
+!!! lab "获取当前正在播放的音乐信息" {#get-current-music-info}
 
     [MPRIS 接口](https://specifications.freedesktop.org/mpris/latest/) 是 Linux 下音乐播放器与桌面组件（以及其他需要相关信息的软件）的标准接口。假如你的音乐播放器名字叫 `playmusic`，那么它在 DBus 上的 well-known name 就是 `org.mpris.MediaPlayer2.playmusic`。`org.mpris.MediaPlayer2.Player` 接口提供了一些属性，可以让我们获取当前播放器的状态，以及歌曲元数据等。
 
@@ -1329,7 +1329,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
 不同的桌面环境会有不同的 portal 实现，并且不同 portal 实现支持的功能也存在差异。实现了 portal 用户程序接口的 Rust 库 [ASHPD](https://github.com/bilelmoussaoui/ashpd) 提供了一个 demo 程序，可以在 [Flathub 上找到](https://flathub.org/apps/details/com.belmoussaoui.ashpd.demo)，可以用来测试你的桌面上 portal 目前实现的功能。
 
-!!! note "Portal 如何判断应用身份，兼 Linux 桌面的安全模型讨论"
+!!! note "Portal 如何判断应用身份，兼 Linux 桌面的安全模型讨论" {#portal-app-identity}
 
     可以注意到，portal 有必要准确判断应用的身份，否则假如程序 A 获取了录屏的权限，而程序 B 想偷偷录屏的话，用程序 A 的名字去请求 portal 就行了。因此 portal 不能光凭应用声称的名字说了算，需要有更可靠的身份验证机制。
 
@@ -1350,7 +1350,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 [Secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。
 
-!!! note "Portal 是如何将沙盒外的文件提供给沙盒内的应用的？"
+!!! note "Portal 是如何将沙盒外的文件提供给沙盒内的应用的？" {#portal-file-sharing}
 
     有两个关键的 portal 接口：[Documents portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Documents.html) 和 [File Chooser portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.FileChooser.html)。
 
@@ -1358,7 +1358,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     那么应用自己怎么请求访问外部的文件呢？这就是 File Chooser portal 的工作了。Gtk、Qt 等 GUI 框架都实现了对 File Chooser portal 的支持，当应用调用文件选择对话框时，这些框架不会再自己实现文件选择对话框，而是调用 File Chooser portal 的 DBus 接口，请求在指定窗口的上方显示文件选择对话框（在 Wayland 下使用 [xdg-foreign-unstable-v2](https://gitlab.freedesktop.org/wayland/wayland-protocols/-/blob/main/unstable/xdg-foreign/xdg-foreign-unstable-v2.xml) 实现）。用户在 portal 的对话框中选择文件之后，portal 会将用户选择的文件通过 Documents portal 提供给应用——应用看不到主机上的其他文件。
 
-!!! note "使用 portal 在 Wayland 下自动化键盘输入"
+!!! note "使用 portal 在 Wayland 下自动化键盘输入" {#portal-keyboard-automation}
 
     在 Wayland 下如果需要自动化键盘输入，目前有以下几种方案：
 
@@ -1373,7 +1373,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。[在 writeup 附录](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96)中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。
 
-!!! note "Portal 与剪贴板文件传输"
+!!! note "Portal 与剪贴板文件传输" {#portal-clipboard-transfer}
 
     跨沙盒进行文件的拖动或剪贴板复制（DND）时，会有一个关键的问题：程序间使用剪贴板传输文件时，一般不会通过这个机制传输完整的文件，而是直接传输一个 URI 或文件路径（一般在 `text/uri-list` 或者 `text/plain;charset=utf-8` 这两个 mimetype 里面），避免不必要的拷贝：
 
@@ -1414,7 +1414,7 @@ by-path/   controlC2  controlC5  hwC2D0    pcmC1D7p  pcmC2D3p  pcmC2D9p  pcmC5D0
 controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0p  pcmC6D1c  pcmC6D2p  timer
 ```
 
-!!! note "我不在 audio 组里面，为什么我可以放歌？"
+!!! note "我不在 audio 组里面，为什么我可以放歌？" {#audio-access-without-audio-group}
 
     `systemd` 包携带的 `/usr/lib/udev/rules.d/70-uaccess.rules` 文件会给用户需要的设备在 udev 中打上 `uaccess` 的标签，例如这里的音频设备：
 
@@ -1445,7 +1445,7 @@ controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0
 
 同时 `/proc/asound` 和 `/sys/class/sound` 也提供了用于调试、管理等的信息。不过绝大多数应用程序都不会直接操作它们——如果程序使用 ALSA 的话，几乎都是通过用户态的 libasound（[`libasound2t64`](https://packages.debian.org/trixie/libasound2t64)）库提供的接口来播放、录制音频。
 
-!!! note "ALSA 中的设备模型"
+!!! note "ALSA 中的设备模型" {#alsa-device-model}
 
     ALSA 中的设备有多个层级。首先是声卡（card），可以从 `/proc/asound/cards` 获取 ALSA 内核态得到的所有（硬件）声卡：
 
@@ -1567,7 +1567,7 @@ controlC0  controlC3  controlC6  pcmC0D0c  pcmC1D8p  pcmC2D7p  pcmC4D0c  pcmC5D0
 
 因此，现代桌面一般都在 ALSA 与应用之间添加了一个中间层来处理桌面产生的新需求。这个中间层在比较老的发行版上一般是 PulseAudio，在新发行版上一般是 PipeWire。两者的模型有非常大的差异，以下以介绍 PipeWire 为主。
 
-!!! note "PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？"
+!!! note "PulseAudio 和 PipeWire 是怎么实现 ALSA 兼容的？" {#pulseaudio-pipewire-alsa-compatibility}
 
     应用一般使用 libasound 暴露出的 `default` 设备来播放或者录制音频，因此只要让它能够转到 PulseAudio 或者 PipeWire 处理即可。`pulseaudio` 包会设置 `pcm` 和 `ctl` 对应的 default interface 为 `pulse`：
 
@@ -1629,7 +1629,7 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
 使用 `pw-top` 可以实时查看每个节点的信息，包括 quantum、采样率等信息。
 
-!!! example "`pw-top` 输出示例"
+!!! example "`pw-top` 输出示例" {#pw-top-example}
 
     ```console
     $ pw-top -b  # 使用非交互模式
@@ -1647,7 +1647,7 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
     这里的 WAIT 和 BUSY 分别代表节点等待调度的时间和处理数据的时间（越小越好），W/Q 和 B/Q 则是它们与一个 quantum 时间的比值（也是越小越好）。ERR 表示出现 xrun 的次数。可以看到，目前的音频处理是非常顺畅的。
 
-!!! note "PipeWire 对 PulseAudio 的兼容"
+!!! note "PipeWire 对 PulseAudio 的兼容" {#pipewire-pulse-compatibility}
 
     作为 PulseAudio 的继承者，PipeWire 当然也需要实现对 PulseAudio 的兼容。`pipewire-pulse` 包提供了这一项兼容层，它会在 PulseAudio 相同的 socket 路径上监听，并且把请求转换、发送到 PipeWire 上。可以从 `pactl info` 的输出判断是不是 PipeWire 提供的服务：
 
@@ -1656,7 +1656,7 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
     Server Name: PulseAudio (on PipeWire 1.6.8)
     ```
 
-!!! tip "调整延迟"
+!!! tip "调整延迟" {#adjust-latency}
 
     PulseAudio 和 PipeWire 都支持应用程序调整延迟，在需要较低延迟的场景，或者出现 xrun 需要提高延迟的情况下都很有用。
 
@@ -1690,7 +1690,7 @@ Helvum 示例图。这里节点 port 之间可以拖动连线，可以轻松实�
 
     相关设置也可以在 [pipewire.conf][pipewire.conf.5]（`default.clock`）修改。
 
-!!! note "RTkit 与音频服务"
+!!! note "RTkit 与音频服务" {#rtkit-audio-service}
 
     实现低延迟音频非常重要的一点是音频处理有足够的 CPU 时间来运行。Linux 支持实时[优先级][sched.7]，能够保障指定的应用在指定规则内不被抢占，包含以下三种模式：
 

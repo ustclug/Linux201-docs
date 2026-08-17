@@ -83,7 +83,7 @@
 - `/dev/nvme0n1` - 控制器 `0` 上的命名空间 `1`，第一个控制器上的第一个命名空间。
 - `/dev/nvme2n5` - 控制器 `2` 上的命名空间 `5`，第三个控制器上的第五个命名空间。
 
-!!! note "命名空间（Namespace）"
+!!! note "命名空间（Namespace）" {#namespace}
 
     命名空间是 NVMe 用于保存用户数据的结构。一个 NVMe 控制器可以包含多个命名空间。目前，大多数 NVMe 固态硬盘都只有一个命名空间，但在虚拟化、安全等领域需要使用多个命名空间。
 
@@ -97,7 +97,7 @@ SD 卡、多媒体存储卡（MMC 卡）和 eMMC 存储设备由 `mmc` 驱动处
 - `/dev/mmcblk0` - 设备 `0`，第一个发现的设备。
 - `/dev/mmcblk4` - 设备 `4`，第五个发现的设备。
 
-!!! note "注意"
+!!! note "注意" {#usb-sd-card-device-naming}
 
     如果 SD/MMC 读卡器使用 USB 接口，则对应的块设备将由 [SCSI 驱动子系统](#scsi)处理，并遵循其命名规则。
 
@@ -139,7 +139,7 @@ VirtIO 块设备的名称以 `vd` 开头。之后是一个从 `a` 开始的小�
 Linux 支持「本地回环设备」，支持挂载一个文件作为块设备使用，类似于「虚拟光驱」类软件。
 因此，可以通过本地回环的方式，在不购买新硬件的情况下进行一些磁盘相关的实验。
 
-!!! note "本地回环与容器"
+!!! note "本地回环与容器" {#loop-devices-in-containers}
 
     Linux 目前不支持设备命名空间（隔离），因此如果需要在容器环境内对本地回环进行挂载等操作，需要特权容器，并且为 root 权限。
     Linux 内核开发中曾有过允许非特权用户挂载本地回环的讨论（[loopfs LWN](https://lwn.net/Articles/819625/)），
@@ -230,7 +230,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 目前除非极其老旧的系统，都使用 GPT 分区表。GPT 分区表在最开头存储了一份「保护性 MBR」（Protective MBR），用于防止不认识 GPT 的旧系统和软件对磁盘误操作，
 同时分区表信息在磁盘最后有一份备份，以减小损坏风险。
 
-!!! note "那 GPT 的磁盘怎么开机呢？"
+!!! note "那 GPT 的磁盘怎么开机呢？" {#gpt-boot}
 
     对于使用传统 BIOS 的机器，GPT 开头的保护性 MBR 仍然可以存储引导代码。不过，目前的主流是使用 UEFI，不再需要在扇区里存储引导代码，
     而是有一个专门的 EFI 系统分区（必须格式化为 FAT32），用来存储引导程序与其他信息。
@@ -269,7 +269,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 
     这里 `efi` 后缀的文件就是 UEFI 会选择的启动引导程序，一般可以在启动时按下 F12 或者其他快捷键选择启动的设备或 EFI 文件。
 
-!!! tip "/efi"
+!!! tip "/efi" {#efi}
 
     在 systemd 的[文件系统层次结构标准 (FHS) 扩展](https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html) 中，
     如果 `/boot` 独立于 EFI 系统分区 (ESP)，则后者挂载点为 `/efi`。
@@ -286,7 +286,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 truncate -s 8G test.img
 ```
 
-!!! info "稀疏文件"
+!!! info "稀疏文件" {#sparse-file}
 
     这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：
 
@@ -317,7 +317,7 @@ Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存
 有关 Swap 的更多内容，可参考[问题调试中的「Swap、Zram 与 Zswap」部分](../debug.md#swap-zram-zswap)。
 ///
 
-??? info "fdisk 操作示例"
+??? info "fdisk 操作示例" {#fdisk-partition-example}
 
     fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 `g` 命令。
     在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 `+` 表示相对于当前位置的偏移量（即分区大小），或者使用 `-` 表示相对于磁盘末尾的偏移量（即在尾部留出多少空间）。
@@ -390,7 +390,7 @@ Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存
     Syncing disks.
     ```
 
-??? info "parted 操作示例"
+??? info "parted 操作示例" {#parted-partition-example}
 
     这里不推荐交互式使用 `parted`，因为其交互不如 `fdisk` 直观，并且**所有操作均为立刻写入**。但是 `parted` 在脚本中使用更加方便。
     parted 脚本的例子可以参考 [101strap 脚本](https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46)。
@@ -445,7 +445,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
 如果对 GPT 的细节感兴趣，可以使用十六进制编辑器查看镜像内容，并与 GPT 标准对照。
 
-??? info "分区对齐"
+??? info "分区对齐" {#partition-alignment}
 
     观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
     这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。
@@ -453,7 +453,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
     在实践中我们一般采取 4K（8 个扇区）对齐，因此起始位置需要为 4K（8 个扇区）的整数倍。
     2048 个扇区即 1M，是现代版本 fdisk 的默认对齐粒度，可以应对未来的对齐需求，因此是一个合理且被普遍使用的选择。
 
-!!! tip "`/dev/disk`"
+!!! tip "`/dev/disk`" {#dev-disk}
 
     在 Linux 中，硬盘设备的设备文件名不是固定的，如果机器有多个硬盘，就可能发生重启前名为 `sda` 的设备重启之后变成了 `sdb` 
     的事情。Linux 的用户态设备管理器 udev 会在 `/dev/disk` 下根据不同分类方式，提供硬盘/分区到实际设备的软链接。
@@ -562,7 +562,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
 此外，Linux 还支持用户态文件系统（FUSE）。FUSE 允许在不编写内核代码的情况下支持新的文件系统。
 
-!!! comment "@taoky: 关于 ReiserFS"
+!!! comment "@taoky: 关于 ReiserFS" {#reiserfs}
 
     ReiserFS 其实有一个其他文件系统不能有效替代的优势：它是目前主线中唯一一个能够只使用几个 GB 的空间就能存储上千万个文件元数据的文件系统。
     （例如，对于一百九十万个只有几个字节的文件，Reiserfs 只需要 325MB，而对比之下，即使是「针对小文件优化」的 Btrfs 也需要接近 1GB。）
@@ -584,7 +584,7 @@ ext4 是包括 Debian 和 Ubuntu 在内的众多发行版为系统分区（根�
 如果没有特殊的需求，ext4 是一个不错的选择；即使有其他需求，也建议对系统分区使用 ext4。
 ext4 最常见的问题之一是 inode 的数量限制。
 
-!!! info "inode"
+!!! info "inode" {#inode}
 
     inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
     可以使用 `stat` 或 `ls -i` 查看文件的 inode 信息。
@@ -698,7 +698,7 @@ Filesystem     Size   Used  Avail Use% Pathname
 
 `xfs_quota` 的 `df` 也会输出其他文件系统的空间使用情况，忽略即可。
 
-!!! info "引用复制"
+!!! info "引用复制" {#xfs-reflink}
 
     尽管不是 CoW 文件系统，XFS 也支持引用复制（reflink）功能。使用方法详见 [Btrfs 的引用复制一节](#btrfs-reflink)。
 
@@ -713,7 +713,7 @@ Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文�
 
 Subvolume 在 Btrfs 中的层次结构类似一棵树，其中每个 Btrfs 文件系统都有一个顶层（top-level）subvolume 作为树根，**其 ID 永远是 5（`subvolid=5`）**。
 
-!!! tip "约定俗成的 subvolume 名称"
+!!! tip "约定俗成的 subvolume 名称" {#subvolume-names}
 
     几乎所有支持在安装时由发行版安装器选择 Btrfs 的 Linux 发行版都不会创建 Btrfs 文件系统后就直接开始使用，而是会创建名为 `@` 的 subvolume 作为根文件系统，`@home` 作为 `/home` subvolume 等等。这种起名不是强制要求，但是许多工具都会做这样的假设。
 
@@ -756,11 +756,11 @@ drwxr-xr-x 1 root root 0 Feb 11 14:50 subvol3/
 
 这里分别以默认的 top-level subvolume 为父节点，创建了 subvol1、subvol2、subvol3 这三个 subvolume。从 `btrfs subvolume list` 的输出可以看到它们的 ID 分别为 256、257、258，父 ID（top level）都为 5。
 
-!!! note "为什么 `btrfs subvolume list` 没有显示 top-level subvolume？"
+!!! note "为什么 `btrfs subvolume list` 没有显示 top-level subvolume？" {#top-level-subvolume}
 
     顶层 subvolume 不会出现在 `btrfs subvolume list` 的输出中。
 
-??? note "`gen` 的含义"
+??? note "`gen` 的含义" {#gen}
 
     `btrfs subvolume list` 的输出中还包含了 `gen`，代表这个 subvolume 最近一次被修改时所处的事务编号。Btrfs 下事务默认是每 30 秒 commit 一次，或者在程序需要 sync 的时候 commit，所以这个数字增长其实比想象的慢。作为参考，一台使用了 4 年的笔记本电脑，其 `@home` subvolume 的 gen 大约为 1838000。
 
@@ -774,7 +774,7 @@ $ stat -c '%d %n' /media/btrfs/ /media/btrfs/subvol1/ /media/btrfs/subvol2/ /med
 226 /media/btrfs/subvol3/
 ```
 
-!!! tip "想改名/修改 subvolume 父节点？"
+!!! tip "想改名/修改 subvolume 父节点？" {#subvolume-rename}
 
     直接 `mv` subvolume 对应目录即可！
 
@@ -792,7 +792,7 @@ $ sudo umount /media/btrfs1
 $ sudo umount /media/btrfs2
 ```
 
-!!! warning "全局挂载参数"
+!!! warning "全局挂载参数" {#global-mount-params}
 
     [大部分 Btrfs 的挂载参数（例如透明压缩）只适用于整个文件系统](https://btrfs.readthedocs.io/en/latest/Subvolumes.html#mount-options)，在首个 subvolume 上挂载时，这些参数会被应用到整个文件系统。
     后续挂载使用的参数会被忽略。
@@ -878,13 +878,13 @@ $ touch /media/btrfs/recovered/subvol1/test  # 向还原的 subvol1 添加文件
 $ sudo umount /media/btrfs
 ```
 
-!!! note "嵌套 subvolume"
+!!! note "嵌套 subvolume" {#nested-subvolume}
 
     虽然嵌套 subvolume 在目录树中看上去是上级 subvolume 的一部分，但它并不是上级 subvolume 的文件，因此不会被包括在快照中，只会保留作为挂载点的空目录。
 
 我们可以定时执行快照，以便在文件被误操作时能够恢复。例如 [snapper](./backup.md#snapper-snapshots) 等软件可以在后台自动执行快照任务。
 
-!!! tip "使用快照将 top-level subvolume 的文件迁移到 `@` 或其他 subvolume"
+!!! tip "使用快照将 top-level subvolume 的文件迁移到 `@` 或其他 subvolume" {#migrate-top-level-subvolume}
 
     如果你在配置系统时直接在 top-level subvolume 下安装了系统，或者需要处理使用 [`btrfs-convert`](#btrfs-convert) 转换得到的 Btrfs，那么根据上面所描述的快照的原理，可以比较方便地迁移，而不需要再手动复制或移动：
 
@@ -943,11 +943,11 @@ At subvol snap3
 (sender) $ sudo btrfs send /media/btrfs/snap3 | pv > /dev/tcp/receiver/12345
 ```
 
-!!! note "Btrfs 传输限制"
+!!! note "Btrfs 传输限制" {#btrfs-send-limit}
 
     与 ZFS 不同，`btrfs-send` 不支持断点续传。
 
-!!! tip "传输压缩后的数据"
+!!! tip "传输压缩后的数据" {#btrfs-send-compressed}
 
     默认情况下，与 `zfs send` 类似，`btrfs send` 会解压本地透明压缩过的数据再传输，很多时候这是在浪费带宽与 CPU。因此建议如果开启了透明压缩，`btrfs send` 总是添加 `--compressed-data` 参数，除非发送方或接收方的内核版本过低。
 
@@ -978,11 +978,11 @@ $ sudo umount /media/btrfs
 $ sudo umount /media/btrfs-alt
 ```
 
-!!! tip "增量传输与只读 subvolume"
+!!! tip "增量传输与只读 subvolume" {#btrfs-send-incremental}
 
     为了确保增量传输正常，默认情况下 btrfs 会对接收到的 subvolume 设置为只读。如果使用 `btrfs property set` 参数修改的话，需要添加 `-f` 参数（当然，操作之后也就不能再做增量传输了）。
 
-!!! warning "网络安全风险"
+!!! warning "网络安全风险" {#btrfs-send-security}
 
     Btrfs 工具目前不会充分验证增量传输流的可靠性，攻击者可以通过精心构造 Btrfs 流使得创建的快照中包括目标文件系统中的任意文件。在通过网络接收 Btrfs 流时，应该首先确保传输来源和传输链路的安全性、可靠性，防范潜在的网络安全攻击风险。
 
@@ -1027,7 +1027,7 @@ btrfs property set /path/to/btrfs/dir compression zstd
 
   [^btrfs:compress_file_range]: `fs/btrfs/inode.c`: [`compress_file_range`](https://elixir.bootlin.com/linux/v7.1/source/fs/btrfs/inode.c#L896-L969)
 
-!!! question "Rsync 对于 btrfs property 的影响"
+!!! question "Rsync 对于 btrfs property 的影响" {#rsync-btrfs-property}
 
     如果你使用 `btrfs property set` 为一个新目录设置了压缩算法，然后以 root 使用 `rsync -aHAXx` 将外部文件复制进这个目录，那么复制后的文件会使用指定的压缩算法吗？
 
@@ -1053,7 +1053,7 @@ btrfs-convert /path/to/device
 
 如果文件数量较多，或者文件大小较大的话，需要耐心等待。在转换后，数据会在 top-level subvolume 中。
 
-!!! warning "计算 checksum 的时间开销"
+!!! warning "计算 checksum 的时间开销" {#checksum-compute-overhead}
 
     `btrfs-convert` 在运行时会将原来的文件系统的 image 放在单独的 subvolume 里面（例如 ext 系列是 `ext2_saved`，用来之后提供恢复到旧文件系统的功能），并在 Btrfs 文件系统元数据中为每个文件添加对应的 inode。由于 Btrfs 支持数据 checksum，`btrfs-convert` 会花大量的时间计算哈希，而且很不幸的是，这个过程目前不是并行的。这可能会导致转换的大部分时间都卡在 `Create ext2 image file`，给 `ext2_saved` 计算哈希（而可能你之后完全不会使用它）。
 
@@ -1071,7 +1071,7 @@ duperemove --hashfile=example.hashfile -dhr /path/to/btrfs
 
 即可扫描 `/path/to/btrfs` 下的文件，搜索重复的块并去重，并将相关文件的哈希存储到 `example.hashfile` 中，在下次去重的时候加速。
 
-!!! note "其他文件系统的去重"
+!!! note "其他文件系统的去重" {#other-filesystem-dedup}
 
     除了 ZFS 自带去重功能，duperemove 支持 XFS 文件系统（因为 XFS 也提供了 `FIDEDUPRANGE` 的内核接口）以外，其他文件系统可以使用 [jdupes](https://codeberg.org/jbruchon/jdupes)，搜索相同的文件，并且做 reflink 或者 hardlink。
 
@@ -1254,17 +1254,17 @@ fusermount -u mountpoint/
 # umount mountpoint/
 ```
 
-!!! tip "FUSE 的代价"
+!!! tip "FUSE 的代价" {#fuse-overhead}
 
     用户态文件系统虽然方便，但是其代价之一是性能。FAST '17 的论文 [To FUSE or Not to FUSE: Performance of User-Space File Systems](https://www.usenix.org/conference/fast17/technical-sessions/presentation/vangoor) 对此做了详细的量化分析。
 
     此外，FUSE 在允许任意用户访问挂载点，并且需要应用定义 ACL 的情况下，[存在潜在的安全问题](https://github.com/libfuse/libfuse?tab=readme-ov-file#security-implications)，在生产环境使用时需要注意。
 
-!!! tip "解决 FUSE 死锁问题"
+!!! tip "解决 FUSE 死锁问题" {#fuse-deadlock-solution}
 
     一些实现不佳的 FUSE 文件系统可能会出现死锁，此时文件系统进程和访问该文件系统的进程都会陷入内核中，无法用常用的 SIGKILL 信号终止。
 
-    ??? note "一个死锁的代码例子：FUSE 文件系统实现访问自身的路径"
+    ??? note "一个死锁的代码例子：FUSE 文件系统实现访问自身的路径" {#fuse-self-access-deadlock}
 
         ```c
         #define FUSE_USE_VERSION 31
