@@ -49,8 +49,8 @@
       
         
         
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        
+        <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
@@ -4151,7 +4151,7 @@
 <dd>
 <p>earlyoom 使用 <a href="https://man7.org/linux/man-pages/man2/mlock.2.html">mlock(2)</a> 来保证在内存不足时其本身仍然可以响应。它会定时检查内存使用情况，如果内存不足，则杀死内核评估 oom 分数最高的进程。</p>
 <p>earlyoom 可以配置在杀死进程后执行命令（例如提示用户有进程被杀死）。Vlab 项目即做了相关的配置，通过结合 zenity 弹出对话框，效果如下：</p>
-<p><img alt="earlyoom in Vlab" src="../../images/vlab-earlyoom.png" style="aspect-ratio: 1413 / 1067" /></p>
+<p><img alt="earlyoom in Vlab" src="../../images/vlab-earlyoom.png" width="1413" height="1067" /></p>
 </dd>
 </dl>
 <div class="admonition question" id="tmpfs">
@@ -4397,7 +4397,7 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 <code>/s
 <li><a href="https://github.com/kxxt/tracexec">tracexec</a> 专注于追踪 exec 系列的系统调用，能够重新构造执行的程序的 shell 命令行并显示环境变量和文件描述符相较于原始环境的差异。除此之外，在用 gdb 调试程序时可能遇到比较复杂的场景，比如被调试的程序是被一个 python 脚本启动的，或者两个需要被调试的程序之间需要通过管道通信（<code>a | b</code>），<a href="https://github.com/kxxt/tracexec/tree/main/demonstration/gdb-launcher">这时可以通过 tracexec 方便地在 <code>execve{,at}</code> 系统调用结束时，程序开始执行前将 gdb 调试器接入想要调试的所有程序</a>。</li>
 </ul>
 <p>除 strace 以外，Linux 中还有很多用于监控、追踪系统状态的工具，如图所示：</p>
-<p><img alt="Linux tools" src="https://www.brendangregg.com/Perf/linux_observability_tools.png" /></p>
+<p><img alt="Linux tools" src="https://www.brendangregg.com/Perf/linux_observability_tools.png"></p>
 <p>需要根据具体情况选择合适的工具。本文亦无法详细介绍每一个工具的使用方法，因此请参考对应工具的手册。</p>
 <h2 id="debug-symbols-and-gdb">调试符号与 gdb<a class="headerlink" href="#debug-symbols-and-gdb" title="Permanent link">&para;</a></h2>
 <p>有的时候，我们会遇到程序崩溃的情况。除了程序本身留下的日志以外，另一个重要的信息就是程序的 coredump。
@@ -4864,7 +4864,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nv">SSLKEYLOGFILE</span><span class="o">=</span>test.log<span class="w"> </span>curl<span class="w"> </span>--http1.1<span class="w"> </span>https://www.example.com
 </code></pre></div>
 <p>之后在 wireshark 的 TLS 协议设置中设置 (Pre)-Master-Secret log filename 即可，如下图：</p>
-<p><img alt="Wireshark setting pre-master-secret log filename" src="../../images/wireshark-tls.png" style="aspect-ratio: 1027 / 727" /></p>
+<p><img alt="Wireshark setting pre-master-secret log filename" src="../../images/wireshark-tls.png" width="1027" height="727" /></p>
 <p><a href="#ebpf">bcc</a> 提供的 <code>sslsniff</code> 工具、<a href="https://github.com/gojue/ecapture">eCapture</a> 工具则通过 eBPF 的方式实现了查看加密内容的功能。</p>
 </div>
 <div class="admonition note" id="http-https-capture-tools">
@@ -4876,7 +4876,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p><code>perf</code> 的功能非常丰富，以下仅能介绍一小部分功能。</p>
 <h3 id="flamegraph">火焰图<a class="headerlink" href="#flamegraph" title="Permanent link">&para;</a></h3>
 <p>火焰图是最常用的用于分析程序性能的图表之一，它可以直观地展示程序中函数的调用关系与耗时。生成的 SVG 文件可以使用浏览器打开并交互。</p>
-<p><a href="../../images/flamegraph-example.svg"><img alt="Flamegraph example" src="../../images/flamegraph-example.png" style="aspect-ratio: 2249 / 1320" /></a></p>
+<p><a href="../../images/flamegraph-example.svg"><img alt="Flamegraph example" src="../../images/flamegraph-example.png" width="2249" height="1320" /></a></p>
 <p class="caption">火焰图示例。点击图片可以查看完整的 SVG 文件。</p>
 <p>火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。</p>
 <div class="admonition note" id="why-analyze-hotspots">
@@ -5013,8 +5013,8 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 是两个常用的 eBPF 工具，用户可以用它们编写自己的 eBPF 程序来获取内核态信息。
 此外，它们还提供了大量的（示例）工具，对一些常见的问题提供了解决方案，如下面两张图所示
 （以下工具的使用请自行查阅资料）：</p>
-<p><img alt="Linux bcc/BPF Tracing Tools" src="https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png" /></p>
-<p><img alt="bpftrace/eBPF Tools" src="https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png" /></p>
+<p><img alt="Linux bcc/BPF Tracing Tools" src="https://www.brendangregg.com/BPF/bcc_tracing_tools_early2019.png"></p>
+<p><img alt="bpftrace/eBPF Tools" src="https://www.brendangregg.com/BPF/bpftrace_tools_early2019.png"></p>
 <p>考虑到 bpftrace 使用较为简单（不需要写 C 代码），因此以下对 bpftrace 做简单介绍。</p>
 <h3 id="kernel-ebpf">内核态<a class="headerlink" href="#kernel-ebpf" title="Permanent link">&para;</a></h3>
 <p>bpftrace 中包含了几种内核态的「探针」（probe）：</p>
@@ -5280,22 +5280,22 @@ Do not link to a "generic" man page for these commands -->
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/apps/autofix-ci" class="md-author" title="@autofix-ci[bot]">
           
-          <img src="https://avatars.githubusercontent.com/in/243519?v=4&size=72" alt="autofix-ci[bot]">
+          <img src="https://avatars.githubusercontent.com/in/243519?v=4&amp;size=72" alt="autofix-ci[bot]">
         </a>
       
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&amp;size=72" alt="web-flow">
         </a>
       
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&amp;size=72" alt="iBug">
         </a>
       
       

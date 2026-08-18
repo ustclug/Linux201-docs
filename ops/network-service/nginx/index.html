@@ -49,8 +49,8 @@
       
         
         
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        
+        <link rel="stylesheet" href="../../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
@@ -4413,7 +4413,7 @@
 <p>默认配置下，Nginx 的工作进程会打开、读取需要的文件，但是 POSIX 默认的文件 API（<code>open()</code>、<code>read()</code> 等）是同步的——这意味着，如果 IO 处理的速度较慢（例如在机械硬盘上），那么对应的工作进程在调用文件 API 时就无法处理其他的请求，导致响应的延迟增大。</p>
 <p>尽管 Linux 提供了内核级别的 AIO（异步 IO）的支持（可参考 <a href="https://pagure.io/libaio">libaio</a>），但是条件较为苛刻：AIO 请求需要使用 <code>O_DIRECT</code> 绕过内核的 page cache（对非常快速的 NVMe 设备来说，这么做可能是必要的，但是对慢速设备来说是弊大于利的），并且 <code>O_DIRECT</code> 访问要求对齐，否则可能会阻塞住。因此除非存储设备非常快，否则不建议使用。在此类场景下，一种常见的解决方式是创建专用的线程池，将 IO 请求 offload 给这个线程池，避免阻塞其他的任务，包括 POSIX AIO（由 glibc 在用户态实现）和 Nginx 都支持这种方式。</p>
 <p><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#aio"><code>aio</code></a> 指令支持基于 Linux 内核 AIO 和线程池这两种实现。添加 <code>aio threads;</code> 即可。默认<strong>每个工作进程的</strong>线程池为 32 线程，最多排队 65536 个请求，可以使用 <a href="https://nginx.org/en/docs/ngx_core_module.html#thread_pool"><code>thread_pool</code></a> 指令调整。以下是科大镜像站在开启 <code>aio threads</code> 前后的请求主页的 HTTP 延迟情况，可以看到效果十分显著：</p>
-<p><img alt="Mirrors HTTP latency with/without AIO" src="../../../images/mirrors-nginx-aio.png" style="aspect-ratio: 860 / 499" /></p>
+<p><img alt="Mirrors HTTP latency with/without AIO" src="../../../images/mirrors-nginx-aio.png" width="860" height="499" /></p>
 <p>此外，Linux 内核目前推荐的异步 IO（包括文件、网络 socket）方式为 io_uring。不过 Nginx 尚未提供对其的支持。</p>
 </div>
 <h2 id="server-location-blocks"><code>server</code> 块与 <code>location</code> 块<a class="headerlink" href="#server-location-blocks" title="Permanent link">&para;</a></h2>
@@ -4737,7 +4737,7 @@
 <details class="note" id="openssl-gui">
 <summary>如果 OpenSSL 是 GUI 程序，会是什么样子的？&#8288;<a class="headerlink" href="#openssl-gui" title="Permanent link">&para;</a></summary>
 <figure>
-<p><img alt="If OpenSSL were a GUI" src="https://smallstep.imgix.net/openssl_83b5f638ef.png" /></p>
+<p><img alt="If OpenSSL were a GUI" src="https://smallstep.imgix.net/openssl_83b5f638ef.png"></p>
 <figcaption>
 <p>图片来自 <a href="https://smallstep.com/blog/if-openssl-were-a-gui/">If OpenSSL were a GUI</a></p>
 </figcaption>
@@ -5405,7 +5405,7 @@
 <h3 id="execution-phases">执行阶段<a class="headerlink" href="#execution-phases" title="Permanent link">&para;</a></h3>
 <p>有一张经典的图展示了 Nginx 处理请求的各个阶段中，Lua 脚本可以插入的位置：</p>
 <figure>
-<p><img alt="Order of Lua Nginx Module Directives" src="https://cloud.githubusercontent.com/assets/2137369/15272097/77d1c09e-1a37-11e6-97ef-d9767035fc3e.png" /></p>
+<p><img alt="Order of Lua Nginx Module Directives" src="https://cloud.githubusercontent.com/assets/2137369/15272097/77d1c09e-1a37-11e6-97ef-d9767035fc3e.png"></p>
 <figcaption>
 <p>图来自 <a href="https://github.com/openresty/lua-nginx-module">openresty/lua-nginx-module</a> 仓库</p>
 </figcaption>
@@ -5655,22 +5655,22 @@ Do not link to a "generic" man page for these commands -->
       
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&size=72" alt="taoky">
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
           
-          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&size=72" alt="iBug">
+          <img src="https://avatars.githubusercontent.com/u/7273074?v=4&amp;size=72" alt="iBug">
         </a>
       
         <a href="https://github.com/Cherrling" class="md-author" title="@Cherrling">
           
-          <img src="https://avatars.githubusercontent.com/u/37233261?v=4&size=72" alt="Cherrling">
+          <img src="https://avatars.githubusercontent.com/u/37233261?v=4&amp;size=72" alt="Cherrling">
         </a>
       
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&size=72" alt="web-flow">
+          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&amp;size=72" alt="web-flow">
         </a>
       
       
