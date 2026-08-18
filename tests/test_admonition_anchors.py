@@ -21,6 +21,7 @@ class AdmonitionAnchorsTest(unittest.TestCase):
     def assert_permalink(self, html, anchor_id):
         self.assertIn(f'href="#{anchor_id}"', html)
         self.assertIn('class="headerlink"', html)
+        self.assertIn('&#8288;<a class="headerlink"', html)
 
     def test_admonition_with_title_and_id(self):
         html = self.render(
@@ -28,8 +29,35 @@ class AdmonitionAnchorsTest(unittest.TestCase):
         )
 
         self.assertIn('<div class="admonition tip" id="tip-summary">', html)
-        self.assertIn('<p class="admonition-title">this is title', html)
+        self.assertIn(
+            '<p class="admonition-title">this is title&#8288;'
+            '<a class="headerlink"',
+            html,
+        )
         self.assert_permalink(html, "tip-summary")
+
+    def test_chinese_title_uses_word_joiner_before_permalink(self):
+        html = self.render('!!! example "一个例子标题" {#example}\n\n    body')
+
+        self.assertIn(
+            '<p class="admonition-title">一个例子标题&#8288;'
+            '<a class="headerlink"',
+            html,
+        )
+
+    def test_formatted_title_keeps_markup_with_permalink(self):
+        html = self.render(
+            "/// tip | title with `code`\n"
+            "    attrs: {id: formatted-title}\n\n"
+            "body\n"
+            "///"
+        )
+
+        self.assertIn(
+            '<p class="admonition-title">title with '
+            '<code>code</code>&#8288;<a class="headerlink"',
+            html,
+        )
 
     def test_admonition_default_and_blank_titles_with_id(self):
         default_title = self.render('!!! tip {#tip-default}\n\n    body')
@@ -54,7 +82,10 @@ class AdmonitionAnchorsTest(unittest.TestCase):
         self.assertIn('open="open"', expanded)
         self.assert_permalink(expanded, "expanded")
         self.assertIn('id="default-details"', default_title)
-        self.assertIn("<summary>Note", default_title)
+        self.assertIn(
+            '<summary>Note&#8288;<a class="headerlink"',
+            default_title,
+        )
         self.assert_permalink(default_title, "default-details")
 
     def test_nested_admonition_with_id(self):

@@ -82,9 +82,16 @@ class AdmonitionAnchorsTreeprocessor(Treeprocessor):
             if title is None or any(
                 child.tag == "a"
                 and "headerlink" in child.get("class", "").split()
-                for child in title
+                for child in title.iter()
             ):
                 continue
+
+            word_joiner = f"{AMP_SUBSTITUTE}#8288;"
+            if len(title):
+                last = title[-1]
+                last.tail = f"{last.tail or ''}{word_joiner}"
+            else:
+                title.text = f"{title.text or ''}{word_joiner}"
 
             permalink = etree.SubElement(
                 title,
