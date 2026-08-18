@@ -4088,7 +4088,7 @@
 <p>如果确信问题是由于某些进程占用大量内存导致的，可以使用 Alt+SysRq+F 来触发内核的 OOM Killer。</p>
 <p>另外，向 <code>/proc/sysrq-trigger</code> 写入字符也可以触发对应的操作。其他内容可以参考以上内核文档链接。</p>
 <div class="admonition lab" id="test-kdump">
-<p class="admonition-title">测试 kdump<a class="headerlink" href="#test-kdump" title="Permanent link">&para;</a></p>
+<p class="admonition-title">测试 kdump&#8288;<a class="headerlink" href="#test-kdump" title="Permanent link">&para;</a></p>
 <p>Debian 的 <code>kdump-tools</code> 包可以帮助配置在内核崩溃（kernel panic）时自动进入 kdump 的备用内核，以便在硬盘上存储内核的 coredump 等调试信息。尝试在测试环境安装 <code>kdump-tools</code>，并使用 SysRq 触发内核崩溃，验证配置的有效性。</p>
 </div>
 <h4 id="memory-pressure">缓解内存压力<a class="headerlink" href="#memory-pressure" title="Permanent link">&para;</a></h4>
@@ -4105,18 +4105,18 @@
 <p>在 unit 文件中配置 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#ManagedOOMSwap=auto%7Ckill"><code>ManagedOOMSwap</code> 和 <code>ManagedOOMMemoryPressure</code></a> 可以控制 systemd-oomd 是否监控对应 unit（cgroup）的 Swap 使用与内存压力。<code>/etc/systemd/oomd.conf</code> 文件可以调整 systemd-oomd 的全局行为。其中 <code>SwapUsedLimit</code> 参数（默认为 90%）虽然名称中包含 "Swap"，但它<strong>同时适用于物理内存和 Swap 空间</strong>。</p>
 <p>systemd-oomd <strong>触发</strong>的条件是：内存压力（PSI）超过 <code>DefaultMemoryPressureLimit</code> <strong>或</strong> (物理内存使用率 &gt; <code>SwapUsedLimit</code> <strong>且</strong> Swap 空间使用率 &gt; <code>SwapUsedLimit</code>)。</p>
 <div class="admonition note" id="oomctl-cgroup-swap-mismatch">
-<p class="admonition-title">为什么设置 <code>ManagedOOMSwap=kill</code> 之后，<code>oomctl</code> 显示的 cgroup swap 使用量和实际不相符？<a class="headerlink" href="#oomctl-cgroup-swap-mismatch" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么设置 <code>ManagedOOMSwap=kill</code> 之后，<code>oomctl</code> 显示的 cgroup swap 使用量和实际不相符？&#8288;<a class="headerlink" href="#oomctl-cgroup-swap-mismatch" title="Permanent link">&para;</a></p>
 <p><code>oomctl</code> 显示的 cgroup 统计信息是从 systemd-oomd 内部读取的（不是实时从 cgroup 读取的），而 <a href="https://github.com/systemd/systemd/blob/0b2d1203cbcc9a1ce5ec4c26d86070eaac0ccba5/src/oom/oomd-manager.c#L472-L475">"Swap Monitored CGroups" 中的 cgroup 只会在<strong>加入 systemd-oomd 监控的时候</strong>读取 swap 使用情况</a>，因此大概率和 <code>oomctl</code> 执行时候的情况是不同的。"System Context" 下显示的内存使用情况是最新的。</p>
 </div>
 <p>触发后，systemd-oomd 需要<strong>选择</strong>一个 cgroup 来杀死。当触发条件为 <code>SwapUsedLimit</code> 时，systemd-oomd 会杀死占用 swap 最高且占用量超过 5% swap 的 cgroup；当触发条件为内存 PSI 达到设置阈值时，systemd-oomd 首先会根据 <code>pgscan</code> 值的增长率（两次采样之间的差值）选择，如果相同，则选择内存使用最大的一项。</p>
 <div class="admonition note" id="why-not-kill-cgroup-with-highest-psi">
-<p class="admonition-title">为什么不选择 PSI 最大的 cgroup 杀死？<a class="headerlink" href="#why-not-kill-cgroup-with-highest-psi" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么不选择 PSI 最大的 cgroup 杀死？&#8288;<a class="headerlink" href="#why-not-kill-cgroup-with-highest-psi" title="Permanent link">&para;</a></p>
 <p>PSI 是一个很好的衡量压力的参数，但是在整个系统内存极度紧张的情况下，所有 cgroup 的内存 PSI 都会很高，此时 PSI 最大的 cgroup 不一定就是资源占用最大的罪魁祸首。</p>
 <p><code>pgscan</code> 是 cgroup 的 <code>memory.stat</code> 中的一个计数器，记录着对该 cgroup，内核回收内存页面时扫描过的页的数量，如果这个值快速增长，那么就代表内核为了给这个 cgroup 找内存空间，进行了大量的扫描操作，把对应的 cgroup 杀掉就能够缓解这一项压力。</p>
 </div>
 <p>在物理内存较大的服务器上，默认的 90% <code>SwapUsedLimit</code> 可能过早触发 OOM Killer，影响正常使用。此时可以考虑将其调整至更高的值，例如 95% 或 98%，根据实际物理内存大小预留一部分即可。另外，可能有一点不符合预期的是，在设置 <code>SwapUsedLimit</code> 的时候，会首先 kill 占用 swap 最多的 cgroup，而不是占用内存最多的 cgroup，因此可能会出现占用了最多的内存的 cgroup 并没有被 kill，而是占用比较少内存的 cgroup 被 kill 了。</p>
 <details class="example" id="debian-13-systemd-oomd-configuration">
-<summary>Debian 13 中的 systemd-oomd 配置<a class="headerlink" href="#debian-13-systemd-oomd-configuration" title="Permanent link">&para;</a></summary>
+<summary>Debian 13 中的 systemd-oomd 配置&#8288;<a class="headerlink" href="#debian-13-systemd-oomd-configuration" title="Permanent link">&para;</a></summary>
 <p>Debian 13 的默认配置为：在用户 service 下，如果内存压力超过 50%，则杀死压力最大的 cgroup；默认不监控 swap 使用量（与 Debian 12 的行为不同）。这里 <code>ManagedOOMSwap</code> 的 <code>auto</code> 代表默认不监控，除非在其上层有 cgroup 将这个属性设置为了 <code>kill</code>。</p>
 <div class="highlight"><span class="filename">/usr/lib/systemd/system/-.slice.d/10-oomd-root-slice-defaults.conf</span><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[Slice]</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">ManagedOOMSwap</span><span class="o">=</span><span class="s">auto</span>
@@ -4131,7 +4131,7 @@
 </code></pre></div>
 </details>
 <details class="example" id="fedora-44-systemd-oomd-configuration">
-<summary>Fedora 44 中的 systemd-oomd 配置<a class="headerlink" href="#fedora-44-systemd-oomd-configuration" title="Permanent link">&para;</a></summary>
+<summary>Fedora 44 中的 systemd-oomd 配置&#8288;<a class="headerlink" href="#fedora-44-systemd-oomd-configuration" title="Permanent link">&para;</a></summary>
 <p>Fedora 44 由 <code>systemd-oomd-defaults</code> 包提供的的默认配置为：在系统和用户 slice 下，如果内存压力超过 80%，则杀死压力最大的 cgroup。</p>
 <div class="highlight"><span class="filename">/usr/lib/systemd/system/system.slice.d/10-oomd-per-slice-defaults.conf</span><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[Slice]</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">ManagedOOMMemoryPressure</span><span class="o">=</span><span class="s">kill</span>
@@ -4155,12 +4155,12 @@
 </dd>
 </dl>
 <div class="admonition question" id="tmpfs">
-<p class="admonition-title">tmpfs?<a class="headerlink" href="#tmpfs" title="Permanent link">&para;</a></p>
+<p class="admonition-title">tmpfs?&#8288;<a class="headerlink" href="#tmpfs" title="Permanent link">&para;</a></p>
 <p>思考这个问题：如果某个在容器中的进程错误地向 tmpfs 写入了大量数据导致内存不足，systemd-oomd 可以解决这个问题吗？earlyoom 呢？</p>
 </div>
 <p>还有很多其他的实现，在 <a href="https://github.com/hakavlad/nohang?tab=readme-ov-file#solution">nohang 的 README</a> 中有相关整理，可以作为参考。</p>
 <div class="admonition note" id="how-app-developers-know-resource-tightness">
-<p class="admonition-title">应用开发者怎么知道当前内存等资源使用是否紧张呢？<a class="headerlink" href="#how-app-developers-know-resource-tightness" title="Permanent link">&para;</a></p>
+<p class="admonition-title">应用开发者怎么知道当前内存等资源使用是否紧张呢？&#8288;<a class="headerlink" href="#how-app-developers-know-resource-tightness" title="Permanent link">&para;</a></p>
 <p>以下以 GLib 和 systemd 为例介绍，不使用 glib 与 systemd 用户库的程序也可以自行实现相关的方式。<a href="https://gitlab.gnome.org/GNOME/glib">GLib</a> 是 Linux 下大量 C 与 C++ 应用使用的基础库，特别是在 GNOME/GTK 生态中随处可见。它的 <a href="https://docs.gtk.org/gio/iface.MemoryMonitor.html">GMemoryMonitor</a> 结构体实现了检测系统内存是否紧张的功能，并允许通过 GLib 的信号机制在内存紧张时执行自定义的函数（需要应用开发者主动使用）。除了传统的定时轮询以外，它也支持其他获取内存使用情况的接口。</p>
 <p>在 Linux 支持 PSI 之前，<a href="https://gitlab.freedesktop.org/hadess/low-memory-monitor"><code>low-memory-monitor</code></a> 包会在 <a href="../../advanced/desktop/#dbus">DBus</a> 上暴露 <code>org.freedesktop.LowMemoryMonitor</code> 接口，在内存不足时发送信号。不过目前的系统已经基本不再采用这个方案。内核暴露的 PSI 文件允许应用通过打开对应文件的方式<a href="https://docs.kernel.org/accounting/psi.html#monitoring-for-pressure-thresholds">写入来注册 trigger</a>，在满足条件的情况下，应用在 PSI 文件上的 <code>poll()</code> 会被触发。针对不能获取到 PSI 文件的沙盒场景，<a href="../../advanced/desktop/#portal">Portal</a> 也提供了 <a href="https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.MemoryMonitor.html"><code>org.freedesktop.portal.MemoryMonitor</code></a> 接口。</p>
 <p><a href="https://systemd.io/PRESSURE/">Systemd 也提供了对应的支持</a>，会在程序启动时设置相关的环境变量，以此在内存、CPU、IO 资源不足的情况下让应用知晓。其中 CPU 与 IO 的支持需要在 systemd 261 版本后，Debian 13 的 systemd 不支持。对目前大部分发行版的默认配置来说，相关的 <code>PressureWatch</code> 配置都是 <code>auto</code>，因此：</p>
@@ -4181,7 +4181,7 @@
 <p>此外，配置 swap 与内存压缩也会对内存不足（高内存压力）的场景有很大帮助，有关 swap 的简单介绍可参考<a href="../storage/filesystem/#swap">分区与文件系统</a>的有关部分。</p>
 <p>传统上，Linux 系统管理员可能会倾向于禁用 swap，因为过去的经验认为，因为磁盘性能远低于内存，使用 swap 会导致系统变慢，并且在内存不足时会让内核的 OOM Killer 更慢介入。但是这种观点目前被认为是过时的，详情可阅读 <a href="https://chrisdown.name/2018/01/02/in-defence-of-swap.html">In defense of swap: common misconceptions</a>（中文版：<a href="https://farseerfc.me/zhs/in-defence-of-swap.html">替 swap 辩护：常见的误解</a>）。</p>
 <div class="admonition note" id="tl-dr-why-swap-is-necessary">
-<p class="admonition-title">tl;dr：为什么 swap 是有必要的？<a class="headerlink" href="#tl-dr-why-swap-is-necessary" title="Permanent link">&para;</a></p>
+<p class="admonition-title">tl;dr：为什么 swap 是有必要的？&#8288;<a class="headerlink" href="#tl-dr-why-swap-is-necessary" title="Permanent link">&para;</a></p>
 <p>上述文章中一个重要的观点是：swap 对高效的内存管理来说是有必要的。</p>
 <p>系统中的内存可以大致分成两种：文件页内存（干净的文件页丢了还可以从磁盘再读取，脏的文件页丢弃之前需要先写回到磁盘上）和匿名内存（磁盘上没有对应的文件，不能直接丢掉）。在 swap 存在的情况下，内核可以将很少被访问的匿名内存换页到磁盘上：</p>
 <ul>
@@ -4190,7 +4190,7 @@
 </ul>
 </div>
 <div class="admonition note" id="kswapd">
-<p class="admonition-title">kswapd<a class="headerlink" href="#kswapd" title="Permanent link">&para;</a></p>
+<p class="admonition-title">kswapd&#8288;<a class="headerlink" href="#kswapd" title="Permanent link">&para;</a></p>
 <p>kswapd 是 Linux 中负责内存回收的内核线程。简单来说，内核为系统内存设置了高（high）、低（low）和最小（min）水位线。当系统剩余可用（free）内存小于 low 时，kswapd 就会在后台工作回收内存，直到 free 达到 high 为止。如果情况更糟糕，小于 min 的话，就会进入直接回收（direct reclaim），此时所有程序的内存分配请求都需要先进行内存回收操作，可以发现大多数程序的运行速度会很明显变慢。如果仍然没有改善，那就只能内核 OOM Killer 出场了。</p>
 <p>实际情况下由于 NUMA、硬件设备 DMA 等的存在，内存空间会分成多个不同的 zone，每个 zone 有不同的水位线。可以阅读 farseerfc（上文《替 swap 辩护》一文的翻译者）的<a href="https://farseerfc.me/zhs/followup-about-swap.html">关于 swap 的一些补充</a> 了解。</p>
 </div>
@@ -4208,7 +4208,7 @@
 </li>
 </ul>
 <div class="admonition note" id="why-zram-plus-swap-is-not-recommended">
-<p class="admonition-title">为什么 zram + swap 不是合理的选择？<a class="headerlink" href="#why-zram-plus-swap-is-not-recommended" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么 zram + swap 不是合理的选择？&#8288;<a class="headerlink" href="#why-zram-plus-swap-is-not-recommended" title="Permanent link">&para;</a></p>
 <p>如果配置过 zram 的话，会注意到系统使用的 swap 有优先级的顺序：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>swapon<span class="w"> </span>--show
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">NAME           TYPE        SIZE USED PRIO</span>
@@ -4219,7 +4219,7 @@
 <p>Zram 虽然支持设置 writeback 设备，允许写回长时间没有访问的页面到指定的块设备文件，但是与 zswap 不同，zram 的 writeback 不会自动触发。作为 zram 最著名的用户，<a href="https://source.android.com/docs/core/perf/mmd#zram-writeback-policy">AOSP 的内存管理 daemon 会定时进行 zram writeback</a>。但是 Android 移动设备和桌面、服务器的 workload 有很大差异，因此在这种情况下，仍然建议选择 zswap 方案，除非你愿意花时间自己写 daemon 定时触发 writeback，并且花上更多的时间调优。</p>
 </div>
 <div class="admonition note" id="check-memory-compression">
-<p class="admonition-title">查看内存压缩情况<a class="headerlink" href="#check-memory-compression" title="Permanent link">&para;</a></p>
+<p class="admonition-title">查看内存压缩情况&#8288;<a class="headerlink" href="#check-memory-compression" title="Permanent link">&para;</a></p>
 <p>针对系统全局来说，zram 可以用 <code>zramctl</code> 查看每个 zram 设备压缩了多少内容，zswap 则可以在 <code>/sys/kernel/debug/zswap/</code> 查看整体的指标。不过它们都查看不了某个进程的情况——进程显示的 swap 占用空间是压缩之前的空间。</p>
 <p>zram 没有方式查看非全局的内存压缩信息。而 cgroup 提供了对 zswap 的支持，<code>memory.zswap.current</code> 记录了对应 cgroup 在 zswap 的 pool 里面使用了多少压缩后的内存。</p>
 </div>
@@ -4259,7 +4259,7 @@
 <p>journalctl 默认会使用 pager（换句话说，<code>less</code>）显示日志，当然也可以后面接个 <code>| grep ...</code> 来过滤日志。
 此外，如果使用了用户服务（user service），那么检查用户服务的状态或者日志时，需要加上 <code>--user</code> 参数。</p>
 <div class="admonition comment" id="journald-complaint">
-<p class="admonition-title">@taoky: journald 的一点吐槽<a class="headerlink" href="#journald-complaint" title="Permanent link">&para;</a></p>
+<p class="admonition-title">@taoky: journald 的一点吐槽&#8288;<a class="headerlink" href="#journald-complaint" title="Permanent link">&para;</a></p>
 <p>首先……journald 看日志太慢了，日志很多的话实在是慢。而且 <code>systemctl status xxx.service</code> 因为要显示最近几条日志，也跟着慢——在 mirrors 服务器上甚至要一分多钟才能显示出服务状态。关于这个问题，可以阅读以下讨论:</p>
 <ul>
 <li><a href="https://github.com/systemd/systemd/issues/2460">https://github.com/systemd/systemd/issues/2460</a></li>
@@ -4275,7 +4275,7 @@
 <p>logrotate 会定期（一般是每天，或者文件足够大的时候，请参考 <code>/etc/logrotate*</code> 对应的配置）「轮转」（rotate）日志文件：
 这是一个将旧日志压缩，更旧的日志删除的过程。为了分析被压缩过的历史日志，可以使用对应压缩软件提供的工具，例如 <code>gz</code> 格式对应 <code>zcat</code>/<code>zgrep</code>，<code>xz</code> 格式对应 <code>xzcat</code>/<code>xzgrep</code>，<code>zst</code> 格式对应 <code>zstdcat</code>/<code>zstdgrep</code> 等等。</p>
 <div class="admonition tip" id="find-source-of-log-message">
-<p class="admonition-title">某段日志/错误信息是从哪个程序的源代码中的哪里输出的？<a class="headerlink" href="#find-source-of-log-message" title="Permanent link">&para;</a></p>
+<p class="admonition-title">某段日志/错误信息是从哪个程序的源代码中的哪里输出的？&#8288;<a class="headerlink" href="#find-source-of-log-message" title="Permanent link">&para;</a></p>
 <p>在排查问题时，有时候会需要去搞清楚是什么东西在哪里输出了我们看到的错误信息。此时可以考虑使用代码搜索网站，最常见的选择有：</p>
 <ul>
 <li>GitHub 代码搜索（需要登录），直接在搜索框输入即可。</li>
@@ -4293,22 +4293,22 @@ pstore 支持多种存储后端，包括一小段专门划分的内存区域（�
 默认情况下，Linux 会在 <code>/sys/fs/pstore</code> 的位置挂载 pstore 文件系统，管理员可以通过此目录查看 pstore 中存储的日志。
 pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 <code>/sys/module/pstore/parameters/backend</code> 的内容确认当前 pstore 选用的存储后端。</p>
 <div class="admonition tip" id="acpi-erst">
-<p class="admonition-title">ACPI ERST<a class="headerlink" href="#acpi-erst" title="Permanent link">&para;</a></p>
+<p class="admonition-title">ACPI ERST&#8288;<a class="headerlink" href="#acpi-erst" title="Permanent link">&para;</a></p>
 <p>可以使用以下命令验证硬件是否支持 ACPI ERST：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ls<span class="w"> </span>/sys/firmware/acpi/tables/<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>ERST
 </code></pre></div>
 </div>
 <div class="admonition note" id="uefi-variable-storage">
-<p class="admonition-title">UEFI 变量存储可能不会被默认启用<a class="headerlink" href="#uefi-variable-storage" title="Permanent link">&para;</a></p>
+<p class="admonition-title">UEFI 变量存储可能不会被默认启用&#8288;<a class="headerlink" href="#uefi-variable-storage" title="Permanent link">&para;</a></p>
 <p>UEFI 变量存储区域的空间是有限的，并且非常不幸的是，UEFI 固件的编写者不少都没有恰当处理<strong>变量存储区域被写满</strong>的情况。这意味着，一旦这种情况发生，那么<strong>系统就可能变砖，无法正常启动</strong>。因此内核提供了 <code>CONFIG_EFI_VARS_PSTORE_DEFAULT_DISABLE</code> 选项，如果它被启用，那么内核就不会默认使用 UEFI 变量存储区域作为 pstore 的存储后端。</p>
 <p>视内核与发行版配置，可以使用 <code>zcat /proc/config.gz | grep PSTORE</code> 或 <code>cat /boot/config-$(uname -r) | grep PSTORE</code> 来检查当前内核是否启用了 pstore 以及相关配置情况。</p>
 </div>
 <div class="admonition note" id="ramoops-data-retention">
-<p class="admonition-title">ramoops 能够保留数据吗？<a class="headerlink" href="#ramoops-data-retention" title="Permanent link">&para;</a></p>
+<p class="admonition-title">ramoops 能够保留数据吗？&#8288;<a class="headerlink" href="#ramoops-data-retention" title="Permanent link">&para;</a></p>
 <p>pstore 的 ramoops 后端无法突破物理规律——如果机器断电重启了，那么（易失性）内存里的数据就自然没了。在不断电重启的情况下，内存是否会被清空取决于硬件实现。</p>
 </div>
 <div class="admonition tip" id="kdump">
-<p class="admonition-title">kdump<a class="headerlink" href="#kdump" title="Permanent link">&para;</a></p>
+<p class="admonition-title">kdump&#8288;<a class="headerlink" href="#kdump" title="Permanent link">&para;</a></p>
 <p>如果无法使用 pstore，kdump 机制也可以作为替代方案。kdump 需要在启动时占用一块内存空间存储备用内核等信息。在 kernel panic 时，kernel 会 kexec 到备用内核上，备用内核此时就可以获取到内核的 coredump、dmesg 等信息。Debian 可以使用上文提到的 <code>kdump-tools</code> 包来配置 kdump。</p>
 </div>
 <p>然而，pstore 的容量是有限的，因此 <strong>systemd-pstore</strong> 服务会在启动时自动将 pstore 的内容归档至 <code>/var/lib/systemd/pstore</code>，以便腾出空间，同时保留记录供管理员查阅。
@@ -4323,7 +4323,7 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 <code>/s
 <li><code>stack</code>：程序在内核态的栈信息，这一项信息在程序一直处于 D 状态（不可中断睡眠）时特别有用</li>
 </ul>
 <div class="admonition tip" id="lsof">
-<p class="admonition-title"><code>lsof</code><a class="headerlink" href="#lsof" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>lsof</code>&#8288;<a class="headerlink" href="#lsof" title="Permanent link">&para;</a></p>
 <p>lsof 工具可以遍历 procfs 上各个进程的 <code>fd</code> 目录，并输出进程打开的文件信息。以下命令可以快速地输出当前系统全部相关的信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>lsof<span class="w"> </span>-Ki<span class="w"> </span>-n
 </code></pre></div>
@@ -4339,11 +4339,11 @@ pstore 模块本身的参数也通过 sysfs 暴露，例如可以通过 <code>/s
 <li><code>strace -k -yy -e mmap ls</code>: 跟踪 <code>ls</code> 的 <code>mmap</code> 系统调用，并打印出执行此系统调用时的堆栈（<code>-k</code>），同时解码所有文件描述符（<code>-yy</code>）。这样即可追踪到每个被 <code>mmap</code> 的文件在程序的何处被引入。</li>
 </ul>
 <div class="admonition tip" id="sysinternals-procmon">
-<p class="admonition-title">Sysinternals' Procmon<a class="headerlink" href="#sysinternals-procmon" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Sysinternals' Procmon&#8288;<a class="headerlink" href="#sysinternals-procmon" title="Permanent link">&para;</a></p>
 <p>Windows 系统上的类似工具是 Sysinternals 的 <a href="https://docs.microsoft.com/en-us/sysinternals/downloads/procmon">Procmon</a>，可以查看所有进程对文件系统、注册表等的操作。有趣的是，Sysinternals 在多年前也推出了 Procmon 的 <a href="https://github.com/Sysinternals/ProcMon-for-Linux">Linux 版本</a>，使用了 eBPF 技术实现（详见下文）。同样的功能（查看全系统的系统调用情况）也可以使用 <code>perf trace</code> 实现。</p>
 </div>
 <div class="admonition example" id="centos-7-yum-bug-case">
-<p class="admonition-title">案例：CentOS 7 容器使用 <code>yum</code> 安装软件的 bug<a class="headerlink" href="#centos-7-yum-bug-case" title="Permanent link">&para;</a></p>
+<p class="admonition-title">案例：CentOS 7 容器使用 <code>yum</code> 安装软件的 bug&#8288;<a class="headerlink" href="#centos-7-yum-bug-case" title="Permanent link">&para;</a></p>
 <p>在某些配置下，可以注意到 <code>centos:7</code> 容器中使用 <code>yum</code> 安装软件时会卡住：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>centos:7<span class="w"> </span>bash
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp">[root@16c7cc5f835d /]# </span>yum<span class="w"> </span>update
@@ -4427,7 +4427,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </code></pre></div>
 <p>在进入调试环境后，使用 <code>bt</code> 命令可以查看当前线程的调用栈。在调试符号配置正确的情况下，至少大部分的信息都能被显示出来（而不是一堆 <code>???</code>）。</p>
 <details class="example" id="coredump-call-stack-example">
-<summary>一个 coredump 的调用栈例子<a class="headerlink" href="#coredump-call-stack-example" title="Permanent link">&para;</a></summary>
+<summary>一个 coredump 的调用栈例子&#8288;<a class="headerlink" href="#coredump-call-stack-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">&gt;&gt;&gt; bt</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp">#</span><span class="m">0</span><span class="w">  </span>g_type_check_instance_cast
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="go">    (type_instance=type_instance@entry=0x60166e80e040, iface_type=0x60166aa86e20 [GtkWidget/GInitiallyUnowned])</span>
@@ -4507,7 +4507,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <li><code>print xxx</code>：打印变量的值，参数支持表达式（需要对 C 的指针与类型系统有一定的了解）</li>
 </ul>
 <div class="admonition note" id="debian-ubuntu-debug-symbols-no-source">
-<p class="admonition-title">Debian/Ubuntu 的调试符号不包含源代码文件<a class="headerlink" href="#debian-ubuntu-debug-symbols-no-source" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Debian/Ubuntu 的调试符号不包含源代码文件&#8288;<a class="headerlink" href="#debian-ubuntu-debug-symbols-no-source" title="Permanent link">&para;</a></p>
 <p>在安装调试符号后，如果你尝试在 gdb 中使用 <code>l</code> 命令查看源码，可能会发现无法显示。以下以 coreutils 的 <code>yes</code> 程序为例：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp gp-VirtualEnv">(gdb)</span> <span class="go">b main</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">Breakpoint 1 at 0x2330: file src/yes.c, line 62.</span>
@@ -4538,7 +4538,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </code></pre></div>
 </div>
 <div class="admonition tip" id="kernel-backtrace-source-location">
-<p class="admonition-title">了解内核 backtrace 对应源代码文件与行号<a class="headerlink" href="#kernel-backtrace-source-location" title="Permanent link">&para;</a></p>
+<p class="admonition-title">了解内核 backtrace 对应源代码文件与行号&#8288;<a class="headerlink" href="#kernel-backtrace-source-location" title="Permanent link">&para;</a></p>
 <p>在调试与内核有关的问题时，经常需要判断内核输出的 backtrace 信息里每个函数的具体位置。例如以下是由 SysRq 的 <code>l</code> 命令触发的向 dmesg 输出所有活跃核心当前栈的信息：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="m">[  243.860496] </span><span class="k">sysrq:</span> Show backtrace of all active CPUs
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="m">[  243.860505] </span>NMI backtrace for cpu 0
@@ -4574,7 +4574,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>可以结合 <code>apt source</code> 获取到的有 Debian 补丁的内核源代码查看。</p>
 </div>
 <div class="admonition tip" id="live-kernel-debugging">
-<p class="admonition-title">使用 <code>crash</code> 或 <code>drgn</code> 调试正在运行的内核<a class="headerlink" href="#live-kernel-debugging" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 <code>crash</code> 或 <code>drgn</code> 调试正在运行的内核&#8288;<a class="headerlink" href="#live-kernel-debugging" title="Permanent link">&para;</a></p>
 <p>Linux 内核将自己的内存信息以 <code>/proc/kcore</code> 文件的形式暴露出来，这是一个 ELF 程序文件，应用可以以此获取内核全貌，而不干扰内核运行。<a href="https://github.com/crash-utility/crash/">crash</a> 和 <a href="https://github.com/osandov/drgn">drgn</a> 就是此类工具，在安装了内核的调试符号后即可使用。crash 提供了类似 gdb 的调试功能：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="go">crash&gt; bt 1</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="go">PID: 1        TASK: ffff8a88c124e000  CPU: 1    COMMAND: "systemd"</span>
@@ -4644,7 +4644,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <h4 id="curl">curl<a class="headerlink" href="#curl" title="Permanent link">&para;</a></h4>
 <p>具体的服务一般也有对应的测试工具，例如对 HTTP(S) 类服务可以使用 <code>curl</code> 测试。添加 <code>-v</code> 参数可以查看详细的请求与响应信息，而添加 <code>-I</code> 参数可以发送 HEAD 请求，避免终端输出过多的内容。与 <code>ping</code> 类似，<code>-4</code> 与 <code>-6</code> 参数可以指定使用 IPv4 或者 IPv6。</p>
 <details class="example" id="curl-head-verbose-output">
-<summary><code>curl -I -v</code> 样例输出<a class="headerlink" href="#curl-head-verbose-output" title="Permanent link">&para;</a></summary>
+<summary><code>curl -I -v</code> 样例输出&#8288;<a class="headerlink" href="#curl-head-verbose-output" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>curl<span class="w"> </span>-I<span class="w"> </span>-v<span class="w"> </span>https://www.example.com
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">* Host www.example.com:443 was resolved.</span>
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="go">* IPv6: 2600:1417:4400:24::17d2:7b3, 2600:1417:4400:24::17d2:7a6</span>
@@ -4733,7 +4733,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <h4 id="mtr">mtr<a class="headerlink" href="#mtr" title="Permanent link">&para;</a></h4>
 <p>对于特定的主机无法连接的问题，我们很多时候会希望知道自己的包在哪一跳丢失了。<code>mtr</code> 命令可以看作是 <code>ping</code> 和 <code>traceroute</code> 的结合体，既可以显示每一跳的延迟，也可以显示丢包率。</p>
 <div class="admonition tip" id="mtr-tiny">
-<p class="admonition-title">mtr-tiny<a class="headerlink" href="#mtr-tiny" title="Permanent link">&para;</a></p>
+<p class="admonition-title">mtr-tiny&#8288;<a class="headerlink" href="#mtr-tiny" title="Permanent link">&para;</a></p>
 <p>Debian 下的 <code>mtr</code> 包会包含图形界面程序，在服务器上建议安装 <code>mtr-tiny</code> 包。</p>
 </div>
 <p>直接使用 <code>mtr &lt;地址&gt;</code> 即可进入交互式界面查看每一跳的情况。如果需要分享给其他人，可以考虑使用 <code>--report</code>（<code>-r</code>）参数进入非交互式的报告模式，使用 <code>-c</code> 设置轮数，类似如下：</p>
@@ -4755,7 +4755,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>这里系统默认的 DNS 服务器指 <code>/etc/resolv.conf</code> 中的配置的 <code>nameserver</code>，在一部分系统上，<code>nameserver</code> 会是 127.0.0.53，代表其启用了 <code>systemd-resolved</code> 作为本地的 DNS 服务器，此时需要使用 <code>resolvectl</code> 命令查看实际的 DNS 配置。</p>
 <p>可以阅读<a href="../network-service/dns/">网络服务实践的 DNS 部分</a>了解更多信息。</p>
 <div class="admonition tip" id="libc-dns-resolution">
-<p class="admonition-title">C 运行时库与 DNS 解析<a class="headerlink" href="#libc-dns-resolution" title="Permanent link">&para;</a></p>
+<p class="admonition-title">C 运行时库与 DNS 解析&#8288;<a class="headerlink" href="#libc-dns-resolution" title="Permanent link">&para;</a></p>
 <p>许多程序会直接使用系统 C 运行时库的 <a href="https://man7.org/linux/man-pages/man3/getaddrinfo.3.html"><code>getaddrinfo()</code></a> 等函数获取 DNS 解析的结果。但是 <code>dig</code> 不会。这可能导致 <code>dig</code> 运行无误，但是使用 C 运行时库的程序因为其他原因无法正常解析的情况。</p>
 <p>可以使用 <code>getent hosts www.example.com</code> 命令来测试 C 运行时库的 DNS 解析情况。在 glibc 下，该命令会根据 <code>/etc/nsswitch.conf</code> 调用对应的 NSS 模块。详情可参考 <a href="../network-service/dns/#nss">DNS 部分对 NSS 的介绍</a>。</p>
 </div>
@@ -4836,7 +4836,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </code></pre></div>
 <p><code>-n</code> 参数用于让 tcpdump 不要去解析主机名，因为解析主机名需要发送额外的 DNS 请求，这在很多情况下都是非预期的，并且会影响抓包性能。例子里面的 <code>host 8.8.8.8</code> 部分为 pcap 表达式，详情可阅读 <a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">pcap-filter(7)</a>。</p>
 <div class="admonition question" id="pcap-filter-expressions">
-<p class="admonition-title">编写 pcap 表达式<a class="headerlink" href="#pcap-filter-expressions" title="Permanent link">&para;</a></p>
+<p class="admonition-title">编写 pcap 表达式&#8288;<a class="headerlink" href="#pcap-filter-expressions" title="Permanent link">&para;</a></p>
 <p>尝试编写满足以下要求的表达式，并用 <code>tcpdump</code> 测试：</p>
 <ul>
 <li>系统发送和接收的所有 DNS（TCP &amp; UDP 53）协议包<ul>
@@ -4854,11 +4854,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <li><code>tcp.port = 1234</code>：过滤 TCP 端口为 1234 的所有包</li>
 </ul>
 <div class="admonition question" id="wireshark-display-filters">
-<p class="admonition-title">编写 Wireshark 表达式<a class="headerlink" href="#wireshark-display-filters" title="Permanent link">&para;</a></p>
+<p class="admonition-title">编写 Wireshark 表达式&#8288;<a class="headerlink" href="#wireshark-display-filters" title="Permanent link">&para;</a></p>
 <p>请在 Wireshark 中编写满足和上一个问题相同的过滤表达式，并测试。</p>
 </div>
 <div class="admonition tip" id="tls-packet-capture">
-<p class="admonition-title">TLS 抓包<a class="headerlink" href="#tls-packet-capture" title="Permanent link">&para;</a></p>
+<p class="admonition-title">TLS 抓包&#8288;<a class="headerlink" href="#tls-packet-capture" title="Permanent link">&para;</a></p>
 <p>TLS（如 HTTPS 等）是加密的，这意味着抓包只能够看到连接双方之间发送了一些 TLS 数据包（如果是 HTTPS，可能还能看到证书和明文的目标域名，即 SNI），但是无法看到具体的请求与响应内容。但是有些时候，我们需要抓包了解内容，分析问题。</p>
 <p>最常用的方法是在启动建立 TLS 连接的程序时添加 <code>SSLKEYLOGFILE</code> 环境变量：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="nv">SSLKEYLOGFILE</span><span class="o">=</span>test.log<span class="w"> </span>curl<span class="w"> </span>--http1.1<span class="w"> </span>https://www.example.com
@@ -4868,7 +4868,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p><a href="#ebpf">bcc</a> 提供的 <code>sslsniff</code> 工具、<a href="https://github.com/gojue/ecapture">eCapture</a> 工具则通过 eBPF 的方式实现了查看加密内容的功能。</p>
 </div>
 <div class="admonition note" id="http-https-capture-tools">
-<p class="admonition-title">HTTP/HTTPS 抓包工具<a class="headerlink" href="#http-https-capture-tools" title="Permanent link">&para;</a></p>
+<p class="admonition-title">HTTP/HTTPS 抓包工具&#8288;<a class="headerlink" href="#http-https-capture-tools" title="Permanent link">&para;</a></p>
 <p>如 Burp Suite、Fiddler 等工具专门设计为 HTTP/HTTPS 抓包工具，以方便开发者调试。它们的工作原理是在本机运行一个代理服务器，在设置浏览器或应用使用这个代理服务器后，这些工具就可以获取 HTTP 请求与响应内容。如果安装它们提供的根证书，还可以解密 HTTPS 的内容。</p>
 </div>
 <h2 id="performance-analysis">性能问题分析<a class="headerlink" href="#performance-analysis" title="Permanent link">&para;</a></h2>
@@ -4880,7 +4880,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p class="caption">火焰图示例。点击图片可以查看完整的 SVG 文件。</p>
 <p>火焰图按照函数调用栈的方式竖向展示程序的执行情况，底部是调用栈的最外层，每个条的宽度代表对应的函数执行的 CPU 比例。于是，越宽的条就代表了对应的函数（以及其调用的函数）占用的 CPU 时间越多。可以点击感兴趣的函数来「专注」于这个函数内部的调用栈。</p>
 <div class="admonition note" id="why-analyze-hotspots">
-<p class="admonition-title">为什么要分析「热点」？<a class="headerlink" href="#why-analyze-hotspots" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么要分析「热点」？&#8288;<a class="headerlink" href="#why-analyze-hotspots" title="Permanent link">&para;</a></p>
 <p>阿姆达尔定律（Amdahl's Law）指出，如果某个部分的执行时间占总体的比重大，那么优化这个部分（热点）就能显著提升整体性能；相反，如果某部分所占的时间比例很小，即使优化得再多，对整体性能提升也十分有限。</p>
 <p>例如，如果某个程序的 90% 时间都花在了函数 A 上，那么对函数 A 的优化，即使只提升 10% 的性能，也能让整体性能提升 9.9%；但如果函数 B 只占用了 1% 的时间，即使让函数 B 提升了 99% 的性能，整体性能也只能提升不到 1%。</p>
 </div>
@@ -4894,11 +4894,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </code></pre></div>
 <p>其中 <code>-F</code> 指定了采样频率为 499 Hz，<code>-g</code> 代表采样函数调用栈，<code>--call-graph</code> 参数指定了调用栈的采样方式。</p>
 <div class="admonition note" id="non-round-sampling-frequency">
-<p class="admonition-title">为什么采样频率不使用整百的数字？<a class="headerlink" href="#non-round-sampling-frequency" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么采样频率不使用整百的数字？&#8288;<a class="headerlink" href="#non-round-sampling-frequency" title="Permanent link">&para;</a></p>
 <p>以上内容中采样频率设置为了 499 Hz。如果阅读别的教程，可以发现不少也会设置为 99 Hz。避开 500 或者 100 的原因是，某些事件可能会恰好间隔 10ms（100 Hz）或者 2ms（500 Hz）发生，如果采样频率与这些事件的周期刚好匹配，就会导致结果出现偏差。设置为恰好整百减一可以最大程度避免这种情况。</p>
 </div>
 <div class="admonition tip" id="profiling-sampling-methods">
-<p class="admonition-title">采样方式<a class="headerlink" href="#profiling-sampling-methods" title="Permanent link">&para;</a></p>
+<p class="admonition-title">采样方式&#8288;<a class="headerlink" href="#profiling-sampling-methods" title="Permanent link">&para;</a></p>
 <p><code>perf</code> 支持三种采样方式：</p>
 <ul>
 <li>
@@ -4918,7 +4918,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a>FlameGraph/flamegraph.pl<span class="w"> </span>out.folded<span class="w"> </span>&gt;<span class="w"> </span>out.svg
 </code></pre></div>
 <div class="admonition tip" id="include-pid-in-output">
-<p class="admonition-title">包含 PID 的输出信息<a class="headerlink" href="#include-pid-in-output" title="Permanent link">&para;</a></p>
+<p class="admonition-title">包含 PID 的输出信息&#8288;<a class="headerlink" href="#include-pid-in-output" title="Permanent link">&para;</a></p>
 <p>有些情况下，我们会希望火焰图输出中能够区分相同程序、不同进程的情况。此时需要在 <code>perf script</code> 时让它在输出中添加 PID 和 TID 信息，<code>stackcollapse-perf.pl</code> 脚本才能正常提取：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>perf<span class="w"> </span>script<span class="w"> </span>-F<span class="w"> </span>comm,pid,tid,time,event,ip,sym,dso<span class="w"> </span>&gt;<span class="w"> </span>out.perf
 <a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a>FlameGraph/stackcollapse-perf.pl<span class="w"> </span>--pid<span class="w"> </span>out.perf<span class="w"> </span>&gt;<span class="w"> </span>out.folded
@@ -4926,11 +4926,11 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <p>相关内容可参考 <code>stackcollapse-perf.pl</code> 脚本的帮助。</p>
 </div>
 <div class="admonition tip" id="perf-report">
-<p class="admonition-title"><code>perf report</code><a class="headerlink" href="#perf-report" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>perf report</code>&#8288;<a class="headerlink" href="#perf-report" title="Permanent link">&para;</a></p>
 <p><code>perf.data</code> 文件也可以使用 TUI 的 <code>perf report</code> 命令查看。<code>perf report</code> 的 annotate 功能可以展示函数内部汇编以及对应的代码（如果有调试信息）采样得到的时间占比。</p>
 </div>
 <div class="admonition note" id="off-cpu-profiling">
-<p class="admonition-title">Off-CPU<a class="headerlink" href="#off-cpu-profiling" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Off-CPU&#8288;<a class="headerlink" href="#off-cpu-profiling" title="Permanent link">&para;</a></p>
 <p>以上 <code>perf record</code> 的方式会在程序使用 CPU 时（on-CPU）定时获取程序的调用栈信息，但是程序不会总是占着 CPU——在睡眠、等待 IO 等情况下，内核调度器可能会把程序从 CPU 上调度下来，程序不会在 CPU 上运行。但是在一些场合下，这一段 off-CPU 的时间也有做 profiling 的需求。有以下几种方法：</p>
 <ul>
 <li>使用 <code>perf record</code> 对 <code>sched:sched_stat_sleep</code>、<code>sched:sched_switch</code>、<code>sched:sched_process_exit</code> 等调度事件跟踪。这种方式比较麻烦并且开销较高，可参考 <a href="https://www.brendangregg.com/blog/2015-02-26/linux-perf-off-cpu-flame-graph.html">Linux perf_events Off-CPU Time Flame Graph</a>。</li>
@@ -4940,7 +4940,7 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 </div>
 <p>注意，这种方式不适用于解释型与 JIT 类的语言，因为这一类语言的函数调用栈难以直接通过解释器/运行时的调用栈获取，需要使用各个语言的专用工具处理。</p>
 <div class="admonition comment" id="quick-flamegraph-generation">
-<p class="admonition-title">@taoky: 快速生成火焰图<a class="headerlink" href="#quick-flamegraph-generation" title="Permanent link">&para;</a></p>
+<p class="admonition-title">@taoky: 快速生成火焰图&#8288;<a class="headerlink" href="#quick-flamegraph-generation" title="Permanent link">&para;</a></p>
 <p>我还是觉得每次都要写这么多命令有点麻烦，所以我自己一般直接用 <a href="https://github.com/flamegraph-rs/flamegraph">flamegraph-rs/flamegraph</a>，于是直接这样就可以生成了：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>flamegraph<span class="w"> </span>-p<span class="w"> </span><span class="m">12345</span>
 </code></pre></div>
@@ -5123,13 +5123,13 @@ coredump 中包含了程序的内存信息，通过解析 coredump，我们可�
 <a id="__codelineno-50-2" name="__codelineno-50-2" href="#__codelineno-50-2"></a><span class="go">0000000000001220 T _Z7exampleii</span>
 </code></pre></div>
 <div class="admonition note" id="symbol-name-mangling">
-<p class="admonition-title">符号的名称修饰（Name mangling）<a class="headerlink" href="#symbol-name-mangling" title="Permanent link">&para;</a></p>
+<p class="admonition-title">符号的名称修饰（Name mangling）&#8288;<a class="headerlink" href="#symbol-name-mangling" title="Permanent link">&para;</a></p>
 <p>可以注意到，上面的符号名不是 <code>example</code>，而是 <code>_Z7exampleii</code>。
 C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名称，以便支持函数重载等特性。
 这里的名字经过 demangle 之后就是 <code>example(int, int)</code>。</p>
 </div>
 <div class="admonition tip" id="nm-symbol-inspection">
-<p class="admonition-title"><code>nm</code><a class="headerlink" href="#nm-symbol-inspection" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>nm</code>&#8288;<a class="headerlink" href="#nm-symbol-inspection" title="Permanent link">&para;</a></p>
 <p><code>nm</code> 是一个用于查看二进制文件中符号的工具，可以用于查看函数、变量等的地址。
 如果不加参数，那么其会列出文件中的静态符号（例如全局变量、函数等）。
 对于动态链接库（<code>.so</code> 文件），可以使用 <code>nm -D</code> 来查看其暴露给应用的动态符号。</p>
@@ -5144,14 +5144,14 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 <a id="__codelineno-51-7" name="__codelineno-51-7" href="#__codelineno-51-7"></a><span class="go">example(1023, 1024)</span>
 </code></pre></div>
 <div class="admonition note" id="compiler-optimization-effects">
-<p class="admonition-title">编译器优化<a class="headerlink" href="#compiler-optimization-effects" title="Permanent link">&para;</a></p>
+<p class="admonition-title">编译器优化&#8288;<a class="headerlink" href="#compiler-optimization-effects" title="Permanent link">&para;</a></p>
 <p>如果上面的例子使用 <code>-O2</code>，那么你可能会发现这里的 bpftrace 没有输出任何内容。
 这是因为编译器进行了内联优化，将 <code>example()</code> 函数内联到了 <code>main()</code> 函数中，省去了函数调用的开销。
 既然没有函数调用，那么也就没有 uprobe 可以追踪的地方。</p>
 <p>可以使用 <code>objdump -d</code> 来查看编译后的汇编代码，以确认是否发生了内联优化。</p>
 </div>
 <div class="admonition lab" id="uprobes-in-containers">
-<p class="admonition-title">使用 uprobe 追踪容器中的程序<a class="headerlink" href="#uprobes-in-containers" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 uprobe 追踪容器中的程序&#8288;<a class="headerlink" href="#uprobes-in-containers" title="Permanent link">&para;</a></p>
 <p>在容器中编译并运行下面的程序：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
 <a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;random&gt;</span>
@@ -5182,7 +5182,7 @@ C++ 以及其他某些语言（例如 Rust）会在编译期修改函数的名�
 <li><a href="https://github.com/bpftrace/bpftrace/blob/master/man/adoc/bpftrace.adoc">bpftrace(8) Manual Page</a></li>
 </ul>
 <div class="admonition lab" id="ebpf-programming-lab">
-<p class="admonition-title">eBPF 程序编写实验<a class="headerlink" href="#ebpf-programming-lab" title="Permanent link">&para;</a></p>
+<p class="admonition-title">eBPF 程序编写实验&#8288;<a class="headerlink" href="#ebpf-programming-lab" title="Permanent link">&para;</a></p>
 <p>尝试使用 bpftrace 或 bcc 完成以下任务：</p>
 <ul>
 <li>对整个系统的程序做监测，当程序退出时，输出程序的运行时间（Wall time）。<ul>

@@ -3331,44 +3331,44 @@
 <p>Nmap（Network Mapper）是开源的网络探测和安全检查工具。其主要功能包括主机发现、端口扫描、服务版本探测、操作系统检测、脚本扫描等。不管是在红方（攻击方）还是蓝方（防御方）的工作中，Nmap 都是一个非常有用的工具。</p>
 <p>以下介绍 Nmap 的常用功能。</p>
 <div class="admonition danger" id="do-not-perform-unauthorized-scanning">
-<p class="admonition-title">请勿进行未经授权的扫描操作<a class="headerlink" href="#do-not-perform-unauthorized-scanning" title="Permanent link">&para;</a></p>
+<p class="admonition-title">请勿进行未经授权的扫描操作&#8288;<a class="headerlink" href="#do-not-perform-unauthorized-scanning" title="Permanent link">&para;</a></p>
 <p>再次重复：<strong>扫描器本身是中性的工具，既可以帮助系统管理员检查已有的系统的问题，也可以帮助攻击者快速发现已有的安全漏洞。请仅在得到授权的前提下使用这类工具，否则可能会有严重的法律风险。</strong></p>
 </div>
 <div class="admonition tip" id="gui-version">
-<p class="admonition-title">GUI 版本<a class="headerlink" href="#gui-version" title="Permanent link">&para;</a></p>
+<p class="admonition-title">GUI 版本&#8288;<a class="headerlink" href="#gui-version" title="Permanent link">&para;</a></p>
 <p>如果你不喜欢命令行，可以使用 Zenmap，它提供了相对用户友好的界面来运行 Nmap。</p>
 </div>
 <h2 id="basic-scanning">基本扫描<a class="headerlink" href="#basic-scanning" title="Permanent link">&para;</a></h2>
 <p>对系统管理员，Nmap 的一个重要用途是搞清楚自己管理的网络中的资产情况。Nmap 可以扫描指定网段中存活（在线）的主机与开放的端口。</p>
 <p>以下假设网络段为 192.168.1.0/24。</p>
 <div class="admonition tip" id="where-is-the-scan-at">
-<p class="admonition-title">扫描到哪里了？<a class="headerlink" href="#where-is-the-scan-at" title="Permanent link">&para;</a></p>
+<p class="admonition-title">扫描到哪里了？&#8288;<a class="headerlink" href="#where-is-the-scan-at" title="Permanent link">&para;</a></p>
 <p>在扫描中按下任意键可以显示进度。</p>
 </div>
 <h3 id="alive-detection">存活检测<a class="headerlink" href="#alive-detection" title="Permanent link">&para;</a></h3>
 <p>Nmap 的 <code>-sn</code> 选项会关闭端口扫描，只进行存活检测。<code>-sn</code> 选项会发送 ICMP Echo（ping）、TCP SYN 到 443（HTTPS）端口和 TCP ACK 到 80（HTTP）端口，以及发送 ICMP Timestamp 请求来检测主机是否在线。</p>
 <div class="admonition note" id="why-tcp-syn-to-443-but-tcp-ack-to-80">
-<p class="admonition-title">为什么 TCP SYN 到 443，但是 TCP ACK 到 80？<a class="headerlink" href="#why-tcp-syn-to-443-but-tcp-ack-to-80" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么 TCP SYN 到 443，但是 TCP ACK 到 80？&#8288;<a class="headerlink" href="#why-tcp-syn-to-443-but-tcp-ack-to-80" title="Permanent link">&para;</a></p>
 <p>很多防火墙会配置直接丢弃对非公开服务端口的 TCP SYN 请求包，但是不是所有防火墙都会丢弃 TCP ACK 请求包，特别是对应防火墙没有记录 TCP 连接状态的情况下。因此采取不同的 TCP 包探测方式可以提高存活检测的成功率。</p>
 </div>
 <div class="admonition note" id="icmp-timestamp">
-<p class="admonition-title">ICMP Timestamp<a class="headerlink" href="#icmp-timestamp" title="Permanent link">&para;</a></p>
+<p class="admonition-title">ICMP Timestamp&#8288;<a class="headerlink" href="#icmp-timestamp" title="Permanent link">&para;</a></p>
 <p>ICMP Timestamp 请求是一个较少使用的 ICMP 类型，用来获取目标主机的时间信息。部分现代操作系统默认不响应此请求。</p>
 <p>可以使用 Nmap 提供的 <code>nping</code> 工具测试：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>nping<span class="w"> </span>--icmp<span class="w"> </span>--icmp-type<span class="w"> </span>timestamp<span class="w"> </span><span class="m">192</span>.168.1.2
 </code></pre></div>
 </div>
 <div class="admonition tip" id="run-as-root">
-<p class="admonition-title">使用 root 执行<a class="headerlink" href="#run-as-root" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 root 执行&#8288;<a class="headerlink" href="#run-as-root" title="Permanent link">&para;</a></p>
 <p>由于发送 ICMP 包需要特权（创建 raw socket），如果希望 Nmap 把所有的扫描方法都用上，建议采用 <code>sudo</code> 执行 Nmap。此外，只发送 TCP SYN、TCP ACK 也需要特权，如果以普通用户运行，Nmap 会使用 <code>connect()</code> 系统调用来检测存活主机，因此只发送 TCP ACK 在这种条件下无法实现。</p>
 <p>如果扫描的是本地网络并且是 root，Nmap 还会尝试使用 ARP 请求来检测存活主机。</p>
 </div>
 <div class="admonition tip" id="disable-dns-resolution">
-<p class="admonition-title">关闭 DNS 解析<a class="headerlink" href="#disable-dns-resolution" title="Permanent link">&para;</a></p>
+<p class="admonition-title">关闭 DNS 解析&#8288;<a class="headerlink" href="#disable-dns-resolution" title="Permanent link">&para;</a></p>
 <p>Nmap 默认会尝试从 IP 地址使用 DNS 解析主机名，这很多时候是没有必要的，而且会占用大量时间。可以使用 <code>-n</code> 选项关闭 DNS 解析。</p>
 </div>
 <div class="admonition tip" id="reduce-wait-time">
-<p class="admonition-title">减小等待时间<a class="headerlink" href="#reduce-wait-time" title="Permanent link">&para;</a></p>
+<p class="admonition-title">减小等待时间&#8288;<a class="headerlink" href="#reduce-wait-time" title="Permanent link">&para;</a></p>
 <p>Nmap 的 <code>-T</code> 参数会控制操作的时间间隔，默认是 <code>-T3</code>。如果网络情况好，可以使用 <code>-T4</code> 或 <code>-T5</code> 来加快扫描速度。</p>
 </div>
 <p>可以使用 <code>-P</code> 系列参数限制存活检测的方式（默认行为相当于 <code>-PE -PS443 -PA80 -PP</code>），例如只允许进行 ICMP Echo 请求（在权限不足的情况下，Nmap 会自动降级到使用 TCP）：</p>
@@ -3378,11 +3378,11 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>nmap<span class="w"> </span>-n<span class="w"> </span>-sn<span class="w"> </span>-PS443<span class="w"> </span><span class="m">192</span>.168.1.0/24
 </code></pre></div>
 <div class="admonition tip" id="skip-some-hosts">
-<p class="admonition-title">跳过某些主机<a class="headerlink" href="#skip-some-hosts" title="Permanent link">&para;</a></p>
+<p class="admonition-title">跳过某些主机&#8288;<a class="headerlink" href="#skip-some-hosts" title="Permanent link">&para;</a></p>
 <p>如果你想扫描整个网络，但需要跳过某些主机，可以使用 <code>--exclude</code> 选项。</p>
 </div>
 <div class="admonition question" id="first-day-work">
-<p class="admonition-title">第一天的工作<a class="headerlink" href="#first-day-work" title="Permanent link">&para;</a></p>
+<p class="admonition-title">第一天的工作&#8288;<a class="headerlink" href="#first-day-work" title="Permanent link">&para;</a></p>
 <p>假设你刚刚加入了一个新的团队，上一任的系统管理员没有留下任何文档。为了搞清楚有哪些机器，你需要做什么来获取你需要扫描的网段？</p>
 </div>
 <h3 id="port-scanning">端口扫描<a class="headerlink" href="#port-scanning" title="Permanent link">&para;</a></h3>
@@ -3394,11 +3394,11 @@
 </ul>
 <p>此外，Nmap 默认只会扫描最常用的 1000 种端口。<code>-p</code> 选项可以指定要扫描的端口（例如 <code>-p 12345</code>），或者端口范围（例如 <code>-p 1-1024</code>）。如果希望让 Nmap 扫描所有端口，可以使用 <code>-p-</code>。</p>
 <div class="admonition question" id="scan-specific-port-in-subnet">
-<p class="admonition-title">扫描网段内的指定端口<a class="headerlink" href="#scan-specific-port-in-subnet" title="Permanent link">&para;</a></p>
+<p class="admonition-title">扫描网段内的指定端口&#8288;<a class="headerlink" href="#scan-specific-port-in-subnet" title="Permanent link">&para;</a></p>
 <p>你想扫描整个网段内有哪些主机开放了 22 端口（SSH），应该怎么写参数？</p>
 </div>
 <div class="admonition tip" id="rustscan-and-masscan">
-<p class="admonition-title">rustscan 和 masscan<a class="headerlink" href="#rustscan-and-masscan" title="Permanent link">&para;</a></p>
+<p class="admonition-title">rustscan 和 masscan&#8288;<a class="headerlink" href="#rustscan-and-masscan" title="Permanent link">&para;</a></p>
 <p>在端口扫描领域，除了 Nmap 以外还有一些其他的工具。其中常用的包括：</p>
 <ul>
 <li><a href="https://github.com/bee-san/RustScan">rustscan</a>，其默认配置就能够非常快速扫描全部端口。</li>
@@ -3457,7 +3457,7 @@
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="go">Nmap done: 1 IP address (1 host up) scanned in 10.23 seconds</span>
 </code></pre></div>
 <div class="admonition tip" id="some-nse-script-examples">
-<p class="admonition-title">部分 NSE 脚本示例<a class="headerlink" href="#some-nse-script-examples" title="Permanent link">&para;</a></p>
+<p class="admonition-title">部分 NSE 脚本示例&#8288;<a class="headerlink" href="#some-nse-script-examples" title="Permanent link">&para;</a></p>
 <p>正如最开始所说的那样，Nmap 是一个中性的工具，其自带脚本集也是如此：一些脚本可以用于调试用途，另一些脚本则非常有攻击性。例如 <a href="https://nmap.org/nsedoc/scripts/broadcast-dhcp-discover.html"><code>broadcast-dhcp-discover</code></a> 脚本会广播发送 <code>DHCPDISCOVER</code>，输出得到的 <code>DHCPOFFER</code>，可以帮助系统管理员检查 DHCP 服务器是否存在问题；而 <a href="https://nmap.org/nsedoc/scripts/ssh-brute.html"><code>ssh-brute</code></a> 则会尝试暴力破解 SSH 密码。</p>
 <p>可以补充阅读 <a href="https://www.redhat.com/en/blog/nmap-scripting-engine">Red Hat Blog 的文章 <em>5 scripts for getting started with the Nmap Scripting Engine</em></a> 作为参考。</p>
 </div>

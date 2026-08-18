@@ -3388,7 +3388,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 </li>
 </ul>
 <div class="admonition question" id="no-useradd">
-<p class="admonition-title"><code>useradd</code> 呢？<a class="headerlink" href="#no-useradd" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>useradd</code> 呢？&#8288;<a class="headerlink" href="#no-useradd" title="Permanent link">&para;</a></p>
 <p>尽管在其他的发行版中更加常见，但 Debian 认为 <a href="https://manpages.debian.org/stable/passwd/useradd.8.en.html"><code>useradd(8)</code></a> 是一个低层次的命令，因此不建议管理员直接使用，并且 <code>adduser.conf</code> 文件中的配置也不会对 <code>useradd</code> 命令生效。</p>
 <p>类似地，Debian 也不推荐直接使用 <a href="https://manpages.debian.org/stable/passwd/userdel.8.en.html"><code>userdel(8)</code></a> 命令来删除用户，并提供了 <a href="https://manpages.debian.org/stable/adduser/deluser.8.en.html"><code>deluser(8)</code></a> 命令。</p>
 </div>
@@ -3399,7 +3399,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <p>在 Linux 中，LDAP 通常用于集中管理用户和组信息，分为服务端和客户端两部分。服务端负责存储用户和组信息，客户端则按需查询这些信息，其中的数据交换格式为 LDIF（LDAP Data Interchange Format）。LDAP 一般用于多名用户以统一的身份访问多台服务器或服务。</p>
 <p>常用的 LDAP 服务器有 OpenLDAP 和 <a href="https://www.port389.org/">389 Directory Server</a> 等。在 Debian 中，OpenLDAP 的软件名为 <code>slapd</code>。由于 LDAP 的复杂性，可以使用成熟的客户端查看 LDAP 的信息，以便理解与修改数据，例如 <a href="https://directory.apache.org/studio/">Apache Directory Studio</a>。</p>
 <div class="admonition comment" id="ldap-urban-legends">
-<p class="admonition-title">@taoky: LDAP 的都市传说<a class="headerlink" href="#ldap-urban-legends" title="Permanent link">&para;</a></p>
+<p class="admonition-title">@taoky: LDAP 的都市传说&#8288;<a class="headerlink" href="#ldap-urban-legends" title="Permanent link">&para;</a></p>
 <p>根据来自 <a href="https://tuna.moe/">TUNA</a> 的都市传说：折腾过 LDAP 的人，都会在某种意义上延毕。因此这一部分是由已经毕业的同学编写的（大概吧）。</p>
 </div>
 <h3 id="ldap-basic">基础概念<a class="headerlink" href="#ldap-basic" title="Permanent link">&para;</a></h3>
@@ -3430,7 +3430,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        ...
 </code></pre></div>
 <div class="admonition note" id="ldap-escape">
-<p class="admonition-title">字符转义<a class="headerlink" href="#ldap-escape" title="Permanent link">&para;</a></p>
+<p class="admonition-title">字符转义&#8288;<a class="headerlink" href="#ldap-escape" title="Permanent link">&para;</a></p>
 <p>可以看到上述 LDAP 树的 <code>ou=groups</code> 里面有一些项的 <code>cn</code> 有特殊的字符。<code>cn</code> 里面确实可以存储任意 UTF-8 字符串，但是根据 <a href="https://datatracker.ietf.org/doc/html/rfc4514#section-2.4">RFC 4514</a> 的要求，有一些字符需要转义，例如 <code>cn=Hello\, Happy World!</code> 中的 <code>,</code> 就需要在前面添加 <code>\</code>，避免在写成 <code>dn</code> 的时候产生混淆：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cn=Hello\, Happy World!,ou=groups,dc=bangdream,dc=example,dc=org
 </code></pre></div>
@@ -3460,7 +3460,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 </code></pre></div>
 <p>属性不是想怎么填就可以怎么填的，可以使用的属性和 <code>objectClass</code> 的定义受到 LDAP schema 的限制。<code>objectClass</code> 规定了当前项中必选或可选哪些属性，例如 <code>inetOrgPerson</code> 要求当前项必须有 <code>cn</code> 或 <code>commonName</code>、<code>objectClass</code> 属性和 <code>sn</code> 或 <code>surname</code> 属性，可选诸如 <code>carLicense</code>、<code>photo</code>、<code>manager</code> 等属性。属性的语法以及匹配规则也由 schema 限制。</p>
 <div class="admonition note" id="objectclass-inheritance">
-<p class="admonition-title"><code>objectClass</code> 的继承<a class="headerlink" href="#objectclass-inheritance" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>objectClass</code> 的继承&#8288;<a class="headerlink" href="#objectclass-inheritance" title="Permanent link">&para;</a></p>
 <p>可以注意到上面有一个特殊的 <code>objectClass</code>：<code>top</code>。这个类是所有其他 <code>objectClass</code> 的根。<code>cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org</code> 的例子里出现的 <code>objectClass</code> 的继承关系如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>top
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    person
@@ -3479,7 +3479,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <h3 id="ldap-server">服务端配置<a class="headerlink" href="#ldap-server" title="Permanent link">&para;</a></h3>
 <p>以下以 OpenLDAP 为例讲解相关配置。在安装 <code>slapd</code> 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 <code>/var/lib/ldap</code>。</p>
 <div class="admonition note" id="mdb-format">
-<p class="admonition-title">mdb 格式<a class="headerlink" href="#mdb-format" title="Permanent link">&para;</a></p>
+<p class="admonition-title">mdb 格式&#8288;<a class="headerlink" href="#mdb-format" title="Permanent link">&para;</a></p>
 <p>OpenLDAP 会保存两个 mdb 文件：<code>data.mdb</code> 和 <code>lock.mdb</code>，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 <a href="https://www.symas.com/mdb">LMDB</a>，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。</p>
 <p>尽管 <code>lmdb-utils</code> 包提供了 <code>mdb_stat</code>、<code>mdb_dump</code> 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 <code>slapcat</code> 工具：</p>
 <div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>

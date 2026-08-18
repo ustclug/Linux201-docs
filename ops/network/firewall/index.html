@@ -3708,7 +3708,7 @@
 <p>特别地，由本机发往本机（回环接口，即 <code>lo</code>）的数据包会依次经过 OUTPUT 和 POSTROUTING 阶段，由 lo 接口发出的同时也由 lo 接口收到，并再次经过 PREROUTING 和 INPUT 阶段后到达接收端 socket。
 该路径的典型场景是使用 <code>localhost</code>、<code>127.0.0.1</code> 或 <code>::1</code> 等地址访问本机服务，但不包括 Unix socket<sup id="fnref:unix-socket"><a class="footnote-ref" href="#fn:unix-socket">1</a></sup>。</p>
 <div class="admonition question" id="routing-decision-and-reroute-check">
-<p class="admonition-title">路由决策与 Reroute check 是什么关系？<a class="headerlink" href="#routing-decision-and-reroute-check" title="Permanent link">&para;</a></p>
+<p class="admonition-title">路由决策与 Reroute check 是什么关系？&#8288;<a class="headerlink" href="#routing-decision-and-reroute-check" title="Permanent link">&para;</a></p>
 <p>可能有部分读者见过 Wikipedia 的这张著名的 <a href="https://commons.wikimedia.org/wiki/File:Netfilter-packet-flow.svg">Netfilter packet flow</a>：</p>
 <p id="wikipedia-netfilter-packet-flow"><img alt="Netfilter flow chart" src="https://upload.wikimedia.org/wikipedia/commons/3/37/Netfilter-packet-flow.svg" /></p>
 <p>它与本文的图示有一处微妙的区别：路由决策位于 OUTPUT 阶段之前，而 OUTPUT 阶段后另有一个 Reroute check<sup id="fnref:iptable_mangle_hook"><a class="footnote-ref" href="#fn:iptable_mangle_hook">2</a></sup>。
@@ -3720,7 +3720,7 @@
 <p>本文在介绍 iptables 的表时绘制了 <a href="#netfilter-kernel-view-tables">Netfilter 视角的阶段图</a>，能够更直观地反映出此「相似性」。</p>
 </div>
 <details class="info" id="reroute-check-details">
-<summary>Reroute check 的细节<a class="headerlink" href="#reroute-check-details" title="Permanent link">&para;</a></summary>
+<summary>Reroute check 的细节&#8288;<a class="headerlink" href="#reroute-check-details" title="Permanent link">&para;</a></summary>
 <p>首先需要重复的一点是：数据包最终的路由结果是基于经过 OUTPUT 阶段后、进入 POSTROUTING（或 INPUT）阶段前的状态决定的。
 那么既然数据包在 OUTPUT 阶段可能发生 MARK 或 DNAT 等修改，为什么不像外部传入的数据包一样，直接在 OUTPUT 阶段后进行路由决策呢？
 作者认为有以下两种可能的原因：</p>
@@ -3827,7 +3827,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>conntrack<span class="w"> </span>-L
 </code></pre></div>
 <details class="example" id="conntrack-output-example">
-<summary>conntrack 输出示例<a class="headerlink" href="#conntrack-output-example" title="Permanent link">&para;</a></summary>
+<summary>conntrack 输出示例&#8288;<a class="headerlink" href="#conntrack-output-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>udp      17 91 src=192.0.2.2 dst=8.8.8.8 sport=39043 dport=53 src=8.8.8.8 dst=198.51.100.1 sport=53 dport=39043 [ASSURED] mark=1 use=1
 </code></pre></div>
 <ul>
@@ -4014,7 +4014,7 @@ iptables 将规则组织成不同的表（table），每个表包含多个链（
 </ul>
 <p>每条内置链都有一个<strong>默认策略</strong>（<code>-P</code> / <code>--policy</code>），当数据包经过该链但未匹配到任何规则时，会由该默认策略处理。默认策略只能是 ACCEPT 或 DROP。</p>
 <details class="example" id="iptables-jump-example" open="open">
-<summary>例：科大镜像站上限制 80 / 443 端口并发连接数<a class="headerlink" href="#iptables-jump-example" title="Permanent link">&para;</a></summary>
+<summary>例：科大镜像站上限制 80 / 443 端口并发连接数&#8288;<a class="headerlink" href="#iptables-jump-example" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>iptables<span class="w"> </span>-A<span class="w"> </span>LIMIT<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>-p<span class="w"> </span>tcp<span class="w"> </span>-m<span class="w"> </span>tcp<span class="w"> </span>--tcp-flags<span class="w"> </span>FIN,SYN,RST,ACK<span class="w"> </span>SYN<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>-m<span class="w"> </span>multiport<span class="w"> </span>--dports<span class="w"> </span><span class="m">80</span>,443<span class="w"> </span><span class="se">\</span>

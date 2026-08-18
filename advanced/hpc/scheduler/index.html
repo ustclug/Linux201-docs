@@ -3545,7 +3545,7 @@
 <p>在中到大型的高性能计算集群上，为了高效地分配计算资源、管理用户作业、实施权限控制和计费等，通常会部署作业调度系统（Job Scheduler）。用户只能登录到少数（甚至一台）登录节点（login node），向调度系统提交作业请求；调度系统会根据资源使用情况和调度策略，将用户的作业分配到计算节点（compute node）上运行，并记录作业的状态和资源使用情况。</p>
 <p>常见的开源作业调度系统包括 <a href="https://github.com/SchedMD/slurm">Slurm</a>、<a href="https://github.com/openpbs/openpbs">OpenPBS</a>、<a href="https://github.com/htcondor/htcondor">HTCondor</a> 等。其中由 SchedMD 开发的 Slurm（Simple Linux Utility for Resource Management）是目前最流行的作业调度系统之一，广泛应用于各大超算计算中心和超级计算机。</p>
 <div class="admonition note" id="not-user-guide">
-<p class="admonition-title">本文不是用户指南<a class="headerlink" href="#not-user-guide" title="Permanent link">&para;</a></p>
+<p class="admonition-title">本文不是用户指南&#8288;<a class="headerlink" href="#not-user-guide" title="Permanent link">&para;</a></p>
 <p>本文主要基于系统管理员的视角，重点介绍 Slurm 在 Debian 集群上的部署、管理。关于集群用户对 Slurm 客户端的使用（如 <code>srun</code>, <code>sbatch</code>, <code>sinfo</code>, <code>squeue</code> 等命令），请参考或者向用户提供如下资料：</p>
 <ul>
 <li><a href="https://slurm.schedmd.com/documentation.html">Slurm 官方文档</a></li>
@@ -3555,7 +3555,7 @@
 </div>
 <h2 id="slurm-deployment">Slurm 部署<a class="headerlink" href="#slurm-deployment" title="Permanent link">&para;</a></h2>
 <div class="admonition note" id="slurm-deployment-prerequisites">
-<p class="admonition-title">前提要求<a class="headerlink" href="#slurm-deployment-prerequisites" title="Permanent link">&para;</a></p>
+<p class="admonition-title">前提要求&#8288;<a class="headerlink" href="#slurm-deployment-prerequisites" title="Permanent link">&para;</a></p>
 <p>我们假设读者已经具备一定的基本概念，了解常见的名词（如 node、partition、job 等）。如果不熟悉这些概念，建议先阅读 Slurm 官方文档的<a href="https://slurm.schedmd.com/overview.html">概述</a>，以及上面的用户文档。</p>
 </div>
 <p>此部分的撰写参考了 <a href="https://scc.ustc.edu.cn/hmli/doc/linux/slurm-install/slurm-install.html">Slurm 资源管理与作业调度系统安装配置</a> 的内容，并修改为使用 Debian 原生软件包，而非使用官方打包版本，或者从源码编译安装。</p>
@@ -3576,7 +3576,7 @@
 <p>需要保证集群上的所有节点，可以通过主机名（hostname）解析所有节点的 IP 地址。建议使用静态 IP 或 DHCP 绑定，并配置好 DNS 服务，或者同步 <code>/etc/hosts</code> 文件。</p>
 <p>运行控制守护进程的节点使用 <code>munge</code> 进行身份验证和通信，需要提前使用 apt 安装，并同步 <code>/etc/munge/munge.key</code>。munge 的正常工作还依赖于集群内时间的同步，请参阅 <a href="../../../ops/network-service/ntp/">网络时间同步</a> 进行配置。</p>
 <details class="tip" id="munge-test">
-<summary>munge 测试<a class="headerlink" href="#munge-test" title="Permanent link">&para;</a></summary>
+<summary>munge 测试&#8288;<a class="headerlink" href="#munge-test" title="Permanent link">&para;</a></summary>
 <p>可通过以下命令测试 munge 是否配置正确：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>harry@foo:~$ echo 'Hello World' | munge | ssh bar unmunge
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>STATUS:          Success (0)
@@ -3617,7 +3617,7 @@
 <h3 id="slurmdbd">数据管理：slurmdbd<a class="headerlink" href="#slurmdbd" title="Permanent link">&para;</a></h3>
 <p>slurmdbd 是其他守护进程访问数据库的代理，可以避免在配置文件中直接暴露数据库连接信息。目前 slurmdbd 只支持 MySQL/MariaDB 作为后端，并只支持通过网络连接（而非 UNIX Domain Socket）。</p>
 <div class="admonition warning" id="backup-slurmdb">
-<p class="admonition-title">注意备份数据库<a class="headerlink" href="#backup-slurmdb" title="Permanent link">&para;</a></p>
+<p class="admonition-title">注意备份数据库&#8288;<a class="headerlink" href="#backup-slurmdb" title="Permanent link">&para;</a></p>
 <p>Slurm 数据库中存储了用户组织关系、作业历史记录、资源使用情况等重要信息，务必定期备份数据库，以防止数据丢失。</p>
 </div>
 <p>slurmdbd 需要单独安装，并提供 <a href="https://slurm.schedmd.com/slurmdbd.conf.html"><code>/etc/slurm/slurmdbd.conf</code></a> 配置文件，指定数据库的连接信息和认证方式。此文件只需要保留在运行 slurmdbd 的节点上，不需要复制到其他节点，并且文件权限必须为 <code>600</code>。</p>
@@ -3654,11 +3654,11 @@
 <p>在此模型下，Slurm 提供了非常丰富的权限、资源控制手段，包括硬限制、配额、QoS 等，管理员可以根据实际需求进行配置和管理。由于内容较为繁杂，且与具体的集群使用场景密切相关，本文不再赘述，用户可以参考 <a href="https://slurm.schedmd.com/accounting.html">Accounting and Resource Limits</a> 和 <a href="https://slurm.schedmd.com/resource_limits.html">Resource Limits</a> 等文档。</p>
 <p>需要特别注意的是，为了正确应用任务优先级，需要显式在配置中启用 <a href="https://slurm.schedmd.com/priority_multifactor.html">Multifactor Priority Plugin</a>，并恰当地配置优先级的计算公式中各项系数；否则，QoS 中的优先级效果可能无法体现。</p>
 <div class="admonition tip" id="enable-accounting">
-<p class="admonition-title">注意打开配置<a class="headerlink" href="#enable-accounting" title="Permanent link">&para;</a></p>
+<p class="admonition-title">注意打开配置&#8288;<a class="headerlink" href="#enable-accounting" title="Permanent link">&para;</a></p>
 <p>为了使得设置生效，需要正确配置 <code>slurm.conf</code> 中的 <code>AccountingStorageEnforce</code> 选项，常见的值是 <code>associations,limits,qos,safe</code>。</p>
 </div>
 <details class="example" id="example-configuration">
-<summary>示例配置<a class="headerlink" href="#example-configuration" title="Permanent link">&para;</a></summary>
+<summary>示例配置&#8288;<a class="headerlink" href="#example-configuration" title="Permanent link">&para;</a></summary>
 <p>下面是作者在管理的某个 Slurm 课程集群上运行 <code>sacctmgr show qos</code> 的输出，展示了三个 QoS 分组的配置情况：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>      Name   Priority  GraceTime    Preempt   PreemptExemptTime PreemptMode                                    Flags UsageThres UsageFactor       GrpTRES   GrpTRESMins GrpTRESRunMin GrpJobs GrpSubmit     GrpWall       MaxTRES MaxTRESPerNode   MaxTRESMins     MaxWall     MaxTRESPU MaxJobsPU MaxSubmitPU     MaxTRESPA MaxJobsPA MaxSubmitPA       MinTRES
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>---------- ---------- ---------- ---------- ------------------- ----------- ---------------------------------------- ---------- ----------- ------------- ------------- ------------- ------- --------- ----------- ------------- -------------- ------------- ----------- ------------- --------- ----------- ------------- --------- ----------- -------------
@@ -3704,12 +3704,12 @@
 <li>确保没有其他模块绕过了 <code>pam_slurm_adopt</code>。</li>
 </ul>
 <div class="admonition note" id="potential-impact">
-<p class="admonition-title">潜在影响<a class="headerlink" href="#potential-impact" title="Permanent link">&para;</a></p>
+<p class="admonition-title">潜在影响&#8288;<a class="headerlink" href="#potential-impact" title="Permanent link">&para;</a></p>
 <p>禁用 <code>pam_systemd</code> 可能会导致某些依赖于 systemd 用户会话的功能（如用户级别的定时任务、用户级别的服务等）无法正常工作。
 考虑到计算节点通常不需要这些功能，作者认为这是可以接受的权衡。</p>
 </div>
 <details class="example" id="pam-configuration">
-<summary>样例 PAM 配置<a class="headerlink" href="#pam-configuration" title="Permanent link">&para;</a></summary>
+<summary>样例 PAM 配置&#8288;<a class="headerlink" href="#pam-configuration" title="Permanent link">&para;</a></summary>
 <p>在作者管理的集群上，sshd 的 PAM 配置如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># PAM configuration for the Secure Shell service</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
@@ -3747,7 +3747,7 @@
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">TemporaryFileSystem</span><span class="o">=</span><span class="s">/etc/slurm</span>
 </code></pre></div>
 <details class="tip" id="pre-trixie-configless-setup">
-<summary>Trixie 前的特殊配置<a class="headerlink" href="#pre-trixie-configless-setup" title="Permanent link">&para;</a></summary>
+<summary>Trixie 前的特殊配置&#8288;<a class="headerlink" href="#pre-trixie-configless-setup" title="Permanent link">&para;</a></summary>
 <p>较旧（Debian Trixie 前）的 <code>slurmd.service</code> 中含有多余的 <code>ConditionPathExists=/etc/slurm/slurmd.conf</code>，需要一并覆盖清除，否则会导致无配置的情况下，服务无法正常启动：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[Unit]</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">ConditionPathExists</span><span class="o">=</span>
@@ -3765,7 +3765,7 @@
 <p>首先，Slurm 任务可以运行在容器中：通过配置 Slurm 的 <a href="https://slurm.schedmd.com/oci.conf.html">oci.conf</a>，让 Slurm 可以在计算节点上调用容器 OCI 运行时（如 <code>runc</code>, <code>crun</code>, <code>nvidia-container-runtime</code> 等）。用户可以通过 <code>srun --container $OCI_BUNDLE</code> 来提交作业，Slurm 会根据配置，在计算节点上启动指定的容器，并在容器内运行用户的作业。也就是说，具体的容器运行时对 Slurm 用户是透明的。</p>
 <p>进一步地，Slurm 还可以作为 OCI 容器运行时（“后端”）：用户在提交作业时不需要使用 slurm 相关命令，而是直接使用 <code>podman</code>, <code>dockers</code> 或者 <code>singularity</code> 等前端工具，它们通过标准 OCI 接口调用 Slurm 的 <a href="https://slurm.schedmd.com/scrun.html"><code>scrun</code></a> 命令来创建和运行容器，而 Slurm 会将容器提交到计算节点上运行。也就是说，Slurm 本身也对容器用户是透明的；最终效果是，用户可以像在单机上运行容器一样，在集群上运行容器，而不需要关心底层的调度和资源分配。</p>
 <div class="admonition warning" id="container-configuration">
-<p class="admonition-title">配置复杂<a class="headerlink" href="#container-configuration" title="Permanent link">&para;</a></p>
+<p class="admonition-title">配置复杂&#8288;<a class="headerlink" href="#container-configuration" title="Permanent link">&para;</a></p>
 <p>目前 Slurm 对容器的支持仍然比较初级，配置较为晦涩难懂（如对共享文件系统有更复杂的要求），且对不同的容器运行时支持程度不一，限制较多。作者尚未成功配置过此功能，建议有兴趣的读者仔细阅读官方文档，谨慎部署。</p>
 </div>
 <h3 id="slurmrestd">Slurm Restful API (slurmrestd)<a class="headerlink" href="#slurmrestd" title="Permanent link">&para;</a></h3>

@@ -3668,7 +3668,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>nameserver 8.8.8.8
 </code></pre></div>
 <details class="note" id="public-dns-servers">
-<summary>公共的 DNS 服务器<a class="headerlink" href="#public-dns-servers" title="Permanent link">&para;</a></summary>
+<summary>公共的 DNS 服务器&#8288;<a class="headerlink" href="#public-dns-servers" title="Permanent link">&para;</a></summary>
 <p>虽然在绝大多数场景下，用户都不需要使用公共的 DNS 服务器，因为：</p>
 <ul>
 <li>在家用场景，运营商通过 DHCP 提供的 DNS 一般来说能够让各网站（特别是使用 CDN 的站点）解析到离自己最近的节点，提升访问速度。</li>
@@ -3707,7 +3707,7 @@
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1">// 域名在 he-&gt;h_name 中</span>
 </code></pre></div>
 <div class="admonition tip" id="reverse-dns-lookup">
-<p class="admonition-title">从 IP 反查域名<a class="headerlink" href="#reverse-dns-lookup" title="Permanent link">&para;</a></p>
+<p class="admonition-title">从 IP 反查域名&#8288;<a class="headerlink" href="#reverse-dns-lookup" title="Permanent link">&para;</a></p>
 <p>很多人对 DNS 的理解仅限于「从域名查 IP」（A 记录和 AAAA 记录），但 DNS 也支持「从 IP 查域名」（PTR 记录）。例如对上面 1.1.1.1 的域名的查询，可以先构造出 <code>1.1.1.1.in-addr.arpa</code> 这个域名，然后查询这个域名的 PTR 记录。</p>
 <p>PTR 记录由 IP 的所有者（ISP/云服务商等）负责维护。</p>
 </div>
@@ -3732,13 +3732,13 @@
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">// 域名在 hostname 中</span>
 </code></pre></div>
 <div class="admonition note" id="res-query">
-<p class="admonition-title"><code>res_query</code><a class="headerlink" href="#res-query" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>res_query</code>&#8288;<a class="headerlink" href="#res-query" title="Permanent link">&para;</a></p>
 <p>尽管 <code>getaddrinfo()</code> 可以解决不少问题，并且跨平台兼容性也不错，但是如果我们需要更底层的 DNS 查询功能（例如查询 A/AAAA 以外的记录）的时候，上面的 API 就不太够用了。而 libresolv（包含在 glibc 中）则提供了更底层的 <a href="https://man7.org/linux/man-pages/man3/resolver.3.html"><code>res_nquery()</code>/<code>res_query()</code></a> 等接口，便于需要直接构造 DNS 报文进行查询的程序使用。</p>
 <p>musl 不支持 <code>res_nquery()</code>，但是支持 <code>res_query()</code>。</p>
 <p>libresolv 在其他平台上可能有不同的行为，可参考：<a href="https://valentin.gosu.se/blog/2025/02/getaddrinfo-sucks-everything-else-is-much-worse">getaddrinfo sucks. everything else is much worse</a>。</p>
 </div>
 <div class="admonition tip" id="libc-dns-api-latency">
-<p class="admonition-title">获取 C 库解析 API 的延迟<a class="headerlink" href="#libc-dns-api-latency" title="Permanent link">&para;</a></p>
+<p class="admonition-title">获取 C 库解析 API 的延迟&#8288;<a class="headerlink" href="#libc-dns-api-latency" title="Permanent link">&para;</a></p>
 <p>bcc 提供的基于 eBPF 的 <a href="https://github.com/iovisor/bcc/blob/master/tools/gethostlatency.py">gethostlatency</a> 工具可以用来获取使用 C 运行时库的 DNS 解析延迟：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>gethostlatency
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">TIME     PID     COMM             LATms      HOST</span>
@@ -3805,7 +3805,7 @@
 </code></pre></div>
 <p>就（一般来说）会返回空，因为其只会用 <code>files</code> 模块来解析 <code>example.com</code>，如果 <code>/etc/hosts</code> 中没有相关的记录，那么就不会有结果。</p>
 <div class="admonition note" id="nss-return-status">
-<p class="admonition-title">NSS 的返回状态<a class="headerlink" href="#nss-return-status" title="Permanent link">&para;</a></p>
+<p class="admonition-title">NSS 的返回状态&#8288;<a class="headerlink" href="#nss-return-status" title="Permanent link">&para;</a></p>
 <p>NSS 模块可能会返回以下几种状态：</p>
 <ul>
 <li><code>SUCCESS</code>：解析成功。</li>
@@ -3819,7 +3819,7 @@
 <p>这样的话，如果某用户在本地（<code>files</code>）属于组 A，在 sssd（<code>sss</code>）中属于组 B，那么最终该用户就会同时属于组 A 和组 B。</p>
 </div>
 <div class="admonition note" id="nss-myhostname-local-resolution">
-<p class="admonition-title">为什么解析本机还需要 <code>myhostname</code> 模块？<a class="headerlink" href="#nss-myhostname-local-resolution" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么解析本机还需要 <code>myhostname</code> 模块？&#8288;<a class="headerlink" href="#nss-myhostname-local-resolution" title="Permanent link">&para;</a></p>
 <p>一个约定俗成的做法是，将主机名放在 <code>/etc/hostname</code> 文件，而在 <code>/etc/hosts</code> 中添加相关的映射：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>127.0.0.1 myhost
 </code></pre></div>
@@ -3841,7 +3841,7 @@
 </code></pre></div>
 </div>
 <div class="admonition note" id="glibc-nss-static-linking">
-<p class="admonition-title">glibc、NSS 与静态链接<a class="headerlink" href="#glibc-nss-static-linking" title="Permanent link">&para;</a></p>
+<p class="admonition-title">glibc、NSS 与静态链接&#8288;<a class="headerlink" href="#glibc-nss-static-linking" title="Permanent link">&para;</a></p>
 <p>如果有尝试对访问网络（使用了 NSS 的）C 程序进行静态链接（<code>-static</code>）的话，那么你可能会看到：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>/usr/bin/ld: /tmp/cchbUcHT.o: in function `main':
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>example.c:(.text+0x2a): warning: Using 'gethostbyname' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking
@@ -3862,7 +3862,7 @@
 <div class="highlight"><span class="filename">/etc/gai.conf</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>precedence ::ffff:0:0/96  100
 </code></pre></div>
 <div class="admonition tip" id="disable-aaaa-queries">
-<p class="admonition-title">如果不希望 glibc 发送 AAAA 请求……<a class="headerlink" href="#disable-aaaa-queries" title="Permanent link">&para;</a></p>
+<p class="admonition-title">如果不希望 glibc 发送 AAAA 请求……&#8288;<a class="headerlink" href="#disable-aaaa-queries" title="Permanent link">&para;</a></p>
 <p>glibc 的 <code>getaddrinfo()</code> 在参数为 <code>AF_UNSPEC</code> 时，总是会同时发送 A 和 AAAA 请求（即使设置了 <code>net.ipv6.conf.all.disable_ipv6</code>）。同样，上面的 <code>gai.conf</code> 配置也无法阻止 glibc 发送 AAAA 请求（只是在获取到两者之后优先选择 IPv4）。</p>
 <p>在 glibc 2.36 之后，glibc 提供了 <code>no-aaaa</code> 选项，可以在 <code>resolv.conf</code> 中添加。而对更老版本的机器，则可能需要考虑使用 <a href="https://github.com/ossobv/nss-dns4only">nss-dns4only</a> 这种第三方的 NSS 模块来实现。</p>
 </div>
@@ -3873,7 +3873,7 @@
 <li>
 <p>对查询非完整域名（例如主机名）的场景，glibc 会依次将 <code>search</code> 列表中的域名附加到查询的域名后面进行查询。例如，假设配置了 <code>search example.com</code>，那么查询 <code>myhost</code> 的时候，会优先搜索 <code>myhost.example.com</code>。</p>
 <div class="admonition tip" id="single-label-public-domains">
-<p class="admonition-title">没有点（dot）的公开域名<a class="headerlink" href="#single-label-public-domains" title="Permanent link">&para;</a></p>
+<p class="admonition-title">没有点（dot）的公开域名&#8288;<a class="headerlink" href="#single-label-public-domains" title="Permanent link">&para;</a></p>
 <p>其实反直觉的是，有非常少量（有解析）的域名是没有点的，比如说 <code>bd</code>（孟加拉国的顶级域）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>dig<span class="w"> </span>bd<span class="w"> </span>A<span class="w"> </span>+short
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="go">203.112.194.232</span>
@@ -3940,7 +3940,7 @@
 <h5 id="resolved-cache">缓存行为<a class="headerlink" href="#resolved-cache" title="Permanent link">&para;</a></h5>
 <p>默认情况下，resolved 会启用 DNS 缓存，根据 DNS 响应的 TTL 信息缓存数据，避免额外的网络开销。</p>
 <div class="admonition tip" id="ttl">
-<p class="admonition-title">TTL<a class="headerlink" href="#ttl" title="Permanent link">&para;</a></p>
+<p class="admonition-title">TTL&#8288;<a class="headerlink" href="#ttl" title="Permanent link">&para;</a></p>
 <p>每条 DNS 记录都有 TTL 时间（秒为单位），标志下游的服务器可以缓存该记录的时间。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>dig<span class="w"> </span>www.example.com
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="go">（省略）</span>
@@ -3952,7 +3952,7 @@
 <p>这里的 237 就是获取到的 TTL 秒数。显然，如果 TTL 设置较长，那么每次更新之后，其他机器就可能需要更长的时间获取到修改后的记录；而如果 TTL 太短，那么就可能会给 DNS 服务器（特别是权威 DNS 服务器）带来较大的压力。</p>
 </div>
 <div class="admonition tip" id="negative-cache-soa">
-<p class="admonition-title">Negative cache 与 SOA 记录<a class="headerlink" href="#negative-cache-soa" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Negative cache 与 SOA 记录&#8288;<a class="headerlink" href="#negative-cache-soa" title="Permanent link">&para;</a></p>
 <p>为了减小网络开销，不仅成功的查询需要缓存，失败的也需要。这被称为 Negative cache。一些常见的情况：</p>
 <ul>
 <li>某个域名只有 A 记录，但是没有 AAAA 记录（或者反过来）</li>
@@ -3969,13 +3969,13 @@
 <p>而如果 DNS 服务器本身查询失败（返回 SERVFAIL），那么也就没有 SOA 记录。<a href="https://github.com/systemd/systemd/pull/17814">resolved 对此默认缓存 10 秒</a>。</p>
 </div>
 <div class="admonition warning" id="ubuntu-negative-cache-disabled">
-<p class="admonition-title">Ubuntu 默认不启用 negative cache<a class="headerlink" href="#ubuntu-negative-cache-disabled" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Ubuntu 默认不启用 negative cache&#8288;<a class="headerlink" href="#ubuntu-negative-cache-disabled" title="Permanent link">&para;</a></p>
 <p>与 systemd 上游设置不同，Ubuntu 的 systemd-resolved 包的 <code>Cache</code> 参数默认值为 <code>no-negative</code>，而不是 <code>yes</code>。</p>
 </div>
 <p>(TODO)</p>
 <h4 id="dnsmasq">dnsmasq<a class="headerlink" href="#dnsmasq" title="Permanent link">&para;</a></h4>
 <div class="admonition warning" id="dnsmasq-docker-bridge-behavior">
-<p class="admonition-title">dnsmasq 与 Docker 默认 bridge 网络的行为<a class="headerlink" href="#dnsmasq-docker-bridge-behavior" title="Permanent link">&para;</a></p>
+<p class="admonition-title">dnsmasq 与 Docker 默认 bridge 网络的行为&#8288;<a class="headerlink" href="#dnsmasq-docker-bridge-behavior" title="Permanent link">&para;</a></p>
 <p>Docker 的默认 bridge 网络不会使用其内置的 DNS 服务器，而是直接使用主机的 <code>/etc/resolv.conf</code> 配置放进容器中。假如 Docker 发现 <code>nameserver</code> 全都是本地地址，那么就会 fallback 到 8.8.8.8/8.8.4.4 上，绕过 dnsmasq 的缓存功能（Docker 对 systemd-resolved 做了特殊处理，可以从 <code>/run/systemd/resolve/resolv.conf</code> 获取到实际上游的 DNS 地址并设置，但是缓存也就失效了）。</p>
 <p>因此，如果希望 Docker 容器使用到缓存功能，那么请考虑以下方法之一：</p>
 <ul>

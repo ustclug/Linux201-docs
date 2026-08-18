@@ -3641,7 +3641,7 @@
 <p>另一项与可靠性有关的重要参数是 Unrecoverable Read Error Rate（不可恢复读错误率，URE），它表示了硬盘在读取数据时出现错误的<strong>概率</strong>。对于机械硬盘来讲，这个值一般为 10^-14 到 10^-15（有时也标注为 1 in 10^14、1 in 10^15 等），即<strong>平均</strong>每读取 10^14（12.5 TB）到 10^15（125 TB）位的数据中会有一位出现错误（这不代表读取了 12.5/125 TB 之后就一定会遇到一次错误）。而对于固态硬盘，一般为 10^-16 到 10^-17。如果在重建 RAID 时遇到 URE 并且没有额外的 parity，视具体实现而定，重建操作会失败或丢失部分数据。在实现允许忽略 URE 继续重建的情况下，发生 URE 处对应的数据无法恢复，如果是文件系统的关键数据结构，那么就会导致文件系统损坏，大量数据丢失。</p>
 <p>对具体的硬盘型号，建议阅读厂商的文档（例如 datasheet 等），以获取准确的信息。此外，云服务商 Backblaze 会定期发布他们的硬盘使用报告，包含硬盘在真实数据中心工况下的 AFR 等信息，可前往 <a href="https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data">https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data</a> 下载，以作参考。</p>
 <div class="admonition tip" id="zoned-storage-vs-smr">
-<p class="admonition-title">Zoned storage 与叠瓦（SMR）盘<a class="headerlink" href="#zoned-storage-vs-smr" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Zoned storage 与叠瓦（SMR）盘&#8288;<a class="headerlink" href="#zoned-storage-vs-smr" title="Permanent link">&para;</a></p>
 <p><a href="https://zonedstorage.io/">Zoned storage</a> 是一种新型的硬盘存储技术，它将硬盘分为多个区域，每个区域的写入方式不同，
 通过暴露更多的信息给 OS 使得针对性的优化得以进行，以提升硬盘的容量和性能。
 我们常说的「叠瓦盘」就是一种 zoned storage。叠瓦盘通过重叠磁道的方式（类似于屋顶上瓦片排列一般）来增加存储密度。
@@ -3666,7 +3666,7 @@
 </li>
 </ul>
 <div class="admonition warning" id="read-factory-documents">
-<p class="admonition-title">仔细阅读并确认厂商文档<a class="headerlink" href="#read-factory-documents" title="Permanent link">&para;</a></p>
+<p class="admonition-title">仔细阅读并确认厂商文档&#8288;<a class="headerlink" href="#read-factory-documents" title="Permanent link">&para;</a></p>
 <p>一个现实中发生过的例子是：将错误的硬盘托架安装至服务器盘位，导致托架卡住无法取出，最后费了近半个小时，甚至用上了螺丝刀作为杠杆，才将其松动，取出硬盘。总结来说，如果要安装的硬盘上面的托架和已经安装的长得不一样，先不要硬塞进去。</p>
 </div>
 <p>磁盘需要带上托架才能安装到服务器中。托架的主要作用是固定住磁盘，并且方便安装和取出。托架的尺寸与磁盘的尺寸有关，3.5 英寸磁盘的托架一般需要安装转接板才能安装 2.5 英寸的磁盘，但也有一些托架预留了 2.5 英寸磁盘的螺丝孔位。同时，托架也一般有 LED 灯，在磁盘故障时会亮黄灯或红灯，也一般能够使用服务器的管理工具控制灯闪烁来定位磁盘。</p>
@@ -3676,7 +3676,7 @@
 <p>机械硬盘使用 SATA（Serial ATA）或 SAS（Serial Attached SCSI）接口连接，一些固态硬盘也会使用 SATA 接口。SATA 是个人计算机上最常见的硬盘连接方式，而 SAS 的接口带宽更高（虽然机械硬盘实际的传输速度通常无法跑满 SATA 的带宽），支持更多功能，并且向下兼容 SATA，因此在服务器上更常见。</p>
 <p>SATA 与 SAS 的详细对比可参考<a href="https://en.wikipedia.org/wiki/Serial_Attached_SCSI#Comparison_with_SATA">英文 Wikipedia 中 SAS 的 "Comparison with SATA" 一节</a>。</p>
 <details class="example" id="sata-sas-hdd-form-factors">
-<summary>图片：SATA &amp; SAS HDD<a class="headerlink" href="#sata-sas-hdd-form-factors" title="Permanent link">&para;</a></summary>
+<summary>图片：SATA &amp; SAS HDD&#8288;<a class="headerlink" href="#sata-sas-hdd-form-factors" title="Permanent link">&para;</a></summary>
 <p>SATA 和 SAS 接口非常相似，都使用了类似的 7 针数据接口和 15 针电源接口，难以分辨，但是两者在外观上仍存在一些细微的差别。</p>
 <p><figure markdown="span">
   <img alt="SAS &amp; SATA" src="../../../images/SATA-SAS-iface.jpg" style="aspect-ratio: 4 / 3" />
@@ -3702,21 +3702,21 @@
 <li>AIC（Add-In Card）就是一块 PCIe 扩展卡，可以插入 PCIe 插槽中使用。</li>
 </ul>
 <details class="example" id="m-2-ssd-image">
-<summary>图片：M.2 SSD<a class="headerlink" href="#m-2-ssd-image" title="Permanent link">&para;</a></summary>
+<summary>图片：M.2 SSD&#8288;<a class="headerlink" href="#m-2-ssd-image" title="Permanent link">&para;</a></summary>
 <p><figure markdown="span">
   <img alt="M.2 2280 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Intel_512G_M2_Solid_State_Drive.jpg/500px-Intel_512G_M2_Solid_State_Drive.jpg" />
   <figcaption>M.2 2280 SSD</figcaption>
 </figure></p>
 </details>
 <details class="example" id="u2-ssd-form-factor">
-<summary>图片：U.2 SSD<a class="headerlink" href="#u2-ssd-form-factor" title="Permanent link">&para;</a></summary>
+<summary>图片：U.2 SSD&#8288;<a class="headerlink" href="#u2-ssd-form-factor" title="Permanent link">&para;</a></summary>
 <p><figure markdown="span">
   <img alt="U.2 SSD" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg/960px-OCZ_Z6300_NVMe_flash_SSD%2C_U.2_%28SFF-8639%29_form-factor.jpg" />
   <figcaption>U.2 SSD</figcaption>
 </figure></p>
 </details>
 <details class="example" id="aic-ssd-form-factor">
-<summary>图片：AIC SSD<a class="headerlink" href="#aic-ssd-form-factor" title="Permanent link">&para;</a></summary>
+<summary>图片：AIC SSD&#8288;<a class="headerlink" href="#aic-ssd-form-factor" title="Permanent link">&para;</a></summary>
 <p><figure markdown="span">
   <img alt="PCIe AIC SSD" src="https://m.media-amazon.com/images/I/61jyO1d8v1L.jpg" />
   <figcaption>PCIe 插卡式 SSD</figcaption>
@@ -3734,7 +3734,7 @@
 <h3 id="trim">Trim (Discard/Unmap)<a class="headerlink" href="#trim" title="Permanent link">&para;</a></h3>
 <p>SSD 的闪存存储的特点是：不支持任意的随机写，修改数据只能通过清空区块之后重新写入来实现。并且区块能够经受的写入次数是有限的。SSD 中的固件会进行区块管理，以将写入带来的磨损分散到所有区块中。但是，固件并不清楚文件系统的情况，因此在文件系统中删除某个文件之后，SSD 固件会仍然认为对应的区块存储了数据，不能释放。Trim 操作由操作系统发出，告诉固件哪些区块可以释放，以提升性能，延长 SSD 使用寿命。一些特殊的存储设备也会支持 trim 操作，例如虚拟机磁盘（<code>virtio-scsi</code>）、部分企业级的 SAN 等。</p>
 <div class="admonition note" id="pay-attention-to-available-space">
-<p class="admonition-title">关注存储的可用空间比例<a class="headerlink" href="#pay-attention-to-available-space" title="Permanent link">&para;</a></p>
+<p class="admonition-title">关注存储的可用空间比例&#8288;<a class="headerlink" href="#pay-attention-to-available-space" title="Permanent link">&para;</a></p>
 <p>不建议将存储的可用空间全部或接近全部耗尽，这是因为：</p>
 <ul>
 <li>机械硬盘：可用空间不足时，文件系统为了存储数据，会不得不产生大量磁盘碎片，而机械硬盘的随机读写性能很差；</li>
@@ -3743,7 +3743,7 @@
 </div>
 <p>一般来说，确保 <code>fstrim.timer</code> 处于启用状态即可。一些文件系统也支持调整 trim/discard 参数（立即 discard 或周期性 discard，一般推荐后者）。</p>
 <details class="tip" id="enable-trim-for-usb">
-<summary>为 USB 设备开启 Trim<a class="headerlink" href="#enable-trim-for-usb" title="Permanent link">&para;</a></summary>
+<summary>为 USB 设备开启 Trim&#8288;<a class="headerlink" href="#enable-trim-for-usb" title="Permanent link">&para;</a></summary>
 <p>由于老旧的 USB 设备对获取设备功能的请求的支持存在问题，因此 Linux 内核默认不会尝试请求相关数据，进而无法探测 USB 连接的存储设备是否支持 trim 功能。可以使用 <code>lsblk --discard</code> 或查看 <code>/sys/block/sdX/queue/discard_max_bytes</code> 确认（以下 <code>sda</code> 为 USB 磁盘设备）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span>lsblk<span class="w"> </span>--discard
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">NAME        DISC-ALN DISC-GRAN DISC-MAX DISC-ZERO</span>
@@ -3833,7 +3833,7 @@
 <dd>
 <p>将数据和<strong>一份</strong>校验信息分块存储在多个磁盘上，可以允许阵列中任何一块磁盘损坏，兼顾冗余性和容量利用率。重建期间的性能会严重下降，并且一旦在重建完成前又坏了一块盘，那么你就寄了。</p>
 <div class="admonition danger" id="do-not-use-raid-5-for-large-hdd">
-<p class="admonition-title">不要为大容量机械硬盘阵列组 RAID 5<a class="headerlink" href="#do-not-use-raid-5-for-large-hdd" title="Permanent link">&para;</a></p>
+<p class="admonition-title">不要为大容量机械硬盘阵列组 RAID 5&#8288;<a class="headerlink" href="#do-not-use-raid-5-for-large-hdd" title="Permanent link">&para;</a></p>
 <p>否则坏了一块盘后重建的时候就等死吧。</p>
 <p>下面的思考题也会涉及到这个问题。</p>
 </div>
@@ -3848,7 +3848,7 @@
 </dd>
 </dl>
 <div class="admonition danger" id="raid-is-not-backup">
-<p class="admonition-title">磁盘阵列不是备份<a class="headerlink" href="#raid-is-not-backup" title="Permanent link">&para;</a></p>
+<p class="admonition-title">磁盘阵列不是备份&#8288;<a class="headerlink" href="#raid-is-not-backup" title="Permanent link">&para;</a></p>
 <p>RAID 不是备份，它可以实现在某块磁盘故障时保证系统继续运行，但是不能在数据误删除、自然灾害、人为破坏等情况下保护数据。</p>
 <p><a href="https://mirrors.tuna.tsinghua.edu.cn/tuna/tunight/2023-03-26-disk-array/slides.pdf"><img alt="磁盘阵列不是备份" src="../../../images/raid-is-not-backup.jpg" style="aspect-ratio: 4 / 3" /></a></p>
 <p><em>图片来自<a href="https://tuna.moe/event/2023/disk-array/">金枪鱼之夜：实验物理垃圾佬之乐——PB 级磁盘阵列演进</a></em></p>
@@ -3911,7 +3911,7 @@
 </table>
 <p>RAID 4 和 RAID 50 在这里不作讨论，因为它们没人用。</p>
 <div class="admonition question" id="thinking-questions">
-<p class="admonition-title">思考题<a class="headerlink" href="#thinking-questions" title="Permanent link">&para;</a></p>
+<p class="admonition-title">思考题&#8288;<a class="headerlink" href="#thinking-questions" title="Permanent link">&para;</a></p>
 <ol>
 <li>为什么 RAID 5 和 RAID 6 的重建期间性能会很差？</li>
 <li>为什么将大量的磁盘组合成单个 RAID 6 不是一个好主意？为什么 RAID 50 没人用？</li>
@@ -3965,7 +3965,7 @@
 <h3 id="benchmark">性能测试<a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h3>
 <p>我们可以使用 <a href="https://fio.readthedocs.io/en/latest/"><code>fio</code></a> 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。</p>
 <div class="admonition info" id="drawbacks-of-dd-benchmark">
-<p class="admonition-title">使用 dd 测速的不足<a class="headerlink" href="#drawbacks-of-dd-benchmark" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 dd 测速的不足&#8288;<a class="headerlink" href="#drawbacks-of-dd-benchmark" title="Permanent link">&para;</a></p>
 <p>以下是使用 dd 命令测试一块希捷 4TB 机械硬盘的例子：</p>
 <div class="highlight"><span class="filename">写入测试</span><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>dd<span class="w"> </span><span class="k">if</span><span class="o">=</span>/dev/zero<span class="w"> </span><span class="nv">of</span><span class="o">=</span>test.img<span class="w"> </span><span class="nv">bs</span><span class="o">=</span>1M<span class="w"> </span><span class="nv">count</span><span class="o">=</span><span class="m">1000</span><span class="w"> </span><span class="nv">oflag</span><span class="o">=</span>direct
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">1000+0 records in</span>
@@ -3992,7 +3992,7 @@
 <li>
 <p><code>--size</code>：测试文件的大小。支持 k/m/g/t/p 后缀（字节 B 可以省略），不区分大小写。使用 1024 倍率，要使用 1000 倍率，可以使用 <code>kib</code>, <code>mib</code> 等。</p>
 <div class="admonition note" id="si-vs-iec-units">
-<p class="admonition-title">SI 与 IEC 单位<a class="headerlink" href="#si-vs-iec-units" title="Permanent link">&para;</a></p>
+<p class="admonition-title">SI 与 IEC 单位&#8288;<a class="headerlink" href="#si-vs-iec-units" title="Permanent link">&para;</a></p>
 <p>SI 单位是国际单位制中的单位，采用 10 进制（即 1 KB = 1000 B）；IEC 单位是国际电工委员会的单位，采用二进制和带有 i 的单位（即 1 KiB = 1024 B）。</p>
 <p>fio 出于对旧脚本的兼容性，默认情况下交换了 SI 和 IEC 单位的含义，即不带 i 的使用 1024 倍率，而带 i 的采用 1000 倍率。这在 fio 文档中有说明（参数 <code>kb_base</code>）。</p>
 </div>
@@ -4014,11 +4014,11 @@
 </ul>
 <p>以下是一些例子，一部分在编写其他内容时使用到了：</p>
 <div class="admonition warning" id="be-careful-with-running-block-devices">
-<p class="admonition-title">对正在运行的块设备操作时需要小心<a class="headerlink" href="#be-careful-with-running-block-devices" title="Permanent link">&para;</a></p>
+<p class="admonition-title">对正在运行的块设备操作时需要小心&#8288;<a class="headerlink" href="#be-careful-with-running-block-devices" title="Permanent link">&para;</a></p>
 <p>对已经有数据的块设备进行写入操作会导致数据丢失，在测试时请加上 <code>--readonly</code> 参数。</p>
 </div>
 <details class="example" id="fio-random-read-latency">
-<summary>使用 fio 测试块设备（<code>/dev/mapper/vg201--test-lvdata</code>）随机读延迟的例子<a class="headerlink" href="#fio-random-read-latency" title="Permanent link">&para;</a></summary>
+<summary>使用 fio 测试块设备（<code>/dev/mapper/vg201--test-lvdata</code>）随机读延迟的例子&#8288;<a class="headerlink" href="#fio-random-read-latency" title="Permanent link">&para;</a></summary>
 <p>本部分编写时参考了 <a href="https://docs.oracle.com/en-us/iaas/Content/Block/References/samplefiocommandslinux.htm">Oracle 的文档</a>。</p>
 <p>一个只读情况下测试 10s <code>/dev/mapper/vg201--test-lvdata</code> 的 4K 随机读的例子如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>/dev/mapper/vg201--test-lvdata<span class="w"> </span><span class="se">\</span>
@@ -4065,7 +4065,7 @@
 </code></pre></div>
 </details>
 <details class="example" id="simulate-i-o-stress">
-<summary>向 <code>./test</code> 随机读写，模拟 I/O 压力<a class="headerlink" href="#simulate-i-o-stress" title="Permanent link">&para;</a></summary>
+<summary>向 <code>./test</code> 随机读写，模拟 I/O 压力&#8288;<a class="headerlink" href="#simulate-i-o-stress" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--filename<span class="o">=</span>./test<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span>--filesize<span class="o">=</span>2G<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span>--rw<span class="o">=</span>randrw<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span>--bs<span class="o">=</span>4k<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--iodepth<span class="o">=</span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
@@ -4074,7 +4074,7 @@
 </code></pre></div>
 </details>
 <details class="example" id="simulate-crystaldiskmark">
-<summary>模拟 Crystal DiskMark 测试磁盘性能<a class="headerlink" href="#simulate-crystaldiskmark" title="Permanent link">&para;</a></summary>
+<summary>模拟 Crystal DiskMark 测试磁盘性能&#8288;<a class="headerlink" href="#simulate-crystaldiskmark" title="Permanent link">&para;</a></summary>
 <p>本部分来自 <a href="https://ibug.io/blog/2019/09/raspberry-pi-4-review-benchmark/#3-fio-microsd-card-speed-test">Raspberry Pi 4 B Review and Benchmark - What’s improved over Pi 3 B+</a>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>sudo<span class="w"> </span>fio<span class="w"> </span>--loops<span class="o">=</span><span class="m">5</span><span class="w"> </span>--size<span class="o">=</span>500m<span class="w"> </span>--filename<span class="o">=</span>fiotest.tmp<span class="w"> </span>--stonewall<span class="w"> </span>--ioengine<span class="o">=</span>libaio<span class="w"> </span>--direct<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span>--name<span class="o">=</span>SeqRead<span class="w"> </span>--bs<span class="o">=</span>1m<span class="w"> </span>--rw<span class="o">=</span><span class="nb">read</span><span class="w"> </span><span class="se">\</span>
@@ -4091,7 +4091,7 @@
 <p>fio 的配置文件被称为 job 文件，定义了一组需要模拟的 I/O 负载。fio 支持输入多个 job 文件，每个 job 文件会依次运行。而 job 文件内的任务默认是并行运行的，可以使用 <code>stonewall</code> 参数来保证串行。</p>
 <p>Job 文件使用 ini 格式，通常包括一个 global 节定义共享参数和若干个 job 节定义每个 I/O 任务的参数（可以覆盖 global 节的参数）。</p>
 <details class="example" id="crystaldiskmark-fio-job">
-<summary>模拟 Crystal DiskMark 测试磁盘性能 job 文件<a class="headerlink" href="#crystaldiskmark-fio-job" title="Permanent link">&para;</a></summary>
+<summary>模拟 Crystal DiskMark 测试磁盘性能 job 文件&#8288;<a class="headerlink" href="#crystaldiskmark-fio-job" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[global]</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">ioengine</span><span class="o">=</span><span class="s">libaio</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="na">direct</span><span class="o">=</span><span class="s">1</span>

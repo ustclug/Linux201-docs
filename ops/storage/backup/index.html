@@ -3527,7 +3527,7 @@
 <li>特定平台可能有专用的备份工具，例如虚拟化平台 Proxmox VE 的 <a href="https://proxmox.com/en/products/proxmox-backup-server/overview">Proxmox Backup Server</a>。</li>
 </ul>
 <div class="admonition warning" id="no-snapshot-and-raid-are-not-backup">
-<p class="admonition-title">单纯的快照与 RAID 都不是备份<a class="headerlink" href="#no-snapshot-and-raid-are-not-backup" title="Permanent link">&para;</a></p>
+<p class="admonition-title">单纯的快照与 RAID 都不是备份&#8288;<a class="headerlink" href="#no-snapshot-and-raid-are-not-backup" title="Permanent link">&para;</a></p>
 <p>快照是文件系统的特性，如果文件系统损坏，那么快照就都无法正常读取。而 RAID 只能在硬盘故障数量小于对应等级限制时才能保证数据完整性，无法防止在诸如误删除、自然灾害等情况下数据的丢失与损坏。</p>
 </div>
 <p>以下首先介绍设计备份时需要注意的问题，之后从上述方法列表引申开来，介绍一部分工具的使用方法与技巧。</p>
@@ -3536,14 +3536,14 @@
 <p>版本管理的问题很容易理解：如果备份的版本只有一份的话，那么一旦数据被误删除，并且触发了备份，那么被删除的数据就没法用正常方法找回了。不过如果数据很大的话，存储每份版本就会需要大量的磁盘空间，因此在选型时需要考虑使用支持增量备份或去重的方案。</p>
 <p>而数据一致性的问题在不少时候会被忽视。</p>
 <div class="admonition note" id="crash-consistency">
-<p class="admonition-title">崩溃一致性<a class="headerlink" href="#crash-consistency" title="Permanent link">&para;</a></p>
+<p class="admonition-title">崩溃一致性&#8288;<a class="headerlink" href="#crash-consistency" title="Permanent link">&para;</a></p>
 <p>很多时候，我们希望即使程序崩溃、系统断电，程序维护的数据内部状态仍然是一致的。这被称为崩溃一致性（crash consistency）。一般来讲，数据库都实现了崩溃一致性。</p>
 </div>
 <p>即使应用实现了崩溃一致性，如果备份工具直接复制对应的文件，那么得到的文件也有可能是不一致的——这个文件可能前半部分在 A 状态，后半部分在 B 状态。因此，备份数据库一般都使用数据库软件提供的 dump 工具导出 SQL，而不是直接用 rsync 等工具简单复制数据库对应的存储文件。</p>
 <p>如果需要备份的文件有一致性的要求，并且不方便使用专用的工具，那么也可以使用文件系统的快照功能避免上述提到的问题。</p>
 <p>最后，在有条件的情况下，需要验证备份的有效性，避免出现备份损坏或不完整的情况。</p>
 <div class="admonition example" id="negative-example">
-<p class="admonition-title">反面例子<a class="headerlink" href="#negative-example" title="Permanent link">&para;</a></p>
+<p class="admonition-title">反面例子&#8288;<a class="headerlink" href="#negative-example" title="Permanent link">&para;</a></p>
 <p>2017 年，GitLab 由于操作失误，在错误的数据库主机上执行了命令导致数据丢失。尽管设置了各种备份，他们没能够第一时间有效恢复：</p>
 <ul>
 <li>LVM 备份每天执行一次，上一次执行还是手动在 6 小时之前做的；备份的数据会加载到 staging 环境里面，但是 webhook 数据会被删除。</li>
@@ -3628,7 +3628,7 @@
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example2/passwd</span>
 </code></pre></div>
 <div class="admonition warning" id="should-i-add-slash-at-target-path">
-<p class="admonition-title">是否要在目标路径后添加 <code>/</code>？<a class="headerlink" href="#should-i-add-slash-at-target-path" title="Permanent link">&para;</a></p>
+<p class="admonition-title">是否要在目标路径后添加 <code>/</code>？&#8288;<a class="headerlink" href="#should-i-add-slash-at-target-path" title="Permanent link">&para;</a></p>
 <p>在以上的例子中，我们给目标路径（<code>/tmp/example1/</code> 和 <code>/tmp/example2/</code>）结尾都添加了 <code>/</code>。这是因为如果不在目标结尾添加 <code>/</code>，如果原始路径是文件或者<strong>空目录</strong>，并且目标路径不存在的话，rsync 的行为会变成复制并重命名为目标路径。对以下的例子，结果会出现区别：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mkdir<span class="w"> </span>/tmp/example3
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/tmp/example3<span class="w"> </span>/tmp/example4
@@ -3646,7 +3646,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">"ssh -p 2222"</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <div class="admonition note" id="rsync-sender-generator-receiver">
-<p class="admonition-title">rsync 的 sender、generator 和 receiver<a class="headerlink" href="#rsync-sender-generator-receiver" title="Permanent link">&para;</a></p>
+<p class="admonition-title">rsync 的 sender、generator 和 receiver&#8288;<a class="headerlink" href="#rsync-sender-generator-receiver" title="Permanent link">&para;</a></p>
 <p>通过网络传输数据时，rsync 在接收端会有 generator 和 receiver 两个进程，在发送端有 sender 进程。大致的流程如下：</p>
 <ol>
 <li>Client 与 server 握手，根据是发送还是接收文件决定谁是 sender、谁是 receiver/generator。sender 遍历本地文件，发送文件列表。</li>
@@ -3660,7 +3660,7 @@
 <h3 id="rsync-mirror">镜像同步<a class="headerlink" href="#rsync-mirror" title="Permanent link">&para;</a></h3>
 <p>Rsync 同时也可以作为服务端（daemon 模式）对外提供 rsync 服务，默认端口为 TCP 873。</p>
 <div class="admonition tip" id="rsync-over-tls">
-<p class="admonition-title">Rsync over TLS<a class="headerlink" href="#rsync-over-tls" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Rsync over TLS&#8288;<a class="headerlink" href="#rsync-over-tls" title="Permanent link">&para;</a></p>
 <p>Rsync 默认为明文协议，不过其支持通过其他反向代理工具（例如 Nginx 的 stream 模块）实现 TLS 加密，默认端口为 874，需要使用 <code>rsync-ssl</code> 命令连接。</p>
 </div>
 <p>以下介绍与镜像同步（mirrors）相关的服务端与客户端配置。其他用途可视情况自行调整。</p>
@@ -3698,7 +3698,7 @@
 </code></pre></div>
 <p>模块是 rsync URL 的第一层，例如 <code>rsync://server/repo1/somedir/</code> 中，<code>repo1</code> 就是模块名。配置完成之后，可以使用 <code>rsync://server/</code> 列出全部模块，<code>rsync rsync://server/repo1</code> 来确认，并且采用类似的命令同步某个模块的全部文件。</p>
 <div class="admonition tip" id="enable-multiple-rsync-services">
-<p class="admonition-title">同时启用多个 rsync 服务<a class="headerlink" href="#enable-multiple-rsync-services" title="Permanent link">&para;</a></p>
+<p class="admonition-title">同时启用多个 rsync 服务&#8288;<a class="headerlink" href="#enable-multiple-rsync-services" title="Permanent link">&para;</a></p>
 <p>如果有需要多个 daemon 的需求（例如需要多个 rsync 服务端 bind 到不同的 IP 地址上），可以使用 systemd 的<a href="../../service/#unit-template">模板单元格式</a>手动编写 <code>rsync@.service</code> 文件。</p>
 <p>同时 <code>rsyncd.conf</code> 格式支持导入其他的配置文件，因此不同服务的共通部分可以提取出来。其中 <code>&amp;include</code> 用于导入模块的定义，<code>&amp;merge</code> 用于导入配置，类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># common.inc 包含配置</span>
@@ -3708,7 +3708,7 @@
 </code></pre></div>
 </div>
 <div class="admonition tip" id="secure-rsync-with-systemd">
-<p class="admonition-title">使用 systemd 安全加固 rsync 服务<a class="headerlink" href="#secure-rsync-with-systemd" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 systemd 安全加固 rsync 服务&#8288;<a class="headerlink" href="#secure-rsync-with-systemd" title="Permanent link">&para;</a></p>
 <p><a href="../../service/#service">Systemd 服务的安全加固参数</a>可以帮助避免未知的安全问题影响 rsync 服务，特别是在 <a href="https://kb.cert.org/vuls/id/952657">rsync 于 2025 年 1 月暴露了多个 CVE 的情况下</a>（其中两个是服务端的漏洞），这样的加固就显得更加重要。</p>
 <p>一份参考 <code>rsync@.service</code> 如下，其中包含安全加固以及降低 IO 与 CPU 优先级的设置（这同样也是<a href="https://docs.ustclug.org/services/mirrors/rsync/">科大镜像站目前使用的配置</a>）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">[Unit]</span>
@@ -3746,7 +3746,7 @@
 <p>也可以考虑将 <code>uid</code> 与 <code>gid</code> 修改为在 systemd 服务中配置（而不是让 daemon 自己降权），并且提供 <code>chroot</code> 等必要的 capability。</p>
 </div>
 <div class="admonition tip" id="rsync-reverse-proxy">
-<p class="admonition-title">Rsync 反向代理<a class="headerlink" href="#rsync-reverse-proxy" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Rsync 反向代理&#8288;<a class="headerlink" href="#rsync-reverse-proxy" title="Permanent link">&para;</a></p>
 <p><a href="https://github.com/ustclug/rsync-proxy">ustclug/rsync-proxy</a> 项目支持基于模块名的 rsync 反向代理，可以将不同的模块放在不同的服务器上，由 rsync-proxy 代理到不同的后端服务器上。</p>
 </div>
 <h4 id="rsync-client">Rsync 客户端参数<a class="headerlink" href="#rsync-client" title="Permanent link">&para;</a></h4>
@@ -3814,7 +3814,7 @@
 <li>如果需要包含某个目录和目录下的内容，需要使用 <code>***</code>，例如 <code>--include=a/***</code>（等价于 <code>--include=a/ --include=a/**</code>）。如果只写 <code>--include=a/</code>，那么只有 <code>a</code> 这个目录本身能够匹配到对应的规则。</li>
 </ol>
 <div class="admonition question" id="matching-exercise">
-<p class="admonition-title">匹配练习<a class="headerlink" href="#matching-exercise" title="Permanent link">&para;</a></p>
+<p class="admonition-title">匹配练习&#8288;<a class="headerlink" href="#matching-exercise" title="Permanent link">&para;</a></p>
 <p>请尝试分别写出符合以下条件的 rsync 参数，假设需要从 src 同步到 dst：</p>
 <ol>
 <li>排除 src 下的 <code>manjaro</code> 目录（不要排除其他名称包含 <code>manjaro</code> 的文件或目录）。</li>
@@ -3833,7 +3833,7 @@
 <p>restic 是一款现代的备份工具，支持使用包括本地、SFTP、S3 等多种后端存储备份数据，同时支持加密、多主机备份、版本管理等功能。Backblaze B2 云对象存储则以实惠的价格（截至写作时，每月存储开销 6 美元/TB；下载量超过存储 3 倍后流量收费 0.01 美元/GB）与对自动化程序友好的 API 成为了个人用户的热门选择。</p>
 <p>首先在 Backblaze 处创建桶和 Application Key，记录下 Bucket 名称和 Application Key 的 ID 和 Key。</p>
 <div class="admonition note" id="application-key-per-host">
-<p class="admonition-title">为每台主机设置单独的 Application Key<a class="headerlink" href="#application-key-per-host" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为每台主机设置单独的 Application Key&#8288;<a class="headerlink" href="#application-key-per-host" title="Permanent link">&para;</a></p>
 <p>为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。</p>
 </div>
 <p>之后设置环境变量并初始化仓库：</p>
@@ -3846,7 +3846,7 @@
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>restic<span class="w"> </span>init
 </code></pre></div>
 <div class="admonition tip" id="use-s3-compatible-mode">
-<p class="admonition-title">也可使用 S3 兼容模式连接 Backblaze B2<a class="headerlink" href="#use-s3-compatible-mode" title="Permanent link">&para;</a></p>
+<p class="admonition-title">也可使用 S3 兼容模式连接 Backblaze B2&#8288;<a class="headerlink" href="#use-s3-compatible-mode" title="Permanent link">&para;</a></p>
 <p>事实上，由于使用的第三方库的错误处理问题，<a href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2">restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2</a>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
@@ -3905,7 +3905,7 @@
 <a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
 </code></pre></div>
 <div class="admonition note" id="restic-cache">
-<p class="admonition-title">restic 的缓存<a class="headerlink" href="#restic-cache" title="Permanent link">&para;</a></p>
+<p class="admonition-title">restic 的缓存&#8288;<a class="headerlink" href="#restic-cache" title="Permanent link">&para;</a></p>
 <p>默认情况下，restic 会在 <code>$XDG_CACHE_HOME/restic</code> 或 <code>~/.cache/restic</code> 下缓存一些索引文件以提升性能。不过 systemd 默认不会给服务设置 <code>XDG_CACHE_HOME</code> 和 <code>HOME</code> 环境变量。因此，环境变量文件中需要额外设置 <code>RESTIC_CACHE_DIR</code>，或前述的与家目录相关的环境变量。</p>
 </div>
 <h3 id="snapper-snapshots">使用 snapper 定时创建 Btrfs 快照<a class="headerlink" href="#snapper-snapshots" title="Permanent link">&para;</a></h3>
@@ -3921,7 +3921,7 @@
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>home<span class="w"> </span>create-config<span class="w"> </span>/home
 </code></pre></div>
 <div class="admonition note" id="note-on-creating-config-for-root">
-<p class="admonition-title">在给 <code>/</code> 创建配置时的注意事项<a class="headerlink" href="#note-on-creating-config-for-root" title="Permanent link">&para;</a></p>
+<p class="admonition-title">在给 <code>/</code> 创建配置时的注意事项&#8288;<a class="headerlink" href="#note-on-creating-config-for-root" title="Permanent link">&para;</a></p>
 <p>给 <code>/</code> 设置自动快照的一种用途是在系统升级出现问题时回滚到以前的状态。不过你应该不会希望回滚系统的时候把系统日志、你的个人数据、虚拟机磁盘、临时文件等等也一起回滚了。这些不希望被回滚（被快照）的目录需要创建单独的 subvolume，避免在给 <code>@</code> 打快照的时候被包含。</p>
 <p>可以参考 <a href="https://documentation.suse.com/smart/systems-management/html/snapper-basic-concepts/index.html#snapper-subvolumes">SUSE 的手册</a>做调整。</p>
 </div>

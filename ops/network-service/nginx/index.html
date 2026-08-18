@@ -4341,7 +4341,7 @@
 <p>一般情况下，我们不在 <code>nginx.conf</code> 文件的 <code>http</code> 块中直接编写站点信息，而是在 <code>sites-available</code> 目录下创建一个新的配置文件，然后在 <code>sites-enabled</code> 目录下创建一个符号链接。如果要暂时下线某个站点，只需要删除 <code>sites-enabled</code> 目录下的符号链接即可，而不需要删除配置文件。</p>
 <p>从 Nginx 的角度来看，唯一的区别在于来自 <code>conf.d</code> 的文件能够更早被处理，因此，如果你有相互冲突的配置，那么来自 <code>conf.d</code> 的配置会优先于 <code>sites-enabled</code> 中的配置。</p>
 <div class="admonition note" id="nginx-configuration-layouts">
-<p class="admonition-title">其他发行版和 Nginx 官方的配置<a class="headerlink" href="#nginx-configuration-layouts" title="Permanent link">&para;</a></p>
+<p class="admonition-title">其他发行版和 Nginx 官方的配置&#8288;<a class="headerlink" href="#nginx-configuration-layouts" title="Permanent link">&para;</a></p>
 <p>对于其他发行版和官方源来说，配置中则不包含 <code>sites-available</code> 和 <code>sites-enabled</code>，而是只会 <code>include</code> <code>conf.d</code> 目录：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">    </span><span class="c1"># ...</span>
@@ -4362,7 +4362,7 @@
 </code></pre></div>
 <p>需要注意的是，如果配置文件中存在错误，重新加载的时候会报出这些错误，然后 Nginx 会以旧的配置文件继续运行。</p>
 <details class="note" id="nginx-process-model">
-<summary>Nginx 的主进程与工作进程的设计<a class="headerlink" href="#nginx-process-model" title="Permanent link">&para;</a></summary>
+<summary>Nginx 的主进程与工作进程的设计&#8288;<a class="headerlink" href="#nginx-process-model" title="Permanent link">&para;</a></summary>
 <p>Nginx 采用了主进程（master process）和工作进程（worker process）的设计。主进程负责读取配置、打开端口、管理工作进程，而工作进程则负责处理实际的请求。当你向主进程发送 SIGHUP 信号时（重新加载配置文件），主进程先验证新的配置，成功后会启动新的工作进程来应用新的配置，并且让旧的工作进程停止接受新连接，处理完成已有的连接之后再退出，因此正在处理的请求不会被突然中断。</p>
 </details>
 <h2 id="directives-variables-modules">指令、变量与模块<a class="headerlink" href="#directives-variables-modules" title="Permanent link">&para;</a></h2>
@@ -4398,18 +4398,18 @@
 </ul>
 <p>对生产环境来说，以上的参数设置可能是不够的。例如对一台分配了 4 核心的虚拟机，按照上述设置，其最多只能同时处理 3072 个连接，对很多业务来说在高峰期都是不够用的，因此需要根据对同时连接数的估计、系统核心数量等来设置 <code>worker_connections</code>。作为参考，科大镜像站的 <code>worker_connections</code> 设置为 32767，并有 80 个 CPU 核心，每个核心一个工作进程。</p>
 <div class="admonition note" id="multi-accept">
-<p class="admonition-title">那 <code>multi_accept</code> 呢？<a class="headerlink" href="#multi-accept" title="Permanent link">&para;</a></p>
+<p class="admonition-title">那 <code>multi_accept</code> 呢？&#8288;<a class="headerlink" href="#multi-accept" title="Permanent link">&para;</a></p>
 <p>在 Linux 下，nginx 默认使用 epoll。<a href="https://nginx.org/en/docs/ngx_core_module.html#multi_accept"><code>multi_accept</code></a> 开启后，每次 nginx epoll 都会尽可能多地 accept 新连接，而不是一个一个来。在一部分场景下可能有效果，但是这也会让某个 worker 一次性抢到太多的连接，导致负载不均等问题。</p>
 <p>相比之下，更推荐的优化是在 <code>server</code> 块（下文介绍）的 <code>listen</code> 指令添加 <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#reuseport"><code>reuseport</code> 参数</a>，让内核将新连接均衡到不同的工作进程上（而不是每个工作进程在有新连接时一起被唤醒抢夺连接——这也被称为<a href="https://en.wikipedia.org/wiki/Thundering_herd_problem">「惊群」（Thundering herd）问题</a>）。</p>
 </div>
 <div class="admonition warning" id="file-descriptor-limit">
-<p class="admonition-title">调整文件描述符数量限制<a class="headerlink" href="#file-descriptor-limit" title="Permanent link">&para;</a></p>
+<p class="admonition-title">调整文件描述符数量限制&#8288;<a class="headerlink" href="#file-descriptor-limit" title="Permanent link">&para;</a></p>
 <p>每个进程能够打开的文件数量是有限制的。对 Shell，可以使用 <code>ulimit -S -n</code> 和 <code>ulimit -H -n</code> 分别查看 soft limit 和 hard limit；对已有的进程也可以查看 <code>/proc/&lt;PID&gt;/limits</code> 文件。</p>
 <p>其中 soft limit 直接限制了文件数量，但是这个值是允许动态调节的，只要比 hard limit 小即可。默认情况下，为了保证使用 <a href="https://man7.org/linux/man-pages/man2/select.2.html">select(2)</a> 的应用的兼容性，进程的文件描述符 soft limit 都是 1024（详见 <a href="https://github.com/systemd/systemd/issues/25478">systemd issue #25478</a>）。由于每个 TCP socket 在 nginx 中都会至少使用一个文件描述符，因此如果调大了 <code>worker_connections</code>，那么基本上也必须调整这一项 soft limit 设置。Nginx 中对应的设置为 <a href="https://nginx.org/en/docs/ngx_core_module.html#worker_rlimit_nofile"><code>worker_rlimit_nofile</code></a>，因为反向代理、提供本地文件等还需要开启额外的文件，一般建议至少设置为 <code>worker_connections</code> 的两倍。</p>
 <p>如果使用 systemd，也可以调整 <code>nginx.service</code>，添加 <code>LimitNOFILE</code> 参数。</p>
 </div>
 <div class="admonition tip" id="use-aio">
-<p class="admonition-title">使用 <code>aio</code> 避免工作进程阻塞<a class="headerlink" href="#use-aio" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 <code>aio</code> 避免工作进程阻塞&#8288;<a class="headerlink" href="#use-aio" title="Permanent link">&para;</a></p>
 <p>默认配置下，Nginx 的工作进程会打开、读取需要的文件，但是 POSIX 默认的文件 API（<code>open()</code>、<code>read()</code> 等）是同步的——这意味着，如果 IO 处理的速度较慢（例如在机械硬盘上），那么对应的工作进程在调用文件 API 时就无法处理其他的请求，导致响应的延迟增大。</p>
 <p>尽管 Linux 提供了内核级别的 AIO（异步 IO）的支持（可参考 <a href="https://pagure.io/libaio">libaio</a>），但是条件较为苛刻：AIO 请求需要使用 <code>O_DIRECT</code> 绕过内核的 page cache（对非常快速的 NVMe 设备来说，这么做可能是必要的，但是对慢速设备来说是弊大于利的），并且 <code>O_DIRECT</code> 访问要求对齐，否则可能会阻塞住。因此除非存储设备非常快，否则不建议使用。在此类场景下，一种常见的解决方式是创建专用的线程池，将 IO 请求 offload 给这个线程池，避免阻塞其他的任务，包括 POSIX AIO（由 glibc 在用户态实现）和 Nginx 都支持这种方式。</p>
 <p><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#aio"><code>aio</code></a> 指令支持基于 Linux 内核 AIO 和线程池这两种实现。添加 <code>aio threads;</code> 即可。默认<strong>每个工作进程的</strong>线程池为 32 线程，最多排队 65536 个请求，可以使用 <a href="https://nginx.org/en/docs/ngx_core_module.html#thread_pool"><code>thread_pool</code></a> 指令调整。以下是科大镜像站在开启 <code>aio threads</code> 前后的请求主页的 HTTP 延迟情况，可以看到效果十分显著：</p>
@@ -4430,7 +4430,7 @@
 </code></pre></div>
 <p><a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#location"><code>location</code> 块</a>嵌套于 <code>server</code> 块中，用于定义如何处理特定 URI 的请求。它是 Nginx 配置中的一个重要部分，允许让 Nginx 根据请求的路径、参数或其他条件来执行不同的操作。一个 <code>server</code> 块中可以有多个 <code>location</code> 块。</p>
 <div class="admonition tip" id="uri-url-request-uri">
-<p class="admonition-title">URI? URL? Request URI?<a class="headerlink" href="#uri-url-request-uri" title="Permanent link">&para;</a></p>
+<p class="admonition-title">URI? URL? Request URI?&#8288;<a class="headerlink" href="#uri-url-request-uri" title="Permanent link">&para;</a></p>
 <p>URI（Uniform Resource Identifier，统一资源标识符）包含 URL（Uniform Resource Locator，统一资源定位符）和 URN（Uniform Resource Name，统一资源名称）。其中 URL 大家都非常熟悉，而 URN 则比较少见。URN 的格式类似于 <a href="https://web.mit.edu/6.001/6.037/sicp.pdf"><code>urn:isbn:0262510871</code></a>，用于标识资源（这里是一本书）的名称。因为 URN 很少见，在绝大部分场景下，URI 和 URL 可以视为同义词。</p>
 <p>而 Request URI 是 <a href="https://www.rfc-editor.org/rfc/rfc2616">HTTP 标准 RFC 2616</a> 中规定的：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Request-URI    = "*" | absoluteURI | abs_path | authority
@@ -4490,7 +4490,7 @@
 </code></pre></div>
 <p>其中对绝大部分后端服务来说，<code>Host</code> 头是必须设置的。</p>
 <div class="admonition note" id="http-request-headers">
-<p class="admonition-title">约定俗成的 HTTP 请求头<a class="headerlink" href="#http-request-headers" title="Permanent link">&para;</a></p>
+<p class="admonition-title">约定俗成的 HTTP 请求头&#8288;<a class="headerlink" href="#http-request-headers" title="Permanent link">&para;</a></p>
 <p>以上配置中除了 <code>Host</code> 是 HTTP/1.1 标准的请求头以外，其他以 <code>X-</code> 开头的请求头都是约定俗成的非标准请求头，用于让反向代理（Nginx）传递请求用户的真实 IP 地址和请求协议等信息，否则后端服务只能看到反代本身的 IP 信息。需要注意的是，如果后端服务器没有经过反向代理，或者反向代理配置不正确，那么用户可能会伪造这些请求头，如果此时后端服务错误地信任了这些请求头，就会导致安全问题。</p>
 </div>
 <p>这时访问 <code>http://localhost</code> 就会被转发到 <code>http://backend_server:port</code>。对外部网络来说，Nginx 就是一个反向代理站点。</p>
@@ -4528,7 +4528,7 @@
 </code></pre></div>
 <p>那 <code>default_server</code> 又是什么意思呢？它表示默认站点，当请求的域名不在 <code>server_name</code> 中时，Nginx 会使用 <code>default_server</code> 对应的 <code>server</code> 块来处理请求。该站点的 server_name 指定为 <code>_</code>，是一种约定俗成的默认域名，本身没有特殊含义。对于配置了 <code>default_server</code> 的 <code>server</code> 块，你也可以完全不写 <code>server_name</code> 指令。一般建议为 Nginx 配置一个默认站点，用于处理未知域名的请求。</p>
 <div class="admonition example" id="reject-unknown-domain">
-<p class="admonition-title">拒绝未知域名请求<a class="headerlink" href="#reject-unknown-domain" title="Permanent link">&para;</a></p>
+<p class="admonition-title">拒绝未知域名请求&#8288;<a class="headerlink" href="#reject-unknown-domain" title="Permanent link">&para;</a></p>
 <p>你也可以通过配置一个默认站点来拒绝未知域名的请求，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="w"> </span><span class="s">default_server</span><span class="p">;</span><span class="w">  </span><span class="c1"># 默认站点</span>
@@ -4657,7 +4657,7 @@
 </li>
 </ol>
 <div class="admonition question" id="location-matching-analysis">
-<p class="admonition-title">分析以下配置的问题<a class="headerlink" href="#location-matching-analysis" title="Permanent link">&para;</a></p>
+<p class="admonition-title">分析以下配置的问题&#8288;<a class="headerlink" href="#location-matching-analysis" title="Permanent link">&para;</a></p>
 <p>以下配置节选自 <a href="https://github.com/USTC-Hackergame/hackergame2020-writeups/tree/master/official/%E8%B6%85%E7%AE%80%E6%98%93%E7%9A%84%E7%BD%91%E7%9B%98%E6%9C%8D%E5%8A%A1%E5%99%A8">Hackergame 2020 题目「超简易的网盘服务器」</a>，该服务为 <a href="https://github.com/lrsjng/h5ai">h5ai</a>（一个 PHP 编写的文件分享服务）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># 根目录是私有目录，使用 basic auth 进行认证，只有我自己可以访问</span>
 <a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
@@ -4684,7 +4684,7 @@
 <h2 id="tls">TLS<a class="headerlink" href="#tls" title="Permanent link">&para;</a></h2>
 <p>TLS 是一种加密通信协议，用于保护客户端和服务器之间的通信安全。HTTPS 就使用了 TLS。你可以在 <a href="https://cherr.cc/ssl.html">https://cherr.cc/ssl.html</a> 找到 SSL/TLS 的原理解释。</p>
 <div class="admonition note" id="ssl-vs-tls">
-<p class="admonition-title">SSL?<a class="headerlink" href="#ssl-vs-tls" title="Permanent link">&para;</a></p>
+<p class="admonition-title">SSL?&#8288;<a class="headerlink" href="#ssl-vs-tls" title="Permanent link">&para;</a></p>
 <p>在早期，HTTPS 使用 SSL 来加密通信，但是人们后续发现 SSL 存在一些安全漏洞，因此逐渐被 TLS 取代。尽管如此，SSL 这个术语仍然被广泛使用，尤其是在非正式场合下。因此，SSL 和 TLS 在很多情况下可以视为同义词。</p>
 </div>
 <p>一般的 HTTP 监听端口是 80，HTTPS 监听端口是 443，这是 IANA（互联网号码分配局）为这两种协议分配的标准端口号。Nginx 支持 TLS 协议，可以用来配置 HTTPS 站点。</p>
@@ -4696,11 +4696,11 @@
 <li>自签名证书（仅用于测试环境，不建议在生产环境中使用）。</li>
 </ul>
 <div class="admonition tip" id="ngx-http-acme-module">
-<p class="admonition-title">ngx_http_acme_module<a class="headerlink" href="#ngx-http-acme-module" title="Permanent link">&para;</a></p>
+<p class="admonition-title">ngx_http_acme_module&#8288;<a class="headerlink" href="#ngx-http-acme-module" title="Permanent link">&para;</a></p>
 <p>Nginx 的 <a href="https://nginx.org/en/docs/http/ngx_http_acme_module.html"><code>ngx_http_acme_module</code></a> 也实现了 ACME 协议，可以类似 Caddy 那样避免多余的证书管理工具，直接让 Nginx 自行申请和续期证书。该模块可能需要自行编译安装。</p>
 </div>
 <div class="admonition comment" id="commercial-vs-free-certificates">
-<p class="admonition-title">@taoky: 商业证书一定比免费证书更好吗？<a class="headerlink" href="#commercial-vs-free-certificates" title="Permanent link">&para;</a></p>
+<p class="admonition-title">@taoky: 商业证书一定比免费证书更好吗？&#8288;<a class="headerlink" href="#commercial-vs-free-certificates" title="Permanent link">&para;</a></p>
 <p>不一定。经常有的一种论调是：商业证书因为付了钱，所以比 Let's Encrypt 等免费证书更可靠、更安全，例如像<a href="https://www.bilibili.com/opus/1119462279183597571">下面这样</a>：</p>
 <blockquote>
 <p>北大用的商业证书，这种证书能证明这个网站确实属于北京大学，你可以看证书颁发对象的组织栏。清华用的是免费证书（注：Let's Encrypt），没有组织信息，不能证明这个网站属于清华大学。商业证书大概每年万把块？我不清楚具体行情，但世一大不应该差这点钱[吃瓜]</p>
@@ -4725,17 +4725,17 @@
 </ol>
 </div>
 <div class="admonition tip" id="debian-snakeoil-certificate">
-<p class="admonition-title">Debian 的 snakeoil 自签名证书<a class="headerlink" href="#debian-snakeoil-certificate" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Debian 的 snakeoil 自签名证书&#8288;<a class="headerlink" href="#debian-snakeoil-certificate" title="Permanent link">&para;</a></p>
 <p>Debian 系统的 <code>ssl-cert</code> 包自带了一个自签名的测试证书。对应的证书在 <code>/etc/ssl/certs/ssl-cert-snakeoil.pem</code>，私钥在 <code>/etc/ssl/private/ssl-cert-snakeoil.key</code>。可以用它本地测试 HTTPS 配置，但不建议在生产环境中使用。</p>
 <p>如果需要重新生成，可以执行：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>make-ssl-cert<span class="w"> </span>generate-default-snakeoil<span class="w"> </span>-f
 </code></pre></div>
 </div>
 <div class="admonition tip" id="use-mkcert">
-<p class="admonition-title">使用 mkcert 创建 CA 证书<a class="headerlink" href="#use-mkcert" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 mkcert 创建 CA 证书&#8288;<a class="headerlink" href="#use-mkcert" title="Permanent link">&para;</a></p>
 <p>以上介绍的「蛇油证书」对简单的场景够用了，但是在一些场景下我们需要生成 CA 证书，再使用 CA 证书签署新的证书（例如需要配置让程序信任使用指定 CA 证书签发的证书）。OpenSSL 虽然能解决这个问题，但是实在是太麻烦了——</p>
 <details class="note" id="openssl-gui">
-<summary>如果 OpenSSL 是 GUI 程序，会是什么样子的？<a class="headerlink" href="#openssl-gui" title="Permanent link">&para;</a></summary>
+<summary>如果 OpenSSL 是 GUI 程序，会是什么样子的？&#8288;<a class="headerlink" href="#openssl-gui" title="Permanent link">&para;</a></summary>
 <figure>
 <p><img alt="If OpenSSL were a GUI" src="https://smallstep.imgix.net/openssl_83b5f638ef.png" /></p>
 <figcaption>
@@ -4758,7 +4758,7 @@
 </code></pre></div>
 <p>CA 证书存储的位置可以使用 <code>mkcert -CAROOT</code> 查看。</p>
 <details class="note" id="i-want-to-use-openssl">
-<summary>我还是想用 OpenSSL<a class="headerlink" href="#i-want-to-use-openssl" title="Permanent link">&para;</a></summary>
+<summary>我还是想用 OpenSSL&#8288;<a class="headerlink" href="#i-want-to-use-openssl" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="c1"># 创建 CA 证书与密钥</span>
 <a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>openssl<span class="w"> </span>genrsa<span class="w"> </span>-out<span class="w"> </span>ca.key<span class="w"> </span><span class="m">4096</span>
 <a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a>openssl<span class="w"> </span>req<span class="w"> </span>-x509<span class="w"> </span>-new<span class="w"> </span>-noenc<span class="w"> </span>-key<span class="w"> </span>ca.key<span class="w"> </span>-sha256<span class="w"> </span>-days<span class="w"> </span><span class="m">3650</span><span class="w"> </span>-subj<span class="w"> </span><span class="s2">"/CN=ExampleCA"</span><span class="w"> </span>-out<span class="w"> </span>ca.crt
@@ -4777,7 +4777,7 @@
 </div>
 <p>以下假设你的证书保存在 <code>/etc/nginx/ssl/example.com.crt</code> 和 <code>/etc/nginx/ssl/example.com.key</code>。</p>
 <div class="admonition tip" id="certificate-format">
-<p class="admonition-title">证书格式<a class="headerlink" href="#certificate-format" title="Permanent link">&para;</a></p>
+<p class="admonition-title">证书格式&#8288;<a class="headerlink" href="#certificate-format" title="Permanent link">&para;</a></p>
 <p>PEM 格式是最常见的证书格式。其内容为纯文本，包含 base64 编码的相关数据。对于证书（一般为 <code>pem</code>、<code>crt</code> 或者 <code>cer</code> 后缀）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="gh">-----BEGIN CERTIFICATE-----</span>
 <a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="s">（base64</span><span class="w"> </span><span class="s">编码的数据）</span>
@@ -4794,7 +4794,7 @@
 </code></pre></div>
 </div>
 <div class="admonition tip" id="fullchain-pem">
-<p class="admonition-title">fullchain.pem<a class="headerlink" href="#fullchain-pem" title="Permanent link">&para;</a></p>
+<p class="admonition-title">fullchain.pem&#8288;<a class="headerlink" href="#fullchain-pem" title="Permanent link">&para;</a></p>
 <p>一些 ACME 客户端会生成 <code>fullchain.pem</code> 文件，它包含了服务器证书和中间证书的完整链。如果存在这个文件，请<strong>优先使用</strong>它，否则浏览器以外的其他客户端可能会因为缺少中间证书而无法验证证书链。</p>
 </div>
 <h3 id="tls-configuration">TLS 配置<a class="headerlink" href="#tls-configuration" title="Permanent link">&para;</a></h3>
@@ -4824,11 +4824,11 @@
 </code></pre></div>
 <p>注意到和前文的配置不同，这里的监听端口是 443，而且增加了 <code>ssl</code> 选项。<code>ssl_certificate</code> 和 <code>ssl_certificate_key</code> 分别指定了 TLS 证书和密钥的路径。</p>
 <div class="admonition note" id="tls-sni-server-selection">
-<p class="admonition-title">既然 TLS 是加密的，那么 Nginx 是怎么在握手阶段知道要用哪个 <code>server</code> 块，以及里面对应的证书呢？<a class="headerlink" href="#tls-sni-server-selection" title="Permanent link">&para;</a></p>
+<p class="admonition-title">既然 TLS 是加密的，那么 Nginx 是怎么在握手阶段知道要用哪个 <code>server</code> 块，以及里面对应的证书呢？&#8288;<a class="headerlink" href="#tls-sni-server-selection" title="Permanent link">&para;</a></p>
 <p>在 TLS 握手阶段，绝大多数客户端都会发送 SNI（Server Name Indication，服务器名称指示）信息，告诉服务器它想要连接的域名。<strong>SNI 是明文的</strong>，因此服务器可以根据 SNI 信息来选择对应的 <code>server</code> 块和证书。</p>
 </div>
 <div class="admonition tip" id="curl-resolve-https-debugging">
-<p class="admonition-title">使用 <code>curl</code> 调试指定 IP 地址上的 HTTPS 站点<a class="headerlink" href="#curl-resolve-https-debugging" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用 <code>curl</code> 调试指定 IP 地址上的 HTTPS 站点&#8288;<a class="headerlink" href="#curl-resolve-https-debugging" title="Permanent link">&para;</a></p>
 <p>假设你希望 <code>curl</code> 能够命中某个服务器（以 127.0.0.1 为例子）上的 example.com <code>server</code> 块，但是 example.com 的 DNS 解析不指向这个服务器。对 HTTP 网站可以直接这么做：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>curl<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Host: example.com"</span><span class="w"> </span>http://127.0.0.1
 </code></pre></div>
@@ -4838,18 +4838,18 @@
 </div>
 <p>在配置文件中，我们还提到了一些可选的配置，如中间证书、TLS 设置、HSTS 等。一般建议设置 <code>ssl_protocols TLSv1.2 TLSv1.3;</code>，因为 SSLv3、TLSv1.0 和 TLSv1.1 等旧的加密协议已经不再被认为是安全的了。</p>
 <div class="admonition note" id="ssl-dhparam">
-<p class="admonition-title"><code>ssl_dhparam</code><a class="headerlink" href="#ssl-dhparam" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>ssl_dhparam</code>&#8288;<a class="headerlink" href="#ssl-dhparam" title="Permanent link">&para;</a></p>
 <p>由于非对称加密的性能不及对称加密，因此 TLS 在握手阶段需要非对称交换对称加密的密钥。在最早期的时候，SSL 使用 RSA 算法进行密钥交换——客户端生成对称加密密钥，使用服务端证书的公钥加密之后，服务端用自己的私钥解密。但是一旦私钥泄露，那么以往的加密流量也就能够轻松解密出来。而使用 Diffie-Hellman 算法的 DHE（Ephemeral DH）会在每次都生成新的 DH 私钥（算法的具体细节这里不展开），即使未来私钥泄露，以往的流量也无法轻松解密。这种性质也被称为<strong>前向安全性（forward secrecy）</strong>。</p>
 <p>DHE 需要 DH 参数，早期 Nginx 等服务都会自带一个固定的 DH 参数，但是后来证明这样会<a href="https://weakdh.org/">削弱安全性</a>，因此 Nginx 目前 <a href="https://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_dhparam"><code>ssl_dhparam</code></a> 参数默认为空。不过目前，DHE 因为性能问题已经被弃用，和 RSA 密钥交换一起在 TLS 1.3 中被移除。目前 TLS 的主流密钥交换为基于椭圆曲线算法的 ECDHE，因此这一项参数也可以不用再设置了。</p>
 </div>
 <p>HSTS 是一种安全机制，用于强制客户端（浏览器）使用 HTTPS 访问网站。当用户首次访问支持 HSTS 的网站时，浏览器会通过 HTTP 或 HTTPS 发送请求。如果网站支持 HSTS，服务器会在响应中包含 <code>Strict-Transport-Security</code> 头部，指示浏览器该网站应仅通过 HTTPS 访问。<code>add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;</code> 表示启用 HSTS，浏览器会在 1 年内强制使用 HTTPS 访问网站，并且包括子域名。</p>
 <div class="admonition tip" id="check-hsts-preload-before-domain">
-<p class="admonition-title">购买域名之前注意一下 HSTS 预加载列表哦！<a class="headerlink" href="#check-hsts-preload-before-domain" title="Permanent link">&para;</a></p>
+<p class="admonition-title">购买域名之前注意一下 HSTS 预加载列表哦！&#8288;<a class="headerlink" href="#check-hsts-preload-before-domain" title="Permanent link">&para;</a></p>
 <p><a href="https://hstspreload.org">HSTS 预加载列表（HSTS Preload List）</a>是一个由浏览器维护的列表，在这个列表里面的网站浏览器在访问时必须使用 HTTPS。如果买了一个在 HSTS 预加载列表上面的域名，但是不想用 HTTPS 的话，事情就会非常麻烦。</p>
 <p>此外，一些 TLD（顶级域）也被加入到了 HSTS 预加载列表中，例如 <code>.dev</code> 等。</p>
 </div>
 <div class="admonition lab" id="http-to-https-redirect">
-<p class="admonition-title">访问 HTTP 自动跳转到 HTTPS 的配置<a class="headerlink" href="#http-to-https-redirect" title="Permanent link">&para;</a></p>
+<p class="admonition-title">访问 HTTP 自动跳转到 HTTPS 的配置&#8288;<a class="headerlink" href="#http-to-https-redirect" title="Permanent link">&para;</a></p>
 <p>假设希望让用户访问 <code>http://example.com</code> 时自动跳转到 <code>https://example.com</code>，对应的 <code>server</code> 块要怎么写呢？（提示：<code>return</code> 指令；HTTP 301 是永久重定向）</p>
 </div>
 <h2 id="reverse-proxy-load-balancing">反向代理与负载均衡<a class="headerlink" href="#reverse-proxy-load-balancing" title="Permanent link">&para;</a></h2>
@@ -4875,7 +4875,7 @@
 <p>于是，当用户请求 <code>/api/foo</code> 时，<code>/api/</code> 会被替换为 <code>/</code>，后端服务器实际收到的请求路径是 <code>/foo</code>。</p>
 <p>此外，在配置一些应用的时候，可能需要额外添加 WebSocket 支持。</p>
 <div class="admonition note" id="what-is-websocket">
-<p class="admonition-title">WebSocket 是什么？<a class="headerlink" href="#what-is-websocket" title="Permanent link">&para;</a></p>
+<p class="admonition-title">WebSocket 是什么？&#8288;<a class="headerlink" href="#what-is-websocket" title="Permanent link">&para;</a></p>
 <p>在现代网站开发时，经常存在的一种需求是：服务端需要主动向客户端推送数据，而不是仅仅被动地响应客户端（浏览器）请求。如果让浏览器定期轮询服务器，既浪费资源，又增加延迟。WebSocket 协议正是为了解决这个问题而设计的。它允许在客户端和服务器之间建立一个持久的双向通信通道，从而实现实时数据传输。</p>
 <p>WebSocket 协议在协商时会先发送一个 HTTP/1.1 请求，包含 <code>Upgrade: websocket</code> 与 <code>Connection: Upgrade</code> 头，表示请求升级到 WebSocket 协议。</p>
 </div>
@@ -4900,16 +4900,16 @@
 <a id="__codelineno-43-18" name="__codelineno-43-18" href="#__codelineno-43-18"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition tip" id="http-variables">
-<p class="admonition-title">以 <code>$http_</code> 开头的变量<a class="headerlink" href="#http-variables" title="Permanent link">&para;</a></p>
+<p class="admonition-title">以 <code>$http_</code> 开头的变量&#8288;<a class="headerlink" href="#http-variables" title="Permanent link">&para;</a></p>
 <p>Nginx 会自动将所有 HTTP 请求头转换为以 <code>$http_</code> 开头的变量，变量名中的连字符 <code>-</code> 会被替换为下划线 <code>_</code>。例如，HTTP 请求头 <code>Upgrade</code> 对应的变量是 <code>$http_upgrade</code>，<code>User-Agent</code> 对应的变量是 <code>$http_user_agent</code>。</p>
 </div>
 <p>这里 <a href="https://nginx.org/en/docs/http/ngx_http_map_module.html#map"><code>map</code></a> 指令必须在 <code>http</code> 块中，定义了一个从 HTTP 请求的 <code>Upgrade</code> 头到 <code>$connection_upgrade</code> 变量的映射关系。</p>
 <div class="admonition note" id="proxy-connection-header">
-<p class="admonition-title">为什么不能 <code>proxy_set_header Connection $http_connection</code>？<a class="headerlink" href="#proxy-connection-header" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么不能 <code>proxy_set_header Connection $http_connection</code>？&#8288;<a class="headerlink" href="#proxy-connection-header" title="Permanent link">&para;</a></p>
 <p>在 HTTP 标准中，<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Connection"><code>Connection</code></a> 头是 hop-by-hop 的，这意味着这个头<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers#hop-by-hop_headers">不应该按照原样转发</a>。直接转发会存在非预期的副作用。</p>
 </div>
 <div class="admonition tip" id="replace-response-string">
-<p class="admonition-title">替换响应中的字符串<a class="headerlink" href="#replace-response-string" title="Permanent link">&para;</a></p>
+<p class="admonition-title">替换响应中的字符串&#8288;<a class="headerlink" href="#replace-response-string" title="Permanent link">&para;</a></p>
 <p>有些时候我们会不得不需要修改上游返回的内容，特别是在没有办法修改上游（一般是网站后端）代码和配置的时候。例如，上游可能在返回的 HTML 里面写死了路径 <code>/static/</code>，但是你希望放在 <code>/app/static/</code>。此时可以使用 <a href="https://nginx.org/en/docs/http/ngx_http_sub_module.html"><code>ngx_http_sub_module</code></a> 模块提供的 <a href="https://nginx.org/en/docs/http/ngx_http_sub_module.html#sub_filter"><code>sub_filter</code></a> 相关的指令：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/app</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="w">    </span><span class="c1"># 省略其他设置</span>
@@ -5020,7 +5020,7 @@
 <a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition tip" id="consistent-hashing">
-<p class="admonition-title">一致性哈希算法<a class="headerlink" href="#consistent-hashing" title="Permanent link">&para;</a></p>
+<p class="admonition-title">一致性哈希算法&#8288;<a class="headerlink" href="#consistent-hashing" title="Permanent link">&para;</a></p>
 <p>在上面的配置中，我们添加了 <code>consistent</code> 选项，这表示使用<a href="https://en.wikipedia.org/wiki/Consistent_hashing">一致性哈希算法</a>，而不是传统的 <code>hash(key) % N</code> 的方法。它可以保证在节点数量变化时，尽可能少地改变已有的映射关系。</p>
 </div>
 <p><code>server</code> 块后还可以添加诸如 <code>max_fails</code>（最大失败次数）、<code>fail_timeout</code>（失败超时时间）等参数来控制节点的故障转移行为。</p>
@@ -5033,7 +5033,7 @@
 </code></pre></div>
 <p>如果 <code>autoindex</code> 设置为 <code>off</code>，并且 <code>index</code> 指令中没有匹配的文件，Nginx 会返回 HTTP 403。</p>
 <div class="admonition tip" id="autoindex-json-output">
-<p class="admonition-title">autoindex 的 JSON 输出支持<a class="headerlink" href="#autoindex-json-output" title="Permanent link">&para;</a></p>
+<p class="admonition-title">autoindex 的 JSON 输出支持&#8288;<a class="headerlink" href="#autoindex-json-output" title="Permanent link">&para;</a></p>
 <p><code>autoindex</code> 的 HTML 的输出很简陋。不过鲜为人知的是，<code>autoindex</code> 也支持输出为 XML、JSON 或 JSONP 格式。JSON 类格式可以方便前端的 JavaScript 进行处理，从而实现更复杂、美观的文件列表界面。对应的指令为 <a href="https://nginx.org/en/docs/http/ngx_http_autoindex_module.html#autoindex_format"><code>autoindex_format</code></a>。</p>
 <p>生成的 JSON 类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="p">[</span>
@@ -5042,7 +5042,7 @@
 <a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a><span class="p">]</span>
 </code></pre></div>
 <details class="tip" id="jsonp">
-<summary>JSONP<a class="headerlink" href="#jsonp" title="Permanent link">&para;</a></summary>
+<summary>JSONP&#8288;<a class="headerlink" href="#jsonp" title="Permanent link">&para;</a></summary>
 <p>JSONP（JSON with Padding）是一种古老的在前端获取其他站点数据（跨域）的技术。在以上的例子中，如果 <code>autoindex_format</code> 设置为 <code>jsonp</code>，则在请求时添加 <code>callback</code> 参数即可获得 JSONP 格式的响应，例如 <code>http://example.com/files/?callback=handleFileList</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a><span class="cm">/* callback */</span>
 <a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="nx">handleFileList</span><span class="p">([</span>
@@ -5058,7 +5058,7 @@
 </div>
 <p>如果需要更好看的界面，一般会使用 fancyindex 模块（<code>libnginx-mod-http-fancyindex</code> 包）。添加 <a href="https://github.com/aperezdc/ngx-fancyindex?tab=readme-ov-file#fancyindex"><code>fancyindex on;</code></a> 指令后，fancyindex 就会以默认样式生成文件列表页面。用户可以自定义 CSS、header 和 footer 来美化页面，网络上也有不少现成的样式可以参考。</p>
 <div class="admonition note" id="backend-generated-file-listing">
-<p class="admonition-title">使用一个专门的后端程序生成文件列表页面<a class="headerlink" href="#backend-generated-file-listing" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用一个专门的后端程序生成文件列表页面&#8288;<a class="headerlink" href="#backend-generated-file-listing" title="Permanent link">&para;</a></p>
 <p>你可能会希望使用其他的文件列表程序（例如 <a href="https://github.com/lrsjng/h5ai">h5ai</a>，或者我们编写的用于科大镜像站的 <a href="https://github.com/ustclug/yadex">yadex</a>），同时在用户访问文件时让 Nginx 直接提供，而不是让后端程序处理文件下载请求。以下是一个参考配置，视具体的文件列表程序，可能需要做一些调整：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a><span class="k">root</span><span class="w"> </span><span class="s">/var/www/files/</span><span class="p">;</span>
 <a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a><span class="k">autoindex</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
@@ -5099,7 +5099,7 @@
 <a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition tip" id="nginx-unit-usage">
-<p class="admonition-title">Nginx 使用的单位<a class="headerlink" href="#nginx-unit-usage" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Nginx 使用的单位&#8288;<a class="headerlink" href="#nginx-unit-usage" title="Permanent link">&para;</a></p>
 <p>在 Nginx 配置中，<code>k</code>、<code>m</code>、<code>g</code> 均使用 1024 作为基数，而不是 1000。即分别是 KiB（Kibibyte）、MiB（Mebibyte）、GiB（Gibibyte）等。</p>
 </div>
 <p>如果希望做到类似「<a href="https://github.com/tuna/issues/issues/1174">下载 2M 后限速到 10KB/s</a>」（当然实际没有部署过这种配置）的效果，可以使用 <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#limit_rate_after"><code>limit_rate_after</code></a> 指令：</p>
@@ -5161,7 +5161,7 @@
 <a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition tip" id="internal-and-named-locations">
-<p class="admonition-title">internal 与 named location<a class="headerlink" href="#internal-and-named-locations" title="Permanent link">&para;</a></p>
+<p class="admonition-title">internal 与 named location&#8288;<a class="headerlink" href="#internal-and-named-locations" title="Permanent link">&para;</a></p>
 <p>有时候我们希望某个路径只能在诸如 <code>rewrite</code>、<a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#error_page"><code>error_page</code></a> 或 <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files"><code>try_files</code></a> 等指令中被跳转访问，而不能被外部直接请求，此时可以使用 <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#internal"><code>internal</code></a> 指令：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/internal-path/</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span><span class="w">  </span><span class="c1"># 只能内部跳转访问</span>
@@ -5186,7 +5186,7 @@
 <a id="__codelineno-69-3" name="__codelineno-69-3" href="#__codelineno-69-3"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition tip" id="multiple-conditions">
-<p class="admonition-title">同时符合多个条件的判断<a class="headerlink" href="#multiple-conditions" title="Permanent link">&para;</a></p>
+<p class="admonition-title">同时符合多个条件的判断&#8288;<a class="headerlink" href="#multiple-conditions" title="Permanent link">&para;</a></p>
 <p>Nginx 的 <code>if</code> 指令不支持 <code>&amp;&amp;</code> 或者 <code>||</code> 这样的逻辑运算，并且不支持 <code>if</code> 嵌套。如果需要同时满足多个条件，可以添加一个变量来实现：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="k">set</span><span class="w"> </span><span class="nv">$condition_met</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="k">if</span><span class="w"> </span><span class="s">(</span><span class="nv">$http_user_agent</span><span class="w"> </span><span class="p">~</span><span class="sr">*</span><span class="w"> </span><span class="s">"^Mozilla")</span><span class="w"> </span><span class="p">{</span>
@@ -5219,7 +5219,7 @@
 </code></pre></div>
 </div>
 <div class="admonition warning" id="caution-if-in-location">
-<p class="admonition-title">谨慎在 <code>location</code> 中使用 <code>if</code><a class="headerlink" href="#caution-if-in-location" title="Permanent link">&para;</a></p>
+<p class="admonition-title">谨慎在 <code>location</code> 中使用 <code>if</code>&#8288;<a class="headerlink" href="#caution-if-in-location" title="Permanent link">&para;</a></p>
 <p>曾有一篇<a href="https://github.com/nginxinc/nginx-wiki/blob/master/source/start/topics/depth/ifisevil.rst">官方博客文章 "If is evil"</a> 讨论了在 <code>location</code> 块中使用 <code>if</code> 指令可能带来的问题。简单来讲，以下的使用场景是安全的：</p>
 <ul>
 <li>在 <code>server</code> 块中使用 <code>if</code> 指令。</li>
@@ -5243,7 +5243,7 @@
 <a id="__codelineno-72-6" name="__codelineno-72-6" href="#__codelineno-72-6"></a><span class="p">}</span>
 </code></pre></div>
 <div class="admonition warning" id="do-not-use-error-log-off">
-<p class="admonition-title">不要写 <code>error_log off</code><a class="headerlink" href="#do-not-use-error-log-off" title="Permanent link">&para;</a></p>
+<p class="admonition-title">不要写 <code>error_log off</code>&#8288;<a class="headerlink" href="#do-not-use-error-log-off" title="Permanent link">&para;</a></p>
 <p><code>access_log</code> 支持 <code>off</code> 参数，表示关闭访问日志，但是 <code>error_log</code> 不支持 <code>off</code> 参数。如果写了 <code>error_log off</code>，Nginx 不会报错，看起来也能正常运行，但是实际上错误日志会被写入到<strong>名为 <code>off</code> 的文件</strong>中（默认情况下，路径会是 <code>/usr/share/nginx/off</code>）。很多时候要等待 <code>off</code> 这个文件变得非常大，才会发现问题所在。</p>
 <p>如果需要完全关闭错误日志，可以将 <code>error_log</code> 输出到 <code>/dev/null</code>，并指定等级为 <code>crit</code> 以减少 nginx 尝试写入日志的频率：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="k">error_log</span><span class="w"> </span><span class="s">/dev/null</span><span class="w"> </span><span class="s">crit</span><span class="p">;</span>
@@ -5467,7 +5467,7 @@
 </code></pre></div>
 <p>在 Lua 代码中使用 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxshareddict"><code>ngx.shared.DICT</code></a> 调用。</p>
 <div class="admonition lab" id="shared-dict-space">
-<p class="admonition-title">获取共享 dict 的剩余空间<a class="headerlink" href="#shared-dict-space" title="Permanent link">&para;</a></p>
+<p class="admonition-title">获取共享 dict 的剩余空间&#8288;<a class="headerlink" href="#shared-dict-space" title="Permanent link">&para;</a></p>
 <p>对比较复杂的需求场景下，获取共享 dict 的剩余空间是有必要的——可以据此添加监控告警，防止共享 dict 被写满导致服务异常。请编写一个 Lua 脚本，当用户访问 <code>/shared-dict-info</code> 时，返回共享 dict 的总大小和剩余空间。</p>
 <p>如果需要测试，可能还需要添加一些其他的 <code>location</code> 来向共享 dict 中写入/删除数据。</p>
 </div>

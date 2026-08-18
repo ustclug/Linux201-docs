@@ -4204,7 +4204,7 @@
 <p>本地端口转发和远程端口转发的工作模式可以结合由 Ivan Velichko 绘制的图片来理解：</p>
 <p><a href="https://iximiuz.com/ssh-tunnels/ssh-tunnels.png"><img alt="SSH local and remote port forwarding" src="../../images/iximiuz-ssh-tunnels-2000-opt.png" style="aspect-ratio: 2000 / 1273" /></a></p>
 <div class="admonition tip" id="proxy-configuration-and-environment-variables">
-<p class="admonition-title">代理与环境变量<a class="headerlink" href="#proxy-configuration-and-environment-variables" title="Permanent link">&para;</a></p>
+<p class="admonition-title">代理与环境变量&#8288;<a class="headerlink" href="#proxy-configuration-and-environment-variables" title="Permanent link">&para;</a></p>
 <p>由于各种各样的原因，目前各种应用程序对代理相关的环境变量（<code>http_proxy</code>、<code>https_proxy</code>、<code>all_proxy</code>、<code>no_proxy</code>）的支持程度差异很大：</p>
 <ul>
 <li><code>http_proxy</code> 和 <code>https_proxy</code> 分别用于连接到 HTTP 和 HTTPS 服务器时的代理设置。<strong>注意这和代理本身的协议无关</strong>，一部分原因是 HTTP 是明文协议，一些代理服务器可以修改 HTTP 请求的内容，或者做缓存操作，但是 HTTPS 就不行了。</li>
@@ -4220,7 +4220,7 @@
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>ProxyCommand<span class="w"> </span>nc<span class="w"> </span>-X<span class="w"> </span><span class="m">5</span><span class="w"> </span>-x<span class="w"> </span>proxy.example.com:1080<span class="w"> </span>%h<span class="w"> </span>%p
 </code></pre></div>
 <div class="admonition question" id="make-git-use-local-as-proxy">
-<p class="admonition-title">让服务器的 <code>git</code> 使用本机作为代理<a class="headerlink" href="#make-git-use-local-as-proxy" title="Permanent link">&para;</a></p>
+<p class="admonition-title">让服务器的 <code>git</code> 使用本机作为代理&#8288;<a class="headerlink" href="#make-git-use-local-as-proxy" title="Permanent link">&para;</a></p>
 <p>在访问 SSH remote 时，<code>git</code> 可以读取 <code>GIT_SSH_COMMAND</code> 环境变量指定的 SSH 命令，例如 <code>GIT_SSH_COMMAND="ssh -i .git/id_ed25519" git ...</code> 就可以让 <code>git</code> 使用指定的路径的密钥。</p>
 <p>而在访问 HTTP(S) remote 时，<code>git</code> 会使用 libcurl，因此会读取 <code>http_proxy</code>、<code>https_proxy</code> 和 <code>all_proxy</code> 环境变量指定的代理。也可以使用 <code>http.proxy</code> 这个 <code>git config</code> 选项来指定。</p>
 <p>结合<a href="#port-forwarding">端口转发</a>和<a href="#proxy">代理</a>部分给出的命令，如果希望让 SSH 连接到的远程服务器上的 <code>git</code> 临时利用本机作为代理连接 SSH 和 HTTP(S) remote，那么应该如何操作？</p>
@@ -4243,7 +4243,7 @@
 <a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span>ProxyJump<span class="w"> </span>jumphost
 </code></pre></div>
 <div class="admonition note" id="jump-host-needs-tcp-forwarding">
-<p class="admonition-title">跳板机需要支持 TCP 端口转发<a class="headerlink" href="#jump-host-needs-tcp-forwarding" title="Permanent link">&para;</a></p>
+<p class="admonition-title">跳板机需要支持 TCP 端口转发&#8288;<a class="headerlink" href="#jump-host-needs-tcp-forwarding" title="Permanent link">&para;</a></p>
 <p>SSH 跳板机和前文所述的“<strong>本地</strong>端口转发”采用相同的技术，因此跳板机需要允许 TCP 端口转发（默认开启）。</p>
 </div>
 <h3 id="ssh-agent">SSH Agent<a class="headerlink" href="#ssh-agent" title="Permanent link">&para;</a></h3>
@@ -4266,7 +4266,7 @@
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span>IdentityAgent<span class="w"> </span>~/example-agent.sock
 </code></pre></div>
 <div class="admonition tip" id="specify-specific-ssh-key-in-agent">
-<p class="admonition-title">指定 SSH agent 中特定密钥<a class="headerlink" href="#specify-specific-ssh-key-in-agent" title="Permanent link">&para;</a></p>
+<p class="admonition-title">指定 SSH agent 中特定密钥&#8288;<a class="headerlink" href="#specify-specific-ssh-key-in-agent" title="Permanent link">&para;</a></p>
 <p>默认情况下，SSH 客户端会依次尝试 SSH agent 中的所有密钥（如果有 SSH agent）、<code>IdentityFile</code> 指定的所有密钥（如果配置 <code>IdentityFile</code>）和默认密钥（如果没有配置 <code>IdentityFile</code>）。当 SSH agent 中管理的密钥较多时，多次错误尝试容易导致 <code>Too many authentication failures</code> 错误。可以使用 <code>IdentityFile</code> 与 <code>IdentitiesOnly</code> 来使用特定密钥，从而避免相关错误。考虑到部分场景（例如使用密码管理器提供的 SSH agent）下，本地环境中不会存储私钥，可以在本地存储公钥并在 <code>IdentityFile</code> 选项中指定相应公钥来使用对应身份凭证。例如：
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>Host<span class="w"> </span>example
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span>IdentityFile<span class="w"> </span>~/.ssh/id_ed25519
@@ -4289,11 +4289,11 @@
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span>ForwardAgent<span class="w"> </span>yes
 </code></pre></div>
 <div class="admonition tip" id="ssh-agent-forwarding-mechanism">
-<p class="admonition-title">SSH agent 转发的机制<a class="headerlink" href="#ssh-agent-forwarding-mechanism" title="Permanent link">&para;</a></p>
+<p class="admonition-title">SSH agent 转发的机制&#8288;<a class="headerlink" href="#ssh-agent-forwarding-mechanism" title="Permanent link">&para;</a></p>
 <p>转发 SSH agent 会在远程主机上创建一个 Unix domain socket，并设置 <code>SSH_AUTH_SOCK</code> 环境变量指向该 socket。该 socket 上的通信通过 SSH 连接内的 <code>auth-agent@openssh.com</code> channel 发送给本地 SSH 客户端，再由本地 SSH 客户端与 SSH Agent 进行通信。</p>
 </div>
 <div class="admonition warning" id="security-warning-for-ssh-agent-forwarding">
-<p class="admonition-title">安全提示<a class="headerlink" href="#security-warning-for-ssh-agent-forwarding" title="Permanent link">&para;</a></p>
+<p class="admonition-title">安全提示&#8288;<a class="headerlink" href="#security-warning-for-ssh-agent-forwarding" title="Permanent link">&para;</a></p>
 <p>从上述机制中不难看出，SSH agent 转发期间，远程主机上拥有足够权限（例如 root）的用户可以使用你转发的 SSH agent socket，并可以使用其间接使用你的 SSH agent。建议仅在信任的远程主机上开启 <code>-A</code> 或 <code>ForwardAgent</code>，<strong>切勿</strong>在 <code>Host *</code> 块中全局启用。</p>
 </div>
 <h3 id="connection-reuse">高级功能：连接复用<a class="headerlink" href="#connection-reuse" title="Permanent link">&para;</a></h3>
@@ -4306,12 +4306,12 @@
 </code></pre></div>
 <p>其中 <code>%C</code> 是 <code>%l%h%p%r</code> 的 hash，因此连接不同主机的 control socket 不会冲突。</p>
 <div class="admonition bug" id="connection-reuse-identifier">
-<p class="admonition-title">连接复用的标识符<a class="headerlink" href="#connection-reuse-identifier" title="Permanent link">&para;</a></p>
+<p class="admonition-title">连接复用的标识符&#8288;<a class="headerlink" href="#connection-reuse-identifier" title="Permanent link">&para;</a></p>
 <p>如果你尝试用相同的用户名和不同的公钥连接同一个目标（例如 <code>git@github.com</code>），由于没有新建连接的过程，你指定的公钥并不会生效。
 解决此问题的方法是再单独指定另一个 <code>ControlPath</code>，或者设置 <code>ControlPath=none</code> 暂时禁用连接复用功能。</p>
 </div>
 <div class="admonition bug" id="port-forwarding-with-connection-reuse">
-<p class="admonition-title">连接复用时的端口转发<a class="headerlink" href="#port-forwarding-with-connection-reuse" title="Permanent link">&para;</a></p>
+<p class="admonition-title">连接复用时的端口转发&#8288;<a class="headerlink" href="#port-forwarding-with-connection-reuse" title="Permanent link">&para;</a></p>
 <p>当启用连接复用时，所有的端口转发等 SSH 连接特性都将由 master 进程管理，此时新的 <code>ssh &lt;host&gt; -L &lt;forwarding&gt;</code> 会将一个新的端口转发请求发送给 master 进程，并在当前 ssh 命令结束后持续转发。</p>
 <p>例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>ssh<span class="w"> </span>host<span class="w"> </span><span class="c1"># do something</span>
@@ -4329,7 +4329,7 @@
 <h2 id="file-transfer">文件传输<a class="headerlink" href="#file-transfer" title="Permanent link">&para;</a></h2>
 <p>SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。</p>
 <div class="admonition tip" id="rsync-for-advanced-file-transfer">
-<p class="admonition-title">Rsync<a class="headerlink" href="#rsync-for-advanced-file-transfer" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Rsync&#8288;<a class="headerlink" href="#rsync-for-advanced-file-transfer" title="Permanent link">&para;</a></p>
 <p>SCP 和 SFTP 能够提供的文件传输功能较为基础。如果你需要更多的功能，例如增量传输、断点续传、文件校验等，可以考虑使用 Rsync。Rsync 可以使用 SSH 作为传输层，因此可以替代 <code>scp</code> 命令。</p>
 <p>详情可以参考<a href="../../ops/storage/backup/#rsync">本教程关于 Rsync 的章节</a>。</p>
 </div>
@@ -4348,7 +4348,7 @@
 </code></pre></div>
 <p>这个命令会提示你输入远程主机上用户的密码，除非你已经设置了 SSH 密钥认证。</p>
 <div class="admonition tip" id="scp-multiple-files">
-<p class="admonition-title">Tip<a class="headerlink" href="#scp-multiple-files" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#scp-multiple-files" title="Permanent link">&para;</a></p>
 <p>你可以一次性传输多个文件或目录，将它们作为源路径的参数。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>scp<span class="w"> </span>file1.txt<span class="w"> </span>file2.txt<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
@@ -4370,7 +4370,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>scp<span class="w"> </span>-P<span class="w"> </span><span class="m">2222</span><span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 <div class="admonition tip" id="scp-parameters-in-ssh-config">
-<p class="admonition-title">Tip<a class="headerlink" href="#scp-parameters-in-ssh-config" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#scp-parameters-in-ssh-config" title="Permanent link">&para;</a></p>
 <p>你也可以在 SSH 客户端配置文件中为 <code>Host remotehost</code> 指定 <code>Port 2222</code>，这样就不需要每次在命令行中指定端口了。</p>
 </div>
 </dd>
@@ -4392,14 +4392,14 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>scp<span class="w"> </span>-C<span class="w"> </span>/path/to/local/file<span class="w"> </span>username@remotehost:/path/to/remote/directory
 </code></pre></div>
 <div class="admonition tip" id="scp-compression-configuration">
-<p class="admonition-title">Tip<a class="headerlink" href="#scp-compression-configuration" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#scp-compression-configuration" title="Permanent link">&para;</a></p>
 <p>此选项等价于 <code>ssh</code> 的 <code>-C</code> 选项，即在 SSH 层面开启压缩，并非 SCP 协议层面的压缩。</p>
 <p>你也可以在 SSH 客户端配置文件中为 <code>Host remotehost</code> 指定 <code>Compression yes</code>，这样就不需要每次在命令行中启用压缩了。</p>
 </div>
 </dd>
 </dl>
 <div class="admonition tip" id="modern-scp-uses-sftp">
-<p class="admonition-title">现代的 <code>scp</code> 命令已经默认使用 SFTP 协议<a class="headerlink" href="#modern-scp-uses-sftp" title="Permanent link">&para;</a></p>
+<p class="admonition-title">现代的 <code>scp</code> 命令已经默认使用 SFTP 协议&#8288;<a class="headerlink" href="#modern-scp-uses-sftp" title="Permanent link">&para;</a></p>
 <p>从 OpenSSH 9.0 开始，<code>scp</code> 命令已经默认使用 SFTP 协议进行文件传输，而不再使用旧的 SCP 协议。对于一些不支持 SFTP 的远程主机（如使用 dropbear 的嵌入式设备或上古版本的 SSH 服务端等），这可能会导致问题，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>/usr/libexec/sftp-server: No such file or directory
 </code></pre></div>
@@ -4433,7 +4433,7 @@
 <h4 id="exit-sftp">退出 SFTP 会话<a class="headerlink" href="#exit-sftp" title="Permanent link">&para;</a></h4>
 <p>输入 <code>exit</code> 或 <code>bye</code> 来终止 SFTP 会话。</p>
 <div class="admonition 使用脚本进行自动化操作" id="automate-sftp-with-scripts">
-<p class="admonition-title">使用脚本进行自动化操作<a class="headerlink" href="#automate-sftp-with-scripts" title="Permanent link">&para;</a></p>
+<p class="admonition-title">使用脚本进行自动化操作&#8288;<a class="headerlink" href="#automate-sftp-with-scripts" title="Permanent link">&para;</a></p>
 <p>通过创建一个包含 SFTP 命令的批处理文件，你可以 让SFTP 会话自动执行这些命令。例如，你可以创建一个文件 <code>upload.txt</code>，其中包含以下内容：</p>
 <p><div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a>put<span class="w"> </span>file1.txt
 <a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a>put<span class="w"> </span>file2.jpg
@@ -4450,7 +4450,7 @@
 </ul>
 <p>sshd 接受 SIGHUP 信号作为重新载入配置文件的方式。<code>sshd -t</code> 命令可以检查配置文件的语法是否正确，这也是大多数发行版提供的 <code>ssh.service</code> 中指定的 <code>ExecStartPre=</code> 命令和第一条 <code>ExecReload=</code> 命令，即在尝试启动和重新加载服务前先检查配置文件的语法。</p>
 <div class="admonition note" id="systemd-and-sshd-configuration">
-<p class="admonition-title">systemd 与 sshd<a class="headerlink" href="#systemd-and-sshd-configuration" title="Permanent link">&para;</a></p>
+<p class="admonition-title">systemd 与 sshd&#8288;<a class="headerlink" href="#systemd-and-sshd-configuration" title="Permanent link">&para;</a></p>
 <p>在使用 systemd 的较新的系统下，服务端可能会有以下变化：</p>
 <ul>
 <li>默认使用 <code>ssh.socket</code> 而不是 <code>ssh.service</code> 对外提供服务。</li>
@@ -4490,7 +4490,7 @@
 </dl>
 <p>完整的选项列表可以在 <a href="https://linux.die.net/man/8/sshd">sshd(8)</a> 的 <code>AUTHORIZED_KEYS FILE FORMAT</code> 部分找到。</p>
 <details class="example" id="example-authorized-keys-for-backup">
-<summary>例：用于备份 LUG FTP 的公钥配置<a class="headerlink" href="#example-authorized-keys-for-backup" title="Permanent link">&para;</a></summary>
+<summary>例：用于备份 LUG FTP 的公钥配置&#8288;<a class="headerlink" href="#example-authorized-keys-for-backup" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>restrict,from<span class="o">=</span><span class="s2">"192.0.2.2"</span>,command<span class="o">=</span><span class="s2">"/usr/bin/rrsync -ro /mnt/lugftp"</span><span class="w"> </span>ssh-rsa<span class="w"> </span>...
 </code></pre></div>
 </details>
@@ -4512,7 +4512,7 @@
 </code></pre></div>
 <p>借助这一功能，可以从统一的数据源获取公钥，从而确保所有服务器上的公钥保持同步。启用该功能后，可以将 <code>AuthorizedKeysFile</code> 设置为 <code>none</code>，以禁用基于 <code>authorized_keys</code> 文件的公钥认证——<strong>请务必阅读下面的注意事项</strong>。</p>
 <div class="admonition warning" id="ensure-authorized-keys-provider-works">
-<p class="admonition-title">确保 Authorized Keys 提供程序正常工作<a class="headerlink" href="#ensure-authorized-keys-provider-works" title="Permanent link">&para;</a></p>
+<p class="admonition-title">确保 Authorized Keys 提供程序正常工作&#8288;<a class="headerlink" href="#ensure-authorized-keys-provider-works" title="Permanent link">&para;</a></p>
 <p>例如，对于上述 <code>curl</code> 命令，如果服务器网络出现故障，或公钥数据源不可用，SSH 服务器将无法获取用于认证的公钥，从而无法完成公钥认证。此时，只能通过其他方式访问服务器并进行修复。</p>
 </div>
 <h2 id="certificates">SSH 证书<a class="headerlink" href="#certificates" title="Permanent link">&para;</a></h2>
@@ -4635,7 +4635,7 @@
 <h3 id="include">拆分配置文件<a class="headerlink" href="#include" title="Permanent link">&para;</a></h3>
 <p>从 OpenSSH 7.3p1 开始，ssh_config 和 sshd_config 都支持 <code>Include</code> 选项，可以在主配置文件中 include 其他文件。与 C 的 <code>#include</code> 或 Nginx 的 <code>include</code> 不同，SSH config 里的 <code>Include</code> <strong>不</strong>等价于文本插入替换，并且 <code>Include</code> 可以出现在 <code>Host</code> 和 <code>Match</code> 块中，出现在这两个块中的 <code>Include</code> 会被视作条件包含。因此一个（不太常见的）坑是：</p>
 <details class="failure" id="incorrect-include-syntax">
-<summary>错误写法<a class="headerlink" href="#incorrect-include-syntax" title="Permanent link">&para;</a></summary>
+<summary>错误写法&#8288;<a class="headerlink" href="#incorrect-include-syntax" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-52-1" name="__codelineno-52-1" href="#__codelineno-52-1"></a>Host<span class="w"> </span>example
 <a id="__codelineno-52-2" name="__codelineno-52-2" href="#__codelineno-52-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
 <a id="__codelineno-52-3" name="__codelineno-52-3" href="#__codelineno-52-3"></a><span class="w">  </span>User<span class="w"> </span>user
@@ -4645,7 +4645,7 @@
 </details>
 <p>因为 SSH 读取配置文件时是不会看缩进的，因此上面示例中的 Include 仅对 <code>Host example</code> 生效。正确的写法是将其放在一个 <code>Match all</code> 块（或者 <code>Host *</code>）中：</p>
 <details class="success" id="correct-include-syntax">
-<summary>正确写法<a class="headerlink" href="#correct-include-syntax" title="Permanent link">&para;</a></summary>
+<summary>正确写法&#8288;<a class="headerlink" href="#correct-include-syntax" title="Permanent link">&para;</a></summary>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a>Host<span class="w"> </span>example
 <a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a><span class="w">  </span>HostName<span class="w"> </span>example.com
 <a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="w">  </span>User<span class="w"> </span>user
@@ -4656,7 +4656,7 @@
 </details>
 <p>更加推荐的写法是将 <code>Include</code> 放在配置文件开头：</p>
 <div class="admonition success" id="recommended-include-syntax">
-<p class="admonition-title">推荐写法<a class="headerlink" href="#recommended-include-syntax" title="Permanent link">&para;</a></p>
+<p class="admonition-title">推荐写法&#8288;<a class="headerlink" href="#recommended-include-syntax" title="Permanent link">&para;</a></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>Include<span class="w"> </span>~/.ssh/global.conf
 <a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a>
 <a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a>Host<span class="w"> </span>example
@@ -4690,7 +4690,7 @@
 <li>
 <p><code>~C</code>：打开 SSH 客户端的命令行，可以用 <code>-L</code> <code>-R</code> <code>-D</code> 参数配置端口转发。<code>-KL</code> <code>-KR</code> <code>-KD</code> 参数关闭端口转发。</p>
 <div class="admonition warning" id="enable-ssh-escape-commandline">
-<p class="admonition-title">Warning<a class="headerlink" href="#enable-ssh-escape-commandline" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Warning&#8288;<a class="headerlink" href="#enable-ssh-escape-commandline" title="Permanent link">&para;</a></p>
 <p>OpenSSH 9.2 新增了 <code>EnableEscapeCommandline</code> 设置项，且默认为 no。如果需要使用 <code>~C</code> 命令行，需要先启用该设置项。OpenSSH &le; 9.1 的版本默认允许 <code>~C</code>。</p>
 </div>
 </li>
@@ -4701,7 +4701,7 @@
 </ul>
 <p>如果开启了<a href="#connection-reuse">连接复用</a>功能，那么一部分转义序列无法使用，例如 <code>~^Z</code> 和 <code>~C</code> 等。</p>
 <div class="admonition note" id="escape-sequences-usage">
-<p class="admonition-title">注意事项<a class="headerlink" href="#escape-sequences-usage" title="Permanent link">&para;</a></p>
+<p class="admonition-title">注意事项&#8288;<a class="headerlink" href="#escape-sequences-usage" title="Permanent link">&para;</a></p>
 <ul>
 <li>转义序列必须在按下回车后立即输入（即当前行前面不能有其他字符），否则会被当作普通输入传给远端。</li>
 <li>在多层 SSH 跳板（多次 ssh 嵌套）时，每多一层，需要输入的 <code>~</code> 会翻倍。例如，<code>~~.</code> 指令会断开第二层的 SSH 连接，而 <code>~~~~.</code> 指令会断开第三层的 SSH 连接。</li>

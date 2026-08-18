@@ -3687,20 +3687,20 @@ U --&gt; F(scope)</code></pre>
 <li>
 <p><code>systemctl enable [some-unit]</code> 可以“启用”一个 unit，即激活该 unit 在 <code>[Install]</code> 部分声明的自动启动条件，如 <code>WantedBy=</code> 和 <code>RequiredBy=</code> 等，以及 <code>Alias=</code>。该命令的本质是在 <code>/etc/systemd/system</code> 目录下创建软链接。</p>
 <div class="admonition tip" id="enable-and-start-unit">
-<p class="admonition-title">Tip<a class="headerlink" href="#enable-and-start-unit" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#enable-and-start-unit" title="Permanent link">&para;</a></p>
 <p><code>systemctl enable --now [some-unit]</code> 可以在 enable 一个 unit 的同时立即启动它。</p>
 </div>
 </li>
 <li>
 <p><code>systemctl disable [some-unit]</code> 可以“禁用”一个 unit，即取消它的自动启动条件。类似地，该命令的本质是删除了上面创建的软链接。</p>
 <div class="admonition tip" id="disable-and-stop-unit">
-<p class="admonition-title">Tip<a class="headerlink" href="#disable-and-stop-unit" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#disable-and-stop-unit" title="Permanent link">&para;</a></p>
 <ul>
 <li>同理，<code>systemctl disable --now [some-unit]</code> 可以在 disable 一个 unit 的同时立即停止它。</li>
 </ul>
 </div>
 <div class="admonition note" id="systemctl-mask">
-<p class="admonition-title"><code>systemctl mask</code><a class="headerlink" href="#systemctl-mask" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>systemctl mask</code>&#8288;<a class="headerlink" href="#systemctl-mask" title="Permanent link">&para;</a></p>
 <p>有些时候，<code>systemctl disable</code> 无法满足需求，例如：</p>
 <ul>
 <li>对应的 unit 没有 <code>[Install]</code> 部分，因此无法被 enable/disable。</li>
@@ -3716,7 +3716,7 @@ U --&gt; F(scope)</code></pre>
 <p><code>systemctl edit [some-unit]</code> 会提供一个临时文件，并在编辑完之后将其保存到 <code>/etc/systemd/system/[some-unit].d/override.conf</code> 文件中，实现对 unit 的修改。</p>
 <p>相比于手工修改文件，使用 <code>systemctl edit</code> 更加安全，它会检查配置文件的语法，而且不需要再额外运行 <code>systemctl daemon-reload</code>。</p>
 <div class="admonition tip" id="multiple-fields">
-<p class="admonition-title">修改可以指定多次的字段<a class="headerlink" href="#multiple-fields" title="Permanent link">&para;</a></p>
+<p class="admonition-title">修改可以指定多次的字段&#8288;<a class="headerlink" href="#multiple-fields" title="Permanent link">&para;</a></p>
 <p>Systemd unit 中有一些字段是可以指定多次的，例如下文介绍的服务的 <code>ExecStart=</code>。如果你想在 <code>systemctl edit</code> 中覆盖这些字段，那么需要先指定空值，再设置，类似下面这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="na">ExecStart</span><span class="o">=</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/your/new/command arg1 arg2</span>
@@ -3741,13 +3741,13 @@ U --&gt; F(scope)</code></pre>
 <a id="__codelineno-cron.service-14" name="__codelineno-cron.service-14" href="#__codelineno-cron.service-14"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
 </code></pre></div>
 <div class="admonition tip" id="query-manual">
-<p class="admonition-title">查询手册<a class="headerlink" href="#query-manual" title="Permanent link">&para;</a></p>
+<p class="admonition-title">查询手册&#8288;<a class="headerlink" href="#query-manual" title="Permanent link">&para;</a></p>
 <p>Unit 配置中不同的字段分布在 systemd 不同的手册页中。其中 <code>[Unit]</code> 和 <code>[Install]</code> 部分的字段可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html"><code>systemd.unit(5)</code></a> 中找到。</p>
 <p>对于服务，<code>[Service]</code> 中的字段大部分在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html"><code>systemd.service(5)</code></a> 中，但其中与运行环境有关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html"><code>systemd.exec(5)</code></a> 中，与程序资源限制相关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html"><code>systemd.resource-control(5)</code></a> 中，与退出/杀死服务相关的会在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html"><code>systemd.kill(5)</code></a> 中。</p>
 <p>对于定时器，<code>[Timer]</code> 部分的字段可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html"><code>systemd.timer(5)</code></a> 中找到。</p>
 </div>
 <div class="admonition note" id="generator">
-<p class="admonition-title">Generator<a class="headerlink" href="#generator" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Generator&#8288;<a class="headerlink" href="#generator" title="Permanent link">&para;</a></p>
 <p>或许你会注意到，有一些 unit 文件存储在 <code>/run/systemd/generator/</code> 下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>status<span class="w"> </span>home.mount
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">● home.mount - /home</span>
@@ -3798,7 +3798,7 @@ U --&gt; F(scope)</code></pre>
 </dl>
 <p>需要注意的是，依赖关系和启动顺序是互相独立的。如果只写 <code>Requires=</code> 或 <code>Wants=</code>，没有写 <code>Before=</code> 或 <code>After=</code>，那么 systemd 会启动依赖与被依赖的单元，但是不保证它们的启动顺序；反过来，如果只写 <code>Before=</code> 或 <code>After=</code>，那么 systemd 不保证这些服务会被启动。</p>
 <div class="admonition tip" id="unit-dependency-order">
-<p class="admonition-title">获取某个 unit 的顺序与依赖关系<a class="headerlink" href="#unit-dependency-order" title="Permanent link">&para;</a></p>
+<p class="admonition-title">获取某个 unit 的顺序与依赖关系&#8288;<a class="headerlink" href="#unit-dependency-order" title="Permanent link">&para;</a></p>
 <p>使用 <code>systemctl show [unit]</code> 可以查看某个 unit 的所有属性，包括上面提到的依赖关系和启动顺序。例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>systemctl<span class="w"> </span>show<span class="w"> </span>gdm.service
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">Id=gdm.service</span>
@@ -3831,7 +3831,7 @@ U --&gt; F(scope)</code></pre>
 </code></pre></div>
 </div>
 <div class="admonition tip" id="analyze-boot-time">
-<p class="admonition-title">分析系统启动时间<a class="headerlink" href="#analyze-boot-time" title="Permanent link">&para;</a></p>
+<p class="admonition-title">分析系统启动时间&#8288;<a class="headerlink" href="#analyze-boot-time" title="Permanent link">&para;</a></p>
 <p>相比传统的 init，systemd 的一大卖点就是通过分析顺序与依赖，并行启动服务，从而缩短系统启动时间。可以使用 <code>systemd-analyze</code> 来绘制启动时间线：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">systemd-analyze plot &gt; boot.svg</span>
 </code></pre></div>
@@ -3922,14 +3922,14 @@ U --&gt; F(scope)</code></pre>
 <li>
 <p><code>ExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS</code> 指定了服务的启动命令，其中 <code>$EXTRA_OPTS</code> 是从上面的文件中读取的环境变量。</p>
 <div class="admonition tip" id="absolute-path">
-<p class="admonition-title">Tip<a class="headerlink" href="#absolute-path" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#absolute-path" title="Permanent link">&para;</a></p>
 <p>通常情况下我们建议对命令使用绝对路径，因为 systemd 启动服务时并不会使用系统配置的 <code>$PATH</code> 环境变量，而是使用一个硬编码的列表。</p>
 </div>
 </li>
 <li>
 <p><code>Restart=on-failure</code> 表示服务在失败时会自动重启。<code>Restart=</code> 的取值和含义可以在 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=">systemd.service</a> 文档中找到。</p>
 <div class="admonition warning" id="systemd-retry-rate-limiting">
-<p class="admonition-title">Systemd 的重试限流机制<a class="headerlink" href="#systemd-retry-rate-limiting" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Systemd 的重试限流机制&#8288;<a class="headerlink" href="#systemd-retry-rate-limiting" title="Permanent link">&para;</a></p>
 <p>实际部署过服务的话，可能会注意到：即使设置了 <code>Restart=always</code>，有的时候服务也会挂掉，systemd 不会重启。这是因为 systemd 会限制 unit 的重试频率，由 <code>StartLimitIntervalSec=</code> 和 <code>StartLimitBurst=</code> 两项参数控制，默认 10s 内最多允许启动 5 次。如果触发到了这个频率，那么 systemd 就不会再尝试重启对应的服务了。</p>
 <p>如果真的希望 systemd 不停重试服务，可以将 <code>StartLimitIntervalSec=</code> 设置为 0。</p>
 </div>
@@ -3957,7 +3957,7 @@ U --&gt; F(scope)</code></pre>
 <dd>
 <p>指定运行服务的用户和组，以及额外的附加组。默认情况下服务会以 <code>root</code> 用户运行，如果有安全和权限管理的需求，那么你应该配置这几项设置。</p>
 <div class="admonition tip" id="security-check">
-<p class="admonition-title">Tip<a class="headerlink" href="#security-check" title="Permanent link">&para;</a></p>
+<p class="admonition-title">Tip&#8288;<a class="headerlink" href="#security-check" title="Permanent link">&para;</a></p>
 <p>如果你有额外的安全需求，可以参考 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#Sandboxing">Sandboxing</a> 一节使用 systemd 提供的高级隔离功能。可以使用 <code>systemd-analyze security</code> 命令检查整个系统的服务安全性配置情况，与单个服务的具体配置是否安全。该命令会根据服务配置计算 "exposure level" 分数，并且提供相关配置以及解释，类似如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>systemd-analyze<span class="w"> </span>security<span class="w"> </span>--no-pager<span class="w"> </span>caddy.service
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">  NAME                                         DESCRIPTION                                  EXPOSURE</span>
@@ -4003,7 +4003,7 @@ U --&gt; F(scope)</code></pre>
 <p>类似 <code>simple</code> 和 <code>exec</code>，但是服务会在启动完成后主动通知 systemd。
 与前面的类型不同的是，这类服务需要程序主动支持 <code>sd_notify</code> 或者 D-Bus 接口。</p>
 <details class="tip" id="sd-notify">
-<summary>sd_notify<a class="headerlink" href="#sd-notify" title="Permanent link">&para;</a></summary>
+<summary>sd_notify&#8288;<a class="headerlink" href="#sd-notify" title="Permanent link">&para;</a></summary>
 <p><a href="https://www.freedesktop.org/software/systemd/man/latest/sd_notify.html">sd_notify(3)</a> 是一个非常简单的协议。Systemd 对于标注自己支持 <code>notify</code> 的服务，会通过环境变量 <code>NOTIFY_SOCKET</code> 给应用提供一个 UNIX socket 地址。应用向这个 socket 发送指定的字符串来通知 systemd 自身的状态。例如，服务完整启动之后，应用可以发送 <code>READY=1</code> 来通知 systemd 服务已经成功启动。</p>
 <p>通知的逻辑很简单，即使不使用 systemd 的 C 库，也可以自己手写实现，帮助文档也提供了 C 和 Python 的样例代码。值得一提的是，2024 年轰动一时的 <a href="https://zh.wikipedia.org/wiki/XZ%E5%AE%9E%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%90%8E%E9%97%A8" title="维基百科：XZ 实用程序后门">xz 后门事件</a>之所以能够影响 sshd 的逻辑，就是因为部分发行版在编译 OpenSSH 时链接了 libsystemd 来使用 <code>sd_notify()</code>，而 libsystemd 又依赖于（被植入后门的）liblzma。</p>
 </details>
@@ -4015,12 +4015,12 @@ U --&gt; F(scope)</code></pre>
 <p>Socket activation 帮助实现了服务的惰性加载，可以在不必要的情况下减小资源占用，并且提升系统启动速度。例如对 Docker，<code>docker.service</code> 如果 enable，它可能会在系统启动的关键路径上面占用几秒的时间，而如果不 enable <code>docker.service</code>，改为 enable <code>docker.socket</code>，那么就能够减小启动时间，让对应服务延迟到首次使用时开启。同时，socket activation 机制允许 systemd 预先绑定低权限用户无法绑定的低端口（小于 1024），然后在有用户访问时把 socket 交给低权限的服务进程。</p>
 <p>当然，对 SSH，如果你想继续使用 <code>ssh.socket</code> 并且修改端口的话，就需要 <code>systemctl edit ssh.socket</code>，而不是编辑 sshd 配置了。</p>
 <div class="admonition note" id="how-to-get-socket">
-<p class="admonition-title">应用是如何获取到自己的 socket 的？<a class="headerlink" href="#how-to-get-socket" title="Permanent link">&para;</a></p>
+<p class="admonition-title">应用是如何获取到自己的 socket 的？&#8288;<a class="headerlink" href="#how-to-get-socket" title="Permanent link">&para;</a></p>
 <p>Systemd 提供了两种方法：应用可以用 libsystemd 的 <a href="https://www.freedesktop.org/software/systemd/man/latest/sd_listen_fds.html">sd_listen_fds(3)</a> 函数获取到 socket 对应的文件描述符，然后直接 <code>accept</code> 或者 <code>recv</code>（根据 <code>Accept</code> 选项的不同）。</p>
 <p>而旧的 inetd 应用会直接从 stdin 读取 socket，向 stdout 写入 socket，此时需要在配置 <code>Accept=yes</code> 的同时，配置 <code>StandardInput=socket</code> 等参数。</p>
 </div>
 <details class="example" id="rsync-socket-example">
-<summary>使用 systemd socket 将 rsync 服务监听在 Unix domain socket 上<a class="headerlink" href="#rsync-socket-example" title="Permanent link">&para;</a></summary>
+<summary>使用 systemd socket 将 rsync 服务监听在 Unix domain socket 上&#8288;<a class="headerlink" href="#rsync-socket-example" title="Permanent link">&para;</a></summary>
 <p>分别创建 systemd 需要的 socket unit 和模板化 service unit：</p>
 <div class="highlight"><span class="filename">/etc/systemd/system/rsync.socket</span><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">[Unit]</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">systemd socket activation for rsync</span>
@@ -4053,14 +4053,14 @@ U --&gt; F(scope)</code></pre>
 例如，USTC 镜像站的 <a href="https://github.com/ustclug/rsync-proxy">rsync-proxy</a> 就支持通过 UDS 和后端 rsync 服务通信。</p>
 </details>
 <div class="admonition note" id="accept-yes-and-dos">
-<p class="admonition-title"><code>Accept=yes</code> 与拒绝服务攻击<a class="headerlink" href="#accept-yes-and-dos" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>Accept=yes</code> 与拒绝服务攻击&#8288;<a class="headerlink" href="#accept-yes-and-dos" title="Permanent link">&para;</a></p>
 <p>配置 <code>Accept=yes</code> 时，systemd 接受的并发连接数由 <code>MaxConnections=</code> 选项控制（默认为 64）。
 如果服务暴露在互联网等不可信环境的话，默认的连接数限制可能会导致正常用户无法使用服务。</p>
 <p>早期的 <code>ssh.socket</code> 对应配置为 <code>Accept=yes</code>，就导致用户无法正常连接到 SSH 的问题（可参考 <a href="https://bugs.archlinux.org/task/62248">Arch Linux FS#62248</a>、<a href="https://gitlab.archlinux.org/archlinux/packaging/packages/openssh/-/commit/b5ee8a935e7f3869efb16c11d2dc6356870c91da">Arch Linux 移除 ssh.socket 的 commit</a>、<a href="https://salsa.debian.org/ssh-team/openssh/-/commit/0dc73888bbfc17fae04b891ac0c80f35f9c44f48">Debian 切换到 <code>Accept=no</code> 的 commit</a>）。</p>
 <p>如果无法切换到 <code>Accept=no</code>，那么可能需要增大最大连接数，或者利用 <a href="../security/#public-service-and-login">fail2ban</a> 与<a href="../network/firewall/">防火墙</a>等方式来阻止恶意的扫描影响正常服务。</p>
 </div>
 <div class="admonition note" id="systemd-ssh-generator">
-<p class="admonition-title">systemd-ssh-generator<a class="headerlink" href="#systemd-ssh-generator" title="Permanent link">&para;</a></p>
+<p class="admonition-title">systemd-ssh-generator&#8288;<a class="headerlink" href="#systemd-ssh-generator" title="Permanent link">&para;</a></p>
 <p>可能出乎人意料的是，systemd 默认除了对外的 TCP 22 端口以外，还会额外 bind：</p>
 <ul>
 <li><code>/run/ssh-unix-local/socket</code></li>
@@ -4165,7 +4165,7 @@ U --&gt; F(scope)</code></pre>
 <p>基于这些讨论，本文认为 <code>systemd-run</code> 是 <code>nohup</code> 命令的全面替代品，也鼓励读者尽量使用 <code>systemd-run</code> 来运行各种一次性的后台命令，而不是使用 <code>nohup</code> 和 <code>&amp;</code>。</p>
 <p>作为一个常见的使用场景，普通用户需要使用 <code>systemd-run --user</code> 以运行临时的用户服务，而非系统服务。用户服务如果需要在用户注销之后继续运行，需要配置 lingering，见本文<a href="#logind">登录管理器</a>部分的介绍。</p>
 <div class="admonition example" id="nohup-vs-systemd-run">
-<p class="admonition-title"><code>nohup</code> 与 <code>systemd-run</code> 对照例子<a class="headerlink" href="#nohup-vs-systemd-run" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>nohup</code> 与 <code>systemd-run</code> 对照例子&#8288;<a class="headerlink" href="#nohup-vs-systemd-run" title="Permanent link">&para;</a></p>
 <p>对下面这个例子：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>nohup<span class="w"> </span>./calc<span class="w"> </span>&gt;<span class="w"> </span>result<span class="w"> </span><span class="m">2</span>&gt;<span class="w"> </span>err<span class="w"> </span><span class="p">&amp;</span>
 </code></pre></div>
@@ -4179,7 +4179,7 @@ U --&gt; F(scope)</code></pre>
 <p>之后 <code>journalctl --user -u mycalc</code> 查看即可。</p>
 </div>
 <div class="admonition note" id="run0">
-<p class="admonition-title">run0<a class="headerlink" href="#run0" title="Permanent link">&para;</a></p>
+<p class="admonition-title">run0&#8288;<a class="headerlink" href="#run0" title="Permanent link">&para;</a></p>
 <p>从 systemd 256 开始，其附带了一个 <code>sudo</code>、<code>pkexec</code> 等提权工具的替代品 <code>run0</code>，可以从 Debian 13 开始使用到。<code>run0</code> 最大的特点是和 <code>sudo</code> 等工具不同，它本体不是一个 SUID binary，因此提权方式不是让自己成为 root（或其他用户），再判断调用者有没有权限，而是直接让系统的 systemd 创建一个临时的 unit（由 polkit 判断是否能够提权），然后在里面运行提权后的程序。它实质上是 <code>systemd-run</code> 的软链接：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-lha<span class="w"> </span>/usr/bin/run0
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="go">lrwxrwxrwx 1 root root 11 Jul 24 01:43 /usr/bin/run0 -&gt; systemd-run*</span>
@@ -4190,7 +4190,7 @@ U --&gt; F(scope)</code></pre>
 <h3 id="systemd-journald">Systemd-journald<a class="headerlink" href="#systemd-journald" title="Permanent link">&para;</a></h3>
 <p>Journald 是 systemd 套件中负责管理日志的部分。与传统的 <code>/var/log/*.log</code> 文件不同，journald 能够处理结构化数据（例如 KV），并且将日志以二进制形式保存。因此 systemd-journald 的日志不能简单通过文本查看器（<code>less</code>、<code>vim</code> 等）查看，需要通过 <code>journalctl</code> 管理。</p>
 <div class="admonition note" id="why-binary-log">
-<p class="admonition-title">为什么 journald 选择使用二进制格式？<a class="headerlink" href="#why-binary-log" title="Permanent link">&para;</a></p>
+<p class="admonition-title">为什么 journald 选择使用二进制格式？&#8288;<a class="headerlink" href="#why-binary-log" title="Permanent link">&para;</a></p>
 <p>传统上，Unix 系统的日志都以文本格式存储，并定时压缩、删除过期的日志。但作为中心化的日志管理服务，journald 选择了二进制格式存储日志，打破 Unix 传统，主要基于下面几点考虑：</p>
 <ul>
 <li>更好支持结构化日志，避免解析文本的麻烦（可以添加 <code>-o verbose</code> 参数查看结构化信息）</li>
@@ -4256,7 +4256,7 @@ U --&gt; F(scope)</code></pre>
 </tbody>
 </table>
 <div class="admonition tip" id="avoid-overwriting-package-managed-files">
-<p class="admonition-title">避免覆盖由包管理器管理的文件<a class="headerlink" href="#avoid-overwriting-package-managed-files" title="Permanent link">&para;</a></p>
+<p class="admonition-title">避免覆盖由包管理器管理的文件&#8288;<a class="headerlink" href="#avoid-overwriting-package-managed-files" title="Permanent link">&para;</a></p>
 <p>自 systemd v249 起（Ubuntu 22.04，Debian 12 Bookworm），所有 <code>/etc/systemd/*.conf</code> 文件均支持 <code>*.conf.d</code> 目录，即可以创建 <code>/etc/systemd/journald.conf.d/</code> 目录，并在其中创建文件来覆盖默认配置，而无需修改 <code>*.conf</code> 文件本身，使用这个方法可以避免在软件包更新或系统升级时处理配置文件的修改冲突。</p>
 <p>例如，要限制磁盘占用（<code>/var/log/journal</code>）为 1G，可以创建如下文件，然后重启 <code>systemd-journald</code> 服务：</p>
 <div class="highlight"><span class="filename">/etc/systemd/journald.conf.d/override.conf</span><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">[Journal]</span>
@@ -4265,7 +4265,7 @@ U --&gt; F(scope)</code></pre>
 </div>
 <p>如果你需要手动清理日志，释放磁盘空间的话，可以使用 <code>journalctl --vacuum-size=100M</code> 来清理日志，journald 会删除日志，直到磁盘占用小于 100M。另外有两个类似的参数 <code>--vacuum-time=</code> 和 <code>--vacuum-files=10</code> 也可参考。</p>
 <div class="admonition note" id="syslog">
-<p class="admonition-title">用户程序视角：如何记录日志？<a class="headerlink" href="#syslog" title="Permanent link">&para;</a></p>
+<p class="admonition-title">用户程序视角：如何记录日志？&#8288;<a class="headerlink" href="#syslog" title="Permanent link">&para;</a></p>
 <p>C 库提供了传统的 <a href="https://man7.org/linux/man-pages/man3/syslog.3.html"><code>syslog()</code></a> 函数，用来连接到 <code>/dev/log</code> 这个 Unix socket 并发送日志信息。在使用 journald 的系统上，这个 socket 由 journald 提供：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/log
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="go">lrwxrwxrwx 1 root root 28 Mar 30 22:55 /dev/log -&gt; /run/systemd/journal/dev-log=</span>
@@ -4359,7 +4359,7 @@ U --&gt; F(scope)</code></pre>
 <h4 id="rsyslog-forward-log">转发日志到其他服务器<a class="headerlink" href="#rsyslog-forward-log" title="Permanent link">&para;</a></h4>
 <p>虽然 journald 提供了转发到 socket 的功能（<code>ForwardToSocket</code> 配置），但是 journald 自带的转发是同步的——这意味着应用在输出日志时，需要等待 journald 转发完成，才能继续操作。如果网络环境不是非常好，对应用性能会有比较大的影响。</p>
 <div class="admonition note" id="systemd-journal-remote-tools">
-<p class="admonition-title">systemd-journal-{upload,remote,gatewayd}<a class="headerlink" href="#systemd-journal-remote-tools" title="Permanent link">&para;</a></p>
+<p class="admonition-title">systemd-journal-{upload,remote,gatewayd}&#8288;<a class="headerlink" href="#systemd-journal-remote-tools" title="Permanent link">&para;</a></p>
 <p>事实上，systemd-journal 也提供了远程通过网络传输日志的独立服务（由 <code>systemd-journal-remote</code> 包提供），其中 systemd-journal-gatewayd 提供了访问日志的 HTTP API 服务，systemd-journal-remote 运行在日志接收端，systemd-journal-upload 运行在发送端。</p>
 <p>但是在 Debian 下存在一个严重的问题：由于 systemd 与 TLS 相关的代码从 GnuTLS 迁移到了 OpenSSL，并且 Debian 不希望同时使用多个 TLS 库构建 systemd，因此在构建时关闭了 GnuTLS 的支持。但是 systemd-journal-remote 依赖于 <a href="https://www.gnu.org/software/libmicrohttpd/">libmicrohttpd</a>，其依赖于 GnuTLS。这导致了 Debian 构建的 systemd-journal-remote 不支持 HTTPS 加密传输日志，带来了安全风险。</p>
 <p>详情可参考 <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1100729">Debian bug #1100729</a>。</p>
@@ -4429,7 +4429,7 @@ U --&gt; F(scope)</code></pre>
 <p><code>loginctl</code> 支持锁定（<code>lock-session</code>）、解锁（<code>unlock-session</code>）、注销（<code>terminate-session</code>）等操作。一种使用场景是：在线下的计算机类比赛中，需要限制选手只能在比赛开始后才能登录系统，在比赛结束后不能够再使用系统，此时就可以使用 <code>loginctl</code> 的功能来实现。</p>
 <p>systemd 中每个 session 都会启动一个用户级别的 systemd 进程（user manager），用于管理用户的服务、timer 等，在 <code>systemctl</code>、<code>journalctl</code> 操作时添加 <code>--user</code> 参数即可查看当前用户的服务和日志等。</p>
 <div class="admonition note" id="dbus">
-<p class="admonition-title">DBus<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></p>
+<p class="admonition-title">DBus&#8288;<a class="headerlink" href="#dbus" title="Permanent link">&para;</a></p>
 <p><code>systemctl</code>、<code>journalctl</code> 等命令依赖于 DBus 总线与 systemd 通信。对于用户 session 来说，则依赖于 session 的 DBus 服务正常工作（一般路径为 <code>/run/user/&lt;用户 UID&gt;/bus</code>）。</p>
 <p>在命令行下需要切换用户的场合中，如果需要使用用户级别的 systemd，推荐的做法是使用以下命令：</p>
 <ul>
@@ -4441,7 +4441,7 @@ U --&gt; F(scope)</code></pre>
 </div>
 <p>有些场景下，我们希望在机器启动时，用户的 user manager（<code>user@UID.service</code>）也能够创建，并且即使用户注销也不销毁。此时需要使用 lingering 的功能。使用 <code>loginctl enable-linger &lt;user&gt;</code> 命令即可启用。</p>
 <div class="admonition note" id="session-and-user-service">
-<p class="admonition-title"><code>session-*.scope</code> 和 <code>user@UID.service</code><a class="headerlink" href="#session-and-user-service" title="Permanent link">&para;</a></p>
+<p class="admonition-title"><code>session-*.scope</code> 和 <code>user@UID.service</code>&#8288;<a class="headerlink" href="#session-and-user-service" title="Permanent link">&para;</a></p>
 <p>如果观察 <code>systemctl status</code>，可以看到在 <code>user.slice</code> 下出现类似这样的场景：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>└─user.slice
 <a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a>  └─user-1000.slice
@@ -4457,7 +4457,7 @@ U --&gt; F(scope)</code></pre>
 <p>因此，如果你 SSH 到某台远程服务器上，开了个 <code>tmux</code> 或者 <code>nohup</code>，注销之后再登录发现没了，那么就很有可能是 <code>KillUserProcesses</code> 设置为了 <code>yes</code> 导致的。</p>
 </div>
 <div class="admonition lab" id="user-resource-limit">
-<p class="admonition-title">限制用户的资源使用<a class="headerlink" href="#user-resource-limit" title="Permanent link">&para;</a></p>
+<p class="admonition-title">限制用户的资源使用&#8288;<a class="headerlink" href="#user-resource-limit" title="Permanent link">&para;</a></p>
 <p>用户 session 启动时，systemd 会创建 <code>user-&lt;uid&gt;.slice</code>。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。</p>
 <p>（最常见的情况是，有人在编译软件时，跑了不限制并发的 <code>make -j</code>）</p>
 <p>请尝试限制让<strong>每个</strong>用户 CPU 最多只使用 30%，内存最多只使用 8G（可阅读 <a href="https://www.freedesktop.org/software/systemd/man/latest/user@.service.html">user@.service(5)</a>）。</p>
