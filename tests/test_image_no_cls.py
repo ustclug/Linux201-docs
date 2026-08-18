@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from PIL import Image
 
-from hooks.images_no_cls import on_page_content
+from hooks.image_no_cls import on_page_content
 
 
 class ImageNoClsTest(unittest.TestCase):
