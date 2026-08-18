@@ -104,7 +104,7 @@ mkdocs-material 提供的全部提示框类型可以参考[官方文档](https:/
 
 - lab: 教程不会详细说明，需要读者自己尝试的实验。
 
-正文中的提示框应当像标题一样添加 ID，以便使用 `#id` 的方式引用。Linux 201 添加了相关的处理 hook，可以直接在传统提示框语法的标题后添加 `{#id}`：
+正文中的提示框应当像标题一样添加 ID，以便使用 `#id` 的方式引用。Linux 201 添加了[相关的处理 hook](https://github.com/ustclug/Linux201-docs/blob/master/hooks/admonition_anchors.py)，可以直接在传统提示框语法的标题后添加 `{#id}`：
 
 ```markdown
 !!! tip "一个例子" {#example}
@@ -136,20 +136,20 @@ ID 应当是提示框标题含义的简洁英文翻译，并遵循[标题 ID](#h
 
 如果你使用 [draw.io](https://draw.io) 绘制图片，请在「文件→属性」中设置缩放比为 200%，并导出为 SVG 格式。如果使用其他绘图工具，请确保导出的图片清晰可见，且文字大小适中。
 
-### 图片的宽高比 {#image-aspect-ratio}
+### 图片尺寸 {#image-size}
 
-构建文档时，Linux 201 中的 mkdocs hook 会读取本地图片的固有尺寸，并自动为生成的 `<img>` 元素设置 `aspect-ratio`。浏览器可以据此提前为图片预留空间，减少图片加载导致的页面重排以及锚点位置偏移。位图和带有 `width`、`height` 或 `viewBox` 信息的 SVG 图片均受支持。
+构建文档时，Linux 201 仓库中的 [hook](https://github.com/ustclug/Linux201-docs/blob/master/hooks/image_aspect_ratio.py) 会读取本地图片的固有尺寸，并自动为生成的 `<img>` 元素设置 `width` 和 `height` 属性。浏览器可以据此在图片加载前确定宽高比并预留空间，减少[布局偏移（CLS）问题](https://web.dev/articles/optimize-cls?hl=zh-cn#images_without_dimensions)。
 
-以下情况不会自动设置宽高比：
+以下情况不会自动设置完整的固有尺寸：
 
 - 图片已经同时设置了 `width` 和 `height`；
-- 图片已经通过 `style` 设置了 `aspect-ratio`；
+- 图片只设置了 `width` 或 `height` 时，hook 会保留作者指定的显示尺寸，并改为补充 `aspect-ratio`；
 - 图片使用远程 URL，构建过程不会为了读取尺寸而下载远程图片。
 
-对于远程图片，请在能够确定尺寸时指定宽高比：
+对于远程图片，请在能够确定尺寸时指定固有宽度和高度：
 
 ```markdown
-![image](https://example.com/image.png){ style="aspect-ratio: 16 / 9" }
+![image](https://example.com/image.png){ width="1600" height="900" }
 ```
 
 如需检查哪些远程图片被跳过，可以使用 `DEBUG=1 mkdocs build` 构建文档。

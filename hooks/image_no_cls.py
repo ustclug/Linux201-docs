@@ -1,4 +1,4 @@
-"""Add intrinsic aspect ratios to local content images."""
+"""Add intrinsic dimensions to local content images."""
 
 import html
 import logging
@@ -16,7 +16,7 @@ from xml.etree import ElementTree
 from PIL import Image, UnidentifiedImageError
 
 
-log = logging.getLogger("mkdocs.hooks.image_aspect_ratio")
+log = logging.getLogger("mkdocs.hooks.image_no_cls")
 
 _ASPECT_RATIO_RE = re.compile(r"(?:^|;)\s*aspect-ratio\s*:", re.IGNORECASE)
 _SVG_LENGTH_RE = re.compile(
@@ -103,7 +103,7 @@ def _local_image_path(src, page, config):
             and (parsed.scheme in {"http", "https"} or parsed.netloc)
         ):
             log.info(
-                "Skipping remote image because its aspect ratio cannot be "
+                "Skipping remote image because its dimensions cannot be "
                 "determined without downloading it: %s",
                 src,
             )
@@ -139,7 +139,7 @@ def _attribute_index(attributes, name):
 
 
 def _enrich_image_attributes(attributes, intrinsic_size):
-    """Add an aspect ratio unless the author already supplied sizing."""
+    """Add intrinsic dimensions unless the author already supplied sizing."""
 
     attributes = list(attributes)
     width, height = intrinsic_size
@@ -149,6 +149,18 @@ def _enrich_image_attributes(attributes, intrinsic_size):
     if width_index is not None and height_index is not None:
         return None
 
+    if width_index is None and height_index is None:
+        attributes.extend(
+            (
+                ("width", _format_number(width)),
+                ("height", _format_number(height)),
+            )
+        )
+        return attributes
+
+    # A single author-supplied dimension may be a display size rather than the
+    # image's intrinsic size. Keep it intact and supply only the ratio needed
+    # to reserve the other dimension.
     style_index = _attribute_index(attributes, "style")
     style = attributes[style_index][1] if style_index is not None else ""
     style = style or ""
