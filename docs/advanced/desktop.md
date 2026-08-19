@@ -1373,6 +1373,16 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     另外，Hackergame 2024 题目「无法获得的秘密」需要选手向一个禁止剪贴板的 VNC session 中输入大量自己的代码。[在 writeup 附录](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/%E6%97%A0%E6%B3%95%E8%8E%B7%E5%BE%97%E7%9A%84%E7%A7%98%E5%AF%86/README.md#%E5%9C%A8-wayland-%E4%BB%A5%E5%8F%8A%E6%B5%8F%E8%A7%88%E5%99%A8%E4%B8%8B%E7%9A%84%E8%BE%93%E5%85%A5%E8%87%AA%E5%8A%A8%E5%8C%96)中包含了直接调用 ASHPD 库与 Remote Desktop portal 交互的示例代码，可以作为参考。
 
+??? note "libei" {#libei}
+
+    libei（library for Emulated Input）是 Wayland 生态下用于模拟/获取输入的组件。客户端（应用程序）通过 [EI 协议](https://libinput.pages.freedesktop.org/libei/) 与服务端（EIS，Emulated Input Server）交互，提供输入或者获取输入。服务端一般是实现了 EIS 的混成器（mutter、kwin 等），对不支持 EIS 的混成器，portal 本身也可以自行实现 EIS，使用其他 Wayland 协议等与混成器交互。
+
+    EI 本身不做鉴权——只要获取了对应的 Unix socket 文件描述符就可以操作，因此服务端一般不会直接暴露 `$XDG_RUNTIME_DIR/eis-0` 提供使用。实际客户端会通过 Remote Desktop portal 与 [Input Capture portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.InputCapture.html) 从 portal 拿到 EIS 提供的 fd。Remote Desktop portal 也提供了不需要 EI 的方式（直接通过 DBus 的 `NotifyPointerMotion()` 等方法去让 portal「提醒」混成器输入的变化），不过 EI 的方案更被推荐。
+
+    在握手阶段，客户端会与 EIS [协商一些信息](https://libinput.pages.freedesktop.org/libei/doc/initial-handshake/index.html)，其中包括自己的身份是 sender 还是 receiver。这里的 sender 和 receiver 是相对 EIS 来说的。例如对使用 [Deskflow](https://github.com/deskflow/deskflow) 远程控制的场景，控制端的 Deskflow 是 receiver，需要从 EIS 获取键盘、鼠标的变化情况；被控端的 Deskflow 则是 sender，需要向 EIS 发送从控制端拿到的键盘、鼠标的变化。
+
+    不过从名称上容易误解的是，Input Capture portal 无法在用户批准后无限制地获取用户输入。尽管理论上可以扩展，其目前唯一的支持场景就是：当鼠标光标移动到指定边界（barrier）之外的时候，才允许应用获取输入信息（并且此时鼠标光标也是冻结住的）。所以这个设计目前只允许了像 Deskflow、Synergy 这类软件用一套键鼠在多台设备之间切换。
+
 !!! note "Portal 与剪贴板文件传输" {#portal-clipboard-transfer}
 
     跨沙盒进行文件的拖动或剪贴板复制（DND）时，会有一个关键的问题：程序间使用剪贴板传输文件时，一般不会通过这个机制传输完整的文件，而是直接传输一个 URI 或文件路径（一般在 `text/uri-list` 或者 `text/plain;charset=utf-8` 这两个 mimetype 里面），避免不必要的拷贝：
