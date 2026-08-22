@@ -479,6 +479,20 @@ sftp -P 2233 username@remotehost
     ```
     然后使用命令 `sftp -b upload.txt username@remotehost` 来自动上传文件。
 
+### SSHFS
+
+[SSHFS](https://github.com/libfuse/sshfs) 可以通过 SFTP 在用户态挂载服务器上的目录，在以下场景非常有用：
+
+- 需要查看服务器上的图片或 PDF 文档。
+- 需要在服务器上提交代码并进行签名，但将私钥复制到服务器可能不安全。
+- 服务器上没有趁手的编辑器或 AI 工具。
+
+```shell
+sshfs -o idmap=user host:/work local
+```
+
+`idmap=user` 会将远程登录用户的 UID/GID 映射为本地执行挂载用户的 UID/GID。因此远端由该用户拥有的文件会显示为本地当前用户拥有；其他 UID/GID 仍然保留。更多选项请参见 [sshfs(1)][sshfs.1]。
+
 ## 服务端配置 {#sshd-config}
 
 服务端的配置与客户端有一些不同点：
