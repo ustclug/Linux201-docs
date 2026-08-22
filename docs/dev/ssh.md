@@ -481,11 +481,11 @@ sftp -P 2233 username@remotehost
 
 ### SSHFS
 
-[SSHFS](https://github.com/libfuse/sshfs) 可以通过 SFTP 用户态挂载服务器上的目录，在以下场景非常有用：
+[SSHFS](https://github.com/libfuse/sshfs) 可以通过 SFTP 在用户态挂载服务器上的目录，在以下场景非常有用：
 
-- 需要查看服务器上的图，PDF 文档。
-- 要提交存储在服务器的代码，并且要签名，但转发私钥可能不安全。
-- 服务器上没有趁手的编辑器，AI 工具。
+- 需要查看服务器上的图片或 PDF 文档。
+- 需要在服务器上提交代码并进行签名，但将私钥复制到服务器可能不安全。
+- 服务器上没有趁手的编辑器或 AI 工具。
 
 ```shell
 sshfs -o idmap=user host:/work local
