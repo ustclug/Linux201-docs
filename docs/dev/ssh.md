@@ -491,6 +491,8 @@ sftp -P 2233 username@remotehost
 sshfs -o idmap=user host:/work local
 ```
 
+`idmap=user` 会将远程登录用户的 UID/GID 映射为本地执行挂载用户的 UID/GID。因此远端由该用户拥有的文件会显示为本地当前用户拥有；其他 UID/GID 仍然保留。更多选项请参见 [sshfs(1)][sshfs.1]。
+
 ## 服务端配置 {#sshd-config}
 
 服务端的配置与客户端有一些不同点：

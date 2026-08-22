@@ -18,6 +18,7 @@
 [rsync.1]: https://man7.org/linux/man-pages/man1/rsync.1.html
 [sacctmgr.1]: https://slurm.schedmd.com/sacctmgr.html
 [scrun.1]: https://slurm.schedmd.com/scrun.html
+[sshfs.1]: https://man7.org/linux/man-pages/man1/sshfs.1.html
 [ssh-keygen.1]: https://man7.org/linux/man-pages/man1/ssh-keygen.1.html
 [systemd-run.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html
 [systemd-ssh-proxy.1]: https://www.freedesktop.org/software/systemd/man/latest/systemd-ssh-proxy.html
