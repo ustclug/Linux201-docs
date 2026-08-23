@@ -51,7 +51,7 @@ QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提�
 
 如果需要手动进行配置，以下内容可以作为参考。
 
-??? info "KVM" {#kvm-overview}
+??? note "KVM" {#kvm-overview}
 
     以 x86 为例。
 
@@ -62,7 +62,7 @@ QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提�
     2. 加载 KVM 模块：`modprobe kvm_intel` 或 `modprobe kvm_amd`。
     3. 正确配置 `/dev/kvm` 字符设备的权限，使需要运行虚拟机的用户可以访问该设备。
 
-??? info "QEMU" {#qemu-overview}
+??? note "QEMU" {#qemu-overview}
 
     只需安装 QEMU 的二进制包。
 

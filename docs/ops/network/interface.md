@@ -45,7 +45,7 @@ icon: material/link-box
 
 ## 参考资料 {#references}
 
-??? info "思考题参考解答" {#thinking-questions-reference}
+??? note "思考题参考解答" {#thinking-questions-reference}
 
     「桥接」小节的思考题：1 和 2 的答案是否定的，而 3 的答案是肯定的。
     由于每个网口的 `rx_handler` 是唯一的，因此在被加入桥接后，就无法再注册其他的 `rx_handler` 回调函数了，例如加入另一个桥或引申出 MACVLAN 子接口等。

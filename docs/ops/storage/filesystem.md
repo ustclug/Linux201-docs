@@ -317,7 +317,7 @@ Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存
 有关 Swap 的更多内容，可参考[问题调试中的「Swap、Zram 与 Zswap」部分](../debug.md#swap-zram-zswap)。
 ///
 
-??? info "fdisk 操作示例" {#fdisk-partition-example}
+??? note "fdisk 操作示例" {#fdisk-partition-example}
 
     fdisk 默认使用 MBR 分区表，如果需要使用 GPT 分区表，需要使用 `g` 命令。
     在创建分区时，按回车使用默认参数。设置分区末尾位置时，可以使用 `+` 表示相对于当前位置的偏移量（即分区大小），或者使用 `-` 表示相对于磁盘末尾的偏移量（即在尾部留出多少空间）。
@@ -390,7 +390,7 @@ Swap（交换）分区是 Linux 虚拟内存管理的一部分。当物理内存
     Syncing disks.
     ```
 
-??? info "parted 操作示例" {#parted-partition-example}
+??? note "parted 操作示例" {#parted-partition-example}
 
     这里不推荐交互式使用 `parted`，因为其交互不如 `fdisk` 直观，并且**所有操作均为立刻写入**。但是 `parted` 在脚本中使用更加方便。
     parted 脚本的例子可以参考 [101strap 脚本](https://github.com/ustclug/101strap/blob/4d27f3dc86d9201f139e605e6fdaa595c25fb1ea/101strap_img#L46)。
@@ -445,7 +445,7 @@ test.img3  2623488 16775167 14151680  6.7G Linux filesystem
 
 如果对 GPT 的细节感兴趣，可以使用十六进制编辑器查看镜像内容，并与 GPT 标准对照。
 
-??? info "分区对齐" {#partition-alignment}
+??? note "分区对齐" {#partition-alignment}
 
     观察 fdisk 的输出可以发现一些有趣的地方：查找资料可以知道，GPT 分区表本身只需要 34 个扇区，但是上文中首个分区却从第 2048 个扇区开始。
     这是基于将分区与物理设备的扇区/访问边界「对齐」的考虑。

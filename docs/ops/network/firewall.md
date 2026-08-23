@@ -72,7 +72,7 @@ POSTROUTING / `NF_INET_POST_ROUTING`
 
   [^iptable_mangle_hook]: 此图的 2021 年的版本仍然有一处错误：Reroute check 发生在 OUTPUT 阶段内部，而 FORWARD 阶段后不经过 reroute check。细节可见 [`iptable_mangle_hook`](https://elixir.bootlin.com/linux/v6.17.8/source/net/ipv4/netfilter/iptable_mangle.c#L78) 函数。
 
-??? info "Reroute check 的细节" {#reroute-check-details}
+??? note "Reroute check 的细节" {#reroute-check-details}
 
     首先需要重复的一点是：数据包最终的路由结果是基于经过 OUTPUT 阶段后、进入 POSTROUTING（或 INPUT）阶段前的状态决定的。
     那么既然数据包在 OUTPUT 阶段可能发生 MARK 或 DNAT 等修改，为什么不像外部传入的数据包一样，直接在 OUTPUT 阶段后进行路由决策呢？
