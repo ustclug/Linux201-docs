@@ -3705,7 +3705,7 @@
 </ul>
 </li>
 </ul>
-<div class="admonition info" id="hardware-virtualization-support">
+<div class="admonition note" id="hardware-virtualization-support">
 <p class="admonition-title">你的 CPU 是否支持硬件虚拟化扩展？&#8288;<a class="headerlink" href="#hardware-virtualization-support" title="Permanent link">&para;</a></p>
 <p>现代主流的 x86-64 CPU 都应当支持这类扩展，可以使用 <code>lscpu</code> 等工具来检查这一点：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>⟩<span class="w"> </span>lscpu
@@ -3788,7 +3788,7 @@
 <p>在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。</p>
 <p>以 Xen 使用的「分离驱动」架构为例。在这种架构中，驱动被分为两个部分：运行在 Guest OS 上的前端驱动（front-end driver）和运行在 Hypervisor 上的后端驱动（back-end driver）。前端驱动向 Guest OS 提供几类标准的设备接口，而后端驱动则负责操作实际物理硬件，前后端驱动之间通过共享内存，使用一个被称为 I/O ring 的数据结构来实现异步数据交换。</p>
 <p>这种实现避免了设备仿真中硬件模拟开销较大等问题，Guest OS 通过采用经过性能优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真。</p>
-<div class="admonition info" id="virtio">
+<div class="admonition note" id="virtio">
 <p class="admonition-title">Virtio&#8288;<a class="headerlink" href="#virtio" title="Permanent link">&para;</a></p>
 <p>Virtio 是一套 I/O 半虚拟化开放标准，其同样采用分离驱动的架构，旨在规范各类 I/O 设备（如网络、存储设备等）的数据传输和事件处理方式，提升虚拟化环境的效率和兼容性。</p>
 <p>Virtio 的基本架构如下图所示，详细标准可以参考 <a href="https://docs.oasis-open.org/virtio/virtio/v1.3/virtio-v1.3.html">spec</a>。</p>
@@ -3803,7 +3803,7 @@
 <p>设备直通的性能是最好的，几乎能够获得原生的 I/O 性能，但独占设备使得其灵活性稍差，在配置上可能会略微复杂，并且可能会存在兼容性问题。</p>
 <!-- FIXME: AIGC -->
 
-<div class="admonition info" id="sr-iov">
+<div class="admonition note" id="sr-iov">
 <p class="admonition-title">Single-Root Input/Output Virtualization (SR-IOV)&#8288;<a class="headerlink" href="#sr-iov" title="Permanent link">&para;</a></p>
 <p>SR-IOV（单根 I/O 虚拟化）是一种硬件虚拟化技术，它允许单个物理 PCIe 设备划分出多个独立的虚拟设备。具体来说，SR-IOV 将物理设备分为两类：  </p>
 <ul>
@@ -3814,7 +3814,7 @@
 </div>
 <!-- FIXME: AIGC -->
 
-<div class="admonition info" id="iommu">
+<div class="admonition note" id="iommu">
 <p class="admonition-title">IOMMU&#8288;<a class="headerlink" href="#iommu" title="Permanent link">&para;</a></p>
 <p>IOMMU（输入/输出内存管理单元）是一种硬件虚拟化技术，旨在为设备的直接内存访问（DMA）提供地址转换和内存保护。它通过将设备请求中的虚拟地址映射到实际物理内存地址，同时对设备访问进行权限检查，从而实现：</p>
 <ul>
@@ -3924,7 +3924,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月23日 19:40:45 UTC">2026年8月23日</span>
   </span>
 
     
