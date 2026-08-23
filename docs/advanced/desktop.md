@@ -1348,7 +1348,9 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     非沙盒化应用也可以用 [org.freedesktop.host.portal.Registry](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.host.portal.Registry.html) 来注册自己的名称。
 
-    可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。在沙盒应用的场景下，钥匙环会经过 [Secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 提供给应用，因此沙盒中的应用只能看到自己的钥匙环内容。
+    可以注意到：这里事实上假设了**非沙盒化的应用是可信**的。可以认为这是一种无奈的设计上的妥协，因为 Linux 下**没有可靠的方法来验证非沙盒化应用的身份**（在安全场景下，`/proc/<PID>/exe` **不可靠**，可以想一下为什么）。同时在这个安全模型下，有一些初看很离谱的安全设计可以得到解释，例如 [CVE-2018-19358](https://nvd.nist.gov/vuln/detail/CVE-2018-19358) 汇报的问题是在 GNOME 钥匙环解锁之后，任意能够访问钥匙环 DBus 接口的程序都能访问钥匙环中的任意内容，而这个问题被忽略（或者说，无法处理）的原因正是因为上述提到的安全模型。
+    
+    在沙盒应用的场景下，应用可以请求 [Secret portal](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Secret.html) 获取一个用于加密的、每个应用不同的 key，应用需要自行使用这个 key 加密自己的数据。Secret portal 不选择中心化存储所有的应用密码，或许是因为 [Secret Service](https://specifications.freedesktop.org/secret-service/latest/) 本身没有分应用的概念，是为了简化实现、避免潜在的问题所做的妥协。对使用 libsecret 的应用，这一项变化是透明的（libsecret 会在使用 portal 时自动创建文件存储加密后的密码）。
 
 !!! note "Portal 是如何将沙盒外的文件提供给沙盒内的应用的？" {#portal-file-sharing}
 
