@@ -617,7 +617,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
     make-ssl-cert generate-default-snakeoil -f
     ```
 
-!!! tip "使用 mkcert 创建 CA 证书" {#use-mkcert}
+!!! tip "使用 mkcert 等程序创建 CA 证书" {#use-mkcert}
 
     以上介绍的「蛇油证书」对简单的场景够用了，但是在一些场景下我们需要生成 CA 证书，再使用 CA 证书签署新的证书（例如需要配置让程序信任使用指定 CA 证书签发的证书）。OpenSSL 虽然能解决这个问题，但是实在是太麻烦了——
 
@@ -629,7 +629,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
         图片来自 [If OpenSSL were a GUI](https://smallstep.com/blog/if-openssl-were-a-gui/)
         ///
 
-    因此这里推荐使用 [mkcert](https://github.com/FiloSottile/mkcert) 用于快速测试。安装 `mkcert` 包后可以直接让它生成指定域名的证书，它会自动生成对应的 CA 证书：
+    如果是测试 HTTPS 网站，推荐使用 [mkcert](https://github.com/FiloSottile/mkcert) 用于快速测试。安装 `mkcert` 包后可以直接让它生成指定域名的证书，它会自动生成对应的 CA 证书：
 
     ```console
     $ mkcert example.com
@@ -663,6 +663,51 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
         # 验证
         openssl verify -CAfile ca.crt cert.crt
         ```
+    
+    如果需要更完整的 CA 管理（支持非 HTTPS 场景、客户端证书、证书吊销等），则可以使用由 OpenVPN 项目维护的 [easy-rsa](https://github.com/OpenVPN/easy-rsa) 工具：
+
+    ```sh
+    # 创建 PKI 与 CA
+    /usr/share/easy-rsa/easyrsa init-pki
+    /usr/share/easy-rsa/easyrsa build-ca
+
+    # 创建服务端证书（不加密）
+    /usr/share/easy-rsa/easyrsa build-server-full server1 nopass
+
+    # 创建客户端证书（不加密）
+    /usr/share/easy-rsa/easyrsa build-client-full client1 nopass
+    /usr/share/easy-rsa/easyrsa build-client-full client2 nopass
+
+    # 吊销 client2 的证书，生成包含吊销信息的 CRL（Certificate Revocation List）
+    /usr/share/easy-rsa/easyrsa revoke client2
+    /usr/share/easy-rsa/easyrsa gen-crl
+    ```
+
+    ??? note "为什么要区分服务端证书和客户端证书？"
+
+        两者的区别在于它们的扩展信息：
+
+        ```conf title="/usr/share/easy-rsa/x509-types/server"
+        # X509 extensions for a server
+
+        basicConstraints = CA:FALSE
+        subjectKeyIdentifier = hash
+        authorityKeyIdentifier = keyid,issuer:always
+        extendedKeyUsage = serverAuth
+        keyUsage = digitalSignature,keyEncipherment
+        ```
+
+        ```conf title="/usr/share/easy-rsa/x509-types/client"
+        # X509 extensions for a client
+
+        basicConstraints = CA:FALSE
+        subjectKeyIdentifier = hash
+        authorityKeyIdentifier = keyid,issuer:always
+        extendedKeyUsage = clientAuth
+        keyUsage = digitalSignature
+        ```
+
+        区分两者是因为安全原因，特别是对网页浏览以外的用途：设想这样一种情况，Eve 拿到了自己由某 CA 签发的客户端证书。如果不做功能区分，Eve 就可能可以使用自己的客户端证书进行中间人攻击，此时被攻击的用户发现服务器上 Eve 的证书确实是 CA 签发的，一些应用程序此时就会信任 Eve 中间人，导致安全问题。
 
     另外，[xca](https://www.hohnstaedt.de/xca/) 是一个 GUI 的证书管理程序，相比于命令行工具更容易上手。
 
