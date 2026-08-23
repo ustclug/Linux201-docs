@@ -486,7 +486,7 @@ Docker 采取 C-S 架构，server daemon（dockerd）暴露一个 UNIX socket（
 用户通过 `docker` 这个 CLI 工具，或者自行编写程序与其通信。
 这个 daemon 的容器操作则是与 containerd 进行交互。
 
-!!! info "Podman" {#podman-alternative}
+!!! note "Podman" {#podman-alternative}
 
     对比 Docker 的 C-S 架构，红帽主推的 [Podman](https://podman.io/) 则不再依赖于 daemon 进行容器管理。
 

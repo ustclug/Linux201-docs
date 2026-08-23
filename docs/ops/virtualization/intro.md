@@ -78,7 +78,7 @@
     - 通过集成虚拟化操作相关的硬件，以提高性能，简化虚拟化相关的软件实现，一般与上述两种虚拟化方式结合使用
     - 目前，x86 平台上几乎所有 Hypervisor 的高效运行都依赖于这类技术
 
-!!! info "你的 CPU 是否支持硬件虚拟化扩展？" {#hardware-virtualization-support}
+!!! note "你的 CPU 是否支持硬件虚拟化扩展？" {#hardware-virtualization-support}
 
     现代主流的 x86-64 CPU 都应当支持这类扩展，可以使用 `lscpu` 等工具来检查这一点：
 
@@ -177,7 +177,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 这种实现避免了设备仿真中硬件模拟开销较大等问题，Guest OS 通过采用经过性能优化的通信接口与 Hypervisor 协同工作，在 I/O 性能上优于完全的软件仿真。
 
-!!! info "Virtio" {#virtio}
+!!! note "Virtio" {#virtio}
 
     Virtio 是一套 I/O 半虚拟化开放标准，其同样采用分离驱动的架构，旨在规范各类 I/O 设备（如网络、存储设备等）的数据传输和事件处理方式，提升虚拟化环境的效率和兼容性。
     
@@ -199,7 +199,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 <!-- FIXME: AIGC -->
 
-!!! info "Single-Root Input/Output Virtualization (SR-IOV)" {#sr-iov}
+!!! note "Single-Root Input/Output Virtualization (SR-IOV)" {#sr-iov}
 
     SR-IOV（单根 I/O 虚拟化）是一种硬件虚拟化技术，它允许单个物理 PCIe 设备划分出多个独立的虚拟设备。具体来说，SR-IOV 将物理设备分为两类：  
 
@@ -210,7 +210,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 <!-- FIXME: AIGC -->
 
-!!! info "IOMMU" {#iommu}
+!!! note "IOMMU" {#iommu}
 
     IOMMU（输入/输出内存管理单元）是一种硬件虚拟化技术，旨在为设备的直接内存访问（DMA）提供地址转换和内存保护。它通过将设备请求中的虚拟地址映射到实际物理内存地址，同时对设备访问进行权限检查，从而实现：
 

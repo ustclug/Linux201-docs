@@ -84,7 +84,7 @@ Linux 201 使用 mkdocs + mkdocs-material 作为文档框架与主题，并且�
 - example: 示例
 - question: 需要读者思考的问题
 
-mkdocs-material 提供的全部提示框类型可以参考[官方文档](https://squidfunk.github.io/mkdocs-material/reference/admonitions/#supported-types)。
+mkdocs-material 提供的全部提示框类型可以参考[官方文档](https://squidfunk.github.io/mkdocs-material/reference/admonitions/#supported-types)。注意，我们目前不使用未在本部分介绍的提示框类型。
 
 此外，我们自定义了一些提示框类型：
 

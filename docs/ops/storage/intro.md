@@ -359,7 +359,7 @@ Linux：
 
 我们可以使用 [`fio`](https://fio.readthedocs.io/en/latest/) 测试磁盘的性能，其支持在文件系统或者块设备上使用不同的 I/O 访问模式进行测试。
 
-!!! info "使用 dd 测速的不足" {#drawbacks-of-dd-benchmark}
+!!! note "使用 dd 测速的不足" {#drawbacks-of-dd-benchmark}
 
     以下是使用 dd 命令测试一块希捷 4TB 机械硬盘的例子：
 

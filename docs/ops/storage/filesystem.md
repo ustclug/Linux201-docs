@@ -286,7 +286,7 @@ MBR 信息存储在磁盘的第一个扇区[^sector]（512 字节[^sector-size]�
 truncate -s 8G test.img
 ```
 
-!!! info "稀疏文件" {#sparse-file}
+!!! note "稀疏文件" {#sparse-file}
 
     这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：
 
@@ -584,7 +584,7 @@ ext4 是包括 Debian 和 Ubuntu 在内的众多发行版为系统分区（根�
 如果没有特殊的需求，ext4 是一个不错的选择；即使有其他需求，也建议对系统分区使用 ext4。
 ext4 最常见的问题之一是 inode 的数量限制。
 
-!!! info "inode" {#inode}
+!!! note "inode" {#inode}
 
     inode 是 Unix 文件系统中的一个重要概念，其包含了文件（文件系统对象）的元数据（如权限、大小、时间等），每个文件对应一个 inode，有一个在文件系统上唯一的 inode 号码。
     可以使用 `stat` 或 `ls -i` 查看文件的 inode 信息。
@@ -698,7 +698,7 @@ Filesystem     Size   Used  Avail Use% Pathname
 
 `xfs_quota` 的 `df` 也会输出其他文件系统的空间使用情况，忽略即可。
 
-!!! info "引用复制" {#xfs-reflink}
+!!! note "引用复制" {#xfs-reflink}
 
     尽管不是 CoW 文件系统，XFS 也支持引用复制（reflink）功能。使用方法详见 [Btrfs 的引用复制一节](#btrfs-reflink)。
 
