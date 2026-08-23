@@ -683,7 +683,7 @@ TLS 是一种加密通信协议，用于保护客户端和服务器之间的通�
     /usr/share/easy-rsa/easyrsa gen-crl
     ```
 
-    ??? note "为什么要区分服务端证书和客户端证书？"
+    ??? note "为什么要区分服务端证书和客户端证书？" {#server-client-cert-difference}
 
         两者的区别在于它们的扩展信息：
 
