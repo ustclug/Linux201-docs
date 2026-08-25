@@ -6,7 +6,7 @@ icon: material/room-service
 
 !!! note "主要作者"
 
-    [@iBug][iBug]
+    [@iBug][iBug]、[@taoky][taoky]
 
 !!! warning "本文编写中"
 
