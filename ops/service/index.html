@@ -3657,7 +3657,7 @@
 <h1 id="top">服务与日志管理<a class="headerlink" href="#top" title="Permanent link">&para;</a></h1>
 <div class="admonition note">
 <p class="admonition-title">主要作者</p>
-<p><a href="https://github.com/iBug">@iBug</a></p>
+<p><a href="https://github.com/iBug">@iBug</a>、<a href="https://github.com/taoky">@taoky</a></p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">本文编写中</p>
@@ -4454,6 +4454,11 @@ U --&gt; F(scope)</code></pre>
 <a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a>      （下略）
 </code></pre></div>
 <p>可以注意到 <code>user@UID.service</code> 和 <code>session-*.scope</code> 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，<a href="https://www.freedesktop.org/software/systemd/man/latest/logind.conf">logind.conf</a> 的 <code>KillUserProcesses=</code> 参数（systemd 上游默认为 <code>yes</code>，但 <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=825394">Debian 修改为了默认为 <code>no</code></a>）就控制是否强制杀死对应的 session scope 的进程。</p>
+<div class="admonition note">
+<p class="admonition-title">slice 和 scope</p>
+<p>Systemd 中的 <a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.slice.html">slice</a> 主要用途是作为 cgroup 中的节点，管理一组 unit 的资源。「根节点」对应的是 <code>-.slice</code>，最常见的是 <code>system.slice</code> 和 <code>user.slice</code>。</p>
+<p><a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.scope.html">scope</a> 用于管理不由 systemd 直接启动的进程。Scope 没有配置文件，是在运行时程序调用 systemd 的接口创建出来的。例如在支持 systemd 的终端模拟器中，新建标签页后，终端模拟器会 fork 并 exec 出 shell，然后会把 fork 出来的子进程向 systemd 要求创建一个 scope 存储进去。</p>
+</div>
 <p>因此，如果你 SSH 到某台远程服务器上，开了个 <code>tmux</code> 或者 <code>nohup</code>，注销之后再登录发现没了，那么就很有可能是 <code>KillUserProcesses</code> 设置为了 <code>yes</code> 导致的。</p>
 </div>
 <div class="admonition lab" id="user-resource-limit">
@@ -4517,7 +4522,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 21:23:34 UTC">2026年8月25日</span>
   </span>
 
     

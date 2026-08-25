@@ -4963,7 +4963,7 @@
 <li>对 Snap，portal 会先从 cgroup 信息确认是否为 Snap 应用，再调用 <code>snap routine portal-info</code> 命令获取应用的 Snap 名称。</li>
 </ul>
 <p>同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如<a href="https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/">基于 cgroup 扩展属性</a>的方案。</p>
-<p>而对非沙盒化应用，portal 会尝试从<a href="https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754">进程所属 cgroup 的名称</a>来获取到应用名称（例如 <code>app-com.example.test-12345.scope</code> -&gt; <code>com.example.test</code>）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在合适的 cgroup（systemd scope）下。而非沙盒化的应用可以轻松用 <code>systemd-run</code> 来实现这一点：</p>
+<p>而对非沙盒化应用，portal 会尝试从<a href="https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754">进程所属 cgroup 的名称</a>来获取到应用名称（例如 <code>app-com.example.test-12345.scope</code> -&gt; <code>com.example.test</code>）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在<a href="https://systemd.io/DESKTOP_ENVIRONMENTS/#xdg-standardization-for-applications">名字符合命名标准的 cgroup（systemd service 或者 scope）下</a>。而非沙盒化的应用可以轻松用 <code>systemd-run</code> 来实现这一点：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-48-1" name="__codelineno-48-1" href="#__codelineno-48-1"></a>systemd-run<span class="w"> </span>--user<span class="w"> </span>--scope<span class="w"> </span>-u<span class="w"> </span>app-com.example.test-12345.scope<span class="w"> </span>path/to/app
 </code></pre></div>
 <p>非沙盒化应用也可以用 <a href="https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.host.portal.Registry.html">org.freedesktop.host.portal.Registry</a> 来注册自己的名称。</p>
@@ -5324,7 +5324,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月23日 18:19:22 UTC">2026年8月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月25日 21:23:46 UTC">2026年8月25日</span>
   </span>
 
     
