@@ -91,8 +91,10 @@
 [systemd.mount.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.mount.html
 [systemd.resource-control.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html
 [systemd.resource-control.5#ManagedOOMSwap]: https://www.freedesktop.org/software/systemd/man/latest/systemd.resource-control.html#ManagedOOMSwap=auto%7Ckill
+[systemd.scope.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.scope.html
 [systemd.service.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html
 [systemd.service.5#Restart=]: https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Restart=
+[systemd.slice.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.slice.html
 [systemd.swap.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.swap.html
 [systemd.timer.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
 [systemd.unit.5]: https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html

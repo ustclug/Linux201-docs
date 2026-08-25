@@ -890,6 +890,12 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
 
     可以注意到 `user@UID.service` 和 `session-*.scope` 是互相独立的。一个用户可以同时有多个 session（例如上述显示的桌面环境登录，以及 SSH 登录等等），但只有一个 user manager。当用户没有 session 的时候，user manager 的去留由 lingering 设置决定；当用户注销的时候，[logind.conf][logind.conf.5] 的 `KillUserProcesses=` 参数（systemd 上游默认为 `yes`，但 [Debian 修改为了默认为 `no`](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=825394)）就控制是否强制杀死对应的 session scope 的进程。
 
+    !!! note "slice 和 scope"
+
+        Systemd 中的 [slice][systemd.slice.5] 主要用途是作为 cgroup 中的节点，管理一组 unit 的资源。「根节点」对应的是 `-.slice`，最常见的是 `system.slice` 和 `user.slice`。
+        
+        [scope][systemd.scope.5] 用于管理不由 systemd 直接启动的进程。Scope 没有配置文件，是在运行时程序调用 systemd 的接口创建出来的。例如在支持 systemd 的终端模拟器中，新建标签页后，终端模拟器会 fork 并 exec 出 shell，然后会把 fork 出来的子进程向 systemd 要求创建一个 scope 存储进去。
+
     因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
 
 !!! lab "限制用户的资源使用" {#user-resource-limit}
