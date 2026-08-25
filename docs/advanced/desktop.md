@@ -1340,7 +1340,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
 
     同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如[基于 cgroup 扩展属性](https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/)的方案。
 
-    而对非沙盒化应用，portal 会尝试从[进程所属 cgroup 的名称](https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754)来获取到应用名称（例如 `app-com.example.test-12345.scope` -> `com.example.test`）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在合适的 cgroup（systemd scope）下。而非沙盒化的应用可以轻松用 `systemd-run` 来实现这一点：
+    而对非沙盒化应用，portal 会尝试从[进程所属 cgroup 的名称](https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754)来获取到应用名称（例如 `app-com.example.test-12345.scope` -> `com.example.test`）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在[名字符合命名标准的 cgroup（systemd service 或者 scope）下](https://systemd.io/DESKTOP_ENVIRONMENTS/#xdg-standardization-for-applications)。而非沙盒化的应用可以轻松用 `systemd-run` 来实现这一点：
 
     ```sh
     systemd-run --user --scope -u app-com.example.test-12345.scope path/to/app
