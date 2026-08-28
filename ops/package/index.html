@@ -4221,7 +4221,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>debconf-get-selections<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>unattended-upgrades/enable_auto_updates
 </code></pre></div>
 <p>如果输出的内容类似下面：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">unattended-upgrades unattended-upgrades/enable_auto_updates boolean false</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">unattended-upgrades	unattended-upgrades/enable_auto_updates	boolean	false</span>
 </code></pre></div>
 <p>则代表自动更新被关闭，反之则启用。可以执行 <code>dpkg-reconfigure unattended-upgrades</code> 修改配置。当自动更新启用时，<code>/etc/apt/apt.conf.d/20auto-upgrades</code> 文件应当存在。<code>unattended-upgrades</code> 需要由定时任务触发，因此需要确认与 APT 更新相关的 timer（<code>apt-daily.timer</code> 和 <code>apt-daily-upgrade.timer</code>）处于启用状态。</p>
 <p>可以使用以下命令：</p>
@@ -4234,17 +4234,17 @@
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>// from non-security sources (e.g. chromium). By allowing the release
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>// pocket these get automatically pulled in.
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>Unattended-Upgrade::Allowed-Origins {
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    "${distro_id}:${distro_codename}";
-<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    "${distro_id}:${distro_codename}-security";
-<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    // Extended Security Maintenance; doesn't necessarily exist for
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>    // every release and this system may not have it installed, but if
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    // available, the policy for updates is such that unattended-upgrades
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    // should also install from here by default.
-<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>    "${distro_id}ESMApps:${distro_codename}-apps-security";
-<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>    "${distro_id}ESM:${distro_codename}-infra-security";
-<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>//  "${distro_id}:${distro_codename}-updates";
-<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>//  "${distro_id}:${distro_codename}-proposed";
-<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>//  "${distro_id}:${distro_codename}-backports";
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>	"${distro_id}:${distro_codename}";
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>	"${distro_id}:${distro_codename}-security";
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>	// Extended Security Maintenance; doesn't necessarily exist for
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>	// every release and this system may not have it installed, but if
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>	// available, the policy for updates is such that unattended-upgrades
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>	// should also install from here by default.
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>	"${distro_id}ESMApps:${distro_codename}-apps-security";
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>	"${distro_id}ESM:${distro_codename}-infra-security";
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>//	"${distro_id}:${distro_codename}-updates";
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>//	"${distro_id}:${distro_codename}-proposed";
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>//	"${distro_id}:${distro_codename}-backports";
 <a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>};
 </code></pre></div>
 <p>此外，systemd 服务 <code>unattended-upgrades.service</code> 会确保系统在关机或重启前正确进行软件包升级的收尾工作。因此也需要确认该服务已启动并会开机自启。</p>
@@ -4592,8 +4592,8 @@
 <div class="admonition note" id="patch-introduction">
 <p class="admonition-title">补丁简介&#8288;<a class="headerlink" href="#patch-introduction" title="Permanent link">&para;</a></p>
 <p>补丁是后缀为 <code>patch</code> 的文件，由 <code>diff</code> 生成。补丁有多种不同的格式：unified diff (<code>diff -u</code>)、context diff (<code>diff -c</code>) 和 normal diff（默认）。其中最常见的是 unified diff 格式，类似如下（命令为 <code>diff -u test.txt test_new.txt</code>）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gd">--- test.txt    2025-02-07 16:00:16.591987241 +0800</span>
-<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="gi">+++ test_new.txt    2025-02-07 16:00:28.462299382 +0800</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="gd">--- test.txt	2025-02-07 16:00:16.591987241 +0800</span>
+<a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="gi">+++ test_new.txt	2025-02-07 16:00:28.462299382 +0800</span>
 <a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="gu">@@ -1 +1 @@</span>
 <a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a><span class="gd">-Hello, world!</span>
 <a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="gi">+Goodbye, world!</span>
@@ -4660,8 +4660,8 @@
 <p>可以验证：</p>
 <div class="highlight"><span class="filename">debian/patches/custom-patch.diff</span><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="gh">Index: sudo-1.9.13p3/src/sudo.c</span>
 <a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="gh">===================================================================</span>
-<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="gd">--- sudo-1.9.13p3.orig/src/sudo.c   2025-02-07 17:37:38.372195671 +0800</span>
-<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="gi">+++ sudo-1.9.13p3/src/sudo.c    2025-02-07 17:37:50.968524513 +0800</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="gd">--- sudo-1.9.13p3.orig/src/sudo.c	2025-02-07 17:37:38.372195671 +0800</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="gi">+++ sudo-1.9.13p3/src/sudo.c	2025-02-07 17:37:50.968524513 +0800</span>
 <a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="gu">@@ -149,6 +149,7 @@</span>
 <a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w"> </span>    const char * const allowed_prognames[] = { "sudo", "sudoedit", NULL };
 <a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w"> </span>    sigset_t mask;
@@ -4770,7 +4770,7 @@
 <a id="__codelineno-51-2" name="__codelineno-51-2" href="#__codelineno-51-2"></a><span class="c">#export DH_VERBOSE=1</span>
 <a id="__codelineno-51-3" name="__codelineno-51-3" href="#__codelineno-51-3"></a>
 <a id="__codelineno-51-4" name="__codelineno-51-4" href="#__codelineno-51-4"></a><span class="nf">%</span><span class="o">:</span>
-<a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">    </span>dh<span class="w"> </span><span class="nv">$@</span>
+<a id="__codelineno-51-5" name="__codelineno-51-5" href="#__codelineno-51-5"></a><span class="w">	</span>dh<span class="w"> </span><span class="nv">$@</span>
 </code></pre></div>
 <div class="admonition tip" id="makefile-wildcard-rule">
 <p class="admonition-title"><code>%:</code>&#8288;<a class="headerlink" href="#makefile-wildcard-rule" title="Permanent link">&para;</a></p>
@@ -4789,15 +4789,15 @@
 <p><code>dh</code> 的各项操作细节都有其对应的 <code>man</code> 文档可以参考。如果需要覆盖某个 <code>dh</code> 的操作，可以在 <code>debian/rules</code> 中添加对应的规则，例如：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-53-1" name="__codelineno-53-1" href="#__codelineno-53-1"></a><span class="c"># 在某个操作之前做一些事情</span>
 <a id="__codelineno-53-2" name="__codelineno-53-2" href="#__codelineno-53-2"></a><span class="nf">execute_before_dh_auto_clean</span><span class="o">:</span>
-<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Something before dh_auto_clean"</span>
+<a id="__codelineno-53-3" name="__codelineno-53-3" href="#__codelineno-53-3"></a><span class="w">	</span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Something before dh_auto_clean"</span>
 <a id="__codelineno-53-4" name="__codelineno-53-4" href="#__codelineno-53-4"></a>
 <a id="__codelineno-53-5" name="__codelineno-53-5" href="#__codelineno-53-5"></a><span class="c"># 在某个操作之后做一些事情</span>
 <a id="__codelineno-53-6" name="__codelineno-53-6" href="#__codelineno-53-6"></a><span class="nf">execute_after_dh_auto_clean</span><span class="o">:</span>
-<a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Something after dh_auto_clean"</span>
+<a id="__codelineno-53-7" name="__codelineno-53-7" href="#__codelineno-53-7"></a><span class="w">	</span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Something after dh_auto_clean"</span>
 <a id="__codelineno-53-8" name="__codelineno-53-8" href="#__codelineno-53-8"></a>
 <a id="__codelineno-53-9" name="__codelineno-53-9" href="#__codelineno-53-9"></a><span class="c"># 覆盖某个操作</span>
 <a id="__codelineno-53-10" name="__codelineno-53-10" href="#__codelineno-53-10"></a><span class="nf">override_dh_auto_clean</span><span class="o">:</span>
-<a id="__codelineno-53-11" name="__codelineno-53-11" href="#__codelineno-53-11"></a><span class="w">    </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Custom clean step"</span>
+<a id="__codelineno-53-11" name="__codelineno-53-11" href="#__codelineno-53-11"></a><span class="w">	</span><span class="nb">echo</span><span class="w"> </span><span class="s2">"Custom clean step"</span>
 </code></pre></div>
 <p>在使用 <code>dpkg-buildpackage</code> 构建完成后，可以使用 <code>lintian</code> 来检查包是否符合 Debian 的规范。在打包的目录执行即可：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>lintian<span class="w"> </span>-i<span class="w"> </span>-I
@@ -4957,12 +4957,12 @@
 </code></pre></div>
 <p><code>Valid-Until</code> 距离 <code>Release</code> 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，<strong>在生产环境下，谨慎使用任何镜像站提供安全更新源</strong>。如果真的需要依赖镜像站加速安全更新的获取，在能够正常连接 <code>security.debian.org</code> 的前提下，可以借助 <a href="https://manpages.debian.org/unstable/apt/apt-transport-mirror.1.en.html">apt-transport-mirror</a> 的镜像选择支持来实现。<strong>注意镜像的 URL 与优先级等标签中间需要使用 Tab 分隔</strong>。</p>
 <div class="highlight"><span class="filename">/etc/apt/mirrorlist/security.debian.org</span><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a># 从 security.debian.org 获取 index
-<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a>https://security.debian.org/debian-security priority:0 type:index
+<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a>https://security.debian.org/debian-security	priority:0 type:index
 <a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a># 优先从镜像站获取软件包，以校园网联合镜像站与科大镜像站为例子
-<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a>https://mirrors.cernet.edu.cn/debian-security   priority:1
-<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a>https://mirrors.ustc.edu.cn/debian-security priority:2
+<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a>https://mirrors.cernet.edu.cn/debian-security	priority:1
+<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a>https://mirrors.ustc.edu.cn/debian-security	priority:2
 <a id="__codelineno-70-6" name="__codelineno-70-6" href="#__codelineno-70-6"></a># 镜像站未及时更新的情况下，从 security.debian.org 获取软件包
-<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a>https://security.debian.org/debian-security priority:3
+<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a>https://security.debian.org/debian-security	priority:3
 </code></pre></div>
 <p>之后设置为 <code>mirror+file:///...</code> 即可，以 Debian 13 为例子：</p>
 <div class="highlight"><span class="filename">/etc/apt/sources.list.d/debian.sources</span><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="c1"># 省略主镜像部分</span>
@@ -5081,7 +5081,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月28日 17:53:40 UTC">2026年8月28日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月28日 18:25:03 UTC">2026年8月28日</span>
   </span>
 
     
@@ -5222,6 +5222,8 @@ Do not link to a "generic" man page for these commands -->
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../js/admonition-details.js"></script>
+      
+        <script src="../../js/code-copy-fix.js"></script>
       
     
   </body>

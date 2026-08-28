@@ -4111,21 +4111,21 @@
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="go">（以下省略）</span>
 <a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>libinput<span class="w"> </span>debug-events<span class="w"> </span>/dev/input/event7
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="go">-event7   DEVICE_ADDED                 Logitech G304                     seat0 default group1  cap:kp left scroll-nat scroll-button</span>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="go"> event7   POINTER_MOTION               +0.000s    0.30/  0.00 ( +1.00/ +0.00)</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="go"> event7   POINTER_MOTION            2  +0.003s    1.81/  0.00 ( +2.00/ +0.00)</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go"> event7   POINTER_MOTION            3  +0.007s    2.22/  0.00 ( +2.00/ +0.00)</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="go"> event7   POINTER_MOTION               +0.000s	  0.30/  0.00 ( +1.00/ +0.00)</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="go"> event7   POINTER_MOTION            2  +0.003s	  1.81/  0.00 ( +2.00/ +0.00)</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="go"> event7   POINTER_MOTION            3  +0.007s	  2.22/  0.00 ( +2.00/ +0.00)</span>
 </code></pre></div>
 <p>而如果要确认 X server 识别到了哪些输入设备，可以使用 <code>xinput</code> 工具。由于 <code>xinput</code> 是和 X server（而不是和设备文件）交互，因此不需要特权。以下是在 Xwayland 下执行的结果：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>xinput<span class="w"> </span>list
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">WARNING: running xinput against an Xwayland server. See the xinput man page for details.</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">⎡ Virtual core pointer                      id=2    [master pointer  (3)]</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">⎜   ↳ Virtual core XTEST pointer                id=4    [slave  pointer  (2)]</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">⎜   ↳ xwayland-pointer:16                       id=6    [slave  pointer  (2)]</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">⎜   ↳ xwayland-relative-pointer:16              id=7    [slave  pointer  (2)]</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">⎜   ↳ xwayland-pointer-gestures:16              id=8    [slave  pointer  (2)]</span>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">⎣ Virtual core keyboard                     id=3    [master keyboard (2)]</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="go">    ↳ Virtual core XTEST keyboard               id=5    [slave  keyboard (3)]</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">    ↳ xwayland-keyboard:16                      id=9    [slave  keyboard (3)]</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="go">⎡ Virtual core pointer                    	id=2	[master pointer  (3)]</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="go">⎜   ↳ Virtual core XTEST pointer              	id=4	[slave  pointer  (2)]</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">⎜   ↳ xwayland-pointer:16                     	id=6	[slave  pointer  (2)]</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="go">⎜   ↳ xwayland-relative-pointer:16            	id=7	[slave  pointer  (2)]</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="go">⎜   ↳ xwayland-pointer-gestures:16            	id=8	[slave  pointer  (2)]</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">⎣ Virtual core keyboard                   	id=3	[master keyboard (2)]</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="go">    ↳ Virtual core XTEST keyboard             	id=5	[slave  keyboard (3)]</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="go">    ↳ xwayland-keyboard:16                    	id=9	[slave  keyboard (3)]</span>
 </code></pre></div>
 <h4 id="x-input-method">输入法<a class="headerlink" href="#x-input-method" title="Permanent link">&para;</a></h4>
 <p>最早期的 X 设计上完全没有考虑输入法的问题。然而在东亚语言（中文、日文、韩文，CJK）场景下，输入法是正常使用桌面的必需组件。因此 X 在 1994 年尝试设计了被称为 <a href="https://www.x.org/releases/X11R7.6/doc/libX11/specs/XIM/xim.html">XIM（X Input Method）</a>的输入法框架，但是这一套框架逐渐无法满足现代 UI 框架与输入法的需求。因此目前在 X 上，主流的 <a href="https://github.com/ibus/ibus">IBus</a> 与 <a href="https://fcitx-im.org/">Fcitx</a>（包括 Fcitx 4 与 Fcitx 5）均使用另一种方案：在 GTK 或 Qt 这样的图形库中直接集成输入法支持，而不再使用 XIM。GTK 或 Qt 会直接调用输入法模块，模块内会通过 DBus 与输入法进程通信，实现功能。</p>
@@ -4288,13 +4288,13 @@
 <p>X server 早期会尝试获取显示器的 EDID（Extended Display Identification Data）信息，获取显示器的物理尺寸，计算出当前 screen 的 DPI，客户端可以获取到相关信息。但很不幸的是，很多时候显示器提供的 EDID 信息是错误的。如果直接拿来用，那么就可能计算出非常奇怪的 DPI，因此 Xorg 固定使用 96 DPI 作为默认值。并且目前绝大多数情况下，即使连接了多个显示器，X server 的 screen 仍然是唯一的（因为窗口等无法在不同 screen 之间顺畅移动），具体的显示器设置由 RandR 扩展管理，因此 X server 也无法为每个显示器提供不同的 DPI 信息。</p>
 <p>因为 X server 提供的 DPI 的不可靠性，大部分应用就转而参考 X resources 中的 <code>Xft.dpi</code> 设置来获取 DPI 信息。X resources 是 X server 提供的一个简单的键值存储系统，记录了字体、颜色等信息，可以使用 <code>xrdb</code> 工具来查看和修改：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-query
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">Xft.dpi:    96</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">Xft.antialias:  1</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">Xft.hinting:    1</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">Xft.hintstyle:  hintslight</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">Xft.rgba:   none</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">Xcursor.size:   24</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">Xcursor.theme:  Adwaita</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">Xft.dpi:	96</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">Xft.antialias:	1</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">Xft.hinting:	1</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">Xft.hintstyle:	hintslight</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="go">Xft.rgba:	none</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">Xcursor.size:	24</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">Xcursor.theme:	Adwaita</span>
 <a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="gp">$ </span><span class="c1"># 从约定俗成的配置文件位置读取并与当前 X resources 合并</span>
 <a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="gp">$ </span>xrdb<span class="w"> </span>-merge<span class="w"> </span>~/.Xresources
 </code></pre></div>
@@ -5454,6 +5454,8 @@ Do not link to a "generic" man page for these commands -->
       <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../js/admonition-details.js"></script>
+      
+        <script src="../../js/code-copy-fix.js"></script>
       
     
   </body>

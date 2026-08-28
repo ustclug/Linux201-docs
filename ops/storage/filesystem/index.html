@@ -4101,9 +4101,9 @@ MBR 信息存储在磁盘的第一个扇区<sup id="fnref:sector"><a class="foot
 <p class="admonition-title">稀疏文件&#8288;<a class="headerlink" href="#sparse-file" title="Permanent link">&para;</a></p>
 <p>这里我们创建了「稀疏文件」（Sparse file）。尽管文件大小是 8G，但是实际上只占用了很少的磁盘空间。可以以此验证：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>test.img
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">0   test.img</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="go">0	test.img</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="gp">$ </span>du<span class="w"> </span>-h<span class="w"> </span>--apparent-size<span class="w"> </span>test.img
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">8G  test.img</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="go">8G	test.img</span>
 </code></pre></div>
 </div>
 <p>之后我们就可以直接操作这个文件，而不用担心破坏真实的磁盘。</p>
@@ -4445,8 +4445,8 @@ ext4 最常见的问题之一是 inode 的数量限制。</p>
 可以使用 <code>stat</code> 或 <code>ls -i</code> 查看文件的 inode 信息。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>stat<span class="w"> </span><span class="nb">test</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="go">  File: test</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">  Size: 0           Blocks: 0          IO Block: 4096   regular empty file</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">Device: 0,28    Inode: 54475724    Links: 1</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">Device: 0,28	Inode: 54475724    Links: 1</span>
 <a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="go">Access: (0644/-rw-r--r--)  Uid: ( 1000/   username)   Gid: ( 1000/   username)</span>
 <a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="go">Access: 2024-02-11 00:23:27.743633975 +0800</span>
 <a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="go">Modify: 2024-02-11 00:23:27.743633975 +0800</span>
@@ -4554,8 +4554,8 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs
 <a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>show<span class="w"> </span>/media/btrfs<span class="w">  </span><span class="c1"># 可以使用 btrfs 工具管理 Btrfs 文件系统</span>
 <a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">Label: none  uuid: 5cdcf4bb-8020-45f9-8dfd-95e04a2a2bc1</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">    Total devices 1 FS bytes used 144.00KiB</span>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go">    devid    1 size 8.00GiB used 536.00MiB path /dev/loop0</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">	Total devices 1 FS bytes used 144.00KiB</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go">	devid    1 size 8.00GiB used 536.00MiB path /dev/loop0</span>
 </code></pre></div>
 <p>此时 <code>/media/btrfs</code> 挂载的就是 top-level subvolume。之后创建一些 subvolume：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>create<span class="w"> </span>/media/btrfs/subvol1
@@ -4624,14 +4624,14 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>show<span class="w"> </span>/media/btrfs
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="go">subvol1/nestedvol1</span>
-<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">    Name:           nestedvol1</span>
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="go">	Name: 			nestedvol1</span>
 <a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="go">（以下输出省略）</span>
 </code></pre></div>
 <p>还记得 top-level subvolume 的 ID 永远是 5 吗？如果想看某个 btrfs 文件系统完整的 subvolume 的情况，直接挂载 top-level subvolume 即可，不用卸载当前的挂载：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>mount<span class="w"> </span>-o<span class="w"> </span><span class="nv">subvolid</span><span class="o">=</span><span class="m">5</span><span class="w"> </span>btrfs.img<span class="w"> </span>/media/btrfs1
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>subvolume<span class="w"> </span>show<span class="w"> </span>/media/btrfs1
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="go">/</span>
-<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">    Name:           &lt;FS_TREE&gt;</span>
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="go">	Name: 			&lt;FS_TREE&gt;</span>
 <a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="go">（以下输出省略）</span>
 <a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs
 <a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>umount<span class="w"> </span>/media/btrfs1
@@ -4821,30 +4821,30 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <p>一个常见的问题是：明明还有剩余空间，但是已经无法写入数据了。简单来说，这是因为 Btrfs 内部存储分为数据（Data）和元数据（Metadata）等部分，当两者任一已满，并且没有未分配（Unallocated）的空间，那么就无法再写入数据了。这可以通过执行 <code>btrfs filesystem usage</code> 判断：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>btrfs<span class="w"> </span>filesystem<span class="w"> </span>usage<span class="w"> </span>/
 <a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="go">Overall:</span>
-<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="go">    Device size:           1.81TiB</span>
-<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="go">    Device allocated:          1.66TiB</span>
-<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="go">    Device unallocated:      156.45GiB</span>
-<a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a><span class="go">    Device missing:          0.00B</span>
-<a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="go">    Device slack:            0.00B</span>
-<a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a><span class="go">    Used:              1.39TiB</span>
-<a id="__codelineno-43-9" name="__codelineno-43-9" href="#__codelineno-43-9"></a><span class="go">    Free (estimated):        414.79GiB  (min: 336.57GiB)</span>
-<a id="__codelineno-43-10" name="__codelineno-43-10" href="#__codelineno-43-10"></a><span class="go">    Free (statfs, df):       414.79GiB</span>
-<a id="__codelineno-43-11" name="__codelineno-43-11" href="#__codelineno-43-11"></a><span class="go">    Data ratio:               1.00</span>
-<a id="__codelineno-43-12" name="__codelineno-43-12" href="#__codelineno-43-12"></a><span class="go">    Metadata ratio:           2.00</span>
-<a id="__codelineno-43-13" name="__codelineno-43-13" href="#__codelineno-43-13"></a><span class="go">    Global reserve:      512.00MiB  (used: 0.00B)</span>
-<a id="__codelineno-43-14" name="__codelineno-43-14" href="#__codelineno-43-14"></a><span class="go">    Multiple profiles:              no</span>
+<a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="go">    Device size:		   1.81TiB</span>
+<a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="go">    Device allocated:		   1.66TiB</span>
+<a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="go">    Device unallocated:		 156.45GiB</span>
+<a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a><span class="go">    Device missing:		     0.00B</span>
+<a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="go">    Device slack:		     0.00B</span>
+<a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a><span class="go">    Used:			   1.39TiB</span>
+<a id="__codelineno-43-9" name="__codelineno-43-9" href="#__codelineno-43-9"></a><span class="go">    Free (estimated):		 414.79GiB	(min: 336.57GiB)</span>
+<a id="__codelineno-43-10" name="__codelineno-43-10" href="#__codelineno-43-10"></a><span class="go">    Free (statfs, df):		 414.79GiB</span>
+<a id="__codelineno-43-11" name="__codelineno-43-11" href="#__codelineno-43-11"></a><span class="go">    Data ratio:			      1.00</span>
+<a id="__codelineno-43-12" name="__codelineno-43-12" href="#__codelineno-43-12"></a><span class="go">    Metadata ratio:		      2.00</span>
+<a id="__codelineno-43-13" name="__codelineno-43-13" href="#__codelineno-43-13"></a><span class="go">    Global reserve:		 512.00MiB	(used: 0.00B)</span>
+<a id="__codelineno-43-14" name="__codelineno-43-14" href="#__codelineno-43-14"></a><span class="go">    Multiple profiles:		        no</span>
 <a id="__codelineno-43-15" name="__codelineno-43-15" href="#__codelineno-43-15"></a>
 <a id="__codelineno-43-16" name="__codelineno-43-16" href="#__codelineno-43-16"></a><span class="go">Data,single: Size:1.62TiB, Used:1.37TiB (84.43%)</span>
-<a id="__codelineno-43-17" name="__codelineno-43-17" href="#__codelineno-43-17"></a><span class="go">/dev/nvme0n1p3     1.62TiB</span>
+<a id="__codelineno-43-17" name="__codelineno-43-17" href="#__codelineno-43-17"></a><span class="go">/dev/nvme0n1p3	   1.62TiB</span>
 <a id="__codelineno-43-18" name="__codelineno-43-18" href="#__codelineno-43-18"></a>
 <a id="__codelineno-43-19" name="__codelineno-43-19" href="#__codelineno-43-19"></a><span class="go">Metadata,DUP: Size:18.00GiB, Used:11.54GiB (64.13%)</span>
-<a id="__codelineno-43-20" name="__codelineno-43-20" href="#__codelineno-43-20"></a><span class="go">/dev/nvme0n1p3    36.00GiB</span>
+<a id="__codelineno-43-20" name="__codelineno-43-20" href="#__codelineno-43-20"></a><span class="go">/dev/nvme0n1p3	  36.00GiB</span>
 <a id="__codelineno-43-21" name="__codelineno-43-21" href="#__codelineno-43-21"></a>
 <a id="__codelineno-43-22" name="__codelineno-43-22" href="#__codelineno-43-22"></a><span class="go">System,DUP: Size:8.00MiB, Used:208.00KiB (2.54%)</span>
-<a id="__codelineno-43-23" name="__codelineno-43-23" href="#__codelineno-43-23"></a><span class="go">/dev/nvme0n1p3    16.00MiB</span>
+<a id="__codelineno-43-23" name="__codelineno-43-23" href="#__codelineno-43-23"></a><span class="go">/dev/nvme0n1p3	  16.00MiB</span>
 <a id="__codelineno-43-24" name="__codelineno-43-24" href="#__codelineno-43-24"></a>
 <a id="__codelineno-43-25" name="__codelineno-43-25" href="#__codelineno-43-25"></a><span class="go">Unallocated:</span>
-<a id="__codelineno-43-26" name="__codelineno-43-26" href="#__codelineno-43-26"></a><span class="go">/dev/nvme0n1p3   156.45GiB</span>
+<a id="__codelineno-43-26" name="__codelineno-43-26" href="#__codelineno-43-26"></a><span class="go">/dev/nvme0n1p3	 156.45GiB</span>
 </code></pre></div>
 <p>除了直接删除文件以外，使用 <code>truncate</code> 将大文件的大小截断为 0 可以在不添加 metadata 信息的情况下释放空间。
 如果 metadata 已满，但是 data 仍有空间，可以使用 balance 功能重新分配空间：</p>
@@ -5270,6 +5270,8 @@ Do not link to a "generic" man page for these commands -->
       <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../js/admonition-details.js"></script>
+      
+        <script src="../../../js/code-copy-fix.js"></script>
       
     
   </body>
