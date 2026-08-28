@@ -8,6 +8,7 @@
 
 <!-- man 1 -->
 
+[apt-transport-mirror.1]: https://manpages.debian.org/unstable/apt/apt-transport-mirror.1.en.html
 [git.1]: https://git-scm.com/docs/git
 [git-bisect.1]: https://git-scm.com/docs/git-bisect
 [git-fetch.1]: https://git-scm.com/docs/git-fetch

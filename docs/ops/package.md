@@ -75,6 +75,8 @@ The following packages will be REMOVED:
 - `apt-mark showauto` 与 `apt-mark showmanual` 可以显示系统中被标记为自动安装与手动安装的包。
 - `apt-mark auto <package>` 与 `apt-mark manual <package>` 可以修改包的标记。
 
+如果熟悉具体软件包的功能，可以使用 `apt-mark minimize-manual` 最小化 manual 依赖，以减少系统安装包的数量。
+
 !!! note "自动/手动安装的信息记录在哪里？" {#auto-manual-installation}
 
     某个包是否为自动安装是 APT 维护的信息，存储在 `/var/lib/apt/extended_states`。事实上，APT 只会把自动安装的包放进这个文件，于是不在这个文件里面的就是手动安装的——所以如果用 dpkg 安装了某个包（尽管不推荐这么做），那么这个包就会被 APT 视为手动安装的，因为 dpkg 不会修改 `extended_states` 文件的内容。
@@ -160,6 +162,7 @@ docker-buildx/noble-updates 0.14.1-0ubuntu1~24.04.1 amd64
         - 提示：可以像这样要求同时满足多个 pattern: `apt list 'P1 P2 P3'`，也可以 pattern 之间不加空格连接起来
     - 输出本地安装的所有标记为手动安装的包
         - 提示：`!PATTERN`
+        - 可以配合 `apt-mark` 将所有包标记为自动安装，然后手动挑选系统必须的包标记为 manual
 
 #### 文件搜索：`apt-file` {#apt-file}
 
@@ -1255,7 +1258,29 @@ Trusted: yes
     Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
     ```
 
-    `Valid-Until` 距离 `Release` 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，**在生产环境下，谨慎使用任何镜像站提供安全更新源**。
+    `Valid-Until` 距离 `Release` 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，**在生产环境下，谨慎使用任何镜像站提供安全更新源**。如果真的需要依赖镜像站加速安全更新的获取，在能够正常连接 `security.debian.org` 的前提下，可以借助 [apt-transport-mirror][apt-transport-mirror.1] 的镜像选择支持来实现。**注意镜像的 URL 与优先级等标签中间需要使用 Tab 分隔**。
+
+    ```text title="/etc/apt/mirrorlist/security.debian.org"
+    # 从 security.debian.org 获取 index
+    https://security.debian.org/debian-security	priority:0 type:index
+    # 优先从镜像站获取软件包，以校园网联合镜像站与科大镜像站为例子
+    https://mirrors.cernet.edu.cn/debian-security	priority:1
+    https://mirrors.ustc.edu.cn/debian-security	priority:2
+    # 镜像站未及时更新的情况下，从 security.debian.org 获取软件包
+    https://security.debian.org/debian-security	priority:3
+    ```
+
+    之后设置为 `mirror+file:///...` 即可，以 Debian 13 为例子：
+
+    ```yaml title="/etc/apt/sources.list.d/debian.sources"
+    # 省略主镜像部分
+
+    Types: deb
+    URIs: mirror+file:///etc/apt/mirrorlist/security.debian.org
+    Suites: trixie-security
+    Components: main
+    Signed-By: /usr/share/keyrings/debian-archive-keyring.pgp
+    ```
 
 组件目录中则包含了：
 
