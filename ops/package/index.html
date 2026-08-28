@@ -4039,6 +4039,7 @@
 <li><code>apt-mark showauto</code> 与 <code>apt-mark showmanual</code> 可以显示系统中被标记为自动安装与手动安装的包。</li>
 <li><code>apt-mark auto &lt;package&gt;</code> 与 <code>apt-mark manual &lt;package&gt;</code> 可以修改包的标记。</li>
 </ul>
+<p>如果熟悉具体软件包的功能，可以使用 <code>apt-mark minimize-manual</code> 最小化 manual 依赖，以减少系统安装包的数量。</p>
 <div class="admonition note" id="auto-manual-installation">
 <p class="admonition-title">自动/手动安装的信息记录在哪里？&#8288;<a class="headerlink" href="#auto-manual-installation" title="Permanent link">&para;</a></p>
 <p>某个包是否为自动安装是 APT 维护的信息，存储在 <code>/var/lib/apt/extended_states</code>。事实上，APT 只会把自动安装的包放进这个文件，于是不在这个文件里面的就是手动安装的——所以如果用 dpkg 安装了某个包（尽管不推荐这么做），那么这个包就会被 APT 视为手动安装的，因为 dpkg 不会修改 <code>extended_states</code> 文件的内容。</p>
@@ -4109,6 +4110,7 @@
 </li>
 <li>输出本地安装的所有标记为手动安装的包<ul>
 <li>提示：<code>!PATTERN</code></li>
+<li>可以配合 <code>apt-mark</code> 将所有包标记为自动安装，然后手动挑选系统必须的包标记为 manual</li>
 </ul>
 </li>
 </ul>
@@ -4953,7 +4955,24 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-69-1" name="__codelineno-69-1" href="#__codelineno-69-1"></a>Date: Sat, 08 Feb 2025 21:33:46 UTC
 <a id="__codelineno-69-2" name="__codelineno-69-2" href="#__codelineno-69-2"></a>Valid-Until: Sat, 15 Feb 2025 21:33:46 UTC
 </code></pre></div>
-<p><code>Valid-Until</code> 距离 <code>Release</code> 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，<strong>在生产环境下，谨慎使用任何镜像站提供安全更新源</strong>。</p>
+<p><code>Valid-Until</code> 距离 <code>Release</code> 生成为期一周，因此即使拖延，也不允许超过一周，否则 APT 会拒绝使用这个软件源。不过仍然请注意，<strong>在生产环境下，谨慎使用任何镜像站提供安全更新源</strong>。如果真的需要依赖镜像站加速安全更新的获取，在能够正常连接 <code>security.debian.org</code> 的前提下，可以借助 <a href="https://manpages.debian.org/unstable/apt/apt-transport-mirror.1.en.html">apt-transport-mirror</a> 的镜像选择支持来实现。<strong>注意镜像的 URL 与优先级等标签中间需要使用 Tab 分隔</strong>。</p>
+<div class="highlight"><span class="filename">/etc/apt/mirrorlist/security.debian.org</span><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a># 从 security.debian.org 获取 index
+<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a>https://security.debian.org/debian-security priority:0 type:index
+<a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a># 优先从镜像站获取软件包，以校园网联合镜像站与科大镜像站为例子
+<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a>https://mirrors.cernet.edu.cn/debian-security   priority:1
+<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a>https://mirrors.ustc.edu.cn/debian-security priority:2
+<a id="__codelineno-70-6" name="__codelineno-70-6" href="#__codelineno-70-6"></a># 镜像站未及时更新的情况下，从 security.debian.org 获取软件包
+<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a>https://security.debian.org/debian-security priority:3
+</code></pre></div>
+<p>之后设置为 <code>mirror+file:///...</code> 即可，以 Debian 13 为例子：</p>
+<div class="highlight"><span class="filename">/etc/apt/sources.list.d/debian.sources</span><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="c1"># 省略主镜像部分</span>
+<a id="__codelineno-71-2" name="__codelineno-71-2" href="#__codelineno-71-2"></a>
+<a id="__codelineno-71-3" name="__codelineno-71-3" href="#__codelineno-71-3"></a><span class="nt">Types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deb</span>
+<a id="__codelineno-71-4" name="__codelineno-71-4" href="#__codelineno-71-4"></a><span class="nt">URIs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mirror+file:///etc/apt/mirrorlist/security.debian.org</span>
+<a id="__codelineno-71-5" name="__codelineno-71-5" href="#__codelineno-71-5"></a><span class="nt">Suites</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">trixie-security</span>
+<a id="__codelineno-71-6" name="__codelineno-71-6" href="#__codelineno-71-6"></a><span class="nt">Components</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+<a id="__codelineno-71-7" name="__codelineno-71-7" href="#__codelineno-71-7"></a><span class="nt">Signed-By</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/usr/share/keyrings/debian-archive-keyring.pgp</span>
+</code></pre></div>
 </div>
 <p>组件目录中则包含了：</p>
 <ul>
@@ -4985,13 +5004,13 @@
 </ul>
 <details class="note" id="rsync-stage-parameters">
 <summary>Stage 1 和 2 的 rsync 参数&#8288;<a class="headerlink" href="#rsync-stage-parameters" title="Permanent link">&para;</a></summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$RSYNC_PROTOCOL</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">31</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
-<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">"-prltvHSB8192 --safe-links --chmod=D755,F644 --timeout 120 --stats --no-human-readable --no-inc-recursive"</span><span class="si">}</span>
-<a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="k">else</span>
-<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a><span class="w">    </span><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">"-prltvHSB8192 --safe-links --timeout 120 --stats --no-human-readable --no-inc-recursive"</span><span class="si">}</span>
-<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a><span class="k">fi</span>
-<a id="__codelineno-70-6" name="__codelineno-70-6" href="#__codelineno-70-6"></a><span class="nv">RSYNC_OPTIONS1</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS1</span><span class="k">:-</span><span class="s2">"--include=*.diff/ --include=by-hash/ --exclude=*.diff/Index --exclude=Contents* --exclude=Packages* --exclude=Sources* --exclude=Release* --exclude=InRelease --exclude=i18n/* --exclude=dep11/* --exclude=installer-*/current --exclude=ls-lR*"</span><span class="si">}</span>
-<a id="__codelineno-70-7" name="__codelineno-70-7" href="#__codelineno-70-7"></a><span class="nv">RSYNC_OPTIONS2</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS2</span><span class="k">:-</span><span class="s2">"--max-delete=40000 --delay-updates --delete --delete-delay --delete-excluded"</span><span class="si">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="nv">$RSYNC_PROTOCOL</span><span class="w"> </span>-ge<span class="w"> </span><span class="m">31</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<a id="__codelineno-72-2" name="__codelineno-72-2" href="#__codelineno-72-2"></a><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">"-prltvHSB8192 --safe-links --chmod=D755,F644 --timeout 120 --stats --no-human-readable --no-inc-recursive"</span><span class="si">}</span>
+<a id="__codelineno-72-3" name="__codelineno-72-3" href="#__codelineno-72-3"></a><span class="k">else</span>
+<a id="__codelineno-72-4" name="__codelineno-72-4" href="#__codelineno-72-4"></a><span class="w">    </span><span class="nv">RSYNC_OPTIONS</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS</span><span class="k">:-</span><span class="s2">"-prltvHSB8192 --safe-links --timeout 120 --stats --no-human-readable --no-inc-recursive"</span><span class="si">}</span>
+<a id="__codelineno-72-5" name="__codelineno-72-5" href="#__codelineno-72-5"></a><span class="k">fi</span>
+<a id="__codelineno-72-6" name="__codelineno-72-6" href="#__codelineno-72-6"></a><span class="nv">RSYNC_OPTIONS1</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS1</span><span class="k">:-</span><span class="s2">"--include=*.diff/ --include=by-hash/ --exclude=*.diff/Index --exclude=Contents* --exclude=Packages* --exclude=Sources* --exclude=Release* --exclude=InRelease --exclude=i18n/* --exclude=dep11/* --exclude=installer-*/current --exclude=ls-lR*"</span><span class="si">}</span>
+<a id="__codelineno-72-7" name="__codelineno-72-7" href="#__codelineno-72-7"></a><span class="nv">RSYNC_OPTIONS2</span><span class="o">=</span><span class="si">${</span><span class="nv">RSYNC_OPTIONS2</span><span class="k">:-</span><span class="s2">"--max-delete=40000 --delay-updates --delete --delete-delay --delete-excluded"</span><span class="si">}</span>
 </code></pre></div>
 </details>
 <p>同时从 Debian 直接同步软件源的官方镜像站会设置允许 SSH 在上游更新后触发同步，触发同步后需要先本地创建 <code>Archive-Update-Required-$MIRROR_NAME</code> 文件（<code>$MIRROR_NAME</code> 为镜像站名），然后执行同步。因此如果在比较耗时的 stage 1 执行的过程中，上游又出现了变化，那么 stage 1 内部也会再次重试（表明上游有新的变化，通知到了镜像站），防止出现在 stage 1 执行过程中，上游出现了更新，但是到 stage 1 执行结束之前更新完成，导致 stage 2 继续执行，出现不一致的情况。</p>
@@ -5062,7 +5081,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月28日 17:53:40 UTC">2026年8月28日</span>
   </span>
 
     
