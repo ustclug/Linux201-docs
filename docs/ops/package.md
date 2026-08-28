@@ -1035,11 +1035,11 @@ $ # 此时需要阅读 `debian/rules` 确认 dh 是怎么被调用的
 ```makefile
 # 在某个操作之前做一些事情
 execute_before_dh_auto_clean:
-  echo "Something before dh_auto_clean"
+	echo "Something before dh_auto_clean"
 
 # 在某个操作之后做一些事情
 execute_after_dh_auto_clean:
-  echo "Something after dh_auto_clean"
+	echo "Something after dh_auto_clean"
 
 # 覆盖某个操作
 override_dh_auto_clean:

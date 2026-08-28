@@ -120,11 +120,11 @@ GitHub 的 deploy keys 功能允许用户对特定仓库添加只用于该仓库
 
     ```ini
     [core]
-    	# ...
-    	# RSA key pair
-    	sshCommand = ssh -i .git/id_rsa
-    	# or ED25519 key pair
-    	sshCommand = ssh -i .git/id_ed25519
+		# ...
+		# RSA key pair
+		sshCommand = ssh -i .git/id_rsa
+		# or ED25519 key pair
+		sshCommand = ssh -i .git/id_ed25519
     ```
 
 3. 将公钥（**以 `.pub` 结尾，别将私钥发给其他任何人！**）添加到仓库设置的 deploy keys 中。
@@ -272,8 +272,8 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
     ```ini title="~/.gitconfig"
     [alias]
-        pr = !sh -c 'git fetch -u $1 +pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2 && git reset --hard HEAD' -
-        mr = !sh -c 'git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2 && git reset --hard HEAD' -
+		pr = !sh -c 'git fetch -u $1 +pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2 && git reset --hard HEAD' -
+		mr = !sh -c 'git fetch -u $1 +merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2 && git reset --hard HEAD' -
     ```
 
     使用例子：`git pr origin 1234`（GitHub）、`git mr origin 1234`（GitLab）。重复执行可从 PR/MR 中获取最新的修改。
@@ -290,8 +290,8 @@ GitHub 在 [这里](https://docs.github.com/en/pull-requests/collaborating-with-
 
         ```ini title="~/.gitconfig"
         [alias]
-            pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
-            mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
+			pr = !sh -c 'git fetch $1 pull/$2/head:pr-$1-$2 && git checkout pr-$1-$2' -
+			mr = !sh -c 'git fetch $1 merge-requests/$2/head:mr-$1-$2 && git checkout mr-$1-$2' -
         ```
 
         相比原始的 alias，这里的有什么变化？添加这些变化的目的是什么？是否有更好的解决方案？

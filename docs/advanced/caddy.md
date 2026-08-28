@@ -72,8 +72,8 @@ example.com {
     file_server
     encode zstd gzip
     log {
-		output file /var/log/access.log
-	}
+        output file /var/log/access.log
+    }
 }
 ```
 

@@ -923,16 +923,16 @@ a490cc0dc175   host                   host      local
 
 ```json title="/etc/docker/daemon.json"
 {
-	"default-address-pools": [
-		{
-			"base": "172.17.1.0/24",
-			"size": 28
-		},
-		{
-			"base": "172.17.2.0/23",
-			"size": 28
-		}
-	],
+  "default-address-pools": [
+    {
+      "base": "172.17.1.0/24",
+      "size": 28
+    },
+    {
+      "base": "172.17.2.0/23",
+      "size": 28
+    }
+  ],
 }
 ```
 

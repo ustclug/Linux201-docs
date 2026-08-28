@@ -217,26 +217,24 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
     下文中会讲解部分配置的作用及注意事项。
 
-!!! warning "缩进问题" {#indentation-issue}
+!!! note "配置缩进" {#indentation-issue}
 
-    下面的文档中，`.gitconfig` 的配置文件均使用 4 个空格而不是 Tab 进行缩进。
-
-    为了方便阅读，Git 默认的配置文件使用 Tab 进行缩进，但 Git 在解析配置文件时并不强制要求使用缩进，也允许等号两边有灵活数量的空格。
+    `git config` 写入配置项时通常使用 Tab 缩进，下面的示例也采用相同格式。Git 在解析配置文件时并不强制要求使用缩进，也允许等号两边有灵活数量的空格。
 
 ### 常用别名 {#git-alias}
 
 ```ini
 [alias]
-    adog = log --all --decorate --oneline --graph
-    aliases = !git config --get-regexp alias | sed -re 's/alias\\.(\\S*)\\s(.*)$/\\1 = \\2/g'
-    ci = commit
-    co = checkout
-    st = status
-    lg = log --graph --date=relative --pretty=tformat:'%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%an %ad)%Creset'
-    oops = commit --amend --no-edit
-    reword = commit --amend
-    push-with-lease = push --force-with-lease
-    uncommit = reset --soft HEAD~1
+	adog = log --all --decorate --oneline --graph
+	aliases = !git config --get-regexp alias | sed -re 's/alias\\.(\\S*)\\s(.*)$/\\1 = \\2/g'
+	ci = commit
+	co = checkout
+	st = status
+	lg = log --graph --date=relative --pretty=tformat:'%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%an %ad)%Creset'
+	oops = commit --amend --no-edit
+	reword = commit --amend
+	push-with-lease = push --force-with-lease
+	uncommit = reset --soft HEAD~1
 ```
 
 !!! tip "部分别名介绍" {#alias-introduction}
@@ -249,25 +247,25 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 ```ini
 [color]
-    ui = auto
+	ui = auto
 [color "branch"]
-    upstream = green
-    remote = red
+	upstream = green
+	remote = red
 [core]
-    editor = nvim
-    excludesFile = ~/.gitignore_global
+	editor = nvim
+	excludesFile = ~/.gitignore_global
 [commit]
-    template = ~/.gitmessage
+	template = ~/.gitmessage
 [pull]
-    ff = only
+	ff = only
 [push]
-    default = upstream
-    followTags = true
+	default = upstream
+	followTags = true
 [tag]
-    sort = version:refname
+	sort = version:refname
 ```
 
-我们也将上述的 `.gitconfig` 正确使用 Tab 缩进的版本放在 [这里](../../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
+我们也将上述的完整 `.gitconfig` 放在 [这里](../../assets/gitconfig_sample). 使用如下命令可以快速将我们提供的模板放入你的配置文件中：
 
 ```bash
 curl -sS https://201.ustclug.org/assets/gitconfig_sample >> ~/.gitconfig
@@ -293,7 +291,7 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 
 ```ini title="~/.gitconfig"
 [core]
-    excludesFile = ~/.gitignore_global
+	excludesFile = ~/.gitignore_global
 ```
 
 ```text title="~/.gitignore_global"
@@ -471,14 +469,14 @@ git rebase master
 
 ```ini
 [pull]
-    rebase = true
+	rebase = true
 ```
 
 或者也可以限制 `git pull` 只能进行 fast-forward，在出现分叉时用户可以手动 `git pull --rebase`，或者使用其他解决的方式：
 
 ```ini
 [pull]
-    ff = only
+	ff = only
 ```
 
 !!! question "更新一个有修改的本地仓库" {#update-local-repo-with-changes}
@@ -692,7 +690,7 @@ git worktree add /tmp/201-dev2 dev2
     ```ini
     # ~/.gitconfig
     [commit]
-        template = ~/.gitmessage
+		template = ~/.gitmessage
     ```
 
     添加后不要忘记在首行添加空行，这样 `git commit` 时无需新建一行。
