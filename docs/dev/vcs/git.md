@@ -362,10 +362,10 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
     ```yaml title=".pre-commit-config.yaml"
     repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-        rev: v6.0.0  # 版本号视实际情况修改
-        hooks:
-        - id: pretty-format-json
-          args: [--autofix, --no-sort-keys, --no-ensure-ascii]
+      rev: v6.0.0  # 版本号视实际情况修改
+      hooks:
+      - id: pretty-format-json
+        args: [--autofix, --no-sort-keys, --no-ensure-ascii]
     ```
 
     之后的每次 commit 前，pre-commit 都会检查并修复 commit 中变化的 JSON 文件的格式。如果需要应用到所有已有的文件上面，那么可以执行：
