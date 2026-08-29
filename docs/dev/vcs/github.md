@@ -320,6 +320,12 @@ GitHub 在 [这里](https://docs.github.com/en/actions/using-workflows/workflow-
 
     测试 CI 很多时候是件头疼的事情：要一遍又一遍 commit、push、观察是否运行正确，几乎是一种无尽的折磨——如果能在本地运行指定的 workflow 就好了！对于 GitHub Actions，可以使用 [act](https://github.com/nektos/act) 工具，其会调用 Docker 运行模拟 Actions 的环境，可以在本地快速测试。
 
+!!! example "自动修复仓库问题并 commit" {#github-actions-autofix}
+
+    [autofix.ci](https://autofix.ci) 提供了一个 GitHub Action 组件，在前面的步骤检查并修改了 checkout 出来的仓库的内容后（例如 formatter 自动格式化了提交者忘记 format 的代码），autofix.ci 可以帮你提交 commit 自动修复。
+
+    使用 autofix.ci 需要安装其提供的 GitHub App，之后可以参考其提供的例子配置。Linux 201 也使用了 autofix.ci，可参考 [autofix.yaml](https://github.com/ustclug/Linux201-docs/blob/5a03cc0ec657314fff3a120b5944d95b6c63da68/.github/workflows/autofix.yaml)。
+
 ### Other CI/CD systems {#ci-cd}
 
 以下是一些其他常用的 CI/CD 提供商，它们提供了类似的服务：

@@ -344,18 +344,46 @@ GitHub 在 [这里](https://github.com/github/gitignore) 提供了一些常见�
 
 ## Git Hook {#git-hooks}
 
-对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 Git Hook 来自动化。
+对于一些重复性的工作（例如格式化代码、检查代码风格等），可以使用 [Git Hook][git-hook.1] 来自动化。
 
-一个较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[这里](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook.
+一个较为成熟的框架是 [pre-commit](https://pre-commit.com/)，它支持多种语言和工具，例如 `black`、`flake8`、`eslint` 等，[pre-commit/pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks) 提供了一些常用的 hook。
 
-!!! note "如果只需要在 commit 后运行一段脚本" {#run-script-on-commit}
+!!! example "在 commit 时检查 JSON 是否恰当格式化" {#pre-commit-json-format}
 
-    可以按照如下方法进行配置：
+    pre-commit-hooks 的 [`pretty-format-json`](https://github.com/pre-commit/pre-commit-hooks#pretty-format-json) 提供了相关的功能，在需要的仓库中首先安装 pre-commit 的 hook（所有能写入仓库的用户都需要安装，否则无法确保提交的 commit 符合要求）：
+
+    ```console
+    $ pre-commit install
+    pre-commit installed at .git/hooks/pre-commit
+    ```
+
+    之后新建 `.pre-commit-config.yaml` 文件，内容如下：
+
+    ```yaml title=".pre-commit-config.yaml"
+    repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+        rev: v6.0.0  # 版本号视实际情况修改
+        hooks:
+        - id: pretty-format-json
+          args: [--autofix, --no-sort-keys, --no-ensure-ascii]
+    ```
+
+    之后的每次 commit 前，pre-commit 都会检查并修复 commit 中变化的 JSON 文件的格式。如果需要应用到所有已有的文件上面，那么可以执行：
+
+    ```sh
+    pre-commit run --all-files
+    ```
+
+    如果需要让 GitHub Actions 自动在运行 CI 时，修复存在的问题并 commit，可以参考 [GitHub 中相关的例子](./github.md#github-actions-autofix)。
+
+!!! note "如果只需要在 commit 前/后运行一段脚本" {#run-script-on-commit}
+
+    可以按照如下方法进行配置，以在 commit 后运行脚本为例子：
 
     ```bash
-    # 在项目根目录下创建 .git/hooks/post-commit
-    touch .git/hooks/__hook_name__
-    chmod +x .git/hooks/__hook_name__
+    # 如果需要在 commit 之前运行脚本，那么对应的文件则是 .git/hooks/pre-commit
+    touch .git/hooks/post-commit
+    chmod +x .git/hooks/post-commit
     ```
 
     ```shell title=".git/hooks/post-commit"

@@ -12,6 +12,7 @@
 [git.1]: https://git-scm.com/docs/git
 [git-bisect.1]: https://git-scm.com/docs/git-bisect
 [git-fetch.1]: https://git-scm.com/docs/git-fetch
+[git-hook.1]: https://git-scm.com/docs/git-hook
 [git-http-backend.1]: https://git-scm.com/docs/git-http-backend
 [git-worktree.1]: https://git-scm.com/docs/git-worktree
 [perf-stat.1]: https://man7.org/linux/man-pages/man1/perf-stat.1.html
