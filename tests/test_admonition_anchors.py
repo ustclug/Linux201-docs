@@ -2,7 +2,7 @@ import unittest
 
 from markdown import Markdown
 
-from hooks.admonition_anchors import AdmonitionAnchorsExtension
+from material.extensions.admonition import AdmonitionExtension
 
 
 class AdmonitionAnchorsTest(unittest.TestCase):
@@ -13,7 +13,7 @@ class AdmonitionAnchorsTest(unittest.TestCase):
                 "pymdownx.blocks.admonition",
                 "pymdownx.blocks.details",
                 "pymdownx.details",
-                AdmonitionAnchorsExtension(),
+                AdmonitionExtension(),
             ]
         )
         return markdown.convert(source)
@@ -27,7 +27,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
         html = self.render(
             '!!! tip "this is title" {#tip-summary}\n\n    body'
         )
-
         self.assertIn('<div class="admonition tip" id="tip-summary">', html)
         self.assertIn(
             '<p class="admonition-title">this is title&#8288;'
@@ -38,7 +37,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
 
     def test_chinese_title_uses_word_joiner_before_permalink(self):
         html = self.render('!!! example "一个例子标题" {#example}\n\n    body')
-
         self.assertIn(
             '<p class="admonition-title">一个例子标题&#8288;'
             '<a class="headerlink"',
@@ -52,7 +50,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
             "body\n"
             "///"
         )
-
         self.assertIn(
             '<p class="admonition-title">title with '
             '<code>code</code>&#8288;<a class="headerlink"',
@@ -62,7 +59,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
     def test_admonition_default_and_blank_titles_with_id(self):
         default_title = self.render('!!! tip {#tip-default}\n\n    body')
         blank_title = self.render('!!! warning "" {#hidden-title}\n\n    body')
-
         self.assertIn('id="tip-default"', default_title)
         self.assertIn('<p class="admonition-title">Tip', default_title)
         self.assert_permalink(default_title, "tip-default")
@@ -74,7 +70,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
         folded = self.render('??? note "folded" {#folded}\n\n    body')
         expanded = self.render('???+ note "expanded" {#expanded}\n\n    body')
         default_title = self.render('??? note {#default-details}\n\n    body')
-
         self.assertIn('<details class="note" id="folded">', folded)
         self.assertNotIn('open="open"', folded)
         self.assert_permalink(folded, "folded")
@@ -83,8 +78,7 @@ class AdmonitionAnchorsTest(unittest.TestCase):
         self.assert_permalink(expanded, "expanded")
         self.assertIn('id="default-details"', default_title)
         self.assertIn(
-            '<summary>Note&#8288;<a class="headerlink"',
-            default_title,
+            '<summary>Note&#8288;<a class="headerlink"', default_title
         )
         self.assert_permalink(default_title, "default-details")
 
@@ -94,14 +88,12 @@ class AdmonitionAnchorsTest(unittest.TestCase):
             '    !!! tip "nested" {#nested-tip}\n\n'
             "        body"
         )
-
         self.assertIn('<div class="admonition tip" id="nested-tip">', html)
         self.assert_permalink(html, "nested-tip")
 
     def test_traditional_syntax_without_id_is_unchanged(self):
         admonition = self.render('!!! tip "legacy"\n\n    body')
         details = self.render('??? note "legacy folded"\n\n    body')
-
         self.assertIn('<div class="admonition tip">', admonition)
         self.assertIn('<details class="note">', details)
         self.assertNotIn('class="headerlink"', admonition)
@@ -121,7 +113,6 @@ class AdmonitionAnchorsTest(unittest.TestCase):
             "body\n"
             "///"
         )
-
         self.assertIn('id="block-tip"', admonition)
         self.assert_permalink(admonition, "block-tip")
         self.assertIn('id="block-details"', details)

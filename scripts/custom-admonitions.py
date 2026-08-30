@@ -7,10 +7,6 @@ import material
 
 
 CUSTOM_ADMONITIONS = {
-    "ansible": {
-        "icon": "material/ansible",
-        "rgb": [0xFF, 0x80, 0x00],
-    },
     "comment": {
         "icon": "material/comment",
         "rgb": [0x00, 0xC8, 0x53],
