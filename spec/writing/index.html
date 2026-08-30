@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.56385464.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -50,7 +50,12 @@
         
         
         
-        <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        
+        <link rel="preload" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css" as="style">
+        <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css" media="print" onload="this.media=&quot;all&quot;">
+        <noscript>
+          <link rel="stylesheet" href="../../assets/external/fonts.googleapis.com/css.49ea35f2.css">
+        </noscript>
         <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
       
     
@@ -3768,7 +3773,7 @@
 <p>lab: 教程不会详细说明，需要读者自己尝试的实验。</p>
 </li>
 </ul>
-<p>正文中的提示框应当像标题一样添加 ID，以便使用 <code>#id</code> 的方式引用。Linux 201 添加了<a href="https://github.com/ustclug/Linux201-docs/blob/master/hooks/admonition_anchors.py">相关的处理 hook</a>，可以直接在传统提示框语法的标题后添加 <code>{#id}</code>：</p>
+<p>正文中的提示框应当像标题一样添加 ID，以便使用 <code>#id</code> 的方式引用。当前使用的<a href="https://github.com/ustclug/mkdocs-material">我们的 Material fork</a> 支持在传统提示框语法的标题后直接添加 <code>{#id}</code>：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>!!! tip "一个例子" {#example}
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    一些文本。
@@ -3789,11 +3794,11 @@
 <h3 id="image-specs">图片规格<a class="headerlink" href="#image-specs" title="Permanent link">&para;</a></h3>
 <p>如果你使用 <a href="https://draw.io">draw.io</a> 绘制图片，请在「文件→属性」中设置缩放比为 200%，并导出为 SVG 格式。如果使用其他绘图工具，请确保导出的图片清晰可见，且文字大小适中。</p>
 <h3 id="image-size">图片尺寸<a class="headerlink" href="#image-size" title="Permanent link">&para;</a></h3>
-<p>构建文档时，Linux 201 仓库中的 <a href="https://github.com/ustclug/Linux201-docs/blob/master/hooks/image_aspect_ratio.py">hook</a> 会读取本地图片的固有尺寸，并自动为生成的 <code>&lt;img&gt;</code> 元素设置 <code>width</code> 和 <code>height</code> 属性。浏览器可以据此在图片加载前确定宽高比并预留空间，减少<a href="https://web.dev/articles/optimize-cls?hl=zh-cn#images_without_dimensions">布局偏移（CLS）问题</a>。</p>
+<p>构建文档时，Material fork 中的 <code>image-dimensions</code> 插件会读取本地图片的固有尺寸，并自动为生成的 <code>&lt;img&gt;</code> 元素设置 <code>width</code> 和 <code>height</code> 属性。浏览器可以据此在图片加载前确定宽高比并预留空间，减少<a href="https://web.dev/articles/optimize-cls?hl=zh-cn#images_without_dimensions">布局偏移（CLS）问题</a>。</p>
 <p>以下情况不会自动设置完整的固有尺寸：</p>
 <ul>
 <li>图片已经同时设置了 <code>width</code> 和 <code>height</code>；</li>
-<li>图片只设置了 <code>width</code> 或 <code>height</code> 时，hook 会保留作者指定的显示尺寸，并改为补充 <code>aspect-ratio</code>；</li>
+<li>图片只设置了 <code>width</code> 或 <code>height</code> 时，插件会保留作者指定的显示尺寸，并改为补充 <code>aspect-ratio</code>；</li>
 <li>图片使用远程 URL，构建过程不会为了读取尺寸而下载远程图片。</li>
 </ul>
 <p>对于远程图片，请在能够确定尺寸时指定固有宽度和高度：</p>
@@ -4045,7 +4050,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月23日 19:40:45 UTC">2026年8月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月30日 09:14:58 UTC">2026年8月30日</span>
   </span>
 
     
@@ -4169,14 +4174,10 @@ Do not link to a "generic" man page for these commands -->
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tabs.link", "navigation.indexes", "navigation.path", "navigation.sections", "navigation.top"], "search": "../../assets/javascripts/workers/search.91d12ba3.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
-      
-        <script src="../../js/admonition-details.js"></script>
-      
-        <script src="../../js/code-copy-fix.js"></script>
+      <script src="../../assets/javascripts/bundle.80ee5ee7.min.js"></script>
       
     
   </body>
