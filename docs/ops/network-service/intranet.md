@@ -28,7 +28,7 @@ icon: material/tunnel-outline
 
 IKEv2 是一种安全性高、易于配置的 VPN 协议，由 IPsec 负责数据的传输安全，基于 UDP 协议。大部分系统都内建了对 IKEv2 协议的支持。
 
-#### 安装 strongSwan
+#### 安装 strongSwan {#install-strongswan}
 
 在 Linux 上的开源 IKEv2/IPsec 实现有 strongSwan、Libreswan，和已经停止更新的 Openswan。本文使用 strongSwan，对应包为 `strongswan`。
 
@@ -41,7 +41,7 @@ TODO
 
 也可以使用如 [yangzhaofengsteven/strongswan](https://hub.docker.com/r/yangzhaofengsteven/strongswan) 等 docker 镜像。
 
-#### 配置证书和路由
+#### 配置证书和路由 {#configure-certificates-and-routing}
 
 ## AnyConnect
 
@@ -49,7 +49,7 @@ AnyConnect 是由思科开发的专用 VPN 协议，由 TLS 负责数据的传�
 
 然而 AnyConnect 作为 Cisco 专有协议，我们一般使用兼容 AnyConnect 协议的服务端 [openconnect/ocserv](https://gitlab.com/openconnect/ocserv)。
 
-### 安装 ocserv
+### 安装 ocserv {#install-ocserv}
 
 [yangzhaofengsteven/ocserv](https://hub.docker.com/r/yangzhaofengsteven/ocserv) docker 镜像
 
@@ -61,7 +61,7 @@ OpenVPN 是一款开源的 VPN 协议，使用 TLS 进行认证。相比其他�
 
 WireGuard 是一种现代的 VPN 协议，速度快、配置简单、安全性良好，基于 UDP 协议。现代 Linux 内核实现了 WireGuard。而其用户态工具则由 `wireguard-tools` 包提供。
 
-### 生成密钥对
+### 生成密钥对 {#generate-wireguard-keypair}
 
 每个 WireGuard 接口都需要一个私钥和公钥。`wg genkey` 生成一个私钥，`wg pubkey` 根据输入的私钥输出公钥。
 
@@ -73,7 +73,7 @@ wg genkey | tee privatekey | wg pubkey > publickey
 
 这将在当前目录下生成两个文件：`privatekey` 和 `publickey`。
 
-### 基于 `wg-quick` 工具设置 WireGuard 接口
+### 基于 `wg-quick` 工具设置 WireGuard 接口 {#configure-wireguard-with-wg-quick}
 
 这里以一个简单的场景为例，两台机器 A 和 B 进行组网。其中 A 有公网 IP，对应域名 `example.com`。
 
@@ -114,7 +114,7 @@ PersistentKeepalive = 25
 
 配置文件需要写在 `/etc/wireguard/<配置名>.conf` 中。例如：`/etc/wireguard/wg0.conf`。
 
-#### 启停 WireGuard 接口
+#### 启停 WireGuard 接口 {#manage-wireguard-interface}
 
 使用 `wg-quick` 工具启动 WireGuard 接口：
 
@@ -132,7 +132,7 @@ sudo systemctl start wg-quick@wg0
 sudo systemctl stop wg-quick@wg0
 ```
 
-### 基于 interface 设置 WireGuard 接口
+### 基于 interface 设置 WireGuard 接口 {#configure-wireguard-with-interface}
 
 场景同上，B 的配置如下：
 
@@ -154,7 +154,7 @@ sudo ifup wg0
 sudo ifdown wg0
 ```
 
-### 检查接口状态
+### 检查接口状态 {#check-wireguard-interface-status}
 
 可以使用 `wg` 命令查看当前的 WireGuard 状态：
 
@@ -168,7 +168,7 @@ sudo wg
 
 > Headscale 仅是 Tailscale 的一个开源、可自行部署的实现，客户端仍需要使用 Tailscale。
 
-### 安装 Headscale
+### 安装 Headscale {#install-headscale}
 
 截止编辑时，Headscale 尚不提供 apt repo，需要在 [GitHub Release](https://github.com/juanfont/headscale/releases) 选择 `.deb` 安装：
 
@@ -177,18 +177,18 @@ wget --output-document=headscale.deb <URL>
 sudo apt install ./headscale.deb
 ```
 
-### 配置 Headscale
+### 配置 Headscale {#configure-headscale}
 
 配置文件位于 `/etc/headscale/config.yaml`，默认配置文件：<https://github.com/juanfont/headscale/blob/main/config-example.yaml>
 
-### 启动 Headscale
+### 启动 Headscale {#start-headscale}
 
 ```shell
 sudo systemctl enable --now headscale
 sudo systemctl status headscale
 ```
 
-### 安装 Headscale-ui
+### 安装 Headscale-ui {#install-headscale-ui}
 
 与 Tailscale 不同，Headscale 目前没有集成的 Admin Console，可以部署 [headscale-ui](https://github.com/gurucomputing/headscale-ui) 替代部分功能。这是一个纯静态的 Web 界面，可以在 [GitHub Release](https://github.com/gurucomputing/headscale-ui/releases) 下载 `headscale-ui.zip`。
 
@@ -197,7 +197,7 @@ wget --output-document=headscale-ui.zip <URL>
 unzip headscale-ui.zip -d /var/www/headscale-ui
 ```
 
-### 配置反向代理
+### 配置反向代理 {#configure-headscale-reverse-proxy}
 
 以 Caddy 为例，我们演示如何配置 Headscale & Headscale-ui：
 
@@ -214,7 +214,7 @@ headscale.****.**** {
 
 Nginx 配置文件可以参考：<https://headscale.net/ref/integration/reverse-proxy/#nginx>
 
-### 设置 API Key
+### 设置 API Key {#configure-headscale-api-key}
 
 ```shell
 sudo headscale apikeys create --expiration 9999d
@@ -222,13 +222,13 @@ sudo headscale apikeys create --expiration 9999d
 
 通过浏览器访问 `/web`，在 Settings 界面中填写 API Key。
 
-### 添加用户
+### 添加用户 {#add-headscale-user}
 
 ```shell
 sudo headscale users create <NAME>
 ```
 
-### 客户端设置
+### 客户端设置 {#configure-headscale-client}
 
 与一般连接 Tailscale 方法不同，需要指定 `--login-server` 和 `--auth-key`：
 
@@ -242,7 +242,7 @@ tailscale up --login-server <URL> --authkey <KEY>
 sudo headscale preauthkeys create --user <NAME>
 ```
 
-### 列出其他节点
+### 列出其他节点 {#list-headscale-nodes}
 
 ```shell
 tailscale status

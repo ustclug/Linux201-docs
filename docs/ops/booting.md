@@ -705,7 +705,7 @@ initrd 本质上是一个块设备镜像（通常是 ext2 等文件系统格式�
 
 ### UKI
 
-## init 进程
+## init 进程 {#init-process}
 
 `init` 进程是 Linux 启动时运行的第一个进程，负责启动系统的各种服务并最终启动 shell。传统的 init 程序位于 `/sbin/init`，而现代发行版中它一般是指向 `/lib/systemd/systemd` 的软链接，即由 systemd 作为 PID 1 运行。
 
@@ -716,4 +716,4 @@ PID 1 在 Linux 中有一些特殊的地位：
 
 ### systemd
 
-### 其他 init 系统
+### 其他 init 系统 {#alternative-init-systems}

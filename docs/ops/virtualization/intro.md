@@ -10,7 +10,7 @@
 
 本部分介绍与虚拟化技术有关的常用术语和基础理论知识。
 
-## 虚拟化技术简介
+## 虚拟化技术简介 {#virtualization-introduction}
 
 虚拟化技术是一种资源管理技术，它在下层计算资源与上层软件之间添加了一层抽象层，称为虚拟化层。虚拟化层负责分割、隔离并管理计算资源，并将资源划分为多个抽象的资源实例，提供给上层软件使用。上层软件拥有对抽象资源的完全控制权，然而，其对物理资源的使用会由虚拟化层进行调度和限制。
 
@@ -27,9 +27,9 @@
 
 以下将具体介绍这两类虚拟化技术。
 
-## 硬件虚拟化
+## 硬件虚拟化 {#hardware-virtualization}
 
-### 概述
+### 概述 {#hardware-virtualization-overview}
 
 在硬件虚拟化技术中，物理主机被分割为一台或多台虚拟机（Virtual Machine）。每台虚拟机都可以看作一台独立的“计算机”，拥有自己的虚拟硬件（CPU、内存、硬盘、网络接口等），运行自己的操作系统和应用程序，通过虚拟化技术共享物理主机的硬件资源。
 
@@ -56,13 +56,13 @@
 
 关于 QEMU/KVM 的更多介绍，请参考本文档的 [QEMU/KVM](./qemu-kvm.md) 部分。
 
-完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置，可以参考下文 [常见服务器虚拟化方案](#_10) 的配图。
+完整的硬件虚拟化解决方案除了提供 Hypervisor 这样的虚拟化基础设施之外，一般还会附带图形化管理界面和命令行接口，帮助管理员完成虚拟机配置，可以参考下文 [常见服务器虚拟化方案](#server-virtualization-solutions) 的配图。
 
 <!-- TODO: 加图，注意版权 -->
 
 <!-- FIXME: 正确性和表述有待商榷 -->
 
-### x86 虚拟化实现
+### x86 虚拟化实现 {#x86-virtualization}
 
 对于 x86 平台，有多种技术路线来实现硬件虚拟化，包括：
 
@@ -115,7 +115,7 @@
 
 以下将从 CPU、内存、I/O 虚拟化三个部分来简要介绍硬件虚拟化的实现。这里提到的实现技术可能已经过时，但它们有助于理解实现虚拟化的基本原理。
 
-#### CPU 虚拟化
+#### CPU 虚拟化 {#cpu-virtualization}
 
 CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思想是：非敏感指令在 Guest OS 上直接执行，敏感指令陷入到 Hypervisor 进行模拟。然而，这种模型对于硬件架构设计存在要求，而 x86 架构在最初设计时并未考虑到虚拟化的场景，无法满足前提条件，也就无法直接使用这种架构，在 x86 虚拟化发展的早期，只能采取一些变通方法。
 
@@ -128,7 +128,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 到了 2006 年前后，Intel 与 AMD 先后发布了 VT-x 和 AMD-V 指令集扩展，从硬件层面提供了对虚拟化的支持。以 VT-x 为例，其引入了两个新的 CPU 运行模式（VMX root/non-root operation），分别交由 Hypervisor 和 Guest OS 使用，并从硬件层面实现权限控制。
 
-#### 内存虚拟化
+#### 内存虚拟化 {#memory-virtualization}
 
 对于操作系统内核来说，内存资源的高效调度建立在对物理内存地址空间的两个假设上：从零开始、内存地址连续；而对于需要同时运行多个操作系统的 Hypervisor 来说，需要高效地调度内存资源，尽可能满足每个操作系统对内存的需求。
 
@@ -148,7 +148,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 而内存虚拟化的硬件辅助技术，被称为二级地址转换技术（Second Level Address Translation，SLAT），通过扩展页表结构，在硬件上直接支持 Guest Virtual Address -> Guest Physical Address -> Host Physical Address 这两层地址转换，如 Intel 的 Extended Page Table（EPT）和 AMD 的 Rapid Virtualization Indexing (RVI) 技术。
 
-#### I/O 虚拟化
+#### I/O 虚拟化 {#io-virtualization}
 
 在非虚拟化的环境下，操作系统内核通过驱动与 I/O 设备进行交互。从 CPU 的角度看，与设备的交互方式一般分为以下三种：
 
@@ -163,13 +163,13 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 以下将讨论几类主流的 I/O 虚拟化的实现方式。
 
-##### 设备仿真
+##### 设备仿真 {#device-emulation}
 
 对于一些实现简单，且性能要求不高的 I/O 设备（如键盘、鼠标、简单网卡等），可以采用纯软件方式来完全模拟已有物理硬件的行为。
 
 此时，Guest OS 可以直接使用现有的、为物理硬件实现的驱动来操作设备，但对于 I/O 吞吐量较大的设备来说，纯软件实现可能带来无法忽略的性能开销。
 
-##### 半虚拟化
+##### 半虚拟化 {#paravirtualization}
 
 在这种架构中，Guest OS 通过在 I/O 子系统上加以修改，能够感知到自己运行在虚拟化环境中，并与 Hypervisor 协同工作。
 
@@ -191,7 +191,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 <!-- TODO: 通过 qemu 使用不同设备后端跑 benchmark 来感受不同实现之间的差异 -->
 
-##### 设备直通
+##### 设备直通 {#device-passthrough}
 
 在设备直通技术中，Hypervisor 将物理 I/O 设备直接分配给特定的虚拟机，使得该虚拟机能够直接与硬件进行交互，而无需经过中间的软件仿真或分离驱动层。这种方式可能依赖于硬件支持（例如 Intel VT-d 或 AMD IOMMU）来实现 DMA 重映射和中断隔离等功能。
 
@@ -220,7 +220,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
     这种机制特别适用于虚拟化和高性能计算环境，在保护系统内存安全的同时，也确保了设备高效、可靠的数据传输。
 
-## 操作系统层虚拟化
+## 操作系统层虚拟化 {#os-level-virtualization}
 
 在操作系统级虚拟化（OS-level virtualization）中，虚拟化的对象是操作系统内核及其调度的系统资源，而不像硬件虚拟化那样直接对硬件资源进行虚拟化。每个虚拟化实例都认为自己独占操作系统内核及其所调度的资源，但实际上，这些虚拟化实例是共享内核资源的，并且仍受到操作系统内核的调度与限制。
 
@@ -236,7 +236,7 @@ CPU 虚拟化的一个经典架构被称为「Trap & Emulate」，其大致思�
 
 <!-- FIXME: AIGC -->
 
-## 常见服务器虚拟化方案
+## 常见服务器虚拟化方案 {#server-virtualization-solutions}
 
 ### Proxmox VE (PVE)
 
@@ -278,7 +278,7 @@ Xen 是 x86 半虚拟化技术的先驱，其经典论文《Xen and the art of v
 
 ![virt-manager in Xen dom0](https://wiki.xenproject.org/images/5/54/Figure_19-_Virt-Manager_%28OpenSUSE%29.png?20170415113220)
 
-## 参考资料
+## 参考资料 {#references}
 
 - [阿里云课程 - 虚拟化技术入门](https://edu.aliyun.com/course/313115/)
 - [CTF Wiki - 虚拟化基础知识](https://ctf-wiki.org/pwn/virtualization/basic-knowledge/basic-knowledge/)

@@ -14,7 +14,7 @@ QEMU/KVM 是 Linux 服务器上常用的虚拟化方案。其分为运行在用�
 
 本部分将对 QEMU 和 KVM 基础知识和基本操作进行介绍。
 
-## 组件介绍
+## 组件介绍 {#components}
 
 ### QEMU
 
@@ -45,7 +45,7 @@ KVM（Kernel-based Virtual Machine）是一种基于 Linux 内核的开源虚拟
 
 QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提供软件模拟和用户界面，而 KVM 则在内核级别提供硬件加速支持。这种配合使得虚拟机能够以较低的性能开销运行，同时用户还可以享受到 QEMU 在设备模拟方面提供的灵活性。实际上，QEMU 通常作为用户空间的工具与 KVM 的内核虚拟化功能配合，一起形成了现代 Linux 环境中强大的虚拟化解决方案。
 
-## 安装配置
+## 安装配置 {#installation}
 
 现在大多数发行版提供的内核都包含 KVM 相关模块，也提供了 QEMU 的二进制包。因此在大多数情况下，KVM 无需进行任何配置，只需要安装 QEMU 的二进制包即可。
 
@@ -68,7 +68,7 @@ QEMU 与 KVM 的关系是互补的。当二者结合使用时，QEMU 负责提�
 
     如果发行版不提供相关包，也可以从 [QEMU 官网](https://www.qemu.org/download/) 下载源码编译安装。
 
-### 第一台虚拟机
+### 第一台虚拟机 {#first-vm}
 
 以下实例命令用于启动一个使用 KVM，带有双核 CPU、1GB 内存，使用一个名为 `example.img` 的磁盘镜像文件，挂载了 `livecd.iso` 作为光盘文件，和用户态网络的虚拟机。
 
@@ -97,11 +97,11 @@ qemu-system-x86_64 \
 
 这只是创建虚拟机的一个基本示例，QEMU 提供了很多其他选项，可以让你定制网络、图形输出、设备等。
 
-## 详细配置
+## 详细配置 {#configuration}
 
-### 块存储
+### 块存储 {#block-storage}
 
-#### 存储格式
+#### 存储格式 {#storage-formats}
 
 QEMU 支持多种存储格式，每种格式都有其特定的优点和用途。以下是一些最常见的 QEMU 磁盘镜像格式：
 
@@ -110,7 +110,7 @@ QEMU 支持多种存储格式，每种格式都有其特定的优点和用途。
 
 此外 QEMU 还支持许多其他磁盘格式，如 vmdk, vdi, vhdx 等。由于这些格式不是很常见，这里不再详细介绍。
 
-#### 配置参数
+#### 配置参数 {#configuration-options}
 
 QEMU 中存储分为存储后端和存储设备两个部分，分别使用 `-blockdev` 和 `-device` 参数进行配置。
 
@@ -138,7 +138,7 @@ QEMU 中存储分为存储后端和存储设备两个部分，分别使用 `-blo
 
 这种方式更加简洁，但不如 `-blockdev` 和 `-device` 参数灵活。当 `if` 选项值为 `none` 时，`-drive` 选项仅创建后端，不创建设备。
 
-### 网络
+### 网络 {#networking}
 
 QEMU 支持多种网络后端，包括 `user`，`tap`，`bridge` 等。其中 `user` 是最简单的网络后端，它使用宿主机的 NAT 网络进行网络连接。`tap` 则是最常用的网络后端，它使用主机上的 TAP 设备进行网络连接。`bridge` 与 `tap` 没有本质区别，它只是自动将创建的 tap 接口接到网桥上。
 
@@ -150,7 +150,7 @@ QEMU 支持多种网络后端，包括 `user`，`tap`，`bridge` 等。其中 `u
 
 QEMU 支持多种网络设备模型，包括 `virtio`，`e1000`，`rtl8139` 等。其中 `virtio` 是性能最好的设备模型，且现在几乎所有 Linux 发行版均包含了对应驱动，因此大多数情况下直接使用该模型即可。
 
-### 内存
+### 内存 {#memory}
 
 !!! warning "本节内容待补充" {#qemu-kvm-section-incomplete}
 
@@ -158,7 +158,7 @@ QEMU 支持多种网络设备模型，包括 `virtio`，`e1000`，`rtl8139` 等�
 
 !!! warning "本节内容待补充" {#cpu-section-incomplete}
 
-## 实用工具
+## 实用工具 {#utilities}
 
 ### qemu-img
 
@@ -166,7 +166,7 @@ QEMU 支持多种网络设备模型，包括 `virtio`，`e1000`，`rtl8139` 等�
 
 `qemu-img` 的详细用法和选项可以通过 `man qemu-img` 或 `qemu-img --help` 查看。
 
-#### 创建
+#### 创建 {#create-image}
 
 `qemu-img create` 命令用于创建磁盘镜像，基本用法如下：
 
@@ -180,7 +180,7 @@ qemu-img create -f <FORMAT:raw|qcow2|...> -o <OPTIONS> <IMAGE> <SIZE>
 
     创建 `qcow2` 格式的磁盘镜像时，可以使用 `-o preallocation=metadata` 选项指定预分配元数据，以提高性能。
 
-#### 转换
+#### 转换 {#convert-image}
 
 `qemu-img convert` 命令用于转换磁盘镜像格式，基本用法如下：
 
@@ -190,7 +190,7 @@ qemu-img convert -f <SRC_FORMAT:raw|qcow2|...> -O <DST_FORMAT:raw|qcow2|...> -o 
 
 其中 `-f` 选项用于指定源磁盘镜像格式，`-O` 选项用于指定目标磁盘镜像格式，`-o` 选项用于指定格式相关的选项，`<SRC_IMAGE>` 为源磁盘镜像文件名，`<DST_IMAGE>` 为目标磁盘镜像文件名。
 
-#### 扩缩容
+#### 扩缩容 {#resize-image}
 
 `qemu-img resize` 命令用于扩缩容磁盘镜像，基本用法如下：
 
@@ -230,7 +230,7 @@ qemu-nbd -c /dev/nbdX -f <FORMAT:raw|qcow2|...> --discard=<unmap|ignore> <IMAGE>
 
 其中 `-c` 选项用于指定 nbd 设备号，`-f` 选项用于指定磁盘镜像格式，`--discard` 选项用于指定磁盘镜像支持的 TRIM/DISCARD 操作，`<IMAGE>` 为磁盘镜像文件。如果需要只读挂载，可以指定 `-r` 选项。`qemu-nbd` 的其他用法和选项可以通过 `man qemu-nbd` 或 `qemu-nbd --help` 查看。
 
-## 管理工具
+## 管理工具 {#management-tools}
 
 !!! warning "本节内容待补充" {#management-tools-section-incomplete}
 
