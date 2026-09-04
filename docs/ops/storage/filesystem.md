@@ -1060,7 +1060,7 @@ btrfs-convert /path/to/device
 
     `btrfs-convert` 在运行时会将原来的文件系统的 image 放在单独的 subvolume 里面（例如 ext 系列是 `ext2_saved`，用来之后提供恢复到旧文件系统的功能），并在 Btrfs 文件系统元数据中为每个文件添加对应的 inode。由于 Btrfs 支持数据 checksum，`btrfs-convert` 会花大量的时间计算哈希，而且很不幸的是，这个过程目前不是并行的。这可能会导致转换的大部分时间都卡在 `Create ext2 image file`，给 `ext2_saved` 计算哈希（而可能你之后完全不会使用它）。
 
-    尽管 `btrfs-convert` 提供了 `--no-datasum` 参数，但是这个参数也会把普通文件的数据 checksum 关闭，只有在创建了新 inode 之后才能恢复。因此对规模较大的场景，如果想节约转换的时间，可能直接格式化然后从备份复制过来会更快一些。
+    尽管 `btrfs-convert` 提供了 `--no-datasum` 参数，但是这个参数也会把普通文件的数据 checksum 关闭，只有在创建了新 inode 之后才能恢复，会影响到透明压缩特性（透明压缩要求必须启用 checksum 和 CoW）。因此对规模较大的场景，如果想节约转换的时间，可能直接格式化然后从备份复制过来会更快一些。
 
 在确定不需要回滚之后，可以删除 `ext2_saved` subvolume，并进行碎片整理（defrag）和对元数据 balance 操作来优化数据排布。详情可参考 btrfs-convert 手册。另外别忘了修改 `/etc/fstab` 哦！
 
