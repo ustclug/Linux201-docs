@@ -704,8 +704,7 @@ Filesystem     Size   Used  Avail Use% Pathname
 
 ### Btrfs
 
-尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。
-但是在许多年的开发后，Btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。
+尽管最开始背负着不稳定与性能不佳的批评，在许多年的开发后，Btrfs 的稳定性与性能有了很大的提升，并且一部分特性（如快照、透明压缩等）在很多场合都很有用。目前，Btrfs 主要用于桌面环境、家用 NAS（例如群晖）、部分场景下的服务器（Meta 在服务器上即大量使用 Btrfs）等场景。
 
 #### Subvolume {#btrfs-subvolume}
 
@@ -986,7 +985,7 @@ $ sudo umount /media/btrfs-alt
 
     Btrfs 工具目前不会充分验证增量传输流的可靠性，攻击者可以通过精心构造 Btrfs 流使得创建的快照中包括目标文件系统中的任意文件。在通过网络接收 Btrfs 流时，应该首先确保传输来源和传输链路的安全性、可靠性，防范潜在的网络安全攻击风险。
 
-#### 透明压缩 {#btrfs-compression}
+#### 透明压缩与碎片整理 {#btrfs-compression}
 
 Btrfs 支持透明压缩，文件系统会自动压缩文件，而上层的应用程序不需要关心这一过程。
 这也是许多 Btrfs 用户会开启的挂载选项。
@@ -1004,7 +1003,7 @@ zstd        27%      105G         384G         413G
 prealloc   100%      643M         643M         1.0G
 ```
 
-可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。如果需要给已有的 Btrfs 文件系统上的文件全部重新压缩（例如设置了新的压缩等级，或者给从 ext4 转换到 Btrfs 后的文件系统中的文件做压缩），可以使用碎片整理功能：
+可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。如果需要给已有的 Btrfs 文件系统上的文件全部重新压缩（例如设置了新的压缩等级，或者给从 ext4 转换到 Btrfs 后的文件系统中的文件做压缩），可以使用**碎片整理**功能：
 
 ```shell
 # 以 zstd:3 重新压缩（设置等级需要 6.15 及以上内核）
@@ -1015,7 +1014,11 @@ btrfs filesystem defrag -v -r -czstd -L3 /path/to/btrfs
 btrfs filesystem defrag -v -r -czstd /path/to/btrfs
 ```
 
-注意 defrag 会破坏 reflink 关系——这可能会导致占用空间提升。
+注意 defrag 会破坏 reflink 关系——这可能会反而导致占用空间提升。
+
+!!! note "使用分层存储管理（Hierarchical Storage Management，HSM）的软件可能会阻止 Btrfs 碎片整理运行" {#hsm-btrfs-defrag}
+
+    [fanotify 的 HSM](https://lwn.net/Articles/932415/) 允许应用程序拦截对某个文件路径的访问，由 HSM daemon 最终提供对应的文件内容。一些安全软件可能会使用这一特性，但这会导致在进行 `btrfs filesystem defrag` 的时候，尝试碎片整理对应文件时[内核返回 `EINVAL`](https://github.com/torvalds/linux/blob/986c24e0fe44f844b44d365b71ce831947f50298/fs/btrfs/ioctl.c#L2470)。
 
 除了在挂载时添加 `compress` 参数以启用透明压缩之外，Btrfs 还允许为特定的 subvolume 或目录指定压缩算法：
 
