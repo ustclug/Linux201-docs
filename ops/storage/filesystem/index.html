@@ -1062,7 +1062,7 @@
     <span class="md-ellipsis">
       
         <span class="md-typeset">
-          透明压缩
+          透明压缩与碎片整理
         </span>
       
     </span>
@@ -3662,7 +3662,7 @@
     <span class="md-ellipsis">
       
         <span class="md-typeset">
-          透明压缩
+          透明压缩与碎片整理
         </span>
       
     </span>
@@ -4541,8 +4541,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <p>尽管不是 CoW 文件系统，XFS 也支持引用复制（reflink）功能。使用方法详见 <a href="#btrfs-reflink">Btrfs 的引用复制一节</a>。</p>
 </div>
 <h3 id="btrfs">Btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
-<p>尽管在我们的实践中，我们不太建议使用 Btrfs——高级特性用不上，而许多年前在镜像站上的测试表明 Btrfs 在长时间运行后存在严重的性能问题。
-但是在许多年的开发后，Btrfs 的稳定性有了很大的提升，并且一部分特性在某些场合下很有用，因此这里提供一些相关的介绍。</p>
+<p>尽管最开始背负着不稳定与性能不佳的批评，在许多年的开发后，Btrfs 的稳定性与性能有了很大的提升，并且一部分特性（如快照、透明压缩等）在很多场合都很有用。目前，Btrfs 主要用于桌面环境、家用 NAS（例如群晖）、部分场景下的服务器（Meta 在服务器上即大量使用 Btrfs）等场景。</p>
 <h4 id="btrfs-subvolume">Subvolume<a class="headerlink" href="#btrfs-subvolume" title="Permanent link">&para;</a></h4>
 <p>Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」，类似于 <a href="../zfs/">ZFS</a> 的 dataset。与目录不同，Subvolume 是独立的，可以有自己的挂载点。同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。</p>
 <p>Subvolume 在 Btrfs 中的层次结构类似一棵树，其中每个 Btrfs 文件系统都有一个顶层（top-level）subvolume 作为树根，<strong>其 ID 永远是 5（<code>subvolid=5</code>）</strong>。</p>
@@ -4763,7 +4762,7 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 <p class="admonition-title">网络安全风险&#8288;<a class="headerlink" href="#btrfs-send-security" title="Permanent link">&para;</a></p>
 <p>Btrfs 工具目前不会充分验证增量传输流的可靠性，攻击者可以通过精心构造 Btrfs 流使得创建的快照中包括目标文件系统中的任意文件。在通过网络接收 Btrfs 流时，应该首先确保传输来源和传输链路的安全性、可靠性，防范潜在的网络安全攻击风险。</p>
 </div>
-<h4 id="btrfs-compression">透明压缩<a class="headerlink" href="#btrfs-compression" title="Permanent link">&para;</a></h4>
+<h4 id="btrfs-compression">透明压缩与碎片整理<a class="headerlink" href="#btrfs-compression" title="Permanent link">&para;</a></h4>
 <p>Btrfs 支持透明压缩，文件系统会自动压缩文件，而上层的应用程序不需要关心这一过程。
 这也是许多 Btrfs 用户会开启的挂载选项。
 Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p>
@@ -4776,7 +4775,7 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="go">zstd        27%      105G         384G         413G       </span>
 <a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="go">prealloc   100%      643M         643M         1.0G</span>
 </code></pre></div>
-<p>可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。如果需要给已有的 Btrfs 文件系统上的文件全部重新压缩（例如设置了新的压缩等级，或者给从 ext4 转换到 Btrfs 后的文件系统中的文件做压缩），可以使用碎片整理功能：</p>
+<p>可以看到，透明压缩特性为该用户节省了 200G 的磁盘空间。如果需要给已有的 Btrfs 文件系统上的文件全部重新压缩（例如设置了新的压缩等级，或者给从 ext4 转换到 Btrfs 后的文件系统中的文件做压缩），可以使用<strong>碎片整理</strong>功能：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="c1"># 以 zstd:3 重新压缩（设置等级需要 6.15 及以上内核）</span>
 <a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="c1"># 如果不设置 -L，在新内核下压缩等级为 0，在老内核下压缩等级为挂载时的等级</span>
 <a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="c1"># https://github.com/torvalds/linux/commit/fc5c0c5825874859069ac44c367c724acd7190fb</span>
@@ -4784,7 +4783,11 @@ Zstd 压缩算法兼顾了性能与压缩效率，是许多用户的选择。</p
 <a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="c1"># 以 zstd 重新压缩（较老的内核）</span>
 <a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a>btrfs<span class="w"> </span>filesystem<span class="w"> </span>defrag<span class="w"> </span>-v<span class="w"> </span>-r<span class="w"> </span>-czstd<span class="w"> </span>/path/to/btrfs
 </code></pre></div>
-<p>注意 defrag 会破坏 reflink 关系——这可能会导致占用空间提升。</p>
+<p>注意 defrag 会破坏 reflink 关系——这可能会反而导致占用空间提升。</p>
+<div class="admonition note" id="hsm-btrfs-defrag">
+<p class="admonition-title">使用分层存储管理（Hierarchical Storage Management，HSM）的软件可能会阻止 Btrfs 碎片整理运行&#8288;<a class="headerlink" href="#hsm-btrfs-defrag" title="Permanent link">&para;</a></p>
+<p><a href="https://lwn.net/Articles/932415/">fanotify 的 HSM</a> 允许应用程序拦截对某个文件路径的访问，由 HSM daemon 最终提供对应的文件内容。一些安全软件可能会使用这一特性，但这会导致在进行 <code>btrfs filesystem defrag</code> 的时候，尝试碎片整理对应文件时<a href="https://github.com/torvalds/linux/blob/986c24e0fe44f844b44d365b71ce831947f50298/fs/btrfs/ioctl.c#L2470">内核返回 <code>EINVAL</code></a>。</p>
+</div>
 <p>除了在挂载时添加 <code>compress</code> 参数以启用透明压缩之外，Btrfs 还允许为特定的 subvolume 或目录指定压缩算法：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a>btrfs<span class="w"> </span>property<span class="w"> </span><span class="nb">set</span><span class="w"> </span>/path/to/btrfs/dir<span class="w"> </span>compression<span class="w"> </span>zstd
 </code></pre></div>
@@ -5134,7 +5137,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月23日 19:52:14 UTC">2026年8月23日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月4日 19:20:08 UTC">2026年9月4日</span>
   </span>
 
     
