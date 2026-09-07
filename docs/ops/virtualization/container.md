@@ -315,6 +315,8 @@ $ getcap /usr/bin/ping
     net.ipv4.ping_group_range = 0	2147483647
     ```
 
+    从 Debian 13 开始，包括这一项设置在内的系统推荐值由 [`linux-sysctl-defaults`](https://packages.debian.org/trixie/linux-sysctl-defaults) 包提供（[安装的配置文件](https://salsa.debian.org/kernel-team/linux-base/-/blob/fcc8795548c25ce8d3b68c8a0405c8528f97a310/sysctl.d/50-default.conf)）。
+
 当前环境的 capabilities 则可以通过 `capsh` 查看（其中 Bounding 和 Ambient 集合的详细细节可参考手册）：
 
 ```console
