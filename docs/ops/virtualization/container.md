@@ -636,10 +636,7 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 
 ### 运行图形应用 {#docker-gui}
 
-<!-- TODO: 链接到高级内容中的显示与窗口系统部分 -->
-
-在容器中运行图形程序也是相当常见的需求。
-以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。
+在容器中运行图形程序也是相当常见的需求。以下简单介绍在 Docker 中运行 X11 图形应用（即 X 客户端）的方法，假设主机环境已经配置好了 X 服务器。
 
 !!! tip "X 客户端与服务器" {#x-client-and-server}
 

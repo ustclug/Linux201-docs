@@ -939,6 +939,7 @@ Wayland 协议内容以 XML 定义。最核心的协议（[`wayland.xml`](https:
     在 X 时代的 GTK/QT 的[输入法模块](#x-input-method)在 Wayland 下根据输入法实现的不同，可能仍然可以使用来绕过 Wayland 的输入法协议。以 [Fcitx 5](https://fcitx-im.org/wiki/Using_Fcitx_5_on_Wayland#Popup_candidate_window) 为例：
 
     - Fcitx 5 的输入法模块能够拿到相对被输入窗口的相对位置。由于输入法模块和被输入窗口在同一个进程里面，输入法模块可以开启一个 `xdg_popup` 的输入法窗口。但是对不支持 `xdg_popup::reposition` 的应用来说，移动候选框窗口只能先隐藏再显示，会出现输入法窗口闪烁的情况。
+    - 如果输入法模块不支持自己绘制候选框（例如老的 Fcitx 4 的模块），那么 Fcitx 5 为了显示候选框，只能在 Xwayland 下指定位置绘制，很容易出现位置偏移的问题。
     - 如果用户使用了 GNOME 的 kimpanel 扩展 [gnome-shell-extension-kimpanel](https://github.com/wengxt/gnome-shell-extension-kimpanel)，那么 Fcitx 5 的输入法模块会给 kimpanel 报告自己的相对位置，由 kimpanel 把 Shell 风格的候选词窗口计算后放在合适的位置。此外仅支持 `text-input-unstable-v3` 的应用无法通过输入法模块的方式处理，只能让 kimpanel 扩展从混成器获取到正确的候选框绘制位置并绘制。
 
     如果你正在使用 Debian 及其衍生发行版，并且发现在 Wayland 下被莫名其妙设置了输入法模块的环境变量，可以参考 [X 中输入法的介绍](#x-input-method)调整 `im-config` 配置（设置为 `none`），并使用混成器提供的配置方式启动输入法。
