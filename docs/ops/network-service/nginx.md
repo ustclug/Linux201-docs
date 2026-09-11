@@ -1338,7 +1338,7 @@ if (-x $request_filename) {
     }
     ```
 
-    或者通过内部 rewrite 构造文件 URI，再使用 $uri 查找文件：
+    或者通过内部 rewrite 构造文件 URI，再使用 `$uri` 查找文件：
 
     ```nginx
     location ~ ^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$ {
