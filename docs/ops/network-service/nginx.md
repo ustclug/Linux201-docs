@@ -1313,7 +1313,7 @@ if (-x $request_filename) {
     }
     ```
 
-!!! warning "`set` 模块保存 `location` 中数字捕获的特殊行为"
+!!! warning "`set` 模块保存 `location` 中数字捕获的特殊行为" {#set-capture-trap}
 
     在获取 `location` 正则匹配中的数字捕获时，rewrite 模块的 `set` 会进行 URI 转义（例如 `+` 会变为 `%2B`），而命名捕获不会。这有时会带来非预期的行为，例如下面的配置：
 
