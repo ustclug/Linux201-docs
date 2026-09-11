@@ -522,6 +522,20 @@ Nginx 支持多种匹配方式，主要通过 `location` 指令后面的可选�
     }
     ```
 
+    此外，正则匹配允许使用正则表达式中的捕获组（例如 `$1`、`$2` 等，也支持 `(?<name>pattern)` 格式的 PCRE 命名捕获组）来引用：
+
+    ```nginx
+    location ~ ^/api/([^/]+)/([^/]+)/download$ {
+        # 内部可以使用 $1 $2 来引用上面包裹的两个部分
+        try_files /var/www/$1/$1-$2 =404;
+    }
+
+    location ~ ^/api/(?<name>[^/]+)/(?<ver>[^/]+)/download$ {
+        # 使用 PCRE 命名捕获组
+        try_files /var/www/$name/$name-$ver =404;
+    }
+    ```
+
 ### Location 块的匹配顺序 {#location-matching-order}
 
 Nginx 在处理请求时会按照以下顺序匹配 `location` 块：
@@ -1243,7 +1257,9 @@ location /old-path/ {
 
 ### 变量与条件判断 {#variables-conditions}
 
-[`set`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set) 指令可以设置变量的值，以上已有介绍。而 [`if`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) 指令可以根据条件执行一组 rewrite 模块的指令。以下是一个示例：
+[`set`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#set) 指令可以设置变量的值，以上已有介绍。
+
+[`if`](https://nginx.org/en/docs/http/ngx_http_rewrite_module.html#if) 指令可以根据条件执行一组 rewrite 模块的指令。以下是一个示例：
 
 ```nginx
 if ($http_user_agent ~* "^Mozilla") {
@@ -1296,6 +1312,45 @@ if (-x $request_filename) {
         default 0;
     }
     ```
+
+!!! warning "`set` 模块保存 `location` 中数字捕获的特殊行为"
+
+    在获取 `location` 正则匹配中的数字捕获时，rewrite 模块的 `set` 会进行 URI 转义（例如 `+` 会变为 `%2B`），而命名捕获不会。这有时会带来非预期的行为，例如下面的配置：
+
+    ```nginx
+    location ~ ^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$ {
+        # @crates_302 需要使用 $crates_pkg 和 $crates_ver 变量
+        set $crates_pkg $1;
+        set $crates_ver $2;
+
+        try_files /crates.io/crates/$crates_pkg/$crates_pkg-$crates_ver.crate @crates_302;
+    }
+    ```
+
+    表面上看这一段配置很正常，但是当 `$1` 或者 `$2` 里面有 `+` 时，`set` 设置的变量内部值不是 `+`，而是 `%2B`。而 `try_files` 匹配的是本地磁盘上的文件，不会再去尝试转义路径，因此即使对应的本地文件存在，也不会匹配到，只会回退到 `@crates_302` 这个 location。使用命名捕获可以避开这个行为：
+
+    ```nginx
+    location ~ ^/crates\.io/api/v1/crates/(?<name>[^/]+)/(?<ver>[^/]+)/download$ {
+        set $crates_pkg $name;
+        set $crates_ver $ver;
+
+        try_files /crates.io/crates/$crates_pkg/$crates_pkg-$crates_ver.crate @crates_302;
+    }
+    ```
+
+    或者通过内部 rewrite 构造文件 URI，再使用 $uri 查找文件：
+
+    ```nginx
+    location ~ ^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$ {
+        set $crates_pkg $1;
+        set $crates_ver $2;
+
+        rewrite ^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$ /crates.io/crates/$1/$1-$2.crate break;
+        try_files $uri @crates_302;
+    }
+    ```
+
+    此时 `$crates_pkg` 和 `$crates_ver` 中的值就不会影响到查找文件。
 
 !!! warning "谨慎在 `location` 中使用 `if`" {#caution-if-in-location}
 
