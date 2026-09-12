@@ -5271,8 +5271,8 @@
 </code></pre></div>
 </div>
 <div class="admonition warning" id="set-capture-trap">
-<p class="admonition-title"><code>set</code> 模块保存 <code>location</code> 中数字捕获的特殊行为&#8288;<a class="headerlink" href="#set-capture-trap" title="Permanent link">&para;</a></p>
-<p>在获取 <code>location</code> 正则匹配中的数字捕获时，rewrite 模块的 <code>set</code> 会进行 URI 转义（例如 <code>+</code> 会变为 <code>%2B</code>），而命名捕获不会。这有时会带来非预期的行为，例如下面的配置：</p>
+<p class="admonition-title"><code>set</code> 模块保存 <code>location</code> 中数字捕获组的特殊行为&#8288;<a class="headerlink" href="#set-capture-trap" title="Permanent link">&para;</a></p>
+<p>在获取 <code>location</code> 正则匹配中的数字捕获组时，rewrite 模块的 <code>set</code> 会进行 URI 转义（例如 <code>+</code> 会变为 <code>%2B</code>），而命名捕获组不会。这有时会带来非预期的行为，例如下面的配置：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="k">location</span><span class="w"> </span><span class="p">~</span><span class="w"> </span><span class="sr">^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="w">    </span><span class="c1"># @crates_302 需要使用 $crates_pkg 和 $crates_ver 变量</span>
 <a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a><span class="w">    </span><span class="kn">set</span><span class="w"> </span><span class="nv">$crates_pkg</span><span class="w"> </span><span class="nv">$1</span><span class="p">;</span>
@@ -5281,7 +5281,7 @@
 <a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a><span class="w">    </span><span class="kn">try_files</span><span class="w"> </span><span class="s">/crates.io/crates/</span><span class="nv">$crates_pkg/$crates_pkg-$crates_ver.crate</span><span class="w"> </span><span class="s">@crates_302</span><span class="p">;</span>
 <a id="__codelineno-76-7" name="__codelineno-76-7" href="#__codelineno-76-7"></a><span class="p">}</span>
 </code></pre></div>
-<p>表面上看这一段配置很正常，但是当 <code>$1</code> 或者 <code>$2</code> 里面有 <code>+</code> 时，<code>set</code> 设置的变量内部值不是 <code>+</code>，而是 <code>%2B</code>。而 <code>try_files</code> 匹配的是本地磁盘上的文件，不会再去尝试转义路径，因此即使对应的本地文件存在，也不会匹配到，只会回退到 <code>@crates_302</code> 这个 location。使用命名捕获可以避开这个行为：</p>
+<p>表面上看这一段配置很正常，但是当 <code>$1</code> 或者 <code>$2</code> 里面有 <code>+</code> 时，<code>set</code> 设置的变量内部值不是 <code>+</code>，而是 <code>%2B</code>。而 <code>try_files</code> 匹配的是本地磁盘上的文件，不会再去尝试转义路径，因此即使对应的本地文件存在，也不会匹配到，只会回退到 <code>@crates_302</code> 这个 location。使用命名捕获组可以避开这个行为：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a><span class="k">location</span><span class="w"> </span><span class="p">~</span><span class="w"> </span><span class="sr">^/crates\.io/api/v1/crates/(?&lt;name&gt;[^/]+)/(?&lt;ver&gt;[^/]+)/download$</span><span class="w"> </span><span class="p">{</span>
 <a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a><span class="w">    </span><span class="kn">set</span><span class="w"> </span><span class="nv">$crates_pkg</span><span class="w"> </span><span class="nv">$name</span><span class="p">;</span>
 <a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a><span class="w">    </span><span class="kn">set</span><span class="w"> </span><span class="nv">$crates_ver</span><span class="w"> </span><span class="nv">$ver</span><span class="p">;</span>
@@ -5716,7 +5716,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月11日 11:48:15 UTC">2026年9月11日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月12日 10:28:39 UTC">2026年9月12日</span>
   </span>
 
     
@@ -5735,6 +5735,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/MirageTurtle" class="md-author" title="@MirageTurtle">
+          
+          <img src="https://avatars.githubusercontent.com/u/60972592?v=4&amp;size=72" alt="MirageTurtle">
+        </a>
+      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
@@ -5750,16 +5755,11 @@ Do not link to a "generic" man page for these commands -->
           <img src="https://avatars.githubusercontent.com/u/37233261?v=4&amp;size=72" alt="Cherrling">
         </a>
       
-        <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
-          
-          <img src="https://avatars.githubusercontent.com/u/19864447?v=4&amp;size=72" alt="web-flow">
-        </a>
-      
       
       
         
           <a href="https://github.com/ustclug/Linux201-docs/blob/master/docs/ops/network-service/nginx.md" class="md-author md-author--more">
-            +1
+            +2
           </a>
         
       
