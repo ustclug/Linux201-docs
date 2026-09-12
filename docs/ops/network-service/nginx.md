@@ -1313,9 +1313,9 @@ if (-x $request_filename) {
     }
     ```
 
-!!! warning "`set` 模块保存 `location` 中数字捕获的特殊行为" {#set-capture-trap}
+!!! warning "`set` 模块保存 `location` 中数字捕获组的特殊行为" {#set-capture-trap}
 
-    在获取 `location` 正则匹配中的数字捕获时，rewrite 模块的 `set` 会进行 URI 转义（例如 `+` 会变为 `%2B`），而命名捕获不会。这有时会带来非预期的行为，例如下面的配置：
+    在获取 `location` 正则匹配中的数字捕获组时，rewrite 模块的 `set` 会进行 URI 转义（例如 `+` 会变为 `%2B`），而命名捕获组不会。这有时会带来非预期的行为，例如下面的配置：
 
     ```nginx
     location ~ ^/crates\.io/api/v1/crates/([^/]+)/([^/]+)/download$ {
@@ -1327,7 +1327,7 @@ if (-x $request_filename) {
     }
     ```
 
-    表面上看这一段配置很正常，但是当 `$1` 或者 `$2` 里面有 `+` 时，`set` 设置的变量内部值不是 `+`，而是 `%2B`。而 `try_files` 匹配的是本地磁盘上的文件，不会再去尝试转义路径，因此即使对应的本地文件存在，也不会匹配到，只会回退到 `@crates_302` 这个 location。使用命名捕获可以避开这个行为：
+    表面上看这一段配置很正常，但是当 `$1` 或者 `$2` 里面有 `+` 时，`set` 设置的变量内部值不是 `+`，而是 `%2B`。而 `try_files` 匹配的是本地磁盘上的文件，不会再去尝试转义路径，因此即使对应的本地文件存在，也不会匹配到，只会回退到 `@crates_302` 这个 location。使用命名捕获组可以避开这个行为：
 
     ```nginx
     location ~ ^/crates\.io/api/v1/crates/(?<name>[^/]+)/(?<ver>[^/]+)/download$ {
