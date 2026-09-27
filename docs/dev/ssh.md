@@ -313,6 +313,14 @@ Host *
 - `ssh host -O exit` 可以使 master 进程退出，后续的 `ssh host` 命令将重新建立连接。
 - `ssh host -O cancel` 可以在保持的后台连接中取消所有的端口转发。
 
+!!! tip "连接复用与超时" {#connection-reuse-timeout}
+
+    对网络经常变化的环境（例如笔记本电脑）来说，连接复用的一大烦恼是：机器网络环境变化后，原来的 SSH 复用的连接就没有办法再使用了。直接 `ssh` 会卡住，需要用 `-O exit` 把连接杀掉再重连。这个问题可以通过配置来解决。
+
+    客户端配置中，`ServerAliveCountMax`（默认为 3）和 `ServerAliveInterval`（默认为 0）控制如果经过 `ServerAliveInterval` 秒，没有收到服务器的数据，那么客户端就发送一条消息。经过 `ServerAliveCountMax` 次还没有响应的话就断开。`ServerAliveInterval` 为 0 的时候不会启用这个行为。
+
+    虽然与连接复用无关，服务器一端也可以配置类似的超时行为（`ClientAliveCountMax` 和 `ClientAliveInterval`），来控制服务器是否经过一段时间后给客户端发送消息。
+
 ## 文件传输 {#file-transfer}
 
 SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。
