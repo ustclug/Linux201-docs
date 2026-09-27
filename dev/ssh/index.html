@@ -4355,6 +4355,12 @@
 <li><code>ssh host -O exit</code> 可以使 master 进程退出，后续的 <code>ssh host</code> 命令将重新建立连接。</li>
 <li><code>ssh host -O cancel</code> 可以在保持的后台连接中取消所有的端口转发。</li>
 </ul>
+<div class="admonition tip" id="connection-reuse-timeout">
+<p class="admonition-title">连接复用与超时&#8288;<a class="headerlink" href="#connection-reuse-timeout" title="Permanent link">&para;</a></p>
+<p>对网络经常变化的环境（例如笔记本电脑）来说，连接复用的一大烦恼是：机器网络环境变化后，原来的 SSH 复用的连接就没有办法再使用了。直接 <code>ssh</code> 会卡住，需要用 <code>-O exit</code> 把连接杀掉再重连。这个问题可以通过配置来解决。</p>
+<p>客户端配置中，<code>ServerAliveCountMax</code>（默认为 3）和 <code>ServerAliveInterval</code>（默认为 0）控制如果经过 <code>ServerAliveInterval</code> 秒，没有收到服务器的数据，那么客户端就发送一条消息。经过 <code>ServerAliveCountMax</code> 次还没有响应的话就断开。<code>ServerAliveInterval</code> 为 0 的时候不会启用这个行为。</p>
+<p>虽然与连接复用无关，服务器一端也可以配置类似的超时行为（<code>ClientAliveCountMax</code> 和 <code>ClientAliveInterval</code>），来控制服务器是否经过一段时间后给客户端发送消息。</p>
+</div>
 <h2 id="file-transfer">文件传输<a class="headerlink" href="#file-transfer" title="Permanent link">&para;</a></h2>
 <p>SFTP（Secure File Transfer Protocol）和 SCP（Secure Copy Protocol）都是基于 SSH 的另一种文件传输工具，它用于在本地和远程系统之间安全地复制文件。SCP 功能相对简单，主要提供文件的复制功能。SFTP 是一个独立的协议，建立在 SSH 之上，提供了一个交互式文件传输会话和更丰富的文件操作功能，包括对文件的浏览、编辑和管理。</p>
 <div class="admonition tip" id="rsync-for-advanced-file-transfer">
@@ -4813,7 +4819,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月22日 19:04:41 UTC">2026年8月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月27日 07:18:50 UTC">2026年9月27日</span>
   </span>
 
     
@@ -4832,6 +4838,11 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
+        <a href="https://github.com/taoky" class="md-author" title="@taoky">
+          
+          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
+        </a>
+      
         <a href="https://github.com/adamanteye" class="md-author" title="@adamanteye">
           
           <img src="https://avatars.githubusercontent.com/u/73372620?v=4&amp;size=72" alt="adamanteye">
@@ -4840,11 +4851,6 @@ Do not link to a "generic" man page for these commands -->
         <a href="https://github.com/web-flow" class="md-author" title="@web-flow">
           
           <img src="https://avatars.githubusercontent.com/u/19864447?v=4&amp;size=72" alt="web-flow">
-        </a>
-      
-        <a href="https://github.com/taoky" class="md-author" title="@taoky">
-          
-          <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
         </a>
       
         <a href="https://github.com/ustcljh" class="md-author" title="@ustcljh">
