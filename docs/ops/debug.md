@@ -906,6 +906,43 @@ $ ip r g 8.8.8.8
     cache
 ```
 
+!!! tip "MTU" {#mtu}
+
+    如果你发现以下的症状：
+
+    - 能 ping 通，curl HTTP 没问题
+    - curl HTTPS 卡住
+    - 大部分网站都无法访问，但是有一些网络应用没问题
+
+    那么可以考虑排查 MTU 的配置问题。可以使用 `ping` 调试：
+
+    ```sh
+    # 替换 1.1.1.1 为需要调试的目标 IPv4 地址。
+    ping -M do -s 1472 1.1.1.1
+    ```
+
+    其中 `-M do` 配置禁止分片，`-s` 配置 ICMP 包数据部分的大小。对 MTU 1500 的情况，`-s` 的值需要减去 IPv4 首部（20 bytes）和 ICMP 首部（8 bytes），得到 1472。
+
+    如果包太大了，显示则会类似如下：
+
+    ```console
+    $ ping -M do -s 1473 1.1.1.1
+    PING 1.1.1.1 (1.1.1.1) 1473(1501) bytes of data.
+    ping: sendmsg: Message too long
+    ping: sendmsg: Message too long
+    ^C
+    --- 1.1.1.1 ping statistics ---
+    2 packets transmitted, 0 received, +2 errors, 100% packet loss, time 1058ms
+    ```
+
+    根据具体网络配置的不同，包过大的表现也有可能显示为其他错误或超时。
+
+    多次测试，最终可以得到一个参考的 MTU 大小，可以使用 `ip` 命令临时配置网络接口，以给 `eth0` 接口配置 MTU 1450 为例子：
+
+    ```sh
+    sudo ip link set dev eth0 mtu 1450
+    ```
+
 ### 性能检查 {#performance-check}
 
 iperf 工具可以用来测试两台主机之间的网络性能。目前 iperf 有两个版本：iperf2 和 iperf3，**两者互不兼容**。关于两者功能的比较，可以参考：
