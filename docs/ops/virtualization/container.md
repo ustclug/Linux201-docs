@@ -981,6 +981,25 @@ a490cc0dc175   host                   host      local
 
     之后启动容器时，指定使用这个网络即可。以上 `ip` 的配置测试无误后，需要在你所使用的[网络配置管理工具](../network/config.md)中持久化。此外，用户自定义的 bridge 网络默认使用的 DNS 为 Docker 内置的 DNS 服务器（`127.0.0.11`），会将 DNS 请求转发到主机设置的 DNS 服务器。如果有自定义 DNS 的需求，需要在创建容器时指定。
 
+!!! note "Docker bridge 的 MTU 配置" {#docker-bridge-mtu}
+
+    在某些特定环境下，对外网卡的 MTU 可能小于 1500。Docker bridge 默认的 MTU 为 1500。对 TCP 连接，可能会出现能够建立连接，但是在诸如 TLS 握手、上传或下载大内容时卡住的情况。以下以网卡 MTU 1450，IPv4 为例子：
+
+    - 外部用户（假设客户端的 MTU 也是 1500）访问容器内的 TCP 服务（例如网页服务器）。
+    - TCP 握手时，由于容器内看到的 MTU 是 1500，因此设置的 TCP MSS（Maximum Segment Size，最大报文段长度）为 1500 - 40 = 1460。TCP MSS 是给对方提示的接收能力的上限，这里即提示客户端最多一个包可以包含 1460 bytes TCP 数据段。
+    - 但是实际 TCP MSS 最大只能是 1450 - 40 = 1410。当 IP 包设置了禁止分片（DF，Don't Fragment，一般都会设置）时，如果这个包超过了下一跳链路的 MTU，那么这个包会被丢弃，并且会向发送端返回 ICMP Fragmentation Needed。如果网络配置了丢弃这类 ICMP 包，那么发送端就不知道该信息，表现就是被卡住了。
+
+    在创建自定义的 Docker 网络时，可以配置网络的 MTU：
+
+    ```sh
+    docker network create \
+        --driver bridge \
+        -o "com.docker.network.driver.mtu=1450" \
+        mtu_test
+    ```
+
+    如果要修改默认 bridge 的参数，需要在 `daemon.json` 中配置 `"mtu": 1450`，然后重启 Docker daemon。
+
 #### 防火墙配置 {#docker-firewall}
 
 在 Linux 上，防火墙功能一般的实现方式是在 iptables 的 filter 表中添加规则。
