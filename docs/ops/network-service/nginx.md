@@ -1442,6 +1442,24 @@ access_log /var/log/nginx/access_403.log combined if=$log_403;
 access_log /var/log/nginx/access.log combined if=$log_normal;
 ```
 
+!!! warning "小心处理 `access_log` 与变量" {#access_log_var}
+
+    我们在现实中看到过类似这样的配置：
+
+    ```nginx
+    map $request_uri $loggable_access_log {
+        default /some/path/to/log;
+        ~*/some/exp/ off;
+    }
+
+    access_log $loggable_access_log;
+    ```
+
+    但是不幸的是，这个配置是完完全全、彻彻底底错误的：
+
+    - 在配置解析阶段，因为 `access_log` 参数的开头不是 `/`，因此这里会被解读为**相对路径**（即使变量本身是绝对路径！），在 `default` 分支场景下最终会尝试写入到 prefix（例如 `/etc/nginx/`）拼上 `/some/path/to/log`，即 `/etc/nginx//some/path/to/log`。这几乎在所有场景下都是不符合预期的。
+    - `off`，同样也是不生效的（会尝试写入到 `/etc/nginx/off`）。
+
 ## Lua {#lua}
 
 由 OpenResty 团队维护的 [ngx_http_lua_module](https://github.com/openresty/lua-nginx-module) 提供了非常强大的 Lua 支持，可以在 Nginx 处理请求的各个阶段运行 Lua 脚本，实现复杂的逻辑。此外，Nginx 官方维护的 [ngx_http_js_module](https://nginx.org/en/docs/http/ngx_http_js_module.html) ([njs](https://nginx.org/en/docs/njs/index.html)) 也提供了类似的使用 JavaScript 脚本的功能，但就目前而言，Lua 模块的生态更加丰富，功能也更强大。
