@@ -4815,40 +4815,56 @@ Docker 的设计主要考虑了开发与部署的便利性。</p>
 </code></pre></div>
 <p>之后启动容器时，指定使用这个网络即可。以上 <code>ip</code> 的配置测试无误后，需要在你所使用的<a href="../../network/config/">网络配置管理工具</a>中持久化。此外，用户自定义的 bridge 网络默认使用的 DNS 为 Docker 内置的 DNS 服务器（<code>127.0.0.11</code>），会将 DNS 请求转发到主机设置的 DNS 服务器。如果有自定义 DNS 的需求，需要在创建容器时指定。</p>
 </div>
+<div class="admonition note" id="docker-bridge-mtu">
+<p class="admonition-title">Docker bridge 的 MTU 配置&#8288;<a class="headerlink" href="#docker-bridge-mtu" title="Permanent link">&para;</a></p>
+<p>在某些特定环境下，对外网卡的 MTU 可能小于 1500。Docker bridge 默认的 MTU 为 1500。对 TCP 连接，可能会出现能够建立连接，但是在诸如 TLS 握手、上传或下载大内容时卡住的情况。以下以网卡 MTU 1450，IPv4 为例子：</p>
+<ul>
+<li>外部用户（假设客户端的 MTU 也是 1500）访问容器内的 TCP 服务（例如网页服务器）。</li>
+<li>TCP 握手时，由于容器内看到的 MTU 是 1500，因此设置的 TCP MSS（Maximum Segment Size，最大报文段长度）为 1500 - 40 = 1460。TCP MSS 是给对方提示的接收能力的上限，这里即提示客户端最多一个包可以包含 1460 bytes TCP 数据段。</li>
+<li>但是实际 TCP MSS 最大只能是 1450 - 40 = 1410。当 IP 包设置了禁止分片（DF，Don't Fragment，一般都会设置）时，如果这个包超过了下一跳链路的 MTU，那么这个包会被丢弃，并且会向发送端返回 ICMP Fragmentation Needed。如果网络配置了丢弃这类 ICMP 包，那么发送端就不知道该信息，表现就是被卡住了。</li>
+</ul>
+<p>在创建自定义的 Docker 网络时，可以配置网络的 MTU：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a><span class="w">    </span>--driver<span class="w"> </span>bridge<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a><span class="w">    </span>-o<span class="w"> </span><span class="s2">"com.docker.network.driver.mtu=1450"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-54-4" name="__codelineno-54-4" href="#__codelineno-54-4"></a><span class="w">    </span>mtu_test
+</code></pre></div>
+<p>如果要修改默认 bridge 的参数，需要在 <code>daemon.json</code> 中配置 <code>"mtu": 1450</code>，然后重启 Docker daemon。</p>
+</div>
 <h4 id="docker-firewall">防火墙配置<a class="headerlink" href="#docker-firewall" title="Permanent link">&para;</a></h4>
 <p>在 Linux 上，防火墙功能一般的实现方式是在 iptables 的 filter 表中添加规则。
 而由于 Docker 自身支持为容器配置不同的网络，因此也需要操作 filter 表来保证容器之间的网络隔离。
 Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-54-1" name="__codelineno-54-1" href="#__codelineno-54-1"></a>-A FORWARD -j DOCKER-USER
-<a id="__codelineno-54-2" name="__codelineno-54-2" href="#__codelineno-54-2"></a>-A FORWARD -j DOCKER-ISOLATION-STAGE-1
-<a id="__codelineno-54-3" name="__codelineno-54-3" href="#__codelineno-54-3"></a>-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-<a id="__codelineno-54-4" name="__codelineno-54-4" href="#__codelineno-54-4"></a>-A FORWARD -o docker0 -j DOCKER
-<a id="__codelineno-54-5" name="__codelineno-54-5" href="#__codelineno-54-5"></a>-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
-<a id="__codelineno-54-6" name="__codelineno-54-6" href="#__codelineno-54-6"></a>-A FORWARD -i docker0 -o docker0 -j ACCEPT
+<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>-A FORWARD -j DOCKER-USER
+<a id="__codelineno-55-2" name="__codelineno-55-2" href="#__codelineno-55-2"></a>-A FORWARD -j DOCKER-ISOLATION-STAGE-1
+<a id="__codelineno-55-3" name="__codelineno-55-3" href="#__codelineno-55-3"></a>-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+<a id="__codelineno-55-4" name="__codelineno-55-4" href="#__codelineno-55-4"></a>-A FORWARD -o docker0 -j DOCKER
+<a id="__codelineno-55-5" name="__codelineno-55-5" href="#__codelineno-55-5"></a>-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+<a id="__codelineno-55-6" name="__codelineno-55-6" href="#__codelineno-55-6"></a>-A FORWARD -i docker0 -o docker0 -j ACCEPT
 </code></pre></div>
 <p>这些规则在 <code>FORWARD</code> 链最前面——即使自行添加了规则，Docker 服务重启之后它也会在最前面重新添加。</p>
 <p>其中 <code>DOCKER-USER</code> 链允许用户自定义规则，其他以 <code>DOCKER</code> 开头的链则由 Docker 自行管理。
 在有端口映射的情况下，<code>DOCKER</code> 链会直接允许对应的数据包，不经过之后的规则：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-55-1" name="__codelineno-55-1" href="#__codelineno-55-1"></a>-A DOCKER -d 172.17.0.4/32 ! -i docker0 -o docker0 -p tcp -m tcp --dport 80 -j ACCEPT
+<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>-A DOCKER -d 172.17.0.4/32 ! -i docker0 -o docker0 -p tcp -m tcp --dport 80 -j ACCEPT
 </code></pre></div>
 <p>而例如在 Ubuntu/Debian 上比较常见的 ufw 工具，它的规则会在 Docker 的规则后面。
 一个例子如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-56-1" name="__codelineno-56-1" href="#__codelineno-56-1"></a>-A FORWARD -j DOCKER-USER
-<a id="__codelineno-56-2" name="__codelineno-56-2" href="#__codelineno-56-2"></a>-A FORWARD -j DOCKER-ISOLATION-STAGE-1
-<a id="__codelineno-56-3" name="__codelineno-56-3" href="#__codelineno-56-3"></a>-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-<a id="__codelineno-56-4" name="__codelineno-56-4" href="#__codelineno-56-4"></a>-A FORWARD -o docker0 -j DOCKER
-<a id="__codelineno-56-5" name="__codelineno-56-5" href="#__codelineno-56-5"></a>-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
-<a id="__codelineno-56-6" name="__codelineno-56-6" href="#__codelineno-56-6"></a>-A FORWARD -i docker0 -o docker0 -j ACCEPT
-<a id="__codelineno-56-7" name="__codelineno-56-7" href="#__codelineno-56-7"></a>-A FORWARD -o br-3e32bdc5bc2a -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-<a id="__codelineno-56-8" name="__codelineno-56-8" href="#__codelineno-56-8"></a>-A FORWARD -o br-3e32bdc5bc2a -j DOCKER
-<a id="__codelineno-56-9" name="__codelineno-56-9" href="#__codelineno-56-9"></a>-A FORWARD -i br-3e32bdc5bc2a ! -o br-3e32bdc5bc2a -j ACCEPT
-<a id="__codelineno-56-10" name="__codelineno-56-10" href="#__codelineno-56-10"></a>-A FORWARD -i br-3e32bdc5bc2a -o br-3e32bdc5bc2a -j ACCEPT
-<a id="__codelineno-56-11" name="__codelineno-56-11" href="#__codelineno-56-11"></a>-A FORWARD -j ufw-before-logging-forward
-<a id="__codelineno-56-12" name="__codelineno-56-12" href="#__codelineno-56-12"></a>-A FORWARD -j ufw-before-forward
-<a id="__codelineno-56-13" name="__codelineno-56-13" href="#__codelineno-56-13"></a>-A FORWARD -j ufw-after-forward
-<a id="__codelineno-56-14" name="__codelineno-56-14" href="#__codelineno-56-14"></a>-A FORWARD -j ufw-after-logging-forward
-<a id="__codelineno-56-15" name="__codelineno-56-15" href="#__codelineno-56-15"></a>-A FORWARD -j ufw-reject-forward
-<a id="__codelineno-56-16" name="__codelineno-56-16" href="#__codelineno-56-16"></a>-A FORWARD -j ufw-track-forward
+<div class="highlight"><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a>-A FORWARD -j DOCKER-USER
+<a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a>-A FORWARD -j DOCKER-ISOLATION-STAGE-1
+<a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a>-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+<a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a>-A FORWARD -o docker0 -j DOCKER
+<a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a>-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+<a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a>-A FORWARD -i docker0 -o docker0 -j ACCEPT
+<a id="__codelineno-57-7" name="__codelineno-57-7" href="#__codelineno-57-7"></a>-A FORWARD -o br-3e32bdc5bc2a -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+<a id="__codelineno-57-8" name="__codelineno-57-8" href="#__codelineno-57-8"></a>-A FORWARD -o br-3e32bdc5bc2a -j DOCKER
+<a id="__codelineno-57-9" name="__codelineno-57-9" href="#__codelineno-57-9"></a>-A FORWARD -i br-3e32bdc5bc2a ! -o br-3e32bdc5bc2a -j ACCEPT
+<a id="__codelineno-57-10" name="__codelineno-57-10" href="#__codelineno-57-10"></a>-A FORWARD -i br-3e32bdc5bc2a -o br-3e32bdc5bc2a -j ACCEPT
+<a id="__codelineno-57-11" name="__codelineno-57-11" href="#__codelineno-57-11"></a>-A FORWARD -j ufw-before-logging-forward
+<a id="__codelineno-57-12" name="__codelineno-57-12" href="#__codelineno-57-12"></a>-A FORWARD -j ufw-before-forward
+<a id="__codelineno-57-13" name="__codelineno-57-13" href="#__codelineno-57-13"></a>-A FORWARD -j ufw-after-forward
+<a id="__codelineno-57-14" name="__codelineno-57-14" href="#__codelineno-57-14"></a>-A FORWARD -j ufw-after-logging-forward
+<a id="__codelineno-57-15" name="__codelineno-57-15" href="#__codelineno-57-15"></a>-A FORWARD -j ufw-reject-forward
+<a id="__codelineno-57-16" name="__codelineno-57-16" href="#__codelineno-57-16"></a>-A FORWARD -j ufw-track-forward
 </code></pre></div>
 <p>于是这就导致了配置的「防火墙」对 Docker 形同虚设的问题。可以考虑以下几种解决方案：</p>
 <ul>
@@ -4865,32 +4881,32 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li>使用<a href="https://github.com/robbertkl/docker-ipv6nat">第三方的方案</a>帮忙做 IPv6 NAT，同时给容器分配 IPv6 的 ULA（Unique Local Address）地址段（目前可以分配 fd00::/8 内的地址段）。</li>
 </ul>
 <p>不过好消息是，目前 Docker 添加了对 IPv6 NAT 的实验性支持，尽管默认的 bridge 网络的 IPv6 支持（基于 ip6tables）<a href="https://docs.docker.com/engine/release-notes/27/#ipv6">在 27.0 版本后才默认打开</a>。如果正在使用 27.0 之前的版本，参考<a href="https://docs.docker.com/config/daemon/ipv6/">对应的文档</a><sup id="fnref:ipv6-docaddr"><a class="footnote-ref" href="#fn:ipv6-docaddr">1</a></sup>，一个配置 daemon.json 的例子如下：</p>
-<div class="highlight"><span class="filename">/etc/docker/daemon.json</span><pre><span></span><code><a id="__codelineno-57-1" name="__codelineno-57-1" href="#__codelineno-57-1"></a><span class="p">{</span>
-<a id="__codelineno-57-2" name="__codelineno-57-2" href="#__codelineno-57-2"></a><span class="w">    </span><span class="nt">"ipv6"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-57-3" name="__codelineno-57-3" href="#__codelineno-57-3"></a><span class="w">    </span><span class="nt">"fixed-cidr-v6"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fd00::/80"</span><span class="p">,</span>
-<a id="__codelineno-57-4" name="__codelineno-57-4" href="#__codelineno-57-4"></a><span class="w">    </span><span class="nt">"experimental"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-57-5" name="__codelineno-57-5" href="#__codelineno-57-5"></a><span class="w">    </span><span class="nt">"ip6tables"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
-<a id="__codelineno-57-6" name="__codelineno-57-6" href="#__codelineno-57-6"></a><span class="p">}</span>
+<div class="highlight"><span class="filename">/etc/docker/daemon.json</span><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="p">{</span>
+<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a><span class="w">    </span><span class="nt">"ipv6"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="w">    </span><span class="nt">"fixed-cidr-v6"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fd00::/80"</span><span class="p">,</span>
+<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a><span class="w">    </span><span class="nt">"experimental"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a><span class="w">    </span><span class="nt">"ip6tables"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a><span class="p">}</span>
 </code></pre></div>
 <p>这样新建的容器就能得到一个在 fd00::/80 内的 IPv6 地址，并且顺利访问外部的 IPv6 网络了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-58-1" name="__codelineno-58-1" href="#__codelineno-58-1"></a><span class="gp">root@14354a8c5349:/# </span>ip<span class="w"> </span>a
-<a id="__codelineno-58-2" name="__codelineno-58-2" href="#__codelineno-58-2"></a><span class="go">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span>
-<a id="__codelineno-58-3" name="__codelineno-58-3" href="#__codelineno-58-3"></a><span class="go">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span>
-<a id="__codelineno-58-4" name="__codelineno-58-4" href="#__codelineno-58-4"></a><span class="go">    inet 127.0.0.1/8 scope host lo</span>
-<a id="__codelineno-58-5" name="__codelineno-58-5" href="#__codelineno-58-5"></a><span class="go">       valid_lft forever preferred_lft forever</span>
-<a id="__codelineno-58-6" name="__codelineno-58-6" href="#__codelineno-58-6"></a><span class="go">    inet6 ::1/128 scope host </span>
-<a id="__codelineno-58-7" name="__codelineno-58-7" href="#__codelineno-58-7"></a><span class="go">       valid_lft forever preferred_lft forever</span>
-<a id="__codelineno-58-8" name="__codelineno-58-8" href="#__codelineno-58-8"></a><span class="go">52: eth0@if53: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default </span>
-<a id="__codelineno-58-9" name="__codelineno-58-9" href="#__codelineno-58-9"></a><span class="go">    link/ether 02:42:ac:11:00:03 brd ff:ff:ff:ff:ff:ff link-netnsid 0</span>
-<a id="__codelineno-58-10" name="__codelineno-58-10" href="#__codelineno-58-10"></a><span class="go">    inet 172.17.0.3/24 brd 172.17.0.255 scope global eth0</span>
-<a id="__codelineno-58-11" name="__codelineno-58-11" href="#__codelineno-58-11"></a><span class="go">       valid_lft forever preferred_lft forever</span>
-<a id="__codelineno-58-12" name="__codelineno-58-12" href="#__codelineno-58-12"></a><span class="go">    inet6 fd00::242:ac11:3/80 scope global nodad </span>
-<a id="__codelineno-58-13" name="__codelineno-58-13" href="#__codelineno-58-13"></a><span class="go">       valid_lft forever preferred_lft forever</span>
-<a id="__codelineno-58-14" name="__codelineno-58-14" href="#__codelineno-58-14"></a><span class="go">    inet6 fe80::42:acff:fe11:3/64 scope link </span>
-<a id="__codelineno-58-15" name="__codelineno-58-15" href="#__codelineno-58-15"></a><span class="go">       valid_lft forever preferred_lft forever</span>
-<a id="__codelineno-58-16" name="__codelineno-58-16" href="#__codelineno-58-16"></a><span class="gp">root@14354a8c5349:/# </span>ping6<span class="w"> </span>mirrors.ustc.edu.cn
-<a id="__codelineno-58-17" name="__codelineno-58-17" href="#__codelineno-58-17"></a><span class="go">PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data bytes</span>
-<a id="__codelineno-58-18" name="__codelineno-58-18" href="#__codelineno-58-18"></a><span class="go">64 bytes from 2001:da8:d800:95::110 (2001:da8:d800:95::110): icmp_seq=1 ttl=62 time=2.42 ms</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="gp">root@14354a8c5349:/# </span>ip<span class="w"> </span>a
+<a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a><span class="go">1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000</span>
+<a id="__codelineno-59-3" name="__codelineno-59-3" href="#__codelineno-59-3"></a><span class="go">    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00</span>
+<a id="__codelineno-59-4" name="__codelineno-59-4" href="#__codelineno-59-4"></a><span class="go">    inet 127.0.0.1/8 scope host lo</span>
+<a id="__codelineno-59-5" name="__codelineno-59-5" href="#__codelineno-59-5"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-59-6" name="__codelineno-59-6" href="#__codelineno-59-6"></a><span class="go">    inet6 ::1/128 scope host </span>
+<a id="__codelineno-59-7" name="__codelineno-59-7" href="#__codelineno-59-7"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-59-8" name="__codelineno-59-8" href="#__codelineno-59-8"></a><span class="go">52: eth0@if53: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default </span>
+<a id="__codelineno-59-9" name="__codelineno-59-9" href="#__codelineno-59-9"></a><span class="go">    link/ether 02:42:ac:11:00:03 brd ff:ff:ff:ff:ff:ff link-netnsid 0</span>
+<a id="__codelineno-59-10" name="__codelineno-59-10" href="#__codelineno-59-10"></a><span class="go">    inet 172.17.0.3/24 brd 172.17.0.255 scope global eth0</span>
+<a id="__codelineno-59-11" name="__codelineno-59-11" href="#__codelineno-59-11"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-59-12" name="__codelineno-59-12" href="#__codelineno-59-12"></a><span class="go">    inet6 fd00::242:ac11:3/80 scope global nodad </span>
+<a id="__codelineno-59-13" name="__codelineno-59-13" href="#__codelineno-59-13"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-59-14" name="__codelineno-59-14" href="#__codelineno-59-14"></a><span class="go">    inet6 fe80::42:acff:fe11:3/64 scope link </span>
+<a id="__codelineno-59-15" name="__codelineno-59-15" href="#__codelineno-59-15"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<a id="__codelineno-59-16" name="__codelineno-59-16" href="#__codelineno-59-16"></a><span class="gp">root@14354a8c5349:/# </span>ping6<span class="w"> </span>mirrors.ustc.edu.cn
+<a id="__codelineno-59-17" name="__codelineno-59-17" href="#__codelineno-59-17"></a><span class="go">PING mirrors.ustc.edu.cn(2001:da8:d800:95::110 (2001:da8:d800:95::110)) 56 data bytes</span>
+<a id="__codelineno-59-18" name="__codelineno-59-18" href="#__codelineno-59-18"></a><span class="go">64 bytes from 2001:da8:d800:95::110 (2001:da8:d800:95::110): icmp_seq=1 ttl=62 time=2.42 ms</span>
 </code></pre></div>
 <div class="admonition warning" id="ipv6-preference-over-ipv4">
 <p class="admonition-title">IPv6 与 IPv4 的优先级&#8288;<a class="headerlink" href="#ipv6-preference-over-ipv4" title="Permanent link">&para;</a></p>
@@ -4913,128 +4929,128 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h5 id="macvlan">Macvlan<a class="headerlink" href="#macvlan" title="Permanent link">&para;</a></h5>
 <p>由于每个容器都有不同于对应网络设备的 MAC 地址，因此 macvlan 模式要求网络设备支持混杂模式（promiscuous mode），即处理所有经过的数据包，即使数据包的 MAC 地址不是自己的。</p>
 <p>以下以一台 Linux 虚拟机为例，对应的「物理」网络设备为 <code>enp1s0</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-59-1" name="__codelineno-59-1" href="#__codelineno-59-1"></a><span class="gp">$ </span>ip<span class="w"> </span>a<span class="w"> </span>show<span class="w"> </span>enp1s0
-<a id="__codelineno-59-2" name="__codelineno-59-2" href="#__codelineno-59-2"></a><span class="go">2: enp1s0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span>
-<a id="__codelineno-59-3" name="__codelineno-59-3" href="#__codelineno-59-3"></a><span class="go">    link/ether 52:54:00:d3:7d:6f brd ff:ff:ff:ff:ff:ff</span>
-<a id="__codelineno-59-4" name="__codelineno-59-4" href="#__codelineno-59-4"></a><span class="go">    inet 192.168.122.247/24 brd 192.168.122.255 scope global dynamic noprefixroute enp1s0</span>
-<a id="__codelineno-59-5" name="__codelineno-59-5" href="#__codelineno-59-5"></a><span class="go">       valid_lft 3577sec preferred_lft 3577sec</span>
-<a id="__codelineno-59-6" name="__codelineno-59-6" href="#__codelineno-59-6"></a><span class="go">    inet6 fe80::5054:ff:fed3:7d6f/64 scope link noprefixroute </span>
-<a id="__codelineno-59-7" name="__codelineno-59-7" href="#__codelineno-59-7"></a><span class="go">       valid_lft forever preferred_lft forever</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="gp">$ </span>ip<span class="w"> </span>a<span class="w"> </span>show<span class="w"> </span>enp1s0
+<a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a><span class="go">2: enp1s0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000</span>
+<a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a><span class="go">    link/ether 52:54:00:d3:7d:6f brd ff:ff:ff:ff:ff:ff</span>
+<a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a><span class="go">    inet 192.168.122.247/24 brd 192.168.122.255 scope global dynamic noprefixroute enp1s0</span>
+<a id="__codelineno-60-5" name="__codelineno-60-5" href="#__codelineno-60-5"></a><span class="go">       valid_lft 3577sec preferred_lft 3577sec</span>
+<a id="__codelineno-60-6" name="__codelineno-60-6" href="#__codelineno-60-6"></a><span class="go">    inet6 fe80::5054:ff:fed3:7d6f/64 scope link noprefixroute </span>
+<a id="__codelineno-60-7" name="__codelineno-60-7" href="#__codelineno-60-7"></a><span class="go">       valid_lft forever preferred_lft forever</span>
 </code></pre></div>
 <p>我们创建一个 macvlan 网络，并且启动多个容器：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-60-1" name="__codelineno-60-1" href="#__codelineno-60-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>-d<span class="w"> </span>macvlan<span class="w"> </span>--subnet<span class="o">=</span><span class="m">192</span>.168.122.0/25<span class="w"> </span>--gateway<span class="o">=</span><span class="m">192</span>.168.122.1<span class="w"> </span>-o<span class="w"> </span><span class="nv">parent</span><span class="o">=</span>enp1s0<span class="w"> </span>macvlan_test
-<a id="__codelineno-60-2" name="__codelineno-60-2" href="#__codelineno-60-2"></a><span class="go">047c9f91cb1a6962d45a916f60c612b0174be5425dcf75d55da1b964037d518f</span>
-<a id="__codelineno-60-3" name="__codelineno-60-3" href="#__codelineno-60-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--network<span class="w"> </span>macvlan_test<span class="w"> </span>--name<span class="w"> </span>ct1<span class="w"> </span>-d<span class="w"> </span>--ip<span class="w"> </span><span class="m">192</span>.168.122.10<span class="w"> </span>ustclug/debian:12
-<a id="__codelineno-60-4" name="__codelineno-60-4" href="#__codelineno-60-4"></a><span class="go">83570467e991dea9fe9f221d7e4e6256f37d193a000b23777a4d37429cdd5e47</span>
-<a id="__codelineno-60-5" name="__codelineno-60-5" href="#__codelineno-60-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--network<span class="w"> </span>macvlan_test<span class="w"> </span>--name<span class="w"> </span>ct2<span class="w"> </span>-d<span class="w"> </span>--ip<span class="w"> </span><span class="m">192</span>.168.122.11<span class="w"> </span>ustclug/debian:12
-<a id="__codelineno-60-6" name="__codelineno-60-6" href="#__codelineno-60-6"></a><span class="go">ea0ef56a73d940dad0b860099e2d8fe26ddcba1d424824e3f45bf4f492dd54f1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>-d<span class="w"> </span>macvlan<span class="w"> </span>--subnet<span class="o">=</span><span class="m">192</span>.168.122.0/25<span class="w"> </span>--gateway<span class="o">=</span><span class="m">192</span>.168.122.1<span class="w"> </span>-o<span class="w"> </span><span class="nv">parent</span><span class="o">=</span>enp1s0<span class="w"> </span>macvlan_test
+<a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a><span class="go">047c9f91cb1a6962d45a916f60c612b0174be5425dcf75d55da1b964037d518f</span>
+<a id="__codelineno-61-3" name="__codelineno-61-3" href="#__codelineno-61-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--network<span class="w"> </span>macvlan_test<span class="w"> </span>--name<span class="w"> </span>ct1<span class="w"> </span>-d<span class="w"> </span>--ip<span class="w"> </span><span class="m">192</span>.168.122.10<span class="w"> </span>ustclug/debian:12
+<a id="__codelineno-61-4" name="__codelineno-61-4" href="#__codelineno-61-4"></a><span class="go">83570467e991dea9fe9f221d7e4e6256f37d193a000b23777a4d37429cdd5e47</span>
+<a id="__codelineno-61-5" name="__codelineno-61-5" href="#__codelineno-61-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--network<span class="w"> </span>macvlan_test<span class="w"> </span>--name<span class="w"> </span>ct2<span class="w"> </span>-d<span class="w"> </span>--ip<span class="w"> </span><span class="m">192</span>.168.122.11<span class="w"> </span>ustclug/debian:12
+<a id="__codelineno-61-6" name="__codelineno-61-6" href="#__codelineno-61-6"></a><span class="go">ea0ef56a73d940dad0b860099e2d8fe26ddcba1d424824e3f45bf4f492dd54f1</span>
 </code></pre></div>
 <p>由于 macvlan 的实现原因，这两个 IP 在主机上无法 ping 通，但是容器之间，以及与虚拟机处在同一个子网的其他设备之间可以通信。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-61-1" name="__codelineno-61-1" href="#__codelineno-61-1"></a><span class="gp">$ </span><span class="c1"># 该虚拟机</span>
-<a id="__codelineno-61-2" name="__codelineno-61-2" href="#__codelineno-61-2"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-61-3" name="__codelineno-61-3" href="#__codelineno-61-3"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
-<a id="__codelineno-61-4" name="__codelineno-61-4" href="#__codelineno-61-4"></a><span class="go">From 192.168.122.247 icmp_seq=1 Destination Host Unreachable</span>
-<a id="__codelineno-61-5" name="__codelineno-61-5" href="#__codelineno-61-5"></a><span class="go">...</span>
-<a id="__codelineno-61-6" name="__codelineno-61-6" href="#__codelineno-61-6"></a><span class="gp">$ </span><span class="c1"># ct1 内部——需要先安装 iputils-ping</span>
-<a id="__codelineno-61-7" name="__codelineno-61-7" href="#__codelineno-61-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>ct1<span class="w"> </span>ping<span class="w"> </span><span class="m">192</span>.168.122.11
-<a id="__codelineno-61-8" name="__codelineno-61-8" href="#__codelineno-61-8"></a><span class="go">PING 192.168.122.11 (192.168.122.11) 56(84) bytes of data.</span>
-<a id="__codelineno-61-9" name="__codelineno-61-9" href="#__codelineno-61-9"></a><span class="go">64 bytes from 192.168.122.11: icmp_seq=1 ttl=64 time=0.095 ms</span>
-<a id="__codelineno-61-10" name="__codelineno-61-10" href="#__codelineno-61-10"></a><span class="go">...</span>
-<a id="__codelineno-61-11" name="__codelineno-61-11" href="#__codelineno-61-11"></a><span class="gp">$ </span><span class="c1"># 同子网其他设备（例如宿主机）</span>
-<a id="__codelineno-61-12" name="__codelineno-61-12" href="#__codelineno-61-12"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-61-13" name="__codelineno-61-13" href="#__codelineno-61-13"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
-<a id="__codelineno-61-14" name="__codelineno-61-14" href="#__codelineno-61-14"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.284 ms</span>
-<a id="__codelineno-61-15" name="__codelineno-61-15" href="#__codelineno-61-15"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="gp">$ </span><span class="c1"># 该虚拟机</span>
+<a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-62-3" name="__codelineno-62-3" href="#__codelineno-62-3"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
+<a id="__codelineno-62-4" name="__codelineno-62-4" href="#__codelineno-62-4"></a><span class="go">From 192.168.122.247 icmp_seq=1 Destination Host Unreachable</span>
+<a id="__codelineno-62-5" name="__codelineno-62-5" href="#__codelineno-62-5"></a><span class="go">...</span>
+<a id="__codelineno-62-6" name="__codelineno-62-6" href="#__codelineno-62-6"></a><span class="gp">$ </span><span class="c1"># ct1 内部——需要先安装 iputils-ping</span>
+<a id="__codelineno-62-7" name="__codelineno-62-7" href="#__codelineno-62-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>ct1<span class="w"> </span>ping<span class="w"> </span><span class="m">192</span>.168.122.11
+<a id="__codelineno-62-8" name="__codelineno-62-8" href="#__codelineno-62-8"></a><span class="go">PING 192.168.122.11 (192.168.122.11) 56(84) bytes of data.</span>
+<a id="__codelineno-62-9" name="__codelineno-62-9" href="#__codelineno-62-9"></a><span class="go">64 bytes from 192.168.122.11: icmp_seq=1 ttl=64 time=0.095 ms</span>
+<a id="__codelineno-62-10" name="__codelineno-62-10" href="#__codelineno-62-10"></a><span class="go">...</span>
+<a id="__codelineno-62-11" name="__codelineno-62-11" href="#__codelineno-62-11"></a><span class="gp">$ </span><span class="c1"># 同子网其他设备（例如宿主机）</span>
+<a id="__codelineno-62-12" name="__codelineno-62-12" href="#__codelineno-62-12"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-62-13" name="__codelineno-62-13" href="#__codelineno-62-13"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
+<a id="__codelineno-62-14" name="__codelineno-62-14" href="#__codelineno-62-14"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.284 ms</span>
+<a id="__codelineno-62-15" name="__codelineno-62-15" href="#__codelineno-62-15"></a><span class="go">...</span>
 </code></pre></div>
 <p>同时，也可以验证它们的 MAC 地址不同：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-62-1" name="__codelineno-62-1" href="#__codelineno-62-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-62-2" name="__codelineno-62-2" href="#__codelineno-62-2"></a><span class="go">ARPING 192.168.122.10 from 192.168.122.1 virbr0</span>
-<a id="__codelineno-62-3" name="__codelineno-62-3" href="#__codelineno-62-3"></a><span class="go">Unicast reply from 192.168.122.10 [02:42:C0:A8:7A:0A]  1.091ms</span>
-<a id="__codelineno-62-4" name="__codelineno-62-4" href="#__codelineno-62-4"></a><span class="go">...</span>
-<a id="__codelineno-62-5" name="__codelineno-62-5" href="#__codelineno-62-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.11
-<a id="__codelineno-62-6" name="__codelineno-62-6" href="#__codelineno-62-6"></a><span class="go">ARPING 192.168.122.11 from 192.168.122.1 virbr0</span>
-<a id="__codelineno-62-7" name="__codelineno-62-7" href="#__codelineno-62-7"></a><span class="go">Unicast reply from 192.168.122.11 [02:42:C0:A8:7A:0B]  0.979ms</span>
-<a id="__codelineno-62-8" name="__codelineno-62-8" href="#__codelineno-62-8"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="go">ARPING 192.168.122.10 from 192.168.122.1 virbr0</span>
+<a id="__codelineno-63-3" name="__codelineno-63-3" href="#__codelineno-63-3"></a><span class="go">Unicast reply from 192.168.122.10 [02:42:C0:A8:7A:0A]  1.091ms</span>
+<a id="__codelineno-63-4" name="__codelineno-63-4" href="#__codelineno-63-4"></a><span class="go">...</span>
+<a id="__codelineno-63-5" name="__codelineno-63-5" href="#__codelineno-63-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.11
+<a id="__codelineno-63-6" name="__codelineno-63-6" href="#__codelineno-63-6"></a><span class="go">ARPING 192.168.122.11 from 192.168.122.1 virbr0</span>
+<a id="__codelineno-63-7" name="__codelineno-63-7" href="#__codelineno-63-7"></a><span class="go">Unicast reply from 192.168.122.11 [02:42:C0:A8:7A:0B]  0.979ms</span>
+<a id="__codelineno-63-8" name="__codelineno-63-8" href="#__codelineno-63-8"></a><span class="go">...</span>
 </code></pre></div>
 <p>解决这个问题的一种方法是在主机上添加一个（和容器的 macvlan 一样的）新的 macvlan 接口，这样就可以互相通信了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-63-1" name="__codelineno-63-1" href="#__codelineno-63-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>macvlan-enp1s0<span class="w"> </span>link<span class="w"> </span>enp1s0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>macvlan<span class="w"> </span>mode<span class="w"> </span>bridge
-<a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.122.9/25<span class="w"> </span>dev<span class="w"> </span>macvlan-enp1s0
-<a id="__codelineno-63-3" name="__codelineno-63-3" href="#__codelineno-63-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>macvlan-enp1s0<span class="w"> </span>up
-<a id="__codelineno-63-4" name="__codelineno-63-4" href="#__codelineno-63-4"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-63-5" name="__codelineno-63-5" href="#__codelineno-63-5"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
-<a id="__codelineno-63-6" name="__codelineno-63-6" href="#__codelineno-63-6"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.172 ms</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>macvlan-enp1s0<span class="w"> </span>link<span class="w"> </span>enp1s0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>macvlan<span class="w"> </span>mode<span class="w"> </span>bridge
+<a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>addr<span class="w"> </span>add<span class="w"> </span><span class="m">192</span>.168.122.9/25<span class="w"> </span>dev<span class="w"> </span>macvlan-enp1s0
+<a id="__codelineno-64-3" name="__codelineno-64-3" href="#__codelineno-64-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span><span class="nb">set</span><span class="w"> </span>macvlan-enp1s0<span class="w"> </span>up
+<a id="__codelineno-64-4" name="__codelineno-64-4" href="#__codelineno-64-4"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-64-5" name="__codelineno-64-5" href="#__codelineno-64-5"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
+<a id="__codelineno-64-6" name="__codelineno-64-6" href="#__codelineno-64-6"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.172 ms</span>
 </code></pre></div>
 <h5 id="ipvlan">IPvlan<a class="headerlink" href="#ipvlan" title="Permanent link">&para;</a></h5>
 <p>这里主要关注 IPvlan 的 L2 模式（也是 IPvlan 的默认模式），L3 模式与上文的场景不同，更加关注网络的隔离，和 bridge 网络类似（主机外部网络无法访问到其中的容器）。
 同时由于不需要额外的 MAC 地址，IPvlan 可以避免混杂模式的开启。</p>
 <p>和 macvlan 非常相似，仍然是创建网络与容器：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a><span class="gp">$ </span><span class="c1"># 在执行命令之前，需要先清除上文的 macvlan 网络，否则网段会冲突，无法创建</span>
-<a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a><span class="gp">$ </span><span class="c1"># 清理之后就可以：</span>
-<a id="__codelineno-64-3" name="__codelineno-64-3" href="#__codelineno-64-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>-d<span class="w"> </span>ipvlan<span class="w"> </span>--subnet<span class="o">=</span><span class="m">192</span>.168.122.0/25<span class="w"> </span>--gateway<span class="o">=</span><span class="m">192</span>.168.122.1<span class="w"> </span>-o<span class="w"> </span><span class="nv">parent</span><span class="o">=</span>enp1s0<span class="w"> </span>ipvlan_test
-<a id="__codelineno-64-4" name="__codelineno-64-4" href="#__codelineno-64-4"></a><span class="go">1d7118ac1a4520b08d4420260700550bb1bcf2ff2badf6f2aeae830b7119502c</span>
-<a id="__codelineno-64-5" name="__codelineno-64-5" href="#__codelineno-64-5"></a><span class="gp">$ </span><span class="c1"># 下面的内容和 macvlan 是几乎一致的，省略</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="gp">$ </span><span class="c1"># 在执行命令之前，需要先清除上文的 macvlan 网络，否则网段会冲突，无法创建</span>
+<a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a><span class="gp">$ </span><span class="c1"># 清理之后就可以：</span>
+<a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>-d<span class="w"> </span>ipvlan<span class="w"> </span>--subnet<span class="o">=</span><span class="m">192</span>.168.122.0/25<span class="w"> </span>--gateway<span class="o">=</span><span class="m">192</span>.168.122.1<span class="w"> </span>-o<span class="w"> </span><span class="nv">parent</span><span class="o">=</span>enp1s0<span class="w"> </span>ipvlan_test
+<a id="__codelineno-65-4" name="__codelineno-65-4" href="#__codelineno-65-4"></a><span class="go">1d7118ac1a4520b08d4420260700550bb1bcf2ff2badf6f2aeae830b7119502c</span>
+<a id="__codelineno-65-5" name="__codelineno-65-5" href="#__codelineno-65-5"></a><span class="gp">$ </span><span class="c1"># 下面的内容和 macvlan 是几乎一致的，省略</span>
 </code></pre></div>
 <p>主机无法连通容器 IP 的问题仍然存在，解决方法也几乎一致：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-65-1" name="__codelineno-65-1" href="#__codelineno-65-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>ipvlan-enp1s0<span class="w"> </span>link<span class="w"> </span>enp1s0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ipvlan<span class="w"> </span>mode<span class="w"> </span>l2
-<a id="__codelineno-65-2" name="__codelineno-65-2" href="#__codelineno-65-2"></a><span class="gp">$ </span><span class="c1"># 后面省略……</span>
-<a id="__codelineno-65-3" name="__codelineno-65-3" href="#__codelineno-65-3"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-65-4" name="__codelineno-65-4" href="#__codelineno-65-4"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
-<a id="__codelineno-65-5" name="__codelineno-65-5" href="#__codelineno-65-5"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.154 ms</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ip<span class="w"> </span>link<span class="w"> </span>add<span class="w"> </span>ipvlan-enp1s0<span class="w"> </span>link<span class="w"> </span>enp1s0<span class="w"> </span><span class="nb">type</span><span class="w"> </span>ipvlan<span class="w"> </span>mode<span class="w"> </span>l2
+<a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="gp">$ </span><span class="c1"># 后面省略……</span>
+<a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="gp">$ </span>ping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-66-4" name="__codelineno-66-4" href="#__codelineno-66-4"></a><span class="go">PING 192.168.122.10 (192.168.122.10) 56(84) bytes of data.</span>
+<a id="__codelineno-66-5" name="__codelineno-66-5" href="#__codelineno-66-5"></a><span class="go">64 bytes from 192.168.122.10: icmp_seq=1 ttl=64 time=0.154 ms</span>
 </code></pre></div>
 <p>同时，容器与主机共享相同的 MAC 地址：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-66-1" name="__codelineno-66-1" href="#__codelineno-66-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.10
-<a id="__codelineno-66-2" name="__codelineno-66-2" href="#__codelineno-66-2"></a><span class="go">ARPING 192.168.122.10 from 192.168.122.1 virbr0</span>
-<a id="__codelineno-66-3" name="__codelineno-66-3" href="#__codelineno-66-3"></a><span class="go">Unicast reply from 192.168.122.10 [52:54:00:D3:7D:6F]  0.687ms</span>
-<a id="__codelineno-66-4" name="__codelineno-66-4" href="#__codelineno-66-4"></a><span class="go">...</span>
-<a id="__codelineno-66-5" name="__codelineno-66-5" href="#__codelineno-66-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.11
-<a id="__codelineno-66-6" name="__codelineno-66-6" href="#__codelineno-66-6"></a><span class="go">ARPING 192.168.122.11 from 192.168.122.1 virbr0</span>
-<a id="__codelineno-66-7" name="__codelineno-66-7" href="#__codelineno-66-7"></a><span class="go">Unicast reply from 192.168.122.11 [52:54:00:D3:7D:6F]  0.721ms</span>
-<a id="__codelineno-66-8" name="__codelineno-66-8" href="#__codelineno-66-8"></a><span class="go">...</span>
-<a id="__codelineno-66-9" name="__codelineno-66-9" href="#__codelineno-66-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.247<span class="w">  </span><span class="c1"># 虚拟机主机</span>
-<a id="__codelineno-66-10" name="__codelineno-66-10" href="#__codelineno-66-10"></a><span class="go">ARPING 192.168.122.247 from 192.168.122.1 virbr0</span>
-<a id="__codelineno-66-11" name="__codelineno-66-11" href="#__codelineno-66-11"></a><span class="go">Unicast reply from 192.168.122.247 [52:54:00:D3:7D:6F]  0.852ms</span>
-<a id="__codelineno-66-12" name="__codelineno-66-12" href="#__codelineno-66-12"></a><span class="go">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.10
+<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="go">ARPING 192.168.122.10 from 192.168.122.1 virbr0</span>
+<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="go">Unicast reply from 192.168.122.10 [52:54:00:D3:7D:6F]  0.687ms</span>
+<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="go">...</span>
+<a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.11
+<a id="__codelineno-67-6" name="__codelineno-67-6" href="#__codelineno-67-6"></a><span class="go">ARPING 192.168.122.11 from 192.168.122.1 virbr0</span>
+<a id="__codelineno-67-7" name="__codelineno-67-7" href="#__codelineno-67-7"></a><span class="go">Unicast reply from 192.168.122.11 [52:54:00:D3:7D:6F]  0.721ms</span>
+<a id="__codelineno-67-8" name="__codelineno-67-8" href="#__codelineno-67-8"></a><span class="go">...</span>
+<a id="__codelineno-67-9" name="__codelineno-67-9" href="#__codelineno-67-9"></a><span class="gp">$ </span>sudo<span class="w"> </span>arping<span class="w"> </span><span class="m">192</span>.168.122.247<span class="w">  </span><span class="c1"># 虚拟机主机</span>
+<a id="__codelineno-67-10" name="__codelineno-67-10" href="#__codelineno-67-10"></a><span class="go">ARPING 192.168.122.247 from 192.168.122.1 virbr0</span>
+<a id="__codelineno-67-11" name="__codelineno-67-11" href="#__codelineno-67-11"></a><span class="go">Unicast reply from 192.168.122.247 [52:54:00:D3:7D:6F]  0.852ms</span>
+<a id="__codelineno-67-12" name="__codelineno-67-12" href="#__codelineno-67-12"></a><span class="go">...</span>
 </code></pre></div>
 <h3 id="docker-compose">Docker Compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h3>
 <p>Docker compose 是 Docker 官方提供的运行多个容器组成的服务的工具：用户编写 YAML 描述如何启动容器，然后使用 <code>docker-compose</code> 命令启动、停止、删除服务。</p>
 <p>作为一个直观的例子，对于类似于下面这样需要大量设置环境变量与挂载点的的单容器启动命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-67-1" name="__codelineno-67-1" href="#__codelineno-67-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-2" name="__codelineno-67-2" href="#__codelineno-67-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">"DISPLAY=</span><span class="nv">$DISPLAY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-3" name="__codelineno-67-3" href="#__codelineno-67-3"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">"XAUTHORITY=</span><span class="nv">$XAUTHORITY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-4" name="__codelineno-67-4" href="#__codelineno-67-4"></a><span class="w">  </span>-v<span class="w"> </span>/tmp/.X11-unix:/tmp/.X11-unix<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-5" name="__codelineno-67-5" href="#__codelineno-67-5"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">"</span><span class="nv">$XAUTHORITY</span><span class="s2">:</span><span class="nv">$XAUTHORITY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-6" name="__codelineno-67-6" href="#__codelineno-67-6"></a><span class="w">  </span>-v<span class="w"> </span>/dev/dri/renderD128:/dev/dri/renderD128<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-7" name="__codelineno-67-7" href="#__codelineno-67-7"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pipewire-0:/run/pipewire/pipewire-0<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-8" name="__codelineno-67-8" href="#__codelineno-67-8"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pulse:/run/pulse/native<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-67-9" name="__codelineno-67-9" href="#__codelineno-67-9"></a><span class="w">  </span>local/example-desktop-1
+<div class="highlight"><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">"DISPLAY=</span><span class="nv">$DISPLAY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a><span class="w">  </span>-e<span class="w"> </span><span class="s2">"XAUTHORITY=</span><span class="nv">$XAUTHORITY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="w">  </span>-v<span class="w"> </span>/tmp/.X11-unix:/tmp/.X11-unix<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">"</span><span class="nv">$XAUTHORITY</span><span class="s2">:</span><span class="nv">$XAUTHORITY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-6" name="__codelineno-68-6" href="#__codelineno-68-6"></a><span class="w">  </span>-v<span class="w"> </span>/dev/dri/renderD128:/dev/dri/renderD128<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-7" name="__codelineno-68-7" href="#__codelineno-68-7"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pipewire-0:/run/pipewire/pipewire-0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-8" name="__codelineno-68-8" href="#__codelineno-68-8"></a><span class="w">  </span>-v<span class="w"> </span>/run/user/1000/pulse:/run/pulse/native<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-68-9" name="__codelineno-68-9" href="#__codelineno-68-9"></a><span class="w">  </span>local/example-desktop-1
 </code></pre></div>
 <p>可以发现这样写不直观，并且容易出错（对于这里的例子，把 <code>-e</code> 和 <code>-v</code> 写反了 Docker 启动容器不会报错）。而使用 Docker compose，就可以将这些参数写入一个 <code>docker-compose.yml</code> 文件：</p>
-<div class="highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><a id="__codelineno-68-1" name="__codelineno-68-1" href="#__codelineno-68-1"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-68-2" name="__codelineno-68-2" href="#__codelineno-68-2"></a><span class="w">  </span><span class="nt">desktop</span><span class="p">:</span>
-<a id="__codelineno-68-3" name="__codelineno-68-3" href="#__codelineno-68-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local/example-desktop-1</span>
-<a id="__codelineno-68-4" name="__codelineno-68-4" href="#__codelineno-68-4"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-68-5" name="__codelineno-68-5" href="#__codelineno-68-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISPLAY=$DISPLAY</span>
-<a id="__codelineno-68-6" name="__codelineno-68-6" href="#__codelineno-68-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">XAUTHORITY=$XAUTHORITY</span>
-<a id="__codelineno-68-7" name="__codelineno-68-7" href="#__codelineno-68-7"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-68-8" name="__codelineno-68-8" href="#__codelineno-68-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/.X11-unix:/tmp/.X11-unix</span>
-<a id="__codelineno-68-9" name="__codelineno-68-9" href="#__codelineno-68-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$XAUTHORITY:$XAUTHORITY</span>
-<a id="__codelineno-68-10" name="__codelineno-68-10" href="#__codelineno-68-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/dev/dri/renderD128:/dev/dri/renderD128</span>
-<a id="__codelineno-68-11" name="__codelineno-68-11" href="#__codelineno-68-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
-<a id="__codelineno-68-12" name="__codelineno-68-12" href="#__codelineno-68-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
+<div class="highlight"><span class="filename">docker-compose.yml</span><pre><span></span><code><a id="__codelineno-69-1" name="__codelineno-69-1" href="#__codelineno-69-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-69-2" name="__codelineno-69-2" href="#__codelineno-69-2"></a><span class="w">  </span><span class="nt">desktop</span><span class="p">:</span>
+<a id="__codelineno-69-3" name="__codelineno-69-3" href="#__codelineno-69-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local/example-desktop-1</span>
+<a id="__codelineno-69-4" name="__codelineno-69-4" href="#__codelineno-69-4"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-69-5" name="__codelineno-69-5" href="#__codelineno-69-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISPLAY=$DISPLAY</span>
+<a id="__codelineno-69-6" name="__codelineno-69-6" href="#__codelineno-69-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">XAUTHORITY=$XAUTHORITY</span>
+<a id="__codelineno-69-7" name="__codelineno-69-7" href="#__codelineno-69-7"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-69-8" name="__codelineno-69-8" href="#__codelineno-69-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/.X11-unix:/tmp/.X11-unix</span>
+<a id="__codelineno-69-9" name="__codelineno-69-9" href="#__codelineno-69-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$XAUTHORITY:$XAUTHORITY</span>
+<a id="__codelineno-69-10" name="__codelineno-69-10" href="#__codelineno-69-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/dev/dri/renderD128:/dev/dri/renderD128</span>
+<a id="__codelineno-69-11" name="__codelineno-69-11" href="#__codelineno-69-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pipewire-0:/run/pipewire/pipewire-0</span>
+<a id="__codelineno-69-12" name="__codelineno-69-12" href="#__codelineno-69-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/run/user/1000/pulse:/run/pulse/native</span>
 </code></pre></div>
 <p>然后跑一下 <code>docker compose up</code>，容器就可以启动。相比于上述的命令来讲直观得多了。</p>
 <h4 id="compose-version">版本<a class="headerlink" href="#compose-version" title="Permanent link">&para;</a></h4>
 <p>Docker compose 有 v1 和 v2 两个版本，而其配置文件（Compose file）则有 version 1（不再使用）、version 2、version 3，以及最新的 <a href="https://docs.docker.com/compose/compose-file/">Compose Specification</a> 四种版本，容易造成混乱。</p>
 <p>Docker compose 的 v1 版本（基于 Python）已经于 2021 年 5 月停止维护。如果输出类似如下，那么就是 v1 版本的 compose：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-69-1" name="__codelineno-69-1" href="#__codelineno-69-1"></a><span class="gp">$ </span>docker-compose<span class="w"> </span>--version
-<a id="__codelineno-69-2" name="__codelineno-69-2" href="#__codelineno-69-2"></a><span class="go">docker-compose version 1.29.2, build unknown</span>
-<a id="__codelineno-69-3" name="__codelineno-69-3" href="#__codelineno-69-3"></a><span class="go">docker-py version: 5.0.3</span>
-<a id="__codelineno-69-4" name="__codelineno-69-4" href="#__codelineno-69-4"></a><span class="go">CPython version: 3.11.2</span>
-<a id="__codelineno-69-5" name="__codelineno-69-5" href="#__codelineno-69-5"></a><span class="go">OpenSSL version: OpenSSL 3.0.11 19 Sep 2023</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="gp">$ </span>docker-compose<span class="w"> </span>--version
+<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="go">docker-compose version 1.29.2, build unknown</span>
+<a id="__codelineno-70-3" name="__codelineno-70-3" href="#__codelineno-70-3"></a><span class="go">docker-py version: 5.0.3</span>
+<a id="__codelineno-70-4" name="__codelineno-70-4" href="#__codelineno-70-4"></a><span class="go">CPython version: 3.11.2</span>
+<a id="__codelineno-70-5" name="__codelineno-70-5" href="#__codelineno-70-5"></a><span class="go">OpenSSL version: OpenSSL 3.0.11 19 Sep 2023</span>
 </code></pre></div>
 <p>从 Docker 源（docker-ce）安装的 <code>docker-compose-plugin</code> 则是 v2 版本的（基于 Go 语言）。v2 版本的 compose 此时作为 Docker 的插件，推荐的运行方式是 <code>docker compose</code>（不含横线）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-70-1" name="__codelineno-70-1" href="#__codelineno-70-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>version
-<a id="__codelineno-70-2" name="__codelineno-70-2" href="#__codelineno-70-2"></a><span class="go">Docker Compose version v2.24.5</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>version
+<a id="__codelineno-71-2" name="__codelineno-71-2" href="#__codelineno-71-2"></a><span class="go">Docker Compose version v2.24.5</span>
 </code></pre></div>
 <p>从 v1 迁移到 v2 的细节问题参见 <a href="https://docs.docker.com/compose/migrate/">Migrate to Compose V2</a>（主要是容器名称与环境变量处理上存在差异）。</p>
 <p>特别地，Ubuntu 在官方源中打包了 <code>docker-compose-v2</code> 这个包，Debian 13 官方源开始提供的 <code>docker-compose</code> 也是 v2 版本的。</p>
@@ -5047,15 +5063,15 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </blockquote>
 <details class="note" id="test-docker-compose-yml-file">
 <summary>测试用 <code>docker-compose.yml</code> 文件&#8288;<a class="headerlink" href="#test-docker-compose-yml-file" title="Permanent link">&para;</a></summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-71-1" name="__codelineno-71-1" href="#__codelineno-71-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.8'</span>
-<a id="__codelineno-71-2" name="__codelineno-71-2" href="#__codelineno-71-2"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-71-3" name="__codelineno-71-3" href="#__codelineno-71-3"></a><span class="w">  </span><span class="nt">python-app</span><span class="p">:</span>
-<a id="__codelineno-71-4" name="__codelineno-71-4" href="#__codelineno-71-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python:3.10-slim</span>
-<a id="__codelineno-71-5" name="__codelineno-71-5" href="#__codelineno-71-5"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -c "print('Init'); a = [0] * 4000000; print('Array created')"</span>
-<a id="__codelineno-71-6" name="__codelineno-71-6" href="#__codelineno-71-6"></a><span class="w">    </span><span class="nt">mem_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
-<a id="__codelineno-71-7" name="__codelineno-71-7" href="#__codelineno-71-7"></a><span class="w">    </span><span class="nt">memswap_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
-<a id="__codelineno-71-8" name="__codelineno-71-8" href="#__codelineno-71-8"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-71-9" name="__codelineno-71-9" href="#__codelineno-71-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'3.8'</span>
+<a id="__codelineno-72-2" name="__codelineno-72-2" href="#__codelineno-72-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-72-3" name="__codelineno-72-3" href="#__codelineno-72-3"></a><span class="w">  </span><span class="nt">python-app</span><span class="p">:</span>
+<a id="__codelineno-72-4" name="__codelineno-72-4" href="#__codelineno-72-4"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python:3.10-slim</span>
+<a id="__codelineno-72-5" name="__codelineno-72-5" href="#__codelineno-72-5"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -c "print('Init'); a = [0] * 4000000; print('Array created')"</span>
+<a id="__codelineno-72-6" name="__codelineno-72-6" href="#__codelineno-72-6"></a><span class="w">    </span><span class="nt">mem_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
+<a id="__codelineno-72-7" name="__codelineno-72-7" href="#__codelineno-72-7"></a><span class="w">    </span><span class="nt">memswap_limit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16m</span>
+<a id="__codelineno-72-8" name="__codelineno-72-8" href="#__codelineno-72-8"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-72-9" name="__codelineno-72-9" href="#__codelineno-72-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
 </code></pre></div>
 <p>如果运行的 compose 环境支持 Compose Specification，那么这个容器不会输出 Array created（在分配内存时即被杀死）。</p>
 </details>
@@ -5073,9 +5089,9 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li><code>secrets</code></li>
 </ul>
 <p>其中前四项是最常见的。同时 Compose Specification 已经不再需要写版本号（已有的会被忽略），而项目名称也是可选的（默认为当前目录名），所以一个最简单的 compose 文件可以只有 <code>services</code> 一项：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-72-1" name="__codelineno-72-1" href="#__codelineno-72-1"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-72-2" name="__codelineno-72-2" href="#__codelineno-72-2"></a><span class="w">  </span><span class="nt">hello-world</span><span class="p">:</span>
-<a id="__codelineno-72-3" name="__codelineno-72-3" href="#__codelineno-72-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-73-2" name="__codelineno-73-2" href="#__codelineno-73-2"></a><span class="w">  </span><span class="nt">hello-world</span><span class="p">:</span>
+<a id="__codelineno-73-3" name="__codelineno-73-3" href="#__codelineno-73-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world</span>
 </code></pre></div>
 <p>假设当前目录名为 <code>helloworld</code>，运行 <code>docker compose up</code> 之后，可以看到 compose 会创建一个名为 <code>helloworld-hello-world-1</code> 的容器，并且为容器创建 <code>helloworld-hello-world-1</code> 的 bridge 网络——由于 <code>hello-world</code> 的唯一功能是输出一段文字，所以容器会立即退出。</p>
 <p>在测试完成后，使用 <code>docker compose down</code> 销毁环境（否则容器和网络会一直存在）。接下来的部分会分析一些使用 Docker compose 的例子。</p>
@@ -5086,72 +5102,72 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <div class="admonition tip" id="is-container-managed-by-compose">
 <p class="admonition-title">某个容器是 compose 管理的吗？&#8288;<a class="headerlink" href="#is-container-managed-by-compose" title="Permanent link">&para;</a></p>
 <p>Compose 会为容器添加以 <code>com.docker.compose</code> 开头的 label，可以使用 <code>docker inspect</code> 查看：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-73-1" name="__codelineno-73-1" href="#__codelineno-73-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>nginx
-<a id="__codelineno-73-2" name="__codelineno-73-2" href="#__codelineno-73-2"></a><span class="go">（省略）</span>
-<a id="__codelineno-73-3" name="__codelineno-73-3" href="#__codelineno-73-3"></a><span class="go">"Labels": {</span>
-<a id="__codelineno-73-4" name="__codelineno-73-4" href="#__codelineno-73-4"></a><span class="go">  "com.docker.compose.config-hash": "826479d8bf1f85975e130423d1beef451a99df55e5bbeaae92448be487665123",</span>
-<a id="__codelineno-73-5" name="__codelineno-73-5" href="#__codelineno-73-5"></a><span class="go">  "com.docker.compose.container-number": "1",</span>
-<a id="__codelineno-73-6" name="__codelineno-73-6" href="#__codelineno-73-6"></a><span class="go">  "com.docker.compose.depends_on": "",</span>
-<a id="__codelineno-73-7" name="__codelineno-73-7" href="#__codelineno-73-7"></a><span class="go">  "com.docker.compose.image": "sha256:999ee2d3eae3cc77a1d100d572b5ef502fed7e763455fee99358ac4a31390123",</span>
-<a id="__codelineno-73-8" name="__codelineno-73-8" href="#__codelineno-73-8"></a><span class="go">  "com.docker.compose.oneoff": "False",</span>
-<a id="__codelineno-73-9" name="__codelineno-73-9" href="#__codelineno-73-9"></a><span class="go">  "com.docker.compose.project": "project",</span>
-<a id="__codelineno-73-10" name="__codelineno-73-10" href="#__codelineno-73-10"></a><span class="go">  "com.docker.compose.project.config_files": "/home/user/project/docker-compose.yml",</span>
-<a id="__codelineno-73-11" name="__codelineno-73-11" href="#__codelineno-73-11"></a><span class="go">  "com.docker.compose.project.working_dir": "/home/user/project",</span>
-<a id="__codelineno-73-12" name="__codelineno-73-12" href="#__codelineno-73-12"></a><span class="go">  "com.docker.compose.replace": "nginx-1",</span>
-<a id="__codelineno-73-13" name="__codelineno-73-13" href="#__codelineno-73-13"></a><span class="go">  "com.docker.compose.service": "nginx",</span>
-<a id="__codelineno-73-14" name="__codelineno-73-14" href="#__codelineno-73-14"></a><span class="go">  "com.docker.compose.version": "2.39.1"</span>
-<a id="__codelineno-73-15" name="__codelineno-73-15" href="#__codelineno-73-15"></a><span class="go">},</span>
-<a id="__codelineno-73-16" name="__codelineno-73-16" href="#__codelineno-73-16"></a><span class="go">（省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-74-1" name="__codelineno-74-1" href="#__codelineno-74-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>inspect<span class="w"> </span>nginx
+<a id="__codelineno-74-2" name="__codelineno-74-2" href="#__codelineno-74-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-74-3" name="__codelineno-74-3" href="#__codelineno-74-3"></a><span class="go">"Labels": {</span>
+<a id="__codelineno-74-4" name="__codelineno-74-4" href="#__codelineno-74-4"></a><span class="go">  "com.docker.compose.config-hash": "826479d8bf1f85975e130423d1beef451a99df55e5bbeaae92448be487665123",</span>
+<a id="__codelineno-74-5" name="__codelineno-74-5" href="#__codelineno-74-5"></a><span class="go">  "com.docker.compose.container-number": "1",</span>
+<a id="__codelineno-74-6" name="__codelineno-74-6" href="#__codelineno-74-6"></a><span class="go">  "com.docker.compose.depends_on": "",</span>
+<a id="__codelineno-74-7" name="__codelineno-74-7" href="#__codelineno-74-7"></a><span class="go">  "com.docker.compose.image": "sha256:999ee2d3eae3cc77a1d100d572b5ef502fed7e763455fee99358ac4a31390123",</span>
+<a id="__codelineno-74-8" name="__codelineno-74-8" href="#__codelineno-74-8"></a><span class="go">  "com.docker.compose.oneoff": "False",</span>
+<a id="__codelineno-74-9" name="__codelineno-74-9" href="#__codelineno-74-9"></a><span class="go">  "com.docker.compose.project": "project",</span>
+<a id="__codelineno-74-10" name="__codelineno-74-10" href="#__codelineno-74-10"></a><span class="go">  "com.docker.compose.project.config_files": "/home/user/project/docker-compose.yml",</span>
+<a id="__codelineno-74-11" name="__codelineno-74-11" href="#__codelineno-74-11"></a><span class="go">  "com.docker.compose.project.working_dir": "/home/user/project",</span>
+<a id="__codelineno-74-12" name="__codelineno-74-12" href="#__codelineno-74-12"></a><span class="go">  "com.docker.compose.replace": "nginx-1",</span>
+<a id="__codelineno-74-13" name="__codelineno-74-13" href="#__codelineno-74-13"></a><span class="go">  "com.docker.compose.service": "nginx",</span>
+<a id="__codelineno-74-14" name="__codelineno-74-14" href="#__codelineno-74-14"></a><span class="go">  "com.docker.compose.version": "2.39.1"</span>
+<a id="__codelineno-74-15" name="__codelineno-74-15" href="#__codelineno-74-15"></a><span class="go">},</span>
+<a id="__codelineno-74-16" name="__codelineno-74-16" href="#__codelineno-74-16"></a><span class="go">（省略）</span>
 </code></pre></div>
 <p>其中给出了诸如项目配置目录等信息。</p>
 </div>
 <h4 id="compose-hackergame-nc">案例 1：Hackergame 的 nc 类题目 Docker 容器环境<a class="headerlink" href="#compose-hackergame-nc" title="Permanent link">&para;</a></h4>
 <p><a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker">Hackergame nc 类题目的 Docker 容器资源限制、动态 flag、网页终端</a> 提供了两个服务。其中 <code>dynamic_flag</code> 由 xinetd 暴露一个 TCP 端口，在客户端（nc）连接时，xinetd 会执行 <code>front.py</code> 脚本处理请求。脚本会要求用户输入 token，检查 token 有效性与连接频率，然后根据预先设置的规则生成 flag，创建并启动容器，由对应的题目容器与用户交互。题目容器内不需要做诸如验证 token、限制资源、处理网络连接等工作，只需要与用户使用标准输入输出交互即可。而 <code>web_netcat</code> 服务则是一个网页终端，用户可以通过浏览器连接到这个服务，然后在网页上输入命令与 <code>dynamic_flag</code> 交互。</p>
 <p><a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/dynamic_flag/docker-compose.yml"><code>dynamic_flag</code> 的 <code>docker-compose.yml</code></a> 文件类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-74-1" name="__codelineno-74-1" href="#__codelineno-74-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
-<a id="__codelineno-74-2" name="__codelineno-74-2" href="#__codelineno-74-2"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-74-3" name="__codelineno-74-3" href="#__codelineno-74-3"></a><span class="w">  </span><span class="nt">front</span><span class="p">:</span>
-<a id="__codelineno-74-4" name="__codelineno-74-4" href="#__codelineno-74-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
-<a id="__codelineno-74-5" name="__codelineno-74-5" href="#__codelineno-74-5"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-74-6" name="__codelineno-74-6" href="#__codelineno-74-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${port}:2333</span>
-<a id="__codelineno-74-7" name="__codelineno-74-7" href="#__codelineno-74-7"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-74-8" name="__codelineno-74-8" href="#__codelineno-74-8"></a><span class="w">    </span><span class="nt">read_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
-<a id="__codelineno-74-9" name="__codelineno-74-9" href="#__codelineno-74-9"></a><span class="w">    </span><span class="nt">ipc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">shareable</span>
-<a id="__codelineno-74-10" name="__codelineno-74-10" href="#__codelineno-74-10"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-74-11" name="__codelineno-74-11" href="#__codelineno-74-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span>
-<a id="__codelineno-74-12" name="__codelineno-74-12" href="#__codelineno-74-12"></a><span class="w">    </span><span class="nt">ulimits</span><span class="p">:</span>
-<a id="__codelineno-74-13" name="__codelineno-74-13" href="#__codelineno-74-13"></a><span class="w">      </span><span class="nt">nofile</span><span class="p">:</span>
-<a id="__codelineno-74-14" name="__codelineno-74-14" href="#__codelineno-74-14"></a><span class="w">        </span><span class="nt">soft</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65536</span>
-<a id="__codelineno-74-15" name="__codelineno-74-15" href="#__codelineno-74-15"></a><span class="w">        </span><span class="nt">hard</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65536</span>
-<a id="__codelineno-74-16" name="__codelineno-74-16" href="#__codelineno-74-16"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-74-17" name="__codelineno-74-17" href="#__codelineno-74-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_conn_interval=${conn_interval}</span>
-<a id="__codelineno-74-18" name="__codelineno-74-18" href="#__codelineno-74-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_token_timeout=${token_timeout}</span>
-<a id="__codelineno-74-19" name="__codelineno-74-19" href="#__codelineno-74-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_timeout=${challenge_timeout}</span>
-<a id="__codelineno-74-20" name="__codelineno-74-20" href="#__codelineno-74-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_pids_limit=${pids_limit}</span>
-<a id="__codelineno-74-21" name="__codelineno-74-21" href="#__codelineno-74-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_mem_limit=${mem_limit}</span>
-<a id="__codelineno-74-22" name="__codelineno-74-22" href="#__codelineno-74-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_path=${flag_path}</span>
-<a id="__codelineno-74-23" name="__codelineno-74-23" href="#__codelineno-74-23"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_rule=${flag_rule}</span>
-<a id="__codelineno-74-24" name="__codelineno-74-24" href="#__codelineno-74-24"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_docker_name=${challenge_docker_name}</span>
-<a id="__codelineno-74-25" name="__codelineno-74-25" href="#__codelineno-74-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_read_only=${read_only}</span>
-<a id="__codelineno-74-26" name="__codelineno-74-26" href="#__codelineno-74-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_suid=${flag_suid}</span>
-<a id="__codelineno-74-27" name="__codelineno-74-27" href="#__codelineno-74-27"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_network=${challenge_network}</span>
-<a id="__codelineno-74-28" name="__codelineno-74-28" href="#__codelineno-74-28"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_shm_exec=${shm_exec}</span>
-<a id="__codelineno-74-29" name="__codelineno-74-29" href="#__codelineno-74-29"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Asia/Shanghai</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-75-1" name="__codelineno-75-1" href="#__codelineno-75-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
+<a id="__codelineno-75-2" name="__codelineno-75-2" href="#__codelineno-75-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-75-3" name="__codelineno-75-3" href="#__codelineno-75-3"></a><span class="w">  </span><span class="nt">front</span><span class="p">:</span>
+<a id="__codelineno-75-4" name="__codelineno-75-4" href="#__codelineno-75-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<a id="__codelineno-75-5" name="__codelineno-75-5" href="#__codelineno-75-5"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-75-6" name="__codelineno-75-6" href="#__codelineno-75-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${port}:2333</span>
+<a id="__codelineno-75-7" name="__codelineno-75-7" href="#__codelineno-75-7"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-75-8" name="__codelineno-75-8" href="#__codelineno-75-8"></a><span class="w">    </span><span class="nt">read_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="__codelineno-75-9" name="__codelineno-75-9" href="#__codelineno-75-9"></a><span class="w">    </span><span class="nt">ipc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">shareable</span>
+<a id="__codelineno-75-10" name="__codelineno-75-10" href="#__codelineno-75-10"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-75-11" name="__codelineno-75-11" href="#__codelineno-75-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/var/run/docker.sock:/var/run/docker.sock</span>
+<a id="__codelineno-75-12" name="__codelineno-75-12" href="#__codelineno-75-12"></a><span class="w">    </span><span class="nt">ulimits</span><span class="p">:</span>
+<a id="__codelineno-75-13" name="__codelineno-75-13" href="#__codelineno-75-13"></a><span class="w">      </span><span class="nt">nofile</span><span class="p">:</span>
+<a id="__codelineno-75-14" name="__codelineno-75-14" href="#__codelineno-75-14"></a><span class="w">        </span><span class="nt">soft</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65536</span>
+<a id="__codelineno-75-15" name="__codelineno-75-15" href="#__codelineno-75-15"></a><span class="w">        </span><span class="nt">hard</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65536</span>
+<a id="__codelineno-75-16" name="__codelineno-75-16" href="#__codelineno-75-16"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-75-17" name="__codelineno-75-17" href="#__codelineno-75-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_conn_interval=${conn_interval}</span>
+<a id="__codelineno-75-18" name="__codelineno-75-18" href="#__codelineno-75-18"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_token_timeout=${token_timeout}</span>
+<a id="__codelineno-75-19" name="__codelineno-75-19" href="#__codelineno-75-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_timeout=${challenge_timeout}</span>
+<a id="__codelineno-75-20" name="__codelineno-75-20" href="#__codelineno-75-20"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_pids_limit=${pids_limit}</span>
+<a id="__codelineno-75-21" name="__codelineno-75-21" href="#__codelineno-75-21"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_mem_limit=${mem_limit}</span>
+<a id="__codelineno-75-22" name="__codelineno-75-22" href="#__codelineno-75-22"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_path=${flag_path}</span>
+<a id="__codelineno-75-23" name="__codelineno-75-23" href="#__codelineno-75-23"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_rule=${flag_rule}</span>
+<a id="__codelineno-75-24" name="__codelineno-75-24" href="#__codelineno-75-24"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_docker_name=${challenge_docker_name}</span>
+<a id="__codelineno-75-25" name="__codelineno-75-25" href="#__codelineno-75-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_read_only=${read_only}</span>
+<a id="__codelineno-75-26" name="__codelineno-75-26" href="#__codelineno-75-26"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_flag_suid=${flag_suid}</span>
+<a id="__codelineno-75-27" name="__codelineno-75-27" href="#__codelineno-75-27"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_challenge_network=${challenge_network}</span>
+<a id="__codelineno-75-28" name="__codelineno-75-28" href="#__codelineno-75-28"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame_shm_exec=${shm_exec}</span>
+<a id="__codelineno-75-29" name="__codelineno-75-29" href="#__codelineno-75-29"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Asia/Shanghai</span>
 </code></pre></div>
 <p>其中 <code>build: .</code> 表示使用当前目录下的 Dockerfile 构建镜像，其他的配置项都可以找到 <code>docker run</code> 的对应参数。配置中形如 <code>${port}</code> 的部分被称为 <a href="https://docs.docker.com/compose/compose-file/12-interpolation/">Interpolation</a>，在运行时会被替换——这里替换这些变量的值位于同一目录的 <code>.env</code>，目前最新版本使用的格式定义可参考<a href="https://docs.docker.com/compose/compose-file/05-services/#env_file-format">文档说明</a>。</p>
 <p><a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/web_netcat/docker-compose.yml"><code>web_netcat</code> 的 <code>docker-compose.yml</code></a> 也类似：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-75-1" name="__codelineno-75-1" href="#__codelineno-75-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
-<a id="__codelineno-75-2" name="__codelineno-75-2" href="#__codelineno-75-2"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-75-3" name="__codelineno-75-3" href="#__codelineno-75-3"></a><span class="w">  </span><span class="nt">web</span><span class="p">:</span>
-<a id="__codelineno-75-4" name="__codelineno-75-4" href="#__codelineno-75-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
-<a id="__codelineno-75-5" name="__codelineno-75-5" href="#__codelineno-75-5"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-75-6" name="__codelineno-75-6" href="#__codelineno-75-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${web_port}:3000</span>
-<a id="__codelineno-75-7" name="__codelineno-75-7" href="#__codelineno-75-7"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-75-8" name="__codelineno-75-8" href="#__codelineno-75-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_host=${nc_host}</span>
-<a id="__codelineno-75-9" name="__codelineno-75-9" href="#__codelineno-75-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_port=${nc_port}</span>
-<a id="__codelineno-75-10" name="__codelineno-75-10" href="#__codelineno-75-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_raw=${nc_raw}</span>
-<a id="__codelineno-75-11" name="__codelineno-75-11" href="#__codelineno-75-11"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-75-12" name="__codelineno-75-12" href="#__codelineno-75-12"></a><span class="w">    </span><span class="nt">init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
+<a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a><span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<a id="__codelineno-76-4" name="__codelineno-76-4" href="#__codelineno-76-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<a id="__codelineno-76-5" name="__codelineno-76-5" href="#__codelineno-76-5"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${web_port}:3000</span>
+<a id="__codelineno-76-7" name="__codelineno-76-7" href="#__codelineno-76-7"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-76-8" name="__codelineno-76-8" href="#__codelineno-76-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_host=${nc_host}</span>
+<a id="__codelineno-76-9" name="__codelineno-76-9" href="#__codelineno-76-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_port=${nc_port}</span>
+<a id="__codelineno-76-10" name="__codelineno-76-10" href="#__codelineno-76-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nc_raw=${nc_raw}</span>
+<a id="__codelineno-76-11" name="__codelineno-76-11" href="#__codelineno-76-11"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-76-12" name="__codelineno-76-12" href="#__codelineno-76-12"></a><span class="w">    </span><span class="nt">init</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
 <p>其中 <a href="https://docs.docker.com/reference/cli/docker/container/run/#init"><code>init: true</code></a> 表示 Docker 会在容器启动时使用基于 <a href="https://github.com/krallin/tini">tini</a> 的 <code>docker-init</code> 管理容器内进程。</p>
 <div class="admonition note" id="pid-1-in-container-and-signal-handling">
@@ -5163,120 +5179,120 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 </ol>
 <p>根据 <a href="https://github.com/krallin/tini/issues/8#issuecomment-146135930">tini Issue #8</a> 的讨论，如果 <code>bash</code> 为 PID 1，那么处理僵尸进程的事情确实不需要操心，但是 <code>bash</code> 默认不会帮忙传递信号——这意味着如果执行 <code>docker stop</code>，那么 <code>bash</code> 自己吞掉信号之后什么都不会发生——这个命令会卡住比较长的时间，直到超时之后被强制杀死，无法做到优雅地退出（gracefully exit）。</p>
 <p>特别地，实际的服务程序也需要恰当处理信号，特别是在作为 PID 1 的时候（因为 PID 1 进程不像其他进程，没有默认的信号 handler）。例如，Python 不会特殊处理信号，因此作为容器启动进程（PID 1）收到 <code>SIGTERM</code>（<code>docker stop</code> 发送的信号）时，什么都不会做：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-76-1" name="__codelineno-76-1" href="#__codelineno-76-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="o">=</span>python-signal<span class="w"> </span>python<span class="w"> </span>bash
-<a id="__codelineno-76-2" name="__codelineno-76-2" href="#__codelineno-76-2"></a><span class="gp">root@ecdc8fe55f36:/# </span><span class="nb">exec</span><span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import time; time.sleep(10000000)"</span><span class="w">  </span><span class="c1"># 使用 `exec` 确保 PID 1 从 bash 变成 python</span>
-<a id="__codelineno-76-3" name="__codelineno-76-3" href="#__codelineno-76-3"></a>
-<a id="__codelineno-76-4" name="__codelineno-76-4" href="#__codelineno-76-4"></a><span class="gp">$ </span><span class="c1"># 另一个终端</span>
-<a id="__codelineno-76-5" name="__codelineno-76-5" href="#__codelineno-76-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>stop<span class="w"> </span>python-signal
-<a id="__codelineno-76-6" name="__codelineno-76-6" href="#__codelineno-76-6"></a><span class="go">（卡住直到超时，SIGKILL）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span>--name<span class="o">=</span>python-signal<span class="w"> </span>python<span class="w"> </span>bash
+<a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a><span class="gp">root@ecdc8fe55f36:/# </span><span class="nb">exec</span><span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import time; time.sleep(10000000)"</span><span class="w">  </span><span class="c1"># 使用 `exec` 确保 PID 1 从 bash 变成 python</span>
+<a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a>
+<a id="__codelineno-77-4" name="__codelineno-77-4" href="#__codelineno-77-4"></a><span class="gp">$ </span><span class="c1"># 另一个终端</span>
+<a id="__codelineno-77-5" name="__codelineno-77-5" href="#__codelineno-77-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>docker<span class="w"> </span>stop<span class="w"> </span>python-signal
+<a id="__codelineno-77-6" name="__codelineno-77-6" href="#__codelineno-77-6"></a><span class="go">（卡住直到超时，SIGKILL）</span>
 </code></pre></div>
 <p>如果在打包 Python 应用时没有注意的话，那么关闭容器的体验就会非常糟糕，并且强制退出也带来了潜在的数据丢失的风险。如果不希望启动容器额外设置 <code>--init</code>，或者需要在退出时做额外清理等操作的话，对于 Python 而言，可以这么解决：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-77-1" name="__codelineno-77-1" href="#__codelineno-77-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
-<a id="__codelineno-77-2" name="__codelineno-77-2" href="#__codelineno-77-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<a id="__codelineno-77-3" name="__codelineno-77-3" href="#__codelineno-77-3"></a>
-<a id="__codelineno-77-4" name="__codelineno-77-4" href="#__codelineno-77-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
-<a id="__codelineno-77-5" name="__codelineno-77-5" href="#__codelineno-77-5"></a>  <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 或者给全局变量赋值，然后在主程序中检查对应的值来实现「优雅退出」</span>
-<a id="__codelineno-77-6" name="__codelineno-77-6" href="#__codelineno-77-6"></a>
-<a id="__codelineno-77-7" name="__codelineno-77-7" href="#__codelineno-77-7"></a><span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
-<a id="__codelineno-77-8" name="__codelineno-77-8" href="#__codelineno-77-8"></a><span class="c1"># ...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-78-1" name="__codelineno-78-1" href="#__codelineno-78-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
+<a id="__codelineno-78-2" name="__codelineno-78-2" href="#__codelineno-78-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<a id="__codelineno-78-3" name="__codelineno-78-3" href="#__codelineno-78-3"></a>
+<a id="__codelineno-78-4" name="__codelineno-78-4" href="#__codelineno-78-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
+<a id="__codelineno-78-5" name="__codelineno-78-5" href="#__codelineno-78-5"></a>  <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># 或者给全局变量赋值，然后在主程序中检查对应的值来实现「优雅退出」</span>
+<a id="__codelineno-78-6" name="__codelineno-78-6" href="#__codelineno-78-6"></a>
+<a id="__codelineno-78-7" name="__codelineno-78-7" href="#__codelineno-78-7"></a><span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
+<a id="__codelineno-78-8" name="__codelineno-78-8" href="#__codelineno-78-8"></a><span class="c1"># ...</span>
 </code></pre></div>
 </div>
 <p>用户需要运行的题目的示例则在 <code>example</code> 目录下，可以看一下<a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/docker-compose.yml">这里的 <code>docker-compose.yml</code></a> 文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-78-1" name="__codelineno-78-1" href="#__codelineno-78-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
-<a id="__codelineno-78-2" name="__codelineno-78-2" href="#__codelineno-78-2"></a><span class="nt">services</span><span class="p">:</span>
-<a id="__codelineno-78-3" name="__codelineno-78-3" href="#__codelineno-78-3"></a><span class="w">  </span><span class="nt">challenge</span><span class="p">:</span>
-<a id="__codelineno-78-4" name="__codelineno-78-4" href="#__codelineno-78-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
-<a id="__codelineno-78-5" name="__codelineno-78-5" href="#__codelineno-78-5"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"/bin/true"</span><span class="p p-Indicator">]</span>
-<a id="__codelineno-78-6" name="__codelineno-78-6" href="#__codelineno-78-6"></a><span class="w">  </span><span class="nt">front</span><span class="p">:</span>
-<a id="__codelineno-78-7" name="__codelineno-78-7" href="#__codelineno-78-7"></a><span class="w">    </span><span class="nt">extends</span><span class="p">:</span>
-<a id="__codelineno-78-8" name="__codelineno-78-8" href="#__codelineno-78-8"></a><span class="w">      </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../dynamic_flag/docker-compose.yml</span>
-<a id="__codelineno-78-9" name="__codelineno-78-9" href="#__codelineno-78-9"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">front</span>
-<a id="__codelineno-78-10" name="__codelineno-78-10" href="#__codelineno-78-10"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
-<a id="__codelineno-78-11" name="__codelineno-78-11" href="#__codelineno-78-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">challenge</span>
-<a id="__codelineno-78-12" name="__codelineno-78-12" href="#__codelineno-78-12"></a><span class="w">  </span><span class="nt">web</span><span class="p">:</span>
-<a id="__codelineno-78-13" name="__codelineno-78-13" href="#__codelineno-78-13"></a><span class="w">    </span><span class="nt">extends</span><span class="p">:</span>
-<a id="__codelineno-78-14" name="__codelineno-78-14" href="#__codelineno-78-14"></a><span class="w">      </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../web_netcat/docker-compose.yml</span>
-<a id="__codelineno-78-15" name="__codelineno-78-15" href="#__codelineno-78-15"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-79-1" name="__codelineno-79-1" href="#__codelineno-79-1"></a><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">'2.4'</span>
+<a id="__codelineno-79-2" name="__codelineno-79-2" href="#__codelineno-79-2"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="w">  </span><span class="nt">challenge</span><span class="p">:</span>
+<a id="__codelineno-79-4" name="__codelineno-79-4" href="#__codelineno-79-4"></a><span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<a id="__codelineno-79-5" name="__codelineno-79-5" href="#__codelineno-79-5"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"/bin/true"</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="w">  </span><span class="nt">front</span><span class="p">:</span>
+<a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="w">    </span><span class="nt">extends</span><span class="p">:</span>
+<a id="__codelineno-79-8" name="__codelineno-79-8" href="#__codelineno-79-8"></a><span class="w">      </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../dynamic_flag/docker-compose.yml</span>
+<a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">front</span>
+<a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-79-11" name="__codelineno-79-11" href="#__codelineno-79-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">challenge</span>
+<a id="__codelineno-79-12" name="__codelineno-79-12" href="#__codelineno-79-12"></a><span class="w">  </span><span class="nt">web</span><span class="p">:</span>
+<a id="__codelineno-79-13" name="__codelineno-79-13" href="#__codelineno-79-13"></a><span class="w">    </span><span class="nt">extends</span><span class="p">:</span>
+<a id="__codelineno-79-14" name="__codelineno-79-14" href="#__codelineno-79-14"></a><span class="w">      </span><span class="nt">file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../web_netcat/docker-compose.yml</span>
+<a id="__codelineno-79-15" name="__codelineno-79-15" href="#__codelineno-79-15"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">web</span>
 </code></pre></div>
 <p>其中 <code>challenge</code> 服务代表题目本身，这里修改 <code>entrypoint</code>，让运行时行为变成直接退出，只是为了能让 compose 创建出对应的容器镜像（选手在连接时由拥有 Docker socket 的 <code>front</code> 操作为每个选手创建、运行容器）。<code>front</code> 与 <code>web</code> 使用了 <a href="https://docs.docker.com/compose/compose-file/05-services/#extends"><code>extends</code> 指令</a>来继承对应的 compose 配置。另外，<code>depends_on</code> 指令表示 <code>front</code> 服务依赖于 <code>challenge</code> 服务，即 <code>challenge</code> 服务启动后 <code>front</code> 服务才会启动。</p>
 <p>在 <code>extends</code> 之后 interpolation 会优先使用当前目录的 <code>.env</code> 文件，因此 <a href="https://github.com/USTC-Hackergame/hackergame-challenge-docker/blob/4311cbfb6b3159192ff882d609fed5bbc7936f88/example/.env"><code>example/.env</code></a> 文件中可以覆盖掉上述两个目录下 <code>.env</code> 的配置。</p>
 <p>最终生成的配置可以使用 <code>docker compose config</code> 查看。</p>
 <details class="note" id="example-final-configuration">
 <summary>Example 最后的实际配置&#8288;<a class="headerlink" href="#example-final-configuration" title="Permanent link">&para;</a></summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-79-1" name="__codelineno-79-1" href="#__codelineno-79-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>config
-<a id="__codelineno-79-2" name="__codelineno-79-2" href="#__codelineno-79-2"></a><span class="go">WARN[0000] /example/hackergame-challenge-docker/example/docker-compose.yml: `version` is obsolete</span>
-<a id="__codelineno-79-3" name="__codelineno-79-3" href="#__codelineno-79-3"></a><span class="go">name: example</span>
-<a id="__codelineno-79-4" name="__codelineno-79-4" href="#__codelineno-79-4"></a><span class="go">services:</span>
-<a id="__codelineno-79-5" name="__codelineno-79-5" href="#__codelineno-79-5"></a><span class="go">  challenge:</span>
-<a id="__codelineno-79-6" name="__codelineno-79-6" href="#__codelineno-79-6"></a><span class="go">    build:</span>
-<a id="__codelineno-79-7" name="__codelineno-79-7" href="#__codelineno-79-7"></a><span class="go">      context: /example/hackergame-challenge-docker/example</span>
-<a id="__codelineno-79-8" name="__codelineno-79-8" href="#__codelineno-79-8"></a><span class="go">      dockerfile: Dockerfile</span>
-<a id="__codelineno-79-9" name="__codelineno-79-9" href="#__codelineno-79-9"></a><span class="go">    entrypoint:</span>
-<a id="__codelineno-79-10" name="__codelineno-79-10" href="#__codelineno-79-10"></a><span class="go">      - /bin/true</span>
-<a id="__codelineno-79-11" name="__codelineno-79-11" href="#__codelineno-79-11"></a><span class="go">    networks:</span>
-<a id="__codelineno-79-12" name="__codelineno-79-12" href="#__codelineno-79-12"></a><span class="go">      default: null</span>
-<a id="__codelineno-79-13" name="__codelineno-79-13" href="#__codelineno-79-13"></a><span class="go">  front:</span>
-<a id="__codelineno-79-14" name="__codelineno-79-14" href="#__codelineno-79-14"></a><span class="go">    build:</span>
-<a id="__codelineno-79-15" name="__codelineno-79-15" href="#__codelineno-79-15"></a><span class="go">      context: /example/hackergame-challenge-docker/dynamic_flag</span>
-<a id="__codelineno-79-16" name="__codelineno-79-16" href="#__codelineno-79-16"></a><span class="go">      dockerfile: Dockerfile</span>
-<a id="__codelineno-79-17" name="__codelineno-79-17" href="#__codelineno-79-17"></a><span class="go">    depends_on:</span>
-<a id="__codelineno-79-18" name="__codelineno-79-18" href="#__codelineno-79-18"></a><span class="go">      challenge:</span>
-<a id="__codelineno-79-19" name="__codelineno-79-19" href="#__codelineno-79-19"></a><span class="go">        condition: service_started</span>
-<a id="__codelineno-79-20" name="__codelineno-79-20" href="#__codelineno-79-20"></a><span class="go">        required: true</span>
-<a id="__codelineno-79-21" name="__codelineno-79-21" href="#__codelineno-79-21"></a><span class="go">    environment:</span>
-<a id="__codelineno-79-22" name="__codelineno-79-22" href="#__codelineno-79-22"></a><span class="go">      TZ: Asia/Shanghai</span>
-<a id="__codelineno-79-23" name="__codelineno-79-23" href="#__codelineno-79-23"></a><span class="go">      hackergame_challenge_docker_name: example_challenge</span>
-<a id="__codelineno-79-24" name="__codelineno-79-24" href="#__codelineno-79-24"></a><span class="go">      hackergame_challenge_network: ""</span>
-<a id="__codelineno-79-25" name="__codelineno-79-25" href="#__codelineno-79-25"></a><span class="go">      hackergame_challenge_timeout: "300"</span>
-<a id="__codelineno-79-26" name="__codelineno-79-26" href="#__codelineno-79-26"></a><span class="go">      hackergame_conn_interval: "10"</span>
-<a id="__codelineno-79-27" name="__codelineno-79-27" href="#__codelineno-79-27"></a><span class="go">      hackergame_flag_path: /flag1,/flag2</span>
-<a id="__codelineno-79-28" name="__codelineno-79-28" href="#__codelineno-79-28"></a><span class="go">      hackergame_flag_rule: f"flag{{this_is_an_example_{sha256('example1'+token)[:10]}}}",f"flag{{this_is_the_second_flag_{sha256('example2'+token)[:10]}}}"</span>
-<a id="__codelineno-79-29" name="__codelineno-79-29" href="#__codelineno-79-29"></a><span class="go">      hackergame_flag_suid: ""</span>
-<a id="__codelineno-79-30" name="__codelineno-79-30" href="#__codelineno-79-30"></a><span class="go">      hackergame_mem_limit: 256m</span>
-<a id="__codelineno-79-31" name="__codelineno-79-31" href="#__codelineno-79-31"></a><span class="go">      hackergame_pids_limit: "16"</span>
-<a id="__codelineno-79-32" name="__codelineno-79-32" href="#__codelineno-79-32"></a><span class="go">      hackergame_read_only: "1"</span>
-<a id="__codelineno-79-33" name="__codelineno-79-33" href="#__codelineno-79-33"></a><span class="go">      hackergame_shm_exec: "0"</span>
-<a id="__codelineno-79-34" name="__codelineno-79-34" href="#__codelineno-79-34"></a><span class="go">      hackergame_token_timeout: "30"</span>
-<a id="__codelineno-79-35" name="__codelineno-79-35" href="#__codelineno-79-35"></a><span class="go">    ipc: shareable</span>
-<a id="__codelineno-79-36" name="__codelineno-79-36" href="#__codelineno-79-36"></a><span class="go">    networks:</span>
-<a id="__codelineno-79-37" name="__codelineno-79-37" href="#__codelineno-79-37"></a><span class="go">      default: null</span>
-<a id="__codelineno-79-38" name="__codelineno-79-38" href="#__codelineno-79-38"></a><span class="go">    ports:</span>
-<a id="__codelineno-79-39" name="__codelineno-79-39" href="#__codelineno-79-39"></a><span class="go">      - mode: ingress</span>
-<a id="__codelineno-79-40" name="__codelineno-79-40" href="#__codelineno-79-40"></a><span class="go">        target: 2333</span>
-<a id="__codelineno-79-41" name="__codelineno-79-41" href="#__codelineno-79-41"></a><span class="go">        published: "10000"</span>
-<a id="__codelineno-79-42" name="__codelineno-79-42" href="#__codelineno-79-42"></a><span class="go">        protocol: tcp</span>
-<a id="__codelineno-79-43" name="__codelineno-79-43" href="#__codelineno-79-43"></a><span class="go">    read_only: true</span>
-<a id="__codelineno-79-44" name="__codelineno-79-44" href="#__codelineno-79-44"></a><span class="go">    restart: always</span>
-<a id="__codelineno-79-45" name="__codelineno-79-45" href="#__codelineno-79-45"></a><span class="go">    ulimits:</span>
-<a id="__codelineno-79-46" name="__codelineno-79-46" href="#__codelineno-79-46"></a><span class="go">      nofile:</span>
-<a id="__codelineno-79-47" name="__codelineno-79-47" href="#__codelineno-79-47"></a><span class="go">        soft: 65536</span>
-<a id="__codelineno-79-48" name="__codelineno-79-48" href="#__codelineno-79-48"></a><span class="go">        hard: 65536</span>
-<a id="__codelineno-79-49" name="__codelineno-79-49" href="#__codelineno-79-49"></a><span class="go">    volumes:</span>
-<a id="__codelineno-79-50" name="__codelineno-79-50" href="#__codelineno-79-50"></a><span class="go">      - type: bind</span>
-<a id="__codelineno-79-51" name="__codelineno-79-51" href="#__codelineno-79-51"></a><span class="go">        source: /var/run/docker.sock</span>
-<a id="__codelineno-79-52" name="__codelineno-79-52" href="#__codelineno-79-52"></a><span class="go">        target: /var/run/docker.sock</span>
-<a id="__codelineno-79-53" name="__codelineno-79-53" href="#__codelineno-79-53"></a><span class="go">        bind:</span>
-<a id="__codelineno-79-54" name="__codelineno-79-54" href="#__codelineno-79-54"></a><span class="go">          create_host_path: true</span>
-<a id="__codelineno-79-55" name="__codelineno-79-55" href="#__codelineno-79-55"></a><span class="go">  web:</span>
-<a id="__codelineno-79-56" name="__codelineno-79-56" href="#__codelineno-79-56"></a><span class="go">    build:</span>
-<a id="__codelineno-79-57" name="__codelineno-79-57" href="#__codelineno-79-57"></a><span class="go">      context: /example/hackergame-challenge-docker/web_netcat</span>
-<a id="__codelineno-79-58" name="__codelineno-79-58" href="#__codelineno-79-58"></a><span class="go">      dockerfile: Dockerfile</span>
-<a id="__codelineno-79-59" name="__codelineno-79-59" href="#__codelineno-79-59"></a><span class="go">    environment:</span>
-<a id="__codelineno-79-60" name="__codelineno-79-60" href="#__codelineno-79-60"></a><span class="go">      nc_host: front</span>
-<a id="__codelineno-79-61" name="__codelineno-79-61" href="#__codelineno-79-61"></a><span class="go">      nc_port: "2333"</span>
-<a id="__codelineno-79-62" name="__codelineno-79-62" href="#__codelineno-79-62"></a><span class="go">      nc_raw: "0"</span>
-<a id="__codelineno-79-63" name="__codelineno-79-63" href="#__codelineno-79-63"></a><span class="go">    init: true</span>
-<a id="__codelineno-79-64" name="__codelineno-79-64" href="#__codelineno-79-64"></a><span class="go">    networks:</span>
-<a id="__codelineno-79-65" name="__codelineno-79-65" href="#__codelineno-79-65"></a><span class="go">      default: null</span>
-<a id="__codelineno-79-66" name="__codelineno-79-66" href="#__codelineno-79-66"></a><span class="go">    ports:</span>
-<a id="__codelineno-79-67" name="__codelineno-79-67" href="#__codelineno-79-67"></a><span class="go">      - mode: ingress</span>
-<a id="__codelineno-79-68" name="__codelineno-79-68" href="#__codelineno-79-68"></a><span class="go">        target: 3000</span>
-<a id="__codelineno-79-69" name="__codelineno-79-69" href="#__codelineno-79-69"></a><span class="go">        published: "10001"</span>
-<a id="__codelineno-79-70" name="__codelineno-79-70" href="#__codelineno-79-70"></a><span class="go">        protocol: tcp</span>
-<a id="__codelineno-79-71" name="__codelineno-79-71" href="#__codelineno-79-71"></a><span class="go">    restart: always</span>
-<a id="__codelineno-79-72" name="__codelineno-79-72" href="#__codelineno-79-72"></a><span class="go">networks:</span>
-<a id="__codelineno-79-73" name="__codelineno-79-73" href="#__codelineno-79-73"></a><span class="go">  default:</span>
-<a id="__codelineno-79-74" name="__codelineno-79-74" href="#__codelineno-79-74"></a><span class="go">    name: example_default</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-80-1" name="__codelineno-80-1" href="#__codelineno-80-1"></a><span class="gp">$ </span>docker<span class="w"> </span>compose<span class="w"> </span>config
+<a id="__codelineno-80-2" name="__codelineno-80-2" href="#__codelineno-80-2"></a><span class="go">WARN[0000] /example/hackergame-challenge-docker/example/docker-compose.yml: `version` is obsolete</span>
+<a id="__codelineno-80-3" name="__codelineno-80-3" href="#__codelineno-80-3"></a><span class="go">name: example</span>
+<a id="__codelineno-80-4" name="__codelineno-80-4" href="#__codelineno-80-4"></a><span class="go">services:</span>
+<a id="__codelineno-80-5" name="__codelineno-80-5" href="#__codelineno-80-5"></a><span class="go">  challenge:</span>
+<a id="__codelineno-80-6" name="__codelineno-80-6" href="#__codelineno-80-6"></a><span class="go">    build:</span>
+<a id="__codelineno-80-7" name="__codelineno-80-7" href="#__codelineno-80-7"></a><span class="go">      context: /example/hackergame-challenge-docker/example</span>
+<a id="__codelineno-80-8" name="__codelineno-80-8" href="#__codelineno-80-8"></a><span class="go">      dockerfile: Dockerfile</span>
+<a id="__codelineno-80-9" name="__codelineno-80-9" href="#__codelineno-80-9"></a><span class="go">    entrypoint:</span>
+<a id="__codelineno-80-10" name="__codelineno-80-10" href="#__codelineno-80-10"></a><span class="go">      - /bin/true</span>
+<a id="__codelineno-80-11" name="__codelineno-80-11" href="#__codelineno-80-11"></a><span class="go">    networks:</span>
+<a id="__codelineno-80-12" name="__codelineno-80-12" href="#__codelineno-80-12"></a><span class="go">      default: null</span>
+<a id="__codelineno-80-13" name="__codelineno-80-13" href="#__codelineno-80-13"></a><span class="go">  front:</span>
+<a id="__codelineno-80-14" name="__codelineno-80-14" href="#__codelineno-80-14"></a><span class="go">    build:</span>
+<a id="__codelineno-80-15" name="__codelineno-80-15" href="#__codelineno-80-15"></a><span class="go">      context: /example/hackergame-challenge-docker/dynamic_flag</span>
+<a id="__codelineno-80-16" name="__codelineno-80-16" href="#__codelineno-80-16"></a><span class="go">      dockerfile: Dockerfile</span>
+<a id="__codelineno-80-17" name="__codelineno-80-17" href="#__codelineno-80-17"></a><span class="go">    depends_on:</span>
+<a id="__codelineno-80-18" name="__codelineno-80-18" href="#__codelineno-80-18"></a><span class="go">      challenge:</span>
+<a id="__codelineno-80-19" name="__codelineno-80-19" href="#__codelineno-80-19"></a><span class="go">        condition: service_started</span>
+<a id="__codelineno-80-20" name="__codelineno-80-20" href="#__codelineno-80-20"></a><span class="go">        required: true</span>
+<a id="__codelineno-80-21" name="__codelineno-80-21" href="#__codelineno-80-21"></a><span class="go">    environment:</span>
+<a id="__codelineno-80-22" name="__codelineno-80-22" href="#__codelineno-80-22"></a><span class="go">      TZ: Asia/Shanghai</span>
+<a id="__codelineno-80-23" name="__codelineno-80-23" href="#__codelineno-80-23"></a><span class="go">      hackergame_challenge_docker_name: example_challenge</span>
+<a id="__codelineno-80-24" name="__codelineno-80-24" href="#__codelineno-80-24"></a><span class="go">      hackergame_challenge_network: ""</span>
+<a id="__codelineno-80-25" name="__codelineno-80-25" href="#__codelineno-80-25"></a><span class="go">      hackergame_challenge_timeout: "300"</span>
+<a id="__codelineno-80-26" name="__codelineno-80-26" href="#__codelineno-80-26"></a><span class="go">      hackergame_conn_interval: "10"</span>
+<a id="__codelineno-80-27" name="__codelineno-80-27" href="#__codelineno-80-27"></a><span class="go">      hackergame_flag_path: /flag1,/flag2</span>
+<a id="__codelineno-80-28" name="__codelineno-80-28" href="#__codelineno-80-28"></a><span class="go">      hackergame_flag_rule: f"flag{{this_is_an_example_{sha256('example1'+token)[:10]}}}",f"flag{{this_is_the_second_flag_{sha256('example2'+token)[:10]}}}"</span>
+<a id="__codelineno-80-29" name="__codelineno-80-29" href="#__codelineno-80-29"></a><span class="go">      hackergame_flag_suid: ""</span>
+<a id="__codelineno-80-30" name="__codelineno-80-30" href="#__codelineno-80-30"></a><span class="go">      hackergame_mem_limit: 256m</span>
+<a id="__codelineno-80-31" name="__codelineno-80-31" href="#__codelineno-80-31"></a><span class="go">      hackergame_pids_limit: "16"</span>
+<a id="__codelineno-80-32" name="__codelineno-80-32" href="#__codelineno-80-32"></a><span class="go">      hackergame_read_only: "1"</span>
+<a id="__codelineno-80-33" name="__codelineno-80-33" href="#__codelineno-80-33"></a><span class="go">      hackergame_shm_exec: "0"</span>
+<a id="__codelineno-80-34" name="__codelineno-80-34" href="#__codelineno-80-34"></a><span class="go">      hackergame_token_timeout: "30"</span>
+<a id="__codelineno-80-35" name="__codelineno-80-35" href="#__codelineno-80-35"></a><span class="go">    ipc: shareable</span>
+<a id="__codelineno-80-36" name="__codelineno-80-36" href="#__codelineno-80-36"></a><span class="go">    networks:</span>
+<a id="__codelineno-80-37" name="__codelineno-80-37" href="#__codelineno-80-37"></a><span class="go">      default: null</span>
+<a id="__codelineno-80-38" name="__codelineno-80-38" href="#__codelineno-80-38"></a><span class="go">    ports:</span>
+<a id="__codelineno-80-39" name="__codelineno-80-39" href="#__codelineno-80-39"></a><span class="go">      - mode: ingress</span>
+<a id="__codelineno-80-40" name="__codelineno-80-40" href="#__codelineno-80-40"></a><span class="go">        target: 2333</span>
+<a id="__codelineno-80-41" name="__codelineno-80-41" href="#__codelineno-80-41"></a><span class="go">        published: "10000"</span>
+<a id="__codelineno-80-42" name="__codelineno-80-42" href="#__codelineno-80-42"></a><span class="go">        protocol: tcp</span>
+<a id="__codelineno-80-43" name="__codelineno-80-43" href="#__codelineno-80-43"></a><span class="go">    read_only: true</span>
+<a id="__codelineno-80-44" name="__codelineno-80-44" href="#__codelineno-80-44"></a><span class="go">    restart: always</span>
+<a id="__codelineno-80-45" name="__codelineno-80-45" href="#__codelineno-80-45"></a><span class="go">    ulimits:</span>
+<a id="__codelineno-80-46" name="__codelineno-80-46" href="#__codelineno-80-46"></a><span class="go">      nofile:</span>
+<a id="__codelineno-80-47" name="__codelineno-80-47" href="#__codelineno-80-47"></a><span class="go">        soft: 65536</span>
+<a id="__codelineno-80-48" name="__codelineno-80-48" href="#__codelineno-80-48"></a><span class="go">        hard: 65536</span>
+<a id="__codelineno-80-49" name="__codelineno-80-49" href="#__codelineno-80-49"></a><span class="go">    volumes:</span>
+<a id="__codelineno-80-50" name="__codelineno-80-50" href="#__codelineno-80-50"></a><span class="go">      - type: bind</span>
+<a id="__codelineno-80-51" name="__codelineno-80-51" href="#__codelineno-80-51"></a><span class="go">        source: /var/run/docker.sock</span>
+<a id="__codelineno-80-52" name="__codelineno-80-52" href="#__codelineno-80-52"></a><span class="go">        target: /var/run/docker.sock</span>
+<a id="__codelineno-80-53" name="__codelineno-80-53" href="#__codelineno-80-53"></a><span class="go">        bind:</span>
+<a id="__codelineno-80-54" name="__codelineno-80-54" href="#__codelineno-80-54"></a><span class="go">          create_host_path: true</span>
+<a id="__codelineno-80-55" name="__codelineno-80-55" href="#__codelineno-80-55"></a><span class="go">  web:</span>
+<a id="__codelineno-80-56" name="__codelineno-80-56" href="#__codelineno-80-56"></a><span class="go">    build:</span>
+<a id="__codelineno-80-57" name="__codelineno-80-57" href="#__codelineno-80-57"></a><span class="go">      context: /example/hackergame-challenge-docker/web_netcat</span>
+<a id="__codelineno-80-58" name="__codelineno-80-58" href="#__codelineno-80-58"></a><span class="go">      dockerfile: Dockerfile</span>
+<a id="__codelineno-80-59" name="__codelineno-80-59" href="#__codelineno-80-59"></a><span class="go">    environment:</span>
+<a id="__codelineno-80-60" name="__codelineno-80-60" href="#__codelineno-80-60"></a><span class="go">      nc_host: front</span>
+<a id="__codelineno-80-61" name="__codelineno-80-61" href="#__codelineno-80-61"></a><span class="go">      nc_port: "2333"</span>
+<a id="__codelineno-80-62" name="__codelineno-80-62" href="#__codelineno-80-62"></a><span class="go">      nc_raw: "0"</span>
+<a id="__codelineno-80-63" name="__codelineno-80-63" href="#__codelineno-80-63"></a><span class="go">    init: true</span>
+<a id="__codelineno-80-64" name="__codelineno-80-64" href="#__codelineno-80-64"></a><span class="go">    networks:</span>
+<a id="__codelineno-80-65" name="__codelineno-80-65" href="#__codelineno-80-65"></a><span class="go">      default: null</span>
+<a id="__codelineno-80-66" name="__codelineno-80-66" href="#__codelineno-80-66"></a><span class="go">    ports:</span>
+<a id="__codelineno-80-67" name="__codelineno-80-67" href="#__codelineno-80-67"></a><span class="go">      - mode: ingress</span>
+<a id="__codelineno-80-68" name="__codelineno-80-68" href="#__codelineno-80-68"></a><span class="go">        target: 3000</span>
+<a id="__codelineno-80-69" name="__codelineno-80-69" href="#__codelineno-80-69"></a><span class="go">        published: "10001"</span>
+<a id="__codelineno-80-70" name="__codelineno-80-70" href="#__codelineno-80-70"></a><span class="go">        protocol: tcp</span>
+<a id="__codelineno-80-71" name="__codelineno-80-71" href="#__codelineno-80-71"></a><span class="go">    restart: always</span>
+<a id="__codelineno-80-72" name="__codelineno-80-72" href="#__codelineno-80-72"></a><span class="go">networks:</span>
+<a id="__codelineno-80-73" name="__codelineno-80-73" href="#__codelineno-80-73"></a><span class="go">  default:</span>
+<a id="__codelineno-80-74" name="__codelineno-80-74" href="#__codelineno-80-74"></a><span class="go">    name: example_default</span>
 </code></pre></div>
 </details>
 <h4 id="compose-hackergame-platform">案例 2：Hackergame 比赛平台的 Docker compose 测试方案<a class="headerlink" href="#compose-hackergame-platform" title="Permanent link">&para;</a></h4>
@@ -5292,39 +5308,39 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <li>在 uWSGI 外是 Nginx 作为反向代理，为用户暴露服务。</li>
 </ul>
 <p>对于这里的 <a href="https://github.com/ustclug/hackergame/blob/3d0d2dcc08cb5a75b724fe4601e4f5e7043c4c6a/docker-compose.yml"><code>docker-compose.yml</code></a>，首先看 <code>services</code> 内部与数据库有关的三个服务：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-80-1" name="__codelineno-80-1" href="#__codelineno-80-1"></a><span class="nt">memcached</span><span class="p">:</span>
-<a id="__codelineno-80-2" name="__codelineno-80-2" href="#__codelineno-80-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-memcached</span>
-<a id="__codelineno-80-3" name="__codelineno-80-3" href="#__codelineno-80-3"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
-<a id="__codelineno-80-4" name="__codelineno-80-4" href="#__codelineno-80-4"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-80-5" name="__codelineno-80-5" href="#__codelineno-80-5"></a><span class="nt">postgresql</span><span class="p">:</span>
-<a id="__codelineno-80-6" name="__codelineno-80-6" href="#__codelineno-80-6"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql</span>
-<a id="__codelineno-80-7" name="__codelineno-80-7" href="#__codelineno-80-7"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
-<a id="__codelineno-80-8" name="__codelineno-80-8" href="#__codelineno-80-8"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-80-9" name="__codelineno-80-9" href="#__codelineno-80-9"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-80-10" name="__codelineno-80-10" href="#__codelineno-80-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_USER=hackergame</span>
-<a id="__codelineno-80-11" name="__codelineno-80-11" href="#__codelineno-80-11"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_PASSWORD=${DB_PASSWORD}</span>
-<a id="__codelineno-80-12" name="__codelineno-80-12" href="#__codelineno-80-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_DB=hackergame</span>
-<a id="__codelineno-80-13" name="__codelineno-80-13" href="#__codelineno-80-13"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-80-14" name="__codelineno-80-14" href="#__codelineno-80-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql:/var/lib/postgresql/data/</span>
-<a id="__codelineno-80-15" name="__codelineno-80-15" href="#__codelineno-80-15"></a><span class="nt">pgbouncer</span><span class="p">:</span>
-<a id="__codelineno-80-16" name="__codelineno-80-16" href="#__codelineno-80-16"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-pgbouncer</span>
-<a id="__codelineno-80-17" name="__codelineno-80-17" href="#__codelineno-80-17"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">edoburu/pgbouncer:latest</span>
-<a id="__codelineno-80-18" name="__codelineno-80-18" href="#__codelineno-80-18"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-80-19" name="__codelineno-80-19" href="#__codelineno-80-19"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-80-20" name="__codelineno-80-20" href="#__codelineno-80-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_USER=hackergame</span>
-<a id="__codelineno-80-21" name="__codelineno-80-21" href="#__codelineno-80-21"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
-<a id="__codelineno-80-22" name="__codelineno-80-22" href="#__codelineno-80-22"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_HOST=postgresql</span>
-<a id="__codelineno-80-23" name="__codelineno-80-23" href="#__codelineno-80-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POOL_MODE=transaction</span>
-<a id="__codelineno-80-24" name="__codelineno-80-24" href="#__codelineno-80-24"></a><span class="w">    </span><span class="c1"># 坑: pg14+ 默认使用 scram-sha-256, 而 pgbouncer 默认是 md5</span>
-<a id="__codelineno-80-25" name="__codelineno-80-25" href="#__codelineno-80-25"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AUTH_TYPE=scram-sha-256</span>
-<a id="__codelineno-80-26" name="__codelineno-80-26" href="#__codelineno-80-26"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
-<a id="__codelineno-80-27" name="__codelineno-80-27" href="#__codelineno-80-27"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-81-1" name="__codelineno-81-1" href="#__codelineno-81-1"></a><span class="nt">memcached</span><span class="p">:</span>
+<a id="__codelineno-81-2" name="__codelineno-81-2" href="#__codelineno-81-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-memcached</span>
+<a id="__codelineno-81-3" name="__codelineno-81-3" href="#__codelineno-81-3"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
+<a id="__codelineno-81-4" name="__codelineno-81-4" href="#__codelineno-81-4"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-81-5" name="__codelineno-81-5" href="#__codelineno-81-5"></a><span class="nt">postgresql</span><span class="p">:</span>
+<a id="__codelineno-81-6" name="__codelineno-81-6" href="#__codelineno-81-6"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql</span>
+<a id="__codelineno-81-7" name="__codelineno-81-7" href="#__codelineno-81-7"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
+<a id="__codelineno-81-8" name="__codelineno-81-8" href="#__codelineno-81-8"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-81-9" name="__codelineno-81-9" href="#__codelineno-81-9"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-81-10" name="__codelineno-81-10" href="#__codelineno-81-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_USER=hackergame</span>
+<a id="__codelineno-81-11" name="__codelineno-81-11" href="#__codelineno-81-11"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-81-12" name="__codelineno-81-12" href="#__codelineno-81-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POSTGRES_DB=hackergame</span>
+<a id="__codelineno-81-13" name="__codelineno-81-13" href="#__codelineno-81-13"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-81-14" name="__codelineno-81-14" href="#__codelineno-81-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-postgresql:/var/lib/postgresql/data/</span>
+<a id="__codelineno-81-15" name="__codelineno-81-15" href="#__codelineno-81-15"></a><span class="nt">pgbouncer</span><span class="p">:</span>
+<a id="__codelineno-81-16" name="__codelineno-81-16" href="#__codelineno-81-16"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-pgbouncer</span>
+<a id="__codelineno-81-17" name="__codelineno-81-17" href="#__codelineno-81-17"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">edoburu/pgbouncer:latest</span>
+<a id="__codelineno-81-18" name="__codelineno-81-18" href="#__codelineno-81-18"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-81-19" name="__codelineno-81-19" href="#__codelineno-81-19"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-81-20" name="__codelineno-81-20" href="#__codelineno-81-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_USER=hackergame</span>
+<a id="__codelineno-81-21" name="__codelineno-81-21" href="#__codelineno-81-21"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-81-22" name="__codelineno-81-22" href="#__codelineno-81-22"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_HOST=postgresql</span>
+<a id="__codelineno-81-23" name="__codelineno-81-23" href="#__codelineno-81-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">POOL_MODE=transaction</span>
+<a id="__codelineno-81-24" name="__codelineno-81-24" href="#__codelineno-81-24"></a><span class="w">    </span><span class="c1"># 坑: pg14+ 默认使用 scram-sha-256, 而 pgbouncer 默认是 md5</span>
+<a id="__codelineno-81-25" name="__codelineno-81-25" href="#__codelineno-81-25"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AUTH_TYPE=scram-sha-256</span>
+<a id="__codelineno-81-26" name="__codelineno-81-26" href="#__codelineno-81-26"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-81-27" name="__codelineno-81-27" href="#__codelineno-81-27"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgresql</span>
 </code></pre></div>
 <p>除去案例 1 中已经介绍的配置，这里设置了容器名称与 volume。对于数据库而言，添加 volume 进行持久化是有必要的，否则容器重启后数据就会丢失。如果定义了 volume，还需要在最外层的 <code>volumes</code> 中定义这个 volume。该 compose 文件定义了三个使用的 volume：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-81-1" name="__codelineno-81-1" href="#__codelineno-81-1"></a><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-81-2" name="__codelineno-81-2" href="#__codelineno-81-2"></a><span class="w">  </span><span class="nt">hackergame-static</span><span class="p">:</span>
-<a id="__codelineno-81-3" name="__codelineno-81-3" href="#__codelineno-81-3"></a><span class="w">  </span><span class="nt">nginx-log</span><span class="p">:</span>
-<a id="__codelineno-81-4" name="__codelineno-81-4" href="#__codelineno-81-4"></a><span class="w">  </span><span class="nt">hackergame-postgresql</span><span class="p">:</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-82-1" name="__codelineno-82-1" href="#__codelineno-82-1"></a><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-82-2" name="__codelineno-82-2" href="#__codelineno-82-2"></a><span class="w">  </span><span class="nt">hackergame-static</span><span class="p">:</span>
+<a id="__codelineno-82-3" name="__codelineno-82-3" href="#__codelineno-82-3"></a><span class="w">  </span><span class="nt">nginx-log</span><span class="p">:</span>
+<a id="__codelineno-82-4" name="__codelineno-82-4" href="#__codelineno-82-4"></a><span class="w">  </span><span class="nt">hackergame-postgresql</span><span class="p">:</span>
 </code></pre></div>
 <div class="admonition note" id="docker-compose-down-and-volume">
 <p class="admonition-title"><code>docker compose down</code> 与 volume&#8288;<a class="headerlink" href="#docker-compose-down-and-volume" title="Permanent link">&para;</a></p>
@@ -5333,86 +5349,86 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>而这里额外设置 <code>container_name</code>（容器名）的目的是，在这些容器组成的内网中，Docker 提供的 DNS 就允许使用更短的主机名（服务名）做服务（容器）之间的互相通信，而用户管理容器时因为容器名都以 <code>hackergame-</code> 开头，可以方便地区分平台容器与其他的容器。</p>
 <details class="note" id="resolv-conf-configuration-and-ping-output">
 <summary><code>resolv.conf</code> 配置，与 <code>ping</code> 主机名与容器名的输出&#8288;<a class="headerlink" href="#resolv-conf-configuration-and-ping-output" title="Permanent link">&para;</a></summary>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-82-1" name="__codelineno-82-1" href="#__codelineno-82-1"></a><span class="gp">root@hackergame:/# </span>cat<span class="w"> </span>/etc/resolv.conf
-<a id="__codelineno-82-2" name="__codelineno-82-2" href="#__codelineno-82-2"></a><span class="gp"># </span>Generated<span class="w"> </span>by<span class="w"> </span>Docker<span class="w"> </span>Engine.
-<a id="__codelineno-82-3" name="__codelineno-82-3" href="#__codelineno-82-3"></a><span class="gp"># </span>This<span class="w"> </span>file<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>edited<span class="p">;</span><span class="w"> </span>Docker<span class="w"> </span>Engine<span class="w"> </span>will<span class="w"> </span>not<span class="w"> </span>make<span class="w"> </span>further<span class="w"> </span>changes<span class="w"> </span>once<span class="w"> </span>it
-<a id="__codelineno-82-4" name="__codelineno-82-4" href="#__codelineno-82-4"></a><span class="gp"># </span>has<span class="w"> </span>been<span class="w"> </span>modified.
-<a id="__codelineno-82-5" name="__codelineno-82-5" href="#__codelineno-82-5"></a>
-<a id="__codelineno-82-6" name="__codelineno-82-6" href="#__codelineno-82-6"></a><span class="go">nameserver 127.0.0.11</span>
-<a id="__codelineno-82-7" name="__codelineno-82-7" href="#__codelineno-82-7"></a><span class="go">search example.com</span>
-<a id="__codelineno-82-8" name="__codelineno-82-8" href="#__codelineno-82-8"></a><span class="go">options ndots:0</span>
-<a id="__codelineno-82-9" name="__codelineno-82-9" href="#__codelineno-82-9"></a>
-<a id="__codelineno-82-10" name="__codelineno-82-10" href="#__codelineno-82-10"></a><span class="gp"># </span>Based<span class="w"> </span>on<span class="w"> </span>host<span class="w"> </span>file:<span class="w"> </span><span class="s1">'/etc/resolv.conf'</span><span class="w"> </span><span class="o">(</span>internal<span class="w"> </span>resolver<span class="o">)</span>
-<a id="__codelineno-82-11" name="__codelineno-82-11" href="#__codelineno-82-11"></a><span class="gp"># </span>ExtServers:<span class="w"> </span><span class="o">[</span><span class="m">192</span>.168.0.1<span class="o">]</span>
-<a id="__codelineno-82-12" name="__codelineno-82-12" href="#__codelineno-82-12"></a><span class="gp"># </span>Overrides:<span class="w"> </span><span class="o">[]</span>
-<a id="__codelineno-82-13" name="__codelineno-82-13" href="#__codelineno-82-13"></a><span class="gp"># </span>Option<span class="w"> </span>ndots<span class="w"> </span>from:<span class="w"> </span>internal
-<a id="__codelineno-82-14" name="__codelineno-82-14" href="#__codelineno-82-14"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>nginx
-<a id="__codelineno-82-15" name="__codelineno-82-15" href="#__codelineno-82-15"></a><span class="go">PING nginx (172.17.1.118) 56(84) bytes of data.</span>
-<a id="__codelineno-82-16" name="__codelineno-82-16" href="#__codelineno-82-16"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.184 ms</span>
-<a id="__codelineno-82-17" name="__codelineno-82-17" href="#__codelineno-82-17"></a><span class="go">^C</span>
-<a id="__codelineno-82-18" name="__codelineno-82-18" href="#__codelineno-82-18"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>hackergame-nginx
-<a id="__codelineno-82-19" name="__codelineno-82-19" href="#__codelineno-82-19"></a><span class="go">PING hackergame-nginx (172.17.1.118) 56(84) bytes of data.</span>
-<a id="__codelineno-82-20" name="__codelineno-82-20" href="#__codelineno-82-20"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.233 ms</span>
-<a id="__codelineno-82-21" name="__codelineno-82-21" href="#__codelineno-82-21"></a><span class="go">^C</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-83-1" name="__codelineno-83-1" href="#__codelineno-83-1"></a><span class="gp">root@hackergame:/# </span>cat<span class="w"> </span>/etc/resolv.conf
+<a id="__codelineno-83-2" name="__codelineno-83-2" href="#__codelineno-83-2"></a><span class="gp"># </span>Generated<span class="w"> </span>by<span class="w"> </span>Docker<span class="w"> </span>Engine.
+<a id="__codelineno-83-3" name="__codelineno-83-3" href="#__codelineno-83-3"></a><span class="gp"># </span>This<span class="w"> </span>file<span class="w"> </span>can<span class="w"> </span>be<span class="w"> </span>edited<span class="p">;</span><span class="w"> </span>Docker<span class="w"> </span>Engine<span class="w"> </span>will<span class="w"> </span>not<span class="w"> </span>make<span class="w"> </span>further<span class="w"> </span>changes<span class="w"> </span>once<span class="w"> </span>it
+<a id="__codelineno-83-4" name="__codelineno-83-4" href="#__codelineno-83-4"></a><span class="gp"># </span>has<span class="w"> </span>been<span class="w"> </span>modified.
+<a id="__codelineno-83-5" name="__codelineno-83-5" href="#__codelineno-83-5"></a>
+<a id="__codelineno-83-6" name="__codelineno-83-6" href="#__codelineno-83-6"></a><span class="go">nameserver 127.0.0.11</span>
+<a id="__codelineno-83-7" name="__codelineno-83-7" href="#__codelineno-83-7"></a><span class="go">search example.com</span>
+<a id="__codelineno-83-8" name="__codelineno-83-8" href="#__codelineno-83-8"></a><span class="go">options ndots:0</span>
+<a id="__codelineno-83-9" name="__codelineno-83-9" href="#__codelineno-83-9"></a>
+<a id="__codelineno-83-10" name="__codelineno-83-10" href="#__codelineno-83-10"></a><span class="gp"># </span>Based<span class="w"> </span>on<span class="w"> </span>host<span class="w"> </span>file:<span class="w"> </span><span class="s1">'/etc/resolv.conf'</span><span class="w"> </span><span class="o">(</span>internal<span class="w"> </span>resolver<span class="o">)</span>
+<a id="__codelineno-83-11" name="__codelineno-83-11" href="#__codelineno-83-11"></a><span class="gp"># </span>ExtServers:<span class="w"> </span><span class="o">[</span><span class="m">192</span>.168.0.1<span class="o">]</span>
+<a id="__codelineno-83-12" name="__codelineno-83-12" href="#__codelineno-83-12"></a><span class="gp"># </span>Overrides:<span class="w"> </span><span class="o">[]</span>
+<a id="__codelineno-83-13" name="__codelineno-83-13" href="#__codelineno-83-13"></a><span class="gp"># </span>Option<span class="w"> </span>ndots<span class="w"> </span>from:<span class="w"> </span>internal
+<a id="__codelineno-83-14" name="__codelineno-83-14" href="#__codelineno-83-14"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>nginx
+<a id="__codelineno-83-15" name="__codelineno-83-15" href="#__codelineno-83-15"></a><span class="go">PING nginx (172.17.1.118) 56(84) bytes of data.</span>
+<a id="__codelineno-83-16" name="__codelineno-83-16" href="#__codelineno-83-16"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.184 ms</span>
+<a id="__codelineno-83-17" name="__codelineno-83-17" href="#__codelineno-83-17"></a><span class="go">^C</span>
+<a id="__codelineno-83-18" name="__codelineno-83-18" href="#__codelineno-83-18"></a><span class="gp">root@hackergame:/# </span>ping<span class="w"> </span>hackergame-nginx
+<a id="__codelineno-83-19" name="__codelineno-83-19" href="#__codelineno-83-19"></a><span class="go">PING hackergame-nginx (172.17.1.118) 56(84) bytes of data.</span>
+<a id="__codelineno-83-20" name="__codelineno-83-20" href="#__codelineno-83-20"></a><span class="go">64 bytes from hackergame-nginx.hackergame_default (172.17.1.118): icmp_seq=1 ttl=64 time=0.233 ms</span>
+<a id="__codelineno-83-21" name="__codelineno-83-21" href="#__codelineno-83-21"></a><span class="go">^C</span>
 </code></pre></div>
 </details>
 <div class="admonition danger" id="port-mapping-security-compose">
 <p class="admonition-title">映射端口的安全性（Compose）&#8288;<a class="headerlink" href="#port-mapping-security-compose" title="Permanent link">&para;</a></p>
 <p>如果阅读网络上某些 Docker compose 的配置，可能会发现他们会像这样将数据库的端口进行映射：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-83-1" name="__codelineno-83-1" href="#__codelineno-83-1"></a><span class="nt">postgresql</span><span class="p">:</span>
-<a id="__codelineno-83-2" name="__codelineno-83-2" href="#__codelineno-83-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
-<a id="__codelineno-83-3" name="__codelineno-83-3" href="#__codelineno-83-3"></a><span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
-<a id="__codelineno-83-4" name="__codelineno-83-4" href="#__codelineno-83-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"5432:5432"</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-84-1" name="__codelineno-84-1" href="#__codelineno-84-1"></a><span class="nt">postgresql</span><span class="p">:</span>
+<a id="__codelineno-84-2" name="__codelineno-84-2" href="#__codelineno-84-2"></a><span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postgres:15</span>
+<a id="__codelineno-84-3" name="__codelineno-84-3" href="#__codelineno-84-3"></a><span class="w">  </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-84-4" name="__codelineno-84-4" href="#__codelineno-84-4"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"5432:5432"</span>
 </code></pre></div>
 <p>除非有确切的需求需要数据库从该 compose 文件管理的容器之外的地方访问，否则<strong>不应该这么设置</strong>，理由和<a href="#docker-basic">基础概念部分</a>中提到的一样。</p>
 <p>由于 compose 会为其管理的服务创建专门的 bridge 网络，而 bridge 网络内部的容器可以互相直接使用主机名通信，因此不需要像这么暴露端口也可以正常工作。</p>
 </div>
 <p>Django 部分的配置如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-84-1" name="__codelineno-84-1" href="#__codelineno-84-1"></a><span class="nt">hackergame</span><span class="p">:</span>
-<a id="__codelineno-84-2" name="__codelineno-84-2" href="#__codelineno-84-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;name</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame</span>
-<a id="__codelineno-84-3" name="__codelineno-84-3" href="#__codelineno-84-3"></a><span class="w">  </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="nv">*name</span>
-<a id="__codelineno-84-4" name="__codelineno-84-4" href="#__codelineno-84-4"></a><span class="w">  </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
-<a id="__codelineno-84-5" name="__codelineno-84-5" href="#__codelineno-84-5"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-<a id="__codelineno-84-6" name="__codelineno-84-6" href="#__codelineno-84-6"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-84-7" name="__codelineno-84-7" href="#__codelineno-84-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DJANGO_SETTINGS_MODULE=conf.settings.docker</span>
-<a id="__codelineno-84-8" name="__codelineno-84-8" href="#__codelineno-84-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
-<a id="__codelineno-84-9" name="__codelineno-84-9" href="#__codelineno-84-9"></a><span class="w">    </span><span class="c1"># 调试用</span>
-<a id="__codelineno-84-10" name="__codelineno-84-10" href="#__codelineno-84-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG=True</span>
-<a id="__codelineno-84-11" name="__codelineno-84-11" href="#__codelineno-84-11"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
-<a id="__codelineno-84-12" name="__codelineno-84-12" href="#__codelineno-84-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.:/opt/hackergame/:ro</span>
-<a id="__codelineno-84-13" name="__codelineno-84-13" href="#__codelineno-84-13"></a><span class="w">    </span><span class="c1"># 存储静态网页与题目文件</span>
-<a id="__codelineno-84-14" name="__codelineno-84-14" href="#__codelineno-84-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-static:/var/opt/hackergame/</span>
-<a id="__codelineno-84-15" name="__codelineno-84-15" href="#__codelineno-84-15"></a><span class="w">    </span><span class="c1"># 很不幸，你可能还需要 bind 完整的题目目录进来（不然不方便导入）</span>
-<a id="__codelineno-84-16" name="__codelineno-84-16" href="#__codelineno-84-16"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
-<a id="__codelineno-84-17" name="__codelineno-84-17" href="#__codelineno-84-17"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
-<a id="__codelineno-84-18" name="__codelineno-84-18" href="#__codelineno-84-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pgbouncer</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-85-1" name="__codelineno-85-1" href="#__codelineno-85-1"></a><span class="nt">hackergame</span><span class="p">:</span>
+<a id="__codelineno-85-2" name="__codelineno-85-2" href="#__codelineno-85-2"></a><span class="w">  </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;name</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame</span>
+<a id="__codelineno-85-3" name="__codelineno-85-3" href="#__codelineno-85-3"></a><span class="w">  </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="nv">*name</span>
+<a id="__codelineno-85-4" name="__codelineno-85-4" href="#__codelineno-85-4"></a><span class="w">  </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.</span>
+<a id="__codelineno-85-5" name="__codelineno-85-5" href="#__codelineno-85-5"></a><span class="w">  </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
+<a id="__codelineno-85-6" name="__codelineno-85-6" href="#__codelineno-85-6"></a><span class="w">  </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-85-7" name="__codelineno-85-7" href="#__codelineno-85-7"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DJANGO_SETTINGS_MODULE=conf.settings.docker</span>
+<a id="__codelineno-85-8" name="__codelineno-85-8" href="#__codelineno-85-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DB_PASSWORD=${DB_PASSWORD}</span>
+<a id="__codelineno-85-9" name="__codelineno-85-9" href="#__codelineno-85-9"></a><span class="w">    </span><span class="c1"># 调试用</span>
+<a id="__codelineno-85-10" name="__codelineno-85-10" href="#__codelineno-85-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DEBUG=True</span>
+<a id="__codelineno-85-11" name="__codelineno-85-11" href="#__codelineno-85-11"></a><span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-85-12" name="__codelineno-85-12" href="#__codelineno-85-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">.:/opt/hackergame/:ro</span>
+<a id="__codelineno-85-13" name="__codelineno-85-13" href="#__codelineno-85-13"></a><span class="w">    </span><span class="c1"># 存储静态网页与题目文件</span>
+<a id="__codelineno-85-14" name="__codelineno-85-14" href="#__codelineno-85-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hackergame-static:/var/opt/hackergame/</span>
+<a id="__codelineno-85-15" name="__codelineno-85-15" href="#__codelineno-85-15"></a><span class="w">    </span><span class="c1"># 很不幸，你可能还需要 bind 完整的题目目录进来（不然不方便导入）</span>
+<a id="__codelineno-85-16" name="__codelineno-85-16" href="#__codelineno-85-16"></a><span class="w">  </span><span class="nt">depends_on</span><span class="p">:</span>
+<a id="__codelineno-85-17" name="__codelineno-85-17" href="#__codelineno-85-17"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">memcached</span>
+<a id="__codelineno-85-18" name="__codelineno-85-18" href="#__codelineno-85-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pgbouncer</span>
 </code></pre></div>
 <p>这里的 <code>&amp;name</code> 和 <code>*name</code> 利用了 YAML 的 <a href="https://yaml.org/spec/1.2/spec.html#id2765878">Anchor 与 Alias</a> 功能。这里 <code>&amp;name hackergame</code> 定义了一个名为 <code>name</code>，值为 <code>hackergame</code> 的 Anchor，而 <code>*name</code> 则表示使用 <code>name</code> 这个 Anchor 的值。</p>
 <p>在这个例子中，使用这个特性或许有些小题大做，但是在一些复杂的配置中，可以使用 Anchor 定义一系列映射，类似这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-85-1" name="__codelineno-85-1" href="#__codelineno-85-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;env</span>
-<a id="__codelineno-85-2" name="__codelineno-85-2" href="#__codelineno-85-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EXAMPLE=1</span>
-<a id="__codelineno-85-3" name="__codelineno-85-3" href="#__codelineno-85-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHON_UNBUFFERED=1</span>
-<a id="__codelineno-85-4" name="__codelineno-85-4" href="#__codelineno-85-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Asia/Shanghai</span>
-<a id="__codelineno-85-5" name="__codelineno-85-5" href="#__codelineno-85-5"></a><span class="w">  </span><span class="c1"># ...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-86-1" name="__codelineno-86-1" href="#__codelineno-86-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;env</span>
+<a id="__codelineno-86-2" name="__codelineno-86-2" href="#__codelineno-86-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EXAMPLE=1</span>
+<a id="__codelineno-86-3" name="__codelineno-86-3" href="#__codelineno-86-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHON_UNBUFFERED=1</span>
+<a id="__codelineno-86-4" name="__codelineno-86-4" href="#__codelineno-86-4"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TZ=Asia/Shanghai</span>
+<a id="__codelineno-86-5" name="__codelineno-86-5" href="#__codelineno-86-5"></a><span class="w">  </span><span class="c1"># ...</span>
 </code></pre></div>
 <p>然后在其他地方使用 <code>*env</code> 引用这个映射：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-86-1" name="__codelineno-86-1" href="#__codelineno-86-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
-<a id="__codelineno-86-2" name="__codelineno-86-2" href="#__codelineno-86-2"></a>
-<a id="__codelineno-86-3" name="__codelineno-86-3" href="#__codelineno-86-3"></a><span class="c1"># 或者，如果需要再添加其他的值</span>
-<a id="__codelineno-86-4" name="__codelineno-86-4" href="#__codelineno-86-4"></a><span class="nt">environment</span><span class="p">:</span>
-<a id="__codelineno-86-5" name="__codelineno-86-5" href="#__codelineno-86-5"></a><span class="w">  </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
-<a id="__codelineno-86-6" name="__codelineno-86-6" href="#__codelineno-86-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OTHER_ENV=2</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a><span class="nt">environment</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
+<a id="__codelineno-87-2" name="__codelineno-87-2" href="#__codelineno-87-2"></a>
+<a id="__codelineno-87-3" name="__codelineno-87-3" href="#__codelineno-87-3"></a><span class="c1"># 或者，如果需要再添加其他的值</span>
+<a id="__codelineno-87-4" name="__codelineno-87-4" href="#__codelineno-87-4"></a><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-87-5" name="__codelineno-87-5" href="#__codelineno-87-5"></a><span class="w">  </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*env</span>
+<a id="__codelineno-87-6" name="__codelineno-87-6" href="#__codelineno-87-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OTHER_ENV=2</span>
 </code></pre></div>
 <p>此外，可以发现在 <code>volumes</code> 的定义中，不再需要使用 <code>$(pwd)</code> 处理相对路径的问题：Docker compose 会帮我们搞定相对路径到绝对路径的转换。</p>
 <p>Nginx 的 compose 配置没有新的特性，因此不再赘述。不过，另一点需要特别提及的是，在不使用 Docker compose 部署时，服务之间的通信使用了 UNIX socket，例如 <a href="https://github.com/ustclug/hackergame/blob/99bfb728670393757247f45679f9216cd64ae5ad/conf/uwsgi-apps/hackergame.ini#L2C1-L2C47">uwsgi 暴露的 socket 配置</a>如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a><span class="k">[uwsgi]</span>
-<a id="__codelineno-87-2" name="__codelineno-87-2" href="#__codelineno-87-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">unix:///run/uwsgi/app/hackergame/socket</span>
-<a id="__codelineno-87-3" name="__codelineno-87-3" href="#__codelineno-87-3"></a><span class="c1"># ...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="k">[uwsgi]</span>
+<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">unix:///run/uwsgi/app/hackergame/socket</span>
+<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="c1"># ...</span>
 </code></pre></div>
 <p>而 <a href="https://github.com/ustclug/hackergame/blob/f1754f0c93d90458cd29dbe288634f8bf01aae5c/conf/uwsgi-apps/hackergame-docker.ini#L2">compose 实现替换为了 TCP socket</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="k">[uwsgi]</span>
-<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">:2018</span>
-<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="c1"># ...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a><span class="k">[uwsgi]</span>
+<a id="__codelineno-89-2" name="__codelineno-89-2" href="#__codelineno-89-2"></a><span class="na">socket</span><span class="o">=</span><span class="s">:2018</span>
+<a id="__codelineno-89-3" name="__codelineno-89-3" href="#__codelineno-89-3"></a><span class="c1"># ...</span>
 </code></pre></div>
 <p>一个重要的原因是，UNIX socket 是有用户所有者和权限的，但是在多个容器的场合下，保证所有容器的 <code>/etc/passwd</code> 映射的用户一致是比较困难的。而 TCP socket 则解决了这个问题。但是其<strong>安全性</strong>需要考虑，例如 uWSGI 的 TCP socket 默认是没有额外的鉴权的，而能够连接到这个 socket 的进程就可以<a href="https://github.com/wofeiwo/webcgi-exploits/blob/master/python/uwsgi-rce-zh.md">执行任意命令</a>，<a href="https://github.com/PKU-GeekGame/geekgame-1st/tree/master/writeups/xmcp#%E6%97%A9%E6%9C%9F%E4%BA%BA%E7%B1%BB%E7%9A%84%E8%81%8A%E5%A4%A9%E5%AE%A4-uwsgi">在某些不正确的设置下，即使在配置中将 uWSGI 降权运行，也可以以此获取到更高的权限</a>。即使 uWSGI 的端口没有暴露到容器内网外部，如果有其他容器被攻破，那么攻击者也可以轻松横向移动到 uWSGI 所在容器。</p>
 <div class="admonition lab" id="health-check">
@@ -5456,7 +5472,7 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p class="admonition-title">配置容器镜像的默认 registry&#8288;<a class="headerlink" href="#configure-default-registry-for-container-images" title="Permanent link">&para;</a></p>
 <p>在 Docker 中如果没有指定镜像的 <a href="#registry">registry</a>，那么它就会默认以 <code>docker.io</code> 作为 registry。但是 Podman 不会这么做。<a href="https://github.com/containers/shortnames/blob/main/shortnames.conf"><code>/etc/containers/registries.conf.d/shortnames.conf</code></a> 会包含一些常用镜像的短命名与实际命名的映射（例如 <code>"debian" = "docker.io/library/debian"</code>），但是在实际使用时用户可能还是更习惯于 Docker 的行为。</p>
 <p>可以添加以下配置文件：</p>
-<div class="highlight"><span class="filename">/etc/containers/registries.conf.d/unqualified-search-registries.conf</span><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a>unqualified-search-registries = ["docker.io"]
+<div class="highlight"><span class="filename">/etc/containers/registries.conf.d/unqualified-search-registries.conf</span><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a>unqualified-search-registries = ["docker.io"]
 </code></pre></div>
 </div>
 <div class="admonition tip" id="support-docker-api-programs">
@@ -5467,23 +5483,23 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <div class="admonition tip" id="configure-podman-container-autostart">
 <p class="admonition-title">配置 Podman 容器的自启动&#8288;<a class="headerlink" href="#configure-podman-container-autostart" title="Permanent link">&para;</a></p>
 <p>Podman 使用 <a href="https://github.com/containers/podman/tree/main/pkg/systemd/quadlet">Quadlet</a> 为 systemd 环境提供自启动支持。Quadlet 是一个 systemd generator（位于 <code>/usr/lib/systemd/system-generators/podman-system-generator</code>）——会从 quadlet 文件生成 systemd 服务。Quadlet 文件的格式和 systemd 单元的配置很像：</p>
-<div class="highlight"><span class="filename">example.container</span><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a><span class="k">[Container]</span>
-<a id="__codelineno-90-2" name="__codelineno-90-2" href="#__codelineno-90-2"></a><span class="na">ContainerName</span><span class="o">=</span><span class="s">example</span>
-<a id="__codelineno-90-3" name="__codelineno-90-3" href="#__codelineno-90-3"></a><span class="na">Image</span><span class="o">=</span><span class="s">docker.io/library/debian</span>
-<a id="__codelineno-90-4" name="__codelineno-90-4" href="#__codelineno-90-4"></a><span class="na">PublishPort</span><span class="o">=</span><span class="s">127.0.0.1:1234:1234</span>
-<a id="__codelineno-90-5" name="__codelineno-90-5" href="#__codelineno-90-5"></a><span class="na">Exec</span><span class="o">=</span><span class="s">sleep 1234</span>
-<a id="__codelineno-90-6" name="__codelineno-90-6" href="#__codelineno-90-6"></a>
-<a id="__codelineno-90-7" name="__codelineno-90-7" href="#__codelineno-90-7"></a><span class="k">[Service]</span>
-<a id="__codelineno-90-8" name="__codelineno-90-8" href="#__codelineno-90-8"></a><span class="na">Restart</span><span class="o">=</span><span class="s">always</span>
-<a id="__codelineno-90-9" name="__codelineno-90-9" href="#__codelineno-90-9"></a>
-<a id="__codelineno-90-10" name="__codelineno-90-10" href="#__codelineno-90-10"></a><span class="k">[Install]</span>
-<a id="__codelineno-90-11" name="__codelineno-90-11" href="#__codelineno-90-11"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">default.target</span>
+<div class="highlight"><span class="filename">example.container</span><pre><span></span><code><a id="__codelineno-91-1" name="__codelineno-91-1" href="#__codelineno-91-1"></a><span class="k">[Container]</span>
+<a id="__codelineno-91-2" name="__codelineno-91-2" href="#__codelineno-91-2"></a><span class="na">ContainerName</span><span class="o">=</span><span class="s">example</span>
+<a id="__codelineno-91-3" name="__codelineno-91-3" href="#__codelineno-91-3"></a><span class="na">Image</span><span class="o">=</span><span class="s">docker.io/library/debian</span>
+<a id="__codelineno-91-4" name="__codelineno-91-4" href="#__codelineno-91-4"></a><span class="na">PublishPort</span><span class="o">=</span><span class="s">127.0.0.1:1234:1234</span>
+<a id="__codelineno-91-5" name="__codelineno-91-5" href="#__codelineno-91-5"></a><span class="na">Exec</span><span class="o">=</span><span class="s">sleep 1234</span>
+<a id="__codelineno-91-6" name="__codelineno-91-6" href="#__codelineno-91-6"></a>
+<a id="__codelineno-91-7" name="__codelineno-91-7" href="#__codelineno-91-7"></a><span class="k">[Service]</span>
+<a id="__codelineno-91-8" name="__codelineno-91-8" href="#__codelineno-91-8"></a><span class="na">Restart</span><span class="o">=</span><span class="s">always</span>
+<a id="__codelineno-91-9" name="__codelineno-91-9" href="#__codelineno-91-9"></a>
+<a id="__codelineno-91-10" name="__codelineno-91-10" href="#__codelineno-91-10"></a><span class="k">[Install]</span>
+<a id="__codelineno-91-11" name="__codelineno-91-11" href="#__codelineno-91-11"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">default.target</span>
 </code></pre></div>
 <p>然后放在 <code>/etc/containers/systemd/</code> 或者 <code>~/.config/containers/systemd/</code>（rootless）即可。不过手写这个文件还是太麻烦了，可以使用 <a href="https://github.com/containers/podlet">podlet</a> 帮我们代劳：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-91-1" name="__codelineno-91-1" href="#__codelineno-91-1"></a><span class="c1"># 生成已有的某个容器的 quadlet</span>
-<a id="__codelineno-91-2" name="__codelineno-91-2" href="#__codelineno-91-2"></a>podlet<span class="w"> </span>-i<span class="w"> </span>generate<span class="w"> </span>container<span class="w"> </span>example
-<a id="__codelineno-91-3" name="__codelineno-91-3" href="#__codelineno-91-3"></a><span class="c1"># 根据启动命令生成 quadlet</span>
-<a id="__codelineno-91-4" name="__codelineno-91-4" href="#__codelineno-91-4"></a>podlet<span class="w"> </span>-i<span class="w"> </span>podman<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>example<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:1234:1234<span class="w"> </span>--restart<span class="o">=</span>always<span class="w"> </span>docker.io/library/debian<span class="w"> </span>sleep<span class="w"> </span><span class="m">1234</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-92-1" name="__codelineno-92-1" href="#__codelineno-92-1"></a><span class="c1"># 生成已有的某个容器的 quadlet</span>
+<a id="__codelineno-92-2" name="__codelineno-92-2" href="#__codelineno-92-2"></a>podlet<span class="w"> </span>-i<span class="w"> </span>generate<span class="w"> </span>container<span class="w"> </span>example
+<a id="__codelineno-92-3" name="__codelineno-92-3" href="#__codelineno-92-3"></a><span class="c1"># 根据启动命令生成 quadlet</span>
+<a id="__codelineno-92-4" name="__codelineno-92-4" href="#__codelineno-92-4"></a>podlet<span class="w"> </span>-i<span class="w"> </span>podman<span class="w"> </span>run<span class="w"> </span>--name<span class="w"> </span>example<span class="w"> </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:1234:1234<span class="w"> </span>--restart<span class="o">=</span>always<span class="w"> </span>docker.io/library/debian<span class="w"> </span>sleep<span class="w"> </span><span class="m">1234</span>
 </code></pre></div>
 <p>有关配置文件格式，详情可参考 <a href="https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html">podman-systemd.unit.5</a>。</p>
 </div>
@@ -5492,29 +5508,29 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <p>由于在 2023 年，Canonical 将 LXD 从 <a href="https://linuxcontainers.org">Linux Containers 项目</a>中分离出来，因此出现了一个新社区 fork <a href="https://linuxcontainers.org/incus/">Incus</a>。以上工具相比于 Docker 更加注重于系统级的容器，而不是应用级的容器。</p>
 <h3 id="systemd-nspawn">Systemd-nspawn<a class="headerlink" href="#systemd-nspawn" title="Permanent link">&para;</a></h3>
 <p>Systemd-nspawn 是由 systemd 提供的轻量级容器工具，提供了与 systemd 的集成。以下是一个简单的使用例子，其中初始化了一个 Debian Bookworm 的 rootfs，并且启动了这个 "Debian"：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-92-1" name="__codelineno-92-1" href="#__codelineno-92-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>debootstrap<span class="w"> </span>bookworm<span class="w"> </span>debian<span class="w"> </span>https://mirrors.ustc.edu.cn/debian
-<a id="__codelineno-92-2" name="__codelineno-92-2" href="#__codelineno-92-2"></a><span class="go">W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg</span>
-<a id="__codelineno-92-3" name="__codelineno-92-3" href="#__codelineno-92-3"></a><span class="go">I: Retrieving InRelease</span>
-<a id="__codelineno-92-4" name="__codelineno-92-4" href="#__codelineno-92-4"></a><span class="go">（以下省略）</span>
-<a id="__codelineno-92-5" name="__codelineno-92-5" href="#__codelineno-92-5"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>debian
-<a id="__codelineno-92-6" name="__codelineno-92-6" href="#__codelineno-92-6"></a><span class="gp">$ </span><span class="c1"># 由于 debootstrap 创建的 root 没有密码，需要设置密码</span>
-<a id="__codelineno-92-7" name="__codelineno-92-7" href="#__codelineno-92-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>passwd<span class="w"> </span>root
-<a id="__codelineno-92-8" name="__codelineno-92-8" href="#__codelineno-92-8"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
-<a id="__codelineno-92-9" name="__codelineno-92-9" href="#__codelineno-92-9"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
-<a id="__codelineno-92-10" name="__codelineno-92-10" href="#__codelineno-92-10"></a><span class="go">New password:</span>
-<a id="__codelineno-92-11" name="__codelineno-92-11" href="#__codelineno-92-11"></a><span class="go">Retype new password:</span>
-<a id="__codelineno-92-12" name="__codelineno-92-12" href="#__codelineno-92-12"></a><span class="go">passwd: password updated successfully</span>
-<a id="__codelineno-92-13" name="__codelineno-92-13" href="#__codelineno-92-13"></a><span class="go">Container debian exited successfully.</span>
-<a id="__codelineno-92-14" name="__codelineno-92-14" href="#__codelineno-92-14"></a><span class="gp">$ </span><span class="c1"># 引导容器</span>
-<a id="__codelineno-92-15" name="__codelineno-92-15" href="#__codelineno-92-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>--boot<span class="w"> </span>.
-<a id="__codelineno-92-16" name="__codelineno-92-16" href="#__codelineno-92-16"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
-<a id="__codelineno-92-17" name="__codelineno-92-17" href="#__codelineno-92-17"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
-<a id="__codelineno-92-18" name="__codelineno-92-18" href="#__codelineno-92-18"></a><span class="go">systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)</span>
-<a id="__codelineno-92-19" name="__codelineno-92-19" href="#__codelineno-92-19"></a><span class="go">Detected virtualization systemd-nspawn.</span>
-<a id="__codelineno-92-20" name="__codelineno-92-20" href="#__codelineno-92-20"></a><span class="go">Detected architecture x86-64.</span>
-<a id="__codelineno-92-21" name="__codelineno-92-21" href="#__codelineno-92-21"></a>
-<a id="__codelineno-92-22" name="__codelineno-92-22" href="#__codelineno-92-22"></a><span class="go">Welcome to Debian GNU/Linux 12 (bookworm)!</span>
-<a id="__codelineno-92-23" name="__codelineno-92-23" href="#__codelineno-92-23"></a><span class="go">（以下省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-93-1" name="__codelineno-93-1" href="#__codelineno-93-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>debootstrap<span class="w"> </span>bookworm<span class="w"> </span>debian<span class="w"> </span>https://mirrors.ustc.edu.cn/debian
+<a id="__codelineno-93-2" name="__codelineno-93-2" href="#__codelineno-93-2"></a><span class="go">W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg</span>
+<a id="__codelineno-93-3" name="__codelineno-93-3" href="#__codelineno-93-3"></a><span class="go">I: Retrieving InRelease</span>
+<a id="__codelineno-93-4" name="__codelineno-93-4" href="#__codelineno-93-4"></a><span class="go">（以下省略）</span>
+<a id="__codelineno-93-5" name="__codelineno-93-5" href="#__codelineno-93-5"></a><span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>debian
+<a id="__codelineno-93-6" name="__codelineno-93-6" href="#__codelineno-93-6"></a><span class="gp">$ </span><span class="c1"># 由于 debootstrap 创建的 root 没有密码，需要设置密码</span>
+<a id="__codelineno-93-7" name="__codelineno-93-7" href="#__codelineno-93-7"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>passwd<span class="w"> </span>root
+<a id="__codelineno-93-8" name="__codelineno-93-8" href="#__codelineno-93-8"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-93-9" name="__codelineno-93-9" href="#__codelineno-93-9"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-93-10" name="__codelineno-93-10" href="#__codelineno-93-10"></a><span class="go">New password:</span>
+<a id="__codelineno-93-11" name="__codelineno-93-11" href="#__codelineno-93-11"></a><span class="go">Retype new password:</span>
+<a id="__codelineno-93-12" name="__codelineno-93-12" href="#__codelineno-93-12"></a><span class="go">passwd: password updated successfully</span>
+<a id="__codelineno-93-13" name="__codelineno-93-13" href="#__codelineno-93-13"></a><span class="go">Container debian exited successfully.</span>
+<a id="__codelineno-93-14" name="__codelineno-93-14" href="#__codelineno-93-14"></a><span class="gp">$ </span><span class="c1"># 引导容器</span>
+<a id="__codelineno-93-15" name="__codelineno-93-15" href="#__codelineno-93-15"></a><span class="gp">$ </span>sudo<span class="w"> </span>systemd-nspawn<span class="w"> </span>--boot<span class="w"> </span>.
+<a id="__codelineno-93-16" name="__codelineno-93-16" href="#__codelineno-93-16"></a><span class="go">Spawning container debian on /home/taoky/tmp/debian/debian.</span>
+<a id="__codelineno-93-17" name="__codelineno-93-17" href="#__codelineno-93-17"></a><span class="go">Press Ctrl-] three times within 1s to kill container.</span>
+<a id="__codelineno-93-18" name="__codelineno-93-18" href="#__codelineno-93-18"></a><span class="go">systemd 252.22-1~deb12u1 running in system mode (+PAM +AUDIT +SELINUX +APPARMOR +IMA +SMACK +SECCOMP +GCRYPT -GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK -XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)</span>
+<a id="__codelineno-93-19" name="__codelineno-93-19" href="#__codelineno-93-19"></a><span class="go">Detected virtualization systemd-nspawn.</span>
+<a id="__codelineno-93-20" name="__codelineno-93-20" href="#__codelineno-93-20"></a><span class="go">Detected architecture x86-64.</span>
+<a id="__codelineno-93-21" name="__codelineno-93-21" href="#__codelineno-93-21"></a>
+<a id="__codelineno-93-22" name="__codelineno-93-22" href="#__codelineno-93-22"></a><span class="go">Welcome to Debian GNU/Linux 12 (bookworm)!</span>
+<a id="__codelineno-93-23" name="__codelineno-93-23" href="#__codelineno-93-23"></a><span class="go">（以下省略）</span>
 </code></pre></div>
 <h3 id="singularity">Singularity<a class="headerlink" href="#singularity" title="Permanent link">&para;</a></h3>
 <p>Singularity 是在 HPC（高性能计算）领域非常常用的容器工具。相比于 Docker、Podman 等我们平时使用的容器工具，Singularity 更加注重于 HPC 场景下的需求：</p>
@@ -5531,30 +5547,30 @@ Docker 会在 filter 表的 <code>FORWARD</code> 链中添加这样的规则：<
 <h3 id="container-sandbox">基于容器技术的沙盒<a class="headerlink" href="#container-sandbox" title="Permanent link">&para;</a></h3>
 <p>以下介绍的「沙盒」不一定符合 OCI 标准，但是其也使用了与容器相同的内核技术。</p>
 <p>Bubblewrap 是目前相对常用的底层沙盒工具之一，并且允许非 root 用户使用。以下是<a href="https://github.com/containers/bubblewrap/blob/main/demos/bubblewrap-shell.sh">使用 bubblewrap 创建 shell 沙盒的例子</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-93-1" name="__codelineno-93-1" href="#__codelineno-93-1"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
-<a id="__codelineno-93-2" name="__codelineno-93-2" href="#__codelineno-93-2"></a><span class="o">(</span><span class="nb">exec</span><span class="w"> </span>bwrap<span class="w"> </span>--ro-bind<span class="w"> </span>/usr<span class="w"> </span>/usr<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-3" name="__codelineno-93-3" href="#__codelineno-93-3"></a><span class="w">      </span>--dir<span class="w"> </span>/tmp<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-4" name="__codelineno-93-4" href="#__codelineno-93-4"></a><span class="w">      </span>--dir<span class="w"> </span>/var<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-5" name="__codelineno-93-5" href="#__codelineno-93-5"></a><span class="w">      </span>--symlink<span class="w"> </span>../tmp<span class="w"> </span>var/tmp<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-6" name="__codelineno-93-6" href="#__codelineno-93-6"></a><span class="w">      </span>--proc<span class="w"> </span>/proc<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-7" name="__codelineno-93-7" href="#__codelineno-93-7"></a><span class="w">      </span>--dev<span class="w"> </span>/dev<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-8" name="__codelineno-93-8" href="#__codelineno-93-8"></a><span class="w">      </span>--ro-bind<span class="w"> </span>/etc/resolv.conf<span class="w"> </span>/etc/resolv.conf<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-9" name="__codelineno-93-9" href="#__codelineno-93-9"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib<span class="w"> </span>/lib<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-10" name="__codelineno-93-10" href="#__codelineno-93-10"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib64<span class="w"> </span>/lib64<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-11" name="__codelineno-93-11" href="#__codelineno-93-11"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/bin<span class="w"> </span>/bin<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-12" name="__codelineno-93-12" href="#__codelineno-93-12"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/sbin<span class="w"> </span>/sbin<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-13" name="__codelineno-93-13" href="#__codelineno-93-13"></a><span class="w">      </span>--chdir<span class="w"> </span>/<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-14" name="__codelineno-93-14" href="#__codelineno-93-14"></a><span class="w">      </span>--unshare-all<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-15" name="__codelineno-93-15" href="#__codelineno-93-15"></a><span class="w">      </span>--share-net<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-16" name="__codelineno-93-16" href="#__codelineno-93-16"></a><span class="w">      </span>--die-with-parent<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-17" name="__codelineno-93-17" href="#__codelineno-93-17"></a><span class="w">      </span>--dir<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-18" name="__codelineno-93-18" href="#__codelineno-93-18"></a><span class="w">      </span>--setenv<span class="w"> </span>XDG_RUNTIME_DIR<span class="w"> </span><span class="s2">"/run/user/`id -u`"</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-19" name="__codelineno-93-19" href="#__codelineno-93-19"></a><span class="w">      </span>--setenv<span class="w"> </span>PS1<span class="w"> </span><span class="s2">"bwrap-demo</span>$<span class="s2"> "</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-20" name="__codelineno-93-20" href="#__codelineno-93-20"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">11</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-21" name="__codelineno-93-21" href="#__codelineno-93-21"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">12</span><span class="w"> </span>/etc/group<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-22" name="__codelineno-93-22" href="#__codelineno-93-22"></a><span class="w">      </span>/bin/sh<span class="o">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-23" name="__codelineno-93-23" href="#__codelineno-93-23"></a><span class="w">    </span><span class="m">11</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>passwd<span class="w"> </span><span class="nv">$UID</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-93-24" name="__codelineno-93-24" href="#__codelineno-93-24"></a><span class="w">    </span><span class="m">12</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>group<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-94-1" name="__codelineno-94-1" href="#__codelineno-94-1"></a><span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+<a id="__codelineno-94-2" name="__codelineno-94-2" href="#__codelineno-94-2"></a><span class="o">(</span><span class="nb">exec</span><span class="w"> </span>bwrap<span class="w"> </span>--ro-bind<span class="w"> </span>/usr<span class="w"> </span>/usr<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-3" name="__codelineno-94-3" href="#__codelineno-94-3"></a><span class="w">      </span>--dir<span class="w"> </span>/tmp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-4" name="__codelineno-94-4" href="#__codelineno-94-4"></a><span class="w">      </span>--dir<span class="w"> </span>/var<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-5" name="__codelineno-94-5" href="#__codelineno-94-5"></a><span class="w">      </span>--symlink<span class="w"> </span>../tmp<span class="w"> </span>var/tmp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-6" name="__codelineno-94-6" href="#__codelineno-94-6"></a><span class="w">      </span>--proc<span class="w"> </span>/proc<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-7" name="__codelineno-94-7" href="#__codelineno-94-7"></a><span class="w">      </span>--dev<span class="w"> </span>/dev<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-8" name="__codelineno-94-8" href="#__codelineno-94-8"></a><span class="w">      </span>--ro-bind<span class="w"> </span>/etc/resolv.conf<span class="w"> </span>/etc/resolv.conf<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-9" name="__codelineno-94-9" href="#__codelineno-94-9"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib<span class="w"> </span>/lib<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-10" name="__codelineno-94-10" href="#__codelineno-94-10"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/lib64<span class="w"> </span>/lib64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-11" name="__codelineno-94-11" href="#__codelineno-94-11"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/bin<span class="w"> </span>/bin<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-12" name="__codelineno-94-12" href="#__codelineno-94-12"></a><span class="w">      </span>--symlink<span class="w"> </span>usr/sbin<span class="w"> </span>/sbin<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-13" name="__codelineno-94-13" href="#__codelineno-94-13"></a><span class="w">      </span>--chdir<span class="w"> </span>/<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-14" name="__codelineno-94-14" href="#__codelineno-94-14"></a><span class="w">      </span>--unshare-all<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-15" name="__codelineno-94-15" href="#__codelineno-94-15"></a><span class="w">      </span>--share-net<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-16" name="__codelineno-94-16" href="#__codelineno-94-16"></a><span class="w">      </span>--die-with-parent<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-17" name="__codelineno-94-17" href="#__codelineno-94-17"></a><span class="w">      </span>--dir<span class="w"> </span>/run/user/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-18" name="__codelineno-94-18" href="#__codelineno-94-18"></a><span class="w">      </span>--setenv<span class="w"> </span>XDG_RUNTIME_DIR<span class="w"> </span><span class="s2">"/run/user/`id -u`"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-19" name="__codelineno-94-19" href="#__codelineno-94-19"></a><span class="w">      </span>--setenv<span class="w"> </span>PS1<span class="w"> </span><span class="s2">"bwrap-demo</span>$<span class="s2"> "</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-20" name="__codelineno-94-20" href="#__codelineno-94-20"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">11</span><span class="w"> </span>/etc/passwd<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-21" name="__codelineno-94-21" href="#__codelineno-94-21"></a><span class="w">      </span>--file<span class="w"> </span><span class="m">12</span><span class="w"> </span>/etc/group<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-22" name="__codelineno-94-22" href="#__codelineno-94-22"></a><span class="w">      </span>/bin/sh<span class="o">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-23" name="__codelineno-94-23" href="#__codelineno-94-23"></a><span class="w">    </span><span class="m">11</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>passwd<span class="w"> </span><span class="nv">$UID</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-94-24" name="__codelineno-94-24" href="#__codelineno-94-24"></a><span class="w">    </span><span class="m">12</span>&lt;<span class="w"> </span>&lt;<span class="o">(</span>getent<span class="w"> </span>group<span class="w"> </span><span class="k">$(</span>id<span class="w"> </span>-g<span class="k">)</span><span class="w"> </span><span class="m">65534</span><span class="o">)</span>
 </code></pre></div>
 <p>这个「沙盒」只读绑定了主机的 <code>/usr</code> 目录，并且处理了一些 <code>/etc</code> 下的配置。</p>
 <p>在实践中，更常见的面向用户的方案有 <a href="https://flatpak.org/">Flatpak</a> 和 <a href="https://snapcraft.io/">Snap</a> 等。这些方案提供了应用沙盒与应用商店的功能，用户可以从它们的商店中安装应用，而这些应用会根据具体的需求以不同的配置隔离在沙盒中；而开发者也可以在公用的「运行时」上开发，保证自己的应用能够跨发行版顺利运行。</p>
@@ -5623,7 +5639,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月10日 14:55:54 UTC">2026年9月10日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月8日 20:31:52 UTC">2026年10月8日</span>
   </span>
 
     
