@@ -5373,115 +5373,131 @@
 <a id="__codelineno-83-11" name="__codelineno-83-11" href="#__codelineno-83-11"></a><span class="k">access_log</span><span class="w"> </span><span class="s">/var/log/nginx/access_403.log</span><span class="w"> </span><span class="s">combined</span><span class="w"> </span><span class="s">if=</span><span class="nv">$log_403</span><span class="p">;</span>
 <a id="__codelineno-83-12" name="__codelineno-83-12" href="#__codelineno-83-12"></a><span class="k">access_log</span><span class="w"> </span><span class="s">/var/log/nginx/access.log</span><span class="w"> </span><span class="s">combined</span><span class="w"> </span><span class="s">if=</span><span class="nv">$log_normal</span><span class="p">;</span>
 </code></pre></div>
+<div class="admonition warning" id="access_log_var">
+<p class="admonition-title">小心处理 <code>access_log</code> 与变量&#8288;<a class="headerlink" href="#access_log_var" title="Permanent link">&para;</a></p>
+<p>我们在现实中看到过类似这样的配置：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-84-1" name="__codelineno-84-1" href="#__codelineno-84-1"></a><span class="k">map</span><span class="w"> </span><span class="nv">$request_uri</span><span class="w"> </span><span class="nv">$loggable_access_log</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-84-2" name="__codelineno-84-2" href="#__codelineno-84-2"></a><span class="w">    </span><span class="kn">default</span><span class="w"> </span><span class="s">/some/path/to/log</span><span class="p">;</span>
+<a id="__codelineno-84-3" name="__codelineno-84-3" href="#__codelineno-84-3"></a><span class="w">    </span><span class="kn">~*/some/exp/</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-84-4" name="__codelineno-84-4" href="#__codelineno-84-4"></a><span class="p">}</span>
+<a id="__codelineno-84-5" name="__codelineno-84-5" href="#__codelineno-84-5"></a>
+<a id="__codelineno-84-6" name="__codelineno-84-6" href="#__codelineno-84-6"></a><span class="k">access_log</span><span class="w"> </span><span class="nv">$loggable_access_log</span><span class="p">;</span>
+</code></pre></div>
+<p>但是不幸的是，这个配置是完完全全、彻彻底底错误的：</p>
+<ul>
+<li>在配置解析阶段，因为 <code>access_log</code> 参数的开头不是 <code>/</code>，因此这里会被解读为<strong>相对路径</strong>（即使变量本身是绝对路径！），在 <code>default</code> 分支场景下最终会尝试写入到 prefix（例如 <code>/etc/nginx/</code>）拼上 <code>/some/path/to/log</code>，即 <code>/etc/nginx//some/path/to/log</code>。这几乎在所有场景下都是不符合预期的。</li>
+<li><code>off</code>，同样也是不生效的（会尝试写入到 <code>/etc/nginx/off</code>）。</li>
+</ul>
+</div>
 <h2 id="lua">Lua<a class="headerlink" href="#lua" title="Permanent link">&para;</a></h2>
 <p>由 OpenResty 团队维护的 <a href="https://github.com/openresty/lua-nginx-module">ngx_http_lua_module</a> 提供了非常强大的 Lua 支持，可以在 Nginx 处理请求的各个阶段运行 Lua 脚本，实现复杂的逻辑。此外，Nginx 官方维护的 <a href="https://nginx.org/en/docs/http/ngx_http_js_module.html">ngx_http_js_module</a> (<a href="https://nginx.org/en/docs/njs/index.html">njs</a>) 也提供了类似的使用 JavaScript 脚本的功能，但就目前而言，Lua 模块的生态更加丰富，功能也更强大。</p>
 <h3 id="lua-intro">Lua 语言简介<a class="headerlink" href="#lua-intro" title="Permanent link">&para;</a></h3>
 <p>Lua 是一种轻量的脚本语言，可以轻松集成到其他应用程序中，并且在 LuaJIT 的支持下，可以达到非常好的性能，常被用于游戏开发，以及各种需要用户自定义运行逻辑的场景。</p>
 <h4 id="lua-basic-syntax">Lua 基础语法<a class="headerlink" href="#lua-basic-syntax" title="Permanent link">&para;</a></h4>
 <p>以下给出一个简单的 Lua 代码示例，展示基本的语法，可以在 Lua 解释器中运行。如果希望进一步学习 Lua，可以参考<a href="https://www.lua.org/manual/">官方文档</a>以及 <a href="https://www.lua.org/pil/contents.html">Programming in Lua</a> 一书。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-84-1" name="__codelineno-84-1" href="#__codelineno-84-1"></a><span class="c1">-- 这是注释</span>
-<a id="__codelineno-84-2" name="__codelineno-84-2" href="#__codelineno-84-2"></a>
-<a id="__codelineno-84-3" name="__codelineno-84-3" href="#__codelineno-84-3"></a><span class="kd">local</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1.0"</span><span class="w">  </span><span class="c1">-- 使用 local 定义局部变量</span>
-<a id="__codelineno-84-4" name="__codelineno-84-4" href="#__codelineno-84-4"></a><span class="kr">if</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">~=</span><span class="w"> </span><span class="s2">"1.0"</span><span class="w"> </span><span class="kr">then</span><span class="w">  </span><span class="c1">-- ~= 表示不等于</span>
-<a id="__codelineno-84-5" name="__codelineno-84-5" href="#__codelineno-84-5"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Version is not 1.0"</span><span class="p">)</span>
-<a id="__codelineno-84-6" name="__codelineno-84-6" href="#__codelineno-84-6"></a><span class="kr">else</span>
-<a id="__codelineno-84-7" name="__codelineno-84-7" href="#__codelineno-84-7"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Version is 1.0"</span><span class="p">)</span>
-<a id="__codelineno-84-8" name="__codelineno-84-8" href="#__codelineno-84-8"></a><span class="kr">end</span>
-<a id="__codelineno-84-9" name="__codelineno-84-9" href="#__codelineno-84-9"></a><span class="kr">if</span><span class="w"> </span><span class="nv">something_not_defined</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="kr">then</span><span class="w">  </span><span class="c1">-- nil 表示空值/未定义</span>
-<a id="__codelineno-84-10" name="__codelineno-84-10" href="#__codelineno-84-10"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"A nil variable"</span><span class="p">)</span>
-<a id="__codelineno-84-11" name="__codelineno-84-11" href="#__codelineno-84-11"></a><span class="kr">end</span>
-<a id="__codelineno-84-12" name="__codelineno-84-12" href="#__codelineno-84-12"></a>
-<a id="__codelineno-84-13" name="__codelineno-84-13" href="#__codelineno-84-13"></a><span class="c1">-- 字符串正则匹配与替换</span>
-<a id="__codelineno-84-14" name="__codelineno-84-14" href="#__codelineno-84-14"></a><span class="kd">local</span><span class="w"> </span><span class="nv">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Hello, Lua 123!"</span>
-<a id="__codelineno-84-15" name="__codelineno-84-15" href="#__codelineno-84-15"></a><span class="kd">local</span><span class="w"> </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">string.match</span><span class="p">(</span><span class="nv">str</span><span class="p">,</span><span class="w"> </span><span class="s2">"%d+"</span><span class="p">)</span>
-<a id="__codelineno-84-16" name="__codelineno-84-16" href="#__codelineno-84-16"></a><span class="kd">local</span><span class="w"> </span><span class="nv">match_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">str</span><span class="p">:</span><span class="nf">match</span><span class="p">(</span><span class="s2">"%d+"</span><span class="p">)</span><span class="w">  </span><span class="c1">-- 冒号语法糖，等价于 str.match(str, pattern)</span>
-<a id="__codelineno-84-17" name="__codelineno-84-17" href="#__codelineno-84-17"></a><span class="kd">local</span><span class="w"> </span><span class="nv">new_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">str</span><span class="p">:</span><span class="nf">gsub</span><span class="p">(</span><span class="s2">"%d+"</span><span class="p">,</span><span class="w"> </span><span class="s2">"456"</span><span class="p">):</span><span class="nf">lower</span><span class="p">()</span><span class="w">  </span><span class="c1">-- gsub 替换，lower 转小写</span>
-<a id="__codelineno-84-18" name="__codelineno-84-18" href="#__codelineno-84-18"></a><span class="nb">assert</span><span class="p">(</span><span class="nv">match</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nv">match_2</span><span class="p">,</span><span class="w"> </span><span class="s2">"Matches should be equal"</span><span class="p">)</span>
-<a id="__codelineno-84-19" name="__codelineno-84-19" href="#__codelineno-84-19"></a><span class="nb">print</span><span class="p">(</span><span class="nv">match</span><span class="p">)</span>
-<a id="__codelineno-84-20" name="__codelineno-84-20" href="#__codelineno-84-20"></a><span class="nb">print</span><span class="p">(</span><span class="nv">new_str</span><span class="p">)</span>
-<a id="__codelineno-84-21" name="__codelineno-84-21" href="#__codelineno-84-21"></a>
-<a id="__codelineno-84-22" name="__codelineno-84-22" href="#__codelineno-84-22"></a><span class="c1">-- Lua 中的表（table）可以用来表示数组、字典（键值对）等数据结构</span>
-<a id="__codelineno-84-23" name="__codelineno-84-23" href="#__codelineno-84-23"></a><span class="kd">local</span><span class="w"> </span><span class="nv">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-84-24" name="__codelineno-84-24" href="#__codelineno-84-24"></a><span class="w">    </span><span class="p">{</span><span class="s2">"host"</span><span class="p">,</span><span class="w"> </span><span class="s2">"host"</span><span class="p">},</span>
-<a id="__codelineno-84-25" name="__codelineno-84-25" href="#__codelineno-84-25"></a><span class="w">    </span><span class="p">{</span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="s2">"server_addr"</span><span class="p">},</span>
-<a id="__codelineno-84-26" name="__codelineno-84-26" href="#__codelineno-84-26"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ts"</span><span class="p">,</span><span class="w"> </span><span class="s2">"msec"</span><span class="p">},</span>
-<a id="__codelineno-84-27" name="__codelineno-84-27" href="#__codelineno-84-27"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ip"</span><span class="p">,</span><span class="w"> </span><span class="s2">"remote_addr"</span><span class="p">},</span>
-<a id="__codelineno-84-28" name="__codelineno-84-28" href="#__codelineno-84-28"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ua"</span><span class="p">,</span><span class="w"> </span><span class="s2">"http_user_agent"</span><span class="p">}</span>
-<a id="__codelineno-84-29" name="__codelineno-84-29" href="#__codelineno-84-29"></a><span class="p">}</span><span class="w">  </span><span class="c1">-- 定义一个表（数组）</span>
-<a id="__codelineno-84-30" name="__codelineno-84-30" href="#__codelineno-84-30"></a><span class="kd">local</span><span class="w"> </span><span class="nv">another_map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-84-31" name="__codelineno-84-31" href="#__codelineno-84-31"></a><span class="w">    </span><span class="nv">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"www.example.com"</span><span class="p">,</span><span class="w">  </span><span class="c1">-- 或者 ["host"] = "www.example.com"</span>
-<a id="__codelineno-84-32" name="__codelineno-84-32" href="#__codelineno-84-32"></a><span class="w">    </span><span class="nv">server_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"www.example.com"</span><span class="p">,</span>
-<a id="__codelineno-84-33" name="__codelineno-84-33" href="#__codelineno-84-33"></a><span class="w">    </span><span class="nv">msec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1234567890</span><span class="p">,</span>
-<a id="__codelineno-84-34" name="__codelineno-84-34" href="#__codelineno-84-34"></a><span class="w">    </span><span class="nv">remote_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"127.0.0.1"</span><span class="p">,</span>
-<a id="__codelineno-84-35" name="__codelineno-84-35" href="#__codelineno-84-35"></a><span class="w">    </span><span class="nv">http_user_agent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Mozilla/5.0"</span>
-<a id="__codelineno-84-36" name="__codelineno-84-36" href="#__codelineno-84-36"></a><span class="p">}</span><span class="w">  </span><span class="c1">-- 定义一个表（字典）</span>
-<a id="__codelineno-84-37" name="__codelineno-84-37" href="#__codelineno-84-37"></a><span class="kd">local</span><span class="w"> </span><span class="nv">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-84-38" name="__codelineno-84-38" href="#__codelineno-84-38"></a>
-<a id="__codelineno-84-39" name="__codelineno-84-39" href="#__codelineno-84-39"></a><span class="c1">-- 循环，使用 ipairs 遍历表，类似 Python 的 enumerate</span>
-<a id="__codelineno-84-40" name="__codelineno-84-40" href="#__codelineno-84-40"></a><span class="kr">for</span><span class="w"> </span><span class="nv">_</span><span class="p">,</span><span class="w"> </span><span class="nv">pair</span><span class="w"> </span><span class="kr">in</span><span class="w"> </span><span class="nb">ipairs</span><span class="p">(</span><span class="nv">map</span><span class="p">)</span><span class="w"> </span><span class="kr">do</span>
-<a id="__codelineno-84-41" name="__codelineno-84-41" href="#__codelineno-84-41"></a><span class="w">    </span><span class="c1">-- 使用 table.insert 向表中添加元素</span>
-<a id="__codelineno-84-42" name="__codelineno-84-42" href="#__codelineno-84-42"></a><span class="w">    </span><span class="c1">-- 使用 .. 进行字符串连接</span>
-<a id="__codelineno-84-43" name="__codelineno-84-43" href="#__codelineno-84-43"></a><span class="w">    </span><span class="c1">-- Lua 的下标从 1 开始，不是 0！</span>
-<a id="__codelineno-84-44" name="__codelineno-84-44" href="#__codelineno-84-44"></a><span class="w">    </span><span class="nb">table.insert</span><span class="p">(</span><span class="nv">result</span><span class="p">,</span><span class="w"> </span><span class="nv">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="s2">"="</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="nv">another_map</span><span class="p">[</span><span class="nv">pair</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
-<a id="__codelineno-84-45" name="__codelineno-84-45" href="#__codelineno-84-45"></a><span class="kr">end</span>
-<a id="__codelineno-84-46" name="__codelineno-84-46" href="#__codelineno-84-46"></a>
-<a id="__codelineno-84-47" name="__codelineno-84-47" href="#__codelineno-84-47"></a><span class="nb">print</span><span class="p">(</span><span class="nb">table.concat</span><span class="p">(</span><span class="nv">result</span><span class="p">,</span><span class="w"> </span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">))</span><span class="w">  </span><span class="c1">-- 使用 table.concat 将表元素连接成字符串</span>
-<a id="__codelineno-84-48" name="__codelineno-84-48" href="#__codelineno-84-48"></a>
-<a id="__codelineno-84-49" name="__codelineno-84-49" href="#__codelineno-84-49"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="nv">n</span><span class="p">)</span><span class="w">  </span><span class="c1">-- 定义函数</span>
-<a id="__codelineno-84-50" name="__codelineno-84-50" href="#__codelineno-84-50"></a><span class="w">    </span><span class="kr">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="kr">then</span>
-<a id="__codelineno-84-51" name="__codelineno-84-51" href="#__codelineno-84-51"></a><span class="w">        </span><span class="kr">return</span><span class="w"> </span><span class="mi">1</span>
-<a id="__codelineno-84-52" name="__codelineno-84-52" href="#__codelineno-84-52"></a><span class="w">    </span><span class="kr">else</span>
-<a id="__codelineno-84-53" name="__codelineno-84-53" href="#__codelineno-84-53"></a><span class="w">        </span><span class="kr">return</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
-<a id="__codelineno-84-54" name="__codelineno-84-54" href="#__codelineno-84-54"></a><span class="w">    </span><span class="kr">end</span>
-<a id="__codelineno-84-55" name="__codelineno-84-55" href="#__codelineno-84-55"></a><span class="kr">end</span>
-<a id="__codelineno-84-56" name="__codelineno-84-56" href="#__codelineno-84-56"></a>
-<a id="__codelineno-84-57" name="__codelineno-84-57" href="#__codelineno-84-57"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Factorial of 5 is "</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-85-1" name="__codelineno-85-1" href="#__codelineno-85-1"></a><span class="c1">-- 这是注释</span>
+<a id="__codelineno-85-2" name="__codelineno-85-2" href="#__codelineno-85-2"></a>
+<a id="__codelineno-85-3" name="__codelineno-85-3" href="#__codelineno-85-3"></a><span class="kd">local</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"1.0"</span><span class="w">  </span><span class="c1">-- 使用 local 定义局部变量</span>
+<a id="__codelineno-85-4" name="__codelineno-85-4" href="#__codelineno-85-4"></a><span class="kr">if</span><span class="w"> </span><span class="nv">version</span><span class="w"> </span><span class="o">~=</span><span class="w"> </span><span class="s2">"1.0"</span><span class="w"> </span><span class="kr">then</span><span class="w">  </span><span class="c1">-- ~= 表示不等于</span>
+<a id="__codelineno-85-5" name="__codelineno-85-5" href="#__codelineno-85-5"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Version is not 1.0"</span><span class="p">)</span>
+<a id="__codelineno-85-6" name="__codelineno-85-6" href="#__codelineno-85-6"></a><span class="kr">else</span>
+<a id="__codelineno-85-7" name="__codelineno-85-7" href="#__codelineno-85-7"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Version is 1.0"</span><span class="p">)</span>
+<a id="__codelineno-85-8" name="__codelineno-85-8" href="#__codelineno-85-8"></a><span class="kr">end</span>
+<a id="__codelineno-85-9" name="__codelineno-85-9" href="#__codelineno-85-9"></a><span class="kr">if</span><span class="w"> </span><span class="nv">something_not_defined</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="kr">then</span><span class="w">  </span><span class="c1">-- nil 表示空值/未定义</span>
+<a id="__codelineno-85-10" name="__codelineno-85-10" href="#__codelineno-85-10"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"A nil variable"</span><span class="p">)</span>
+<a id="__codelineno-85-11" name="__codelineno-85-11" href="#__codelineno-85-11"></a><span class="kr">end</span>
+<a id="__codelineno-85-12" name="__codelineno-85-12" href="#__codelineno-85-12"></a>
+<a id="__codelineno-85-13" name="__codelineno-85-13" href="#__codelineno-85-13"></a><span class="c1">-- 字符串正则匹配与替换</span>
+<a id="__codelineno-85-14" name="__codelineno-85-14" href="#__codelineno-85-14"></a><span class="kd">local</span><span class="w"> </span><span class="nv">str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Hello, Lua 123!"</span>
+<a id="__codelineno-85-15" name="__codelineno-85-15" href="#__codelineno-85-15"></a><span class="kd">local</span><span class="w"> </span><span class="nv">match</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">string.match</span><span class="p">(</span><span class="nv">str</span><span class="p">,</span><span class="w"> </span><span class="s2">"%d+"</span><span class="p">)</span>
+<a id="__codelineno-85-16" name="__codelineno-85-16" href="#__codelineno-85-16"></a><span class="kd">local</span><span class="w"> </span><span class="nv">match_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">str</span><span class="p">:</span><span class="nf">match</span><span class="p">(</span><span class="s2">"%d+"</span><span class="p">)</span><span class="w">  </span><span class="c1">-- 冒号语法糖，等价于 str.match(str, pattern)</span>
+<a id="__codelineno-85-17" name="__codelineno-85-17" href="#__codelineno-85-17"></a><span class="kd">local</span><span class="w"> </span><span class="nv">new_str</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">str</span><span class="p">:</span><span class="nf">gsub</span><span class="p">(</span><span class="s2">"%d+"</span><span class="p">,</span><span class="w"> </span><span class="s2">"456"</span><span class="p">):</span><span class="nf">lower</span><span class="p">()</span><span class="w">  </span><span class="c1">-- gsub 替换，lower 转小写</span>
+<a id="__codelineno-85-18" name="__codelineno-85-18" href="#__codelineno-85-18"></a><span class="nb">assert</span><span class="p">(</span><span class="nv">match</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nv">match_2</span><span class="p">,</span><span class="w"> </span><span class="s2">"Matches should be equal"</span><span class="p">)</span>
+<a id="__codelineno-85-19" name="__codelineno-85-19" href="#__codelineno-85-19"></a><span class="nb">print</span><span class="p">(</span><span class="nv">match</span><span class="p">)</span>
+<a id="__codelineno-85-20" name="__codelineno-85-20" href="#__codelineno-85-20"></a><span class="nb">print</span><span class="p">(</span><span class="nv">new_str</span><span class="p">)</span>
+<a id="__codelineno-85-21" name="__codelineno-85-21" href="#__codelineno-85-21"></a>
+<a id="__codelineno-85-22" name="__codelineno-85-22" href="#__codelineno-85-22"></a><span class="c1">-- Lua 中的表（table）可以用来表示数组、字典（键值对）等数据结构</span>
+<a id="__codelineno-85-23" name="__codelineno-85-23" href="#__codelineno-85-23"></a><span class="kd">local</span><span class="w"> </span><span class="nv">map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-85-24" name="__codelineno-85-24" href="#__codelineno-85-24"></a><span class="w">    </span><span class="p">{</span><span class="s2">"host"</span><span class="p">,</span><span class="w"> </span><span class="s2">"host"</span><span class="p">},</span>
+<a id="__codelineno-85-25" name="__codelineno-85-25" href="#__codelineno-85-25"></a><span class="w">    </span><span class="p">{</span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="s2">"server_addr"</span><span class="p">},</span>
+<a id="__codelineno-85-26" name="__codelineno-85-26" href="#__codelineno-85-26"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ts"</span><span class="p">,</span><span class="w"> </span><span class="s2">"msec"</span><span class="p">},</span>
+<a id="__codelineno-85-27" name="__codelineno-85-27" href="#__codelineno-85-27"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ip"</span><span class="p">,</span><span class="w"> </span><span class="s2">"remote_addr"</span><span class="p">},</span>
+<a id="__codelineno-85-28" name="__codelineno-85-28" href="#__codelineno-85-28"></a><span class="w">    </span><span class="p">{</span><span class="s2">"ua"</span><span class="p">,</span><span class="w"> </span><span class="s2">"http_user_agent"</span><span class="p">}</span>
+<a id="__codelineno-85-29" name="__codelineno-85-29" href="#__codelineno-85-29"></a><span class="p">}</span><span class="w">  </span><span class="c1">-- 定义一个表（数组）</span>
+<a id="__codelineno-85-30" name="__codelineno-85-30" href="#__codelineno-85-30"></a><span class="kd">local</span><span class="w"> </span><span class="nv">another_map</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-85-31" name="__codelineno-85-31" href="#__codelineno-85-31"></a><span class="w">    </span><span class="nv">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"www.example.com"</span><span class="p">,</span><span class="w">  </span><span class="c1">-- 或者 ["host"] = "www.example.com"</span>
+<a id="__codelineno-85-32" name="__codelineno-85-32" href="#__codelineno-85-32"></a><span class="w">    </span><span class="nv">server_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"www.example.com"</span><span class="p">,</span>
+<a id="__codelineno-85-33" name="__codelineno-85-33" href="#__codelineno-85-33"></a><span class="w">    </span><span class="nv">msec</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1234567890</span><span class="p">,</span>
+<a id="__codelineno-85-34" name="__codelineno-85-34" href="#__codelineno-85-34"></a><span class="w">    </span><span class="nv">remote_addr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"127.0.0.1"</span><span class="p">,</span>
+<a id="__codelineno-85-35" name="__codelineno-85-35" href="#__codelineno-85-35"></a><span class="w">    </span><span class="nv">http_user_agent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Mozilla/5.0"</span>
+<a id="__codelineno-85-36" name="__codelineno-85-36" href="#__codelineno-85-36"></a><span class="p">}</span><span class="w">  </span><span class="c1">-- 定义一个表（字典）</span>
+<a id="__codelineno-85-37" name="__codelineno-85-37" href="#__codelineno-85-37"></a><span class="kd">local</span><span class="w"> </span><span class="nv">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-85-38" name="__codelineno-85-38" href="#__codelineno-85-38"></a>
+<a id="__codelineno-85-39" name="__codelineno-85-39" href="#__codelineno-85-39"></a><span class="c1">-- 循环，使用 ipairs 遍历表，类似 Python 的 enumerate</span>
+<a id="__codelineno-85-40" name="__codelineno-85-40" href="#__codelineno-85-40"></a><span class="kr">for</span><span class="w"> </span><span class="nv">_</span><span class="p">,</span><span class="w"> </span><span class="nv">pair</span><span class="w"> </span><span class="kr">in</span><span class="w"> </span><span class="nb">ipairs</span><span class="p">(</span><span class="nv">map</span><span class="p">)</span><span class="w"> </span><span class="kr">do</span>
+<a id="__codelineno-85-41" name="__codelineno-85-41" href="#__codelineno-85-41"></a><span class="w">    </span><span class="c1">-- 使用 table.insert 向表中添加元素</span>
+<a id="__codelineno-85-42" name="__codelineno-85-42" href="#__codelineno-85-42"></a><span class="w">    </span><span class="c1">-- 使用 .. 进行字符串连接</span>
+<a id="__codelineno-85-43" name="__codelineno-85-43" href="#__codelineno-85-43"></a><span class="w">    </span><span class="c1">-- Lua 的下标从 1 开始，不是 0！</span>
+<a id="__codelineno-85-44" name="__codelineno-85-44" href="#__codelineno-85-44"></a><span class="w">    </span><span class="nb">table.insert</span><span class="p">(</span><span class="nv">result</span><span class="p">,</span><span class="w"> </span><span class="nv">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="s2">"="</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="nv">another_map</span><span class="p">[</span><span class="nv">pair</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+<a id="__codelineno-85-45" name="__codelineno-85-45" href="#__codelineno-85-45"></a><span class="kr">end</span>
+<a id="__codelineno-85-46" name="__codelineno-85-46" href="#__codelineno-85-46"></a>
+<a id="__codelineno-85-47" name="__codelineno-85-47" href="#__codelineno-85-47"></a><span class="nb">print</span><span class="p">(</span><span class="nb">table.concat</span><span class="p">(</span><span class="nv">result</span><span class="p">,</span><span class="w"> </span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">))</span><span class="w">  </span><span class="c1">-- 使用 table.concat 将表元素连接成字符串</span>
+<a id="__codelineno-85-48" name="__codelineno-85-48" href="#__codelineno-85-48"></a>
+<a id="__codelineno-85-49" name="__codelineno-85-49" href="#__codelineno-85-49"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="nv">n</span><span class="p">)</span><span class="w">  </span><span class="c1">-- 定义函数</span>
+<a id="__codelineno-85-50" name="__codelineno-85-50" href="#__codelineno-85-50"></a><span class="w">    </span><span class="kr">if</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="kr">then</span>
+<a id="__codelineno-85-51" name="__codelineno-85-51" href="#__codelineno-85-51"></a><span class="w">        </span><span class="kr">return</span><span class="w"> </span><span class="mi">1</span>
+<a id="__codelineno-85-52" name="__codelineno-85-52" href="#__codelineno-85-52"></a><span class="w">    </span><span class="kr">else</span>
+<a id="__codelineno-85-53" name="__codelineno-85-53" href="#__codelineno-85-53"></a><span class="w">        </span><span class="kr">return</span><span class="w"> </span><span class="nv">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="nv">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<a id="__codelineno-85-54" name="__codelineno-85-54" href="#__codelineno-85-54"></a><span class="w">    </span><span class="kr">end</span>
+<a id="__codelineno-85-55" name="__codelineno-85-55" href="#__codelineno-85-55"></a><span class="kr">end</span>
+<a id="__codelineno-85-56" name="__codelineno-85-56" href="#__codelineno-85-56"></a>
+<a id="__codelineno-85-57" name="__codelineno-85-57" href="#__codelineno-85-57"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"Factorial of 5 is "</span><span class="w"> </span><span class="o">..</span><span class="w"> </span><span class="nf">factorial</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
 </code></pre></div>
 <h4 id="lua-modules">Lua 模块<a class="headerlink" href="#lua-modules" title="Permanent link">&para;</a></h4>
 <p>最简单的代码复用的方式是使用 <code>loadfile()</code> 函数直接加载另一个 Lua 脚本文件：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-85-1" name="__codelineno-85-1" href="#__codelineno-85-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">loadfile</span><span class="p">(</span><span class="s2">"some_script.lua"</span><span class="p">)</span>
-<a id="__codelineno-85-2" name="__codelineno-85-2" href="#__codelineno-85-2"></a><span class="kr">if</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="kr">then</span>
-<a id="__codelineno-85-3" name="__codelineno-85-3" href="#__codelineno-85-3"></a><span class="w">    </span><span class="nf">f</span><span class="p">()</span><span class="w"> </span><span class="c1">-- 执行加载的脚本</span>
-<a id="__codelineno-85-4" name="__codelineno-85-4" href="#__codelineno-85-4"></a><span class="kr">else</span>
-<a id="__codelineno-85-5" name="__codelineno-85-5" href="#__codelineno-85-5"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Failed to load some_script.lua"</span><span class="p">)</span>
-<a id="__codelineno-85-6" name="__codelineno-85-6" href="#__codelineno-85-6"></a><span class="kr">end</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-86-1" name="__codelineno-86-1" href="#__codelineno-86-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">loadfile</span><span class="p">(</span><span class="s2">"some_script.lua"</span><span class="p">)</span>
+<a id="__codelineno-86-2" name="__codelineno-86-2" href="#__codelineno-86-2"></a><span class="kr">if</span><span class="w"> </span><span class="nv">f</span><span class="w"> </span><span class="kr">then</span>
+<a id="__codelineno-86-3" name="__codelineno-86-3" href="#__codelineno-86-3"></a><span class="w">    </span><span class="nf">f</span><span class="p">()</span><span class="w"> </span><span class="c1">-- 执行加载的脚本</span>
+<a id="__codelineno-86-4" name="__codelineno-86-4" href="#__codelineno-86-4"></a><span class="kr">else</span>
+<a id="__codelineno-86-5" name="__codelineno-86-5" href="#__codelineno-86-5"></a><span class="w">    </span><span class="nb">print</span><span class="p">(</span><span class="s2">"Failed to load some_script.lua"</span><span class="p">)</span>
+<a id="__codelineno-86-6" name="__codelineno-86-6" href="#__codelineno-86-6"></a><span class="kr">end</span>
 </code></pre></div>
 <p>但是这样做存在很多问题：每次调用 <code>loadfile</code> 都会重新加载，并且无法利用到 LuaJIT 的编译缓存机制。因此更推荐的做法是包装成 Lua 模块，然后使用 <code>require</code> 导入。以下是调用 cjson 模块解析 JSON 的示例：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-86-1" name="__codelineno-86-1" href="#__codelineno-86-1"></a><span class="c1">-- 导入 cjson 模块用于处理 JSON</span>
-<a id="__codelineno-86-2" name="__codelineno-86-2" href="#__codelineno-86-2"></a><span class="c1">-- Debian 下包为 lua-cjson</span>
-<a id="__codelineno-86-3" name="__codelineno-86-3" href="#__codelineno-86-3"></a><span class="kd">local</span><span class="w"> </span><span class="nv">cjson</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="w"> </span><span class="s2">"cjson"</span>
-<a id="__codelineno-86-4" name="__codelineno-86-4" href="#__codelineno-86-4"></a><span class="kd">local</span><span class="w"> </span><span class="nv">example</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"{</span><span class="se">\"</span><span class="s2">key1</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">value1</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">key2</span><span class="se">\"</span><span class="s2">:2}"</span>
-<a id="__codelineno-86-5" name="__codelineno-86-5" href="#__codelineno-86-5"></a><span class="kd">local</span><span class="w"> </span><span class="nv">decoded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">cjson</span><span class="p">.</span><span class="nf">decode</span><span class="p">(</span><span class="nv">example</span><span class="p">)</span>
-<a id="__codelineno-86-6" name="__codelineno-86-6" href="#__codelineno-86-6"></a><span class="nb">print</span><span class="p">(</span><span class="nv">decoded</span><span class="p">[</span><span class="s2">"key1"</span><span class="p">])</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a><span class="c1">-- 导入 cjson 模块用于处理 JSON</span>
+<a id="__codelineno-87-2" name="__codelineno-87-2" href="#__codelineno-87-2"></a><span class="c1">-- Debian 下包为 lua-cjson</span>
+<a id="__codelineno-87-3" name="__codelineno-87-3" href="#__codelineno-87-3"></a><span class="kd">local</span><span class="w"> </span><span class="nv">cjson</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">require</span><span class="w"> </span><span class="s2">"cjson"</span>
+<a id="__codelineno-87-4" name="__codelineno-87-4" href="#__codelineno-87-4"></a><span class="kd">local</span><span class="w"> </span><span class="nv">example</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"{</span><span class="se">\"</span><span class="s2">key1</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">value1</span><span class="se">\"</span><span class="s2">,</span><span class="se">\"</span><span class="s2">key2</span><span class="se">\"</span><span class="s2">:2}"</span>
+<a id="__codelineno-87-5" name="__codelineno-87-5" href="#__codelineno-87-5"></a><span class="kd">local</span><span class="w"> </span><span class="nv">decoded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">cjson</span><span class="p">.</span><span class="nf">decode</span><span class="p">(</span><span class="nv">example</span><span class="p">)</span>
+<a id="__codelineno-87-6" name="__codelineno-87-6" href="#__codelineno-87-6"></a><span class="nb">print</span><span class="p">(</span><span class="nv">decoded</span><span class="p">[</span><span class="s2">"key1"</span><span class="p">])</span>
 </code></pre></div>
 <p>为了包装为模块，Lua 代码需要小幅修改。一个非常简单的模块示例如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-87-1" name="__codelineno-87-1" href="#__codelineno-87-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">_M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-87-2" name="__codelineno-87-2" href="#__codelineno-87-2"></a>
-<a id="__codelineno-87-3" name="__codelineno-87-3" href="#__codelineno-87-3"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
-<a id="__codelineno-87-4" name="__codelineno-87-4" href="#__codelineno-87-4"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span>
-<a id="__codelineno-87-5" name="__codelineno-87-5" href="#__codelineno-87-5"></a><span class="kr">end</span>
-<a id="__codelineno-87-6" name="__codelineno-87-6" href="#__codelineno-87-6"></a>
-<a id="__codelineno-87-7" name="__codelineno-87-7" href="#__codelineno-87-7"></a><span class="kr">function</span><span class="w"> </span><span class="nc">_M</span><span class="p">.</span><span class="nf">double_plus</span><span class="p">(</span><span class="nv">a</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
-<a id="__codelineno-87-8" name="__codelineno-87-8" href="#__codelineno-87-8"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
-<a id="__codelineno-87-9" name="__codelineno-87-9" href="#__codelineno-87-9"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">bb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">b</span><span class="p">)</span>
-<a id="__codelineno-87-10" name="__codelineno-87-10" href="#__codelineno-87-10"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">bb</span>
-<a id="__codelineno-87-11" name="__codelineno-87-11" href="#__codelineno-87-11"></a><span class="kr">end</span>
-<a id="__codelineno-87-12" name="__codelineno-87-12" href="#__codelineno-87-12"></a>
-<a id="__codelineno-87-13" name="__codelineno-87-13" href="#__codelineno-87-13"></a><span class="kr">return</span><span class="w"> </span><span class="nv">_M</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="kd">local</span><span class="w"> </span><span class="nv">_M</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a>
+<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="kd">local</span><span class="w"> </span><span class="kr">function</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
+<a id="__codelineno-88-4" name="__codelineno-88-4" href="#__codelineno-88-4"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">a</span>
+<a id="__codelineno-88-5" name="__codelineno-88-5" href="#__codelineno-88-5"></a><span class="kr">end</span>
+<a id="__codelineno-88-6" name="__codelineno-88-6" href="#__codelineno-88-6"></a>
+<a id="__codelineno-88-7" name="__codelineno-88-7" href="#__codelineno-88-7"></a><span class="kr">function</span><span class="w"> </span><span class="nc">_M</span><span class="p">.</span><span class="nf">double_plus</span><span class="p">(</span><span class="nv">a</span><span class="p">,</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
+<a id="__codelineno-88-8" name="__codelineno-88-8" href="#__codelineno-88-8"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">a</span><span class="p">)</span>
+<a id="__codelineno-88-9" name="__codelineno-88-9" href="#__codelineno-88-9"></a><span class="w">    </span><span class="kd">local</span><span class="w"> </span><span class="nv">bb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">double_var</span><span class="p">(</span><span class="nv">b</span><span class="p">)</span>
+<a id="__codelineno-88-10" name="__codelineno-88-10" href="#__codelineno-88-10"></a><span class="w">    </span><span class="kr">return</span><span class="w"> </span><span class="nv">aa</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">bb</span>
+<a id="__codelineno-88-11" name="__codelineno-88-11" href="#__codelineno-88-11"></a><span class="kr">end</span>
+<a id="__codelineno-88-12" name="__codelineno-88-12" href="#__codelineno-88-12"></a>
+<a id="__codelineno-88-13" name="__codelineno-88-13" href="#__codelineno-88-13"></a><span class="kr">return</span><span class="w"> </span><span class="nv">_M</span>
 </code></pre></div>
 <h3 id="lua-installation-configuration">Nginx 中 Lua 的安装配置<a class="headerlink" href="#lua-installation-configuration" title="Permanent link">&para;</a></h3>
 <p>要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。如果不希望使用 OpenResty，也可以自行安装 Lua 模块（<code>libnginx-mod-http-lua</code> 包）。安装此包后，<code>/etc/nginx/modules-enabled/</code> 会自动引入对应的配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-88-1" name="__codelineno-88-1" href="#__codelineno-88-1"></a><span class="gp">$ </span>readlink<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
-<a id="__codelineno-88-2" name="__codelineno-88-2" href="#__codelineno-88-2"></a><span class="go">/usr/share/nginx/modules-available/mod-http-lua.conf</span>
-<a id="__codelineno-88-3" name="__codelineno-88-3" href="#__codelineno-88-3"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
-<a id="__codelineno-88-4" name="__codelineno-88-4" href="#__codelineno-88-4"></a><span class="go">load_module modules/ngx_http_lua_module.so;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a><span class="gp">$ </span>readlink<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
+<a id="__codelineno-89-2" name="__codelineno-89-2" href="#__codelineno-89-2"></a><span class="go">/usr/share/nginx/modules-available/mod-http-lua.conf</span>
+<a id="__codelineno-89-3" name="__codelineno-89-3" href="#__codelineno-89-3"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
+<a id="__codelineno-89-4" name="__codelineno-89-4" href="#__codelineno-89-4"></a><span class="go">load_module modules/ngx_http_lua_module.so;</span>
 </code></pre></div>
 <p>与 <code>sites-enabled</code> 类似，<code>modules-enabled</code> 目录下的配置文件会被 Nginx 主配置文件自动包含。配置后可以使用以下 <code>location</code> 测试：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-89-1" name="__codelineno-89-1" href="#__codelineno-89-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-89-2" name="__codelineno-89-2" href="#__codelineno-89-2"></a><span class="w">    </span><span class="kn">content_by_lua_block</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-89-3" name="__codelineno-89-3" href="#__codelineno-89-3"></a><span class="w">        </span><span class="kn">ngx.say("Hello,</span><span class="w"> </span><span class="s">world!")</span>
-<a id="__codelineno-89-4" name="__codelineno-89-4" href="#__codelineno-89-4"></a><span class="w">    </span><span class="err">}</span>
-<a id="__codelineno-89-5" name="__codelineno-89-5" href="#__codelineno-89-5"></a><span class="err">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-90-2" name="__codelineno-90-2" href="#__codelineno-90-2"></a><span class="w">    </span><span class="kn">content_by_lua_block</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-90-3" name="__codelineno-90-3" href="#__codelineno-90-3"></a><span class="w">        </span><span class="kn">ngx.say("Hello,</span><span class="w"> </span><span class="s">world!")</span>
+<a id="__codelineno-90-4" name="__codelineno-90-4" href="#__codelineno-90-4"></a><span class="w">    </span><span class="err">}</span>
+<a id="__codelineno-90-5" name="__codelineno-90-5" href="#__codelineno-90-5"></a><span class="err">}</span>
 </code></pre></div>
 <p>其中 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#content_by_lua_block"><code>content_by_lua_block</code></a> 控制了请求的响应内容，而 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxsay"><code>ngx.say</code></a> 则会直接向响应中写入内容。</p>
 <h3 id="execution-phases">执行阶段<a class="headerlink" href="#execution-phases" title="Permanent link">&para;</a></h3>
@@ -5494,21 +5510,21 @@
 </figure>
 <p>有关 Nginx 处理请求的各个阶段的介绍，可以参考 <a href="https://nginx.org/en/docs/dev/development_guide.html#http_phases">Nginx 的 Development guide</a>。</p>
 <p>如果不熟悉相关的阶段的话，那么在写代码的时候可能会遇到非预期的行为。这是一个我们实际遇到的例子：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-90-1" name="__codelineno-90-1" href="#__codelineno-90-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-90-2" name="__codelineno-90-2" href="#__codelineno-90-2"></a><span class="w">    </span><span class="c1"># ...</span>
-<a id="__codelineno-90-3" name="__codelineno-90-3" href="#__codelineno-90-3"></a>
-<a id="__codelineno-90-4" name="__codelineno-90-4" href="#__codelineno-90-4"></a><span class="w">    </span><span class="kn">access_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/access.lua</span><span class="p">;</span>
-<a id="__codelineno-90-5" name="__codelineno-90-5" href="#__codelineno-90-5"></a><span class="w">    </span><span class="kn">header_filter_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/header_filter.lua</span><span class="p">;</span>
-<a id="__codelineno-90-6" name="__codelineno-90-6" href="#__codelineno-90-6"></a><span class="w">    </span><span class="kn">log_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/log.lua</span><span class="p">;</span>
-<a id="__codelineno-90-7" name="__codelineno-90-7" href="#__codelineno-90-7"></a>
-<a id="__codelineno-90-8" name="__codelineno-90-8" href="#__codelineno-90-8"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test0</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-90-9" name="__codelineno-90-9" href="#__codelineno-90-9"></a><span class="w">        </span><span class="kn">return</span><span class="w"> </span><span class="mi">200</span><span class="p">;</span>
-<a id="__codelineno-90-10" name="__codelineno-90-10" href="#__codelineno-90-10"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-90-11" name="__codelineno-90-11" href="#__codelineno-90-11"></a>
-<a id="__codelineno-90-12" name="__codelineno-90-12" href="#__codelineno-90-12"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test1</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-90-13" name="__codelineno-90-13" href="#__codelineno-90-13"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
-<a id="__codelineno-90-14" name="__codelineno-90-14" href="#__codelineno-90-14"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-90-15" name="__codelineno-90-15" href="#__codelineno-90-15"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-91-1" name="__codelineno-91-1" href="#__codelineno-91-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-91-2" name="__codelineno-91-2" href="#__codelineno-91-2"></a><span class="w">    </span><span class="c1"># ...</span>
+<a id="__codelineno-91-3" name="__codelineno-91-3" href="#__codelineno-91-3"></a>
+<a id="__codelineno-91-4" name="__codelineno-91-4" href="#__codelineno-91-4"></a><span class="w">    </span><span class="kn">access_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/access.lua</span><span class="p">;</span>
+<a id="__codelineno-91-5" name="__codelineno-91-5" href="#__codelineno-91-5"></a><span class="w">    </span><span class="kn">header_filter_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/header_filter.lua</span><span class="p">;</span>
+<a id="__codelineno-91-6" name="__codelineno-91-6" href="#__codelineno-91-6"></a><span class="w">    </span><span class="kn">log_by_lua_file</span><span class="w"> </span><span class="s">/etc/nginx/lua/log.lua</span><span class="p">;</span>
+<a id="__codelineno-91-7" name="__codelineno-91-7" href="#__codelineno-91-7"></a>
+<a id="__codelineno-91-8" name="__codelineno-91-8" href="#__codelineno-91-8"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test0</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-91-9" name="__codelineno-91-9" href="#__codelineno-91-9"></a><span class="w">        </span><span class="kn">return</span><span class="w"> </span><span class="mi">200</span><span class="p">;</span>
+<a id="__codelineno-91-10" name="__codelineno-91-10" href="#__codelineno-91-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-91-11" name="__codelineno-91-11" href="#__codelineno-91-11"></a>
+<a id="__codelineno-91-12" name="__codelineno-91-12" href="#__codelineno-91-12"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/lua-test1</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-91-13" name="__codelineno-91-13" href="#__codelineno-91-13"></a><span class="w">        </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
+<a id="__codelineno-91-14" name="__codelineno-91-14" href="#__codelineno-91-14"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-91-15" name="__codelineno-91-15" href="#__codelineno-91-15"></a><span class="p">}</span>
 </code></pre></div>
 <p>那么在访问 <code>/lua-test0</code> 的时候，上面三个 Lua 脚本都会被执行吗？<code>/lua-test1</code> 呢？答案是：对 <code>/lua-test1</code>，这三个脚本都会被执行，但是对 <code>/lua-test0</code>，<code>access_by_lua_file</code> 不会被执行，其他两个会。这是因为 <code>return</code> 在 rewrite 阶段执行重定向，结束了对请求的处理，因此后面的 access 阶段的脚本不会被执行。但是 header_filter（输出过滤的一部分，未在 Phase 中列出，但是会在 content 生成后，发送数据前执行）和 log（日志记录）阶段仍然会被执行，因此就产生了和上图矛盾的现象。</p>
 <h3 id="storing-state">存储与共享状态<a class="headerlink" href="#storing-state" title="Permanent link">&para;</a></h3>
@@ -5520,17 +5536,17 @@
 <p>以下介绍 Lua 模块提供解决方案。</p>
 <h4 id="ngx-ctx-ngx-var"><code>ngx.ctx</code> 与 <code>ngx.var</code><a class="headerlink" href="#ngx-ctx-ngx-var" title="Permanent link">&para;</a></h4>
 <p><a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxctx"><code>ngx.ctx</code></a> 是可以存储任意 Lua 变量的表，在当前请求有效。使用方法类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-91-1" name="__codelineno-91-1" href="#__codelineno-91-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/example</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-91-2" name="__codelineno-91-2" href="#__codelineno-91-2"></a><span class="w">    </span><span class="kn">access_by_lua_block</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-91-3" name="__codelineno-91-3" href="#__codelineno-91-3"></a><span class="w">        </span><span class="kn">ngx.ctx.start_time</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span>
-<a id="__codelineno-91-4" name="__codelineno-91-4" href="#__codelineno-91-4"></a><span class="w">        </span><span class="s">ngx.sleep(0.1)</span>
-<a id="__codelineno-91-5" name="__codelineno-91-5" href="#__codelineno-91-5"></a><span class="w">    </span><span class="err">}</span>
-<a id="__codelineno-91-6" name="__codelineno-91-6" href="#__codelineno-91-6"></a>
-<a id="__codelineno-91-7" name="__codelineno-91-7" href="#__codelineno-91-7"></a><span class="w">    </span><span class="s">log_by_lua_block</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-91-8" name="__codelineno-91-8" href="#__codelineno-91-8"></a><span class="w">        </span><span class="kn">local</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span><span class="w"> </span><span class="s">-</span><span class="w"> </span><span class="s">ngx.ctx.start_time</span>
-<a id="__codelineno-91-9" name="__codelineno-91-9" href="#__codelineno-91-9"></a><span class="w">        </span><span class="s">ngx.log(ngx.ERR,</span><span class="w"> </span><span class="s">"Request</span><span class="w"> </span><span class="s">took</span><span class="w"> </span><span class="s">"</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">"</span><span class="w"> </span><span class="s">seconds")</span>
-<a id="__codelineno-91-10" name="__codelineno-91-10" href="#__codelineno-91-10"></a><span class="w">    </span><span class="err">}</span>
-<a id="__codelineno-91-11" name="__codelineno-91-11" href="#__codelineno-91-11"></a><span class="err">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-92-1" name="__codelineno-92-1" href="#__codelineno-92-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/example</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-92-2" name="__codelineno-92-2" href="#__codelineno-92-2"></a><span class="w">    </span><span class="kn">access_by_lua_block</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-92-3" name="__codelineno-92-3" href="#__codelineno-92-3"></a><span class="w">        </span><span class="kn">ngx.ctx.start_time</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span>
+<a id="__codelineno-92-4" name="__codelineno-92-4" href="#__codelineno-92-4"></a><span class="w">        </span><span class="s">ngx.sleep(0.1)</span>
+<a id="__codelineno-92-5" name="__codelineno-92-5" href="#__codelineno-92-5"></a><span class="w">    </span><span class="err">}</span>
+<a id="__codelineno-92-6" name="__codelineno-92-6" href="#__codelineno-92-6"></a>
+<a id="__codelineno-92-7" name="__codelineno-92-7" href="#__codelineno-92-7"></a><span class="w">    </span><span class="s">log_by_lua_block</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-92-8" name="__codelineno-92-8" href="#__codelineno-92-8"></a><span class="w">        </span><span class="kn">local</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">ngx.now()</span><span class="w"> </span><span class="s">-</span><span class="w"> </span><span class="s">ngx.ctx.start_time</span>
+<a id="__codelineno-92-9" name="__codelineno-92-9" href="#__codelineno-92-9"></a><span class="w">        </span><span class="s">ngx.log(ngx.ERR,</span><span class="w"> </span><span class="s">"Request</span><span class="w"> </span><span class="s">took</span><span class="w"> </span><span class="s">"</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">duration</span><span class="w"> </span><span class="s">..</span><span class="w"> </span><span class="s">"</span><span class="w"> </span><span class="s">seconds")</span>
+<a id="__codelineno-92-10" name="__codelineno-92-10" href="#__codelineno-92-10"></a><span class="w">    </span><span class="err">}</span>
+<a id="__codelineno-92-11" name="__codelineno-92-11" href="#__codelineno-92-11"></a><span class="err">}</span>
 </code></pre></div>
 <p>可以看到，这里在 access 阶段存储了请求的开始时间，并在 log 阶段计算并输出了请求的持续时间。</p>
 <p>不过有一个无法忽视的问题是：如果请求使用了内部跳转（internal redirect，例如 <code>try_files</code>、<code>error_page</code>、<code>index</code>），那么 <code>ngx.ctx</code> 会被清空。因此，退而求其次，需要使用 Nginx 的变量机制来存储数据。可以使用 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxvarvariable"><code>ngx.var.VARIABLE</code></a> 来访问 Nginx 变量，不过 <code>ngx.var</code> 相比 <code>ngx.ctx</code> 有一些限制：</p>
@@ -5543,9 +5559,9 @@
 <p>对于需要使用 <code>ngx.var</code> 存储复杂 Lua 变量的场景，可以使用第三方的 <a href="https://github.com/tokers/lua-resty-ctxdump/">lua-resty-ctxdump</a>。其原理是：将实际内容保存在模块内部的 <code>memo</code> 表中，而需要存储在 <code>ngx.var</code> 里面的只是 <code>memo</code> 表的 key（数字）。</p>
 <h4 id="shared-dict">共享 dict<a class="headerlink" href="#shared-dict" title="Permanent link">&para;</a></h4>
 <p>针对不同的工作进程之间需要共享状态的场景（例如统计某个 <code>location</code> 的访问状态），Lua 模块提供了 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#lua_shared_dict"><code>lua_shared_dict</code></a> 指令，可以在 <code>http</code> 块中定义一个共享 dict 区域：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-92-1" name="__codelineno-92-1" href="#__codelineno-92-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-92-2" name="__codelineno-92-2" href="#__codelineno-92-2"></a><span class="w">    </span><span class="kn">lua_shared_dict</span><span class="w"> </span><span class="s">my_cache</span><span class="w"> </span><span class="mi">10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># 定义一个名字为 my_cache 的共享 dict，大小 10M。</span>
-<a id="__codelineno-92-3" name="__codelineno-92-3" href="#__codelineno-92-3"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-93-1" name="__codelineno-93-1" href="#__codelineno-93-1"></a><span class="k">http</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-93-2" name="__codelineno-93-2" href="#__codelineno-93-2"></a><span class="w">    </span><span class="kn">lua_shared_dict</span><span class="w"> </span><span class="s">my_cache</span><span class="w"> </span><span class="mi">10m</span><span class="p">;</span><span class="w">  </span><span class="c1"># 定义一个名字为 my_cache 的共享 dict，大小 10M。</span>
+<a id="__codelineno-93-3" name="__codelineno-93-3" href="#__codelineno-93-3"></a><span class="p">}</span>
 </code></pre></div>
 <p>在 Lua 代码中使用 <a href="https://github.com/openresty/lua-nginx-module?tab=readme-ov-file#ngxshareddict"><code>ngx.shared.DICT</code></a> 调用。</p>
 <div class="admonition lab" id="shared-dict-space">
@@ -5569,33 +5585,33 @@
 
 比如上面的例子，就可以通过下面的配置实现反向代理：
 
-<div class="highlight"><pre><span></span><code><a id="__codelineno-93-1" name="__codelineno-93-1" href="#__codelineno-93-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-93-2" name="__codelineno-93-2" href="#__codelineno-93-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-93-3" name="__codelineno-93-3" href="#__codelineno-93-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-93-4" name="__codelineno-93-4" href="#__codelineno-93-4"></a>
-<a id="__codelineno-93-5" name="__codelineno-93-5" href="#__codelineno-93-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-93-6" name="__codelineno-93-6" href="#__codelineno-93-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-93-7" name="__codelineno-93-7" href="#__codelineno-93-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-93-8" name="__codelineno-93-8" href="#__codelineno-93-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-93-9" name="__codelineno-93-9" href="#__codelineno-93-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-93-10" name="__codelineno-93-10" href="#__codelineno-93-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-93-11" name="__codelineno-93-11" href="#__codelineno-93-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-93-12" name="__codelineno-93-12" href="#__codelineno-93-12"></a><span class="p">}</span>
-<a id="__codelineno-93-13" name="__codelineno-93-13" href="#__codelineno-93-13"></a>
-<a id="__codelineno-93-14" name="__codelineno-93-14" href="#__codelineno-93-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-93-15" name="__codelineno-93-15" href="#__codelineno-93-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
-<a id="__codelineno-93-16" name="__codelineno-93-16" href="#__codelineno-93-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
-<a id="__codelineno-93-17" name="__codelineno-93-17" href="#__codelineno-93-17"></a>
-<a id="__codelineno-93-18" name="__codelineno-93-18" href="#__codelineno-93-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-93-19" name="__codelineno-93-19" href="#__codelineno-93-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
-<a id="__codelineno-93-20" name="__codelineno-93-20" href="#__codelineno-93-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
-<a id="__codelineno-93-21" name="__codelineno-93-21" href="#__codelineno-93-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
-<a id="__codelineno-93-22" name="__codelineno-93-22" href="#__codelineno-93-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
-<a id="__codelineno-93-23" name="__codelineno-93-23" href="#__codelineno-93-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
-<a id="__codelineno-93-24" name="__codelineno-93-24" href="#__codelineno-93-24"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-93-25" name="__codelineno-93-25" href="#__codelineno-93-25"></a><span class="p">}</span>
-<a id="__codelineno-93-26" name="__codelineno-93-26" href="#__codelineno-93-26"></a>
-<a id="__codelineno-93-27" name="__codelineno-93-27" href="#__codelineno-93-27"></a><span class="k">...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-94-1" name="__codelineno-94-1" href="#__codelineno-94-1"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-94-2" name="__codelineno-94-2" href="#__codelineno-94-2"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-94-3" name="__codelineno-94-3" href="#__codelineno-94-3"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">alist.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-94-4" name="__codelineno-94-4" href="#__codelineno-94-4"></a>
+<a id="__codelineno-94-5" name="__codelineno-94-5" href="#__codelineno-94-5"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-94-6" name="__codelineno-94-6" href="#__codelineno-94-6"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:5244</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-94-7" name="__codelineno-94-7" href="#__codelineno-94-7"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-94-8" name="__codelineno-94-8" href="#__codelineno-94-8"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-94-9" name="__codelineno-94-9" href="#__codelineno-94-9"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-94-10" name="__codelineno-94-10" href="#__codelineno-94-10"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-94-11" name="__codelineno-94-11" href="#__codelineno-94-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-94-12" name="__codelineno-94-12" href="#__codelineno-94-12"></a><span class="p">}</span>
+<a id="__codelineno-94-13" name="__codelineno-94-13" href="#__codelineno-94-13"></a>
+<a id="__codelineno-94-14" name="__codelineno-94-14" href="#__codelineno-94-14"></a><span class="k">server</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-94-15" name="__codelineno-94-15" href="#__codelineno-94-15"></a><span class="w">    </span><span class="kn">listen</span><span class="w"> </span><span class="mi">80</span><span class="p">;</span><span class="w">  </span><span class="c1"># 监听的端口</span>
+<a id="__codelineno-94-16" name="__codelineno-94-16" href="#__codelineno-94-16"></a><span class="w">    </span><span class="kn">server_name</span><span class="w"> </span><span class="s">komga.cherr.cc</span><span class="p">;</span><span class="w">  </span><span class="c1"># 指定的域名</span>
+<a id="__codelineno-94-17" name="__codelineno-94-17" href="#__codelineno-94-17"></a>
+<a id="__codelineno-94-18" name="__codelineno-94-18" href="#__codelineno-94-18"></a><span class="w">    </span><span class="kn">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-94-19" name="__codelineno-94-19" href="#__codelineno-94-19"></a><span class="w">        </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://localhost:25600</span><span class="p">;</span><span class="w">  </span><span class="c1"># 反向代理的地址</span>
+<a id="__codelineno-94-20" name="__codelineno-94-20" href="#__codelineno-94-20"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置主机头</span>
+<a id="__codelineno-94-21" name="__codelineno-94-21" href="#__codelineno-94-21"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置真实客户端 IP</span>
+<a id="__codelineno-94-22" name="__codelineno-94-22" href="#__codelineno-94-22"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的 IP</span>
+<a id="__codelineno-94-23" name="__codelineno-94-23" href="#__codelineno-94-23"></a><span class="w">        </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span><span class="w">  </span><span class="c1"># 设置转发的协议</span>
+<a id="__codelineno-94-24" name="__codelineno-94-24" href="#__codelineno-94-24"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-94-25" name="__codelineno-94-25" href="#__codelineno-94-25"></a><span class="p">}</span>
+<a id="__codelineno-94-26" name="__codelineno-94-26" href="#__codelineno-94-26"></a>
+<a id="__codelineno-94-27" name="__codelineno-94-27" href="#__codelineno-94-27"></a><span class="k">...</span>
 </code></pre></div>
 
 但是这只是最简单的反向代理配置，实际情况下往往还需要根据不同的服务做一些特殊的配置，可以通过两个狠狠坑过我的例子来学习。
@@ -5624,18 +5640,18 @@
 
     因为它可能为空，如果你在配置中直接使用它（例如 `proxy_set_header Host $http_host;`），当其为空时，转发给后端的请求的 Host 头也会是空的，这可能导致后端服务器无法正确处理请求（无法识别要访问哪个虚拟主机）。
 
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-94-1" name="__codelineno-94-1" href="#__codelineno-94-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-94-2" name="__codelineno-94-2" href="#__codelineno-94-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
-<a id="__codelineno-94-3" name="__codelineno-94-3" href="#__codelineno-94-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
-<a id="__codelineno-94-4" name="__codelineno-94-4" href="#__codelineno-94-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
-<a id="__codelineno-94-5" name="__codelineno-94-5" href="#__codelineno-94-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
-<a id="__codelineno-94-6" name="__codelineno-94-6" href="#__codelineno-94-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
-<a id="__codelineno-94-7" name="__codelineno-94-7" href="#__codelineno-94-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
-<a id="__codelineno-94-8" name="__codelineno-94-8" href="#__codelineno-94-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
-<a id="__codelineno-94-9" name="__codelineno-94-9" href="#__codelineno-94-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
-<a id="__codelineno-94-10" name="__codelineno-94-10" href="#__codelineno-94-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
-<a id="__codelineno-94-11" name="__codelineno-94-11" href="#__codelineno-94-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
-<a id="__codelineno-94-12" name="__codelineno-94-12" href="#__codelineno-94-12"></a><span class="p">}</span>
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-95-1" name="__codelineno-95-1" href="#__codelineno-95-1"></a><span class="k">location</span><span class="w"> </span><span class="s">/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-95-2" name="__codelineno-95-2" href="#__codelineno-95-2"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-95-3" name="__codelineno-95-3" href="#__codelineno-95-3"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-95-4" name="__codelineno-95-4" href="#__codelineno-95-4"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-95-5" name="__codelineno-95-5" href="#__codelineno-95-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-95-6" name="__codelineno-95-6" href="#__codelineno-95-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Range</span><span class="w"> </span><span class="nv">$http_range</span><span class="p">;</span>
+<a id="__codelineno-95-7" name="__codelineno-95-7" href="#__codelineno-95-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">If-Range</span><span class="w"> </span><span class="nv">$http_if_range</span><span class="p">;</span>
+<a id="__codelineno-95-8" name="__codelineno-95-8" href="#__codelineno-95-8"></a><span class="w">    </span><span class="kn">proxy_redirect</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-95-9" name="__codelineno-95-9" href="#__codelineno-95-9"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:5244</span><span class="p">;</span>
+<a id="__codelineno-95-10" name="__codelineno-95-10" href="#__codelineno-95-10"></a><span class="w">    </span><span class="c1"># the max size of file to upload</span>
+<a id="__codelineno-95-11" name="__codelineno-95-11" href="#__codelineno-95-11"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">20000m</span><span class="p">;</span>
+<a id="__codelineno-95-12" name="__codelineno-95-12" href="#__codelineno-95-12"></a><span class="p">}</span>
 </code></pre></div>
 
 !!! bug "Grafana 需要 websocket 反代支持"
@@ -5716,7 +5732,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月12日 10:28:39 UTC">2026年9月12日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月8日 20:04:26 UTC">2026年10月8日</span>
   </span>
 
     
@@ -5735,14 +5751,14 @@ Do not link to a "generic" man page for these commands -->
     
     <nav>
       
-        <a href="https://github.com/MirageTurtle" class="md-author" title="@MirageTurtle">
-          
-          <img src="https://avatars.githubusercontent.com/u/60972592?v=4&amp;size=72" alt="MirageTurtle">
-        </a>
-      
         <a href="https://github.com/taoky" class="md-author" title="@taoky">
           
           <img src="https://avatars.githubusercontent.com/u/2109893?v=4&amp;size=72" alt="taoky">
+        </a>
+      
+        <a href="https://github.com/MirageTurtle" class="md-author" title="@MirageTurtle">
+          
+          <img src="https://avatars.githubusercontent.com/u/60972592?v=4&amp;size=72" alt="MirageTurtle">
         </a>
       
         <a href="https://github.com/iBug" class="md-author" title="@iBug">
