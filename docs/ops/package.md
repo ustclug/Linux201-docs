@@ -710,7 +710,7 @@ Original-Maintainer: Sudo Maintainers <sudo@packages.debian.org>
 
 !!! note "ucf" {#ucf}
 
-    [ucf（**U**pdate **C**onfiguration **F**ile）](https://packages.debian.org/trixie/ucf) 和 `conffiles` 类似，是用来提供软件包的配置文件的机制。和 `conffiles` 不同的是，`conffiles` 安装的配置是静态的，而 `ucf` 的机制更加灵活一些，它支持配置文件在软件包安装时动态修改，然后软件包在 `postinst` 阶段调用 `ucf` 安装到预期位置。例如 [`openssh-server` 包](packages.debian.org/trixie/openssh-server) 就在 `postinst` 脚本中使用 `ucf` 安装了 `/etc/ssh/sshd_config`：
+    [ucf（**U**pdate **C**onfiguration **F**ile）](https://packages.debian.org/trixie/ucf) 和 `conffiles` 类似，是用来提供软件包的配置文件的机制。和 `conffiles` 不同的是，`conffiles` 安装的配置是静态的，而 `ucf` 的机制更加灵活一些，它支持配置文件在软件包安装时动态修改，然后软件包在 `postinst` 阶段调用 `ucf` 安装到预期位置。例如 [`openssh-server` 包](https://packages.debian.org/trixie/openssh-server) 就在 `postinst` 脚本中使用 `ucf` 安装了 `/etc/ssh/sshd_config`：
 
     ```sh
     new_config="$(mktemp)"
