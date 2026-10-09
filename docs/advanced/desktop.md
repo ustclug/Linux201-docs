@@ -1339,7 +1339,7 @@ $ varlinkctl call /run/systemd/resolve/io.systemd.Resolve io.systemd.Resolve.Res
     - Flatpak 保证沙盒化应用运行时其挂载命名空间中存在 `/.flatpak-info` 文件，并且该文件无法被沙盒内的程序修改、删除。因此 portal 可以通过 procfs 读取该文件来获取应用的应用名称。
     - 对 Snap，portal 会先从 cgroup 信息确认是否为 Snap 应用，再调用 `snap routine portal-info` 命令获取应用的 Snap 名称。
 
-    同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如[基于 cgroup 扩展属性](https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/)的方案。
+    同时也有尝试统一各个沙盒化方案下应用身份识别的提议，例如[基于 cgroup 扩展属性](https://blog.sebastianwick.net/posts/so-peerpidfd-gets-more-useful/)的方案。近期 [systemd-appd 的 PR](https://github.com/systemd/systemd/pull/43885) 也提供了在 systemd 管理 cgroup 的框架下统一身份识别的方式，目前未合并。
 
     而对非沙盒化应用，portal 会尝试从[进程所属 cgroup 的名称](https://github.com/flatpak/xdg-desktop-portal/commit/8a115405b4131d064be14b72d10d6b2dd8d73754)来获取到应用名称（例如 `app-com.example.test-12345.scope` -> `com.example.test`）。现代桌面环境的应用启动器会做这样的处理，将启动的应用放在[名字符合命名标准的 cgroup（systemd service 或者 scope）下](https://systemd.io/DESKTOP_ENVIRONMENTS/#xdg-standardization-for-applications)。而非沙盒化的应用可以轻松用 `systemd-run` 来实现这一点：
 
