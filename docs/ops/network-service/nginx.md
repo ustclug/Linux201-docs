@@ -838,13 +838,12 @@ location / {
     proxy_pass http://backend_server;  # 反向代理的地址
     # 设置 header 部分略过
     proxy_buffering on;  # 启用 buffering（默认启用）
-    proxy_ssl_server_name on;  # 向后端服务器发送 SNI（默认关闭）
     proxy_connect_timeout 10s;  # 连接后端服务器的超时时间（默认 60s）
     proxy_max_temp_file_size 128m;  # 临时文件的最大大小（默认 1024m）
 }
 ```
 
-这里比较重要的配置是 [buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) 的启用与否。在启用 buffering 的时候，Nginx 在收到后端数据后，不会立刻给客户端，而是先将数据缓存在内存或者临时文件中，然后再发送，以此提高吞吐量。但是对于延迟敏感的应用，或者在磁盘空间有限的情况下，可能需要关闭 buffering。
+这里比较重要的配置是 [buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering) 的启用与否。在启用 buffering 的时候，Nginx 会尽快读取后端响应，将一部分数据缓存在内存或者临时文件中，然后再发送，以此提高吞吐量，减少慢客户端对后端连接的占用（否则如果某个客户端很慢的话，从 nginx 到后端的连接就会一直占用着）。但是对于延迟敏感的应用，或者在磁盘空间有限的情况下，可能需要关闭 buffering。
 
 在以上的配置中，因为 `proxy_pass` 的地址中不包含任何路径（即域名/IP 之后没有 `/`），Nginx 会将用户请求的 URI（`$request_uri`）原样转发给后端服务器（如果额外添加了 [rewrite](#rewrite) 规则，则是修改后的 `$uri`）。但是有些时候，我们会希望后端服务器只处理某个路径下的请求，例如当用户请求 `/api/foo` 时，后端服务器看到的是 `/foo`。这时可以在 `proxy_pass` 的地址后面添加一个 `/`，例如：
 
@@ -856,6 +855,49 @@ location /api/ {
 ```
 
 于是，当用户请求 `/api/foo` 时，`/api/` 会被替换为 `/`，后端服务器实际收到的请求路径是 `/foo`。
+
+如果 `proxy_pass` 反向代理的地址是 HTTPS 的，根据具体情况，可能需要配置下面的参数：
+
+```nginx
+location / {
+    proxy_pass https://tls_backend.example.com/;
+    # 其他配置略过
+    proxy_ssl_server_name on;  # 向后端服务器发送 SNI（默认关闭）
+    proxy_ssl_verify on;  # 校验后端证书（默认关闭）
+    proxy_ssl_verify_depth 3;  # 校验证书的深度（默认为 1）
+    # 校验证书时信任的 CA 证书
+    proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+}
+```
+
+!!! tip "获取证书深度" {#cert-verify-depth}
+
+    证书深度设置为 3 可以覆盖大部分常见的证书链。可以使用 `openssl` 查看网络对端的证书信息：
+
+    ```sh
+    # 查看科大镜像站 HTTPS 端口的证书信息
+    openssl s_client -connect mirrors.ustc.edu.cn:443 -servername mirrors.ustc.edu.cn -showcerts
+    ```
+
+    其中 `Certificate chain` 部分就提供了相关信息：
+
+    ```console
+    Certificate chain
+     0 s:CN=mirrors.ustc.edu.cn
+       i:C=US, O=Let's Encrypt, CN=YE1
+    （省略）
+     1 s:C=US, O=Let's Encrypt, CN=YE1
+       i:C=US, O=ISRG, CN=Root YE
+    （省略）
+     2 s:C=US, O=ISRG, CN=Root YE
+       i:C=US, O=Internet Security Research Group, CN=ISRG Root X2
+    （省略）
+     3 s:C=US, O=Internet Security Research Group, CN=ISRG Root X2
+       i:C=US, O=Internet Security Research Group, CN=ISRG Root X1
+    （省略）
+    ```
+
+    可以看到这里的证书是 Let's Encrypt 签发的。在系统 CA 不包含 `ISRG Root X2`，包含 `ISRG Root X1` 的情况下，验证的深度为 3（不包含站点证书）。如果信任 `ISRG Root X2` 的话，深度可以更短（2）。
 
 此外，在配置一些应用的时候，可能需要额外添加 WebSocket 支持。
 
@@ -950,10 +992,16 @@ location / {
 
 这里加入的一些额外选项：
 
-- [`proxy_cache_valid`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_valid) 指令用于定义不同响应状态码的缓存时间。
+- [`proxy_cache_valid`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_valid) 指令用于定义不同响应状态码的缓存时间。**注意后端提供的缓存相关的 HTTP 响应头优先级高于这一项设置**，有需要的情况下，使用 [`proxy_ignore_headers`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_ignore_headers) 忽略对应的响应头。
 - [`proxy_cache_revalidate`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_revalidate) 则会在缓存过期后使用条件请求（If-Modified-Since 或 If-None-Match）来验证缓存的有效性，如果后端资源没有变化，则继续使用缓存。
 - [`proxy_cache_use_stale`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_use_stale) 指令允许在后端服务器出现错误时使用过期的缓存响应，从而提高可用性。
 - 最后的 `add_header` 用于在响应头中添加一个 `X-Cache-Status` 字段，显示缓存状态（`HIT`、`MISS`、`BYPASS` 等）。
+
+其他可能需要的配置：
+
+- [`proxy_cache_lock`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock) 启用时会在多个客户端同时访问相同内容并需要回源的时候加锁，只有在拿到锁的请求结束之后或者超时后，其他的才能继续处理。如果需要尽可能减少回源的话，建议开启此选项。
+
+    超时配置包括 [`proxy_cache_lock_timeout`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock_timeout) 和 [`proxy_cache_lock_age`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_cache_lock_age) 两种。`proxy_cache_lock_age` 控制一次缓存填充可以独占多久：超过该时间仍未完成，就允许另一个请求回源填充缓存；`proxy_cache_lock_timeout` 控制每个请求最多等待多久：等待超时后仍拿不到锁，就自行回源，响应不写入缓存。两者独立计时，默认均为 5 秒。
 
 ### 负载均衡配置 {#load-balancing-configuration}
 
