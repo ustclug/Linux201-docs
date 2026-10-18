@@ -632,7 +632,13 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 ```
 
 可以发现，这个 Dockerfile 有多个 `FROM` 代表了多个阶段。
-第一阶段的 `FROM` 后面加上了 `AS builder`，这样就可以在第二阶段使用 `COPY --from=builder` 从第一阶段拷贝文件。
+第一阶段的 `FROM` 后面加上了 `AS builder`，为第一阶段命名，这样就可以在第二阶段使用 `COPY --from=builder` 从第一阶段拷贝文件。
+
+在阶段有命名的情况下，可以使用 `--target` 参数只构建到指定的阶段，方便调试：
+
+```console
+$ sudo docker build --target builder -t example:builder .
+```
 
 ### 运行图形应用 {#docker-gui}
 
