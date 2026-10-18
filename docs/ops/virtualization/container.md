@@ -637,7 +637,7 @@ COPY --from=builder /tmp/example /usr/local/bin/example
 在阶段有命名的情况下，可以使用 `--target` 参数只构建到指定的阶段，方便调试：
 
 ```console
-$ sudo docker build --target builder -t example:builder .
+sudo docker build --target builder -t example:builder .
 ```
 
 ### 运行图形应用 {#docker-gui}
