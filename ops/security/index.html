@@ -5204,7 +5204,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <p>对于 Linux，可以使用 <code>netstat -tulnp</code> 或 <code>ss -tulnp</code> 命令检查监听的端口情况。</p>
 <p>一般来说，防火墙默认配置会拒绝所有入站，除非用户同意。Windows 下的防火墙默认启用，而 macOS 的防火墙默认是关闭的。Linux 桌面用户可以考虑使用 ufw 或 firewalld 作为防火墙方案。</p>
 <h4 id="physical-security">物理安全<a class="headerlink" href="#physical-security" title="Permanent link">&para;</a></h4>
-<p>保证物理安全也是个人设备安全的重要一环。建议不要配置自动登录，至少保证本地账户有足够长的口令（或者强度足够的 PIN），并且养成在离开时<strong>锁屏</strong>的好习惯。除此之外，如果可能有攻击者物理接触设备的风险，那么配置**全盘加密（FDE）**也是重要的一步。对桌面系统，Windows 在新的设备上会自动启用 BitLocker，macOS 也会在有 T2 芯片的设备上自动开启 FileVault。而 Linux 用户则需要自行配置 LUKS（Linux Unified Key Setup）。</p>
+<p>保证物理安全也是个人设备安全的重要一环。建议不要配置自动登录，至少保证本地账户有足够长的口令（或者强度足够的 PIN），并且养成在离开时<strong>锁屏</strong>的好习惯。除此之外，如果可能有攻击者物理接触设备的风险，那么配置<strong>全盘加密（FDE）</strong>也是重要的一步。对桌面系统，Windows 在新的设备上会自动启用 BitLocker，macOS 也会在有 T2 芯片的设备上自动开启 FileVault。而 Linux 用户则需要自行配置 LUKS（Linux Unified Key Setup）。</p>
 <p>如果有对攻击者物理接触设备后篡改设备的担忧，那么还需要关心<strong>安全启动（Secure Boot）</strong>。在有必要的情况下，需要设置 UEFI 口令（否则攻击者可以直接关掉安全启动），并且（对 Linux 用户来说）正确配置安全启动。</p>
 <div class="admonition example" id="personal-device-invasion-case">
 <p class="admonition-title">从个人设备入侵服务器的真实案例&#8288;<a class="headerlink" href="#personal-device-invasion-case" title="Permanent link">&para;</a></p>
@@ -5240,7 +5240,7 @@ TA 先前因为自己写的程序经常被报毒，因此关闭了杀毒软件�
 <div class="admonition question" id="thinking-question-code-analysis">
 <p class="admonition-title">思考题：代码问题分析&#8288;<a class="headerlink" href="#thinking-question-code-analysis" title="Permanent link">&para;</a></p>
 <p>以下的 Python <a href="https://fastapi.tiangolo.com/">FastAPI</a> 代码修改自互联网上某篇博客的教程。</p>
-<p>提示：**在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！**对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码<sup id="fnref:prompt"><a class="footnote-ref" href="#fn:prompt">1</a></sup>。</p>
+<p>提示：<strong>在使用其他人的代码（包括了大语言模型生成的代码）前，请总是检查一下是否存在可能的安全问题！</strong>对于大语言模型，遗憾的是，如果不强调安全要求，那么甚至目前最强大的模型（例如 OpenAI O1）也会生成这样不安全的代码<sup id="fnref:prompt"><a class="footnote-ref" href="#fn:prompt">1</a></sup>。</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">FastAPI</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fastapi.responses</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileResponse</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
