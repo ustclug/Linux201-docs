@@ -3406,111 +3406,150 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <p>根据来自 <a href="https://tuna.moe/">TUNA</a> 的都市传说：折腾过 LDAP 的人，都会在某种意义上延毕。因此这一部分是由已经毕业的同学编写的（大概吧）。</p>
 </div>
 <h3 id="ldap-basic">基础概念<a class="headerlink" href="#ldap-basic" title="Permanent link">&para;</a></h3>
-<p>LDAP 的数据组成一颗树，被称为 Directory Information Tree（DIT）。树中每个项（Entry）都有一个唯一表示它的名字，被称为 Distinguished Name（识别名，<strong>dn</strong>）。例如一个用户项的 <code>dn</code> 可能为如下：</p>
+<p>LDAP 的数据组成一颗树，被称为 Directory Information Tree（DIT）。树中每个项（Entry）都有一个<strong>唯一</strong>表示它的名字，被称为 Distinguished Name（识别名，<strong>dn</strong>）。例如一个用户项的 DN 可能为如下：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
 </code></pre></div>
-<p>其中 <strong>cn</strong> 为 Common Name（通用名称），<strong>ou</strong> 为 Organization Unit（组织单元），<strong>dc</strong> 为 Domain Component（域组件）。其对应的相对识别名（Relative Distinguished Name，RDN）则是 <code>dn</code> 最左边的 <code>cn=Takamatsu Tomori</code>。</p>
+<p>其中 <strong>cn</strong> 为 Common Name（通用名称），<strong>ou</strong> 为 Organization Unit（组织单元），<strong>dc</strong> 为 Domain Component（域组件）。其对应的相对识别名（Relative Distinguished Name，RDN）则是 <code>dn</code> 最左边的 <code>cn=Takamatsu Tomori</code>。RDN 不一定必须是 <code>cn</code>，只要在下面所说的属性里面即可，所以这个用户项的 DN 也可以设置为：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>uid=tomori,ou=people,dc=bangdream,dc=example,dc=org
+</code></pre></div>
 <p>此外，树中的项也被称为 DSE（Directory Service Entry）。RootDSE 存储了 LDAP 服务器本身的信息。一个 LDAP 服务器可以有多个 <code>namingContexts</code>，每个 <code>namingContexts</code> 对应一颗目录树。每颗目录树的树根也被称为 Base DN。</p>
 <p>一般来讲，域组件习惯上按照 DNS 域名的顺序来写。而上述用户项所在的目录树可能长这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>dc=bangdream,dc=example,dc=org
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    ou=people
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        cn=Toyama Kasumi
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        cn=Ichigaya Arisa
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        ...
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        cn=Takamatsu Tomori
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        ...
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    ou=groups
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        cn=Poppin'Party
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        cn=Roselia
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        cn=Hello\, Happy World!
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        ...
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        cn=MyGO!!!!!
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>        ...
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    ou=sudoers
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>        cn=SPACE
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>        cn=CiRCLE
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>        cn=RiNG
-<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        ...
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dc=bangdream,dc=example,dc=org
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    ou=people
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>        cn=Toyama Kasumi
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        cn=Ichigaya Arisa
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        ...
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        cn=Takamatsu Tomori
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        ...
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    ou=groups
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        cn=Poppin'Party
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        cn=Roselia
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        cn=Hello\, Happy World!
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>        ...
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>        cn=MyGO!!!!!
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        ...
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    ou=sudoers
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>        cn=SPACE
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        cn=CiRCLE
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        cn=RiNG
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>        ...
 </code></pre></div>
 <div class="admonition note" id="ldap-escape">
 <p class="admonition-title">字符转义&#8288;<a class="headerlink" href="#ldap-escape" title="Permanent link">&para;</a></p>
-<p>可以看到上述 LDAP 树的 <code>ou=groups</code> 里面有一些项的 <code>cn</code> 有特殊的字符。<code>cn</code> 里面确实可以存储任意 UTF-8 字符串，但是根据 <a href="https://datatracker.ietf.org/doc/html/rfc4514#section-2.4">RFC 4514</a> 的要求，有一些字符需要转义，例如 <code>cn=Hello\, Happy World!</code> 中的 <code>,</code> 就需要在前面添加 <code>\</code>，避免在写成 <code>dn</code> 的时候产生混淆：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cn=Hello\, Happy World!,ou=groups,dc=bangdream,dc=example,dc=org
+<p>可以看到上述 LDAP 树的 <code>ou=groups</code> 里面有一些项的 <code>cn</code> 有特殊的字符。<code>cn</code> 里面确实可以存储任意 UTF-8 字符串，但是根据 <a href="https://datatracker.ietf.org/doc/html/rfc4514#section-2.4">RFC 4514</a> 的要求，有一些字符需要转义，例如 <code>Hello, Happy World!</code> 中的 <code>,</code> 就需要在前面添加 <code>\</code>，避免在写成 <code>dn</code> 的时候产生混淆：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cn=Hello\, Happy World!,ou=groups,dc=bangdream,dc=example,dc=org
 </code></pre></div>
 <p>因此尽管可以，但是不建议在 <code>cn</code> 中使用需要转义的字符，避免麻烦。</p>
 </div>
 <p>项是属性（Attribute）的集合。属性是一对 key（被称为 Attribute Type）和 value。例如上面 <code>cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org</code> 的属性以 LDIF 格式表示可能是这样：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Takamatsu Tomori</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">inetOrgPerson</span>
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalPerson</span>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">person</span>
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixAccount</span>
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">shadowAccount</span>
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu Tomori</span>
-<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2008</span>
-<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="na">homeDirectory</span><span class="p">:</span><span class="w"> </span><span class="s">/home/tomori</span>
-<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="na">sn</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu</span>
-<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="na">uid</span><span class="p">:</span><span class="w"> </span><span class="s">tomori</span>
-<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="na">uidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2036</span>
-<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="na">gecos</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu Tomori</span>
-<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="na">givenName</span><span class="p">:</span><span class="w"> </span><span class="s">Tomori</span>
-<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="na">loginShell</span><span class="p">:</span><span class="w"> </span><span class="s">/bin/fish</span>
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="na">shadowLastChange</span><span class="p">:</span><span class="w"> </span><span class="s">12345</span>
-<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="na">userPassword</span><span class="p">:</span><span class="w"> </span><span class="s">{SSHA}(redacted)</span>
-<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="na">createTimestamp</span><span class="p">:</span><span class="w"> </span><span class="s">20220429000000Z</span>
-<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="na">modifyTimestamp</span><span class="p">:</span><span class="w"> </span><span class="s">20260112000000Z</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Takamatsu Tomori</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">inetOrgPerson</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalPerson</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">person</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixAccount</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">shadowAccount</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu Tomori</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2008</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="na">homeDirectory</span><span class="p">:</span><span class="w"> </span><span class="s">/home/tomori</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="na">sn</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="na">uid</span><span class="p">:</span><span class="w"> </span><span class="s">tomori</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="na">uidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2036</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="na">gecos</span><span class="p">:</span><span class="w"> </span><span class="s">Takamatsu Tomori</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="na">givenName</span><span class="p">:</span><span class="w"> </span><span class="s">Tomori</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="na">loginShell</span><span class="p">:</span><span class="w"> </span><span class="s">/bin/fish</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="na">shadowLastChange</span><span class="p">:</span><span class="w"> </span><span class="s">12345</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="na">userPassword</span><span class="p">:</span><span class="w"> </span><span class="s">{SSHA}(redacted)</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="na">createTimestamp</span><span class="p">:</span><span class="w"> </span><span class="s">20220429000000Z</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="na">modifyTimestamp</span><span class="p">:</span><span class="w"> </span><span class="s">20260112000000Z</span>
 </code></pre></div>
 <p>属性不是想怎么填就可以怎么填的，可以使用的属性和 <code>objectClass</code> 的定义受到 LDAP schema 的限制。<code>objectClass</code> 规定了当前项中必选或可选哪些属性，例如 <code>inetOrgPerson</code> 要求当前项必须有 <code>cn</code> 或 <code>commonName</code>、<code>objectClass</code> 属性和 <code>sn</code> 或 <code>surname</code> 属性，可选诸如 <code>carLicense</code>、<code>photo</code>、<code>manager</code> 等属性。属性的语法以及匹配规则也由 schema 限制。</p>
 <div class="admonition note" id="objectclass-inheritance">
 <p class="admonition-title"><code>objectClass</code> 的继承&#8288;<a class="headerlink" href="#objectclass-inheritance" title="Permanent link">&para;</a></p>
 <p>可以注意到上面有一个特殊的 <code>objectClass</code>：<code>top</code>。这个类是所有其他 <code>objectClass</code> 的根。<code>cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org</code> 的例子里出现的 <code>objectClass</code> 的继承关系如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>top
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    person
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>        organizationalPerson
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>            inetOrgPerson
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    posixAccount
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    shadowAccount
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>top
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    person
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>        organizationalPerson
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>            inetOrgPerson
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    posixAccount
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    shadowAccount
 </code></pre></div>
 <p>尽管只要写 <code>inetOrgPerson</code>，就包含了 <code>organizationalPerson</code>、<code>person</code> 和 <code>top</code> 的约束关系，但是在实践中在这个继承链条上的 <code>objectClass</code> 很多时候仍然是完整写出的。</p>
+<p>此外，<code>objectClass</code> 分为三大类：STRUCTURAL（结构类）、AUXILIARY（辅助类）和 ABSTRACT（抽象类）。结构类确定一个 entry 的基本类型，辅助类给已有的 entry 添加新的功能，抽象类则给其他类提供基础属性（比如说 <code>top</code>）。对结构类来说，两个结构类要在同一条继承链条上面，才能够组合在一起。</p>
+</div>
+<div class="admonition note" id="rfc2307">
+<p class="admonition-title">RFC 2307&#8288;<a class="headerlink" href="#rfc2307" title="Permanent link">&para;</a></p>
+<p>另外还可以注意到样例中的一些属性和类 Unix 系统中用户的信息是对应的，比如说 <code>uid</code>、<code>homeDirectory</code>、<code>loginShell</code> 等等。这些是 <code>posixAccount</code> 这个 <code>objectClass</code> 定义的（用户组对应的则是 <code>posixGroup</code>）。其对应的标准是 <a href="https://datatracker.ietf.org/doc/html/rfc2307">RFC 2307</a>，用来让 LDAP 替代早期（1985）由 Sun 公司开发的 NIS 来存储 Unix 上的用户信息。</p>
+<p>在一些场合下还可以看到 <a href="https://datatracker.ietf.org/doc/html/draft-howard-rfc2307bis-01">RFC 2307bis</a> 草稿标准，尽管不是正式 RFC 标准，2307bis 也仍然被广泛应用。相比 RFC 2307，其最大的区别是对用户组的处理。RFC 2307 的用户组可能长这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">CRYCHIC</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixGroup</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">CRYCHIC</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2106</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">sakiko</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">tomori</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">soyo</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">mutsumi</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">taki</span>
+</code></pre></div>
+<p>而 2307bis 的用户组：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">CRYCHIC</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">groupOfNames</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixGroup</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">CRYCHIC</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2106</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="na">member</span><span class="p">:</span><span class="w"> </span><span class="s">cn=Togawa Sakiko,ou=people,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="na">member</span><span class="p">:</span><span class="w"> </span><span class="s">cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="na">member</span><span class="p">:</span><span class="w"> </span><span class="s">cn=Nagasaki Soyo,ou=people,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="na">member</span><span class="p">:</span><span class="w"> </span><span class="s">cn=Wakaba Mutsumi,ou=people,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="na">member</span><span class="p">:</span><span class="w"> </span><span class="s">cn=Shina Taki,ou=people,dc=bangdream,dc=example,dc=org</span>
+</code></pre></div>
+<p>这里，<code>posixGroup</code> 因为从 RFC 2307 的结构类变成了辅助类，因此可以和 <code>groupOfNames</code> 组合起来，由 <code>groupOfNames</code> 提供 <code>member</code> 属性，包含对应成员完整的 DN。这样做有一些好处，比如说如果用户的 <code>uid</code> 需要变化时，组的信息不需要修改（因为使用了 DN 来引用），以及删除、重命名用户 entry 的时候，根据服务器的配置，LDAP 服务器实现可能能够帮助自动维护好相关的配置。</p>
 </div>
 <p>此外有一些特殊的属性，不能被用户设置，只能由服务器生成，例如 <code>createTimestamp</code> 和 <code>modifyTimestamp</code>。这些被称为操作属性（Operational Attribute）。</p>
 <p>LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如删除一项：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">CRYCHIC</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">delete</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">CRYCHIC</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">delete</span>
 </code></pre></div>
+<p>用户如果要访问 LDAP 数据的话需要登录，这个过程被称为 Bind。最常见的 Simple Bind 需要用户提供自己的 DN 和密码，类似这样：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ldapwhoami<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://bangdream.example.org:389<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-D<span class="w"> </span><span class="s2">"cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-w<span class="w"> </span><span class="s2">"&lt;redacted&gt;"</span>
+</code></pre></div>
+<p>有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 <code>uid=tomori,...</code> 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 <code>uid</code>）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。</p>
 <h3 id="ldap-server">服务端配置<a class="headerlink" href="#ldap-server" title="Permanent link">&para;</a></h3>
 <p>以下以 OpenLDAP 为例讲解相关配置。在安装 <code>slapd</code> 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 <code>/var/lib/ldap</code>。</p>
 <div class="admonition note" id="mdb-format">
 <p class="admonition-title">mdb 格式&#8288;<a class="headerlink" href="#mdb-format" title="Permanent link">&para;</a></p>
 <p>OpenLDAP 会保存两个 mdb 文件：<code>data.mdb</code> 和 <code>lock.mdb</code>，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 <a href="https://www.symas.com/mdb">LMDB</a>，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。</p>
 <p>尽管 <code>lmdb-utils</code> 包提供了 <code>mdb_stat</code>、<code>mdb_dump</code> 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 <code>slapcat</code> 工具：</p>
-<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">读取第一个数据库</span><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><span class="filename">读取第一个数据库</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 </div>
 <p>安装 <code>slapd</code> 后对应的服务为 <code>slapd.service</code>，默认配置下监听未加密的 LDAP 协议端口 TCP 389。如果后续配置了 LDAPS，则默认是 TCP 636 端口。</p>
 <p>默认情况下，<code>slapd</code> 安装时会尝试根据 <code>hostname -d</code> 的输出配置 base DN，如果输出为空，那么就会变成 <code>dc=nodomain</code>。在几乎所有的情况下，都不是我们想要的，可以用下面的命令从 rootDSE 获取 <code>namingContexts</code> 验证：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://localhost<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="gp">#</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp"># </span>LDAPv3
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="gp"># </span>base<span class="w"> </span>&lt;&gt;<span class="w"> </span>with<span class="w"> </span>scope<span class="w"> </span>baseObject
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="gp"># </span>filter:<span class="w"> </span><span class="o">(</span><span class="nv">objectclass</span><span class="o">=</span>*<span class="o">)</span>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gp"># </span>requesting:<span class="w"> </span>namingContexts
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="gp">#</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="gp">#</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="go">dn:</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="go">namingContexts: dc=nodomain</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="gp"># </span>search<span class="w"> </span>result
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="go">search: 2</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="go">result: 0 Success</span>
-<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">2</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://localhost<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">#</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gp"># </span>LDAPv3
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="gp"># </span>base<span class="w"> </span>&lt;&gt;<span class="w"> </span>with<span class="w"> </span>scope<span class="w"> </span>baseObject
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gp"># </span>filter:<span class="w"> </span><span class="o">(</span><span class="nv">objectclass</span><span class="o">=</span>*<span class="o">)</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="gp"># </span>requesting:<span class="w"> </span>namingContexts
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="gp">#</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">#</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">dn:</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">namingContexts: dc=nodomain</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="gp"># </span>search<span class="w"> </span>result
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="go">search: 2</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="go">result: 0 Success</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <p>这里表明当前环境的 base DN 就是 <code>dc=nodomain</code>。如果不满意，使用 <code>dpkg-reconfigure slapd</code> 配置即可。</p>
 <p>(TODO)</p>
@@ -3573,7 +3612,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月22日 21:41:20 UTC">2026年10月22日</span>
   </span>
 
     
