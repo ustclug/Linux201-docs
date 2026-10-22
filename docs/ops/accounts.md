@@ -102,13 +102,17 @@ LDAP 即轻量级目录访问协议（Lightweight Directory Access Protocol）�
 
 ### 基础概念 {#ldap-basic}
 
-LDAP 的数据组成一颗树，被称为 Directory Information Tree（DIT）。树中每个项（Entry）都有一个唯一表示它的名字，被称为 Distinguished Name（识别名，**dn**）。例如一个用户项的 `dn` 可能为如下：
+LDAP 的数据组成一颗树，被称为 Directory Information Tree（DIT）。树中每个项（Entry）都有一个**唯一**表示它的名字，被称为 Distinguished Name（识别名，**dn**）。例如一个用户项的 DN 可能为如下：
 
 ```txt
 cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
 ```
 
-其中 **cn** 为 Common Name（通用名称），**ou** 为 Organization Unit（组织单元），**dc** 为 Domain Component（域组件）。其对应的相对识别名（Relative Distinguished Name，RDN）则是 `dn` 最左边的 `cn=Takamatsu Tomori`。
+其中 **cn** 为 Common Name（通用名称），**ou** 为 Organization Unit（组织单元），**dc** 为 Domain Component（域组件）。其对应的相对识别名（Relative Distinguished Name，RDN）则是 `dn` 最左边的 `cn=Takamatsu Tomori`。RDN 不一定必须是 `cn`，只要在下面所说的属性里面即可，所以这个用户项的 DN 也可以设置为：
+
+```txt
+uid=tomori,ou=people,dc=bangdream,dc=example,dc=org
+```
 
 此外，树中的项也被称为 DSE（Directory Service Entry）。RootDSE 存储了 LDAP 服务器本身的信息。一个 LDAP 服务器可以有多个 `namingContexts`，每个 `namingContexts` 对应一颗目录树。每颗目录树的树根也被称为 Base DN。
 
@@ -138,7 +142,7 @@ dc=bangdream,dc=example,dc=org
 
 !!! note "字符转义" {#ldap-escape}
 
-    可以看到上述 LDAP 树的 `ou=groups` 里面有一些项的 `cn` 有特殊的字符。`cn` 里面确实可以存储任意 UTF-8 字符串，但是根据 [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4) 的要求，有一些字符需要转义，例如 `cn=Hello\, Happy World!` 中的 `,` 就需要在前面添加 `\`，避免在写成 `dn` 的时候产生混淆：
+    可以看到上述 LDAP 树的 `ou=groups` 里面有一些项的 `cn` 有特殊的字符。`cn` 里面确实可以存储任意 UTF-8 字符串，但是根据 [RFC 4514](https://datatracker.ietf.org/doc/html/rfc4514#section-2.4) 的要求，有一些字符需要转义，例如 `Hello, Happy World!` 中的 `,` 就需要在前面添加 `\`，避免在写成 `dn` 的时候产生混淆：
 
     ```txt
     cn=Hello\, Happy World!,ou=groups,dc=bangdream,dc=example,dc=org
@@ -188,6 +192,45 @@ modifyTimestamp: 20260112000000Z
 
     尽管只要写 `inetOrgPerson`，就包含了 `organizationalPerson`、`person` 和 `top` 的约束关系，但是在实践中在这个继承链条上的 `objectClass` 很多时候仍然是完整写出的。
 
+    此外，`objectClass` 分为三大类：STRUCTURAL（结构类）、AUXILIARY（辅助类）和 ABSTRACT（抽象类）。结构类确定一个 entry 的基本类型，辅助类给已有的 entry 添加新的功能，抽象类则给其他类提供基础属性（比如说 `top`）。对结构类来说，两个结构类要在同一条继承链条上面，才能够组合在一起。
+
+!!! note "RFC 2307" {#rfc2307}
+
+    另外还可以注意到样例中的一些属性和类 Unix 系统中用户的信息是对应的，比如说 `uid`、`homeDirectory`、`loginShell` 等等。这些是 `posixAccount` 这个 `objectClass` 定义的（用户组对应的则是 `posixGroup`）。其对应的标准是 [RFC 2307](https://datatracker.ietf.org/doc/html/rfc2307)，用来让 LDAP 替代早期（1985）由 Sun 公司开发的 NIS 来存储 Unix 上的用户信息。
+
+    在一些场合下还可以看到 [RFC 2307bis](https://datatracker.ietf.org/doc/html/draft-howard-rfc2307bis-01) 草稿标准，尽管不是正式 RFC 标准，2307bis 也仍然被广泛应用。相比 RFC 2307，其最大的区别是对用户组的处理。RFC 2307 的用户组可能长这样：
+
+    ```ldif
+    dn: cn=CRYCHIC,ou=groups,dc=bangdream,dc=example,dc=org
+    objectClass: top
+    objectClass: posixGroup
+    cn: CRYCHIC
+    gidNumber: 2106
+    memberUid: sakiko
+    memberUid: tomori
+    memberUid: soyo
+    memberUid: mutsumi
+    memberUid: taki
+    ```
+
+    而 2307bis 的用户组：
+
+    ```ldif
+    dn: cn=CRYCHIC,ou=groups,dc=bangdream,dc=example,dc=org
+    objectClass: top
+    objectClass: groupOfNames
+    objectClass: posixGroup
+    cn: CRYCHIC
+    gidNumber: 2106
+    member: cn=Togawa Sakiko,ou=people,dc=bangdream,dc=example,dc=org
+    member: cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
+    member: cn=Nagasaki Soyo,ou=people,dc=bangdream,dc=example,dc=org
+    member: cn=Wakaba Mutsumi,ou=people,dc=bangdream,dc=example,dc=org
+    member: cn=Shina Taki,ou=people,dc=bangdream,dc=example,dc=org
+    ```
+
+    这里，`posixGroup` 因为从 RFC 2307 的结构类变成了辅助类，因此可以和 `groupOfNames` 组合起来，由 `groupOfNames` 提供 `member` 属性，包含对应成员完整的 DN。这样做有一些好处，比如说如果用户的 `uid` 需要变化时，组的信息不需要修改（因为使用了 DN 来引用），以及删除、重命名用户 entry 的时候，根据服务器的配置，LDAP 服务器实现可能能够帮助自动维护好相关的配置。
+
 此外有一些特殊的属性，不能被用户设置，只能由服务器生成，例如 `createTimestamp` 和 `modifyTimestamp`。这些被称为操作属性（Operational Attribute）。
 
 LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如删除一项：
@@ -196,6 +239,16 @@ LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如
 dn: cn=CRYCHIC,ou=groups,dc=bangdream,dc=example,dc=org
 changetype: delete
 ```
+
+用户如果要访问 LDAP 数据的话需要登录，这个过程被称为 Bind。最常见的 Simple Bind 需要用户提供自己的 DN 和密码，类似这样：
+
+```sh
+ldapwhoami -x -H ldap://bangdream.example.org:389 \
+  -D "cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org" \
+  -w "<redacted>"
+```
+
+有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 `uid=tomori,...` 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 `uid`）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。
 
 ### 服务端配置 {#ldap-server}
 
