@@ -248,7 +248,28 @@ ldapwhoami -x -H ldap://bangdream.example.org:389 \
   -w "<redacted>"
 ```
 
+注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 `-x` 参数，否则会变成使用 SASL Bind。以下不涉及相关的高级鉴权方式。
+
 有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 `uid=tomori,...` 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 `uid`）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。
+
+LDAP 的搜索也有自己一套独特的 filter 语法，格式是 `(属性名 运算符 属性值)`，而组合条件（`&`、`|`、`!`）使用前缀的形式，例如：
+
+- 所有 `inetOrgPerson` 用户：`(objectClass=inetOrgPerson)`
+- 寻找 UID 为 tomori 的人员：`(uid=tomori)`
+- 寻找多个用户（或）：`(|(uid=anon)(uid=soyo))`
+- 寻找设置了 `mail` 的项：`(mail=*)`
+- 寻找 cn 开头（姓）是 Hikawa 的项：`(cn=Hikawa *)`
+- 寻找 UID 数字大于等于 1000，小于等于 9999 的项：`(&(uidNumber>=1000)(uidNumber<=9999))`
+
+使用 `ldapsearch` 可以进行查询：
+
+```sh
+ldapsearch -x -H ldap://bangdream.example.org:389 \
+  -D "cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org" \
+  -w "<redacted>" \
+  -b "dc=bangdream,dc=example,dc=org" \
+  "(uid=tomori)"
+```
 
 ### 服务端配置 {#ldap-server}
 
