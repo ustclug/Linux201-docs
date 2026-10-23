@@ -3517,39 +3517,56 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span>-D<span class="w"> </span><span class="s2">"cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span>-w<span class="w"> </span><span class="s2">"&lt;redacted&gt;"</span>
 </code></pre></div>
+<p>注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 <code>-x</code> 参数，否则会变成使用 SASL Bind。以下不涉及相关的高级鉴权方式。</p>
 <p>有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 <code>uid=tomori,...</code> 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 <code>uid</code>）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。</p>
+<p>LDAP 的搜索也有自己一套独特的 filter 语法，格式是 <code>(属性名 运算符 属性值)</code>，而组合条件（<code>&amp;</code>、<code>|</code>、<code>!</code>）使用前缀的形式，例如：</p>
+<ul>
+<li>所有 <code>inetOrgPerson</code> 用户：<code>(objectClass=inetOrgPerson)</code></li>
+<li>寻找 UID 为 tomori 的人员：<code>(uid=tomori)</code></li>
+<li>寻找多个用户（或）：<code>(|(uid=anon)(uid=soyo))</code></li>
+<li>寻找设置了 <code>mail</code> 的项：<code>(mail=*)</code></li>
+<li>寻找 cn 开头（姓）是 Hikawa 的项：<code>(cn=Hikawa *)</code></li>
+<li>寻找 UID 数字大于等于 1000，小于等于 9999 的项：<code>(&amp;(uidNumber&gt;=1000)(uidNumber&lt;=9999))</code></li>
+</ul>
+<p>使用 <code>ldapsearch</code> 可以进行查询：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://bangdream.example.org:389<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>-D<span class="w"> </span><span class="s2">"cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>-w<span class="w"> </span><span class="s2">"&lt;redacted&gt;"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span>-b<span class="w"> </span><span class="s2">"dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="s2">"(uid=tomori)"</span>
+</code></pre></div>
 <h3 id="ldap-server">服务端配置<a class="headerlink" href="#ldap-server" title="Permanent link">&para;</a></h3>
 <p>以下以 OpenLDAP 为例讲解相关配置。在安装 <code>slapd</code> 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 <code>/var/lib/ldap</code>。</p>
 <div class="admonition note" id="mdb-format">
 <p class="admonition-title">mdb 格式&#8288;<a class="headerlink" href="#mdb-format" title="Permanent link">&para;</a></p>
 <p>OpenLDAP 会保存两个 mdb 文件：<code>data.mdb</code> 和 <code>lock.mdb</code>，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 <a href="https://www.symas.com/mdb">LMDB</a>，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。</p>
 <p>尽管 <code>lmdb-utils</code> 包提供了 <code>mdb_stat</code>、<code>mdb_dump</code> 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 <code>slapcat</code> 工具：</p>
-<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
-<div class="highlight"><span class="filename">读取第一个数据库</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><span class="filename">读取第一个数据库</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 </div>
 <p>安装 <code>slapd</code> 后对应的服务为 <code>slapd.service</code>，默认配置下监听未加密的 LDAP 协议端口 TCP 389。如果后续配置了 LDAPS，则默认是 TCP 636 端口。</p>
 <p>默认情况下，<code>slapd</code> 安装时会尝试根据 <code>hostname -d</code> 的输出配置 base DN，如果输出为空，那么就会变成 <code>dc=nodomain</code>。在几乎所有的情况下，都不是我们想要的，可以用下面的命令从 rootDSE 获取 <code>namingContexts</code> 验证：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://localhost<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="gp">#</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="gp"># </span>LDAPv3
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="gp"># </span>base<span class="w"> </span>&lt;&gt;<span class="w"> </span>with<span class="w"> </span>scope<span class="w"> </span>baseObject
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="gp"># </span>filter:<span class="w"> </span><span class="o">(</span><span class="nv">objectclass</span><span class="o">=</span>*<span class="o">)</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="gp"># </span>requesting:<span class="w"> </span>namingContexts
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="gp">#</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="gp">#</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="go">dn:</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="go">namingContexts: dc=nodomain</span>
-<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>
-<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="gp"># </span>search<span class="w"> </span>result
-<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="go">search: 2</span>
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="go">result: 0 Success</span>
-<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">2</span>
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://localhost<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="gp">#</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="gp"># </span>LDAPv3
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="gp"># </span>base<span class="w"> </span>&lt;&gt;<span class="w"> </span>with<span class="w"> </span>scope<span class="w"> </span>baseObject
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="gp"># </span>filter:<span class="w"> </span><span class="o">(</span><span class="nv">objectclass</span><span class="o">=</span>*<span class="o">)</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="gp"># </span>requesting:<span class="w"> </span>namingContexts
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="gp">#</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="gp">#</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="go">dn:</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="go">namingContexts: dc=nodomain</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="gp"># </span>search<span class="w"> </span>result
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="go">search: 2</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="go">result: 0 Success</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">2</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <p>这里表明当前环境的 base DN 就是 <code>dc=nodomain</code>。如果不满意，使用 <code>dpkg-reconfigure slapd</code> 配置即可。</p>
 <p>(TODO)</p>
@@ -3612,7 +3629,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月22日 21:41:20 UTC">2026年10月22日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月23日 15:24:32 UTC">2026年10月23日</span>
   </span>
 
     
