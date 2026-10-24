@@ -150,6 +150,21 @@ dc=bangdream,dc=example,dc=org
 
     因此尽管可以，但是不建议在 `cn` 中使用需要转义的字符，避免麻烦。
 
+!!! note "为什么不每个 group 一个 ou？" {#group-ou}
+
+    对于上面这个例子，以下的目录树似乎会更符合直觉一些：
+
+    ```txt
+    dc=bangdream,dc=example,dc=org
+        ou=Poppin'Party
+            cn=Toyama Kasumi
+            cn=Ichigaya Arisa
+            ...
+        ...
+    ```
+
+    但是在更多的例子中，一个用户可能会属于多个组（例如同时隶属于可以登录 A 机器的 group，和可以登录 B 机器的 group），这种 ou 的模型就无法表示这种情况。并且要把用户从一个组搬到另一个组也会麻烦很多——用户的 DN 会发生变化（相当于变化了关系型数据库中的主键），即使 LDAP 实现能够在内部处理好，外部程序记录的 DN 也要随之更改。
+
 项是属性（Attribute）的集合。属性是一对 key（被称为 Attribute Type）和 value。例如上面 `cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org` 的属性以 LDIF 格式表示可能是这样：
 
 ```ldif
