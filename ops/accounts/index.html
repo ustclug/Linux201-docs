@@ -1872,6 +1872,38 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="服务端配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#slapd-basic-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          基本环境
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slapd-cn-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          查看配置
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3235,6 +3267,38 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="服务端配置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#slapd-basic-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          基本环境
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#slapd-cn-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <span class="md-typeset">
+          查看配置
+        </span>
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -3529,7 +3593,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span>-D<span class="w"> </span><span class="s2">"cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span>-w<span class="w"> </span><span class="s2">"&lt;redacted&gt;"</span>
 </code></pre></div>
-<p>注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 <code>-x</code> 参数，否则会变成使用 SASL Bind。以下不涉及相关的高级鉴权方式。</p>
+<p>注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 <code>-x</code> 参数，否则会变成使用 SASL Bind。SASL 是一种能够应用于某些网络协议（例如 LDAP、SMTP、IMAP 等）的认证框架：服务端需要在对应网络协议的标准内提供自己支持的 SASL 框架下的认证机制，客户端选择一种机制，提供对应的认证数据，由服务器再验证。以下不涉及相关的高级鉴权方式。</p>
 <p>有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 <code>uid=tomori,...</code> 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 <code>uid</code>）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。</p>
 <p>LDAP 的搜索也有自己一套独特的 filter 语法，格式是 <code>(属性名 运算符 属性值)</code>，而组合条件（<code>&amp;</code>、<code>|</code>、<code>!</code>）使用前缀的形式，例如：</p>
 <ul>
@@ -3548,19 +3612,20 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="s2">"(uid=tomori)"</span>
 </code></pre></div>
 <h3 id="ldap-server">服务端配置<a class="headerlink" href="#ldap-server" title="Permanent link">&para;</a></h3>
+<h4 id="slapd-basic-env">基本环境<a class="headerlink" href="#slapd-basic-env" title="Permanent link">&para;</a></h4>
 <p>以下以 OpenLDAP 为例讲解相关配置。在安装 <code>slapd</code> 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 <code>/var/lib/ldap</code>。</p>
 <div class="admonition note" id="mdb-format">
 <p class="admonition-title">mdb 格式&#8288;<a class="headerlink" href="#mdb-format" title="Permanent link">&para;</a></p>
 <p>OpenLDAP 会保存两个 mdb 文件：<code>data.mdb</code> 和 <code>lock.mdb</code>，分别存储实际的数据，以及锁管理相关的数据。这个格式对应的是 <a href="https://www.symas.com/mdb">LMDB</a>，是为 OpenLDAP 的需求量身定制的嵌入式键值数据库。</p>
 <p>尽管 <code>lmdb-utils</code> 包提供了 <code>mdb_stat</code>、<code>mdb_dump</code> 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 <code>slapcat</code> 工具：</p>
-<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 LDAP 数据库中）</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
+<div class="highlight"><span class="filename">读取配置（如果 LDAP 配置存储在 cn=config 中）</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">0</span>
 </code></pre></div>
 <div class="highlight"><span class="filename">读取第一个数据库</span><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>slapcat<span class="w"> </span>-n<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 </div>
 <p>安装 <code>slapd</code> 后对应的服务为 <code>slapd.service</code>，默认配置下监听未加密的 LDAP 协议端口 TCP 389。如果后续配置了 LDAPS，则默认是 TCP 636 端口。</p>
 <p>默认情况下，<code>slapd</code> 安装时会尝试根据 <code>hostname -d</code> 的输出配置 base DN，如果输出为空，那么就会变成 <code>dc=nodomain</code>。在几乎所有的情况下，都不是我们想要的，可以用下面的命令从 rootDSE 获取 <code>namingContexts</code> 验证：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://localhost<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-b<span class="w"> </span><span class="s2">""</span><span class="w"> </span>-s<span class="w"> </span>base<span class="w"> </span>namingContexts
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="gp">#</span>
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="gp"># </span>LDAPv3
@@ -3581,6 +3646,83 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <p>这里表明当前环境的 base DN 就是 <code>dc=nodomain</code>。如果不满意，使用 <code>dpkg-reconfigure slapd</code> 配置即可。</p>
+<div class="admonition note" id="ldapi">
+<p class="admonition-title">ldapi?&#8288;<a class="headerlink" href="#ldapi" title="Permanent link">&para;</a></p>
+<p>可以注意到，我们这里连接本地的 OpenLDAP 服务器时，使用的是 <code>ldapi:///</code>（LDAP over IPC）。对 OpenLDAP，其实际访问的是 <code>/var/run/slapd/ldapi</code>。对 Simple Bind，如果没有提供任何凭据，那么相当于匿名访问（即使操作者是 root 也是这样）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>ldapwhoami<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="go">anonymous</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapwhoami<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="go">anonymous</span>
+</code></pre></div>
+<p>如果使用 SASL 的话，在选择 <code>EXTERNAL</code> 认证机制（复用已经完成的身份认证，这里即 Unix socket 自动提供的对端凭据）的情况下，OpenLDAP 会根据访问者的本地用户信息构造出一个身份：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>ldapwhoami<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w">  </span><span class="c1"># -Y EXTERNAL 可以省略</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="go">SASL/EXTERNAL authentication started</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">SASL username: gidNumber=1000+uidNumber=1000,cn=peercred,cn=external,cn=auth</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="go">SASL SSF: 0</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="go">dn:gidNumber=1000+uidNumber=1000,cn=peercred,cn=external,cn=auth</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapwhoami<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="go">SASL/EXTERNAL authentication started</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="go">SASL username: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="go">SASL SSF: 0</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="go">dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth</span>
+</code></pre></div>
+<p>在默认配置下，root 用户有全部权限。</p>
+</div>
+<h4 id="slapd-cn-config">查看配置<a class="headerlink" href="#slapd-cn-config" title="Permanent link">&para;</a></h4>
+<p>OpenLDAP 有两种配置方式：使用 <code>/etc/ldap/slapd.conf</code> 配置文件，以及 <code>cn=config</code> 配置数据库。基于 <code>slapd.conf</code> 配置文件的方式目前<strong>已经弃用</strong>（下文也不会再做介绍），对比较新的 LDAP 服务器来说，使用的都是 <code>cn=config</code> 的方式，在 LDAP 数据库中动态存储配置。相比配置文件，这样做在修改配置时，不需要重启 OpenLDAP 服务器。<code>cn=config</code> 与实际存储用户信息的目录树（Base DN）是两套由同一个 slapd 管理的不同的数据库。</p>
+<p>可以使用 <code>ldapsearch</code> 查看（大部分输出省略）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="nv">cn</span><span class="o">=</span>config
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="gp"># </span>extended<span class="w"> </span>LDIF
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="gp">#</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="gp"># </span>LDAPv3
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="gp"># </span>base<span class="w"> </span>&lt;<span class="nv">cn</span><span class="o">=</span>config&gt;<span class="w"> </span>with<span class="w"> </span>scope<span class="w"> </span>subtree
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="gp"># </span>filter:<span class="w"> </span><span class="o">(</span><span class="nv">objectclass</span><span class="o">=</span>*<span class="o">)</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="gp"># </span>requesting:<span class="w"> </span>ALL
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="gp">#</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="gp"># </span>config
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="go">dn: cn=config</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="go">...</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="gp"># </span>module<span class="o">{</span><span class="m">0</span><span class="o">}</span>,<span class="w"> </span>config
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="go">dn: cn=module{0},cn=config</span>
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a><span class="go">...</span>
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="gp"># </span>schema,<span class="w"> </span>config
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a><span class="go">dn: cn=schema,cn=config</span>
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a><span class="go">...</span>
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="gp"># </span><span class="o">{</span>-1<span class="o">}</span>frontend,<span class="w"> </span>config
+<a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a><span class="go">dn: olcDatabase={-1}frontend,cn=config</span>
+<a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a><span class="go">...</span>
+<a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a><span class="gp"># </span><span class="o">{</span><span class="m">0</span><span class="o">}</span>config,<span class="w"> </span>config
+<a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a><span class="go">dn: olcDatabase={0}config,cn=config</span>
+<a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a><span class="go">...</span>
+<a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a><span class="gp"># </span><span class="o">{</span><span class="m">1</span><span class="o">}</span>mdb,<span class="w"> </span>config
+<a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a><span class="go">dn: olcDatabase={1}mdb,cn=config</span>
+<a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a><span class="go">...</span>
+<a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a><span class="gp"># </span>search<span class="w"> </span>result
+<a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a><span class="go">search: 2</span>
+<a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a><span class="go">result: 0 Success</span>
+<a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a>
+<a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">11</span>
+<a id="__codelineno-19-33" name="__codelineno-19-33" href="#__codelineno-19-33"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<div class="admonition note" id="frontend-database">
+<p class="admonition-title">{-1}frontend 是什么数据库？&#8288;<a class="headerlink" href="#frontend-database" title="Permanent link">&para;</a></p>
+<p>可以发现，除了存储用户数据的数据库（<code>{1}mdb</code>）和 <code>cn=config</code> 配置数据库（<code>{0}config</code>）以外，还有一个 <code>{-1}frontend</code> 数据库。这个数据库存储着所有其他数据库继承的全局默认配置。例如：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="s1">'olcDatabase={-1}frontend,cn=config'</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">（省略）</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="gp"># </span><span class="o">{</span>-1<span class="o">}</span>frontend,<span class="w"> </span>config
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">dn: olcDatabase={-1}frontend,cn=config</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="go">objectClass: olcDatabaseConfig</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">objectClass: olcFrontendConfig</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="go">olcDatabase: {-1}frontend</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="go">olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth manage by * break</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="go">olcAccess: {1}to dn.exact="" by * read</span>
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="go">olcAccess: {2}to dn.base="cn=Subschema" by * read</span>
+<a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="go">olcSizeLimit: 500</span>
+<a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="go">（省略）</span>
+</code></pre></div>
+<p>这里通过 <code>olcAccess</code> 指定的 ACL 配置，就允许了通过 <code>ldapi:///</code> 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。</p>
+</div>
 <p>(TODO)</p>
 <h2 id="references">参考资料<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3641,7 +3783,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月24日 21:58:11 UTC">2026年10月24日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月25日 19:43:28 UTC">2026年10月25日</span>
   </span>
 
     
