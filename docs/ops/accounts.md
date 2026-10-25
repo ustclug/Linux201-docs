@@ -263,7 +263,7 @@ ldapwhoami -x -H ldap://bangdream.example.org:389 \
   -w "<redacted>"
 ```
 
-注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 `-x` 参数，否则会变成使用 SASL Bind。以下不涉及相关的高级鉴权方式。
+注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 `-x` 参数，否则会变成使用 SASL Bind。SASL 是一种能够应用于某些网络协议（例如 LDAP、SMTP、IMAP 等）的认证框架：服务端需要在对应网络协议的标准内提供自己支持的 SASL 框架下的认证机制，客户端选择一种机制，提供对应的认证数据，由服务器再验证。以下不涉及相关的高级鉴权方式。
 
 有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 `uid=tomori,...` 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 `uid`）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。
 
@@ -288,6 +288,8 @@ ldapsearch -x -H ldap://bangdream.example.org:389 \
 
 ### 服务端配置 {#ldap-server}
 
+#### 基本环境 {#slapd-basic-env}
+
 以下以 OpenLDAP 为例讲解相关配置。在安装 `slapd` 包的过程中会要求设置管理员密码。配置完成后，LDAP 数据库存储在 `/var/lib/ldap`。
 
 !!! note "mdb 格式" {#mdb-format}
@@ -296,7 +298,7 @@ ldapsearch -x -H ldap://bangdream.example.org:389 \
 
     尽管 `lmdb-utils` 包提供了 `mdb_stat`、`mdb_dump` 等工具可以读取、导出 mdb 数据库的内容，但是以此阅读 OpenLDAP 实际存储的内容仍然是难以理解的。如果需要导出 mdb 到可读的 LDIF 格式，需要使用 `slapcat` 工具：
 
-    ```sh title="读取配置（如果 LDAP 配置存储在 LDAP 数据库中）"
+    ```sh title="读取配置（如果 LDAP 配置存储在 cn=config 中）"
     slapcat -n 0
     ```
 
@@ -309,7 +311,7 @@ ldapsearch -x -H ldap://bangdream.example.org:389 \
 默认情况下，`slapd` 安装时会尝试根据 `hostname -d` 的输出配置 base DN，如果输出为空，那么就会变成 `dc=nodomain`。在几乎所有的情况下，都不是我们想要的，可以用下面的命令从 rootDSE 获取 `namingContexts` 验证：
 
 ```console
-$ ldapsearch -x -H ldap://localhost -b "" -s base namingContexts
+$ ldapsearch -x -H ldapi:/// -b "" -s base namingContexts
 # extended LDIF
 #
 # LDAPv3
@@ -331,6 +333,97 @@ result: 0 Success
 ```
 
 这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可。
+
+!!! note "ldapi?" {#ldapi}
+
+    可以注意到，我们这里连接本地的 OpenLDAP 服务器时，使用的是 `ldapi:///`（LDAP over IPC）。对 OpenLDAP，其实际访问的是 `/var/run/slapd/ldapi`。对 Simple Bind，如果没有提供任何凭据，那么相当于匿名访问（即使操作者是 root 也是这样）：
+
+    ```console
+    $ ldapwhoami -x -H ldapi:///
+    anonymous
+    $ sudo ldapwhoami -x -H ldapi:///
+    anonymous
+    ```
+
+    如果使用 SASL 的话，在选择 `EXTERNAL` 认证机制（复用已经完成的身份认证，这里即 Unix socket 自动提供的对端凭据）的情况下，OpenLDAP 会根据访问者的本地用户信息构造出一个身份：
+
+    ```console
+    $ ldapwhoami -H ldapi:/// -Y EXTERNAL  # -Y EXTERNAL 可以省略
+    SASL/EXTERNAL authentication started
+    SASL username: gidNumber=1000+uidNumber=1000,cn=peercred,cn=external,cn=auth
+    SASL SSF: 0
+    dn:gidNumber=1000+uidNumber=1000,cn=peercred,cn=external,cn=auth
+    $ sudo ldapwhoami -H ldapi:/// -Y EXTERNAL
+    SASL/EXTERNAL authentication started
+    SASL username: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+    SASL SSF: 0
+    dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+    ```
+
+    在默认配置下，root 用户有全部权限。
+
+#### 查看配置 {#slapd-cn-config}
+
+OpenLDAP 有两种配置方式：使用 `/etc/ldap/slapd.conf` 配置文件，以及 `cn=config` 配置数据库。基于 `slapd.conf` 配置文件的方式目前**已经弃用**（下文也不会再做介绍），对比较新的 LDAP 服务器来说，使用的都是 `cn=config` 的方式，在 LDAP 数据库中动态存储配置。相比配置文件，这样做在修改配置时，不需要重启 OpenLDAP 服务器。`cn=config` 与实际存储用户信息的目录树（Base DN）是两套由同一个 slapd 管理的不同的数据库。
+
+可以使用 `ldapsearch` 查看（大部分输出省略）：
+
+```console
+$ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b cn=config
+# extended LDIF
+#
+# LDAPv3
+# base <cn=config> with scope subtree
+# filter: (objectclass=*)
+# requesting: ALL
+#
+
+# config
+dn: cn=config
+...
+# module{0}, config
+dn: cn=module{0},cn=config
+...
+# schema, config
+dn: cn=schema,cn=config
+...
+# {-1}frontend, config
+dn: olcDatabase={-1}frontend,cn=config
+...
+# {0}config, config
+dn: olcDatabase={0}config,cn=config
+...
+# {1}mdb, config
+dn: olcDatabase={1}mdb,cn=config
+...
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 11
+# numEntries: 10
+```
+
+!!! note "{-1}frontend 是什么数据库？" {#frontend-database}
+
+    可以发现，除了存储用户数据的数据库（`{1}mdb`）和 `cn=config` 配置数据库（`{0}config`）以外，还有一个 `{-1}frontend` 数据库。这个数据库存储着所有其他数据库继承的全局默认配置。例如：
+
+    ```console
+    $ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b 'olcDatabase={-1}frontend,cn=config'
+    （省略）
+    # {-1}frontend, config
+    dn: olcDatabase={-1}frontend,cn=config
+    objectClass: olcDatabaseConfig
+    objectClass: olcFrontendConfig
+    olcDatabase: {-1}frontend
+    olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth manage by * break
+    olcAccess: {1}to dn.exact="" by * read
+    olcAccess: {2}to dn.base="cn=Subschema" by * read
+    olcSizeLimit: 500
+    （省略）
+    ```
+
+    这里通过 `olcAccess` 指定的 ACL 配置，就允许了通过 `ldapi:///` 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。
 
 (TODO)
 
