@@ -3630,6 +3630,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ldapwhoami<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://bangdream.example.org:389<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>-D<span class="w"> </span><span class="s2">"cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>-w<span class="w"> </span><span class="s2">"&lt;redacted&gt;"</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># 或者用 -W 交互式输入密码，以下同。</span>
 </code></pre></div>
 <p>注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 <code>-x</code> 参数，否则会变成使用 SASL Bind。SASL 是一种能够应用于某些网络协议（例如 LDAP、SMTP、IMAP 等）的认证框架：服务端需要在对应网络协议的标准内提供自己支持的 SASL 框架下的认证机制，客户端选择一种机制，提供对应的认证数据，由服务器再验证。以下不涉及相关的高级鉴权方式。</p>
 <p>有一些反直觉的地方是，如果你的 DN 像上面这样，那么不能使用（看起来更合理的）uid 来登录，因为 <code>uid=tomori,...</code> 不是你的 DN。因此应用常用的一种形式是：如果 LDAP 服务不允许匿名搜索，那么就需要先用提前配置好的专门用于搜索的账号 bind，根据用户的条件（例如 <code>uid</code>）找到实际的 DN，再拿这个 DN 加上用户输入的密码再来 bind。</p>
@@ -3683,7 +3684,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="gp"># </span>numResponses:<span class="w"> </span><span class="m">2</span>
 <a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="gp"># </span>numEntries:<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
-<p>这里表明当前环境的 base DN 就是 <code>dc=nodomain</code>。如果不满意，使用 <code>dpkg-reconfigure slapd</code> 配置即可。后文的 <code>ldapsearch</code> 输出会省略一部分注释以方便阅读。</p>
+<p>这里表明当前环境的 base DN 就是 <code>dc=nodomain</code>。如果不满意，使用 <code>dpkg-reconfigure slapd</code> 配置即可（这一步也会设置 LDAP 的管理员密码）。后文的 <code>ldapsearch</code> 输出会省略一部分注释以方便阅读。</p>
 <div class="admonition note" id="ldapi">
 <p class="admonition-title">ldapi?&#8288;<a class="headerlink" href="#ldapi" title="Permanent link">&para;</a></p>
 <p>可以注意到，我们这里连接本地的 OpenLDAP 服务器时，使用的是 <code>ldapi:///</code>（LDAP over IPC）。对 OpenLDAP，其实际访问的是 <code>/var/run/slapd/ldapi</code>。对 Simple Bind，如果没有提供任何凭据，那么相当于匿名访问（即使操作者是 root 也是这样）：</p>
@@ -3704,7 +3705,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="go">SASL SSF: 0</span>
 <a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="go">dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth</span>
 </code></pre></div>
-<p>在默认配置下，root 用户有全部权限。</p>
+<p>在默认配置下，root 用户有很多权限，具体配置会在后文介绍 ACL 时提到。</p>
 </div>
 <h4 id="slapd-cn-config">查看配置<a class="headerlink" href="#slapd-cn-config" title="Permanent link">&para;</a></h4>
 <p>OpenLDAP 有两种配置方式：使用 <code>/etc/ldap/slapd.conf</code> 配置文件，以及 <code>cn=config</code> 配置数据库。基于 <code>slapd.conf</code> 配置文件的方式目前<strong>已经弃用</strong>（下文也不会再做介绍），对比较新的 LDAP 服务器来说，使用的都是 <code>cn=config</code> 的方式，在 LDAP 数据库中动态存储配置。相比配置文件，这样做在修改配置时，不需要重启 OpenLDAP 服务器。<code>cn=config</code> 与实际存储用户信息的目录树（Base DN）是两套由同一个 slapd 管理的不同的数据库。</p>
@@ -3761,7 +3762,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="go">olcSizeLimit: 500</span>
 <a id="__codelineno-22-13" name="__codelineno-22-13" href="#__codelineno-22-13"></a><span class="go">（省略）</span>
 </code></pre></div>
-<p>这里通过 <code>olcAccess</code> 指定的 ACL 配置，就允许了通过 <code>ldapi:///</code> 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。</p>
+<p>这里通过 <code>olcAccess</code> 指定的 ACL 配置会在其他数据库的 <code>olcAccess</code> 之后插入，在数据库前面的 <code>olcAccess</code> 没有终止匹配的情况下，允许通过 <code>ldapi:///</code> 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。</p>
 </div>
 <div class="admonition tip" id="openldap-ldif-line-folding">
 <p class="admonition-title">OpenLDAP 工具的自动折行&#8288;<a class="headerlink" href="#openldap-ldif-line-folding" title="Permanent link">&para;</a></p>
@@ -3787,7 +3788,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-24-12" name="__codelineno-24-12" href="#__codelineno-24-12"></a><span class="go">result: 0 Success</span>
 </code></pre></div>
 <p>我们至少需要先添加 <code>ou=people</code> 和 <code>ou=groups</code>（也可以用自己喜欢的名字表示用户和组的 ou）。就像对关系型数据库需要写 SQL 来创建数据库一样，我们也需要写 LDIF 来创建 ou：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<div class="highlight"><span class="filename">ou.ldif</span><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalUnit</span>
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="na">ou</span><span class="p">:</span><span class="w"> </span><span class="s">people</span>
@@ -3797,9 +3798,74 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalUnit</span>
 <a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="na">ou</span><span class="p">:</span><span class="w"> </span><span class="s">groups</span>
 </code></pre></div>
+<p>之后使用 <code>ldapadd</code> 执行 LDIF：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>ldapadd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>ou.ldap
+</code></pre></div>
+<div class="admonition note" id="get-admin-from-olcrootdn">
+<p class="admonition-title">为什么是 <code>cn=admin,dc=bangdream,dc=example,dc=org</code>？&#8288;<a class="headerlink" href="#get-admin-from-olcrootdn" title="Permanent link">&para;</a></p>
+<p>用户数据库的管理员由数据库的 <code>olcRootDN</code> 属性指定：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="s1">'olcDatabase={1}mdb,cn=config'</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="gp"># </span><span class="o">{</span><span class="m">1</span><span class="o">}</span>mdb,<span class="w"> </span>config
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="go">dn: olcDatabase={1}mdb,cn=config</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="go">olcRootDN: cn=admin,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="go">（省略）</span>
+</code></pre></div>
+</div>
 <div class="admonition note" id="ou-utf8">
 <p class="admonition-title">我可以写 <code>ou=用户</code>，<code>ou=组</code> 吗？&#8288;<a class="headerlink" href="#ou-utf8" title="Permanent link">&para;</a></p>
-<p>(TODO)</p>
+<p><code>ou</code> 可以是非 ASCII 字符，<code>ldapadd</code> 也能正常处理：</p>
+<div class="highlight"><span class="filename">test.ldif</span><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">ou</span><span class="o">=</span><span class="s">测试</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalUnit</span>
+<a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="na">ou</span><span class="p">:</span><span class="w"> </span><span class="s">测试</span>
+</code></pre></div>
+<p>但是 <code>ldapsearch</code> 在输出查询结果时，根据 <a href="https://datatracker.ietf.org/doc/html/rfc2849">RFC 2849</a>，会对非 ASCII 等特殊的字符做 base64 处理。这一类的属性名称和值之间是两个冒号（<code>::</code>）。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="s1">'dc=bangdream,dc=example,dc=org'</span>
+<a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="gp"># </span><span class="se">\E</span><span class="m">6</span><span class="se">\B</span><span class="m">5</span><span class="se">\8</span>B<span class="se">\E</span><span class="m">8</span><span class="se">\A</span>F<span class="se">\9</span><span class="m">5</span>,<span class="w"> </span>bangdream.example.org
+<a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="go">dn:: b3U95rWL6K+VLGRjPWJhbmdkcmVhbSxkYz1leGFtcGxlLGRjPW9yZw==</span>
+<a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="go">objectClass: top</span>
+<a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="go">objectClass: organizationalUnit</span>
+<a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="go">ou:: 5rWL6K+V</span>
+<a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s1">'b3U95rWL6K+VLGRjPWJhbmdkcmVhbSxkYz1leGFtcGxlLGRjPW9yZw=='</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+<a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="go">ou=测试,dc=bangdream,dc=example,dc=org</span>
+<a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="gp">$ </span><span class="nb">echo</span><span class="w"> </span><span class="s1">'5rWL6K+V'</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>base64<span class="w"> </span>-d<span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+<a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="go">测试</span>
+</code></pre></div>
+<p>所以为了阅读方便，不建议这么做。</p>
+</div>
+<div class="admonition note" id="mdb-acl">
+<p class="admonition-title">为什么不能用 root 添加 LDIF？&#8288;<a class="headerlink" href="#mdb-acl" title="Permanent link">&para;</a></p>
+<p>如果查看用户数据库的 <code>olcAccess</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="s1">'olcDatabase={1}mdb,cn=config'</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="gp"># </span><span class="o">{</span><span class="m">1</span><span class="o">}</span>mdb,<span class="w"> </span>config
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="go">dn: olcDatabase={1}mdb,cn=config</span>
+<a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="go">（省略）</span>
+<a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="go">olcAccess: {0}to attrs=userPassword by self write by anonymous auth by * none</span>
+<a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="go">olcAccess: {1}to attrs=shadowLastChange by self write by * read</span>
+<a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="go">olcAccess: {2}to * by * read</span>
+<a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="go">（省略）</span>
+</code></pre></div>
+<p>在默认情况下，如果一条 <code>olcAccess</code> 被匹配到了，那么就不会再继续匹配。这里 root 会匹配到 <code>{2}to * by * read</code>，从而只能获取到只读权限，不会再去匹配 <code>{-1}frontend</code> 的配置。</p>
+</div>
+<div class="admonition tip" id="reset-mdb-password">
+<p class="admonition-title">忘了 <code>cn=admin,...</code> 的密码怎么办？&#8288;<a class="headerlink" href="#reset-mdb-password" title="Permanent link">&para;</a></p>
+<p>这种情况下，千万不要使用 <code>dpkg-reconfigure slapd</code> 来重新设置，除非你想完全扔掉当前的所有数据。</p>
+<p>首先使用 <code>slappasswd</code> 生成自己想要设置的密码对应的哈希：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>/sbin/slappasswd
+<a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="go">New password: </span>
+<a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="go">Re-enter new password: </span>
+<a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="go">{SSHA}(redacted)</span>
+</code></pre></div>
+<p>然后写一个 LDIF 文件：</p>
+<div class="highlight"><span class="filename">reset-admin-passwd.ldif</span><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">olcDatabase</span><span class="o">=</span><span class="s">{1}mdb</span><span class="p">,</span><span class="na">cn</span><span class="o">=</span><span class="s">config</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">modify</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="k">replace</span><span class="p">:</span><span class="w"> </span><span class="na">olcRootPW</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="na">olcRootPW</span><span class="p">:</span><span class="w"> </span><span class="s">{SSHA}(redacted)</span>
+</code></pre></div>
+<p>最后以 root 的身份应用：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>sudo<span class="w"> </span>ldapmodify<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-f<span class="w"> </span>reset-admin-passwd.ldif
+</code></pre></div>
 </div>
 <p>(TODO)</p>
 <h2 id="references">参考资料<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
@@ -3861,7 +3927,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月27日 03:54:07 UTC">2026年10月27日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月27日 21:34:40 UTC">2026年10月27日</span>
   </span>
 
     
