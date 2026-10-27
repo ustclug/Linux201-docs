@@ -275,6 +275,7 @@ postalAddress: 114-0001
 ldapwhoami -x -H ldap://bangdream.example.org:389 \
   -D "cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org" \
   -w "<redacted>"
+# 或者用 -W 交互式输入密码，以下同。
 ```
 
 注意在 OpenLDAP 提供的 CLI 工具中，Simple Bind 需要使用 `-x` 参数，否则会变成使用 SASL Bind。SASL 是一种能够应用于某些网络协议（例如 LDAP、SMTP、IMAP 等）的认证框架：服务端需要在对应网络协议的标准内提供自己支持的 SASL 框架下的认证机制，客户端选择一种机制，提供对应的认证数据，由服务器再验证。以下不涉及相关的高级鉴权方式。
@@ -346,7 +347,7 @@ result: 0 Success
 # numEntries: 1
 ```
 
-这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可。后文的 `ldapsearch` 输出会省略一部分注释以方便阅读。
+这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可（这一步也会设置 LDAP 的管理员密码）。后文的 `ldapsearch` 输出会省略一部分注释以方便阅读。
 
 !!! note "ldapi?" {#ldapi}
 
@@ -374,7 +375,7 @@ result: 0 Success
     dn:gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
     ```
 
-    在默认配置下，root 用户有全部权限。
+    在默认配置下，root 用户有很多权限，具体配置会在后文介绍 ACL 时提到。
 
 #### 查看配置 {#slapd-cn-config}
 
@@ -442,7 +443,7 @@ cn=config
     （省略）
     ```
 
-    这里通过 `olcAccess` 指定的 ACL 配置，就允许了通过 `ldapi:///` 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。
+    这里通过 `olcAccess` 指定的 ACL 配置会在其他数据库的 `olcAccess` 之后插入，在数据库前面的 `olcAccess` 没有终止匹配的情况下，允许通过 `ldapi:///` 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。
 
 !!! tip "OpenLDAP 工具的自动折行" {#openldap-ldif-line-folding}
 
@@ -476,7 +477,7 @@ result: 0 Success
 
 我们至少需要先添加 `ou=people` 和 `ou=groups`（也可以用自己喜欢的名字表示用户和组的 ou）。就像对关系型数据库需要写 SQL 来创建数据库一样，我们也需要写 LDIF 来创建 ou：
 
-```ldif
+```ldif title="ou.ldif"
 dn: ou=people,dc=bangdream,dc=example,dc=org
 objectClass: top
 objectClass: organizationalUnit
@@ -488,9 +489,97 @@ objectClass: organizationalUnit
 ou: groups
 ```
 
+之后使用 `ldapadd` 执行 LDIF：
+
+```sh
+ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ou.ldap
+```
+
+!!! note "为什么是 `cn=admin,dc=bangdream,dc=example,dc=org`？" {#get-admin-from-olcrootdn}
+
+    用户数据库的管理员由数据库的 `olcRootDN` 属性指定：
+
+    ```console
+    $ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b 'olcDatabase={1}mdb,cn=config'
+    # {1}mdb, config
+    dn: olcDatabase={1}mdb,cn=config
+    （省略）
+    olcRootDN: cn=admin,dc=bangdream,dc=example,dc=org
+    （省略）
+    ```
+
 !!! note "我可以写 `ou=用户`，`ou=组` 吗？" {#ou-utf8}
 
-    (TODO)
+    `ou` 可以是非 ASCII 字符，`ldapadd` 也能正常处理：
+
+    ```ldif title="test.ldif"
+    dn: ou=测试,dc=bangdream,dc=example,dc=org
+    objectClass: top
+    objectClass: organizationalUnit
+    ou: 测试
+    ```
+
+    但是 `ldapsearch` 在输出查询结果时，根据 [RFC 2849](https://datatracker.ietf.org/doc/html/rfc2849)，会对非 ASCII 等特殊的字符做 base64 处理。这一类的属性名称和值之间是两个冒号（`:: `）。
+
+    ```console
+    $ ldapsearch -H ldapi:/// -Y EXTERNAL -b 'dc=bangdream,dc=example,dc=org'
+    # \E6\B5\8B\E8\AF\95, bangdream.example.org
+    dn:: b3U95rWL6K+VLGRjPWJhbmdkcmVhbSxkYz1leGFtcGxlLGRjPW9yZw==
+    objectClass: top
+    objectClass: organizationalUnit
+    ou:: 5rWL6K+V
+    $ echo 'b3U95rWL6K+VLGRjPWJhbmdkcmVhbSxkYz1leGFtcGxlLGRjPW9yZw==' | base64 -d; echo
+    ou=测试,dc=bangdream,dc=example,dc=org
+    $ echo '5rWL6K+V' | base64 -d; echo
+    测试
+    ```
+
+    所以为了阅读方便，不建议这么做。
+
+!!! note "为什么不能用 root 添加 LDIF？" {#mdb-acl}
+
+    如果查看用户数据库的 `olcAccess`：
+
+    ```console
+    $ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b 'olcDatabase={1}mdb,cn=config'
+    # {1}mdb, config
+    dn: olcDatabase={1}mdb,cn=config
+    （省略）
+    olcAccess: {0}to attrs=userPassword by self write by anonymous auth by * none
+    olcAccess: {1}to attrs=shadowLastChange by self write by * read
+    olcAccess: {2}to * by * read
+    （省略）
+    ```
+
+    在默认情况下，如果一条 `olcAccess` 被匹配到了，那么就不会再继续匹配。这里 root 会匹配到 `{2}to * by * read`，从而只能获取到只读权限，不会再去匹配 `{-1}frontend` 的配置。
+
+!!! tip "忘了 `cn=admin,...` 的密码怎么办？" {#reset-mdb-password}
+
+    这种情况下，千万不要使用 `dpkg-reconfigure slapd` 来重新设置，除非你想完全扔掉当前的所有数据。
+
+    首先使用 `slappasswd` 生成自己想要设置的密码对应的哈希：
+
+    ```console
+    $ /sbin/slappasswd
+    New password: 
+    Re-enter new password: 
+    {SSHA}(redacted)
+    ```
+
+    然后写一个 LDIF 文件：
+
+    ```ldif title="reset-admin-passwd.ldif"
+    dn: olcDatabase={1}mdb,cn=config
+    changetype: modify
+    replace: olcRootPW
+    olcRootPW: {SSHA}(redacted)
+    ```
+
+    最后以 root 的身份应用：
+
+    ```sh
+    sudo ldapmodify -H ldapi:/// -Y EXTERNAL -f reset-admin-passwd.ldif
+    ```
 
 (TODO)
 
