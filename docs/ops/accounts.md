@@ -220,7 +220,7 @@ modifyTimestamp: 20260112000000Z
     objectClass: top
     objectClass: posixGroup
     cn: CRYCHIC
-    gidNumber: 2106
+    gidNumber: 2101
     memberUid: sakiko
     memberUid: tomori
     memberUid: soyo
@@ -236,7 +236,7 @@ modifyTimestamp: 20260112000000Z
     objectClass: groupOfNames
     objectClass: posixGroup
     cn: CRYCHIC
-    gidNumber: 2106
+    gidNumber: 2101
     member: cn=Togawa Sakiko,ou=people,dc=bangdream,dc=example,dc=org
     member: cn=Takamatsu Tomori,ou=people,dc=bangdream,dc=example,dc=org
     member: cn=Nagasaki Soyo,ou=people,dc=bangdream,dc=example,dc=org
@@ -248,11 +248,25 @@ modifyTimestamp: 20260112000000Z
 
 此外有一些特殊的属性，不能被用户设置，只能由服务器生成，例如 `createTimestamp` 和 `modifyTimestamp`。这些被称为操作属性（Operational Attribute）。
 
-LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如删除一项：
+LDIF 格式不仅可以表示一个项，也可以表示数据的修改，例如删除或者修改一些项：
 
 ```ldif
 dn: cn=CRYCHIC,ou=groups,dc=bangdream,dc=example,dc=org
 changetype: delete
+
+# 对不同对象的操作之间用空行隔开
+dn: cn=Viola,ou=people,dc=bangdream,dc=example,dc=org
+changetype: delete
+```
+
+```ldif
+dn: cn=Togawa Sakiko,ou=people,dc=bangdream,dc=example,dc=org
+add: displayName
+displayName: Oblivionis
+-
+# 对同一对象的修改操作用 - 隔开
+replace: postalAddress
+postalAddress: 114-0001
 ```
 
 用户如果要访问 LDAP 数据的话需要登录，这个过程被称为 Bind。最常见的 Simple Bind 需要用户提供自己的 DN 和密码，类似这样：
@@ -273,7 +287,7 @@ LDAP 的搜索也有自己一套独特的 filter 语法，格式是 `(属性名 
 - 寻找 UID 为 tomori 的人员：`(uid=tomori)`
 - 寻找多个用户（或）：`(|(uid=anon)(uid=soyo))`
 - 寻找设置了 `mail` 的项：`(mail=*)`
-- 寻找 cn 开头（姓）是 Hikawa 的项：`(cn=Hikawa *)`
+- 寻找 cn 开头（姓）是 Hikawa 的项：`(cn=Hikawa *)`，或者更加贴切的 `(sn=Hikawa)`
 - 寻找 UID 数字大于等于 1000，小于等于 9999 的项：`(&(uidNumber>=1000)(uidNumber<=9999))`
 
 使用 `ldapsearch` 可以进行查询：
@@ -332,7 +346,7 @@ result: 0 Success
 # numEntries: 1
 ```
 
-这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可。
+这里表明当前环境的 base DN 就是 `dc=nodomain`。如果不满意，使用 `dpkg-reconfigure slapd` 配置即可。后文的 `ldapsearch` 输出会省略一部分注释以方便阅读。
 
 !!! note "ldapi?" {#ldapi}
 
@@ -370,14 +384,6 @@ OpenLDAP 有两种配置方式：使用 `/etc/ldap/slapd.conf` 配置文件，�
 
 ```console
 $ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b cn=config
-# extended LDIF
-#
-# LDAPv3
-# base <cn=config> with scope subtree
-# filter: (objectclass=*)
-# requesting: ALL
-#
-
 # config
 dn: cn=config
 ...
@@ -399,14 +405,26 @@ dn: olcDatabase={1}mdb,cn=config
 # search result
 search: 2
 result: 0 Success
-
-# numResponses: 11
-# numEntries: 10
 ```
 
-!!! note "{-1}frontend 是什么数据库？" {#frontend-database}
+根据对应的完整输出，`cn=config` 的结构如下。本文不会详尽介绍所有配置项的细节。
 
-    可以发现，除了存储用户数据的数据库（`{1}mdb`）和 `cn=config` 配置数据库（`{0}config`）以外，还有一个 `{-1}frontend` 数据库。这个数据库存储着所有其他数据库继承的全局默认配置。例如：
+```txt
+cn=config
+    cn=module{0},cn=config
+    cn=schema,cn=config
+        cn={0}core,cn=schema,cn=config
+        cn={1}cosine,cn=schema,cn=config
+        cn={2}nis,cn=schema,cn=config
+        cn={3}inetorgperson,cn=schema,cn=config
+    olcDatabase={-1}frontend,cn=config
+    olcDatabase={0}config,cn=config
+    olcDatabase={1}mdb,cn=config
+```
+
+!!! note "`{-1}frontend` 是什么数据库？" {#frontend-database}
+
+    可以发现，除了存储用户数据的数据库（`{1}mdb`）和 `cn=config` 配置数据库（`{0}config`）以外，还有一个 `{-1}frontend` 数据库。这个「数据库」并非实际存在，对应的配置只用来配置对其他所有数据库的默认行为。例如：
 
     ```console
     $ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b 'olcDatabase={-1}frontend,cn=config'
@@ -416,7 +434,8 @@ result: 0 Success
     objectClass: olcDatabaseConfig
     objectClass: olcFrontendConfig
     olcDatabase: {-1}frontend
-    olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth manage by * break
+    olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external
+     ,cn=auth manage by * break
     olcAccess: {1}to dn.exact="" by * read
     olcAccess: {2}to dn.base="cn=Subschema" by * read
     olcSizeLimit: 500
@@ -424,6 +443,54 @@ result: 0 Success
     ```
 
     这里通过 `olcAccess` 指定的 ACL 配置，就允许了通过 `ldapi:///` 连接的 root 用户管理数据库，并允许所有用户（包括匿名用户）读取 rootDSE 和 schema。
+
+!!! tip "OpenLDAP 工具的自动折行" {#openldap-ldif-line-folding}
+
+    上面的例子中，可以发现 `ldapsearch` 在输出时，过长的行会折行处理：
+
+    ```ldif
+    olcAccess: {0}to * by dn.exact=gidNumber=0+uidNumber=0,cn=peercred,cn=external
+     ,cn=auth manage by * break
+    ```
+
+    LDIF 允许折行：对太长的一行，可以拆成多行，后面接续的行开头需要是一个空格。解析的时候会把这个开头的空格去掉，再接到上面的内容。对 OpenLDAP 的 CLI 工具，可以添加 `-o ldif-wrap=no` 关闭其默认的折行行为。
+
+#### 用户操作 {#slapd-user-op}
+
+在起始状态下，base DN 里面是没有内容的：
+
+```console
+$ sudo ldapsearch -H ldapi:/// -Y EXTERNAL -b dc=bangdream,dc=example,dc=org
+# bangdream.example.org
+dn: dc=bangdream,dc=example,dc=org
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: bangdream
+dc: bangdream
+
+# search result
+search: 2
+result: 0 Success
+```
+
+我们至少需要先添加 `ou=people` 和 `ou=groups`（也可以用自己喜欢的名字表示用户和组的 ou）。就像对关系型数据库需要写 SQL 来创建数据库一样，我们也需要写 LDIF 来创建 ou：
+
+```ldif
+dn: ou=people,dc=bangdream,dc=example,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=bangdream,dc=example,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: groups
+```
+
+!!! note "我可以写 `ou=用户`，`ou=组` 吗？" {#ou-utf8}
+
+    (TODO)
 
 (TODO)
 
