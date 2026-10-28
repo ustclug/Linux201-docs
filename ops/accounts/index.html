@@ -3619,12 +3619,13 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">delete</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Togawa Sakiko</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="k">add</span><span class="p">:</span><span class="w"> </span><span class="na">displayName</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="na">displayName</span><span class="p">:</span><span class="w"> </span><span class="s">Oblivionis</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="p">-</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># 对同一对象的修改操作用 - 隔开</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">replace</span><span class="p">:</span><span class="w"> </span><span class="na">postalAddress</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="na">postalAddress</span><span class="p">:</span><span class="w"> </span><span class="s">114-0001</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">modify</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="k">add</span><span class="p">:</span><span class="w"> </span><span class="na">displayName</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="na">displayName</span><span class="p">:</span><span class="w"> </span><span class="s">Oblivionis</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="p">-</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># 对同一对象的修改操作用 - 隔开</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="k">replace</span><span class="p">:</span><span class="w"> </span><span class="na">postalAddress</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="na">postalAddress</span><span class="p">:</span><span class="w"> </span><span class="s">114-0001</span>
 </code></pre></div>
 <p>用户如果要访问 LDAP 数据的话需要登录，这个过程被称为 Bind。最常见的 Simple Bind 需要用户提供自己的 DN 和密码，类似这样：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ldapwhoami<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldap://bangdream.example.org:389<span class="w"> </span><span class="se">\</span>
@@ -3745,6 +3746,10 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>    olcDatabase={0}config,cn=config
 <a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>    olcDatabase={1}mdb,cn=config
 </code></pre></div>
+<div class="admonition tip" id="slapd-init-config">
+<p class="admonition-title">查看初始配置&#8288;<a class="headerlink" href="#slapd-init-config" title="Permanent link">&para;</a></p>
+<p><code>slapd</code> 包的初始配置在 <code>/usr/share/slapd/slapd.init.ldif</code>，包含每项设置的注释，可以参考阅读。</p>
+</div>
 <div class="admonition note" id="frontend-database">
 <p class="admonition-title"><code>{-1}frontend</code> 是什么数据库？&#8288;<a class="headerlink" href="#frontend-database" title="Permanent link">&para;</a></p>
 <p>可以发现，除了存储用户数据的数据库（<code>{1}mdb</code>）和 <code>cn=config</code> 配置数据库（<code>{0}config</code>）以外，还有一个 <code>{-1}frontend</code> 数据库。这个「数据库」并非实际存在，对应的配置只用来配置对其他所有数据库的默认行为。例如：</p>
@@ -3799,10 +3804,11 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="na">ou</span><span class="p">:</span><span class="w"> </span><span class="s">groups</span>
 </code></pre></div>
 <p>之后使用 <code>ldapadd</code> 执行 LDIF：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>ldapadd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>ou.ldap
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>ldapadd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>ou.ldif
 </code></pre></div>
+<p>如果没有 <code>-f ou.ldif</code> 的话，<code>ldapadd</code> 就会直接从 stdin 读 LDIF。</p>
 <div class="admonition note" id="get-admin-from-olcrootdn">
-<p class="admonition-title">为什么是 <code>cn=admin,dc=bangdream,dc=example,dc=org</code>？&#8288;<a class="headerlink" href="#get-admin-from-olcrootdn" title="Permanent link">&para;</a></p>
+<p class="admonition-title">查找数据库管理员的 DN&#8288;<a class="headerlink" href="#get-admin-from-olcrootdn" title="Permanent link">&para;</a></p>
 <p>用户数据库的管理员由数据库的 <code>olcRootDN</code> 属性指定：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ldapsearch<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-b<span class="w"> </span><span class="s1">'olcDatabase={1}mdb,cn=config'</span>
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="gp"># </span><span class="o">{</span><span class="m">1</span><span class="o">}</span>mdb,<span class="w"> </span>config
@@ -3849,7 +3855,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <p>在默认情况下，如果一条 <code>olcAccess</code> 被匹配到了，那么就不会再继续匹配。这里 root 会匹配到 <code>{2}to * by * read</code>，从而只能获取到只读权限，不会再去匹配 <code>{-1}frontend</code> 的配置。</p>
 </div>
 <div class="admonition tip" id="reset-mdb-password">
-<p class="admonition-title">忘了 <code>cn=admin,...</code> 的密码怎么办？&#8288;<a class="headerlink" href="#reset-mdb-password" title="Permanent link">&para;</a></p>
+<p class="admonition-title">忘了/要修改 <code>cn=admin,...</code> 的密码怎么办？&#8288;<a class="headerlink" href="#reset-mdb-password" title="Permanent link">&para;</a></p>
 <p>这种情况下，千万不要使用 <code>dpkg-reconfigure slapd</code> 来重新设置，除非你想完全扔掉当前的所有数据。</p>
 <p>首先使用 <code>slappasswd</code> 生成自己想要设置的密码对应的哈希：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="gp">$ </span>/sbin/slappasswd
@@ -3866,7 +3872,91 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <p>最后以 root 的身份应用：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>sudo<span class="w"> </span>ldapmodify<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-Y<span class="w"> </span>EXTERNAL<span class="w"> </span>-f<span class="w"> </span>reset-admin-passwd.ldif
 </code></pre></div>
+<p>注意这里不能够使用接下来会介绍的 <code>ldappasswd</code>。因为数据库管理员的密码，即使同 DN 的条目存在，也不在对应 entry 的 <code>userPassword</code> 里，而是在数据库的 <code>olcRootPW</code> 中。</p>
 </div>
+<p><code>ldapadd</code> 其实是 <code>ldapmodify</code> 的软链接，相当于 <code>ldapmodify -a</code>（<code>-a</code> 即创建新的 entry）。</p>
+<p>之后创建第一个用户和第一个组，以 RFC 2307 的组的格式为标准。</p>
+<div class="highlight"><span class="filename">first-user-group.ldif</span><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Toyama Kasumi</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">inetOrgPerson</span>
+<a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalPerson</span>
+<a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">person</span>
+<a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixAccount</span>
+<a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">shadowAccount</span>
+<a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Toyama Kasumi</span>
+<a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="na">sn</span><span class="p">:</span><span class="w"> </span><span class="s">Toyama</span>
+<a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="na">uid</span><span class="p">:</span><span class="w"> </span><span class="s">kasumi</span>
+<a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="na">uidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2001</span>
+<a id="__codelineno-34-12" name="__codelineno-34-12" href="#__codelineno-34-12"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2001</span>
+<a id="__codelineno-34-13" name="__codelineno-34-13" href="#__codelineno-34-13"></a><span class="na">homeDirectory</span><span class="p">:</span><span class="w"> </span><span class="s">/home/kasumi</span>
+<a id="__codelineno-34-14" name="__codelineno-34-14" href="#__codelineno-34-14"></a>
+<a id="__codelineno-34-15" name="__codelineno-34-15" href="#__codelineno-34-15"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Poppin'Party</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-34-16" name="__codelineno-34-16" href="#__codelineno-34-16"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-34-17" name="__codelineno-34-17" href="#__codelineno-34-17"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixGroup</span>
+<a id="__codelineno-34-18" name="__codelineno-34-18" href="#__codelineno-34-18"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Poppin'Party</span>
+<a id="__codelineno-34-19" name="__codelineno-34-19" href="#__codelineno-34-19"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2001</span>
+<a id="__codelineno-34-20" name="__codelineno-34-20" href="#__codelineno-34-20"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">kasumi</span>
+</code></pre></div>
+<p>如法炮制：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a>ldapadd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>first-user-group.ldif
+</code></pre></div>
+<p>向已有的组添加用户时，因为组已经存在，所以一种常见的方式是分开操作：使用 <code>ldapadd</code> 添加用户，使用 <code>ldapmodify</code> 来做组的修改操作。</p>
+<div class="highlight"><span class="filename">arisa.ldif</span><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Ichigaya Arisa</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">inetOrgPerson</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalPerson</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">person</span>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixAccount</span>
+<a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">shadowAccount</span>
+<a id="__codelineno-36-7" name="__codelineno-36-7" href="#__codelineno-36-7"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-36-8" name="__codelineno-36-8" href="#__codelineno-36-8"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Ichigaya Arisa</span>
+<a id="__codelineno-36-9" name="__codelineno-36-9" href="#__codelineno-36-9"></a><span class="na">sn</span><span class="p">:</span><span class="w"> </span><span class="s">Ichigaya</span>
+<a id="__codelineno-36-10" name="__codelineno-36-10" href="#__codelineno-36-10"></a><span class="na">uid</span><span class="p">:</span><span class="w"> </span><span class="s">arisa</span>
+<a id="__codelineno-36-11" name="__codelineno-36-11" href="#__codelineno-36-11"></a><span class="na">uidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2002</span>
+<a id="__codelineno-36-12" name="__codelineno-36-12" href="#__codelineno-36-12"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2001</span>
+<a id="__codelineno-36-13" name="__codelineno-36-13" href="#__codelineno-36-13"></a><span class="na">homeDirectory</span><span class="p">:</span><span class="w"> </span><span class="s">/home/arisa</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">add-arisa-to-group.ldif</span><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Poppin'Party</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">modify</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="k">add</span><span class="p">:</span><span class="w"> </span><span class="na">memberUid</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">arisa</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a>ldapadd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>arisa.ldif
+<a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a>ldapmodify<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>add-arisa-to-group.ldif
+</code></pre></div>
+<div class="admonition tip" id="ldapmodify-changetype-add">
+<p class="admonition-title">当然也可以放一起操作&#8288;<a class="headerlink" href="#ldapmodify-changetype-add" title="Permanent link">&para;</a></p>
+<p><code>changetype</code> 可以是 <code>add</code>，所以其实可以这样：</p>
+<div class="highlight"><span class="filename">tae.ldif</span><pre><span></span><code><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Hanazono Tae</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">people</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">add</span>
+<a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">inetOrgPerson</span>
+<a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">organizationalPerson</span>
+<a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">person</span>
+<a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">posixAccount</span>
+<a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">shadowAccount</span>
+<a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="na">objectClass</span><span class="p">:</span><span class="w"> </span><span class="s">top</span>
+<a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="na">cn</span><span class="p">:</span><span class="w"> </span><span class="s">Hanazono Tae</span>
+<a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a><span class="na">sn</span><span class="p">:</span><span class="w"> </span><span class="s">Hanazono</span>
+<a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a><span class="na">uid</span><span class="p">:</span><span class="w"> </span><span class="s">tae</span>
+<a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="na">uidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2002</span>
+<a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="na">gidNumber</span><span class="p">:</span><span class="w"> </span><span class="s">2001</span>
+<a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="na">homeDirectory</span><span class="p">:</span><span class="w"> </span><span class="s">/home/tae</span>
+<a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a>
+<a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="k">dn</span><span class="p">:</span><span class="w"> </span><span class="na">cn</span><span class="o">=</span><span class="s">Poppin'Party</span><span class="p">,</span><span class="na">ou</span><span class="o">=</span><span class="s">groups</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">bangdream</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">example</span><span class="p">,</span><span class="na">dc</span><span class="o">=</span><span class="s">org</span>
+<a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a><span class="k">changetype</span><span class="p">:</span><span class="w"> </span><span class="k">modify</span>
+<a id="__codelineno-39-18" name="__codelineno-39-18" href="#__codelineno-39-18"></a><span class="k">add</span><span class="p">:</span><span class="w"> </span><span class="na">memberUid</span>
+<a id="__codelineno-39-19" name="__codelineno-39-19" href="#__codelineno-39-19"></a><span class="na">memberUid</span><span class="p">:</span><span class="w"> </span><span class="s">tae</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a>ldapmodify<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span>-W<span class="w"> </span>-f<span class="w"> </span>tae.ldif
+</code></pre></div>
+</div>
+<p>当然，别忘了给用户设置密码！虽然可以像重置管理员用户的密码一样用 <code>slappasswd</code> + <code>ldapmodify</code> 的方式来修改用户 entry 的 <code>userPassword</code> 属性，但是一般来说，使用的是 <code>ldappasswd</code> 工具：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="c1"># -S =&gt; 交互式输入新密码</span>
+<a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a>ldappasswd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=admin,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="w">  </span>-W<span class="w"> </span>-S<span class="w"> </span><span class="s2">"cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org"</span>
+<a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a><span class="c1"># 默认情况下，如果知道自己的密码，用户也可以修改自己的密码</span>
+<a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a>ldappasswd<span class="w"> </span>-x<span class="w"> </span>-H<span class="w"> </span>ldapi:///<span class="w"> </span>-D<span class="w"> </span><span class="s2">"cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">  </span>-W<span class="w"> </span>-S<span class="w"> </span><span class="s2">"cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org"</span>
+</code></pre></div>
 <p>(TODO)</p>
 <h2 id="references">参考资料<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
@@ -3927,7 +4017,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月27日 21:34:40 UTC">2026年10月27日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月28日 21:10:20 UTC">2026年10月28日</span>
   </span>
 
     
