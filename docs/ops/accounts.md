@@ -669,7 +669,7 @@ ldapmodify -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ad
     cn: Hanazono Tae
     sn: Hanazono
     uid: tae
-    uidNumber: 2002
+    uidNumber: 2003
     gidNumber: 2001
     homeDirectory: /home/tae
 
