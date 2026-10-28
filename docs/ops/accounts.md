@@ -261,6 +261,7 @@ changetype: delete
 
 ```ldif
 dn: cn=Togawa Sakiko,ou=people,dc=bangdream,dc=example,dc=org
+changetype: modify
 add: displayName
 displayName: Oblivionis
 -
@@ -423,6 +424,10 @@ cn=config
     olcDatabase={1}mdb,cn=config
 ```
 
+!!! tip "查看初始配置" {#slapd-init-config}
+
+    `slapd` 包的初始配置在 `/usr/share/slapd/slapd.init.ldif`，包含每项设置的注释，可以参考阅读。
+
 !!! note "`{-1}frontend` 是什么数据库？" {#frontend-database}
 
     可以发现，除了存储用户数据的数据库（`{1}mdb`）和 `cn=config` 配置数据库（`{0}config`）以外，还有一个 `{-1}frontend` 数据库。这个「数据库」并非实际存在，对应的配置只用来配置对其他所有数据库的默认行为。例如：
@@ -492,10 +497,12 @@ ou: groups
 之后使用 `ldapadd` 执行 LDIF：
 
 ```sh
-ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ou.ldap
+ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ou.ldif
 ```
 
-!!! note "为什么是 `cn=admin,dc=bangdream,dc=example,dc=org`？" {#get-admin-from-olcrootdn}
+如果没有 `-f ou.ldif` 的话，`ldapadd` 就会直接从 stdin 读 LDIF。
+
+!!! note "查找数据库管理员的 DN" {#get-admin-from-olcrootdn}
 
     用户数据库的管理员由数据库的 `olcRootDN` 属性指定：
 
@@ -553,7 +560,7 @@ ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ou.ld
 
     在默认情况下，如果一条 `olcAccess` 被匹配到了，那么就不会再继续匹配。这里 root 会匹配到 `{2}to * by * read`，从而只能获取到只读权限，不会再去匹配 `{-1}frontend` 的配置。
 
-!!! tip "忘了 `cn=admin,...` 的密码怎么办？" {#reset-mdb-password}
+!!! tip "忘了/要修改 `cn=admin,...` 的密码怎么办？" {#reset-mdb-password}
 
     这种情况下，千万不要使用 `dpkg-reconfigure slapd` 来重新设置，除非你想完全扔掉当前的所有数据。
 
@@ -580,6 +587,112 @@ ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f ou.ld
     ```sh
     sudo ldapmodify -H ldapi:/// -Y EXTERNAL -f reset-admin-passwd.ldif
     ```
+
+    注意这里不能够使用接下来会介绍的 `ldappasswd`。因为数据库管理员的密码，即使同 DN 的条目存在，也不在对应 entry 的 `userPassword` 里，而是在数据库的 `olcRootPW` 中。
+
+`ldapadd` 其实是 `ldapmodify` 的软链接，相当于 `ldapmodify -a`（`-a` 即创建新的 entry）。
+
+之后创建第一个用户和第一个组，以 RFC 2307 的组的格式为标准。
+
+```ldif title="first-user-group.ldif"
+dn: cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: top
+cn: Toyama Kasumi
+sn: Toyama
+uid: kasumi
+uidNumber: 2001
+gidNumber: 2001
+homeDirectory: /home/kasumi
+
+dn: cn=Poppin'Party,ou=groups,dc=bangdream,dc=example,dc=org
+objectClass: top
+objectClass: posixGroup
+cn: Poppin'Party
+gidNumber: 2001
+memberUid: kasumi
+```
+
+如法炮制：
+
+```sh
+ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f first-user-group.ldif
+```
+
+向已有的组添加用户时，因为组已经存在，所以一种常见的方式是分开操作：使用 `ldapadd` 添加用户，使用 `ldapmodify` 来做组的修改操作。
+
+```ldif title="arisa.ldif"
+dn: cn=Ichigaya Arisa,ou=people,dc=bangdream,dc=example,dc=org
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: posixAccount
+objectClass: shadowAccount
+objectClass: top
+cn: Ichigaya Arisa
+sn: Ichigaya
+uid: arisa
+uidNumber: 2002
+gidNumber: 2001
+homeDirectory: /home/arisa
+```
+
+```ldif title="add-arisa-to-group.ldif"
+dn: cn=Poppin'Party,ou=groups,dc=bangdream,dc=example,dc=org
+changetype: modify
+add: memberUid
+memberUid: arisa
+```
+
+```sh
+ldapadd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f arisa.ldif
+ldapmodify -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f add-arisa-to-group.ldif
+```
+
+!!! tip "当然也可以放一起操作" {#ldapmodify-changetype-add}
+
+    `changetype` 可以是 `add`，所以其实可以这样：
+
+    ```ldif title="tae.ldif"
+    dn: cn=Hanazono Tae,ou=people,dc=bangdream,dc=example,dc=org
+    changetype: add
+    objectClass: inetOrgPerson
+    objectClass: organizationalPerson
+    objectClass: person
+    objectClass: posixAccount
+    objectClass: shadowAccount
+    objectClass: top
+    cn: Hanazono Tae
+    sn: Hanazono
+    uid: tae
+    uidNumber: 2002
+    gidNumber: 2001
+    homeDirectory: /home/tae
+
+    dn: cn=Poppin'Party,ou=groups,dc=bangdream,dc=example,dc=org
+    changetype: modify
+    add: memberUid
+    memberUid: tae
+    ```
+
+    ```sh
+    ldapmodify -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" -W -f tae.ldif
+    ```
+
+当然，别忘了给用户设置密码！虽然可以像重置管理员用户的密码一样用 `slappasswd` + `ldapmodify` 的方式来修改用户 entry 的 `userPassword` 属性，但是一般来说，使用的是 `ldappasswd` 工具：
+
+```sh
+# -S => 交互式输入新密码
+ldappasswd -x -H ldapi:/// -D "cn=admin,dc=bangdream,dc=example,dc=org" \
+  -W -S "cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org"
+# 默认情况下，如果知道自己的密码，用户也可以修改自己的密码
+ldappasswd -x -H ldapi:/// -D "cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org" \
+  -W -S "cn=Toyama Kasumi,ou=people,dc=bangdream,dc=example,dc=org"
+```
 
 (TODO)
 
