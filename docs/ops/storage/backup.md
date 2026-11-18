@@ -38,6 +38,26 @@
 
     很多时候，我们希望即使程序崩溃、系统断电，程序维护的数据内部状态仍然是一致的。这被称为崩溃一致性（crash consistency）。一般来讲，数据库都实现了崩溃一致性。
 
+!!! warning "POSIX 文件系统与崩溃一致性" {#posix-fs-crash-consistency}
+
+    POSIX 标准没有规定如果不做 `fsync` 的话，整个系统崩溃（例如断电）后磁盘上的数据必须要满足什么状态。这就带来了一个很尴尬的问题：一些看起来没有问题的操作，在实际发生断电之后，就有可能导致非预期的数据丢失。例如经常可以看到的「原子更新」一个文件的操作：
+
+    ```python
+    with open(target + ".tmp", "w") as f:
+        f.write(some_content)
+    os.replace(target + ".tmp", target)
+    ```
+
+    假设没有崩溃，那么在同文件系统上，`rename` 确实可以保证是原子的：`target` 要么是修改前的文件，要么是修改后写入的新文件。但是系统实际写入到磁盘可能会发生这样的情况：`rename` 操作可能会先 flush 到磁盘上，然后实际的数据才会 flush，因此有可能会出现断电之后，`target` 变成一个空文件或者全为 0 的文件，破坏了崩溃一致性。对原子更新文件的操作，正确的步骤应为：
+
+    1. 写入临时文件，对临时文件做 fsync。
+    2. 调用 rename 替代目标文件。
+    3. 对该文件的父目录 fd 做 fsync，保证替换操作落盘。
+
+    不过，**下文介绍的 rsync** 默认（不加 checksum 与 fsync 参数时）更新文件时不会做上述的操作，在一些文件系统上有可能会出现大小和 mtime 一样，但是内容损坏的文件。因此如果在 rsync 传输时发生断电，建议重跑时添加 checksum 检查。
+
+    OSDI 2014 的论文 [All File Systems Are Not Created Equal: On the Complexity of Crafting Crash-Consistent Applications](https://www.usenix.org/conference/osdi14/technical-sessions/presentation/pillai) 讨论了这个话题，可以作为参考来阅读。
+
 即使应用实现了崩溃一致性，如果备份工具直接复制对应的文件，那么得到的文件也有可能是不一致的——这个文件可能前半部分在 A 状态，后半部分在 B 状态。因此，备份数据库一般都使用数据库软件提供的 dump 工具导出 SQL，而不是直接用 rsync 等工具简单复制数据库对应的存储文件。
 
 如果需要备份的文件有一致性的要求，并且不方便使用专用的工具，那么也可以使用文件系统的快照功能避免上述提到的问题。
