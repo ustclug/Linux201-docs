@@ -3542,6 +3542,22 @@
 <p class="admonition-title">崩溃一致性&#8288;<a class="headerlink" href="#crash-consistency" title="Permanent link">&para;</a></p>
 <p>很多时候，我们希望即使程序崩溃、系统断电，程序维护的数据内部状态仍然是一致的。这被称为崩溃一致性（crash consistency）。一般来讲，数据库都实现了崩溃一致性。</p>
 </div>
+<div class="admonition warning" id="posix-fs-crash-consistency">
+<p class="admonition-title">POSIX 文件系统与崩溃一致性&#8288;<a class="headerlink" href="#posix-fs-crash-consistency" title="Permanent link">&para;</a></p>
+<p>POSIX 标准没有规定如果不做 <code>fsync</code> 的话，整个系统崩溃（例如断电）后磁盘上的数据必须要满足什么状态。这就带来了一个很尴尬的问题：一些看起来没有问题的操作，在实际发生断电之后，就有可能导致非预期的数据丢失。例如经常可以看到的「原子更新」一个文件的操作：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">target</span> <span class="o">+</span> <span class="s2">".tmp"</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">some_content</span><span class="p">)</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">target</span> <span class="o">+</span> <span class="s2">".tmp"</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</code></pre></div>
+<p>假设没有崩溃，那么在同文件系统上，<code>rename</code> 确实可以保证是原子的：<code>target</code> 要么是修改前的文件，要么是修改后写入的新文件。但是系统实际写入到磁盘可能会发生这样的情况：<code>rename</code> 操作可能会先 flush 到磁盘上，然后实际的数据才会 flush，因此有可能会出现断电之后，<code>target</code> 变成一个空文件或者全为 0 的文件，破坏了崩溃一致性。对原子更新文件的操作，正确的步骤应为：</p>
+<ol>
+<li>写入临时文件，对临时文件做 fsync。</li>
+<li>调用 rename 替代目标文件。</li>
+<li>对该文件的父目录 fd 做 fsync，保证替换操作落盘。</li>
+</ol>
+<p>不过，<strong>下文介绍的 rsync</strong> 默认（不加 checksum 与 fsync 参数时）更新文件时不会做上述的操作，在一些文件系统上有可能会出现大小和 mtime 一样，但是内容损坏的文件。因此如果在 rsync 传输时发生断电，建议重跑时添加 checksum 检查。</p>
+<p>OSDI 2014 的论文 <a href="https://www.usenix.org/conference/osdi14/technical-sessions/presentation/pillai">All File Systems Are Not Created Equal: On the Complexity of Crafting Crash-Consistent Applications</a> 讨论了这个话题，可以作为参考来阅读。</p>
+</div>
 <p>即使应用实现了崩溃一致性，如果备份工具直接复制对应的文件，那么得到的文件也有可能是不一致的——这个文件可能前半部分在 A 状态，后半部分在 B 状态。因此，备份数据库一般都使用数据库软件提供的 dump 工具导出 SQL，而不是直接用 rsync 等工具简单复制数据库对应的存储文件。</p>
 <p>如果需要备份的文件有一致性的要求，并且不方便使用专用的工具，那么也可以使用文件系统的快照功能避免上述提到的问题。</p>
 <p>最后，在有条件的情况下，需要验证备份的有效性，避免出现备份损坏或不完整的情况。</p>
@@ -3561,7 +3577,7 @@
 <p>Rsync 是最常用的文件同步工具之一，支持本地复制和远程复制。相比于 <code>cp</code>（本地）和 <code>scp</code>（SSH 远程），<code>rsync</code> 可以做到增量复制，只复制文件中发生变化的部分，并且能够保留文件完整的元数据信息。Rsync 也是从镜像站点同步完整镜像的事实标准。</p>
 <h3 id="rsync-transfer">文件传输<a class="headerlink" href="#rsync-transfer" title="Permanent link">&para;</a></h3>
 <p>最常用的命令：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>--delete<span class="w"> </span>/path/to/source<span class="w"> </span>/path/to/destination
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>--delete<span class="w"> </span>/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <p>参数含义如下：</p>
 <table>
@@ -3620,33 +3636,33 @@
 </table>
 <p>以下提供一些参考示例。</p>
 <p>将 <code>/A</code> 文件复制到 <code>/tmp/A</code>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/A
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># 或者</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/A
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 或者</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/A<span class="w"> </span>/tmp/
 </code></pre></div>
 <p>将 <code>/etc</code> 文件夹复制为/复制到 <code>/tmp/example</code>。区别在 source 的结尾是否有 <code>/</code>，如果没有的话，源文件夹就会<strong>作为一个整体</strong>复制到目标文件夹内；否则如果有 <code>/</code>，源文件夹内的<strong>内容</strong>会被复制到目标文件夹内。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc<span class="w"> </span>/tmp/example1/
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example1/etc/passwd</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc/<span class="w"> </span>/tmp/example2/
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example2/passwd</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc<span class="w"> </span>/tmp/example1/
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example1/etc/passwd</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/etc/<span class="w"> </span>/tmp/example2/
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># 此时 /etc/passwd 对应 /tmp/example2/passwd</span>
 </code></pre></div>
 <div class="admonition warning" id="should-i-add-slash-at-target-path">
 <p class="admonition-title">是否要在目标路径后添加 <code>/</code>？&#8288;<a class="headerlink" href="#should-i-add-slash-at-target-path" title="Permanent link">&para;</a></p>
 <p>在以上的例子中，我们给目标路径（<code>/tmp/example1/</code> 和 <code>/tmp/example2/</code>）结尾都添加了 <code>/</code>。这是因为如果不在目标结尾添加 <code>/</code>，如果原始路径是文件或者<strong>空目录</strong>，并且目标路径不存在的话，rsync 的行为会变成复制并重命名为目标路径。对以下的例子，结果会出现区别：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>mkdir<span class="w"> </span>/tmp/example3
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/tmp/example3<span class="w"> </span>/tmp/example4
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># rsync 将 /tmp/example3 复制并重命名为 /tmp/example4</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/tmp/example3<span class="w"> </span>/tmp/example5/
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># rsync 将 /tmp/example3 复制到 /tmp/example5 目录下，即 /tmp/example5/example3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>mkdir<span class="w"> </span>/tmp/example3
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/tmp/example3<span class="w"> </span>/tmp/example4
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># rsync 将 /tmp/example3 复制并重命名为 /tmp/example4</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>rsync<span class="w"> </span>-avP<span class="w"> </span>/tmp/example3<span class="w"> </span>/tmp/example5/
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># rsync 将 /tmp/example3 复制到 /tmp/example5 目录下，即 /tmp/example5/example3</span>
 </code></pre></div>
 <p>在编写脚本的时候，这可能会出现问题，因为如果在测试时没有考虑到原始路径是空目录的情况，那么脚本在运行时就可能会出现意外的行为（例如后续的脚本假设 rsync 会将文件夹复制到目标目录下，但是实际上 rsync 却将其重命名了）。因此，<strong>建议在目标目录路径结尾都添加 <code>/</code></strong>，以避免这种情况的发生。</p>
 </div>
 <p>作为 <code>scp</code> 的高效替代，<code>rsync</code> 也支持基于 SSH 的远程复制（远程服务器也需要安装 rsync）。可以使用 <code>-z</code> 开启压缩，以 CPU 为代价减小传输量。<code>rsync</code> 对增量复制的支持允许了「断点续传」的功能，在网络情况欠佳的时候尤其有用。</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>/path/to/source<span class="w"> </span>user@remote:/path/to/destination
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>/path/to/source<span class="w"> </span>user@remote:/path/to/destination
 </code></pre></div>
 <p>如果远程服务器需要特殊的 <code>ssh</code> 参数（例如端口），并且不想修改 <code>~/.ssh/config</code>，可以使用 <code>-e</code> 参数：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">"ssh -p 2222"</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>rsync<span class="w"> </span>-avPz<span class="w"> </span>-e<span class="w"> </span><span class="s2">"ssh -p 2222"</span><span class="w"> </span>user@remote:/path/to/source<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <div class="admonition note" id="rsync-sender-generator-receiver">
 <p class="admonition-title">rsync 的 sender、generator 和 receiver&#8288;<a class="headerlink" href="#rsync-sender-generator-receiver" title="Permanent link">&para;</a></p>
@@ -3670,22 +3686,22 @@
 <h4 id="rsync-server">Rsync 服务端配置<a class="headerlink" href="#rsync-server" title="Permanent link">&para;</a></h4>
 <p>Debian 默认的 rsync 的 systemd 服务依赖于 <code>/etc/rsyncd.conf</code> 文件，同时 <code>/usr/share/doc/rsync/examples/rsyncd.conf</code> 提供了一个参考范例。</p>
 <p>一份用于镜像站点的 <code>rsyncd.conf</code> 可能如下所示：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="na">motd file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/rsyncd/rsyncd.motd</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">pid file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/run/rsyncd.pid</span>
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="na">log file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/log/rsyncd.log</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="na">max verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">transfer logging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="na">ignore nonreadable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># 需要 adduser --system rsyncd</span>
-<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="na">uid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">rsyncd</span>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="na">gid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nogroup</span>
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="na">use chroot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="na">dont compress</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">*</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="na">max connections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="na">refuse options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">checksum</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="na">read only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
-<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="na">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">240</span>
-<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="na">reverse lookup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">no</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="na">motd file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/rsyncd/rsyncd.motd</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">pid file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/run/rsyncd.pid</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="na">log file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/log/rsyncd.log</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="na">max verbosity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="na">transfer logging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="na">ignore nonreadable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1"># 需要 adduser --system rsyncd</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="na">uid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">rsyncd</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="na">gid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nogroup</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="na">use chroot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="na">dont compress</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">*</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="na">max connections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">50</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="na">refuse options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">checksum</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="na">read only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">true</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="na">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">240</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="na">reverse lookup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">no</span>
 </code></pre></div>
 <p>其中比较重要的参数有：</p>
 <ul>
@@ -3693,58 +3709,58 @@
 <li>性能相关：<code>max connections</code> 用于限制总连接数，<code>timeout</code> 用于限制连接超时时间，防止被未响应的客户端长时间占用资源。<code>dont compress</code> 与 <code>refuse options</code> 用于禁用压缩（如果需要传输的文件大多已经是压缩过的）与检验和（会大量占用服务器 CPU）。<code>reverse lookup</code> 用于关闭反向 DNS 查询，避免 DNS 问题导致的连接延迟。</li>
 </ul>
 <p>之后就是定义暴露的模块（module）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">[repo1]</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo1</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">[repo2]</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo2</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">[repo1]</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo1</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">[repo2]</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="na">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/path/to/repo2</span>
 </code></pre></div>
 <p>模块是 rsync URL 的第一层，例如 <code>rsync://server/repo1/somedir/</code> 中，<code>repo1</code> 就是模块名。配置完成之后，可以使用 <code>rsync://server/</code> 列出全部模块，<code>rsync rsync://server/repo1</code> 来确认，并且采用类似的命令同步某个模块的全部文件。</p>
 <div class="admonition tip" id="enable-multiple-rsync-services">
 <p class="admonition-title">同时启用多个 rsync 服务&#8288;<a class="headerlink" href="#enable-multiple-rsync-services" title="Permanent link">&para;</a></p>
 <p>如果有需要多个 daemon 的需求（例如需要多个 rsync 服务端 bind 到不同的 IP 地址上），可以使用 systemd 的<a href="../../service/#unit-template">模板单元格式</a>手动编写 <code>rsync@.service</code> 文件。</p>
 <p>同时 <code>rsyncd.conf</code> 格式支持导入其他的配置文件，因此不同服务的共通部分可以提取出来。其中 <code>&amp;include</code> 用于导入模块的定义，<code>&amp;merge</code> 用于导入配置，类似如下：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># common.inc 包含配置</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="na">&amp;merge /etc/rsyncd/common.inc</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># common.conf 包含模块定义</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="na">&amp;include /etc/rsyncd/common.conf</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># common.inc 包含配置</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">&amp;merge /etc/rsyncd/common.inc</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># common.conf 包含模块定义</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">&amp;include /etc/rsyncd/common.conf</span>
 </code></pre></div>
 </div>
 <div class="admonition tip" id="secure-rsync-with-systemd">
 <p class="admonition-title">使用 systemd 安全加固 rsync 服务&#8288;<a class="headerlink" href="#secure-rsync-with-systemd" title="Permanent link">&para;</a></p>
 <p><a href="../../service/#service">Systemd 服务的安全加固参数</a>可以帮助避免未知的安全问题影响 rsync 服务，特别是在 <a href="https://kb.cert.org/vuls/id/952657">rsync 于 2025 年 1 月暴露了多个 CVE 的情况下</a>（其中两个是服务端的漏洞），这样的加固就显得更加重要。</p>
 <p>一份参考 <code>rsync@.service</code> 如下，其中包含安全加固以及降低 IO 与 CPU 优先级的设置（这同样也是<a href="https://docs.ustclug.org/services/mirrors/rsync/">科大镜像站目前使用的配置</a>）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">fast remote file copy program daemon</span>
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="na">ConditionPathExists</span><span class="o">=</span><span class="s">/etc/rsyncd/rsyncd-%i.conf</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="na">After</span><span class="o">=</span><span class="s">network.target network-online.target</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="k">[Service]</span>
-<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">exec</span>
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="na">PIDFile</span><span class="o">=</span><span class="s">rsyncd-%i.pid</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/rsync --daemon --no-detach --config=/etc/rsyncd/rsyncd-%i.conf</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="na">Nice</span><span class="o">=</span><span class="s">19</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="na">IOSchedulingClass</span><span class="o">=</span><span class="s">best-effort</span>
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="na">IOSchedulingPriority</span><span class="o">=</span><span class="s">7</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="na">IOAccounting</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="na">ProtectSystem</span><span class="o">=</span><span class="s">strict</span>
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="na">ProtectHome</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="na">ProtectProc</span><span class="o">=</span><span class="s">invisible</span>
-<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="na">ProtectControlGroups</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="na">ProtectKernelModules</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="na">ProtectKernelTunables</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="na">PrivateDevices</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="na">NoNewPrivileges</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="na">MemoryDenyWriteExecute</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a>
-<a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="na">ReadWritePaths</span><span class="o">=</span><span class="s">/var/log/rsyncd</span>
-<a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>
-<a id="__codelineno-9-29" name="__codelineno-9-29" href="#__codelineno-9-29"></a><span class="k">[Install]</span>
-<a id="__codelineno-9-30" name="__codelineno-9-30" href="#__codelineno-9-30"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
-<a id="__codelineno-9-31" name="__codelineno-9-31" href="#__codelineno-9-31"></a><span class="na">Alias</span><span class="o">=</span><span class="s">rsyncd@.service</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">fast remote file copy program daemon</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="na">ConditionPathExists</span><span class="o">=</span><span class="s">/etc/rsyncd/rsyncd-%i.conf</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="na">After</span><span class="o">=</span><span class="s">network.target network-online.target</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">exec</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="na">PIDFile</span><span class="o">=</span><span class="s">rsyncd-%i.pid</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/rsync --daemon --no-detach --config=/etc/rsyncd/rsyncd-%i.conf</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="na">Nice</span><span class="o">=</span><span class="s">19</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="na">IOSchedulingClass</span><span class="o">=</span><span class="s">best-effort</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="na">IOSchedulingPriority</span><span class="o">=</span><span class="s">7</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="na">IOAccounting</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="na">ProtectSystem</span><span class="o">=</span><span class="s">strict</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="na">ProtectHome</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="na">ProtectProc</span><span class="o">=</span><span class="s">invisible</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="na">ProtectControlGroups</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="na">ProtectKernelModules</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="na">ProtectKernelTunables</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="na">PrivateTmp</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="na">PrivateDevices</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="na">NoNewPrivileges</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="na">MemoryDenyWriteExecute</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="na">ReadWritePaths</span><span class="o">=</span><span class="s">/var/log/rsyncd</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="k">[Install]</span>
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="na">Alias</span><span class="o">=</span><span class="s">rsyncd@.service</span>
 </code></pre></div>
 <p>也可以考虑将 <code>uid</code> 与 <code>gid</code> 修改为在 systemd 服务中配置（而不是让 daemon 自己降权），并且提供 <code>chroot</code> 等必要的 capability。</p>
 </div>
@@ -3754,7 +3770,7 @@
 </div>
 <h4 id="rsync-client">Rsync 客户端参数<a class="headerlink" href="#rsync-client" title="Permanent link">&para;</a></h4>
 <p>一份参考的完整参数如下（修改自 <a href="https://github.com/ustclug/ustcmirror-images/blob/2915ed8c403090f54f4295d8ceef63a12bbaf471/rsync/sync.sh">ustcmirror-images 的 rsync 同步脚本</a>）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>rsync<span class="w"> </span>-pPrltvH<span class="w"> </span>--partial-dir<span class="o">=</span>.rsync-partial<span class="w"> </span>--timeout<span class="w"> </span><span class="m">14400</span><span class="w"> </span>--safe-links<span class="w"> </span>--delete-excluded<span class="w"> </span>--delete-delay<span class="w"> </span>--delay-updates<span class="w"> </span>--sparse<span class="w"> </span>--max-delete<span class="w"> </span><span class="m">4000</span><span class="w"> </span>rsync://server/repo1/<span class="w"> </span>/path/to/destination
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>rsync<span class="w"> </span>-pPrltvH<span class="w"> </span>--partial-dir<span class="o">=</span>.rsync-partial<span class="w"> </span>--timeout<span class="w"> </span><span class="m">14400</span><span class="w"> </span>--safe-links<span class="w"> </span>--delete-excluded<span class="w"> </span>--delete-delay<span class="w"> </span>--delay-updates<span class="w"> </span>--sparse<span class="w"> </span>--max-delete<span class="w"> </span><span class="m">4000</span><span class="w"> </span>rsync://server/repo1/<span class="w"> </span>/path/to/destination
 </code></pre></div>
 <p>其中部分参数含义如下：</p>
 <table>
@@ -3840,72 +3856,72 @@
 <p>为了安全起见，建议为每台需要备份的主机创建单独的 Application Key，以便单独吊销。</p>
 </div>
 <p>之后设置环境变量并初始化仓库：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"b2:your_bucket_name:/"</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_PASSWORD</span><span class="o">=</span><span class="s2">"your_strong_password"</span><span class="w">  </span><span class="c1"># restic 使用这个密码加密备份数据</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_HOST</span><span class="o">=</span><span class="s2">"your_hostname"</span><span class="w">  </span><span class="c1"># 用于区分不同主机的备份</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>restic<span class="w"> </span>init
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">B2_ACCOUNT_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"b2:your_bucket_name:/"</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_PASSWORD</span><span class="o">=</span><span class="s2">"your_strong_password"</span><span class="w">  </span><span class="c1"># restic 使用这个密码加密备份数据</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_HOST</span><span class="o">=</span><span class="s2">"your_hostname"</span><span class="w">  </span><span class="c1"># 用于区分不同主机的备份</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>restic<span class="w"> </span>init
 </code></pre></div>
 <div class="admonition tip" id="use-s3-compatible-mode">
 <p class="admonition-title">也可使用 S3 兼容模式连接 Backblaze B2&#8288;<a class="headerlink" href="#use-s3-compatible-mode" title="Permanent link">&para;</a></p>
 <p>事实上，由于使用的第三方库的错误处理问题，<a href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#backblaze-b2">restic 官方文档目前更建议使用 S3 兼容模式连接 Backblaze B2</a>：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># 以下 endpoint 需要根据桶所在的实际区域修改</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name"</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># ...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s2">"your_account_id"</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">AWS_SECRET_ACCESS_KEY</span><span class="o">=</span><span class="s2">"your_account_key"</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1"># 以下 endpoint 需要根据桶所在的实际区域修改</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nb">export</span><span class="w"> </span><span class="nv">RESTIC_REPOSITORY</span><span class="o">=</span><span class="s2">"s3:https://s3.us-east-005.backblazeb2.com/your_bucket_name"</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="c1"># ...</span>
 </code></pre></div>
 <p>有关 S3 兼容模式的注意事项，请参阅上述文档。</p>
 </div>
 <p>之后就可以备份了，不过先让我们排除一些不需要备份的目录：</p>
-<div class="highlight"><span class="filename">excludes</span><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>.local/share/Trash/
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>.cache/
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>.local/share/Steam/steamapps/
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>target/
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>node_modules/
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>.cargo/registry/
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>.cargo/git/
+<div class="highlight"><span class="filename">excludes</span><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>.local/share/Trash/
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>.cache/
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>.local/share/Steam/steamapps/
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>target/
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>node_modules/
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>.cargo/registry/
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>.cargo/git/
 </code></pre></div>
 <p>以上的排除项是针对备份个人电脑的家目录设置的，排除了回收站、缓存、Steam 游戏库、Rust 与 Node.js 的依赖与构建产物等目录。可以根据自己的实际情况调整。</p>
 <p>之后就可以执行备份了：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>restic<span class="w"> </span>backup<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span>--one-file-system<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span>--exclude-file<span class="o">=</span>/path/to/excludes<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span>/home/username
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>restic<span class="w"> </span>backup<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span>--one-file-system<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span>--exclude-file<span class="o">=</span>/path/to/excludes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span>/home/username
 </code></pre></div>
 <p>备份完成后，可以使用以下命令查看备份状态：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># 查看所有的备份</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>restic<span class="w"> </span>snapshots
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="c1"># 查看某个备份下的所有文件</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>restic<span class="w"> </span>ls<span class="w"> </span>&lt;snapshot_id&gt;
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1"># 使用 FUSE 挂载备份</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>restic<span class="w"> </span>mount<span class="w"> </span>/path/to/mountpoint
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 查看所有的备份</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>restic<span class="w"> </span>snapshots
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="c1"># 查看某个备份下的所有文件</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>restic<span class="w"> </span>ls<span class="w"> </span>&lt;snapshot_id&gt;
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="c1"># 使用 FUSE 挂载备份</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>restic<span class="w"> </span>mount<span class="w"> </span>/path/to/mountpoint
 </code></pre></div>
 <p>备份积累到一定程度后，可以参考<a href="https://restic.readthedocs.io/en/latest/060_forget.html#removing-snapshots-according-to-a-policy">以下命令</a>清理旧的备份：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 每个主机保留最近 100 个备份</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>restic<span class="w"> </span>forget<span class="w"> </span>--group-by<span class="o">=</span>host<span class="w"> </span>--keep-last<span class="w"> </span><span class="m">100</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># 每个主机保留最近 100 个备份</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>restic<span class="w"> </span>forget<span class="w"> </span>--group-by<span class="o">=</span>host<span class="w"> </span>--keep-last<span class="w"> </span><span class="m">100</span>
 </code></pre></div>
 <p>建议定时进行备份，以下是一个参考的 systemd timer 配置。其中 <code>/etc/restic/env</code> 存储环境变量信息（记得限制权限！），<code>/usr/local/bin/restic-backup.sh</code> 则是调用上述备份命令的脚本。</p>
-<div class="highlight"><span class="filename">restic-backup.service</span><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Backup to B2 by restic</span>
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="k">[Service]</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/etc/restic/env</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/local/bin/restic-backup.sh</span>
-</code></pre></div>
-<div class="highlight"><span class="filename">restic-backup.timer</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">[Unit]</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run restic backup daily with random delay</span>
+<div class="highlight"><span class="filename">restic-backup.service</span><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Backup to B2 by restic</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">[Timer]</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">daily</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">3600</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="k">[Install]</span>
-<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="k">[Service]</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="na">Type</span><span class="o">=</span><span class="s">oneshot</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/etc/restic/env</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/local/bin/restic-backup.sh</span>
+</code></pre></div>
+<div class="highlight"><span class="filename">restic-backup.timer</span><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">Run restic backup daily with random delay</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="k">[Timer]</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="na">OnCalendar</span><span class="o">=</span><span class="s">daily</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="na">RandomizedDelaySec</span><span class="o">=</span><span class="s">3600</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="na">Persistent</span><span class="o">=</span><span class="s">true</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="k">[Install]</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">timers.target</span>
 </code></pre></div>
 <div class="admonition note" id="restic-cache">
 <p class="admonition-title">restic 的缓存&#8288;<a class="headerlink" href="#restic-cache" title="Permanent link">&para;</a></p>
@@ -3920,8 +3936,8 @@
 </ul>
 <p>由 OpenSUSE 维护的 <a href="https://github.com/openSUSE/snapper">snapper</a> 可以定时创建、管理 Btrfs 或 LVM 的快照。以下介绍其与 Btrfs 配合使用的场景。</p>
 <p>假设系统 rootfs 为 Btrfs，有两个 Btrfs subvolume：<a href="../filesystem/#btrfs-subvolume"><code>@</code>（<code>/</code>）与 <code>@home</code>（<code>/home</code>）</a>，那么创建对应的配置：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>create-config<span class="w"> </span>/
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>home<span class="w"> </span>create-config<span class="w"> </span>/home
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>create-config<span class="w"> </span>/
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>home<span class="w"> </span>create-config<span class="w"> </span>/home
 </code></pre></div>
 <div class="admonition note" id="note-on-creating-config-for-root">
 <p class="admonition-title">在给 <code>/</code> 创建配置时的注意事项&#8288;<a class="headerlink" href="#note-on-creating-config-for-root" title="Permanent link">&para;</a></p>
@@ -3930,20 +3946,20 @@
 </div>
 <p>相关配置信息存储在 <code>/etc/snapper/configs/root</code> 和 <code>/etc/snapper/configs/home</code> 中，可以编辑来调整快照的保留方案（主要需要设置的是每小时、每天、每周、每月、每年需要保留多少快照等），文档可参考 <a href="https://manpages.debian.org/unstable/snapper/snapper-configs.5.en.html">snapper-configs(5)</a>。之后启用 <code>snapper-timeline.timer</code> 和 <code>snapper-cleanup.timer</code> 定时器即可。如果希望每次开机的时候都给 <code>root</code> 创建快照，也可以启用 <code>snapper-boot.timer</code>。</p>
 <p>在进行首次快照后，可以看到在 <code>/</code> 和 <code>/home</code> 下多出了 <code>.snapshots</code> 目录，可以从其中访问快照内容（默认只读）：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="go">1</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="go">info.xml  snapshot</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1/snapshot/
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="go">bin  boot（后续内容省略）</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="go">1</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">info.xml  snapshot</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="gp">$ </span>sudo<span class="w"> </span>ls<span class="w"> </span>/.snapshots/1/snapshot/
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="go">bin  boot（后续内容省略）</span>
 </code></pre></div>
 <p>同时可以使用 <code>snapper</code> 命令查看或删除快照：</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>list
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="gp"># </span>│<span class="w"> </span>Type<span class="w">   </span>│<span class="w"> </span>Pre<span class="w"> </span><span class="c1"># │ Date                     │ User │ Cleanup  │ Description │ Userdata</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="go">──┼────────┼───────┼──────────────────────────┼──────┼──────────┼─────────────┼─────────</span>
-<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="go">0 │ single │       │                          │ root │          │ current     │</span>
-<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="go">1 │ single │       │ Thu Jan 15 04:50:37 2026 │ root │ timeline │ timeline    │</span>
-<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>delete<span class="w"> </span><span class="m">1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>list
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="gp"># </span>│<span class="w"> </span>Type<span class="w">   </span>│<span class="w"> </span>Pre<span class="w"> </span><span class="c1"># │ Date                     │ User │ Cleanup  │ Description │ Userdata</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="go">──┼────────┼───────┼──────────────────────────┼──────┼──────────┼─────────────┼─────────</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="go">0 │ single │       │                          │ root │          │ current     │</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="go">1 │ single │       │ Thu Jan 15 04:50:37 2026 │ root │ timeline │ timeline    │</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="gp">$ </span>sudo<span class="w"> </span>snapper<span class="w"> </span>-c<span class="w"> </span>root<span class="w"> </span>delete<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <p>其他和 snapper 相关的用法可以参考手册等资料。</p>
 <!--
@@ -4010,7 +4026,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年8月17日 19:02:38 UTC">2026年8月17日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年11月18日 21:26:43 UTC">2026年11月18日</span>
   </span>
 
     
