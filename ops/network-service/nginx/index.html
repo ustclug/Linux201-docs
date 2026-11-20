@@ -5526,7 +5526,18 @@
 <a id="__codelineno-91-13" name="__codelineno-91-13" href="#__codelineno-91-13"></a><span class="kr">return</span><span class="w"> </span><span class="nv">_M</span>
 </code></pre></div>
 <h3 id="lua-installation-configuration">Nginx 中 Lua 的安装配置<a class="headerlink" href="#lua-installation-configuration" title="Permanent link">&para;</a></h3>
-<p>要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。如果不希望使用 OpenResty，也可以自行安装 Lua 模块（<code>libnginx-mod-http-lua</code> 包）。安装此包后，<code>/etc/nginx/modules-enabled/</code> 会自动引入对应的配置：</p>
+<p>要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。</p>
+<div class="admonition comment" id="openresty-slow-security-response">
+<p class="admonition-title">@taoky: OpenResty 与安全更新问题&#8288;<a class="headerlink" href="#openresty-slow-security-response" title="Permanent link">&para;</a></p>
+<p>2026 年，由于 LLM Agent 的安全能力提升，Nginx 被发现有多个严重的安全漏洞，其中一些甚至不需要很特殊的配置就可以触发（例如 <a href="https://nvd.nist.gov/vuln/detail/cve-2026-123007">CVE-2026-123007</a> 只要开启了 HTTP/2 就有 RCE 的风险）。<strong>OpenResty 官方发布修复包的时间相比之下，显著慢于 Debian 的 security 仓库与 n.wtf</strong>：</p>
+<ul>
+<li>CVE-2026-123007：Debian 与 n.wtf 均在一日内修复，OpenResty 截至写作（3 天）还未打包修复。</li>
+<li><a href="https://nvd.nist.gov/vuln/detail/cve-2026-42533">CVE-2026-42533</a>，特定配置的正则表达式导致 DoS/RCE：n.wtf 在两日内（7/17）修复，Debian 在 59 天后修复（9/12），OpenResty 在 103 天后（10/26）才更新打包。</li>
+</ul>
+<p>尽管按照<a href="https://github.com/openresty/openresty/issues/1166#issuecomment-7015545554">贡献者的解释</a>，OpenResty 正式发版需要进行大量回归测试和兼容性处理，但是这其实也暴露出了 OpenResty 的安全修复发布机制目前是存在问题的（特别是对已经有公开 PoC、可以远程利用的安全漏洞来说），等待修复的时间比 Debian 显著更长也是不合理的。<a href="https://openresty.com/en/security/">OpenResty 公司的安全处理流程</a>也仅涉及他们的商业产品。</p>
+<p>出于这一点（以及之前对 Debian 新版本支持太慢）的考虑，我们也不再使用 OpenResty，而是直接使用 Nginx 的 Lua 模块。如果必须使用 OpenResty 的话，建议做好需要自己打包安全更新的准备。</p>
+</div>
+<p>如果不希望使用 OpenResty，也可以自行安装 Lua 模块（<code>libnginx-mod-http-lua</code> 包）。安装此包后，<code>/etc/nginx/modules-enabled/</code> 会自动引入对应的配置：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-92-1" name="__codelineno-92-1" href="#__codelineno-92-1"></a><span class="gp">$ </span>readlink<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
 <a id="__codelineno-92-2" name="__codelineno-92-2" href="#__codelineno-92-2"></a><span class="go">/usr/share/nginx/modules-available/mod-http-lua.conf</span>
 <a id="__codelineno-92-3" name="__codelineno-92-3" href="#__codelineno-92-3"></a><span class="gp">$ </span>cat<span class="w"> </span>/etc/nginx/modules-enabled/50-mod-http-lua.conf
@@ -5772,7 +5783,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年10月9日 20:54:21 UTC">2026年10月9日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年11月20日 23:11:05 UTC">2026年11月20日</span>
   </span>
 
     
