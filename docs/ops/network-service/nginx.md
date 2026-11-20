@@ -1624,7 +1624,20 @@ return _M
 
 ### Nginx 中 Lua 的安装配置 {#lua-installation-configuration}
 
-要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。如果不希望使用 OpenResty，也可以自行安装 Lua 模块（`libnginx-mod-http-lua` 包）。安装此包后，`/etc/nginx/modules-enabled/` 会自动引入对应的配置：
+要在 Nginx 中使用 Lua 脚本扩展能力的话，需要安装 Lua 模块。最简单的方式是使用 OpenResty，它集成了 Nginx 和 Lua 模块，并且预置了很多常用的第三方 Lua 库。
+
+!!! comment "@taoky: OpenResty 与安全更新问题" {#openresty-slow-security-response}
+
+    2026 年，由于 LLM Agent 的安全能力提升，Nginx 被发现有多个严重的安全漏洞，其中一些甚至不需要很特殊的配置就可以触发（例如 [CVE-2026-123007](https://nvd.nist.gov/vuln/detail/cve-2026-123007) 只要开启了 HTTP/2 就有 RCE 的风险）。**OpenResty 官方发布修复包的时间相比之下，显著慢于 Debian 的 security 仓库与 n.wtf**：
+
+    - CVE-2026-123007：Debian 与 n.wtf 均在一日内修复，OpenResty 截至写作（3 天）还未打包修复。
+    - [CVE-2026-42533](https://nvd.nist.gov/vuln/detail/cve-2026-42533)，特定配置的正则表达式导致 DoS/RCE：n.wtf 在两日内（7/17）修复，Debian 在 59 天后修复（9/12），OpenResty 在 103 天后（10/26）才更新打包。
+
+    尽管按照[贡献者的解释](https://github.com/openresty/openresty/issues/1166#issuecomment-7015545554)，OpenResty 正式发版需要进行大量回归测试和兼容性处理，但是这其实也暴露出了 OpenResty 的安全修复发布机制目前是存在问题的（特别是对已经有公开 PoC、可以远程利用的安全漏洞来说），等待修复的时间比 Debian 显著更长也是不合理的。[OpenResty 公司的安全处理流程](https://openresty.com/en/security/)也仅涉及他们的商业产品。
+
+    出于这一点（以及之前对 Debian 新版本支持太慢）的考虑，我们也不再使用 OpenResty，而是直接使用 Nginx 的 Lua 模块。如果必须使用 OpenResty 的话，建议做好需要自己打包安全更新的准备。
+
+如果不希望使用 OpenResty，也可以自行安装 Lua 模块（`libnginx-mod-http-lua` 包）。安装此包后，`/etc/nginx/modules-enabled/` 会自动引入对应的配置：
 
 ```console
 $ readlink /etc/nginx/modules-enabled/50-mod-http-lua.conf
