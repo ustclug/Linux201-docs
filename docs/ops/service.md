@@ -898,6 +898,36 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
 
     因此，如果你 SSH 到某台远程服务器上，开了个 `tmux` 或者 `nohup`，注销之后再登录发现没了，那么就很有可能是 `KillUserProcesses` 设置为了 `yes` 导致的。
 
+!!! note "通过 Polkit 限制用户设置 lingering" {#polkit-disable-lingering}
+
+    以下内容参考了 <https://utcc.utoronto.ca/~cks/space/blog/linux/PolkitDisableLoginctlLinger>。
+
+    一些情况下，我们希望用户退出登录之后不能再有任何用户自己的进程运行，此时不仅需要设置 `KillUserProcesses`，还需要确保用户的 user manager 没有启用 lingering。但是默认情况下，lingering 设置用户可以自行开启。
+
+    ```xml title="/usr/share/polkit-1/actions/org.freedesktop.login1.policy"
+    <!-- 以上内容省略 -->
+    <action id="org.freedesktop.login1.set-self-linger">
+            <description gettext-domain="systemd">Allow non-logged-in user to run programs</description>
+            <message gettext-domain="systemd">Explicit request is required to run programs as a non-logged-in user.</message>
+            <defaults>
+                    <allow_any>yes</allow_any>
+                    <allow_inactive>yes</allow_inactive>
+                    <allow_active>yes</allow_active>
+            </defaults>
+    </action>
+    <!-- 以下内容省略 -->
+    ```
+
+    添加对应的 Polkit 规则，禁止即可：
+
+    ```js title="/etc/polkit-1/rules.d/disable-self-lingering"
+    polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.login1.set-self-linger") {
+            return polkit.Result.NO;
+        }
+    });
+    ```
+
 !!! lab "限制用户的资源使用" {#user-resource-limit}
 
     用户 session 启动时，systemd 会创建 `user-<uid>.slice`。Slice 是 systemd 中用于限制资源的 unit，将多个 service 等 unit 组织在一起进行统一的资源限制。为用户限制资源使用是一个常见的需求，特别是在实验室服务器上。在用的人够多的情况下，每过几天就会有人把服务器的 CPU、内存或者 IO 全部吃满，无法操作，只能重启。
