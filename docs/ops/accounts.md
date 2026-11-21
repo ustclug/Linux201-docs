@@ -84,7 +84,54 @@ info: Adding user `test' to group `users' ...
 
     类似地，Debian 也不推荐直接使用 [`userdel(8)`][userdel.8] 命令来删除用户，并提供了 [`deluser(8)`][deluser.8] 命令。
 
-### PAM
+### PAM 认证 {#pam}
+
+!!! tip "认证（Authentication）和授权（Authorization）的区别" {#authentication-authorization}
+
+    这两个对应的英文单词由于长得比较相似，容易被混淆。简单来说，认证负责**确认你是谁**，而授权负责**确认你能不能做你要做的事情**。
+
+    在 Unix 的架构下，PAM 就负责认证用户（在外部组件的帮助下，可以实现包括但不限于让用户输入密码、按指纹、按硬件密钥、输入 TOTP、刷脸验证等等），而我们熟悉的 `sudo`，以及其平替 `doas`，和细粒度的 Polkit 做的就是授权（检查用户能否提权到 root 或者其他用户，用户自己能不能执行某种特权操作，例如修改系统名等）。
+
+(TODO)
+
+### 授权工具 {#authorization-tools}
+
+以下介绍包括 sudo 和 Polkit 在内的授权相关的工具。
+
+#### sudo
+
+sudo 应该是本文几乎所有读者都经常使用的工具。如果需要添加自己的配置，推荐在 `/etc/sudoers.d/` 下使用 `visudo` 添加。
+
+sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) 运行哪些命令`，其中括号内可以是 `(用户:组)` 的结构。例如：
+
+- `root ALL=(ALL:ALL) ALL`：允许 root 切换到任意用户运行任意命令，否则即使你是 root，`sudo` 也会拒绝。
+- `%sudo ALL=(ALL:ALL) ALL`：允许 `sudo` 用户组的用户切换到任意用户运行任意命令。
+- `certupdate ALL=(root) NOPASSWD: /usr/bin/systemctl reload nginx`：允许 `certupdate` 用户无密码让 Nginx 重新加载配置。
+- `telegraf ALL=(root) NOEXEC: NOPASSWD: /usr/sbin/nfacct list`：允许 `telegraf` 用户提取到 root 无密码运行 `nfacct list` 命令，但是不可以让 `nfacct` 再启动其他的程序。
+
+其中指定的可以运行的命令必须使用完整路径。
+
+!!! note "sudo 规则的主机限制真的有意义吗？" {#sudoers-hostname}
+
+    sudoers 配置设计初衷是希望同一个文件可以部署到很多台机器上（例如通过 NFS 等），添加主机限制可以帮助系统管理员写出「允许用户 A 在 X 服务器上提权跑应用 1，在 Y 服务器上提权跑应用 2」这样的配置，而不需要给每台机器放不一样的配置文件。这里可以添加主机名（hostname）、IP 地址等。
+
+!!! warning "细粒度限制的安全性建议" {#sudoers-process-limitation}
+
+    虽然 sudo 提供了方便的按用户和程序名称配置能否提权的功能，但是在编写配置时，需要额外注意安全，否则可能实质上给用户授权了没有限制的 root 权限：
+
+    - 限制提权的目标用户，如果只需要提权到某个特定用户，不要写 `(ALL:ALL)`。
+    - 在可行的情况下，添加 `NOEXEC`：避免程序以非预期的方式启动其他程序。
+    - 如果可以授权运行的命令没有任何参数，结尾需要添加 `""`（例如 `/usr/local/bin/backup.sh ""`），**否则会被 sudo 解释为允许任意参数**。
+    - 额外限制环境变量。对需要保留的环境变量，sudo 默认为白名单制，可以以 root 身份用 `sudo -V` 查看。
+        - 某些情况下需要额外添加环境变量，例如**添加 `LESSSECURE=1` 来禁用 `less` 分页器的命令执行功能**。
+    - 从命令字符串角度限制有时候完全无法避免用户做预期以外的事情，例如 [Hackergame 2024 的 "Docker for Everyone Plus" 题目](https://github.com/USTC-Hackergame/hackergame2024-writeups/blob/master/official/Docker%20for%20Everyone%20Plus/README.md) 展示的失败的用 `sudo` 限制普通用户使用 `docker` 命令的例子。这种情况下建议放弃 sudo，使用其他方式解决问题。
+
+此外其他的一些设置：
+
+- `Defaults secure_path="/usr/sbin:/usr/bin:/sbin:/bin"`：重写 PATH 环境变量，避免提权运行的程序未使用绝对路径调用其他程序时，被用户自己的 PATH 欺骗。
+- `Defaults:%wheel !targetpw`：允许 `wheel` 用户组的用户使用 sudo 时不使用提权目标用户的密码（而是自己的密码）验证。一般来讲，`!targetpw` 是默认配置，但在某些环境下，可能会设置 `Defaults targetpw`（默认要求输入目标密码）。
+
+#### Polkit
 
 (TODO)
 
