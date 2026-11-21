@@ -109,7 +109,7 @@ sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) �
 - `certupdate ALL=(root) NOPASSWD: /usr/bin/systemctl reload nginx`：允许 `certupdate` 用户无密码让 Nginx 重新加载配置。
 - `telegraf ALL=(root) NOEXEC: NOPASSWD: /usr/sbin/nfacct list`：允许 `telegraf` 用户提取到 root 无密码运行 `nfacct list` 命令，但是不可以让 `nfacct` 再启动其他的程序。
 
-其中指定的可以运行的命令必须使用完整路径。
+其中指定的可以运行的命令必须使用完整路径。用户可以用 `sudo -l` 查看自己的配置。
 
 !!! note "sudo 规则的主机限制真的有意义吗？" {#sudoers-hostname}
 
@@ -130,6 +130,45 @@ sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) �
 
 - `Defaults secure_path="/usr/sbin:/usr/bin:/sbin:/bin"`：重写 PATH 环境变量，避免提权运行的程序未使用绝对路径调用其他程序时，被用户自己的 PATH 欺骗。
 - `Defaults:%wheel !targetpw`：允许 `wheel` 用户组的用户使用 sudo 时不使用提权目标用户的密码（而是自己的密码）验证。一般来讲，`!targetpw` 是默认配置，但在某些环境下，可能会设置 `Defaults targetpw`（默认要求输入目标密码）。
+
+!!! tip "sudo 录屏审计" {#sudo-record}
+
+    sudo 有一个鲜为人知的功能：它可以录制 sudo 提权之后的 PTY 操作，在对安全性要求较高的环境下可以帮助系统管理员检查是否有内鬼使用 sudo 提权之后搞破坏：
+
+    ```sudoers title="/etc/sudoers.d/record-pty"
+    # 录制终端输出
+    Defaults log_output
+    # 录制终端输入，可能会把用户后续输入的密码录制进去，所以不建议启用
+    # Defaults log_input
+    # 不让 sudoreplay（播放录制）的输出记录进去
+    Defaults!/usr/bin/sudoreplay !log_output
+    # 不让重启的输出记录进去，REBOOT 在 /etc/sudoers 有定义
+    Defaults!REBOOT !log_output
+    # 限制最多记录 1000 条数据
+    Defaults maxseq = 1000
+    ```
+
+    之后可以用 `sudoreplay` 播放：
+
+    ```console
+    # sudoreplay -l
+    Nov 21 10:34:42 2026 : root : HOST=localhost ; TTY=pts/0 ; CWD=/etc ; USER=root ; TSID=000001 ; COMMAND=/bin/bash
+    # sudoreplay 000001
+    Replaying sudo session: /bin/bash
+    （后续省略）
+    ```
+
+    录屏存储在 `/var/log/sudo-io` 里。由于提权后用户可能会把这个目录直接删了，因此在需要高安全性的场合下，可以配置让 sudo 把录屏发送到运行 `sudo_logsrvd` 的日志服务器上面。
+
+!!! note "doas、sudo-rs 和 run0" {#doas-sudo-rs-run0}
+
+    sudo 是系统非常重要的组件：它本身有 SUID 权限，以 root 身份运行，一旦有安全漏洞，攻击者就能轻松成为 root，接管系统。但是 sudo 的功能比较多（包括历史遗留的兼容性考虑），攻击面也相对较大。因此有一些改进的新方案：
+
+    - doas 由 OpenBSD 开发，在 Linux 上的实现为 [OpenDoas](https://github.com/Duncaen/OpenDoas)。相比 sudo（十几万行），它的代码量很小（几千行），因此审计也更为简单。它只实现了最常见的功能，并且配置与 sudo 不兼容。
+    - [sudo-rs](https://github.com/trifectatechfoundation/sudo-rs) 是 Rust 重写的 sudo，旨在利用 Rust 去除与内存安全相关的问题，并在保持与 sudo 配置兼容性的情况下移除了一部分罕见、复杂的功能。Ubuntu 从 25.10 开始使用 sudo-rs 替代 sudo。
+    - run0 是 systemd 的方案，利用下文介绍的 Polkit 授权。和其他方案相比，其最大的不同是不再依赖于 SUID 权限，而是由 systemd 创建一个隔离的提权后的进程。
+
+    此外，`pkexec` 尽管使用 Polkit，但是其也是一个 SUID 权限程序。其曾经出现过非常严重的安全漏洞（[CVE-2021-4034](https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt)），并且对 `pkexec` 的代码审计可能远不如上述方案，因此不建议使用。
 
 #### Polkit
 
