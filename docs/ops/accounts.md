@@ -160,6 +160,10 @@ sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) �
 
     录屏存储在 `/var/log/sudo-io` 里。由于提权后用户可能会把这个目录直接删了，因此在需要高安全性的场合下，可以配置让 sudo 把录屏发送到运行 `sudo_logsrvd` 的日志服务器上面。
 
+!!! note "sudo 认证缓存" {#sudo-auth-cache}
+
+    没有人喜欢一遍一遍又一遍输密码，因此 sudo 默认会缓存认证状态，这样在一定时间内，sudo 就不会再问你要密码。sudo 会存储对应操作的 TTY 设备号，session 的 leader 进程的创建时间到 `/run/sudo/ts/<UID>` 或者 `/run/sudo/ts/<username>`（较老版本）里。在相同的 TTY 里，一段时间内再操作的话，sudo 就不会再进行认证，而是直接进行授权判断。
+
 !!! note "doas、sudo-rs 和 run0" {#doas-sudo-rs-run0}
 
     sudo 是系统非常重要的组件：它本身有 SUID 权限，以 root 身份运行，一旦有安全漏洞，攻击者就能轻松成为 root，接管系统。但是 sudo 的功能比较多（包括历史遗留的兼容性考虑），攻击面也相对较大。因此有一些改进的新方案：
@@ -172,7 +176,101 @@ sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) �
 
 #### Polkit
 
-(TODO)
+即使你不是 Linux 桌面用户，可能也见过 Polkit 的鉴权提示：
+
+```console
+$ systemctl enable ssh
+==== AUTHENTICATING FOR org.freedesktop.systemd1.manage-unit-files ====
+Authentication is required to manage system service or unit files.
+Authenticating as: ,,, (username)
+Password: 
+```
+
+为什么已经有 sudo 了，还要再来一个授权工具呢？在服务器场景下，Polkit 看起来用途不大，但是在桌面环境下，Polkit 很有必要，因为桌面用户经常需要高频做一些传统意义上需要 root 的事情，包括连接/断开网络、调整时间、关机/重启、挂载 U 盘等等。如果每次都要敲密码，那实在有点太折磨了。但是光靠 sudo 规则无法完全解决问题：
+
+- sudo 依靠的是字符串匹配来决定是否放行，对复杂的需求很容易误判导致安全问题。
+- sudo 不知道（不关心）操作的用户是物理意义上可以和设备接触，还是在用 SSH 访问。
+
+Polkit 相比于 sudo，提供了更加细粒度的规则设置。Polkit 的核心是动作（Action）和规则（Rule），其中动作在 `/usr/share/polkit-1/actions/` 中，由软件包安装，指定需要权限的动作以及默认的策略，例如上面的 `org.freedesktop.systemd1.manage-unit-files` 就是一种动作，对应的 XML 节选如下：
+
+```xml
+<action id="org.freedesktop.systemd1.manage-unit-files">
+        <description gettext-domain="systemd">Manage system service or unit files</description>
+        <message gettext-domain="systemd">Authentication is required to manage system service or unit files.</message>
+        <defaults>
+                <allow_any>auth_admin</allow_any>
+                <allow_inactive>auth_admin</allow_inactive>
+                <allow_active>auth_admin_keep</allow_active>
+        </defaults>
+        <annotate key="org.freedesktop.policykit.imply">org.freedesktop.systemd1.reload-daemon org.freedesktop.systemd1.manage-units</annotate>
+</action>
+```
+
+其中如果用户是当前正在物理操作电脑的话，那么就对应 `allow_active`，如果物理操作，但是切换到了后台（例如切走了 TTY），那么对应 `allow_inactive`，其他情况（例如远程登录）对应 `allow_any`。在使用 systemd-logind 的系统上，Polkit 会使用 systemd 后端获取对应的信息。
+
+当前所有的 Polkit 动作可以用 `pkaction` 查看。
+
+而 Polkit 的规则使用的是 JavaScript 语言。系统默认规则在 `/usr/share/polkit-1/rules.d/`，用户自定义的规则在 `/etc/polkit-1/rules.d/`。例如默认定义 `sudo` 用户组为管理员组：
+
+```js title="/usr/share/polkit-1/rules.d/50-default.rules"
+polkit.addAdminRule(function(action, subject) {
+    return ["unix-group:sudo"];
+});
+```
+
+允许 `empower` 用户组提权（动作总是允许执行）：
+
+```js title="/usr/share/polkit-1/rules.d/empower.rules"
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("empower")) {
+        return polkit.Result.YES;
+    }
+});
+```
+
+允许 `systemd-network` 用户设置 hostname，获取 UUID，设置时区：
+
+```js title="/usr/share/polkit-1/rules.d/systemd-networkd.rules"
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.hostname1.set-hostname" ||
+         action.id == "org.freedesktop.hostname1.get-product-uuid" ||
+         action.id == "org.freedesktop.timedate1.set-timezone") &&
+        subject.user == "systemd-network") {
+        return polkit.Result.YES;
+    }
+});
+```
+
+!!! note "Polkit 引入 JavaScript 的争议" {#polkit-js-controversy}
+
+    早期的 Polkit 使用的是类似 INI 的 `.pkla` 文件。例如在 Debian 11 中，`systemd` 包安装的配置类似如下：
+
+    ```ini title="/var/lib/polkit-1/localauthority/10-vendor.d/systemd-networkd.pkla"
+    [Allow systemd-networkd to set timezone and transient hostname]
+    Identity=unix-user:systemd-network
+    Action=org.freedesktop.hostname1.set-hostname;org.freedesktop.hostname1.get-product-uuid;org.freedesktop.timedate1.set-timezone;
+    ResultAny=yes
+    ```
+
+    但是[出于灵活性等考虑](https://davidz25.blogspot.com/2012/06/authorization-rules-in-polkit.html)，Polkit 在 0.106（2012 年）迁移到了 JavaScript 作为配置，使用 Firefox 的 JS 引擎 SpiderMonkey 来执行 JavaScript 配置脚本。这一点颇具争议，尽管 JS 引擎分离出来，不以 root 权限运行，但是这样导致了可能的攻击面增加，并且 SpiderMonkey 本身也比较庞大。因此很长时间内，Debian 都没有采用新的 JS 配置。一直到轻量的 [Duktape](https://duktape.org/) 引入到 Polkit 作为 SpiderMonkey 的替代之后，相关的部分问题才得到了缓解。
+
+!!! tip "让 run0 免密码执行" {#run0-nopasswd}
+
+    如果版本足够新（需要至少 systemd 259 版本，Debian 14+），systemd 会安装 `/usr/share/polkit-1/rules.d/empower.rules`，允许 empower 组内所有用户使用所有动作，因此把自己加到这个组里（如果没有需要创建一个）即可。`run0 --empower` 会同时给创建出来的 service 里面的用户所有 capabilities，并临时加入到 empower 这个组里面，因此相当于启动了一个有所有特权的当前用户的 shell。
+
+    如果没有的话，也可以自己创建类似的规则，例如让 `sudo` 用户组无密码：
+
+    ```js title="/etc/polkit-1/rules.d/sudo-group-nopasswd.rules"
+    polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.systemd1.manage-units" && subject.isInGroup("sudo")) {
+            return polkit.Result.YES;
+        }
+    });
+    ```
+
+!!! tip "让用户只能用 run0 跑某个指定的命令" {#run0-service}
+
+    (TODO)
 
 ## LDAP
 
