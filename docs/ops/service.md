@@ -918,7 +918,7 @@ systemd 中每个 session 都会启动一个用户级别的 systemd 进程（use
     <!-- 以下内容省略 -->
     ```
 
-    添加对应的 [Polkit 规则](./accounts.md#polkit)，禁止即可：
+    添加对应的 [Polkit 规则](./accounts.md#polkit-and-run0)，禁止即可：
 
     ```js title="/etc/polkit-1/rules.d/disable-self-lingering.rules"
     polkit.addRule(function(action, subject) {

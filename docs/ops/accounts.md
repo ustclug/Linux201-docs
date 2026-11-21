@@ -170,11 +170,11 @@ sudo 规则的基本结构为 `谁 在哪台机器上=(可以以谁的身份) �
 
     - doas 由 OpenBSD 开发，在 Linux 上的实现为 [OpenDoas](https://github.com/Duncaen/OpenDoas)。相比 sudo（十几万行），它的代码量很小（几千行），因此审计也更为简单。它只实现了最常见的功能，并且配置与 sudo 不兼容。
     - [sudo-rs](https://github.com/trifectatechfoundation/sudo-rs) 是 Rust 重写的 sudo，旨在利用 Rust 去除与内存安全相关的问题，并在保持与 sudo 配置兼容性的情况下移除了一部分罕见、复杂的功能。Ubuntu 从 25.10 开始使用 sudo-rs 替代 sudo。
-    - run0 是 systemd 的方案，利用下文介绍的 Polkit 授权。和其他方案相比，其最大的不同是不再依赖于 SUID 权限，而是由 systemd 创建一个隔离的提权后的进程。
+    - run0 是 systemd 的方案，利用下文介绍的 Polkit 授权。和其他方案相比，其最大的不同是不再依赖于 SUID 权限（编写可靠安全的 SUID 程序是一件很难、很容易出错的事情），而是由 systemd 创建一个隔离的提权后的进程。
 
     此外，`pkexec` 尽管使用 Polkit，但是其也是一个 SUID 权限程序。其曾经出现过非常严重的安全漏洞（[CVE-2021-4034](https://www.qualys.com/2022/01/25/cve-2021-4034/pwnkit.txt)），并且对 `pkexec` 的代码审计可能远不如上述方案，因此不建议使用。
 
-#### Polkit
+#### Polkit 与 run0 {#polkit-and-run0}
 
 即使你不是 Linux 桌面用户，可能也见过 Polkit 的鉴权提示：
 
@@ -241,6 +241,58 @@ polkit.addRule(function(action, subject) {
 });
 ```
 
+!!! warning "Polkit 的授权缓存只检查 action ID 和 subject" {#polkit-cache-warning}
+
+    你可能会看到这样的配置：
+
+    ```js
+    if (action.id == "someid" && 
+        action.lookup("xxx") == "somecondition" &&
+        subject.user == "someuser") {
+            return polkit.Result.AUTH_SELF_KEEP;
+            // Or: polkit.Result.AUTH_ADMIN_KEEP
+        }
+    ```
+
+    这里的 `_KEEP` 会让 Polkit 对指定的 Action ID 和 Subject 缓存授权结果一小段时间。**但是这一项缓存不检查其他的判断条件**（在这里是 `action.lookup("xxx") == "somecondition"`）——大概率是非预期的。
+
+!!! tip "输出调试信息" {#polkit-debug}
+
+    `polkit.log()` 函数可以在 Polkit 日志中输出需要的内容，因此如果想要知道执行某个操作的时候 Polkit 的 rule 函数里面看到了什么，可以类似这样：
+
+    ```js title="/etc/polkit-1/rules.d/00-debug.rules"
+    polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.systemd1.manage-units") {
+            polkit.log("Action: " + action);
+            polkit.log("Subject: " + subject);
+        }
+        return polkit.Result.NOT_HANDLED;
+    });
+    ```
+
+    不过发行版一般会关闭 Polkit 的日志功能（`--no-debug`），因此需要用 `systemctl edit polkit.service` 编辑：
+
+    ```ini
+    [Service]
+    ExecStart=
+    ExecStart=/usr/lib/polkit-1/polkitd --log-level=notice
+    ```
+
+    重启后就能在服务日志里面看到了（以下日志由 `run0` 触发）：
+
+    ```log
+    Nov 22 04:10:38 hostname polkitd[1690412]: Action: [Action id='org.freedesktop.systemd1.manage-units' verb='start' unit='run-p1690515-i1733830.service' polkit.message='Authentication is required to start transient unit '$(unit)'.' polkit.gettext_domain='systemd']
+    Nov 22 04:10:38 hostname polkitd[1690412]: Subject: [Subject uid=1000 pid=1691016 user='username' groups=usergroups seat=null session=null system_unit='user@1000.service' no_new_privileges=false local=true active=true]
+    ```
+
+    Polkit 会自动加载修改后的规则，因此不需要手动 reload。同时可以使用 `pkcheck` 手动触发：
+
+    ```sh
+    pkcheck --action-id org.freedesktop.systemd1.manage-units --process $PID -u
+    ```
+
+    调试完成后，记得删除对应的规则，并用 `systemctl revert polkit` 恢复原服务。
+
 !!! note "Polkit 引入 JavaScript 的争议" {#polkit-js-controversy}
 
     早期的 Polkit 使用的是类似 INI 的 `.pkla` 文件。例如在 Debian 11 中，`systemd` 包安装的配置类似如下：
@@ -268,9 +320,35 @@ polkit.addRule(function(action, subject) {
     });
     ```
 
-!!! tip "让用户只能用 run0 跑某个指定的命令" {#run0-service}
+!!! tip "让用户只能用 Polkit 提权跑某个指定的命令" {#polkit-and-service}
 
-    (TODO)
+    从上面的调试日志可以看到，`action` 和 `subject` 中都没有 `run0` 要运行的命令的信息。推荐的方式是：将要运行的命令包装为 systemd service，然后编写只允许启动这个 service 的 Polkit 规则。
+
+    ```js title="/etc/polkit-1/rules.d/allow-user-to-run-given-service.rules"
+    polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.systemd1.manage-units" &&
+            action.lookup("unit") == "your-service.service" &&
+            action.lookup("verb") == "start" &&
+            subject.user == "username"
+        ) {
+            return polkit.Result.AUTH_SELF;
+            // or nopasswd:
+            // return polkit.Result.YES;
+        }
+    });
+    ```
+
+??? note "授权/沙箱/容器工具与 TIOCSTI 的安全陷阱" {#tiocsti}
+
+    TIOCSTI（Terminal I/O Control Simulate Terminal Input）是一个臭名昭著的控制指令，功能是对指定终端设备的文件描述符模拟键盘输入。如果相关的工具在调整权限的时候没有考虑到处理 TIOCSTI，那么就会引发非常恶劣的问题：
+
+    1. 授权工具降权运行程序时，直接将当前的终端复用给了恶意的程序。
+    2. 恶意程序使用 TIOCSTI 向终端输入恶意的指令，然后自己退出。
+    3. 恶意的指令被外层的 shell 读取到，shell 以为这是用户自己输入的命令，然后直接执行。
+
+    包括 sudo（[CVE-2005-4890](https://nvd.nist.gov/vuln/detail/cve-2005-4890)）、OpenDoas（[CVE-2023-28339](https://nvd.nist.gov/vuln/detail/cve-2023-28339)）、bubblewrap 与 Flatpak（[CVE-2017-5226](https://nvd.nist.gov/vuln/detail/cve-2017-5226)）、SELinux（[CVE-2016-7545](https://nvd.nist.gov/vuln/detail/cve-2016-7545)）等，都被 TIOCSTI 坑过。因此，需要运行不可信应用的程序需要创建独立的 PTY 自己转发，或者利用 seccomp 来禁止 TIOCSTI。当然，大概率是因为 TIOCSTI 实在害人不浅，从 Linux 6.2 开始，kernel 可以通过 `dev.tty.legacy_tiocsti` 配置，等于 `0` 时只允许有 CAP_SYS_ADMIN capability 的进程使用 TIOCSTI。
+
+    run0 的设计上不会有 TIOCSTI 的问题，但是和 sudo 等不同的是，它用来转发 PTY 的程序是以调用者身份（而不是 root 身份）执行的，在没有通过 `kernel.yama.ptrace_scope` 禁止同用户之间调试的情况下，同用户的其他进程可以直接看到交互数据，甚至插入命令。因此在使用 run0 的场景中，建议开启禁止同用户调试的设置，以缓解安全风险。
 
 ## LDAP
 
