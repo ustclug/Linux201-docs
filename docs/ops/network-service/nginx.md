@@ -1150,14 +1150,15 @@ autoindex on;
     autoindex off;
     index index.html index.htm;
 
-    try_files $uri $uri/index.html $uri/index.htm @dir_check;
+    # 不使用 $uri/index.html，否则配置中自定义的 location /dir/ {...} 内部的规则不会被使用
+    try_files $uri ${uri}index.html ${uri}index.htm @dir_check;
 
     location @dir_check {
         internal;
         if (-d $request_filename) {  # 判断目录是否存在
-            rewrite ^(.*)$ /_dir_handler/$1/ last;
+            # 只改写结尾是 / 的访问。结尾不是 / 对目录的访问让 Nginx 自己 301 处理。
+            rewrite ^(.*/)$ /_dir_handler$1 last;
         }
-        return 404;
     }
 
     location /_dir_handler/ {
@@ -1166,19 +1167,29 @@ autoindex on;
     }
     ```
 
-    不过 `try_files` 的问题是：它没有办法继承到子 `location` 中，这在配置复杂的情况下是难以接受的。因此我们可以有另一个 workaround 方案：`index` 指令的最后一个参数可以是 URI 绝对路径，例如 `index index.html /_dir_handler`。于是我们的配置可以改成：
+    不过 `try_files` 的问题是：它没有办法继承到子 `location` 中，这在配置复杂的情况下是难以接受的。因此我们可以有另一个 workaround 方案：`index` 指令的最后一个参数可以是 URI 绝对路径，例如 `index index.html /_dir_handler`。于是更推荐使用下面的配置：
 
     ```nginx
     index index.html index.htm /_dir_handler;
 
+    if ($uri != /_dir_handler) {
+        # 在 /_dir_handler 外部记录下 $uri 到另一个变量，因为进入 /_dir_handler 之后 $uri 就会被修改
+        set $listing_uri $uri;
+    }
+
     location = /_dir_handler {
         internal;
-        # 由于 $uri 已经是 /_dir_handler/，因此只能从 $request_uri 中获取原始请求路径
-        proxy_pass http://127.0.0.1:1234/$request_uri;  # 文件列表程序监听的地址
+        # 使用 rewrite 恢复路径
+        rewrite ^ $listing_uri break;
+        # 文件列表程序监听的地址，结尾不加 /，因为 rewrite，传递过去的就是 $uri
+        proxy_pass http://127.0.0.1:1234;
+
+        # 如果后端程序可以接受，也可以不添加变量记录 $uri，直接把原始的 $request_uri proxy_pass 过去，不过可能会有潜在的安全问题
+        # proxy_pass http://127.0.0.1:1234/$request_uri;
     }
     ```
 
-    有关 `internal` 与 `if` 等相关的介绍，可参考下文的 [Rewrite](#rewrite) 部分。
+    有关 `internal`、`if`、`rewrite` 等相关的介绍，可参考下文的 [Rewrite](#rewrite) 部分。
 
 ## 速率、请求与连接数限制 {#limiting}
 
