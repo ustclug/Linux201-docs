@@ -3678,7 +3678,7 @@ UID 0 通常称为 root 用户，具有操作系统的最高管理权限，而�
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="gp"># </span>cat<span class="w"> </span>/proc/self/loginuid<span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="go">12345</span>
 </code></pre></div>
-<p>需要在 auditd 配置中添加 <code>--loginuid-immutable</code> 才能避免这一项设置被篡改。另外需要注意的是，<code>run0</code> 启动的程序不会继承当前用户的 <code>loginuid</code>（因为是被 UID 1 systemd 启动的）：</p>
+<p>需要在 auditd 配置中添加 <code>--loginuid-immutable</code> 才能避免这一项设置被篡改。另外需要注意的是，<code>run0</code> 启动的程序不会继承当前用户的 <code>loginuid</code>（因为是被 PID 1 systemd 启动的）：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>run0
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="gp"># </span>cat<span class="w"> </span>/proc/self/loginuid<span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">4294967295</span>
