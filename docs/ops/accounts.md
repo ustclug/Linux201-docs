@@ -134,13 +134,13 @@ password	requisite			pam_deny.so
 password	required			pam_permit.so
 ```
 
-程序在调用 PAM 的时候，需要提供自己的服务名，PAM 库会读取 `/etc/pam.d/` 下服务名对应的配置，如果不存在，则读取 `/etc/pam.d/other`（配置为拒绝请求）。
+程序在调用 PAM 的时候，需要提供自己的服务名，PAM 库会读取 `/etc/pam.d/` 下服务名对应的配置，如果不存在，则读取 `/etc/pam.d/other`（Debian 下默认配置为 include 通用的配置文件）。
 
 插件（pam_\*.so）会按顺序调用，并且根据配置中的策略来决定控制流：
 
 - `requisite`：失败后立刻报错中止。
 - `required`：失败后跑完后续的插件再报错中止。
-- `sufficient`：如果之前没有 `required` 失败的话就成功结束。
+- `sufficient`：如果之前没有 `required` 失败，并且这个插件成功的话就成功结束。
 - `optional`：除非是唯一的插件，否则成功或失败都不影响。
 - 类似 `[success=1]` 的策略（如果成功，跳过下一个插件）能够更加细粒度地控制流程，详情可参考 [pam.conf][pam.conf.5]。
 
@@ -163,10 +163,10 @@ password	required			pam_permit.so
     - [`pam_mail`][pam_mail.8]：显示未读邮件信息。
     - [`pam_systemd`][pam_systemd.8]：向 logind 注册用户 session，并创建 `/run/user/$UID` 目录，初始化 `$XDG_SESSION_ID` 等操作。在用户注销时，清理 session 进程（如果开启了 `KillUserProcesses=yes`），并清理创建出来的用户临时目录。
     - [`pam_unix`][pam_unix.8]：记录登录注销日志。
-    - [`pam_wtmpdb`][pam_wtmpdb.8]：在 `/var/log/wtmp.db` 数据库记录登录注销信息。
+    - [`pam_wtmpdb`][pam_wtmpdb.8]：在 `/var/lib/wtmpdb/wtmp.db` 数据库记录登录注销信息。
 - `password` 的 [`pam_unix`][pam_unix.8]：检查基础的弱口令（`obscure`），使用现代的 `yescrypt` 哈希算法（设计用来对抗 GPU、FPGA、ASIC 高度并行计算的能力）存储密码。
 
-!!! note "这些 pam_\*.so 是在哪里运行的？"
+!!! note "这些 pam_\*.so 是在哪里运行的？" {#pam-run-in-current-proc}
 
     应用程序通过 libpam 处理 PAM 配置，通过 dlopen 加载这些动态链接库，因此 PAM 的权限和当前用户（进程）是一样的。其中一些插件，特别是 `session` 一类，也依赖于这一项设计（例如 `pam_limits` 要设置的是当前用户/进程的资源限制）。
 
@@ -177,8 +177,31 @@ password	required			pam_permit.so
       - 还记得 `pam_env` 会设置环境变量吗？它过去默认会读取 `~/.pam_environment` 的内容，然后在当前进程（**可能是 root 的**）设置。**这会影响后续 PAM 插件的行为**，例如 [CVE-2025-6018](https://nvd.nist.gov/vuln/detail/cve-2025-6018) 就是 `pam_env` 影响了 `pam_systemd` 的例子。因此，现在 `pam_env` 默认不会再读取用户自己指定的环境变量了。
       - `pam_motd` 很久以前会在 `~/.cache/` 记录用户查看 MOTD 的时间戳，然后没有正确处理 `.cache` 是软链接的情况，导致任意文件权限可以被非特权用户修改。（[CVE-2010-0832](https://nvd.nist.gov/vuln/detail/cve-2010-0832)）
       - 一些依赖于网络进行身份认证的 PAM 模块（例如 `pam_ldap`）也会因此在 root 用户一侧运行复杂、攻击面较大的代码。因此，目前现代系统推荐将相关的逻辑放在 sssd 中，并由 `pam_sss` 连接本地的 sssd 来验证。
+    
+!!! note "loginuid" {#loginuid}
 
-(TODO)
+    `loginuid` 会被用于审计（audit），但是在默认配置下，`/proc/self/loginuid` 可以随意由 root 修改：
+
+    ```console
+    $ sudo -i
+    # cat /proc/self/loginuid; echo
+    1000
+    # echo 12345 > /proc/self/loginuid
+    # cat /proc/self/loginuid; echo
+    12345
+    ```
+
+    需要在 auditd 配置中添加 `--loginuid-immutable` 才能避免这一项设置被篡改。另外需要注意的是，`run0` 启动的程序不会继承当前用户的 `loginuid`（因为是被 UID 1 systemd 启动的）：
+
+    ```console
+    $ run0
+    # cat /proc/self/loginuid; echo
+    4294967295
+    ```
+
+    这里 4294967295（-1）代表没有设置过 loginuid。
+
+Debian 下可以使用 `pam-auth-update` 启用或禁用 `auth` 部分相关插件（例如是否对新用户自动在 `/home` 下创建用户目录等）。
 
 ### 授权工具 {#authorization-tools}
 
