@@ -147,23 +147,23 @@ password	required			pam_permit.so
 从上面的配置中可以看到一些关键的步骤：
 
 - `auth`：
-  - [`pam_faildelay`][pam_faildelay.8]：如果密码错误，等待 3s 再返回，提升爆破难度。
-  - [`pam_nologin`][pam_nologin.8]：如果 `/var/run/nologin` 或者 `/etc/nologin` 存在，不允许非 root 登录。
-  - [`pam_unix`][pam_unix.8]：验证用户密码，`nullok` 允许空密码用户。
-  - [`pam_group`][pam_group.8]：根据 `/etc/security/group.conf` 临时赋予用户指定的组权限。
+    - [`pam_faildelay`][pam_faildelay.8]：如果密码错误，等待 3s 再返回，提升爆破难度。
+    - [`pam_nologin`][pam_nologin.8]：如果 `/var/run/nologin` 或者 `/etc/nologin` 存在，不允许非 root 登录。
+    - [`pam_unix`][pam_unix.8]：验证用户密码，`nullok` 允许空密码用户。
+    - [`pam_group`][pam_group.8]：根据 `/etc/security/group.conf` 临时赋予用户指定的组权限。
 - `account` 的 [`pam_unix`][pam_unix.8]：根据 shadow 检查用户和密码有效性。如果密码过期了，`new_authtok_reqd` 会强制让用户修改密码。
 - `session`：
-  - [`pam_selinux`][pam_selinux.8]：SELinux 相关设置。
-  - [`pam_loginuid`][pam_loginuid.8]：设置 `/proc/self/loginuid`，后续即使用 `su`、`sudo` 等提权，`loginuid` 仍然记录着原始用户的信息。
-  - [`pam_limits`][pam_limits.8]：加载 `/etc/security/limits.conf` 等文件，设置用户系统资源限制。
-  - [`pam_umask`][pam_umask.8]：设置用户的 umask（默认文件创建权限的 mask）。
-  - [`pam_keyinit`][pam_keyinit.8]：初始化用户在内核中的 keyring。
-  - [`pam_env`][pam_env.8]：读取环境变量设置。
-  - [`pam_motd`][pam_motd.8]：显示登录欢迎信息。
-  - [`pam_mail`][pam_mail.8]：显示未读邮件信息。
-  - [`pam_systemd`][pam_systemd.8]：向 logind 注册用户 session，并创建 `/run/user/$UID` 目录，初始化 `$XDG_SESSION_ID` 等操作。在用户注销时，清理 session 进程（如果开启了 `KillUserProcesses=yes`），并清理创建出来的用户临时目录。
-  - [`pam_unix`][pam_unix.8]：记录登录注销日志。
-  - [`pam_wtmpdb`][pam_wtmpdb.8]：在 `/var/log/wtmp.db` 数据库记录登录注销信息。
+    - [`pam_selinux`][pam_selinux.8]：SELinux 相关设置。
+    - [`pam_loginuid`][pam_loginuid.8]：设置 `/proc/self/loginuid`，后续即使用 `su`、`sudo` 等提权，`loginuid` 仍然记录着原始用户的信息。
+    - [`pam_limits`][pam_limits.8]：加载 `/etc/security/limits.conf` 等文件，设置用户系统资源限制。
+    - [`pam_umask`][pam_umask.8]：设置用户的 umask（默认文件创建权限的 mask）。
+    - [`pam_keyinit`][pam_keyinit.8]：初始化用户在内核中的 keyring。
+    - [`pam_env`][pam_env.8]：读取环境变量设置。
+    - [`pam_motd`][pam_motd.8]：显示登录欢迎信息。
+    - [`pam_mail`][pam_mail.8]：显示未读邮件信息。
+    - [`pam_systemd`][pam_systemd.8]：向 logind 注册用户 session，并创建 `/run/user/$UID` 目录，初始化 `$XDG_SESSION_ID` 等操作。在用户注销时，清理 session 进程（如果开启了 `KillUserProcesses=yes`），并清理创建出来的用户临时目录。
+    - [`pam_unix`][pam_unix.8]：记录登录注销日志。
+    - [`pam_wtmpdb`][pam_wtmpdb.8]：在 `/var/log/wtmp.db` 数据库记录登录注销信息。
 - `password` 的 [`pam_unix`][pam_unix.8]：检查基础的弱口令（`obscure`），使用现代的 `yescrypt` 哈希算法（设计用来对抗 GPU、FPGA、ASIC 高度并行计算的能力）存储密码。
 
 !!! note "这些 pam_\*.so 是在哪里运行的？"
