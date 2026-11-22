@@ -174,9 +174,9 @@ password	required			pam_permit.so
 
     - 非特权用户调用 `auth` 的 `pam_unix` 的时候（例如屏保程序检查用户是否输入正确的密码来解锁屏幕），显然无法读取 `/etc/shadow`。在这种情况下，它会调用 `unix_chkpwd` 这个 SUID（或者 SGID `shadow`）程序来检查调用者**自己**的密码设置。
     - 对 TTY `login` 等场景下，让 root 用户跑 `pam_motd`、`pam_mail` 等，就只是为了输出一下登录欢迎信息和用户有没有未读邮件，听起来并不合理。历史上，这也导致了很多问题：
-      - 还记得 `pam_env` 会设置环境变量吗？它过去默认会读取 `~/.pam_environment` 的内容，然后在当前进程（**可能是 root 的**）设置。**这会影响后续 PAM 插件的行为**，例如 [CVE-2025-6018](https://nvd.nist.gov/vuln/detail/cve-2025-6018) 就是 `pam_env` 影响了 `pam_systemd` 的例子。因此，现在 `pam_env` 默认不会再读取用户自己指定的环境变量了。
-      - `pam_motd` 很久以前会在 `~/.cache/` 记录用户查看 MOTD 的时间戳，然后没有正确处理 `.cache` 是软链接的情况，导致任意文件权限可以被非特权用户修改。（[CVE-2010-0832](https://nvd.nist.gov/vuln/detail/cve-2010-0832)）
-      - 一些依赖于网络进行身份认证的 PAM 模块（例如 `pam_ldap`）也会因此在 root 用户一侧运行复杂、攻击面较大的代码。因此，目前现代系统推荐将相关的逻辑放在 sssd 中，并由 `pam_sss` 连接本地的 sssd 来验证。
+        - 还记得 `pam_env` 会设置环境变量吗？它过去默认会读取 `~/.pam_environment` 的内容，然后在当前进程（**可能是 root 的**）设置。**这会影响后续 PAM 插件的行为**，例如 [CVE-2025-6018](https://nvd.nist.gov/vuln/detail/cve-2025-6018) 就是 `pam_env` 影响了 `pam_systemd` 的例子。因此，现在 `pam_env` 默认不会再读取用户自己指定的环境变量了。
+        - `pam_motd` 很久以前会在 `~/.cache/` 记录用户查看 MOTD 的时间戳，然后没有正确处理 `.cache` 是软链接的情况，导致任意文件权限可以被非特权用户修改。（[CVE-2010-0832](https://nvd.nist.gov/vuln/detail/cve-2010-0832)）
+        - 一些依赖于网络进行身份认证的 PAM 模块（例如 `pam_ldap`）也会因此在 root 用户一侧运行复杂、攻击面较大的代码。因此，目前现代系统推荐将相关的逻辑放在 sssd 中，并由 `pam_sss` 连接本地的 sssd 来验证。
 
 !!! note "loginuid" {#loginuid}
 
@@ -191,7 +191,7 @@ password	required			pam_permit.so
     12345
     ```
 
-    需要在 auditd 配置中添加 `--loginuid-immutable` 才能避免这一项设置被篡改。另外需要注意的是，`run0` 启动的程序不会继承当前用户的 `loginuid`（因为是被 UID 1 systemd 启动的）：
+    需要在 auditd 配置中添加 `--loginuid-immutable` 才能避免这一项设置被篡改。另外需要注意的是，`run0` 启动的程序不会继承当前用户的 `loginuid`（因为是被 PID 1 systemd 启动的）：
 
     ```console
     $ run0
