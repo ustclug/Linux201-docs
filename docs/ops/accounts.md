@@ -90,7 +90,93 @@ info: Adding user `test' to group `users' ...
 
     这两个对应的英文单词由于长得比较相似，容易被混淆。简单来说，认证负责**确认你是谁**，而授权负责**确认你能不能做你要做的事情**。
 
-    在 Unix 的架构下，PAM 就负责认证用户（在外部组件的帮助下，可以实现包括但不限于让用户输入密码、按指纹、按硬件密钥、输入 TOTP、刷脸验证等等），而我们熟悉的 `sudo`，以及其平替 `doas`，和细粒度的 Polkit 做的就是授权（检查用户能否提权到 root 或者其他用户，用户自己能不能执行某种特权操作，例如修改系统名等）。
+    在 Linux 的架构下，PAM 就负责认证用户（在外部组件的帮助下，可以实现包括但不限于让用户输入密码、按指纹、按硬件密钥、输入 TOTP、刷脸验证等等），而我们熟悉的 `sudo`，以及其平替 `doas`，和细粒度的 Polkit 做的就是授权（检查用户能否提权到 root 或者其他用户，用户自己能不能执行某种特权操作，例如修改系统名等）。
+
+PAM 为应用提供了统一的认证用户的接口，而不需要自己去解析 `/etc/shadow`，或者为其他的认证方式自己编写代码。PAM 是一套插件系统，有四大模块类型：`auth`（根据用户输入的凭证验证是不是用户本人）、`account`（检查用户本身的状态是否能登录，例如用户密码有没有过期）、`password`（修改密码的时候，检查密码是否符合条件）、`session`（在登录时准备环境，退出时清理等）。**应用程序可以自由选择需要使用的模块**。
+
+例如用户通过 TTY 登录时，对应的 PAM 配置为：
+
+```conf title="/etc/pam.d/login"
+# 删除了其他注释项，并且展开了 @include
+auth       optional   pam_faildelay.so  delay=3000000
+auth       requisite  pam_nologin.so
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional   pam_motd.so motd=/run/motd.dynamic
+session    optional   pam_motd.so noupdate
+session [success=ok ignore=ignore module_unknown=ignore default=bad] pam_selinux.so open
+session       required   pam_env.so readenv=1
+session       required   pam_env.so readenv=1 envfile=/etc/default/locale
+# @include common-auth
+auth	[success=1 default=ignore]	pam_unix.so nullok
+auth	requisite			pam_deny.so
+auth	required			pam_permit.so
+auth       optional   pam_group.so
+
+session    required   pam_limits.so
+session    optional   pam_mail.so standard
+session    optional   pam_keyinit.so force revoke
+# @include common-account
+account	[success=1 new_authtok_reqd=done default=ignore]	pam_unix.so
+account	requisite			pam_deny.so
+account	required			pam_permit.so
+# @include common-session
+session	[default=1]			pam_permit.so
+session	requisite			pam_deny.so
+session	required			pam_permit.so
+session optional			pam_umask.so
+session	required	pam_unix.so 
+session	optional			pam_wtmpdb.so skip_if=sshd
+session	optional	pam_systemd.so
+# @include common-password
+password	[success=1 default=ignore]	pam_unix.so obscure yescrypt
+password	requisite			pam_deny.so
+password	required			pam_permit.so
+```
+
+程序在调用 PAM 的时候，需要提供自己的服务名，PAM 库会读取 `/etc/pam.d/` 下服务名对应的配置，如果不存在，则读取 `/etc/pam.d/other`（配置为拒绝请求）。
+
+插件（pam_\*.so）会按顺序调用，并且根据配置中的策略来决定控制流：
+
+- `requisite`：失败后立刻报错中止。
+- `required`：失败后跑完后续的插件再报错中止。
+- `sufficient`：如果之前没有 `required` 失败的话就成功结束。
+- `optional`：除非是唯一的插件，否则成功或失败都不影响。
+- 类似 `[success=1]` 的策略（如果成功，跳过下一个插件）能够更加细粒度地控制流程，详情可参考 [pam.conf][pam.conf.5]。
+
+从上面的配置中可以看到一些关键的步骤：
+
+- `auth`：
+  - [`pam_faildelay`][pam_faildelay.8]：如果密码错误，等待 3s 再返回，提升爆破难度。
+  - [`pam_nologin`][pam_nologin.8]：如果 `/var/run/nologin` 或者 `/etc/nologin` 存在，不允许非 root 登录。
+  - [`pam_unix`][pam_unix.8]：验证用户密码，`nullok` 允许空密码用户。
+  - [`pam_group`][pam_group.8]：根据 `/etc/security/group.conf` 临时赋予用户指定的组权限。
+- `account` 的 [`pam_unix`][pam_unix.8]：根据 shadow 检查用户和密码有效性。如果密码过期了，`new_authtok_reqd` 会强制让用户修改密码。
+- `session`：
+  - [`pam_selinux`][pam_selinux.8]：SELinux 相关设置。
+  - [`pam_loginuid`][pam_loginuid.8]：设置 `/proc/self/loginuid`，后续即使用 `su`、`sudo` 等提权，`loginuid` 仍然记录着原始用户的信息。
+  - [`pam_limits`][pam_limits.8]：加载 `/etc/security/limits.conf` 等文件，设置用户系统资源限制。
+  - [`pam_umask`][pam_umask.8]：设置用户的 umask（默认文件创建权限的 mask）。
+  - [`pam_keyinit`][pam_keyinit.8]：初始化用户在内核中的 keyring。
+  - [`pam_env`][pam_env.8]：读取环境变量设置。
+  - [`pam_motd`][pam_motd.8]：显示登录欢迎信息。
+  - [`pam_mail`][pam_mail.8]：显示未读邮件信息。
+  - [`pam_systemd`][pam_systemd.8]：向 logind 注册用户 session，并创建 `/run/user/$UID` 目录，初始化 `$XDG_SESSION_ID` 等操作。在用户注销时，清理 session 进程（如果开启了 `KillUserProcesses=yes`），并清理创建出来的用户临时目录。
+  - [`pam_unix`][pam_unix.8]：记录登录注销日志。
+  - [`pam_wtmpdb`][pam_wtmpdb.8]：在 `/var/log/wtmp.db` 数据库记录登录注销信息。
+- `password` 的 [`pam_unix`][pam_unix.8]：检查基础的弱口令（`obscure`），使用现代的 `yescrypt` 哈希算法（设计用来对抗 GPU、FPGA、ASIC 高度并行计算的能力）存储密码。
+
+!!! note "这些 pam_\*.so 是在哪里运行的？"
+
+    应用程序通过 libpam 处理 PAM 配置，通过 dlopen 加载这些动态链接库，因此 PAM 的权限和当前用户（进程）是一样的。其中一些插件，特别是 `session` 一类，也依赖于这一项设计（例如 `pam_limits` 要设置的是当前用户/进程的资源限制）。
+
+    不过可以发现一些明显的问题：
+
+    - 非特权用户调用 `auth` 的 `pam_unix` 的时候（例如屏保程序检查用户是否输入正确的密码来解锁屏幕），显然无法读取 `/etc/shadow`。在这种情况下，它会调用 `unix_chkpwd` 这个 SUID（或者 SGID `shadow`）程序来检查调用者**自己**的密码设置。
+    - 对 TTY `login` 等场景下，让 root 用户跑 `pam_motd`、`pam_mail` 等，就只是为了输出一下登录欢迎信息和用户有没有未读邮件，听起来并不合理。历史上，这也导致了很多问题：
+      - 还记得 `pam_env` 会设置环境变量吗？它过去默认会读取 `~/.pam_environment` 的内容，然后在当前进程（**可能是 root 的**）设置。**这会影响后续 PAM 插件的行为**，例如 [CVE-2025-6018](https://nvd.nist.gov/vuln/detail/cve-2025-6018) 就是 `pam_env` 影响了 `pam_systemd` 的例子。因此，现在 `pam_env` 默认不会再读取用户自己指定的环境变量了。
+      - `pam_motd` 很久以前会在 `~/.cache/` 记录用户查看 MOTD 的时间戳，然后没有正确处理 `.cache` 是软链接的情况，导致任意文件权限可以被非特权用户修改。（[CVE-2010-0832](https://nvd.nist.gov/vuln/detail/cve-2010-0832)）
+      - 一些依赖于网络进行身份认证的 PAM 模块（例如 `pam_ldap`）也会因此在 root 用户一侧运行复杂、攻击面较大的代码。因此，目前现代系统推荐将相关的逻辑放在 sssd 中，并由 `pam_sss` 连接本地的 sssd 来验证。
 
 (TODO)
 
