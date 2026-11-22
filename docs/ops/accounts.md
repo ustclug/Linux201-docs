@@ -177,7 +177,7 @@ password	required			pam_permit.so
       - 还记得 `pam_env` 会设置环境变量吗？它过去默认会读取 `~/.pam_environment` 的内容，然后在当前进程（**可能是 root 的**）设置。**这会影响后续 PAM 插件的行为**，例如 [CVE-2025-6018](https://nvd.nist.gov/vuln/detail/cve-2025-6018) 就是 `pam_env` 影响了 `pam_systemd` 的例子。因此，现在 `pam_env` 默认不会再读取用户自己指定的环境变量了。
       - `pam_motd` 很久以前会在 `~/.cache/` 记录用户查看 MOTD 的时间戳，然后没有正确处理 `.cache` 是软链接的情况，导致任意文件权限可以被非特权用户修改。（[CVE-2010-0832](https://nvd.nist.gov/vuln/detail/cve-2010-0832)）
       - 一些依赖于网络进行身份认证的 PAM 模块（例如 `pam_ldap`）也会因此在 root 用户一侧运行复杂、攻击面较大的代码。因此，目前现代系统推荐将相关的逻辑放在 sssd 中，并由 `pam_sss` 连接本地的 sssd 来验证。
-    
+
 !!! note "loginuid" {#loginuid}
 
     `loginuid` 会被用于审计（audit），但是在默认配置下，`/proc/self/loginuid` 可以随意由 root 修改：
