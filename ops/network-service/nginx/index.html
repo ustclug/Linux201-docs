@@ -5155,31 +5155,42 @@
 <a id="__codelineno-63-2" name="__codelineno-63-2" href="#__codelineno-63-2"></a><span class="k">autoindex</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
 <a id="__codelineno-63-3" name="__codelineno-63-3" href="#__codelineno-63-3"></a><span class="k">index</span><span class="w"> </span><span class="s">index.html</span><span class="w"> </span><span class="s">index.htm</span><span class="p">;</span>
 <a id="__codelineno-63-4" name="__codelineno-63-4" href="#__codelineno-63-4"></a>
-<a id="__codelineno-63-5" name="__codelineno-63-5" href="#__codelineno-63-5"></a><span class="k">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/index.html</span><span class="w"> </span><span class="nv">$uri/index.htm</span><span class="w"> </span><span class="s">@dir_check</span><span class="p">;</span>
-<a id="__codelineno-63-6" name="__codelineno-63-6" href="#__codelineno-63-6"></a>
-<a id="__codelineno-63-7" name="__codelineno-63-7" href="#__codelineno-63-7"></a><span class="k">location</span><span class="w"> </span><span class="s">@dir_check</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-63-8" name="__codelineno-63-8" href="#__codelineno-63-8"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
-<a id="__codelineno-63-9" name="__codelineno-63-9" href="#__codelineno-63-9"></a><span class="w">    </span><span class="kn">if</span><span class="w"> </span><span class="s">(-d</span><span class="w"> </span><span class="nv">$request_filename</span><span class="s">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1"># 判断目录是否存在</span>
-<a id="__codelineno-63-10" name="__codelineno-63-10" href="#__codelineno-63-10"></a><span class="w">        </span><span class="kn">rewrite</span><span class="w"> </span><span class="s">^(.*)</span>$<span class="w"> </span><span class="s">/_dir_handler/</span><span class="nv">$1/</span><span class="w"> </span><span class="s">last</span><span class="p">;</span>
-<a id="__codelineno-63-11" name="__codelineno-63-11" href="#__codelineno-63-11"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-63-12" name="__codelineno-63-12" href="#__codelineno-63-12"></a><span class="w">    </span><span class="kn">return</span><span class="w"> </span><span class="mi">404</span><span class="p">;</span>
-<a id="__codelineno-63-13" name="__codelineno-63-13" href="#__codelineno-63-13"></a><span class="p">}</span>
-<a id="__codelineno-63-14" name="__codelineno-63-14" href="#__codelineno-63-14"></a>
-<a id="__codelineno-63-15" name="__codelineno-63-15" href="#__codelineno-63-15"></a><span class="k">location</span><span class="w"> </span><span class="s">/_dir_handler/</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-63-16" name="__codelineno-63-16" href="#__codelineno-63-16"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
-<a id="__codelineno-63-17" name="__codelineno-63-17" href="#__codelineno-63-17"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:1234/</span><span class="p">;</span><span class="w">  </span><span class="c1"># 文件列表程序监听的地址</span>
-<a id="__codelineno-63-18" name="__codelineno-63-18" href="#__codelineno-63-18"></a><span class="p">}</span>
+<a id="__codelineno-63-5" name="__codelineno-63-5" href="#__codelineno-63-5"></a><span class="c1"># 不使用 $uri/index.html，否则配置中自定义的 location /dir/ {...} 内部的规则不会被使用</span>
+<a id="__codelineno-63-6" name="__codelineno-63-6" href="#__codelineno-63-6"></a><span class="k">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">${uri}index.html</span><span class="w"> </span><span class="nv">${uri}index.htm</span><span class="w"> </span><span class="s">@dir_check</span><span class="p">;</span>
+<a id="__codelineno-63-7" name="__codelineno-63-7" href="#__codelineno-63-7"></a>
+<a id="__codelineno-63-8" name="__codelineno-63-8" href="#__codelineno-63-8"></a><span class="k">location</span><span class="w"> </span><span class="s">@dir_check</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-63-9" name="__codelineno-63-9" href="#__codelineno-63-9"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
+<a id="__codelineno-63-10" name="__codelineno-63-10" href="#__codelineno-63-10"></a><span class="w">    </span><span class="kn">if</span><span class="w"> </span><span class="s">(-d</span><span class="w"> </span><span class="nv">$request_filename</span><span class="s">)</span><span class="w"> </span><span class="p">{</span><span class="w">  </span><span class="c1"># 判断目录是否存在</span>
+<a id="__codelineno-63-11" name="__codelineno-63-11" href="#__codelineno-63-11"></a><span class="w">        </span><span class="c1"># 只改写结尾是 / 的访问。结尾不是 / 对目录的访问让 Nginx 自己 301 处理。</span>
+<a id="__codelineno-63-12" name="__codelineno-63-12" href="#__codelineno-63-12"></a><span class="w">        </span><span class="kn">rewrite</span><span class="w"> </span><span class="s">^(.*/)</span>$<span class="w"> </span><span class="s">/_dir_handler</span><span class="nv">$1</span><span class="w"> </span><span class="s">last</span><span class="p">;</span>
+<a id="__codelineno-63-13" name="__codelineno-63-13" href="#__codelineno-63-13"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-63-14" name="__codelineno-63-14" href="#__codelineno-63-14"></a><span class="p">}</span>
+<a id="__codelineno-63-15" name="__codelineno-63-15" href="#__codelineno-63-15"></a>
+<a id="__codelineno-63-16" name="__codelineno-63-16" href="#__codelineno-63-16"></a><span class="k">location</span><span class="w"> </span><span class="s">/_dir_handler/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-63-17" name="__codelineno-63-17" href="#__codelineno-63-17"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
+<a id="__codelineno-63-18" name="__codelineno-63-18" href="#__codelineno-63-18"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:1234/</span><span class="p">;</span><span class="w">  </span><span class="c1"># 文件列表程序监听的地址</span>
+<a id="__codelineno-63-19" name="__codelineno-63-19" href="#__codelineno-63-19"></a><span class="p">}</span>
 </code></pre></div>
-<p>不过 <code>try_files</code> 的问题是：它没有办法继承到子 <code>location</code> 中，这在配置复杂的情况下是难以接受的。因此我们可以有另一个 workaround 方案：<code>index</code> 指令的最后一个参数可以是 URI 绝对路径，例如 <code>index index.html /_dir_handler</code>。于是我们的配置可以改成：</p>
+<p>不过 <code>try_files</code> 的问题是：它没有办法继承到子 <code>location</code> 中，这在配置复杂的情况下是难以接受的。因此我们可以有另一个 workaround 方案：<code>index</code> 指令的最后一个参数可以是 URI 绝对路径，例如 <code>index index.html /_dir_handler</code>。于是更推荐使用下面的配置：</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-64-1" name="__codelineno-64-1" href="#__codelineno-64-1"></a><span class="k">index</span><span class="w"> </span><span class="s">index.html</span><span class="w"> </span><span class="s">index.htm</span><span class="w"> </span><span class="s">/_dir_handler</span><span class="p">;</span>
 <a id="__codelineno-64-2" name="__codelineno-64-2" href="#__codelineno-64-2"></a>
-<a id="__codelineno-64-3" name="__codelineno-64-3" href="#__codelineno-64-3"></a><span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/_dir_handler</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-64-4" name="__codelineno-64-4" href="#__codelineno-64-4"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
-<a id="__codelineno-64-5" name="__codelineno-64-5" href="#__codelineno-64-5"></a><span class="w">    </span><span class="c1"># 由于 $uri 已经是 /_dir_handler/，因此只能从 $request_uri 中获取原始请求路径</span>
-<a id="__codelineno-64-6" name="__codelineno-64-6" href="#__codelineno-64-6"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:1234/</span><span class="nv">$request_uri</span><span class="p">;</span><span class="w">  </span><span class="c1"># 文件列表程序监听的地址</span>
-<a id="__codelineno-64-7" name="__codelineno-64-7" href="#__codelineno-64-7"></a><span class="p">}</span>
+<a id="__codelineno-64-3" name="__codelineno-64-3" href="#__codelineno-64-3"></a><span class="k">if</span><span class="w"> </span><span class="s">(</span><span class="nv">$uri</span><span class="w"> </span><span class="s">!=</span><span class="w"> </span><span class="s">/_dir_handler)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-64-4" name="__codelineno-64-4" href="#__codelineno-64-4"></a><span class="w">    </span><span class="c1"># 在 /_dir_handler 外部记录下 $uri 到另一个变量，因为进入 /_dir_handler 之后 $uri 就会被修改</span>
+<a id="__codelineno-64-5" name="__codelineno-64-5" href="#__codelineno-64-5"></a><span class="w">    </span><span class="kn">set</span><span class="w"> </span><span class="nv">$listing_uri</span><span class="w"> </span><span class="nv">$uri</span><span class="p">;</span>
+<a id="__codelineno-64-6" name="__codelineno-64-6" href="#__codelineno-64-6"></a><span class="p">}</span>
+<a id="__codelineno-64-7" name="__codelineno-64-7" href="#__codelineno-64-7"></a>
+<a id="__codelineno-64-8" name="__codelineno-64-8" href="#__codelineno-64-8"></a><span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/_dir_handler</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-64-9" name="__codelineno-64-9" href="#__codelineno-64-9"></a><span class="w">    </span><span class="kn">internal</span><span class="p">;</span>
+<a id="__codelineno-64-10" name="__codelineno-64-10" href="#__codelineno-64-10"></a><span class="w">    </span><span class="c1"># 使用 rewrite 恢复路径</span>
+<a id="__codelineno-64-11" name="__codelineno-64-11" href="#__codelineno-64-11"></a><span class="w">    </span><span class="kn">rewrite</span><span class="w"> </span><span class="s">^</span><span class="w"> </span><span class="nv">$listing_uri</span><span class="w"> </span><span class="s">break</span><span class="p">;</span>
+<a id="__codelineno-64-12" name="__codelineno-64-12" href="#__codelineno-64-12"></a><span class="w">    </span><span class="c1"># 文件列表程序监听的地址，结尾不加 /，因为 rewrite，传递过去的就是 $uri</span>
+<a id="__codelineno-64-13" name="__codelineno-64-13" href="#__codelineno-64-13"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:1234</span><span class="p">;</span>
+<a id="__codelineno-64-14" name="__codelineno-64-14" href="#__codelineno-64-14"></a>
+<a id="__codelineno-64-15" name="__codelineno-64-15" href="#__codelineno-64-15"></a><span class="w">    </span><span class="c1"># 如果后端程序可以接受，也可以不添加变量记录 $uri，直接把原始的 $request_uri proxy_pass 过去，不过可能会有潜在的安全问题</span>
+<a id="__codelineno-64-16" name="__codelineno-64-16" href="#__codelineno-64-16"></a><span class="w">    </span><span class="c1"># proxy_pass http://127.0.0.1:1234/$request_uri;</span>
+<a id="__codelineno-64-17" name="__codelineno-64-17" href="#__codelineno-64-17"></a><span class="p">}</span>
 </code></pre></div>
-<p>有关 <code>internal</code> 与 <code>if</code> 等相关的介绍，可参考下文的 <a href="#rewrite">Rewrite</a> 部分。</p>
+<p>有关 <code>internal</code>、<code>if</code>、<code>rewrite</code> 等相关的介绍，可参考下文的 <a href="#rewrite">Rewrite</a> 部分。</p>
 </div>
 <h2 id="limiting">速率、请求与连接数限制<a class="headerlink" href="#limiting" title="Permanent link">&para;</a></h2>
 <p>Nginx 提供了多种不同维度的限制功能，帮助减轻恶意流量对服务的影响，保护后端稳定运行，将更多资源分配给正常用户。以下介绍 Nginx 自带的限制功能，如果需要更复杂的规则，可以参考 <a href="#lua">Lua</a> 部分。</p>
@@ -5783,7 +5794,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年11月20日 23:11:05 UTC">2026年11月20日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年11月22日 19:38:23 UTC">2026年11月22日</span>
   </span>
 
     
