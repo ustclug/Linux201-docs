@@ -4544,6 +4544,11 @@ ext4 在较新的版本中也添加了类似的功能（之前仅支持基于用
 </div>
 <h3 id="btrfs">Btrfs<a class="headerlink" href="#btrfs" title="Permanent link">&para;</a></h3>
 <p>尽管最开始背负着不稳定与性能不佳的批评，在许多年的开发后，Btrfs 的稳定性与性能有了很大的提升，并且一部分特性（如快照、透明压缩等）在很多场合都很有用。目前，Btrfs 主要用于桌面环境、家用 NAS（例如群晖）、部分场景下的服务器（Meta 在服务器上即大量使用 Btrfs）等场景。</p>
+<div class="admonition warning" id="btrfs-write-barrier">
+<p class="admonition-title">使用 Btrfs 的设备需要正确实现写屏障（write barrier）&#8288;<a class="headerlink" href="#btrfs-write-barrier" title="Permanent link">&para;</a></p>
+<p>Btrfs 作为 CoW 文件系统，每次提交事务都需要先写入新的数据和元数据树，向硬件设备发出 flush，确认落盘之后，再写入 superblock 指向新的树根。如果硬件设备说谎（确认了落盘但是实际上没有），那么在断电等情况后，Btrfs 会发现 superblock 引用的树还是老的，就会拒绝挂载；也有可能会出现读取到某个目录时，才发现事务版本不一致等情况，并且难以处理，很可能无法恢复完整的数据。</p>
+<p>如果遇到这种情况，可以先尝试使用 <code>ro,rescue=nologreplay</code> 只读挂载，或者使用 <code>ro,rescue=nologreplay,rescue=usebackuproot</code> 使用备用树根只读挂载。如果可以挂载的话，立刻备份数据到其他盘上。</p>
+</div>
 <h4 id="btrfs-subvolume">Subvolume<a class="headerlink" href="#btrfs-subvolume" title="Permanent link">&para;</a></h4>
 <p>Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」，类似于 <a href="../zfs/">ZFS</a> 的 dataset。与目录不同，Subvolume 是独立的，可以有自己的挂载点。同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。</p>
 <p>Subvolume 在 Btrfs 中的层次结构类似一棵树，其中每个 Btrfs 文件系统都有一个顶层（top-level）subvolume 作为树根，<strong>其 ID 永远是 5（<code>subvolid=5</code>）</strong>。</p>
@@ -5139,7 +5144,7 @@ Do not link to a "generic" man page for these commands -->
     <span class="md-icon" title="最后更新">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年9月4日 20:56:47 UTC">2026年9月4日</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="2026年11月24日 05:14:26 UTC">2026年11月24日</span>
   </span>
 
     
