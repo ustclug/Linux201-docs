@@ -710,7 +710,7 @@ Filesystem     Size   Used  Avail Use% Pathname
 
     Btrfs 作为 CoW 文件系统，每次提交事务都需要先写入新的数据和元数据树，向硬件设备发出 flush，确认落盘之后，再写入 superblock 指向新的树根。如果硬件设备说谎（确认了落盘但是实际上没有），那么在断电等情况后，Btrfs 会发现 superblock 引用的树还是老的，就会拒绝挂载；也有可能会出现读取到某个目录时，才发现事务版本不一致等情况，并且难以处理，很可能无法恢复完整的数据。
 
-    如果遇到这种情况，可以先尝试使用 `ro,rescue=nologreplay` 只读挂载，或者使用 `ro,rescue=nologreplay,rescue=usebackuproot` 使用备用树根只读挂载。如果可以挂载的话，立刻备份数据到其他盘上。
+    如果遇到这种情况，可以先尝试使用 `ro,rescue=nologreplay` 只读挂载，或者使用 `ro,rescue=nologreplay,rescue=usebackuproot` 使用备用树根只读挂载。如果可以挂载的话，立刻备份数据到其他盘上。如果即使只读也无法挂载，可以参考[紧急救援](#btrfs-rescue)部分的建议。
 
 #### Subvolume {#btrfs-subvolume}
 
@@ -1083,6 +1083,257 @@ duperemove --hashfile=example.hashfile -dhr /path/to/btrfs
 !!! note "其他文件系统的去重" {#other-filesystem-dedup}
 
     除了 ZFS 自带去重功能，duperemove 支持 XFS 文件系统（因为 XFS 也提供了 `FIDEDUPRANGE` 的内核接口）以外，其他文件系统可以使用 [jdupes](https://codeberg.org/jbruchon/jdupes)，搜索相同的文件，并且做 reflink 或者 hardlink。
+
+#### 紧急救援 {#btrfs-rescue}
+
+!!! danger "数据无价，谨慎操作！" {#data-loss-warning}
+
+    如果你的数据很重要，请咨询专业的数据恢复公司，不要轻易尝试自行操作。
+
+!!! warning "以下内容不是完整的救援指南" {#not-full-rescue-guide}
+
+    请注意，以下仅记录我们在实际故障中恢复的 Btrfs 分区的例子，可能不能涵盖需要帮助的读者所遇到的所有情况。
+
+我们遇到的情况是，在某虚拟化集群中，有一些容器使用了 Btrfs，在机房突然断电并恢复后，一些使用 Btrfs 的容器出现了无法挂载 Btrfs 块设备的情况：
+
+```console
+# mount /dev/user-data/vm-12345-disk-0 /mnt/rescue/
+mount: /mnt/rescue: can't read superblock on /dev/mapper/user--data-vm--12345--disk--0.
+       dmesg(1) may have more information after failed mount system call.
+# dmesg
+[78647.327079] BTRFS: device fsid 9006deb6-959a-489b-80d8-8120dc1472ee devid 1 transid 201077 /dev/mapper/user--data-vm--12345--disk--0 (252:26) scanned by mount (2439652)
+[78647.330802] BTRFS info (device dm-26): first mount of filesystem 9006deb6-959a-489b-80d8-8120dc1472ee
+[78647.331154] BTRFS info (device dm-26): using crc32c checksum algorithm
+[78647.384477] BTRFS error (device dm-26): level verify failed on logical 71057408 mirror 1 wanted 1 found 0
+[78647.406122] BTRFS error (device dm-26): level verify failed on logical 71057408 mirror 2 wanted 1 found 0
+[78647.406481] BTRFS error (device dm-26): failed to load root free space
+[78647.407316] BTRFS error (device dm-26): open_ctree failed: -5
+```
+
+也有一些块设备出现类似下面的错误：
+
+```log
+[78732.297357] BTRFS error (device dm-19): parent transid verify failed on logical 4625580032 mirror 2 wanted 206133 found 169439
+```
+
+经过分析，怀疑是该虚拟化集群使用的某 SAN 没有正确实现 write barrier，并且机房没有配置 UPS，导致突然断电后，SAN 内存中的数据丢失，Btrfs 结构出现非预期的问题。其中一些分区可以使用只读方式挂载（`ro,rescue=nologreplay`、`ro,rescue=nologreplay,rescue=usebackuproot`、`ro,rescue=nologreplay,rescue=all`），但是有一些无论如何都无法 mount：
+
+```console
+# mount -o ro,rescue=nologreplay,rescue=all /dev/user-data/vm-12345-disk-0 /mnt/rescue/
+mount: /mnt/rescue: can't read superblock on /dev/mapper/user--data-vm--12345--disk--0.
+       dmesg(1) may have more information after failed mount system call.
+```
+
+即使可以 mount，要恢复成 rw 的状态也仍然很困难。因此以下只给出从损坏的 Btrfs 分区中提取文件的步骤。
+
+为了更好地实验与恢复，**你需要先使用 `dd` 或 `ddrescue`（如果硬件有问题，出现 IO Error）dump 对应的块设备出来**。完成 dump 后，可以首先尝试使用 `btrfs restore -l` 列出 subvolume 的根：
+
+```console
+$ btrfs restore -l disk.img
+ tree key (EXTENT_TREE ROOT_ITEM 0) 4610768896 level 2
+ tree key (DEV_TREE ROOT_ITEM 0) 88227840 level 0
+ tree key (FS_TREE ROOT_ITEM 0) 30654464 level 0
+ tree key (CSUM_TREE ROOT_ITEM 0) 4607557632 level 2
+ tree key (UUID_TREE ROOT_ITEM 0) 30588928 level 0
+ tree key (FREE_SPACE_TREE ROOT_ITEM 0) 4610850816 level 1
+ tree key (256 ROOT_ITEM 0) 4608983040 level 2
+ tree key (DATA_RELOC_TREE ROOT_ITEM 0) 30523392 level 0
+```
+
+这里存储数据的 subvolume ID 是 256。然后尝试用 `btrfs restore` 导出。错误信息可能会比较多，所以建议将标准错误导出到文件：
+
+```sh
+mkdir current
+btrfs restore -iS --root 256 disk.img current 2>current.log
+```
+
+其中 `-i` 可以让 restore 即使遇到失败也还继续尝试恢复其他的文件，`-S` 则恢复符号链接。如果需要保留权限信息，考虑添加 `-m` 和 `-x`（xattrs）。此外在实际恢复前，需要手工创建目录，否则 `btrfs restore` 会直接跳过恢复过程返回成功。
+
+如果你的运气不是很好：
+
+```console
+$ btrfs restore -l disk.img
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+Ignoring transid failure
+ERROR: root [7 0] level 0 does not match 1
+
+WARNING: could not setup csum tree, skipping (partial open)
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+Ignoring transid failure
+ tree key (EXTENT_TREE ROOT_ITEM 0) 4722311168 level 2
+ tree key (DEV_TREE ROOT_ITEM 0) 157646848 level 0
+ tree key (FS_TREE ROOT_ITEM 0) 30654464 level 0
+ tree key (CSUM_TREE ROOT_ITEM 0) 4721164288 level 1
+ tree key (UUID_TREE ROOT_ITEM 0) 30588928 level 0
+ tree key (FREE_SPACE_TREE ROOT_ITEM 0) 4793466880 level 1
+ tree key (256 ROOT_ITEM 0) 4683628544 level 2
+ tree key (DATA_RELOC_TREE ROOT_ITEM 0) 30523392 level 0
+$ btrfs restore -iS -r 256 disk.img current
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+parent transid verify failed on 4721164288 wanted 285516 found 285512
+Ignoring transid failure
+ERROR: root [7 0] level 0 does not match 1
+
+WARNING: could not setup csum tree, skipping (partial open)
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+parent transid verify failed on 4793466880 wanted 285516 found 285502
+Ignoring transid failure
+parent transid verify failed on 4683628544 wanted 285516 found 285512
+parent transid verify failed on 4683628544 wanted 285516 found 285512
+parent transid verify failed on 4683628544 wanted 285516 found 285512
+Ignoring transid failure
+ERROR: root [256 0] level 0 does not match 2
+
+ERROR: failed to read root 256: Input/output error
+```
+
+那么可以尝试使用备用的 superblock（`--super`）：
+
+```console
+$ btrfs restore --super 1 -l disk.img
+parent transid verify failed on 4651270144 wanted 285515 found 285512
+ tree key (EXTENT_TREE ROOT_ITEM 0) 4640227328 level 2
+ tree key (DEV_TREE ROOT_ITEM 0) 157646848 level 0
+ tree key (FS_TREE ROOT_ITEM 0) 30654464 level 0
+ tree key (CSUM_TREE ROOT_ITEM 0) 4641259520 level 1
+ tree key (UUID_TREE ROOT_ITEM 0) 30588928 level 0
+ tree key (FREE_SPACE_TREE ROOT_ITEM 0) 4640325632 level 1
+ tree key (256 ROOT_ITEM 0) 4639932416 level 2
+ tree key (DATA_RELOC_TREE ROOT_ITEM 0) 30523392 level 0
+$ mkdir current-super1
+$ btrfs restore --super 1 -iS --root 256 disk.img current-super1 2>current-super1.log
+（省略）
+```
+
+不过也有可能你看到的会是像下面这么绝望的画面：
+
+```console
+$ btrfs restore --super 0 -l disk.img
+parent transid verify failed on 136495104 wanted 101882 found 101859
+parent transid verify failed on 136495104 wanted 101882 found 101859
+parent transid verify failed on 136495104 wanted 101882 found 101859
+Ignoring transid failure
+WARNING: could not setup extent tree, skipping (partial open)
+WARNING: could not setup csum tree, skipping (partial open)
+WARNING: could not setup free space tree, skipping (partial open)
+Couldn't setup device tree
+Could not open root, trying backup super
+parent transid verify failed on 75497472 wanted 101881 found 101870
+parent transid verify failed on 75497472 wanted 101881 found 101870
+parent transid verify failed on 75497472 wanted 101881 found 101870
+Ignoring transid failure
+ERROR: root [1 0] level 1 does not match 0
+
+Couldn't read tree root
+Could not open root, trying backup super
+ERROR: superblock bytenr 274877906944 is larger than device size 17179869184
+Could not open root, trying backup super
+$ btrfs restore --super 1 -l disk.img
+parent transid verify failed on 75497472 wanted 101881 found 101870
+parent transid verify failed on 75497472 wanted 101881 found 101870
+parent transid verify failed on 75497472 wanted 101881 found 101870
+Ignoring transid failure
+ERROR: root [1 0] level 1 does not match 0
+
+Couldn't read tree root
+Could not open root, trying backup super
+ERROR: superblock bytenr 274877906944 is larger than device size 17179869184
+Could not open root, trying backup super
+```
+
+此时可以考虑找一下历史根：
+
+```console
+$ btrfs inspect-internal dump-super -a -f disk.img
+superblock: bytenr=65536, device=disk.img
+---------------------------------------------------------
+（省略）
+backup_roots[4]:
+	backup 0:
+		backup_tree_root:	75497472	gen: 101881	level: 0
+		backup_chunk_root:	22102016	gen: 60207	level: 0
+		backup_extent_root:	74153984	gen: 101881	level: 2
+		backup_fs_root:		30654464	gen: 9	level: 0
+		backup_dev_root:	66502656	gen: 101711	level: 0
+		csum_root:	66125824	gen: 101880	level: 1
+		backup_total_bytes:	17179869184
+		backup_bytes_used:	2120040448
+		backup_num_devices:	1
+
+	backup 1:
+		backup_tree_root:	136495104	gen: 101882	level: 0
+		backup_chunk_root:	22102016	gen: 60207	level: 0
+		backup_extent_root:	84967424	gen: 101882	level: 2
+		backup_fs_root:		30654464	gen: 9	level: 0
+		backup_dev_root:	66502656	gen: 101711	level: 0
+		csum_root:	75677696	gen: 101882	level: 1
+		backup_total_bytes:	17179869184
+		backup_bytes_used:	2120040448
+		backup_num_devices:	1
+
+	backup 2:
+		backup_tree_root:	65126400	gen: 101879	level: 0
+		backup_chunk_root:	22102016	gen: 60207	level: 0
+		backup_extent_root:	63684608	gen: 101879	level: 2
+		backup_fs_root:		30654464	gen: 9	level: 0
+		backup_dev_root:	66502656	gen: 101711	level: 0
+		csum_root:	58818560	gen: 101878	level: 1
+		backup_total_bytes:	17179869184
+		backup_bytes_used:	2120040448
+		backup_num_devices:	1
+
+	backup 3:
+		backup_tree_root:	69828608	gen: 101880	level: 0
+		backup_chunk_root:	22102016	gen: 60207	level: 0
+		backup_extent_root:	65699840	gen: 101880	level: 2
+		backup_fs_root:		30654464	gen: 9	level: 0
+		backup_dev_root:	66502656	gen: 101711	level: 0
+		csum_root:	66125824	gen: 101880	level: 1
+		backup_total_bytes:	17179869184
+		backup_bytes_used:	2120040448
+		backup_num_devices:	1
+superblock: bytenr=67108864, device=disk.img
+---------------------------------------------------------
+（省略）
+backup_roots[4]:
+（省略）
+```
+
+我们还可以尝试知道 subvolume 的 root 地址：
+
+```console
+$ btrfs-find-root -o 256 disk.img
+parent transid verify failed on 136495104 wanted 101882 found 101859
+parent transid verify failed on 136495104 wanted 101882 found 101859
+Couldn't read tree root
+Superblock doesn't contain generation info for root 256
+Superblock doesn't contain the level info for root 256
+Well block 75513856(gen: 101882 level: 2) seems good, but we are unsure about the correct generation/level
+Well block 73318400(gen: 101881 level: 2) seems good, but we are unsure about the correct generation/level
+Well block 65650688(gen: 101880 level: 2) seems good, but we are unsure about the correct generation/level
+Well block 65142784(gen: 101880 level: 2) seems good, but we are unsure about the correct generation/level
+Well block 65110016(gen: 101879 level: 0) seems good, but we are unsure about the correct generation/level
+Well block 64782336(gen: 101879 level: 0) seems good, but we are unsure about the correct generation/level
+Well block 57835520(gen: 101878 level: 2) seems good, but we are unsure about the correct generation/level
+（省略）
+```
+
+`btrfs restore` 可以用 `-t` 指定 `backup_tree_root`，用 `-f` 指定 subvolume 根地址，例如这样：
+
+```sh
+mkdir backup-root
+btrfs restore -iS -t 69828608 -r 256 disk.img backup-root
+mkdir subvol-root
+btrfs restore -iS -t 69828608 -f 73318400 disk.img subvol-root
+```
+
+需要注意的是，恢复出的文件可能会存在部分损坏的情况，对重要文件请务必核验内容正确。
 
 #### 常见问题 {#btrfs-faq}
 
