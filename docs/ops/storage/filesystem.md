@@ -706,6 +706,12 @@ Filesystem     Size   Used  Avail Use% Pathname
 
 尽管最开始背负着不稳定与性能不佳的批评，在许多年的开发后，Btrfs 的稳定性与性能有了很大的提升，并且一部分特性（如快照、透明压缩等）在很多场合都很有用。目前，Btrfs 主要用于桌面环境、家用 NAS（例如群晖）、部分场景下的服务器（Meta 在服务器上即大量使用 Btrfs）等场景。
 
+!!! warning "使用 Btrfs 的设备需要正确实现写屏障（write barrier）" {#btrfs-write-barrier}
+
+    Btrfs 作为 CoW 文件系统，每次提交事务都需要先写入新的数据和元数据树，向硬件设备发出 flush，确认落盘之后，再写入 superblock 指向新的树根。如果硬件设备说谎（确认了落盘但是实际上没有），那么在断电等情况后，Btrfs 会发现 superblock 引用的树还是老的，就会拒绝挂载；也有可能会出现读取到某个目录时，才发现事务版本不一致等情况，并且难以处理，很可能无法恢复完整的数据。
+
+    如果遇到这种情况，可以先尝试使用 `ro,rescue=nologreplay` 只读挂载，或者使用 `ro,rescue=nologreplay,rescue=usebackuproot` 使用备用树根只读挂载。如果可以挂载的话，立刻备份数据到其他盘上。
+
 #### Subvolume {#btrfs-subvolume}
 
 Subvolume 是 Btrfs 的一个重要概念，可以看作是 Btrfs 的「子文件系统」，类似于 [ZFS](./zfs.md) 的 dataset。与目录不同，Subvolume 是独立的，可以有自己的挂载点。同时 subvolume 共享同一个 Btrfs 文件系统的空间，不需要手动分配空间。
