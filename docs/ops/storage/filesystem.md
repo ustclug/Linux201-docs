@@ -1124,7 +1124,7 @@ mount: /mnt/rescue: can't read superblock on /dev/mapper/user--data-vm--12345--d
        dmesg(1) may have more information after failed mount system call.
 ```
 
-!!! note "`rescue=all` 会开启哪些选项？"
+!!! note "`rescue=all` 会开启哪些选项？" {#btrfs-rescue-all-options}
 
     可以在 `/sys/fs/btrfs/features/supported_rescue_options` 查看所有的选项：
 
