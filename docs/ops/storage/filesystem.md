@@ -710,7 +710,7 @@ Filesystem     Size   Used  Avail Use% Pathname
 
     Btrfs 作为 CoW 文件系统，每次提交事务都需要先写入新的数据和元数据树，向硬件设备发出 flush，确认落盘之后，再写入 superblock 指向新的树根。如果硬件设备说谎（确认了落盘但是实际上没有），那么在断电等情况后，Btrfs 会发现 superblock 引用的树还是老的，就会拒绝挂载；也有可能会出现读取到某个目录时，才发现事务版本不一致等情况，并且难以处理，很可能无法恢复完整的数据。
 
-    如果遇到这种情况，可以先尝试使用 `ro,rescue=nologreplay` 只读挂载，或者使用 `ro,rescue=nologreplay,rescue=usebackuproot` 使用备用树根只读挂载。如果可以挂载的话，立刻备份数据到其他盘上。如果即使只读也无法挂载，可以参考[紧急救援](#btrfs-rescue)部分的建议。
+    如果遇到这种情况，可以先尝试使用 `ro,rescue=nologreplay` 只读挂载，使用 `ro,rescue=nologreplay,rescue=usebackuproot` 使用备用树根只读挂载，或者 `ro,rescue=all` 尽可能开启内核所有的救援选项挂载。如果可以挂载的话，立刻备份数据到其他盘上。如果即使只读也无法挂载，可以参考[紧急救援](#btrfs-rescue)部分的建议。
 
 #### Subvolume {#btrfs-subvolume}
 
@@ -1116,13 +1116,27 @@ mount: /mnt/rescue: can't read superblock on /dev/mapper/user--data-vm--12345--d
 [78732.297357] BTRFS error (device dm-19): parent transid verify failed on logical 4625580032 mirror 2 wanted 206133 found 169439
 ```
 
-经过分析，怀疑是该虚拟化集群使用的某 SAN 没有正确实现 write barrier，并且机房没有配置 UPS，导致突然断电后，SAN 内存中的数据丢失，Btrfs 结构出现非预期的问题。其中一些分区可以使用只读方式挂载（`ro,rescue=nologreplay`、`ro,rescue=nologreplay,rescue=usebackuproot`、`ro,rescue=nologreplay,rescue=all`），但是有一些无论如何都无法 mount：
+经过分析，怀疑是该虚拟化集群使用的某 SAN 没有正确实现 write barrier，并且机房没有配置 UPS，导致突然断电后，SAN 内存中的数据丢失，Btrfs 结构出现非预期的问题。其中一些分区可以使用只读方式挂载（`ro,rescue=nologreplay`、`ro,rescue=nologreplay,rescue=usebackuproot`、`ro,rescue=all`），但是有一些无论如何都无法 mount：
 
 ```console
 # mount -o ro,rescue=nologreplay,rescue=all /dev/user-data/vm-12345-disk-0 /mnt/rescue/
 mount: /mnt/rescue: can't read superblock on /dev/mapper/user--data-vm--12345--disk--0.
        dmesg(1) may have more information after failed mount system call.
 ```
+
+!!! note "`rescue=all` 会开启哪些选项？"
+
+    可以在 `/sys/fs/btrfs/features/supported_rescue_options` 查看所有的选项：
+
+    ```txt title="/sys/fs/btrfs/features/supported_rescue_options"
+    usebackuproot nologreplay ignorebadroots ignoredatacsums ignoremetacsums ignoresuperflags all
+    ```
+
+    - `usebackuproot` 会尝试使用备用的树根读取数据
+    - `nologreplay` 会禁止挂载时重放日志，避免进一步写入损坏磁盘数据
+    - `ignorebadroots` 会忽略损坏的树根完成挂载
+    - `ignoredatacsums` 和 `ignoremetacsums` 分别会忽略数据和元数据的校验错误
+    - `ignoresuperflags` 会忽略 superblock 中不认识的 flag
 
 即使可以 mount，要恢复成 rw 的状态也仍然很困难。因此以下只给出从损坏的 Btrfs 分区中提取文件的步骤。
 
